@@ -103,6 +103,39 @@ export type Database = {
         }
         Relationships: []
       }
+      compliance_templates: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          jurisdiction: string
+          requirements: Json
+          template_name: string
+          updated_at: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          jurisdiction: string
+          requirements: Json
+          template_name: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          jurisdiction?: string
+          requirements?: Json
+          template_name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_check_template_items: {
         Row: {
           category: string | null
@@ -151,6 +184,7 @@ export type Database = {
           is_active: boolean | null
           ride_id: string
           template_name: string
+          template_type: string | null
           updated_at: string
           user_id: string
         }
@@ -163,6 +197,7 @@ export type Database = {
           is_active?: boolean | null
           ride_id: string
           template_name: string
+          template_type?: string | null
           updated_at?: string
           user_id: string
         }
@@ -175,6 +210,7 @@ export type Database = {
           is_active?: boolean | null
           ride_id?: string
           template_name?: string
+          template_type?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -337,6 +373,57 @@ export type Database = {
           },
         ]
       }
+      maintenance_records: {
+        Row: {
+          cost: number | null
+          created_at: string
+          description: string
+          document_ids: string[] | null
+          id: string
+          maintenance_date: string
+          maintenance_type: string
+          next_maintenance_due: string | null
+          notes: string | null
+          parts_replaced: string | null
+          performed_by: string | null
+          ride_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cost?: number | null
+          created_at?: string
+          description: string
+          document_ids?: string[] | null
+          id?: string
+          maintenance_date: string
+          maintenance_type: string
+          next_maintenance_due?: string | null
+          notes?: string | null
+          parts_replaced?: string | null
+          performed_by?: string | null
+          ride_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cost?: number | null
+          created_at?: string
+          description?: string
+          document_ids?: string[] | null
+          id?: string
+          maintenance_date?: string
+          maintenance_type?: string
+          next_maintenance_due?: string | null
+          notes?: string | null
+          parts_replaced?: string | null
+          performed_by?: string | null
+          ride_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ndt_reports: {
         Row: {
           certificate_number: string | null
@@ -464,6 +551,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          is_read: boolean | null
+          message: string
+          related_id: string | null
+          related_table: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message: string
+          related_id?: string | null
+          related_table?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          related_id?: string | null
+          related_table?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       profiles: {
         Row: {

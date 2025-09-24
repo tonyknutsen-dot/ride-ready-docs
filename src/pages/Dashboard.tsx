@@ -3,18 +3,23 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { User, Settings, FileText, Plus, Users, Wrench, Shield, LogOut } from 'lucide-react';
+import { User, Settings, FileText, Plus, Users, Wrench, Shield, LogOut, Calendar as CalendarIcon, Bell as BellIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import RideManagement from '@/components/RideManagement';
 import GlobalDocuments from '@/components/GlobalDocuments';
+import DashboardOverview from '@/components/DashboardOverview';
+import CalendarView from '@/components/CalendarView';
+import NotificationCenter from '@/components/NotificationCenter';
+import MaintenanceTracker from '@/components/MaintenanceTracker';
+import ReportGenerator from '@/components/ReportGenerator';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('rides');
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     if (user) {
@@ -107,31 +112,67 @@ const Dashboard = () => {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="rides" className="flex items-center space-x-2">
-                <Settings className="h-4 w-4" />
+            <TabsList className="grid w-full grid-cols-8 h-auto p-1">
+              <TabsTrigger value="overview" className="flex flex-col items-center py-3 px-2 text-xs">
+                <Plus className="h-4 w-4 mb-1" />
+                <span>Overview</span>
+              </TabsTrigger>
+              <TabsTrigger value="rides" className="flex flex-col items-center py-3 px-2 text-xs">
+                <Settings className="h-4 w-4 mb-1" />
                 <span>My Rides</span>
               </TabsTrigger>
-              <TabsTrigger value="documents" className="flex items-center space-x-2">
-                <Shield className="h-4 w-4" />
-                <span>Global Docs</span>
+              <TabsTrigger value="calendar" className="flex flex-col items-center py-3 px-2 text-xs">
+                <CalendarIcon className="h-4 w-4 mb-1" />
+                <span>Calendar</span>
               </TabsTrigger>
-              <TabsTrigger value="profile" className="flex items-center space-x-2">
-                <User className="h-4 w-4" />
-                <span>Profile</span>
+              <TabsTrigger value="maintenance" className="flex flex-col items-center py-3 px-2 text-xs">
+                <Wrench className="h-4 w-4 mb-1" />
+                <span>Maintenance</span>
               </TabsTrigger>
-              <TabsTrigger value="reports" className="flex items-center space-x-2">
-                <FileText className="h-4 w-4" />
+              <TabsTrigger value="documents" className="flex flex-col items-center py-3 px-2 text-xs">
+                <Shield className="h-4 w-4 mb-1" />
+                <span>Documents</span>
+              </TabsTrigger>
+              <TabsTrigger value="notifications" className="flex flex-col items-center py-3 px-2 text-xs">
+                <BellIcon className="h-4 w-4 mb-1" />
+                <span>Notifications</span>
+              </TabsTrigger>
+              <TabsTrigger value="reports" className="flex flex-col items-center py-3 px-2 text-xs">
+                <FileText className="h-4 w-4 mb-1" />
                 <span>Reports</span>
               </TabsTrigger>
+              <TabsTrigger value="profile" className="flex flex-col items-center py-3 px-2 text-xs">
+                <User className="h-4 w-4 mb-1" />
+                <span>Profile</span>
+              </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="overview">
+              <DashboardOverview onNavigate={setActiveTab} />
+            </TabsContent>
 
             <TabsContent value="rides">
               <RideManagement />
             </TabsContent>
 
+            <TabsContent value="calendar">
+              <CalendarView />
+            </TabsContent>
+
+            <TabsContent value="maintenance">
+              <MaintenanceTracker />
+            </TabsContent>
+
             <TabsContent value="documents">
               <GlobalDocuments />
+            </TabsContent>
+
+            <TabsContent value="notifications">
+              <NotificationCenter />
+            </TabsContent>
+
+            <TabsContent value="reports">
+              <ReportGenerator />
             </TabsContent>
 
             <TabsContent value="profile">
@@ -166,20 +207,6 @@ const Dashboard = () => {
                   </CardContent>
                 </Card>
               )}
-            </TabsContent>
-
-            <TabsContent value="reports">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="text-center py-8">
-                    <FileText className="mx-auto h-16 w-16 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold mt-4">Reports Coming Soon</h3>
-                    <p className="text-muted-foreground">
-                      Compliance reports and analytics will be available here
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
             </TabsContent>
           </Tabs>
         </div>
