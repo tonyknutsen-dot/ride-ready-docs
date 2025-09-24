@@ -17,10 +17,14 @@ import ReportGenerator from '@/components/ReportGenerator';
 import ProfileSetup from '@/components/ProfileSetup';
 import { TrialStatus } from '@/components/TrialStatus';
 import { PlanSelection } from '@/components/PlanSelection';
+import { FeatureGate } from '@/components/FeatureGate';
+import { RestrictedFeatureCard } from '@/components/RestrictedFeatureCard';
+import { useSubscription } from '@/hooks/useSubscription';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
+  const { subscription } = useSubscription();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
@@ -129,15 +133,27 @@ const Dashboard = () => {
                 <Plus className="h-4 w-4 mb-1" />
                 <span>Overview</span>
               </TabsTrigger>
-              <TabsTrigger value="rides" className="flex flex-col items-center py-3 px-2 text-xs">
+              <TabsTrigger 
+                value="rides" 
+                className="flex flex-col items-center py-3 px-2 text-xs"
+                disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+              >
                 <Settings className="h-4 w-4 mb-1" />
                 <span>My Rides</span>
               </TabsTrigger>
-              <TabsTrigger value="calendar" className="flex flex-col items-center py-3 px-2 text-xs">
+              <TabsTrigger 
+                value="calendar" 
+                className="flex flex-col items-center py-3 px-2 text-xs"
+                disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+              >
                 <CalendarIcon className="h-4 w-4 mb-1" />
                 <span>Calendar</span>
               </TabsTrigger>
-              <TabsTrigger value="maintenance" className="flex flex-col items-center py-3 px-2 text-xs">
+              <TabsTrigger 
+                value="maintenance" 
+                className="flex flex-col items-center py-3 px-2 text-xs"
+                disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+              >
                 <Wrench className="h-4 w-4 mb-1" />
                 <span>Maintenance</span>
               </TabsTrigger>
@@ -145,11 +161,19 @@ const Dashboard = () => {
                 <Shield className="h-4 w-4 mb-1" />
                 <span>Documents</span>
               </TabsTrigger>
-              <TabsTrigger value="notifications" className="flex flex-col items-center py-3 px-2 text-xs">
+              <TabsTrigger 
+                value="notifications" 
+                className="flex flex-col items-center py-3 px-2 text-xs"
+                disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+              >
                 <BellIcon className="h-4 w-4 mb-1" />
                 <span>Notifications</span>
               </TabsTrigger>
-              <TabsTrigger value="reports" className="flex flex-col items-center py-3 px-2 text-xs">
+              <TabsTrigger 
+                value="reports" 
+                className="flex flex-col items-center py-3 px-2 text-xs"
+                disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+              >
                 <FileText className="h-4 w-4 mb-1" />
                 <span>Reports</span>
               </TabsTrigger>
@@ -164,27 +188,39 @@ const Dashboard = () => {
             </TabsContent>
 
             <TabsContent value="rides">
-              <RideManagement />
+              <FeatureGate requiredPlan="advanced" feature="Ride Management">
+                <RideManagement />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="calendar">
-              <CalendarView />
+              <FeatureGate requiredPlan="advanced" feature="Calendar & Scheduling">
+                <CalendarView />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="maintenance">
-              <MaintenanceTracker />
+              <FeatureGate requiredPlan="advanced" feature="Maintenance Tracking">
+                <MaintenanceTracker />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="documents">
-              <GlobalDocuments />
+              <FeatureGate requiredPlan="basic" feature="Document Management">
+                <GlobalDocuments />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="notifications">
-              <NotificationCenter />
+              <FeatureGate requiredPlan="advanced" feature="Notifications & Alerts">
+                <NotificationCenter />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="reports">
-              <ReportGenerator />
+              <FeatureGate requiredPlan="advanced" feature="Advanced Reporting">
+                <ReportGenerator />
+              </FeatureGate>
             </TabsContent>
 
             <TabsContent value="profile">

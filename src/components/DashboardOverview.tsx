@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { RestrictedFeatureCard } from '@/components/RestrictedFeatureCard';
+import { useSubscription } from '@/hooks/useSubscription';
 import { 
   FileText, 
   Calendar, 
@@ -33,6 +35,7 @@ interface DashboardOverviewProps {
 const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { subscription } = useSubscription();
   const [stats, setStats] = useState<DashboardStats>({
     totalRides: 0,
     activeInspections: 0,
@@ -52,77 +55,86 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
 
   const loadDashboardData = async () => {
     try {
-      // Load rides count
-      const { data: rides, error: ridesError } = await supabase
-        .from('rides')
-        .select('id')
-        .eq('user_id', user?.id);
-
-      if (ridesError) throw ridesError;
-
-      // Load inspection checks
-      const { data: inspections, error: inspectionsError } = await supabase
-        .from('inspection_checks')
-        .select('id, check_date, status')
-        .eq('user_id', user?.id);
-
-      if (inspectionsError) throw inspectionsError;
-
-      // Load maintenance records
-      const { data: maintenance, error: maintenanceError } = await supabase
-        .from('maintenance_records')
-        .select('id, maintenance_date')
-        .eq('user_id', user?.id);
-
-      if (maintenanceError) throw maintenanceError;
-
-      // Load documents expiring soon
-      const thirtyDaysFromNow = new Date();
-      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-
+      // Only load documents for trial/basic users
       const { data: documents, error: documentsError } = await supabase
         .from('documents')
         .select('id, expires_at')
         .eq('user_id', user?.id)
-        .not('expires_at', 'is', null)
-        .lte('expires_at', thirtyDaysFromNow.toISOString().split('T')[0]);
+        .not('expires_at', 'is', null);
 
       if (documentsError) throw documentsError;
 
+      // Only load advanced features data for advanced plan users
+      let ridesData, inspectionsData, maintenanceData, activityData;
+      
+      if (subscription?.subscriptionStatus === 'advanced') {
+        // Load rides count
+        const { data: rides, error: ridesError } = await supabase
+          .from('rides')
+          .select('id')
+          .eq('user_id', user?.id);
+
+        if (ridesError) throw ridesError;
+        ridesData = rides;
+
+        // Load inspection checks
+        const { data: inspections, error: inspectionsError } = await supabase
+          .from('inspection_checks')
+          .select('id, check_date, status')
+          .eq('user_id', user?.id);
+
+        if (inspectionsError) throw inspectionsError;
+        inspectionsData = inspections;
+
+        // Load maintenance records
+        const { data: maintenance, error: maintenanceError } = await supabase
+          .from('maintenance_records')
+          .select('id, maintenance_date')
+          .eq('user_id', user?.id);
+
+        if (maintenanceError) throw maintenanceError;
+        maintenanceData = maintenance;
+
+        // Load recent activity (last 5 inspection checks)
+        const { data: activity } = await supabase
+          .from('inspection_checks')
+          .select(`
+            id,
+            check_date,
+            status,
+            inspector_name,
+            rides(ride_name)
+          `)
+          .eq('user_id', user?.id)
+          .order('created_at', { ascending: false })
+          .limit(5);
+
+        activityData = activity;
+      }
+
       // Calculate stats
       const today = new Date().toISOString().split('T')[0];
-      const activeInspections = inspections?.filter(i => i.status === 'in_progress').length || 0;
-      const overdueInspections = inspections?.filter(i => 
-        i.status === 'pending' && i.check_date < today
-      ).length || 0;
-      const upcomingInspections = inspections?.filter(i => 
-        i.status === 'pending' && i.check_date >= today
+      const thirtyDaysFromNow = new Date();
+      thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+      
+      const documentsExpiringSoon = documents?.filter(doc => 
+        doc.expires_at && doc.expires_at <= thirtyDaysFromNow.toISOString().split('T')[0]
       ).length || 0;
 
       setStats({
-        totalRides: rides?.length || 0,
-        activeInspections,
-        overdueInspections,
-        upcomingInspections,
-        maintenanceRecords: maintenance?.length || 0,
-        documentsExpiringSoon: documents?.length || 0,
+        totalRides: ridesData?.length || 0,
+        activeInspections: inspectionsData?.filter(i => i.status === 'in_progress').length || 0,
+        overdueInspections: inspectionsData?.filter(i => 
+          i.status === 'pending' && i.check_date < today
+        ).length || 0,
+        upcomingInspections: inspectionsData?.filter(i => 
+          i.status === 'pending' && i.check_date >= today
+        ).length || 0,
+        maintenanceRecords: maintenanceData?.length || 0,
+        documentsExpiringSoon,
       });
 
-      // Load recent activity (last 5 inspection checks)
-      const { data: activity } = await supabase
-        .from('inspection_checks')
-        .select(`
-          id,
-          check_date,
-          status,
-          inspector_name,
-          rides(ride_name)
-        `)
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(5);
-
-      setRecentActivity(activity || []);
+      setRecentActivity(activityData || []);
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -161,48 +173,78 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
     );
   }
 
+  const isAdvancedUser = subscription?.subscriptionStatus === 'advanced';
+  const isBasicOrTrial = subscription?.subscriptionStatus === 'basic' || subscription?.subscriptionStatus === 'trial' || subscription?.isTrialActive;
+
   return (
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="hover:shadow-elegant transition-smooth cursor-pointer" onClick={() => onNavigate('rides')}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Rides</CardTitle>
-              <Wrench className="h-4 w-4 text-muted-foreground" />
-            </div>
-            <div className="text-2xl font-bold">{stats.totalRides}</div>
-            <p className="text-xs text-muted-foreground">
-              Registered rides in system
-            </p>
-          </CardContent>
-        </Card>
+        {isAdvancedUser ? (
+          <Card className="hover:shadow-elegant transition-smooth cursor-pointer" onClick={() => onNavigate('rides')}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Total Rides</CardTitle>
+                <Wrench className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="text-2xl font-bold">{stats.totalRides}</div>
+              <p className="text-xs text-muted-foreground">
+                Registered rides in system
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <RestrictedFeatureCard
+            title="Total Rides"
+            description="Track all your registered rides"
+            icon={<Wrench className="h-4 w-4" />}
+            requiredPlan="advanced"
+          />
+        )}
 
-        <Card className="hover:shadow-elegant transition-smooth cursor-pointer" onClick={() => onNavigate('inspections')}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Active Inspections</CardTitle>
-              <CheckCircle className="h-4 w-4 text-emerald-600" />
-            </div>
-            <div className="text-2xl font-bold text-emerald-600">{stats.activeInspections}</div>
-            <p className="text-xs text-muted-foreground">
-              Currently in progress
-            </p>
-          </CardContent>
-        </Card>
+        {isAdvancedUser ? (
+          <Card className="hover:shadow-elegant transition-smooth cursor-pointer" onClick={() => onNavigate('inspections')}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Active Inspections</CardTitle>
+                <CheckCircle className="h-4 w-4 text-emerald-600" />
+              </div>
+              <div className="text-2xl font-bold text-emerald-600">{stats.activeInspections}</div>
+              <p className="text-xs text-muted-foreground">
+                Currently in progress
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <RestrictedFeatureCard
+            title="Active Inspections"
+            description="Monitor ongoing inspection checks"
+            icon={<CheckCircle className="h-4 w-4" />}
+            requiredPlan="advanced"
+          />
+        )}
 
-        <Card className="hover:shadow-elegant transition-smooth cursor-pointer" onClick={() => onNavigate('calendar')}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-              <AlertTriangle className="h-4 w-4 text-destructive" />
-            </div>
-            <div className="text-2xl font-bold text-destructive">{stats.overdueInspections}</div>
-            <p className="text-xs text-muted-foreground">
-              Require immediate attention
-            </p>
-          </CardContent>
-        </Card>
+        {isAdvancedUser ? (
+          <Card className="hover:shadow-elegant transition-smooth cursor-pointer" onClick={() => onNavigate('calendar')}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Overdue</CardTitle>
+                <AlertTriangle className="h-4 w-4 text-destructive" />
+              </div>
+              <div className="text-2xl font-bold text-destructive">{stats.overdueInspections}</div>
+              <p className="text-xs text-muted-foreground">
+                Require immediate attention
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <RestrictedFeatureCard
+            title="Overdue Items"
+            description="Track overdue inspections and maintenance"
+            icon={<AlertTriangle className="h-4 w-4" />}
+            requiredPlan="advanced"
+          />
+        )}
 
         <Card className="hover:shadow-elegant transition-smooth cursor-pointer" onClick={() => onNavigate('documents')}>
           <CardContent className="p-6">
@@ -231,19 +273,21 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            <Button 
-              variant="outline" 
-              className="justify-start h-auto p-4"
-              onClick={() => onNavigate('inspections')}
-            >
-              <div className="flex flex-col items-start space-y-1">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-4 w-4" />
-                  <span className="font-medium">New Inspection</span>
+            {isAdvancedUser && (
+              <Button 
+                variant="outline" 
+                className="justify-start h-auto p-4"
+                onClick={() => onNavigate('inspections')}
+              >
+                <div className="flex flex-col items-start space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="font-medium">New Inspection</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">Perform daily checks</span>
                 </div>
-                <span className="text-xs text-muted-foreground">Perform daily checks</span>
-              </div>
-            </Button>
+              </Button>
+            )}
             
             <Button 
               variant="outline" 
@@ -259,33 +303,37 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
               </div>
             </Button>
 
-            <Button 
-              variant="outline" 
-              className="justify-start h-auto p-4"
-              onClick={() => onNavigate('maintenance')}
-            >
-              <div className="flex flex-col items-start space-y-1">
-                <div className="flex items-center space-x-2">
-                  <Wrench className="h-4 w-4" />
-                  <span className="font-medium">Log Maintenance</span>
+            {isAdvancedUser && (
+              <Button 
+                variant="outline" 
+                className="justify-start h-auto p-4"
+                onClick={() => onNavigate('maintenance')}
+              >
+                <div className="flex flex-col items-start space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <Wrench className="h-4 w-4" />
+                    <span className="font-medium">Log Maintenance</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">Record repairs</span>
                 </div>
-                <span className="text-xs text-muted-foreground">Record repairs</span>
-              </div>
-            </Button>
+              </Button>
+            )}
 
-            <Button 
-              variant="outline" 
-              className="justify-start h-auto p-4"
-              onClick={() => onNavigate('calendar')}
-            >
-              <div className="flex flex-col items-start space-y-1">
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4" />
-                  <span className="font-medium">View Calendar</span>
+            {isAdvancedUser && (
+              <Button 
+                variant="outline" 
+                className="justify-start h-auto p-4"
+                onClick={() => onNavigate('calendar')}
+              >
+                <div className="flex flex-col items-start space-y-1">
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-4 w-4" />
+                    <span className="font-medium">View Calendar</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">See schedule</span>
                 </div>
-                <span className="text-xs text-muted-foreground">See schedule</span>
-              </div>
-            </Button>
+              </Button>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -298,11 +346,17 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
             Recent Activity
           </CardTitle>
           <CardDescription>
-            Latest inspection checks and updates
+            {isAdvancedUser ? 'Latest inspection checks and updates' : 'Document uploads and updates'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {recentActivity.length === 0 ? (
+          {!isAdvancedUser ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
+              <p>Advanced activity tracking</p>
+              <p className="text-sm">Upgrade to Advanced plan to see inspection activity</p>
+            </div>
+          ) : recentActivity.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
               <p>No recent activity</p>
