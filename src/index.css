@@ -111,3 +111,41 @@ All colors MUST be HSL.
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .shadow-elegant {
+    box-shadow: var(--shadow-elegant);
+  }
+  
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+  
+  .transition-smooth {
+    transition: var(--transition-smooth);
+  }
+  
+  .bg-card-hover {
+    background: hsl(var(--card-hover));
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Mobile touch improvements */
+  @media (max-width: 768px) {
+    .touch-pan-x {
+      touch-action: pan-x;
+    }
+    
+    .touch-manipulation {
+      touch-action: manipulation;
+    }
+  }
+}

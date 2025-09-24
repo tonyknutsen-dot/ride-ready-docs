@@ -92,96 +92,177 @@ const Dashboard = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <FileText className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold">Ride Ready Docs</h1>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-muted-foreground">
-              Welcome, {user?.email}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSignOut}
-              className="flex items-center space-x-2"
-            >
-              <LogOut className="h-4 w-4" />
-              <span>Sign Out</span>
-            </Button>
+        <div className="container mx-auto px-4 py-3">
+          {/* Mobile-first responsive header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 min-w-0 flex-1">
+              <FileText className="h-6 w-6 md:h-8 md:w-8 text-primary flex-shrink-0" />
+              <h1 className="text-lg md:text-2xl font-bold truncate">
+                <span className="hidden sm:inline">Ride Ready Docs</span>
+                <span className="sm:hidden">RRD</span>
+              </h1>
+            </div>
+            
+            {/* Desktop user info */}
+            <div className="hidden md:flex items-center space-x-4">
+              <span className="text-sm text-muted-foreground truncate max-w-[200px]">
+                Welcome, {user?.email}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSignOut}
+                className="flex items-center space-x-2 flex-shrink-0"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Sign Out</span>
+              </Button>
+            </div>
+
+            {/* Mobile user menu */}
+            <div className="md:hidden flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSignOut}
+                className="flex items-center space-x-1 text-xs"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Exit</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-4 md:py-8">
         <TrialStatus onUpgrade={() => setShowPlanSelection(true)} />
         
-        <div className="space-y-6">
-          <div className="space-y-2">
-            <h2 className="text-3xl font-bold">Dashboard</h2>
-            <p className="text-muted-foreground">
+        <div className="space-y-4 md:space-y-6">
+          <div className="space-y-1 md:space-y-2">
+            <h2 className="text-xl md:text-3xl font-bold">Dashboard</h2>
+            <p className="text-sm md:text-base text-muted-foreground">
               Manage your ride documentation and compliance
             </p>
           </div>
 
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-8 h-auto p-1">
-              <TabsTrigger value="overview" className="flex flex-col items-center py-3 px-2 text-xs">
-                <Plus className="h-4 w-4 mb-1" />
-                <span>Overview</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="rides" 
-                className="flex flex-col items-center py-3 px-2 text-xs"
-                disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-              >
-                <Settings className="h-4 w-4 mb-1" />
-                <span>My Rides</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="calendar" 
-                className="flex flex-col items-center py-3 px-2 text-xs"
-                disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-              >
-                <CalendarIcon className="h-4 w-4 mb-1" />
-                <span>Calendar</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="maintenance" 
-                className="flex flex-col items-center py-3 px-2 text-xs"
-                disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-              >
-                <Wrench className="h-4 w-4 mb-1" />
-                <span>Maintenance</span>
-              </TabsTrigger>
-              <TabsTrigger value="documents" className="flex flex-col items-center py-3 px-2 text-xs">
-                <Shield className="h-4 w-4 mb-1" />
-                <span>Documents</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="notifications" 
-                className="flex flex-col items-center py-3 px-2 text-xs"
-                disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-              >
-                <BellIcon className="h-4 w-4 mb-1" />
-                <span>Notifications</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="reports" 
-                className="flex flex-col items-center py-3 px-2 text-xs"
-                disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-              >
-                <FileText className="h-4 w-4 mb-1" />
-                <span>Reports</span>
-              </TabsTrigger>
-              <TabsTrigger value="profile" className="flex flex-col items-center py-3 px-2 text-xs">
-                <User className="h-4 w-4 mb-1" />
-                <span>Profile</span>
-              </TabsTrigger>
-            </TabsList>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
+            {/* Mobile: Scrollable tabs */}
+            <div className="md:hidden">
+              <TabsList className="flex w-full overflow-x-auto scrollbar-hide h-auto p-1 gap-1">
+                <TabsTrigger value="overview" className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0">
+                  <Plus className="h-4 w-4 mb-1" />
+                  <span>Overview</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="rides" 
+                  className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0"
+                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+                >
+                  <Settings className="h-4 w-4 mb-1" />
+                  <span>Rides</span>
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0">
+                  <Shield className="h-4 w-4 mb-1" />
+                  <span>Docs</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="calendar" 
+                  className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0"
+                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+                >
+                  <CalendarIcon className="h-4 w-4 mb-1" />
+                  <span>Calendar</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="maintenance" 
+                  className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0"
+                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+                >
+                  <Wrench className="h-4 w-4 mb-1" />
+                  <span>Maintenance</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="notifications" 
+                  className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0"
+                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+                >
+                  <BellIcon className="h-4 w-4 mb-1" />
+                  <span>Alerts</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="reports" 
+                  className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0"
+                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+                >
+                  <FileText className="h-4 w-4 mb-1" />
+                  <span>Reports</span>
+                </TabsTrigger>
+                <TabsTrigger value="profile" className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0">
+                  <User className="h-4 w-4 mb-1" />
+                  <span>Profile</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
+
+            {/* Desktop: Grid layout */}
+            <div className="hidden md:block">
+              <TabsList className="grid w-full grid-cols-8 h-auto p-1">
+                <TabsTrigger value="overview" className="flex flex-col items-center py-3 px-2 text-xs">
+                  <Plus className="h-4 w-4 mb-1" />
+                  <span>Overview</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="rides" 
+                  className="flex flex-col items-center py-3 px-2 text-xs"
+                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+                >
+                  <Settings className="h-4 w-4 mb-1" />
+                  <span>My Rides</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="calendar" 
+                  className="flex flex-col items-center py-3 px-2 text-xs"
+                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+                >
+                  <CalendarIcon className="h-4 w-4 mb-1" />
+                  <span>Calendar</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="maintenance" 
+                  className="flex flex-col items-center py-3 px-2 text-xs"
+                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+                >
+                  <Wrench className="h-4 w-4 mb-1" />
+                  <span>Maintenance</span>
+                </TabsTrigger>
+                <TabsTrigger value="documents" className="flex flex-col items-center py-3 px-2 text-xs">
+                  <Shield className="h-4 w-4 mb-1" />
+                  <span>Documents</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="notifications" 
+                  className="flex flex-col items-center py-3 px-2 text-xs"
+                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+                >
+                  <BellIcon className="h-4 w-4 mb-1" />
+                  <span>Notifications</span>
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="reports" 
+                  className="flex flex-col items-center py-3 px-2 text-xs"
+                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
+                >
+                  <FileText className="h-4 w-4 mb-1" />
+                  <span>Reports</span>
+                </TabsTrigger>
+                <TabsTrigger value="profile" className="flex flex-col items-center py-3 px-2 text-xs">
+                  <User className="h-4 w-4 mb-1" />
+                  <span>Profile</span>
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
             <TabsContent value="overview">
               <DashboardOverview onNavigate={setActiveTab} />

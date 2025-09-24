@@ -17,13 +17,13 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
 
   if (subscriptionStatus === 'basic' || subscriptionStatus === 'advanced') {
     return (
-      <Card className="mb-6 border-primary/20">
-        <CardContent className="p-4">
+      <Card className="mb-4 md:mb-6 border-primary/20">
+        <CardContent className="p-3 md:p-4">
           <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="capitalize">
+            <Badge variant="secondary" className="capitalize flex-shrink-0">
               {subscriptionPlan} Plan
             </Badge>
-            <span className="text-sm text-muted-foreground">
+            <span className="text-sm text-muted-foreground truncate">
               Active subscription
             </span>
           </div>
@@ -34,19 +34,19 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
 
   if (isExpired) {
     return (
-      <Card className="mb-6 border-destructive/50 bg-destructive/5">
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-destructive" />
-              <div>
+      <Card className="mb-4 md:mb-6 border-destructive/50 bg-destructive/5">
+        <CardContent className="p-3 md:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold text-destructive">Trial Expired</p>
                 <p className="text-sm text-muted-foreground">
                   Your free trial has ended. Upgrade to continue using all features.
                 </p>
               </div>
             </div>
-            <Button onClick={onUpgrade} variant="destructive">
+            <Button onClick={onUpgrade} variant="destructive" size="sm" className="flex-shrink-0 self-start sm:self-center">
               Upgrade Now
             </Button>
           </div>
@@ -59,12 +59,12 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
     const isLowTime = daysRemaining <= 7;
     
     return (
-      <Card className={`mb-6 ${isLowTime ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-primary/20'}`}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Clock className={`h-5 w-5 ${isLowTime ? 'text-yellow-600' : 'text-primary'}`} />
-              <div>
+      <Card className={`mb-4 md:mb-6 ${isLowTime ? 'border-yellow-500/50 bg-yellow-500/5' : 'border-primary/20'}`}>
+        <CardContent className="p-3 md:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <Clock className={`h-5 w-5 ${isLowTime ? 'text-yellow-600' : 'text-primary'} flex-shrink-0 mt-0.5`} />
+              <div className="min-w-0 flex-1">
                 <p className="font-semibold">
                   Free Trial - {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} remaining
                 </p>
@@ -73,7 +73,7 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
                 </p>
               </div>
             </div>
-            <Button onClick={onUpgrade} variant={isLowTime ? "default" : "outline"}>
+            <Button onClick={onUpgrade} variant={isLowTime ? "default" : "outline"} size="sm" className="flex-shrink-0 self-start sm:self-center">
               Choose Plan
             </Button>
           </div>
