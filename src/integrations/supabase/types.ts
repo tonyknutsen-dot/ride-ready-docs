@@ -14,6 +14,65 @@ export type Database = {
   }
   public: {
     Tables: {
+      annual_inspection_reports: {
+        Row: {
+          certificate_number: string | null
+          conditions_notes: string | null
+          created_at: string
+          id: string
+          inspection_company: string
+          inspection_date: string
+          inspection_status: string
+          inspection_year: number
+          inspector_name: string
+          next_inspection_due: string | null
+          recommendations: string | null
+          report_file_path: string | null
+          ride_id: string
+          user_id: string
+        }
+        Insert: {
+          certificate_number?: string | null
+          conditions_notes?: string | null
+          created_at?: string
+          id?: string
+          inspection_company: string
+          inspection_date: string
+          inspection_status: string
+          inspection_year: number
+          inspector_name: string
+          next_inspection_due?: string | null
+          recommendations?: string | null
+          report_file_path?: string | null
+          ride_id: string
+          user_id: string
+        }
+        Update: {
+          certificate_number?: string | null
+          conditions_notes?: string | null
+          created_at?: string
+          id?: string
+          inspection_company?: string
+          inspection_date?: string
+          inspection_status?: string
+          inspection_year?: number
+          inspector_name?: string
+          next_inspection_due?: string | null
+          recommendations?: string | null
+          report_file_path?: string | null
+          ride_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "annual_inspection_reports_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       check_item_library: {
         Row: {
           category: string
@@ -43,48 +102,6 @@ export type Database = {
           sort_order?: number | null
         }
         Relationships: []
-      }
-      daily_check_results: {
-        Row: {
-          created_at: string
-          daily_check_id: string
-          id: string
-          is_checked: boolean
-          notes: string | null
-          template_item_id: string
-        }
-        Insert: {
-          created_at?: string
-          daily_check_id: string
-          id?: string
-          is_checked: boolean
-          notes?: string | null
-          template_item_id: string
-        }
-        Update: {
-          created_at?: string
-          daily_check_id?: string
-          id?: string
-          is_checked?: boolean
-          notes?: string | null
-          template_item_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "daily_check_results_daily_check_id_fkey"
-            columns: ["daily_check_id"]
-            isOneToOne: false
-            referencedRelation: "daily_checks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "daily_check_results_template_item_id_fkey"
-            columns: ["template_item_id"]
-            isOneToOne: false
-            referencedRelation: "daily_check_template_items"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       daily_check_template_items: {
         Row: {
@@ -126,7 +143,10 @@ export type Database = {
       }
       daily_check_templates: {
         Row: {
+          check_frequency: string
           created_at: string
+          custom_interval_days: number | null
+          description: string | null
           id: string
           is_active: boolean | null
           ride_id: string
@@ -135,7 +155,10 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          check_frequency?: string
           created_at?: string
+          custom_interval_days?: number | null
+          description?: string | null
           id?: string
           is_active?: boolean | null
           ride_id: string
@@ -144,7 +167,10 @@ export type Database = {
           user_id: string
         }
         Update: {
+          check_frequency?: string
           created_at?: string
+          custom_interval_days?: number | null
+          description?: string | null
           id?: string
           is_active?: boolean | null
           ride_id?: string
@@ -158,57 +184,6 @@ export type Database = {
             columns: ["ride_id"]
             isOneToOne: false
             referencedRelation: "rides"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      daily_checks: {
-        Row: {
-          check_date: string
-          created_at: string
-          id: string
-          inspector_name: string
-          notes: string | null
-          ride_id: string
-          status: string
-          template_id: string
-          user_id: string
-        }
-        Insert: {
-          check_date?: string
-          created_at?: string
-          id?: string
-          inspector_name: string
-          notes?: string | null
-          ride_id: string
-          status: string
-          template_id: string
-          user_id: string
-        }
-        Update: {
-          check_date?: string
-          created_at?: string
-          id?: string
-          inspector_name?: string
-          notes?: string | null
-          ride_id?: string
-          status?: string
-          template_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "daily_checks_ride_id_fkey"
-            columns: ["ride_id"]
-            isOneToOne: false
-            referencedRelation: "rides"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "daily_checks_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "daily_check_templates"
             referencedColumns: ["id"]
           },
         ]
@@ -259,6 +234,230 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "documents_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_check_results: {
+        Row: {
+          created_at: string
+          id: string
+          inspection_check_id: string
+          is_checked: boolean
+          notes: string | null
+          template_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          inspection_check_id: string
+          is_checked: boolean
+          notes?: string | null
+          template_item_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          inspection_check_id?: string
+          is_checked?: boolean
+          notes?: string | null
+          template_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_check_results_daily_check_id_fkey"
+            columns: ["inspection_check_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_check_results_template_item_id_fkey"
+            columns: ["template_item_id"]
+            isOneToOne: false
+            referencedRelation: "daily_check_template_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      inspection_checks: {
+        Row: {
+          check_date: string
+          check_frequency: string
+          created_at: string
+          id: string
+          inspector_name: string
+          notes: string | null
+          ride_id: string
+          status: string
+          template_id: string
+          user_id: string
+        }
+        Insert: {
+          check_date?: string
+          check_frequency?: string
+          created_at?: string
+          id?: string
+          inspector_name: string
+          notes?: string | null
+          ride_id: string
+          status: string
+          template_id: string
+          user_id: string
+        }
+        Update: {
+          check_date?: string
+          check_frequency?: string
+          created_at?: string
+          id?: string
+          inspector_name?: string
+          notes?: string | null
+          ride_id?: string
+          status?: string
+          template_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_checks_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_checks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "daily_check_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ndt_reports: {
+        Row: {
+          certificate_number: string | null
+          component_tested: string
+          created_at: string
+          defects_found: string | null
+          id: string
+          inspection_company: string | null
+          inspection_date: string
+          inspector_name: string
+          ndt_method: string
+          ndt_schedule_id: string
+          next_inspection_due: string | null
+          recommendations: string | null
+          report_file_path: string | null
+          ride_id: string
+          test_results: string
+          user_id: string
+        }
+        Insert: {
+          certificate_number?: string | null
+          component_tested: string
+          created_at?: string
+          defects_found?: string | null
+          id?: string
+          inspection_company?: string | null
+          inspection_date: string
+          inspector_name: string
+          ndt_method: string
+          ndt_schedule_id: string
+          next_inspection_due?: string | null
+          recommendations?: string | null
+          report_file_path?: string | null
+          ride_id: string
+          test_results: string
+          user_id: string
+        }
+        Update: {
+          certificate_number?: string | null
+          component_tested?: string
+          created_at?: string
+          defects_found?: string | null
+          id?: string
+          inspection_company?: string | null
+          inspection_date?: string
+          inspector_name?: string
+          ndt_method?: string
+          ndt_schedule_id?: string
+          next_inspection_due?: string | null
+          recommendations?: string | null
+          report_file_path?: string | null
+          ride_id?: string
+          test_results?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ndt_reports_ndt_schedule_id_fkey"
+            columns: ["ndt_schedule_id"]
+            isOneToOne: false
+            referencedRelation: "ndt_schedules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ndt_reports_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ndt_schedules: {
+        Row: {
+          component_description: string
+          created_at: string
+          frequency_months: number
+          id: string
+          is_active: boolean | null
+          last_inspection_date: string | null
+          ndt_method: string
+          next_inspection_due: string | null
+          notes: string | null
+          ride_id: string
+          schedule_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          component_description: string
+          created_at?: string
+          frequency_months: number
+          id?: string
+          is_active?: boolean | null
+          last_inspection_date?: string | null
+          ndt_method: string
+          next_inspection_due?: string | null
+          notes?: string | null
+          ride_id: string
+          schedule_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          component_description?: string
+          created_at?: string
+          frequency_months?: number
+          id?: string
+          is_active?: boolean | null
+          last_inspection_date?: string | null
+          ndt_method?: string
+          next_inspection_due?: string | null
+          notes?: string | null
+          ride_id?: string
+          schedule_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ndt_schedules_ride_id_fkey"
             columns: ["ride_id"]
             isOneToOne: false
             referencedRelation: "rides"

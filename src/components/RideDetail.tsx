@@ -6,8 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, FileText, CheckSquare, Calendar, Upload, Settings, AlertTriangle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import RideDocuments from './RideDocuments';
-import RideDailyChecks from './RideDailyChecks';
-import DailyCheckTemplateManager from './DailyCheckTemplateManager';
+import InspectionManager from './InspectionManager';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -75,7 +74,7 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <FileText className="h-4 w-4" />
             <span>Overview</span>
@@ -84,13 +83,9 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
             <Upload className="h-4 w-4" />
             <span>Documents</span>
           </TabsTrigger>
-          <TabsTrigger value="checks" className="flex items-center space-x-2">
+          <TabsTrigger value="inspections" className="flex items-center space-x-2">
             <CheckSquare className="h-4 w-4" />
-            <span>Daily Checks</span>
-          </TabsTrigger>
-          <TabsTrigger value="template" className="flex items-center space-x-2">
-            <Settings className="h-4 w-4" />
-            <span>Templates</span>
+            <span>Inspections</span>
           </TabsTrigger>
           <TabsTrigger value="bulletins" className="flex items-center space-x-2">
             <AlertTriangle className="h-4 w-4" />
@@ -127,10 +122,10 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <CheckSquare className="h-5 w-5 text-accent" />
-                  <span>Daily Checks</span>
+                  <span>Inspections</span>
                 </CardTitle>
                 <CardDescription>
-                  Complete daily safety checks
+                  Manage all inspection types
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -139,8 +134,8 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
                     <div className="text-2xl font-bold text-accent">0</div>
                     <p className="text-sm text-muted-foreground">Checks completed today</p>
                   </div>
-                  <Button onClick={() => setActiveTab("checks")} variant="outline" className="w-full">
-                    Start Daily Checks
+                  <Button onClick={() => setActiveTab("inspections")} variant="outline" className="w-full">
+                    Start Inspections
                   </Button>
                 </div>
               </CardContent>
@@ -175,12 +170,8 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
           <RideDocuments ride={ride} />
         </TabsContent>
 
-        <TabsContent value="checks">
-          <RideDailyChecks ride={ride} />
-        </TabsContent>
-
-        <TabsContent value="template" className="space-y-6">
-          <DailyCheckTemplateManager ride={ride} />
+        <TabsContent value="inspections">
+          <InspectionManager ride={ride} />
         </TabsContent>
 
         <TabsContent value="bulletins" className="space-y-6">

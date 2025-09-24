@@ -23,7 +23,7 @@ type Template = Tables<'daily_check_templates'> & {
   daily_check_template_items: Tables<'daily_check_template_items'>[];
 };
 
-type DailyCheck = Tables<'daily_checks'>;
+type InspectionCheck = Tables<'inspection_checks'>;
 
 interface RideDailyChecksProps {
   ride: Ride;
@@ -33,7 +33,7 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [template, setTemplate] = useState<Template | null>(null);
-  const [recentChecks, setRecentChecks] = useState<DailyCheck[]>([]);
+  const [recentChecks, setRecentChecks] = useState<InspectionCheck[]>([]);
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState('');
   const [inspectorName, setInspectorName] = useState('');
@@ -58,6 +58,7 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
         .eq('user_id', user?.id)
         .eq('ride_id', ride.id)
         .eq('is_active', true)
+        .eq('check_frequency', 'daily')
         .maybeSingle();
 
       if (error) {
@@ -80,10 +81,11 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
   const loadRecentChecks = async () => {
     try {
       const { data, error } = await supabase
-        .from('daily_checks')
+        .from('inspection_checks')
         .select('*')
         .eq('user_id', user?.id)
         .eq('ride_id', ride.id)
+        .eq('check_frequency', 'daily')
         .order('check_date', { ascending: false })
         .limit(5);
 
@@ -151,12 +153,13 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
 
       // Create daily check record
       const { data: dailyCheck, error: checkError } = await supabase
-        .from('daily_checks')
+        .from('inspection_checks')
         .insert({
           user_id: user?.id,
           ride_id: ride.id,
           template_id: template.id,
           inspector_name: inspectorName.trim(),
+          check_frequency: 'daily',
           status,
           notes: notes.trim() || null,
         })
@@ -169,14 +172,14 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
 
       // Create individual check results
       const resultsToInsert = template.daily_check_template_items.map(item => ({
-        daily_check_id: dailyCheck.id,
+        inspection_check_id: dailyCheck.id,
         template_item_id: item.id,
         is_checked: checkedItems[item.id] || false,
         notes: null, // Could be extended to support per-item notes
       }));
 
       const { error: resultsError } = await supabase
-        .from('daily_check_results')
+        .from('inspection_check_results')
         .insert(resultsToInsert);
 
       if (resultsError) {
