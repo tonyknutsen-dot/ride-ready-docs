@@ -1,6 +1,9 @@
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 const CallToAction = () => {
+  const navigate = useNavigate();
+
   return (
     <section className="py-20 bg-hero-gradient text-white relative overflow-hidden">
       {/* Background Pattern */}
@@ -30,6 +33,7 @@ const CallToAction = () => {
           <Button 
             size="lg" 
             className="bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-4 text-lg font-semibold shadow-glow transition-smooth"
+            onClick={() => navigate('/auth')}
           >
             Start Your Free Trial
           </Button>
@@ -37,6 +41,7 @@ const CallToAction = () => {
             variant="outline" 
             size="lg"
             className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-4 text-lg backdrop-blur-sm transition-smooth"
+            onClick={() => navigate('/auth')}
           >
             Schedule a Demo
           </Button>
