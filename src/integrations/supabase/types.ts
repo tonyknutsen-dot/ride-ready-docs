@@ -596,6 +596,10 @@ export type Database = {
           created_at: string
           id: string
           showmen_name: string | null
+          subscription_plan: string | null
+          subscription_status: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
           updated_at: string
           user_id: string
         }
@@ -606,6 +610,10 @@ export type Database = {
           created_at?: string
           id?: string
           showmen_name?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -616,6 +624,10 @@ export type Database = {
           created_at?: string
           id?: string
           showmen_name?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string
           user_id?: string
         }
