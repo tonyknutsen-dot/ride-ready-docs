@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Settings, FileText, CheckSquare, Calendar } from 'lucide-react';
+import { Plus, Settings, FileText, CheckSquare, Calendar, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import RideForm from './RideForm';
 import RideDetail from './RideDetail';
+import { SendDocumentsDialog } from './SendDocumentsDialog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -173,13 +174,23 @@ const RideManagement = () => {
                       <p className="text-xs mt-1">No Due</p>
                     </div>
                   </div>
-                  <Button 
-                    onClick={() => setSelectedRide(ride)}
-                    className="w-full"
-                    variant="outline"
-                  >
-                    Manage Ride
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      onClick={() => setSelectedRide(ride)}
+                      className="flex-1"
+                      variant="outline"
+                    >
+                      Manage Ride
+                    </Button>
+                    <SendDocumentsDialog 
+                      ride={ride} 
+                      trigger={
+                        <Button variant="outline" size="sm">
+                          <Mail className="h-4 w-4" />
+                        </Button>
+                      }
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>

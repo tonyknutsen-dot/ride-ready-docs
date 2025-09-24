@@ -3,10 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, FileText, CheckSquare, Calendar, Upload, Settings, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, FileText, CheckSquare, Calendar, Upload, Settings, AlertTriangle, Mail } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import RideDocuments from './RideDocuments';
 import InspectionManager from './InspectionManager';
+import { SendDocumentsDialog } from './SendDocumentsDialog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -31,14 +32,25 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Rides</span>
         </Button>
-        <div className="flex-1">
-          <div className="flex items-center space-x-3">
-            <h2 className="text-3xl font-bold">{ride.ride_name}</h2>
-            <Badge variant="secondary">{ride.ride_categories.name}</Badge>
+        <div className="flex items-center space-x-3">
+          <div className="flex-1">
+            <div className="flex items-center space-x-3">
+              <h2 className="text-3xl font-bold">{ride.ride_name}</h2>
+              <Badge variant="secondary">{ride.ride_categories.name}</Badge>
+            </div>
+            <p className="text-muted-foreground">
+              Manage documentation and daily checks for this ride
+            </p>
           </div>
-          <p className="text-muted-foreground">
-            Manage documentation and daily checks for this ride
-          </p>
+          <SendDocumentsDialog 
+            ride={ride}
+            trigger={
+              <Button className="flex items-center space-x-2">
+                <Mail className="h-4 w-4" />
+                <span>Send Documents</span>
+              </Button>
+            }
+          />
         </div>
       </div>
 
