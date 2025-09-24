@@ -1,12 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { CheckSquare, AlertTriangle, Clock, User, Calendar, Save } from 'lucide-react';
-import { Tables } from '@/integrations/supabase/types';
+import { CheckSquare, AlertTriangle, Clock, User, Calendar, Save, Settings } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Tables } from '@/integrations/supabase/types';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -15,69 +19,83 @@ type Ride = Tables<'rides'> & {
   };
 };
 
+type Template = Tables<'daily_check_templates'> & {
+  daily_check_template_items: Tables<'daily_check_template_items'>[];
+};
+
+type DailyCheck = Tables<'daily_checks'>;
+
 interface RideDailyChecksProps {
   ride: Ride;
 }
 
-// Mock check items based on ride category
-const getCheckItems = (categoryName: string) => {
-  const baseChecks = [
-    { id: 'visual', label: 'Visual inspection of ride structure', required: true },
-    { id: 'safety_barriers', label: 'Safety barriers and gates secure', required: true },
-    { id: 'emergency_stops', label: 'Emergency stop buttons functional', required: true },
-    { id: 'safety_signs', label: 'Safety signage visible and intact', required: true },
-  ];
-
-  const categorySpecificChecks: Record<string, any[]> = {
-    'Chair O Plane': [
-      { id: 'chain_condition', label: 'Check chair chains and connections', required: true },
-      { id: 'seat_security', label: 'Chair seats securely attached', required: true },
-      { id: 'rotation_mechanism', label: 'Rotation mechanism operates smoothly', required: true },
-    ],
-    'Dodgems': [
-      { id: 'floor_condition', label: 'Floor surface clean and intact', required: true },
-      { id: 'car_bumpers', label: 'Car bumpers in good condition', required: true },
-      { id: 'electrical_pickup', label: 'Electrical pickup poles secure', required: true },
-    ],
-    'Twist': [
-      { id: 'gondola_secure', label: 'Gondolas securely attached', required: true },
-      { id: 'restraint_systems', label: 'Passenger restraint systems functional', required: true },
-      { id: 'hydraulic_systems', label: 'Hydraulic systems operating normally', required: true },
-    ],
-  };
-
-  return [
-    ...baseChecks,
-    ...(categorySpecificChecks[categoryName] || [])
-  ];
-};
-
-// Mock recent checks data
-const mockRecentChecks = [
-  {
-    id: '1',
-    date: '2024-09-23',
-    inspector: 'John Smith',
-    status: 'passed',
-    issues: 0,
-    notes: 'All checks completed successfully'
-  },
-  {
-    id: '2',
-    date: '2024-09-22',
-    inspector: 'John Smith',
-    status: 'failed',
-    issues: 2,
-    notes: 'Minor issue with safety barrier - resolved'
-  }
-];
-
 const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
+  const { user } = useAuth();
   const { toast } = useToast();
-  const [checkItems] = useState(getCheckItems(ride.ride_categories.name));
+  const [template, setTemplate] = useState<Template | null>(null);
+  const [recentChecks, setRecentChecks] = useState<DailyCheck[]>([]);
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState('');
+  const [inspectorName, setInspectorName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (user) {
+      loadActiveTemplate();
+      loadRecentChecks();
+    }
+  }, [user, ride.id]);
+
+  const loadActiveTemplate = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('daily_check_templates')
+        .select(`
+          *,
+          daily_check_template_items (*)
+        `)
+        .eq('user_id', user?.id)
+        .eq('ride_id', ride.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      if (error) {
+        throw error;
+      }
+
+      setTemplate(data as Template | null);
+    } catch (error: any) {
+      console.error('Error loading template:', error);
+      toast({
+        title: "Error loading template",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const loadRecentChecks = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('daily_checks')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('ride_id', ride.id)
+        .order('check_date', { ascending: false })
+        .limit(5);
+
+      if (error) {
+        throw error;
+      }
+
+      setRecentChecks(data || []);
+    } catch (error: any) {
+      console.error('Error loading recent checks:', error);
+    }
+  };
 
   const handleCheckChange = (itemId: string, checked: boolean) => {
     setCheckedItems(prev => ({
@@ -87,7 +105,25 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
   };
 
   const handleSubmitChecks = async () => {
-    const requiredItems = checkItems.filter(item => item.required);
+    if (!template) {
+      toast({
+        title: "No template available",
+        description: "Please create a daily check template for this ride first",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!inspectorName.trim()) {
+      toast({
+        title: "Missing information",
+        description: "Please enter the inspector's name",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const requiredItems = template.daily_check_template_items.filter(item => item.is_required);
     const completedRequiredItems = requiredItems.filter(item => checkedItems[item.id]);
 
     if (completedRequiredItems.length !== requiredItems.length) {
@@ -101,23 +137,106 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
 
     setIsSubmitting(true);
 
-    // This would save to Supabase in real implementation
-    setTimeout(() => {
+    try {
+      // Calculate status
+      const allItems = template.daily_check_template_items;
+      const completedItems = allItems.filter(item => checkedItems[item.id]);
+      let status: 'passed' | 'failed' | 'partial' = 'passed';
+      
+      if (completedItems.length === 0) {
+        status = 'failed';
+      } else if (completedItems.length < allItems.length) {
+        status = 'partial';
+      }
+
+      // Create daily check record
+      const { data: dailyCheck, error: checkError } = await supabase
+        .from('daily_checks')
+        .insert({
+          user_id: user?.id,
+          ride_id: ride.id,
+          template_id: template.id,
+          inspector_name: inspectorName.trim(),
+          status,
+          notes: notes.trim() || null,
+        })
+        .select()
+        .single();
+
+      if (checkError) {
+        throw checkError;
+      }
+
+      // Create individual check results
+      const resultsToInsert = template.daily_check_template_items.map(item => ({
+        daily_check_id: dailyCheck.id,
+        template_item_id: item.id,
+        is_checked: checkedItems[item.id] || false,
+        notes: null, // Could be extended to support per-item notes
+      }));
+
+      const { error: resultsError } = await supabase
+        .from('daily_check_results')
+        .insert(resultsToInsert);
+
+      if (resultsError) {
+        throw resultsError;
+      }
+
       toast({
         title: "Daily checks completed",
         description: "Your daily safety checks have been recorded successfully",
       });
       
-      // Reset form
+      // Reset form and reload recent checks
       setCheckedItems({});
       setNotes('');
+      setInspectorName('');
+      loadRecentChecks();
+    } catch (error: any) {
+      console.error('Error submitting daily checks:', error);
+      toast({
+        title: "Error submitting checks",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
       setIsSubmitting(false);
-    }, 1500);
+    }
   };
 
-  const completedCount = Object.values(checkedItems).filter(Boolean).length;
-  const totalCount = checkItems.length;
+  const completedCount = template ? Object.values(checkedItems).filter(Boolean).length : 0;
+  const totalCount = template?.daily_check_template_items.length || 0;
   const completionPercentage = totalCount > 0 ? (completedCount / totalCount) * 100 : 0;
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-4">
+            <Settings className="mx-auto h-8 w-8 text-muted-foreground animate-spin" />
+            <p className="text-muted-foreground mt-2">Loading daily checks...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!template) {
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <div className="text-center py-8">
+            <CheckSquare className="mx-auto h-16 w-16 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mt-4">No daily check template</h3>
+            <p className="text-muted-foreground">
+              Create a daily check template for this ride to start performing safety checks.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -132,20 +251,31 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
             Complete the daily safety inspection for this {ride.ride_categories.name}
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="inspector">Inspector Name</Label>
+              <Input
+                id="inspector"
+                value={inspectorName}
+                onChange={(e) => setInspectorName(e.target.value)}
+                placeholder="Enter inspector name"
+              />
+            </div>
+            <div className="flex items-end">
               <div className="text-center">
                 <div className="text-2xl font-bold text-primary">{completedCount}/{totalCount}</div>
                 <p className="text-xs text-muted-foreground">Checks completed</p>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-accent">{Math.round(completionPercentage)}%</div>
-                <p className="text-xs text-muted-foreground">Progress</p>
-              </div>
             </div>
-            <Badge variant={completionPercentage === 100 ? "default" : "secondary"}>
-              {completionPercentage === 100 ? "Ready to Submit" : "In Progress"}
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-accent">{Math.round(completionPercentage)}%</div>
+              <p className="text-xs text-muted-foreground">Progress</p>
+            </div>
+            <Badge variant={completionPercentage === 100 && inspectorName.trim() ? "default" : "secondary"}>
+              {completionPercentage === 100 && inspectorName.trim() ? "Ready to Submit" : "In Progress"}
             </Badge>
           </div>
         </CardContent>
@@ -160,7 +290,9 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {checkItems.map((item) => (
+          {template.daily_check_template_items
+            .sort((a, b) => a.sort_order - b.sort_order)
+            .map((item) => (
             <div key={item.id} className="flex items-start space-x-3 p-3 rounded border">
               <Checkbox
                 id={item.id}
@@ -173,14 +305,17 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
                   htmlFor={item.id}
                   className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                 >
-                  {item.label}
-                  {item.required && <span className="text-red-500 ml-1">*</span>}
+                  {item.check_item_text}
+                  {item.is_required && <span className="text-red-500 ml-1">*</span>}
                 </label>
+                <Badge variant="outline" className="text-xs mt-1">
+                  {item.category}
+                </Badge>
               </div>
               <div className="flex items-center">
                 {checkedItems[item.id] ? (
                   <CheckSquare className="h-4 w-4 text-green-600" />
-                ) : item.required ? (
+                ) : item.is_required ? (
                   <AlertTriangle className="h-4 w-4 text-yellow-600" />
                 ) : (
                   <Clock className="h-4 w-4 text-muted-foreground" />
@@ -213,7 +348,7 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
       <div className="flex justify-center">
         <Button
           onClick={handleSubmitChecks}
-          disabled={isSubmitting || completionPercentage !== 100}
+          disabled={isSubmitting || completionPercentage !== 100 || !inspectorName.trim()}
           size="lg"
           className="flex items-center space-x-2"
         >
@@ -235,30 +370,36 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {mockRecentChecks.map((check) => (
-              <div key={check.id} className="flex items-center justify-between p-3 rounded border">
-                <div className="flex items-center space-x-3">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">{new Date(check.date).toLocaleDateString()}</span>
+            {recentChecks.length === 0 ? (
+              <p className="text-muted-foreground text-center py-4">
+                No daily checks completed yet for this ride.
+              </p>
+            ) : (
+              recentChecks.map((check) => (
+                <div key={check.id} className="flex items-center justify-between p-3 rounded border">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="font-medium">{new Date(check.check_date).toLocaleDateString()}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">{check.inspector_name}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">{check.inspector}</span>
+                  <div className="flex items-center space-x-3">
+                    <Badge variant={
+                      check.status === 'passed' ? 'default' : 
+                      check.status === 'failed' ? 'destructive' : 
+                      'secondary'
+                    }>
+                      {check.status === 'passed' ? 'Passed' : 
+                       check.status === 'failed' ? 'Failed' : 'Partial'}
+                    </Badge>
                   </div>
                 </div>
-                <div className="flex items-center space-x-3">
-                  <Badge variant={check.status === 'passed' ? 'default' : 'destructive'}>
-                    {check.status === 'passed' ? 'Passed' : 'Issues Found'}
-                  </Badge>
-                  {check.issues > 0 && (
-                    <span className="text-sm text-muted-foreground">
-                      {check.issues} issue{check.issues !== 1 ? 's' : ''}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </CardContent>
       </Card>

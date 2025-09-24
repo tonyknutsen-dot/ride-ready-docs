@@ -7,6 +7,7 @@ import { ArrowLeft, FileText, CheckSquare, Calendar, Upload, Settings, AlertTria
 import { Tables } from '@/integrations/supabase/types';
 import RideDocuments from './RideDocuments';
 import RideDailyChecks from './RideDailyChecks';
+import DailyCheckTemplateManager from './DailyCheckTemplateManager';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -74,7 +75,7 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <FileText className="h-4 w-4" />
             <span>Overview</span>
@@ -86,6 +87,10 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
           <TabsTrigger value="checks" className="flex items-center space-x-2">
             <CheckSquare className="h-4 w-4" />
             <span>Daily Checks</span>
+          </TabsTrigger>
+          <TabsTrigger value="template" className="flex items-center space-x-2">
+            <Settings className="h-4 w-4" />
+            <span>Templates</span>
           </TabsTrigger>
           <TabsTrigger value="bulletins" className="flex items-center space-x-2">
             <AlertTriangle className="h-4 w-4" />
@@ -172,6 +177,10 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
 
         <TabsContent value="checks">
           <RideDailyChecks ride={ride} />
+        </TabsContent>
+
+        <TabsContent value="template" className="space-y-6">
+          <DailyCheckTemplateManager ride={ride} />
         </TabsContent>
 
         <TabsContent value="bulletins" className="space-y-6">

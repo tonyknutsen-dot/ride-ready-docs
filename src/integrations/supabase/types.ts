@@ -14,6 +14,205 @@ export type Database = {
   }
   public: {
     Tables: {
+      check_item_library: {
+        Row: {
+          category: string
+          check_item_text: string
+          created_at: string
+          description: string | null
+          id: string
+          is_required: boolean | null
+          sort_order: number | null
+        }
+        Insert: {
+          category: string
+          check_item_text: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_required?: boolean | null
+          sort_order?: number | null
+        }
+        Update: {
+          category?: string
+          check_item_text?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_required?: boolean | null
+          sort_order?: number | null
+        }
+        Relationships: []
+      }
+      daily_check_results: {
+        Row: {
+          created_at: string
+          daily_check_id: string
+          id: string
+          is_checked: boolean
+          notes: string | null
+          template_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_check_id: string
+          id?: string
+          is_checked: boolean
+          notes?: string | null
+          template_item_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_check_id?: string
+          id?: string
+          is_checked?: boolean
+          notes?: string | null
+          template_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_check_results_daily_check_id_fkey"
+            columns: ["daily_check_id"]
+            isOneToOne: false
+            referencedRelation: "daily_checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_check_results_template_item_id_fkey"
+            columns: ["template_item_id"]
+            isOneToOne: false
+            referencedRelation: "daily_check_template_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_check_template_items: {
+        Row: {
+          category: string | null
+          check_item_text: string
+          created_at: string
+          id: string
+          is_required: boolean | null
+          sort_order: number | null
+          template_id: string
+        }
+        Insert: {
+          category?: string | null
+          check_item_text: string
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          sort_order?: number | null
+          template_id: string
+        }
+        Update: {
+          category?: string | null
+          check_item_text?: string
+          created_at?: string
+          id?: string
+          is_required?: boolean | null
+          sort_order?: number | null
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_check_template_items_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "daily_check_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_check_templates: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean | null
+          ride_id: string
+          template_name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          ride_id: string
+          template_name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          ride_id?: string
+          template_name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_check_templates_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_checks: {
+        Row: {
+          check_date: string
+          created_at: string
+          id: string
+          inspector_name: string
+          notes: string | null
+          ride_id: string
+          status: string
+          template_id: string
+          user_id: string
+        }
+        Insert: {
+          check_date?: string
+          created_at?: string
+          id?: string
+          inspector_name: string
+          notes?: string | null
+          ride_id: string
+          status: string
+          template_id: string
+          user_id: string
+        }
+        Update: {
+          check_date?: string
+          created_at?: string
+          id?: string
+          inspector_name?: string
+          notes?: string | null
+          ride_id?: string
+          status?: string
+          template_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_checks_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_checks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "daily_check_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       documents: {
         Row: {
           document_name: string
