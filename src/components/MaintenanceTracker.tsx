@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { format } from 'date-fns';
+import { format as formatDate } from 'date-fns';
 
 interface MaintenanceRecord {
   id: string;
@@ -38,7 +38,10 @@ interface MaintenanceRecord {
   next_maintenance_due?: string;
   notes?: string;
   created_at: string;
-  rides: {
+  updated_at: string;
+  user_id: string;
+  document_ids?: string[];
+  rides?: {
     id: string;
     ride_name: string;
   };
@@ -88,7 +91,7 @@ const MaintenanceTracker = () => {
         .order('maintenance_date', { ascending: false });
 
       if (error) throw error;
-      setRecords(data as MaintenanceRecord[] || []);
+      setRecords(data as any || []);
     } catch (error) {
       console.error('Error loading maintenance records:', error);
       toast({
@@ -164,10 +167,10 @@ const MaintenanceTracker = () => {
         maintenance_type: formData.maintenance_type,
         description: formData.description,
         cost: formData.cost ? parseFloat(formData.cost) : null,
-        maintenance_date: format(maintenanceDate, 'yyyy-MM-dd'),
+        maintenance_date: formatDate(maintenanceDate, 'yyyy-MM-dd'),
         performed_by: formData.performed_by || null,
         parts_replaced: formData.parts_replaced || null,
-        next_maintenance_due: nextDueDate ? format(nextDueDate, 'yyyy-MM-dd') : null,
+        next_maintenance_due: nextDueDate ? formatDate(nextDueDate, 'yyyy-MM-dd') : null,
         notes: formData.notes || null,
       };
 
@@ -361,7 +364,7 @@ const MaintenanceTracker = () => {
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {maintenanceDate ? format(maintenanceDate, "PPP") : <span>Pick a date</span>}
+                          {maintenanceDate ? formatDate(maintenanceDate, "PPP") : <span>Pick a date</span>}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
@@ -427,7 +430,7 @@ const MaintenanceTracker = () => {
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {nextDueDate ? format(nextDueDate, "PPP") : <span>Set next due date (optional)</span>}
+                          {nextDueDate ? formatDate(nextDueDate, "PPP") : <span>Set next due date (optional)</span>}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0">
@@ -512,7 +515,7 @@ const MaintenanceTracker = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                       <div className="flex items-center space-x-2">
                         <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                        <span>{format(new Date(record.maintenance_date), 'MMM d, yyyy')}</span>
+                        <span>{formatDate(new Date(record.maintenance_date), 'MMM d, yyyy')}</span>
                       </div>
                       
                       {record.cost && (
@@ -532,7 +535,7 @@ const MaintenanceTracker = () => {
                       {record.next_maintenance_due && (
                         <div className="flex items-center space-x-2">
                           <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                          <span>Next: {format(new Date(record.next_maintenance_due), 'MMM d, yyyy')}</span>
+                          <span>Next: {formatDate(new Date(record.next_maintenance_due), 'MMM d, yyyy')}</span>
                         </div>
                       )}
                     </div>
