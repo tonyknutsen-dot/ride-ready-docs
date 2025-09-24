@@ -5,12 +5,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { LogOut, Settings, FileText, Users, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import RideManagement from '@/components/RideManagement';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
   const { toast } = useToast();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [currentView, setCurrentView] = useState<'dashboard' | 'rides'>('dashboard');
 
   useEffect(() => {
     if (user) {
@@ -94,6 +96,9 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
+        {currentView === 'rides' ? (
+          <RideManagement />
+        ) : (
         <div className="space-y-6">
           <div className="space-y-2">
             <h2 className="text-3xl font-bold">Dashboard</h2>
@@ -147,7 +152,7 @@ const Dashboard = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Button className="w-full">
+                <Button className="w-full" onClick={() => setCurrentView('rides')}>
                   View Rides
                 </Button>
               </CardContent>
@@ -227,6 +232,7 @@ const Dashboard = () => {
             </Card>
           </div>
         </div>
+        )}
       </main>
     </div>
   );
