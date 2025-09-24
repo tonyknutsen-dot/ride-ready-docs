@@ -94,38 +94,72 @@ const Header = () => {
             )}
           </div>
 
-          {/* Mobile Menu Button */}
-          <button
-            className="md:hidden p-2 rounded-lg hover:bg-muted transition-smooth"
-            onClick={() => setIsMenuOpen(!isMenuOpen)}
-          >
-            <Menu className="h-6 w-6 text-foreground" />
-          </button>
+          {/* Mobile Actions */}
+          <div className="md:hidden flex items-center space-x-2">
+            {!user ? (
+              <>
+                <Link to="/auth">
+                  <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+                    Sign In
+                  </Button>
+                </Link>
+                <button
+                  className="p-2 rounded-lg hover:bg-muted transition-smooth"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  aria-label="Open menu"
+                >
+                  <Menu className="h-6 w-6 text-foreground" />
+                </button>
+              </>
+            ) : (
+              <>
+                <Link to="/dashboard">
+                  <Button size="sm" variant="outline">
+                    Dashboard
+                  </Button>
+                </Link>
+                <button
+                  className="p-2 rounded-lg hover:bg-muted transition-smooth"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                  aria-label="Open menu"
+                >
+                  <Menu className="h-6 w-6 text-foreground" />
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div className="md:hidden border-t border-border/50 py-4">
+          <div className="md:hidden border-t border-border/50 py-4 bg-background/95 backdrop-blur-sm">
             <nav className="flex flex-col space-y-4">
               {!user ? (
                 <>
-                  <a href="#features" className="text-foreground hover:text-primary transition-smooth">
+                  <a 
+                    href="#features" 
+                    className="text-foreground hover:text-primary transition-smooth py-2 px-2 rounded-lg hover:bg-muted"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
                     Features
                   </a>
-                  <a href="#pricing" className="text-foreground hover:text-primary transition-smooth">
+                  <a 
+                    href="#pricing" 
+                    className="text-foreground hover:text-primary transition-smooth py-2 px-2 rounded-lg hover:bg-muted"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
                     Pricing
                   </a>
-                  <a href="#contact" className="text-foreground hover:text-primary transition-smooth">
+                  <a 
+                    href="#contact" 
+                    className="text-foreground hover:text-primary transition-smooth py-2 px-2 rounded-lg hover:bg-muted"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
                     Contact
                   </a>
-                  <div className="flex flex-col space-y-2 pt-2">
-                    <Link to="/auth">
-                      <Button variant="ghost" className="justify-start w-full">
-                        Sign In
-                      </Button>
-                    </Link>
-                    <Link to="/auth">
-                      <Button className="bg-primary hover:bg-primary/90 text-primary-foreground w-full">
+                  <div className="border-t border-border/50 pt-4 mt-2">
+                    <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
+                      <Button className="bg-primary hover:bg-primary/90 text-primary-foreground w-full mb-2">
                         Start Free Trial
                       </Button>
                     </Link>
@@ -133,17 +167,14 @@ const Header = () => {
                 </>
               ) : (
                 <>
-                  <Link to="/dashboard" className="text-foreground hover:text-primary transition-smooth">
-                    Dashboard
-                  </Link>
-                  <div className="flex items-center space-x-2 text-sm text-muted-foreground py-2">
+                  <div className="flex items-center space-x-2 text-sm text-muted-foreground py-2 px-2 bg-muted/50 rounded-lg">
                     <User className="h-4 w-4" />
-                    <span>{user.email}</span>
+                    <span className="truncate">{user.email}</span>
                   </div>
                   <Button
                     variant="outline"
                     onClick={handleSignOut}
-                    className="justify-start w-full"
+                    className="justify-start w-full text-destructive hover:text-destructive"
                   >
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
