@@ -3,6 +3,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { User, Settings, FileText, Plus, Users, Wrench, Shield, LogOut, Calendar as CalendarIcon, Bell as BellIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,6 +15,8 @@ import NotificationCenter from '@/components/NotificationCenter';
 import MaintenanceTracker from '@/components/MaintenanceTracker';
 import ReportGenerator from '@/components/ReportGenerator';
 import ProfileSetup from '@/components/ProfileSetup';
+import { TrialStatus } from '@/components/TrialStatus';
+import { PlanSelection } from '@/components/PlanSelection';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -21,6 +24,7 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [showPlanSelection, setShowPlanSelection] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -109,6 +113,8 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-8">
+        <TrialStatus onUpgrade={() => setShowPlanSelection(true)} />
+        
         <div className="space-y-6">
           <div className="space-y-2">
             <h2 className="text-3xl font-bold">Dashboard</h2>
@@ -217,6 +223,12 @@ const Dashboard = () => {
           </Tabs>
         </div>
       </main>
+      
+      <Dialog open={showPlanSelection} onOpenChange={setShowPlanSelection}>
+        <DialogContent className="max-w-4xl">
+          <PlanSelection onClose={() => setShowPlanSelection(false)} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
