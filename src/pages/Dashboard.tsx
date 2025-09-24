@@ -90,63 +90,65 @@ const Dashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="border-b">
+      {/* Simplified Header */}
+      <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3">
-          {/* Mobile-first responsive header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 min-w-0 flex-1">
-              <FileText className="h-6 w-6 md:h-8 md:w-8 text-primary flex-shrink-0" />
-              <h1 className="text-lg md:text-2xl font-bold truncate">
-                <span className="hidden sm:inline">Ride Ready Docs</span>
-                <span className="sm:hidden">RRD</span>
-              </h1>
+          <div className="flex items-center justify-between gap-4">
+            {/* Logo and Title */}
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <FileText className="h-6 w-6 text-primary flex-shrink-0" />
+              <div className="min-w-0 flex-1">
+                <h1 className="text-lg font-bold truncate">Dashboard</h1>
+                <p className="text-xs text-muted-foreground truncate">
+                  Ride Ready Docs
+                </p>
+              </div>
             </div>
             
-            {/* Desktop user info */}
-            <div className="hidden md:flex items-center space-x-4">
-              <span className="text-sm text-muted-foreground truncate max-w-[200px]">
-                Welcome, {user?.email}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSignOut}
-                className="flex items-center space-x-2 flex-shrink-0"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Sign Out</span>
-              </Button>
-            </div>
-
-            {/* Mobile user menu */}
-            <div className="md:hidden flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleSignOut}
-                className="flex items-center space-x-1 text-xs"
-              >
-                <LogOut className="h-4 w-4" />
-                <span>Exit</span>
-              </Button>
+            {/* User Actions */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {/* Desktop user info */}
+              <div className="hidden sm:flex items-center gap-3">
+                <div className="text-right min-w-0">
+                  <p className="text-xs text-muted-foreground">Welcome</p>
+                  <p className="text-sm font-medium truncate max-w-[120px]">
+                    {user?.email?.split('@')[0]}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="flex items-center gap-1"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden md:inline">Sign Out</span>
+                </Button>
+              </div>
+              
+              {/* Mobile user menu */}
+              <div className="sm:hidden">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSignOut}
+                  className="flex items-center gap-1 px-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="text-xs">Exit</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-4 md:py-8">
+      <main className="container mx-auto px-4 py-4 md:py-6">
         <TrialStatus onUpgrade={() => setShowPlanSelection(true)} />
         
         <div className="space-y-4 md:space-y-6">
-          <div className="space-y-1 md:space-y-2">
-            <h2 className="text-xl md:text-3xl font-bold">Dashboard</h2>
-            <p className="text-sm md:text-base text-muted-foreground">
-              Manage your ride documentation and compliance
-            </p>
-          </div>
-
+          {/* Content Area - No duplicate titles */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
             {/* Mobile: Scrollable tabs */}
             <div className="md:hidden">
