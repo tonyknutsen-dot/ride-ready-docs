@@ -14,7 +14,145 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          address: string | null
+          company_name: string | null
+          controller_name: string | null
+          created_at: string
+          id: string
+          showmen_name: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address?: string | null
+          company_name?: string | null
+          controller_name?: string | null
+          created_at?: string
+          id?: string
+          showmen_name?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string | null
+          company_name?: string | null
+          controller_name?: string | null
+          created_at?: string
+          id?: string
+          showmen_name?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      ride_categories: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
+      rides: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          manufacturer: string | null
+          ride_name: string
+          serial_number: string | null
+          updated_at: string
+          user_id: string
+          year_manufactured: number | null
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          manufacturer?: string | null
+          ride_name: string
+          serial_number?: string | null
+          updated_at?: string
+          user_id: string
+          year_manufactured?: number | null
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          manufacturer?: string | null
+          ride_name?: string
+          serial_number?: string | null
+          updated_at?: string
+          user_id?: string
+          year_manufactured?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rides_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ride_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      technical_bulletins: {
+        Row: {
+          bulletin_number: string | null
+          category_id: string
+          content: string | null
+          created_at: string
+          id: string
+          issue_date: string | null
+          priority: string | null
+          title: string
+        }
+        Insert: {
+          bulletin_number?: string | null
+          category_id: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          issue_date?: string | null
+          priority?: string | null
+          title: string
+        }
+        Update: {
+          bulletin_number?: string | null
+          category_id?: string
+          content?: string | null
+          created_at?: string
+          id?: string
+          issue_date?: string | null
+          priority?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "technical_bulletins_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "ride_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
