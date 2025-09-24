@@ -14,6 +14,59 @@ export type Database = {
   }
   public: {
     Tables: {
+      documents: {
+        Row: {
+          document_name: string
+          document_type: string
+          expires_at: string | null
+          file_path: string
+          file_size: number | null
+          id: string
+          is_global: boolean | null
+          mime_type: string | null
+          notes: string | null
+          ride_id: string | null
+          uploaded_at: string
+          user_id: string
+        }
+        Insert: {
+          document_name: string
+          document_type: string
+          expires_at?: string | null
+          file_path: string
+          file_size?: number | null
+          id?: string
+          is_global?: boolean | null
+          mime_type?: string | null
+          notes?: string | null
+          ride_id?: string | null
+          uploaded_at?: string
+          user_id: string
+        }
+        Update: {
+          document_name?: string
+          document_type?: string
+          expires_at?: string | null
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          is_global?: boolean | null
+          mime_type?: string | null
+          notes?: string | null
+          ride_id?: string | null
+          uploaded_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "documents_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null

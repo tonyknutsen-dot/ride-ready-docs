@@ -1,22 +1,11 @@
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, FileText } from 'lucide-react';
-import { Tables } from '@/integrations/supabase/types';
 import DocumentUpload from './DocumentUpload';
 import DocumentList from './DocumentList';
 
-type Ride = Tables<'rides'> & {
-  ride_categories: {
-    name: string;
-    description: string | null;
-  };
-};
-
-interface RideDocumentsProps {
-  ride: Ride;
-}
-
-const RideDocuments = ({ ride }: RideDocumentsProps) => {
+const GlobalDocuments = () => {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleUploadSuccess = () => {
@@ -30,9 +19,9 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h3 className="text-xl font-semibold">Document Management</h3>
+        <h2 className="text-3xl font-bold">Global Documents</h2>
         <p className="text-muted-foreground">
-          Upload and manage documents for {ride.ride_name}
+          Manage documents that apply to all your rides, such as insurance certificates, operator licenses, and company policies.
         </p>
       </div>
 
@@ -51,14 +40,14 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
         <TabsContent value="documents">
           <DocumentList 
             key={refreshKey}
-            rideId={ride.id}
+            isGlobal={true}
             onDocumentDeleted={handleDocumentDeleted}
           />
         </TabsContent>
 
         <TabsContent value="upload">
           <DocumentUpload 
-            rideId={ride.id}
+            isGlobal={true}
             onUploadSuccess={handleUploadSuccess}
           />
         </TabsContent>
@@ -67,4 +56,4 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
   );
 };
 
-export default RideDocuments;
+export default GlobalDocuments;
