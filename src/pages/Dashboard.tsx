@@ -13,6 +13,7 @@ import CalendarView from '@/components/CalendarView';
 import NotificationCenter from '@/components/NotificationCenter';
 import MaintenanceTracker from '@/components/MaintenanceTracker';
 import ReportGenerator from '@/components/ReportGenerator';
+import ProfileSetup from '@/components/ProfileSetup';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -72,6 +73,11 @@ const Dashboard = () => {
         </div>
       </div>
     );
+  }
+
+  // Show profile setup if no profile exists
+  if (!profile) {
+    return <ProfileSetup onComplete={loadProfile} />;
   }
 
   return (
