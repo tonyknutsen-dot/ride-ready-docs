@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const CallToAction = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   return (
     <section className="py-20 bg-hero-gradient text-white relative overflow-hidden">
@@ -33,9 +35,9 @@ const CallToAction = () => {
           <Button 
             size="lg" 
             className="bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-4 text-lg font-semibold shadow-glow transition-smooth"
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate(user ? '/dashboard' : '/auth')}
           >
-            Start Your Free Trial
+            {user ? 'Go to Dashboard' : 'Start Your Free Trial'}
           </Button>
           <Button 
             variant="outline" 

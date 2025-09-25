@@ -2,9 +2,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
 const Pricing = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const features = [
     "Unlimited document storage",
@@ -67,9 +69,9 @@ const Pricing = () => {
               <Button 
                 className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-4 text-lg font-semibold shadow-elegant transition-smooth"
                 size="lg"
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate(user ? '/dashboard' : '/auth')}
               >
-                Start 30-Day Free Trial
+                {user ? 'Go to Dashboard' : 'Start 30-Day Free Trial'}
               </Button>
 
               <div className="text-center mt-6 space-y-2 text-sm text-muted-foreground">
@@ -84,8 +86,8 @@ const Pricing = () => {
           <p className="text-muted-foreground mb-4">
             Need a custom solution for your fairground business?
           </p>
-          <Button variant="outline" size="lg" onClick={() => navigate('/auth')}>
-            Contact Sales
+          <Button variant="outline" size="lg" onClick={() => navigate(user ? '/dashboard' : '/auth')}>
+            {user ? 'Go to Dashboard' : 'Contact Sales'}
           </Button>
         </div>
       </div>
