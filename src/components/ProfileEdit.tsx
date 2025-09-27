@@ -88,6 +88,15 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="mb-4 p-4 bg-muted/50 rounded-lg">
+        <h4 className="font-medium text-sm mb-2">Role Definitions:</h4>
+        <ul className="text-xs text-muted-foreground space-y-1">
+          <li><strong>Controller:</strong> The person responsible for ride safety and compliance</li>
+          <li><strong>Showmen:</strong> The person who operates the fairground/show (may be same as controller)</li>
+          <li><strong>Owner:</strong> The person who owns individual rides (set separately for each ride)</li>
+        </ul>
+      </div>
+      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="company_name" className="flex items-center gap-2">

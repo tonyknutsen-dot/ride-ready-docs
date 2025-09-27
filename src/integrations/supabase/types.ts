@@ -679,6 +679,7 @@ export type Database = {
           created_at: string
           id: string
           manufacturer: string | null
+          owner_name: string | null
           ride_name: string
           serial_number: string | null
           updated_at: string
@@ -690,6 +691,7 @@ export type Database = {
           created_at?: string
           id?: string
           manufacturer?: string | null
+          owner_name?: string | null
           ride_name: string
           serial_number?: string | null
           updated_at?: string
@@ -701,6 +703,7 @@ export type Database = {
           created_at?: string
           id?: string
           manufacturer?: string | null
+          owner_name?: string | null
           ride_name?: string
           serial_number?: string | null
           updated_at?: string

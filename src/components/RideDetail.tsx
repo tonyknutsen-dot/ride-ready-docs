@@ -116,7 +116,7 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
             <div>
               <span className="font-medium">Category:</span>
               <p className="text-muted-foreground">{ride.ride_categories.name}</p>
@@ -132,6 +132,10 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
             <div>
               <span className="font-medium">Serial Number:</span>
               <p className="text-muted-foreground">{ride.serial_number || 'Not specified'}</p>
+            </div>
+            <div>
+              <span className="font-medium">Owner:</span>
+              <p className="text-muted-foreground">{ride.owner_name || 'Not specified'}</p>
             </div>
           </div>
         </CardContent>

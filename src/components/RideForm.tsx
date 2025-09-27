@@ -24,6 +24,7 @@ const rideSchema = z.object({
   manufacturer: z.string().trim().max(100, "Manufacturer must be less than 100 characters").optional(),
   year_manufactured: z.number().int().min(1800).max(new Date().getFullYear() + 1).optional(),
   serial_number: z.string().trim().max(50, "Serial number must be less than 50 characters").optional(),
+  owner_name: z.string().trim().max(100, "Owner name must be less than 100 characters").optional(),
 });
 
 const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
@@ -37,6 +38,7 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
     manufacturer: '',
     year_manufactured: '',
     serial_number: '',
+    owner_name: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -72,6 +74,7 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
         year_manufactured: formData.year_manufactured ? parseInt(formData.year_manufactured) : undefined,
         manufacturer: formData.manufacturer || undefined,
         serial_number: formData.serial_number || undefined,
+        owner_name: formData.owner_name || undefined,
       };
 
       // Validate form data
@@ -89,6 +92,7 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
           manufacturer: validatedData.manufacturer || null,
           year_manufactured: validatedData.year_manufactured || null,
           serial_number: validatedData.serial_number || null,
+          owner_name: validatedData.owner_name || null,
         });
 
       if (error) {
@@ -141,7 +145,7 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
         <CardHeader>
           <CardTitle>Ride Information</CardTitle>
           <CardDescription>
-            Enter the details for your new ride
+            Enter the details for your new ride. Note: The ride owner may be different from the controller or showmen listed in your profile.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -227,6 +231,23 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
               {errors.serial_number && (
                 <p className="text-sm text-destructive">{errors.serial_number}</p>
               )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="owner_name">Ride Owner</Label>
+              <Input
+                id="owner_name"
+                value={formData.owner_name}
+                onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
+                placeholder="Enter owner name (if different from controller)"
+                className={errors.owner_name ? "border-destructive" : ""}
+              />
+              {errors.owner_name && (
+                <p className="text-sm text-destructive">{errors.owner_name}</p>
+              )}
+              <p className="text-xs text-muted-foreground">
+                The ride owner may be different from the controller (responsible for safety) or showmen (operator) in your profile.
+              </p>
             </div>
 
             <div className="flex space-x-4 pt-4">
