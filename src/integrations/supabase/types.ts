@@ -233,11 +233,15 @@ export type Database = {
           file_size: number | null
           id: string
           is_global: boolean | null
+          is_latest_version: boolean | null
           mime_type: string | null
           notes: string | null
+          replaced_document_id: string | null
           ride_id: string | null
           uploaded_at: string
           user_id: string
+          version_notes: string | null
+          version_number: string | null
         }
         Insert: {
           document_name: string
@@ -247,11 +251,15 @@ export type Database = {
           file_size?: number | null
           id?: string
           is_global?: boolean | null
+          is_latest_version?: boolean | null
           mime_type?: string | null
           notes?: string | null
+          replaced_document_id?: string | null
           ride_id?: string | null
           uploaded_at?: string
           user_id: string
+          version_notes?: string | null
+          version_number?: string | null
         }
         Update: {
           document_name?: string
@@ -261,13 +269,24 @@ export type Database = {
           file_size?: number | null
           id?: string
           is_global?: boolean | null
+          is_latest_version?: boolean | null
           mime_type?: string | null
           notes?: string | null
+          replaced_document_id?: string | null
           ride_id?: string | null
           uploaded_at?: string
           user_id?: string
+          version_notes?: string | null
+          version_number?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "documents_replaced_document_id_fkey"
+            columns: ["replaced_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documents_ride_id_fkey"
             columns: ["ride_id"]

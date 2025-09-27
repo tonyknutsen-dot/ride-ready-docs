@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, FileText } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Upload, FileText, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +35,45 @@ const DocumentUpload = ({ rideId, isGlobal = false, onUploadSuccess }: DocumentU
   const [expiryDate, setExpiryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [useVersionControl, setUseVersionControl] = useState(false);
+  const [versionNumber, setVersionNumber] = useState('1.0');
+  const [versionNotes, setVersionNotes] = useState('');
+  const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
+  const [replacingDocumentId, setReplacingDocumentId] = useState<string | null>(null);
+
+  // Load existing documents with same name for version control
+  useEffect(() => {
+    if (documentName && useVersionControl) {
+      loadExistingDocuments();
+    }
+  }, [documentName, useVersionControl, rideId, isGlobal]);
+
+  const loadExistingDocuments = async () => {
+    if (!user || !documentName) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('document_name', documentName)
+        .eq('is_global', isGlobal)
+        .eq('ride_id', isGlobal ? null : rideId)
+        .order('created_at', { ascending: false });
+
+      if (!error && data) {
+        setExistingDocuments(data);
+        if (data.length > 0) {
+          // Auto-increment version number
+          const latestVersion = data[0].version_number || '1.0';
+          const [major, minor = 0] = latestVersion.split('.').map(Number);
+          setVersionNumber(`${major}.${minor + 1}`);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading existing documents:', error);
+    }
+  };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -74,23 +114,37 @@ const DocumentUpload = ({ rideId, isGlobal = false, onUploadSuccess }: DocumentU
       }
 
       // Save document metadata to database
+      const documentData: any = {
+        user_id: user.id,
+        ride_id: isGlobal ? null : rideId,
+        document_name: documentName,
+        document_type: documentType,
+        file_path: filePath,
+        file_size: selectedFile.size,
+        mime_type: selectedFile.type,
+        is_global: isGlobal,
+        expires_at: expiryDate || null,
+        notes: notes || null,
+        version_number: useVersionControl ? versionNumber : '1.0',
+        is_latest_version: true,
+        version_notes: useVersionControl ? versionNotes : null,
+        replaced_document_id: replacingDocumentId,
+      };
+
       const { error: dbError } = await supabase
         .from('documents')
-        .insert({
-          user_id: user.id,
-          ride_id: isGlobal ? null : rideId,
-          document_name: documentName,
-          document_type: documentType,
-          file_path: filePath,
-          file_size: selectedFile.size,
-          mime_type: selectedFile.type,
-          is_global: isGlobal,
-          expires_at: expiryDate || null,
-          notes: notes || null,
-        });
+        .insert(documentData);
 
       if (dbError) {
         throw dbError;
+      }
+
+      // If this is a version update, mark the old document as not latest
+      if (replacingDocumentId) {
+        await supabase
+          .from('documents')
+          .update({ is_latest_version: false })
+          .eq('id', replacingDocumentId);
       }
 
       toast({
@@ -104,6 +158,11 @@ const DocumentUpload = ({ rideId, isGlobal = false, onUploadSuccess }: DocumentU
       setDocumentName('');
       setExpiryDate('');
       setNotes('');
+      setUseVersionControl(false);
+      setVersionNumber('1.0');
+      setVersionNotes('');
+      setReplacingDocumentId(null);
+      setExistingDocuments([]);
       onUploadSuccess();
 
     } catch (error: any) {
@@ -140,9 +199,13 @@ const DocumentUpload = ({ rideId, isGlobal = false, onUploadSuccess }: DocumentU
               id="file"
               type="file"
               onChange={handleFileSelect}
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls"
+              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf"
               disabled={uploading}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              Supported: PDF, Word, Excel, PowerPoint, Images (JPG, PNG, TIFF, BMP, GIF), 
+              Video (MP4, MOV, AVI), CAD files (DWG, DXF), Archives (ZIP, RAR), Text files
+            </p>
             {selectedFile && (
               <p className="text-sm text-muted-foreground">
                 {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
@@ -160,7 +223,86 @@ const DocumentUpload = ({ rideId, isGlobal = false, onUploadSuccess }: DocumentU
               disabled={uploading}
             />
           </div>
+        </div>
 
+        {/* Version Control Section */}
+        <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
+          <div className="flex items-center space-x-2">
+            <Checkbox 
+              id="version-control" 
+              checked={useVersionControl}
+              onCheckedChange={(checked) => setUseVersionControl(checked as boolean)}
+              disabled={uploading}
+            />
+            <Label htmlFor="version-control" className="flex items-center space-x-2">
+              <span>Enable version control</span>
+              <Info className="h-4 w-4 text-muted-foreground" />
+            </Label>
+          </div>
+          
+          {useVersionControl && (
+            <div className="space-y-4 ml-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="version">Version Number</Label>
+                  <Input
+                    id="version"
+                    value={versionNumber}
+                    onChange={(e) => setVersionNumber(e.target.value)}
+                    placeholder="e.g., 1.0, 2.1"
+                    disabled={uploading}
+                  />
+                </div>
+                
+                {existingDocuments.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="replacing">Replacing Document</Label>
+                    <Select value={replacingDocumentId || ''} onValueChange={setReplacingDocumentId} disabled={uploading}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select document to replace" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">None (New document)</SelectItem>
+                        {existingDocuments.map((doc) => (
+                          <SelectItem key={doc.id} value={doc.id}>
+                            Version {doc.version_number} - {new Date(doc.created_at).toLocaleDateString()}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="version-notes">Version Notes</Label>
+                <Textarea
+                  id="version-notes"
+                  value={versionNotes}
+                  onChange={(e) => setVersionNotes(e.target.value)}
+                  placeholder="What changed in this version?"
+                  disabled={uploading}
+                />
+              </div>
+              
+              {existingDocuments.length > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  <p className="font-medium">Existing versions:</p>
+                  <ul className="list-disc list-inside ml-2">
+                    {existingDocuments.slice(0, 3).map((doc) => (
+                      <li key={doc.id}>
+                        Version {doc.version_number} - {new Date(doc.created_at).toLocaleDateString()}
+                        {doc.is_latest_version && ' (Current)'}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="type">Document Type *</Label>
             <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
