@@ -32,8 +32,8 @@ const Pricing = () => {
           </p>
         </div>
 
-        <div className="max-w-lg mx-auto">
-          <Card className="relative overflow-hidden shadow-elegant hover:shadow-glow transition-smooth border-2 border-primary/20">
+        <div className="max-w-2xl mx-auto">
+          <Card className="relative shadow-elegant hover:shadow-glow transition-smooth border-2 border-primary/20">
             {/* Popular badge */}
             <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
               <div className="bg-accent-gradient px-6 py-2 rounded-full">
