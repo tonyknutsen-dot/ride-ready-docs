@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { RestrictedFeatureCard } from '@/components/RestrictedFeatureCard';
 import { useSubscription } from '@/hooks/useSubscription';
 import { 
@@ -28,6 +30,14 @@ interface DashboardStats {
   documentsExpiringSoon: number;
 }
 
+interface Ride {
+  id: string;
+  ride_name: string;
+  ride_categories: {
+    name: string;
+  };
+}
+
 interface DashboardOverviewProps {
   onNavigate: (tab: string) => void;
 }
@@ -46,6 +56,9 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
   });
   const [loading, setLoading] = useState(true);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [showUploadDialog, setShowUploadDialog] = useState(false);
+  const [selectedRideForUpload, setSelectedRideForUpload] = useState<string>('');
 
   useEffect(() => {
     if (user && subscription) {
@@ -55,6 +68,22 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
 
   const loadDashboardData = async () => {
     try {
+      // Load rides for all users (needed for document upload selection)
+      const { data: ridesData, error: ridesError } = await supabase
+        .from('rides')
+        .select(`
+          id,
+          ride_name,
+          ride_categories (
+            name
+          )
+        `)
+        .eq('user_id', user?.id)
+        .order('ride_name');
+
+      if (ridesError) throw ridesError;
+      setRides(ridesData || []);
+
       // Only load documents for trial/basic users
       const { data: documents, error: documentsError } = await supabase
         .from('documents')
@@ -65,7 +94,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
       if (documentsError) throw documentsError;
 
       // Only load advanced features data for advanced plan users
-      let ridesData, inspectionsData, maintenanceData, activityData;
+      let ridesDataForStats, inspectionsData, maintenanceData, activityData;
       
       if (subscription?.subscriptionStatus === 'advanced') {
         // Load rides count
@@ -75,7 +104,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
           .eq('user_id', user?.id);
 
         if (ridesError) throw ridesError;
-        ridesData = rides;
+        ridesDataForStats = rides;
 
         // Load inspection checks
         const { data: inspections, error: inspectionsError } = await supabase
@@ -122,7 +151,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
       ).length || 0;
 
       setStats({
-        totalRides: ridesData?.length || 0,
+        totalRides: ridesDataForStats?.length || 0,
         activeInspections: inspectionsData?.filter(i => i.status === 'in_progress').length || 0,
         overdueInspections: inspectionsData?.filter(i => 
           i.status === 'pending' && i.check_date < today
@@ -155,6 +184,41 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
       case 'pending': return 'bg-amber-100 text-amber-800 border-amber-200';
       default: return 'bg-secondary text-secondary-foreground';
     }
+  };
+
+  const handleUploadDocument = () => {
+    if (rides.length === 0) {
+      toast({
+        title: "No rides found",
+        description: "Please add a ride first before uploading documents.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setShowUploadDialog(true);
+  };
+
+  const handleUploadConfirm = () => {
+    if (!selectedRideForUpload) {
+      toast({
+        title: "Please select a ride",
+        description: "Choose which ride this document belongs to.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setShowUploadDialog(false);
+    // Navigate to documents with the selected ride context
+    onNavigate('documents');
+    
+    // Store the selected ride in session storage for the documents component to use
+    sessionStorage.setItem('selectedRideForUpload', selectedRideForUpload);
+    
+    toast({
+      title: "Ready to upload",
+      description: `Upload documents for ${rides.find(r => r.id === selectedRideForUpload)?.ride_name}`,
+    });
   };
 
   if (loading) {
@@ -292,7 +356,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
             <Button 
               variant="outline" 
               className="justify-start h-auto p-4"
-              onClick={() => onNavigate('documents')}
+              onClick={handleUploadDocument}
             >
               <div className="flex flex-col items-start space-y-1">
                 <div className="flex items-center space-x-2">
@@ -397,6 +461,48 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
           )}
         </CardContent>
       </Card>
+
+      {/* Upload Document Dialog */}
+      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Upload Document</DialogTitle>
+            <DialogDescription>
+              Select which ride this document belongs to
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Ride</label>
+              <Select value={selectedRideForUpload} onValueChange={setSelectedRideForUpload}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a ride..." />
+                </SelectTrigger>
+                <SelectContent className="bg-background border border-border shadow-lg z-50">
+                  {rides.map((ride) => (
+                    <SelectItem key={ride.id} value={ride.id}>
+                      <div>
+                        <div className="font-medium">{ride.ride_name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {ride.ride_categories.name}
+                        </div>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowUploadDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUploadConfirm}>
+              Continue to Upload
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
