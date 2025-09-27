@@ -51,7 +51,7 @@ const Hero = () => {
             variant="outline" 
             size="lg"
             className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-4 text-lg backdrop-blur-sm transition-smooth"
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate('/demo')}
           >
             View Demo
           </Button>
