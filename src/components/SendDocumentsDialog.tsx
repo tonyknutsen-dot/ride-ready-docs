@@ -118,7 +118,11 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
 
       if (error) throw error;
 
-      toast.success(`Successfully sent ${data.documentsCount} documents to ${recipientEmail}`);
+      const successMessage = data.wasSplit 
+        ? `Successfully sent ${data.documentsCount} documents to ${recipientEmail} across ${data.emailsSent} separate emails due to size limits`
+        : `Successfully sent ${data.documentsCount} documents to ${recipientEmail}`;
+        
+      toast.success(successMessage);
       setOpen(false);
       
       // Reset form
@@ -151,6 +155,15 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
 
   const totalSelectedDocs = selectedDocuments.length;
   const rideInfo = `${ride.ride_name}${ride.manufacturer ? ` (${ride.manufacturer})` : ''}`;
+  
+  // Calculate total file size of selected documents
+  const allAvailableDocs = [...documents, ...insuranceDocuments];
+  const totalFileSize = allAvailableDocs
+    .filter(doc => selectedDocuments.includes(doc.id))
+    .reduce((sum, doc) => sum + (doc.file_size || 0), 0);
+  
+  const totalSizeMB = totalFileSize / (1024 * 1024);
+  const exceedsEmailLimit = totalSizeMB > 10;
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -223,6 +236,30 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* File size warning */}
+              {exceedsEmailLimit && (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-amber-800 mb-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="font-medium text-sm">Large File Size Warning</span>
+                  </div>
+                  <p className="text-sm text-amber-700">
+                    Total size: {totalSizeMB.toFixed(1)}MB exceeds typical email limits (10MB). 
+                    The system will automatically split this into multiple emails if needed.
+                  </p>
+                </div>
+              )}
+              
+              {/* File size summary */}
+              <div className="bg-muted/50 rounded-lg p-3">
+                <div className="flex justify-between items-center text-sm">
+                  <span>Total file size:</span>
+                  <Badge variant={exceedsEmailLimit ? "destructive" : "secondary"}>
+                    {formatFileSize(totalFileSize)}
+                  </Badge>
+                </div>
+              </div>
+
               {/* Ride-specific documents */}
               {documents.length > 0 && (
                 <div>
