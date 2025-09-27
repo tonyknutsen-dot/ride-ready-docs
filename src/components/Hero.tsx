@@ -1,7 +1,17 @@
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import heroImage from "@/assets/hero-fairground.jpg";
 
 const Hero = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const handleStartTrial = () => {
+    const destination = user ? '/dashboard' : '/auth';
+    navigate(destination);
+  };
+
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       {/* Background Image with Overlay */}
@@ -33,6 +43,7 @@ const Hero = () => {
           <Button 
             size="lg" 
             className="bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-4 text-lg font-semibold shadow-glow transition-smooth"
+            onClick={handleStartTrial}
           >
             Start Free Trial
           </Button>
@@ -40,6 +51,7 @@ const Hero = () => {
             variant="outline" 
             size="lg"
             className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-4 text-lg backdrop-blur-sm transition-smooth"
+            onClick={() => navigate('/auth')}
           >
             View Demo
           </Button>
