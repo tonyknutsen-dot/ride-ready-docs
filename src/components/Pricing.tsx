@@ -9,22 +9,25 @@ const Pricing = () => {
   const { user } = useAuth();
 
   const basicFeatures = [
+    "Ride management & setup",
     "Document storage (up to 100 documents)",
     "Basic document types supported",
+    "Organize documents by ride",
     "Web-based dashboard access",
     "Email support"
   ];
 
   const advancedFeatures = [
+    "All Basic plan features",
     "Unlimited document storage",
     "All document types supported", 
     "Technical bulletin access",
-    "Advanced web dashboard",
+    "Maintenance tracking & scheduling",
+    "Calendar & inspection scheduling",
     "Automated compliance reminders",
     "Council-ready document packages",
+    "Advanced reporting & analytics",
     "Priority 24/7 support",
-    "Data backup & security",
-    "Advanced reporting",
     "Multi-user collaboration"
   ];
 

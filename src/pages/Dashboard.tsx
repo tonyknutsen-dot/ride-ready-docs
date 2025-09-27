@@ -160,7 +160,6 @@ const Dashboard = () => {
                 <TabsTrigger 
                   value="rides" 
                   className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0"
-                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
                 >
                   <Settings className="h-4 w-4 mb-1" />
                   <span>Rides</span>
@@ -218,7 +217,6 @@ const Dashboard = () => {
                 <TabsTrigger 
                   value="rides" 
                   className="flex flex-col items-center py-3 px-2 text-xs"
-                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
                 >
                   <Settings className="h-4 w-4 mb-1" />
                   <span>My Rides</span>
@@ -271,7 +269,7 @@ const Dashboard = () => {
             </TabsContent>
 
             <TabsContent value="rides">
-              <FeatureGate requiredPlan="advanced" feature="Ride Management">
+              <FeatureGate requiredPlan="basic" feature="Ride Management">
                 <RideManagement />
               </FeatureGate>
             </TabsContent>
