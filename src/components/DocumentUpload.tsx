@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -40,6 +40,7 @@ const DocumentUpload = ({ rideId, isGlobal = false, onUploadSuccess }: DocumentU
   const [versionNotes, setVersionNotes] = useState('');
   const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
   const [replacingDocumentId, setReplacingDocumentId] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load existing documents with same name for version control
   useEffect(() => {
@@ -152,7 +153,7 @@ const DocumentUpload = ({ rideId, isGlobal = false, onUploadSuccess }: DocumentU
         description: `${documentName} has been uploaded`,
       });
 
-      // Reset form
+      // Reset form completely
       setSelectedFile(null);
       setDocumentType('');
       setDocumentName('');
@@ -163,6 +164,12 @@ const DocumentUpload = ({ rideId, isGlobal = false, onUploadSuccess }: DocumentU
       setVersionNotes('');
       setReplacingDocumentId(null);
       setExistingDocuments([]);
+      
+      // Clear the file input element
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+      
       onUploadSuccess();
 
     } catch (error: any) {
@@ -196,6 +203,7 @@ const DocumentUpload = ({ rideId, isGlobal = false, onUploadSuccess }: DocumentU
           <div className="space-y-2">
             <Label htmlFor="file">Select File *</Label>
             <Input
+              ref={fileInputRef}
               id="file"
               type="file"
               onChange={handleFileSelect}
