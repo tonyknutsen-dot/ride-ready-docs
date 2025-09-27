@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Upload, FileText, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -13,28 +14,27 @@ import { supabase } from '@/integrations/supabase/client';
 import RequestDocumentTypeDialog from './RequestDocumentTypeDialog';
 
 const documentTypes = [
-  { id: 'risk_assessment', name: 'Risk Assessment', description: 'General risk assessments' },
-  { id: 'method_statement', name: 'Method Statement', description: 'Work method statements and procedures' },
-  { id: 'emergency_plan', name: 'Emergency Plan', description: 'Emergency response plans' },
-  { id: 'emergency_action_plan', name: 'Emergency Action Plan', description: 'Emergency action procedures' },
-  { id: 'evacuation_plan', name: 'Evacuation Plan', description: 'Evacuation procedures and plans' },
-  { id: 'working_height_ra', name: 'Working at Height Risk Assessment', description: 'Risk assessments for working at height' },
   { id: 'confined_space_ra', name: 'Confined Space Risk Assessment', description: 'Risk assessments for confined spaces' },
-  { id: 'design_review', name: 'Design Review', description: 'Design review documents' },
   { id: 'conformity_design', name: 'Conformity to Design', description: 'Design conformity certificates' },
+  { id: 'controller_manual', name: 'Controller Manual', description: 'Control system manuals' },
+  { id: 'design_review', name: 'Design Review', description: 'Design review documents' },
+  { id: 'design_risk_assessment', name: 'Design Risk Assessment', description: 'Design-related risk assessments' },
+  { id: 'docs', name: 'DOCs', description: 'Department of Culture approval documents' },
+  { id: 'electrical_inspection', name: 'Electrical Inspection Report', description: 'Electrical safety inspection reports' },
+  { id: 'emergency_action_plan', name: 'Emergency Action Plan', description: 'Emergency response and action procedures' },
+  { id: 'evacuation_plan', name: 'Evacuation Plan', description: 'Evacuation procedures and plans' },
+  { id: 'fire_risk_assessment', name: 'Fire Risk Assessment', description: 'Fire safety risk assessments' },
   { id: 'initial_test_report', name: 'Initial Test Report', description: 'Initial testing and commissioning reports' },
   { id: 'inservice_inspection', name: 'In-Service Inspection Report', description: 'Regular in-service inspection reports' },
+  { id: 'insurance', name: 'Insurance Documents', description: 'Insurance certificates and policies' },
+  { id: 'maturity_risk_assessment', name: 'Maturity Risk Assessment', description: 'Equipment maturity assessments' },
+  { id: 'method_statement', name: 'Method Statement', description: 'Work method statements and procedures' },
+  { id: 'ndt_inspection', name: 'NDT Inspection Report', description: 'Non-destructive testing reports' },
   { id: 'ndt_schedule', name: 'NDT Schedule', description: 'Non-destructive testing schedules' },
   { id: 'operator_manual', name: 'Operator Manual', description: 'Operating manuals and instructions' },
-  { id: 'design_risk_assessment', name: 'Design Risk Assessment', description: 'Design-related risk assessments' },
-  { id: 'fire_risk_assessment', name: 'Fire Risk Assessment', description: 'Fire safety risk assessments' },
-  { id: 'maturity_risk_assessment', name: 'Maturity Risk Assessment', description: 'Equipment maturity assessments' },
-  { id: 'electrical_inspection', name: 'Electrical Inspection Report', description: 'Electrical safety inspection reports' },
-  { id: 'ndt_inspection', name: 'NDT Inspection Report', description: 'Non-destructive testing reports' },
-  { id: 'controller_manual', name: 'Controller Manual', description: 'Control system manuals' },
-  { id: 'evacuation_procedure', name: 'Evacuation Procedure', description: 'Detailed evacuation procedures' },
-  { id: 'insurance', name: 'Insurance Documents', description: 'Insurance certificates and policies' },
   { id: 'other', name: 'Other Documents', description: 'Other document types' },
+  { id: 'risk_assessment', name: 'Risk Assessment', description: 'General risk assessments' },
+  { id: 'working_height_ra', name: 'Working at Height Risk Assessment', description: 'Risk assessments for working at height' },
 ];
 
 interface DocumentUploadProps {
@@ -261,7 +261,16 @@ const DocumentUpload = ({ rideId, isGlobal = false, onUploadSuccess }: DocumentU
             />
             <Label htmlFor="version-control" className="flex items-center space-x-2">
               <span>Enable version control</span>
-              <Info className="h-4 w-4 text-muted-foreground" />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-xs">
+                    <p>Version control lets you upload newer versions of the same document while keeping track of previous versions. This is useful for documents that get updated regularly, like risk assessments or manuals.</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </Label>
           </div>
           
