@@ -10,14 +10,31 @@ import { Upload, FileText, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import RequestDocumentTypeDialog from './RequestDocumentTypeDialog';
 
 const documentTypes = [
-  { id: 'safety', name: 'Safety Documents', description: 'Safety certificates, risk assessments' },
-  { id: 'maintenance', name: 'Maintenance Records', description: 'Service records, repairs' },
-  { id: 'inspection', name: 'Inspection Certificates', description: 'Annual inspections, certifications' },
-  { id: 'manual', name: 'Operation Manuals', description: 'User manuals, technical guides' },
-  { id: 'insurance', name: 'Insurance Documents', description: 'Insurance certificates, policies' },
-  { id: 'other', name: 'Other Documents', description: 'Miscellaneous documents' },
+  { id: 'risk_assessment', name: 'Risk Assessment', description: 'General risk assessments' },
+  { id: 'method_statement', name: 'Method Statement', description: 'Work method statements and procedures' },
+  { id: 'emergency_plan', name: 'Emergency Plan', description: 'Emergency response plans' },
+  { id: 'emergency_action_plan', name: 'Emergency Action Plan', description: 'Emergency action procedures' },
+  { id: 'evacuation_plan', name: 'Evacuation Plan', description: 'Evacuation procedures and plans' },
+  { id: 'working_height_ra', name: 'Working at Height Risk Assessment', description: 'Risk assessments for working at height' },
+  { id: 'confined_space_ra', name: 'Confined Space Risk Assessment', description: 'Risk assessments for confined spaces' },
+  { id: 'design_review', name: 'Design Review', description: 'Design review documents' },
+  { id: 'conformity_design', name: 'Conformity to Design', description: 'Design conformity certificates' },
+  { id: 'initial_test_report', name: 'Initial Test Report', description: 'Initial testing and commissioning reports' },
+  { id: 'inservice_inspection', name: 'In-Service Inspection Report', description: 'Regular in-service inspection reports' },
+  { id: 'ndt_schedule', name: 'NDT Schedule', description: 'Non-destructive testing schedules' },
+  { id: 'operator_manual', name: 'Operator Manual', description: 'Operating manuals and instructions' },
+  { id: 'design_risk_assessment', name: 'Design Risk Assessment', description: 'Design-related risk assessments' },
+  { id: 'fire_risk_assessment', name: 'Fire Risk Assessment', description: 'Fire safety risk assessments' },
+  { id: 'maturity_risk_assessment', name: 'Maturity Risk Assessment', description: 'Equipment maturity assessments' },
+  { id: 'electrical_inspection', name: 'Electrical Inspection Report', description: 'Electrical safety inspection reports' },
+  { id: 'ndt_inspection', name: 'NDT Inspection Report', description: 'Non-destructive testing reports' },
+  { id: 'controller_manual', name: 'Controller Manual', description: 'Control system manuals' },
+  { id: 'evacuation_procedure', name: 'Evacuation Procedure', description: 'Detailed evacuation procedures' },
+  { id: 'insurance', name: 'Insurance Documents', description: 'Insurance certificates and policies' },
+  { id: 'other', name: 'Other Documents', description: 'Other document types' },
 ];
 
 interface DocumentUploadProps {
@@ -313,21 +330,26 @@ const DocumentUpload = ({ rideId, isGlobal = false, onUploadSuccess }: DocumentU
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="type">Document Type *</Label>
-            <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select document type" />
-              </SelectTrigger>
-              <SelectContent>
-                {documentTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    <div>
-                      <div className="font-medium">{type.name}</div>
-                      <div className="text-xs text-muted-foreground">{type.description}</div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select document type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {documentTypes.map((type) => (
+                      <SelectItem key={type.id} value={type.id}>
+                        <div>
+                          <div className="font-medium">{type.name}</div>
+                          <div className="text-xs text-muted-foreground">{type.description}</div>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <RequestDocumentTypeDialog />
+            </div>
           </div>
 
           <div className="space-y-2">
