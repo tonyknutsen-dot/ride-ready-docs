@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { User, Settings, FileText, Plus, Users, Wrench, Shield, LogOut, Calendar as CalendarIcon, Bell as BellIcon, Crown } from 'lucide-react';
+import { User, Settings, FileText, Plus, Users, Wrench, Shield, LogOut, Calendar as CalendarIcon, Bell as BellIcon, Crown, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,6 +15,8 @@ import CalendarView from '@/components/CalendarView';
 import NotificationCenter from '@/components/NotificationCenter';
 import MaintenanceTracker from '@/components/MaintenanceTracker';
 import ReportGenerator from '@/components/ReportGenerator';
+import TechnicalBulletinManager from '@/components/TechnicalBulletinManager';
+import TechnicalBulletinList from '@/components/TechnicalBulletinList';
 import ProfileSetup from '@/components/ProfileSetup';
 import ProfileEdit from '@/components/ProfileEdit';
 import { TrialStatus } from '@/components/TrialStatus';
@@ -253,6 +255,13 @@ const Dashboard = () => {
                     className="whitespace-nowrap flex-shrink-0 py-2 px-3"
                   />
                   <PlanAwareTabTrigger 
+                    value="bulletins" 
+                    icon={AlertTriangle} 
+                    label="Bulletins"
+                    requiresAdvanced={true}
+                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
+                  />
+                  <PlanAwareTabTrigger 
                     value="profile" 
                     icon={User} 
                     label="Profile"
@@ -265,7 +274,7 @@ const Dashboard = () => {
             {/* Desktop: Grid layout */}
             <div className="hidden md:block">
               <TooltipProvider>
-                <TabsList className="grid w-full grid-cols-8 h-auto p-1 bg-muted/20">
+                <TabsList className="grid w-full grid-cols-9 h-auto p-1 bg-muted/20">
                   <PlanAwareTabTrigger 
                     value="overview" 
                     icon={Plus} 
@@ -303,6 +312,12 @@ const Dashboard = () => {
                     value="reports" 
                     icon={FileText} 
                     label="Reports"
+                    requiresAdvanced={true}
+                  />
+                  <PlanAwareTabTrigger 
+                    value="bulletins" 
+                    icon={AlertTriangle} 
+                    label="Bulletins"
                     requiresAdvanced={true}
                   />
                   <PlanAwareTabTrigger 
@@ -351,6 +366,27 @@ const Dashboard = () => {
             <TabsContent value="reports">
               <FeatureGate requiredPlan="advanced" feature="Advanced Reporting">
                 <ReportGenerator />
+              </FeatureGate>
+            </TabsContent>
+
+            <TabsContent value="bulletins">
+              <FeatureGate requiredPlan="advanced" feature="Technical Bulletins">
+                <div className="space-y-6">
+                  <Tabs defaultValue="view" className="space-y-6">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="view">View Bulletins</TabsTrigger>
+                      <TabsTrigger value="manage">Manage Bulletins</TabsTrigger>
+                    </TabsList>
+                    
+                    <TabsContent value="view">
+                      <TechnicalBulletinList />
+                    </TabsContent>
+                    
+                    <TabsContent value="manage">
+                      <TechnicalBulletinManager />
+                    </TabsContent>
+                  </Tabs>
+                </div>
               </FeatureGate>
             </TabsContent>
 
