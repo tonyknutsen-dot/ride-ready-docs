@@ -14,27 +14,23 @@ import { supabase } from '@/integrations/supabase/client';
 import RequestDocumentTypeDialog from './RequestDocumentTypeDialog';
 
 const documentTypes = [
-  { id: 'confined_space_ra', name: 'Confined Space Risk Assessment', description: 'Risk assessments for confined spaces' },
+  { id: 'build_up_down', name: 'Build Up and Down Procedure', description: 'Procedures for ride assembly and dismantling' },
   { id: 'conformity_design', name: 'Conformity to Design', description: 'Design conformity certificates' },
   { id: 'controller_manual', name: 'Controller Manual', description: 'Control system manuals' },
   { id: 'design_review', name: 'Design Review', description: 'Design review documents' },
-  { id: 'design_risk_assessment', name: 'Design Risk Assessment', description: 'Design-related risk assessments' },
   { id: 'docs', name: 'DOCs', description: 'Department of Culture approval documents' },
   { id: 'electrical_inspection', name: 'Electrical Inspection Report', description: 'Electrical safety inspection reports' },
   { id: 'emergency_action_plan', name: 'Emergency Action Plan', description: 'Emergency response and action procedures' },
   { id: 'evacuation_plan', name: 'Evacuation Plan', description: 'Evacuation procedures and plans' },
-  { id: 'fire_risk_assessment', name: 'Fire Risk Assessment', description: 'Fire safety risk assessments' },
   { id: 'initial_test_report', name: 'Initial Test Report', description: 'Initial testing and commissioning reports' },
   { id: 'inservice_inspection', name: 'In-Service Inspection Report', description: 'Regular in-service inspection reports' },
   { id: 'insurance', name: 'Insurance Documents', description: 'Insurance certificates and policies' },
-  { id: 'maturity_risk_assessment', name: 'Maturity Risk Assessment', description: 'Equipment maturity assessments' },
   { id: 'method_statement', name: 'Method Statement', description: 'Work method statements and procedures' },
   { id: 'ndt_inspection', name: 'NDT Inspection Report', description: 'Non-destructive testing reports' },
   { id: 'ndt_schedule', name: 'NDT Schedule', description: 'Non-destructive testing schedules' },
   { id: 'operator_manual', name: 'Operator Manual', description: 'Operating manuals and instructions' },
   { id: 'other', name: 'Other Documents', description: 'Other document types' },
-  { id: 'risk_assessment', name: 'Risk Assessment', description: 'General risk assessments' },
-  { id: 'working_height_ra', name: 'Working at Height Risk Assessment', description: 'Risk assessments for working at height' },
+  { id: 'risk_assessment', name: 'Risk Assessment', description: 'General, fire, confined space, working at height, design, and maturity risk assessments' },
 ];
 
 interface DocumentUploadProps {
