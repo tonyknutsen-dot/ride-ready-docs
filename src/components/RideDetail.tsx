@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ArrowLeft, FileText, CheckSquare, Calendar, Upload, Settings, AlertTriangle, Mail } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import RideDocuments from './RideDocuments';
 import InspectionManager from './InspectionManager';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
@@ -25,7 +27,56 @@ interface RideDetailProps {
 }
 
 const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
+  const [rideStats, setRideStats] = useState({
+    docCount: 0,
+    todayChecks: 0,
+    bulletinCount: 0,
+    loading: true
+  });
+
+  useEffect(() => {
+    loadRideStatistics();
+  }, [ride.id, user]);
+
+  const loadRideStatistics = async () => {
+    if (!user) return;
+
+    try {
+      // Get document count for this ride
+      const { count: docCount } = await supabase
+        .from('documents')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('ride_id', ride.id);
+
+      // Get today's inspection checks count
+      const today = new Date().toISOString().split('T')[0];
+      const { count: todayChecks } = await supabase
+        .from('inspection_checks')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('ride_id', ride.id)
+        .eq('check_date', today);
+
+      // Get technical bulletins count for this ride category
+      const { count: bulletinCount } = await supabase
+        .from('technical_bulletins')
+        .select('*', { count: 'exact', head: true })
+        .eq('category_id', ride.category_id);
+
+      setRideStats({
+        docCount: docCount || 0,
+        todayChecks: todayChecks || 0,
+        bulletinCount: bulletinCount || 0,
+        loading: false
+      });
+    } catch (error) {
+      console.error('Error loading ride statistics:', error);
+      setRideStats(prev => ({ ...prev, loading: false }));
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -122,8 +173,12 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
               <CardContent>
                 <div className="space-y-4">
                   <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">0</div>
-                    <p className="text-sm text-muted-foreground">Documents uploaded</p>
+                    <div className="text-2xl font-bold text-primary">
+                      {rideStats.loading ? '...' : rideStats.docCount}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Documents uploaded
+                    </p>
                   </div>
                   <Button onClick={() => setActiveTab("documents")} className="w-full">
                     Manage Documents
@@ -157,8 +212,12 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-accent">0</div>
-                      <p className="text-sm text-muted-foreground">Checks completed today</p>
+                      <div className="text-2xl font-bold text-accent">
+                        {rideStats.loading ? '...' : rideStats.todayChecks}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Checks completed today
+                      </p>
                     </div>
                     <Button onClick={() => setActiveTab("inspections")} variant="outline" className="w-full">
                       Start Inspections
@@ -193,8 +252,12 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
                 <CardContent>
                   <div className="space-y-4">
                     <div className="text-center">
-                      <div className="text-2xl font-bold text-secondary-foreground">0</div>
-                      <p className="text-sm text-muted-foreground">New bulletins</p>
+                      <div className="text-2xl font-bold text-secondary-foreground">
+                        {rideStats.loading ? '...' : rideStats.bulletinCount}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Available bulletins
+                      </p>
                     </div>
                     <Button onClick={() => setActiveTab("bulletins")} variant="secondary" className="w-full">
                       View Bulletins
