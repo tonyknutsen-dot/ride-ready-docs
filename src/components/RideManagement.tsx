@@ -22,6 +22,7 @@ const RideManagement = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [rides, setRides] = useState<Ride[]>([]);
+  const [rideStats, setRideStats] = useState<Record<string, { docCount: number; checkCount: number; nextDue: string | null }>>({});
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
@@ -55,12 +56,85 @@ const RideManagement = () => {
         });
       } else {
         setRides(data as Ride[]);
+        // Load statistics for each ride
+        await loadRideStatistics(data as Ride[]);
       }
     } catch (error) {
       console.error('Error loading rides:', error);
     } finally {
       setLoading(false);
     }
+  };
+
+  const loadRideStatistics = async (ridesData: Ride[]) => {
+    const stats: Record<string, { docCount: number; checkCount: number; nextDue: string | null }> = {};
+    
+    for (const ride of ridesData) {
+      try {
+        // Get document count for this ride
+        const { count: docCount } = await supabase
+          .from('documents')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user?.id)
+          .eq('ride_id', ride.id);
+
+        // Get daily check count for this ride
+        const { count: checkCount } = await supabase
+          .from('inspection_checks')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user?.id)
+          .eq('ride_id', ride.id);
+
+        // Get next due date from various sources
+        const [maintenanceQuery, inspectionQuery, ndtQuery] = await Promise.all([
+          supabase
+            .from('maintenance_records')
+            .select('next_maintenance_due')
+            .eq('user_id', user?.id)
+            .eq('ride_id', ride.id)
+            .not('next_maintenance_due', 'is', null)
+            .order('next_maintenance_due', { ascending: true })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('annual_inspection_reports')
+            .select('next_inspection_due')
+            .eq('user_id', user?.id)
+            .eq('ride_id', ride.id)
+            .not('next_inspection_due', 'is', null)
+            .order('next_inspection_due', { ascending: true })
+            .limit(1)
+            .maybeSingle(),
+          supabase
+            .from('ndt_reports')
+            .select('next_inspection_due')
+            .eq('user_id', user?.id)
+            .eq('ride_id', ride.id)
+            .not('next_inspection_due', 'is', null)
+            .order('next_inspection_due', { ascending: true })
+            .limit(1)
+            .maybeSingle()
+        ]);
+
+        // Find the earliest due date
+        const dueDates = [
+          maintenanceQuery.data?.next_maintenance_due,
+          inspectionQuery.data?.next_inspection_due,
+          ndtQuery.data?.next_inspection_due
+        ].filter(Boolean).sort();
+
+        stats[ride.id] = {
+          docCount: docCount || 0,
+          checkCount: checkCount || 0,
+          nextDue: dueDates[0] || null
+        };
+      } catch (error) {
+        console.error(`Error loading stats for ride ${ride.id}:`, error);
+        stats[ride.id] = { docCount: 0, checkCount: 0, nextDue: null };
+      }
+    }
+    
+    setRideStats(stats);
   };
 
   const handleRideAdded = () => {
@@ -163,15 +237,27 @@ const RideManagement = () => {
                   <div className="grid grid-cols-3 gap-2 text-center">
                     <div className="p-2 rounded bg-muted">
                       <FileText className="h-4 w-4 mx-auto text-primary" />
-                      <p className="text-xs mt-1">0 Docs</p>
+                      <p className="text-xs mt-1">
+                        {rideStats[ride.id]?.docCount ?? 0} Docs
+                      </p>
                     </div>
                     <div className="p-2 rounded bg-muted">
                       <CheckSquare className="h-4 w-4 mx-auto text-accent" />
-                      <p className="text-xs mt-1">0 Checks</p>
+                      <p className="text-xs mt-1">
+                        {rideStats[ride.id]?.checkCount ?? 0} Checks
+                      </p>
                     </div>
                     <div className="p-2 rounded bg-muted">
                       <Calendar className="h-4 w-4 mx-auto text-secondary-foreground" />
-                      <p className="text-xs mt-1">No Due</p>
+                      <p className="text-xs mt-1">
+                        {rideStats[ride.id]?.nextDue 
+                          ? new Date(rideStats[ride.id].nextDue!).toLocaleDateString('en-GB', { 
+                              day: '2-digit', 
+                              month: 'short' 
+                            })
+                          : 'No Due'
+                        }
+                      </p>
                     </div>
                   </div>
                   <div className="flex gap-2">
