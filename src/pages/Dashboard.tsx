@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { User, Settings, FileText, Plus, Users, Wrench, Shield, LogOut, Calendar as CalendarIcon, Bell as BellIcon } from 'lucide-react';
+import { User, Settings, FileText, Plus, Users, Wrench, Shield, LogOut, Calendar as CalendarIcon, Bell as BellIcon, Crown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import RideManagement from '@/components/RideManagement';
 import GlobalDocuments from '@/components/GlobalDocuments';
@@ -88,6 +89,55 @@ const Dashboard = () => {
     return <ProfileSetup onComplete={loadProfile} />;
   }
 
+  const isBasicOrTrial = subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic';
+  
+  const PlanAwareTabTrigger = ({ value, icon: Icon, label, requiresAdvanced = false, className = "" }) => {
+    const isRestricted = requiresAdvanced && isBasicOrTrial;
+    const isAvailable = !isRestricted;
+    
+    const triggerContent = (
+      <TabsTrigger 
+        value={value}
+        disabled={isRestricted}
+        className={`
+          flex flex-col items-center py-3 px-2 text-xs relative
+          ${isAvailable ? 'bg-background hover:bg-background/80 border border-border/50' : 'bg-muted/30 text-muted-foreground hover:bg-muted/40'}
+          ${isRestricted ? 'cursor-not-allowed' : ''}
+          ${className}
+        `}
+      >
+        <div className="relative">
+          <Icon className={`h-4 w-4 mb-1 ${isRestricted ? 'opacity-50' : ''}`} />
+          {isRestricted && (
+            <Crown className="absolute -top-1 -right-1 h-3 w-3 text-amber-500" />
+          )}
+        </div>
+        <span className={isRestricted ? 'opacity-50' : ''}>{label}</span>
+        {isRestricted && (
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-muted/20 to-transparent opacity-30" />
+        )}
+      </TabsTrigger>
+    );
+
+    if (isRestricted) {
+      return (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {triggerContent}
+          </TooltipTrigger>
+          <TooltipContent>
+            <div className="text-center">
+              <p className="font-medium">Advanced Plan Required</p>
+              <p className="text-xs text-muted-foreground">Upgrade to access {label}</p>
+            </div>
+          </TooltipContent>
+        </Tooltip>
+      );
+    }
+
+    return triggerContent;
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Simplified Header */}
@@ -152,116 +202,114 @@ const Dashboard = () => {
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
             {/* Mobile: Scrollable tabs */}
             <div className="md:hidden">
-              <TabsList className="flex w-full overflow-x-auto scrollbar-hide h-auto p-1 gap-1">
-                <TabsTrigger value="overview" className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0">
-                  <Plus className="h-4 w-4 mb-1" />
-                  <span>Overview</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="rides" 
-                  className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0"
-                >
-                  <Settings className="h-4 w-4 mb-1" />
-                  <span>Rides</span>
-                </TabsTrigger>
-                <TabsTrigger value="documents" className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0">
-                  <Shield className="h-4 w-4 mb-1" />
-                  <span>Docs</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="calendar" 
-                  className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0"
-                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-                >
-                  <CalendarIcon className="h-4 w-4 mb-1" />
-                  <span>Calendar</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="maintenance" 
-                  className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0"
-                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-                >
-                  <Wrench className="h-4 w-4 mb-1" />
-                  <span>Maintenance</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="notifications" 
-                  className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0"
-                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-                >
-                  <BellIcon className="h-4 w-4 mb-1" />
-                  <span>Alerts</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="reports" 
-                  className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0"
-                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-                >
-                  <FileText className="h-4 w-4 mb-1" />
-                  <span>Reports</span>
-                </TabsTrigger>
-                <TabsTrigger value="profile" className="flex flex-col items-center py-2 px-3 text-xs whitespace-nowrap flex-shrink-0">
-                  <User className="h-4 w-4 mb-1" />
-                  <span>Profile</span>
-                </TabsTrigger>
-              </TabsList>
+              <TooltipProvider>
+                <TabsList className="flex w-full overflow-x-auto scrollbar-hide h-auto p-1 gap-1 bg-muted/20">
+                  <PlanAwareTabTrigger 
+                    value="overview" 
+                    icon={Plus} 
+                    label="Overview"
+                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
+                  />
+                  <PlanAwareTabTrigger 
+                    value="rides" 
+                    icon={Settings} 
+                    label="Rides"
+                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
+                  />
+                  <PlanAwareTabTrigger 
+                    value="documents" 
+                    icon={Shield} 
+                    label="Docs"
+                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
+                  />
+                  <PlanAwareTabTrigger 
+                    value="calendar" 
+                    icon={CalendarIcon} 
+                    label="Calendar"
+                    requiresAdvanced={true}
+                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
+                  />
+                  <PlanAwareTabTrigger 
+                    value="maintenance" 
+                    icon={Wrench} 
+                    label="Maintenance"
+                    requiresAdvanced={true}
+                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
+                  />
+                  <PlanAwareTabTrigger 
+                    value="notifications" 
+                    icon={BellIcon} 
+                    label="Alerts"
+                    requiresAdvanced={true}
+                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
+                  />
+                  <PlanAwareTabTrigger 
+                    value="reports" 
+                    icon={FileText} 
+                    label="Reports"
+                    requiresAdvanced={true}
+                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
+                  />
+                  <PlanAwareTabTrigger 
+                    value="profile" 
+                    icon={User} 
+                    label="Profile"
+                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
+                  />
+                </TabsList>
+              </TooltipProvider>
             </div>
 
             {/* Desktop: Grid layout */}
             <div className="hidden md:block">
-              <TabsList className="grid w-full grid-cols-8 h-auto p-1">
-                <TabsTrigger value="overview" className="flex flex-col items-center py-3 px-2 text-xs">
-                  <Plus className="h-4 w-4 mb-1" />
-                  <span>Overview</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="rides" 
-                  className="flex flex-col items-center py-3 px-2 text-xs"
-                >
-                  <Settings className="h-4 w-4 mb-1" />
-                  <span>My Rides</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="calendar" 
-                  className="flex flex-col items-center py-3 px-2 text-xs"
-                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-                >
-                  <CalendarIcon className="h-4 w-4 mb-1" />
-                  <span>Calendar</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="maintenance" 
-                  className="flex flex-col items-center py-3 px-2 text-xs"
-                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-                >
-                  <Wrench className="h-4 w-4 mb-1" />
-                  <span>Maintenance</span>
-                </TabsTrigger>
-                <TabsTrigger value="documents" className="flex flex-col items-center py-3 px-2 text-xs">
-                  <Shield className="h-4 w-4 mb-1" />
-                  <span>Documents</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="notifications" 
-                  className="flex flex-col items-center py-3 px-2 text-xs"
-                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-                >
-                  <BellIcon className="h-4 w-4 mb-1" />
-                  <span>Notifications</span>
-                </TabsTrigger>
-                <TabsTrigger 
-                  value="reports" 
-                  className="flex flex-col items-center py-3 px-2 text-xs"
-                  disabled={subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic'}
-                >
-                  <FileText className="h-4 w-4 mb-1" />
-                  <span>Reports</span>
-                </TabsTrigger>
-                <TabsTrigger value="profile" className="flex flex-col items-center py-3 px-2 text-xs">
-                  <User className="h-4 w-4 mb-1" />
-                  <span>Profile</span>
-                </TabsTrigger>
-              </TabsList>
+              <TooltipProvider>
+                <TabsList className="grid w-full grid-cols-8 h-auto p-1 bg-muted/20">
+                  <PlanAwareTabTrigger 
+                    value="overview" 
+                    icon={Plus} 
+                    label="Overview"
+                  />
+                  <PlanAwareTabTrigger 
+                    value="rides" 
+                    icon={Settings} 
+                    label="My Rides"
+                  />
+                  <PlanAwareTabTrigger 
+                    value="calendar" 
+                    icon={CalendarIcon} 
+                    label="Calendar"
+                    requiresAdvanced={true}
+                  />
+                  <PlanAwareTabTrigger 
+                    value="maintenance" 
+                    icon={Wrench} 
+                    label="Maintenance"
+                    requiresAdvanced={true}
+                  />
+                  <PlanAwareTabTrigger 
+                    value="documents" 
+                    icon={Shield} 
+                    label="Documents"
+                  />
+                  <PlanAwareTabTrigger 
+                    value="notifications" 
+                    icon={BellIcon} 
+                    label="Notifications"
+                    requiresAdvanced={true}
+                  />
+                  <PlanAwareTabTrigger 
+                    value="reports" 
+                    icon={FileText} 
+                    label="Reports"
+                    requiresAdvanced={true}
+                  />
+                  <PlanAwareTabTrigger 
+                    value="profile" 
+                    icon={User} 
+                    label="Profile"
+                  />
+                </TabsList>
+              </TooltipProvider>
             </div>
 
             <TabsContent value="overview">
