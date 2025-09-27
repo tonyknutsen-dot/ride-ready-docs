@@ -11,7 +11,7 @@ const Pricing = () => {
   const basicFeatures = [
     "Document storage (up to 100 documents)",
     "Basic document types supported",
-    "Mobile app access",
+    "Web-based dashboard access",
     "Email support"
   ];
 
@@ -19,13 +19,13 @@ const Pricing = () => {
     "Unlimited document storage",
     "All document types supported", 
     "Technical bulletin access",
-    "Mobile app access",
+    "Advanced web dashboard",
     "Automated compliance reminders",
     "Council-ready document packages",
     "Priority 24/7 support",
     "Data backup & security",
     "Advanced reporting",
-    "API access"
+    "Multi-user collaboration"
   ];
 
   return (
