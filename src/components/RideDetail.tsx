@@ -8,6 +8,8 @@ import { Tables } from '@/integrations/supabase/types';
 import RideDocuments from './RideDocuments';
 import InspectionManager from './InspectionManager';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
+import { FeatureGate } from './FeatureGate';
+import { RestrictedFeatureCard } from './RestrictedFeatureCard';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -130,51 +132,77 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <CheckSquare className="h-5 w-5 text-accent" />
-                  <span>Inspections</span>
-                </CardTitle>
-                <CardDescription>
-                  Manage all inspection types
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-accent">0</div>
-                    <p className="text-sm text-muted-foreground">Checks completed today</p>
+            <FeatureGate 
+              requiredPlan="advanced" 
+              feature="Daily Inspections & Checks"
+              fallback={
+                <RestrictedFeatureCard
+                  title="Inspections"
+                  description="Manage all inspection types including daily checks, annual inspections, and NDT testing"
+                  icon={<CheckSquare className="h-5 w-5" />}
+                  requiredPlan="advanced"
+                />
+              }
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <CheckSquare className="h-5 w-5 text-accent" />
+                    <span>Inspections</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Manage all inspection types
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-accent">0</div>
+                      <p className="text-sm text-muted-foreground">Checks completed today</p>
+                    </div>
+                    <Button onClick={() => setActiveTab("inspections")} variant="outline" className="w-full">
+                      Start Inspections
+                    </Button>
                   </div>
-                  <Button onClick={() => setActiveTab("inspections")} variant="outline" className="w-full">
-                    Start Inspections
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </FeatureGate>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <AlertTriangle className="h-5 w-5 text-secondary-foreground" />
-                  <span>Technical Bulletins</span>
-                </CardTitle>
-                <CardDescription>
-                  View relevant safety bulletins
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-secondary-foreground">0</div>
-                    <p className="text-sm text-muted-foreground">New bulletins</p>
+            <FeatureGate 
+              requiredPlan="advanced" 
+              feature="Technical Bulletins"
+              fallback={
+                <RestrictedFeatureCard
+                  title="Technical Bulletins"
+                  description="Access safety bulletins and technical notices relevant to your ride category"
+                  icon={<AlertTriangle className="h-5 w-5" />}
+                  requiredPlan="advanced"
+                />
+              }
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <AlertTriangle className="h-5 w-5 text-secondary-foreground" />
+                    <span>Technical Bulletins</span>
+                  </CardTitle>
+                  <CardDescription>
+                    View relevant safety bulletins
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-secondary-foreground">0</div>
+                      <p className="text-sm text-muted-foreground">New bulletins</p>
+                    </div>
+                    <Button onClick={() => setActiveTab("bulletins")} variant="secondary" className="w-full">
+                      View Bulletins
+                    </Button>
                   </div>
-                  <Button onClick={() => setActiveTab("bulletins")} variant="secondary" className="w-full">
-                    View Bulletins
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </FeatureGate>
           </div>
         </TabsContent>
 
@@ -183,30 +211,34 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
         </TabsContent>
 
         <TabsContent value="inspections">
-          <InspectionManager ride={ride} />
+          <FeatureGate requiredPlan="advanced" feature="Daily Inspections & Checks">
+            <InspectionManager ride={ride} />
+          </FeatureGate>
         </TabsContent>
 
-        <TabsContent value="bulletins" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <AlertTriangle className="h-5 w-5" />
-                <span>Technical Bulletins for {ride.ride_categories.name}</span>
-              </CardTitle>
-              <CardDescription>
-                Safety bulletins and technical notices relevant to this ride category
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <AlertTriangle className="mx-auto h-16 w-16 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mt-4">No bulletins available</h3>
-                <p className="text-muted-foreground">
-                  There are currently no technical bulletins for this ride category.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="bulletins">
+          <FeatureGate requiredPlan="advanced" feature="Technical Bulletins">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <AlertTriangle className="h-5 w-5" />
+                  <span>Technical Bulletins for {ride.ride_categories.name}</span>
+                </CardTitle>
+                <CardDescription>
+                  Safety bulletins and technical notices relevant to this ride category
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <AlertTriangle className="mx-auto h-16 w-16 text-muted-foreground" />
+                  <h3 className="text-lg font-semibold mt-4">No bulletins available</h3>
+                  <p className="text-muted-foreground">
+                    There are currently no technical bulletins for this ride category.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </FeatureGate>
         </TabsContent>
       </Tabs>
     </div>
