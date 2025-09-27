@@ -16,6 +16,7 @@ import NotificationCenter from '@/components/NotificationCenter';
 import MaintenanceTracker from '@/components/MaintenanceTracker';
 import ReportGenerator from '@/components/ReportGenerator';
 import ProfileSetup from '@/components/ProfileSetup';
+import ProfileEdit from '@/components/ProfileEdit';
 import { TrialStatus } from '@/components/TrialStatus';
 import { PlanSelection } from '@/components/PlanSelection';
 import { FeatureGate } from '@/components/FeatureGate';
@@ -30,6 +31,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
   const [showPlanSelection, setShowPlanSelection] = useState(false);
+  const [showProfileEdit, setShowProfileEdit] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -357,30 +359,46 @@ const Dashboard = () => {
               {profile && (
                 <Card>
                   <CardHeader>
-                    <CardTitle className="flex items-center space-x-2">
-                      <Users className="h-5 w-5" />
-                      <span>Profile Information</span>
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <Users className="h-5 w-5" />
+                        <span>Profile Information</span>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowProfileEdit(!showProfileEdit)}
+                      >
+                        {showProfileEdit ? 'Cancel' : 'Edit Profile'}
+                      </Button>
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <span className="font-medium">Company:</span>{' '}
-                        {profile.company_name || 'Not set'}
+                    {!showProfileEdit ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Company:</span>{' '}
+                          {profile.company_name || 'Not set'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Controller:</span>{' '}
+                          {profile.controller_name || 'Not set'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Showmen:</span>{' '}
+                          {profile.showmen_name || 'Not set'}
+                        </div>
+                        <div>
+                          <span className="font-medium">Address:</span>{' '}
+                          {profile.address || 'Not set'}
+                        </div>
                       </div>
-                      <div>
-                        <span className="font-medium">Controller:</span>{' '}
-                        {profile.controller_name || 'Not set'}
-                      </div>
-                      <div>
-                        <span className="font-medium">Showmen:</span>{' '}
-                        {profile.showmen_name || 'Not set'}
-                      </div>
-                      <div>
-                        <span className="font-medium">Address:</span>{' '}
-                        {profile.address || 'Not set'}
-                      </div>
-                    </div>
+                    ) : (
+                      <ProfileEdit profile={profile} onComplete={() => {
+                        setShowProfileEdit(false);
+                        loadProfile();
+                      }} />
+                    )}
                   </CardContent>
                 </Card>
               )}
