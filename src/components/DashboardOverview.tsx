@@ -48,10 +48,10 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
 
   useEffect(() => {
-    if (user) {
+    if (user && subscription) {
       loadDashboardData();
     }
-  }, [user]);
+  }, [user, subscription?.subscriptionStatus]);
 
   const loadDashboardData = async () => {
     try {
@@ -341,9 +341,20 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
       {/* Recent Activity */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-5 w-5" />
-            Recent Activity
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5" />
+              Recent Activity
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={loadDashboardData}
+              disabled={loading}
+              className="h-8 px-2"
+            >
+              <TrendingUp className="h-4 w-4" />
+            </Button>
           </CardTitle>
           <CardDescription>
             {isAdvancedUser ? 'Latest inspection checks and updates' : 'Document uploads and updates'}
