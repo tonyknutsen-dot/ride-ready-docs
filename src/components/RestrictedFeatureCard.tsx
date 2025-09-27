@@ -55,7 +55,7 @@ export const RestrictedFeatureCard: React.FC<RestrictedFeatureCardProps> = ({
               <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
                 <div className="text-center space-y-3">
                   <div className="text-3xl font-bold text-primary">
-                    £39<span className="text-base text-muted-foreground">/month</span>
+                    £27.99<span className="text-base text-muted-foreground">/month</span>
                   </div>
                   <h3 className="text-lg font-semibold">Advanced Plan</h3>
                   

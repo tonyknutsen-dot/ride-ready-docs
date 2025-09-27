@@ -51,7 +51,7 @@ const Pricing = () => {
                 Basic Plan
               </CardTitle>
               <div className="mb-4">
-                <span className="text-4xl font-bold text-primary">£19</span>
+                <span className="text-4xl font-bold text-primary">£12.99</span>
                 <span className="text-xl text-muted-foreground">/month</span>
               </div>
               <p className="text-muted-foreground">
@@ -96,7 +96,7 @@ const Pricing = () => {
                 Advanced Plan
               </CardTitle>
               <div className="mb-4">
-                <span className="text-4xl font-bold text-primary">£39</span>
+                <span className="text-4xl font-bold text-primary">£27.99</span>
                 <span className="text-xl text-muted-foreground">/month</span>
               </div>
               <p className="text-muted-foreground">
