@@ -61,7 +61,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-2xl font-bold">$9.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
+            <div className="text-2xl font-bold">£12.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
             
             <ul className="space-y-2">
               {basicFeatures.map((feature, index) => (
@@ -98,7 +98,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-2xl font-bold">$29.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
+            <div className="text-2xl font-bold">£27.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
             
             <ul className="space-y-2">
               {advancedFeatures.map((feature, index) => (
