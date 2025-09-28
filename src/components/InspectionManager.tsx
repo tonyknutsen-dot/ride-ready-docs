@@ -5,6 +5,9 @@ import { Clock, Calendar, FileText, CalendarDays, TestTube, Building } from 'luc
 import { Tables } from '@/integrations/supabase/types';
 import RideDailyChecks from './RideDailyChecks';
 import DailyCheckTemplateManager from './DailyCheckTemplateManager';
+import MonthlyCheckTemplateManager from './MonthlyCheckTemplateManager';
+import YearlyCheckTemplateManager from './YearlyCheckTemplateManager';
+import InspectionChecklist from './InspectionChecklist';
 import NDTScheduleManager from './NDTScheduleManager';
 import AnnualInspectionManager from './AnnualInspectionManager';
 
@@ -84,31 +87,59 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         </TabsContent>
 
         <TabsContent value="monthly">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-8">
-                <Calendar className="mx-auto h-16 w-16 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mt-4">Monthly Inspections</h3>
-                <p className="text-muted-foreground">
-                  Monthly inspection functionality coming soon
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Calendar className="h-5 w-5" />
+                  <span>Monthly Safety Checks</span>
+                </CardTitle>
+                <CardDescription>
+                  Perform and manage monthly safety inspections for this ride
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Tabs defaultValue="perform" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="perform">Perform Checks</TabsTrigger>
+                <TabsTrigger value="templates">Manage Templates</TabsTrigger>
+              </TabsList>
+              <TabsContent value="perform">
+                <InspectionChecklist ride={ride} frequency="monthly" />
+              </TabsContent>
+              <TabsContent value="templates">
+                <MonthlyCheckTemplateManager ride={ride} />
+              </TabsContent>
+            </Tabs>
+          </div>
         </TabsContent>
 
         <TabsContent value="annual">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="text-center py-8">
-                <CalendarDays className="mx-auto h-16 w-16 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mt-4">Annual Inspections</h3>
-                <p className="text-muted-foreground">
-                  Annual inspection functionality coming soon
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <CalendarDays className="h-5 w-5" />
+                  <span>Yearly Safety Checks</span>
+                </CardTitle>
+                <CardDescription>
+                  Perform and manage yearly safety inspections for this ride
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Tabs defaultValue="perform" className="space-y-4">  
+              <TabsList>
+                <TabsTrigger value="perform">Perform Checks</TabsTrigger>
+                <TabsTrigger value="templates">Manage Templates</TabsTrigger>
+              </TabsList>
+              <TabsContent value="perform">
+                <InspectionChecklist ride={ride} frequency="yearly" />
+              </TabsContent>
+              <TabsContent value="templates">
+                <YearlyCheckTemplateManager ride={ride} />
+              </TabsContent>
+            </Tabs>
+          </div>
         </TabsContent>
 
         <TabsContent value="ndt">

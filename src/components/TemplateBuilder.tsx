@@ -30,6 +30,7 @@ type TemplateItem = Tables<'daily_check_template_items'>;
 interface TemplateBuilderProps {
   ride: Ride;
   template?: Template | null;
+  frequency?: string;
   onSuccess: () => void;
   onCancel: () => void;
 }
@@ -43,7 +44,7 @@ interface BuilderItem {
   isNew?: boolean;
 }
 
-const TemplateBuilder = ({ ride, template, onSuccess, onCancel }: TemplateBuilderProps) => {
+const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCancel }: TemplateBuilderProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [templateName, setTemplateName] = useState(template?.template_name || '');
@@ -221,6 +222,8 @@ const TemplateBuilder = ({ ride, template, onSuccess, onCancel }: TemplateBuilde
             user_id: user?.id,
             ride_id: ride.id,
             template_name: templateName.trim(),
+            check_frequency: frequency,
+            template_type: frequency,
             is_active: false,
           })
           .select()

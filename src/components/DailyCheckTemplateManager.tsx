@@ -190,15 +190,16 @@ const DailyCheckTemplateManager = ({ ride }: DailyCheckTemplateManagerProps) => 
 
   if (showBuilder) {
     return (
-      <TemplateBuilder
-        ride={ride}
-        template={editingTemplate}
-        onSuccess={handleTemplateSuccess}
-        onCancel={() => {
-          setShowBuilder(false);
-          setEditingTemplate(null);
-        }}
-      />
+        <TemplateBuilder
+          ride={ride}
+          template={editingTemplate}
+          frequency="daily"
+          onSuccess={handleTemplateSuccess}
+          onCancel={() => {
+            setShowBuilder(false);
+            setEditingTemplate(null);
+          }}
+        />
     );
   }
 

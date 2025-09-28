@@ -342,38 +342,50 @@ export type Database = {
         Row: {
           check_date: string
           check_frequency: string
+          compliance_officer: string | null
           created_at: string
+          environment_notes: string | null
           id: string
           inspector_name: string
           notes: string | null
           ride_id: string
+          signature_data: string | null
           status: string
           template_id: string
           user_id: string
+          weather_conditions: string | null
         }
         Insert: {
           check_date?: string
           check_frequency?: string
+          compliance_officer?: string | null
           created_at?: string
+          environment_notes?: string | null
           id?: string
           inspector_name: string
           notes?: string | null
           ride_id: string
+          signature_data?: string | null
           status: string
           template_id: string
           user_id: string
+          weather_conditions?: string | null
         }
         Update: {
           check_date?: string
           check_frequency?: string
+          compliance_officer?: string | null
           created_at?: string
+          environment_notes?: string | null
           id?: string
           inspector_name?: string
           notes?: string | null
           ride_id?: string
+          signature_data?: string | null
           status?: string
           template_id?: string
           user_id?: string
+          weather_conditions?: string | null
         }
         Relationships: [
           {
