@@ -9,9 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import RideManagement from '@/components/RideManagement';
-import RideDocumentManager from '@/components/RideDocumentManager';
-import RideInspectionManager from '@/components/RideInspectionManager';
-import RideMaintenanceManager from '@/components/RideMaintenanceManager';
+import RideWorkspace from '@/components/RideWorkspace';
 import DashboardOverview from '@/components/DashboardOverview';
 import CalendarView from '@/components/CalendarView';
 import NotificationCenter from '@/components/NotificationCenter';
@@ -208,12 +206,12 @@ const Dashboard = () => {
                 <p className="text-xs text-muted-foreground truncate">Add rides, stalls & equipment</p>
               </div>
               <Button 
-                onClick={() => setActiveTab('rides')}
+                onClick={() => setActiveTab('workspace')}
                 size="sm"
                 className="ml-3 flex-shrink-0"
               >
-                <Plus className="h-3 w-3 mr-1" />
-                Add
+                <Wrench className="h-3 w-3 mr-1" />
+                Open
               </Button>
             </div>
           </div>
@@ -236,26 +234,14 @@ const Dashboard = () => {
                     <PlanAwareTabTrigger 
                       value="rides" 
                       icon={Settings} 
-                      label="Rides"
-                      className="flex-shrink-0 px-3 py-2 text-xs font-medium bg-primary/10 text-primary"
-                    />
-                    <PlanAwareTabTrigger 
-                      value="inspections" 
-                      icon={CheckSquare} 
-                      label="Checks"
+                      label="Manage"
                       className="flex-shrink-0 px-3 py-2 text-xs"
                     />
                     <PlanAwareTabTrigger 
-                      value="maintenance" 
+                      value="workspace" 
                       icon={Wrench} 
-                      label="Service"
-                      className="flex-shrink-0 px-3 py-2 text-xs"
-                    />
-                    <PlanAwareTabTrigger 
-                      value="documents" 
-                      icon={Shield} 
-                      label="Docs"
-                      className="flex-shrink-0 px-3 py-2 text-xs"
+                      label="Workspace"
+                      className="flex-shrink-0 px-3 py-2 text-xs font-medium bg-primary/10 text-primary"
                     />
                     <PlanAwareTabTrigger 
                       value="profile" 
@@ -280,7 +266,12 @@ const Dashboard = () => {
                   <PlanAwareTabTrigger 
                     value="rides" 
                     icon={Settings} 
-                    label="My Rides"
+                    label="Manage Rides"
+                  />
+                  <PlanAwareTabTrigger 
+                    value="workspace" 
+                    icon={Wrench} 
+                    label="Workspace"
                   />
                   <PlanAwareTabTrigger 
                     value="calendar" 
@@ -288,21 +279,6 @@ const Dashboard = () => {
                     label="Calendar"
                     requiresAdvanced={true}
                   />
-                    <PlanAwareTabTrigger 
-                      value="inspections" 
-                      icon={CheckSquare} 
-                      label="Inspections"
-                    />
-                    <PlanAwareTabTrigger 
-                      value="maintenance" 
-                      icon={Wrench} 
-                      label="Maintenance"
-                    />
-                    <PlanAwareTabTrigger 
-                      value="documents" 
-                      icon={Shield} 
-                      label="Documents"
-                    />
                   <PlanAwareTabTrigger 
                     value="notifications" 
                     icon={BellIcon} 
@@ -340,27 +316,15 @@ const Dashboard = () => {
               </FeatureGate>
             </TabsContent>
 
+            <TabsContent value="workspace">
+              <FeatureGate requiredPlan="basic" feature="Equipment Workspace">
+                <RideWorkspace onAddRide={() => setActiveTab('rides')} />
+              </FeatureGate>
+            </TabsContent>
+
             <TabsContent value="calendar">
               <FeatureGate requiredPlan="advanced" feature="Calendar & Scheduling">
                 <CalendarView />
-              </FeatureGate>
-            </TabsContent>
-
-            <TabsContent value="inspections">
-              <FeatureGate requiredPlan="basic" feature="Inspection Management">
-                <RideInspectionManager />
-              </FeatureGate>
-            </TabsContent>
-
-            <TabsContent value="maintenance">
-              <FeatureGate requiredPlan="basic" feature="Maintenance Management">
-                <RideMaintenanceManager />
-              </FeatureGate>
-            </TabsContent>
-
-            <TabsContent value="documents">
-              <FeatureGate requiredPlan="basic" feature="Document Management">
-                <RideDocumentManager />
               </FeatureGate>
             </TabsContent>
 
