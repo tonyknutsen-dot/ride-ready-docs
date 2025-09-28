@@ -240,69 +240,83 @@ const RideManagement = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {rides.map((ride) => (
-            <Card key={ride.id} className="hover:shadow-elegant transition-shadow cursor-pointer">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">{ride.ride_name}</CardTitle>
-                  <Badge variant="secondary">{ride.ride_categories.name}</Badge>
+            <Card key={ride.id} className="hover:shadow-md transition-all cursor-pointer border-muted/50">
+              <CardHeader className="pb-3">
+                <div className="flex flex-col space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="text-base leading-tight flex-1 min-w-0 truncate">
+                      {ride.ride_name}
+                    </CardTitle>
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20 flex-shrink-0"
+                    >
+                      {ride.ride_categories.name}
+                    </Badge>
+                  </div>
+                  
+                  {/* Simplified details for mobile */}
+                  <div className="text-xs text-muted-foreground space-y-0.5">
+                    {ride.manufacturer && (
+                      <div className="truncate">Make: {ride.manufacturer}</div>
+                    )}
+                    {ride.year_manufactured && (
+                      <div>Year: {ride.year_manufactured}</div>
+                    )}
+                  </div>
                 </div>
-                <CardDescription>
-                  {ride.manufacturer && (
-                    <span className="block">Manufacturer: {ride.manufacturer}</span>
-                  )}
-                  {ride.year_manufactured && (
-                    <span className="block">Year: {ride.year_manufactured}</span>
-                  )}
-                  {ride.serial_number && (
-                    <span className="block text-xs text-muted-foreground">
-                      Serial: {ride.serial_number}
-                    </span>
-                  )}
-                </CardDescription>
               </CardHeader>
-              <CardContent>
+              
+              <CardContent className="pt-0">
                 <div className="space-y-3">
-                  <div className="grid grid-cols-3 gap-2 text-center">
-                    <div className="p-2 rounded bg-muted">
-                      <FileText className="h-4 w-4 mx-auto text-primary" />
-                      <p className="text-xs mt-1">
-                        {rideStats[ride.id]?.docCount ?? 0} Docs
+                  {/* Clean 2-column stats for mobile */}
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="p-2 rounded-md bg-muted/50 text-center">
+                      <FileText className="h-3 w-3 mx-auto text-primary mb-1" />
+                      <p className="text-xs font-medium">
+                        {rideStats[ride.id]?.docCount ?? 0}
                       </p>
+                      <p className="text-[10px] text-muted-foreground">Documents</p>
                     </div>
-                    <div className="p-2 rounded bg-muted">
-                      <CheckSquare className="h-4 w-4 mx-auto text-accent" />
-                      <p className="text-xs mt-1">
-                        {rideStats[ride.id]?.checkCount ?? 0} Checks
+                    <div className="p-2 rounded-md bg-muted/50 text-center">
+                      <CheckSquare className="h-3 w-3 mx-auto text-accent mb-1" />
+                      <p className="text-xs font-medium">
+                        {rideStats[ride.id]?.checkCount ?? 0}
                       </p>
-                    </div>
-                    <div className="p-2 rounded bg-muted">
-                      <Calendar className="h-4 w-4 mx-auto text-secondary-foreground" />
-                      <p className="text-xs mt-1">
-                        {rideStats[ride.id]?.nextDue 
-                          ? new Date(rideStats[ride.id].nextDue!).toLocaleDateString('en-GB', { 
-                              day: '2-digit', 
-                              month: 'short' 
-                            })
-                          : 'No Due'
-                        }
-                      </p>
+                      <p className="text-[10px] text-muted-foreground">Checks</p>
                     </div>
                   </div>
+
+                  {/* Next due - if exists */}
+                  {rideStats[ride.id]?.nextDue && (
+                    <div className="text-center p-2 rounded-md bg-amber-50 border border-amber-200">
+                      <p className="text-xs text-amber-700 font-medium">
+                        Due: {new Date(rideStats[ride.id].nextDue!).toLocaleDateString('en-GB', { 
+                          day: '2-digit', 
+                          month: 'short',
+                          year: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Simplified action buttons */}
                   <div className="flex gap-2">
                     <Button 
                       onClick={() => setSelectedRide(ride)}
-                      className="flex-1"
+                      className="flex-1 text-xs"
                       variant="outline"
+                      size="sm"
                     >
                       Manage
                     </Button>
                     <SendDocumentsDialog 
                       ride={ride} 
                       trigger={
-                        <Button variant="outline" size="sm">
-                          <Mail className="h-4 w-4" />
+                        <Button variant="ghost" size="sm" className="px-2">
+                          <Mail className="h-3 w-3" />
                         </Button>
                       }
                     />

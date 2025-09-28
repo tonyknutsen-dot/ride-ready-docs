@@ -104,22 +104,18 @@ const Dashboard = () => {
         value={value}
         disabled={isRestricted}
         className={`
-          flex flex-col items-center py-3 px-2 text-xs relative
-          ${isAvailable ? 'bg-background hover:bg-background/80 border border-border/50' : 'bg-muted/30 text-muted-foreground hover:bg-muted/40'}
-          ${isRestricted ? 'cursor-not-allowed' : ''}
+          flex flex-col items-center justify-center py-2 px-3 text-xs relative min-h-[3rem]
+          ${isAvailable ? 'hover:bg-accent/50' : 'opacity-60 cursor-not-allowed'}
           ${className}
         `}
       >
-        <div className="relative">
+        <div className="relative flex flex-col items-center">
           <Icon className={`h-4 w-4 mb-1 ${isRestricted ? 'opacity-50' : ''}`} />
+          <span className={`${isRestricted ? 'opacity-50' : ''} font-medium`}>{label}</span>
           {isRestricted && (
-            <Crown className="absolute -top-1 -right-1 h-3 w-3 text-amber-500" />
+            <Crown className="absolute -top-1 -right-3 h-3 w-3 text-amber-500" />
           )}
         </div>
-        <span className={isRestricted ? 'opacity-50' : ''}>{label}</span>
-        {isRestricted && (
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-muted/20 to-transparent opacity-30" />
-        )}
       </TabsTrigger>
     );
 
@@ -129,10 +125,10 @@ const Dashboard = () => {
           <TooltipTrigger asChild>
             {triggerContent}
           </TooltipTrigger>
-          <TooltipContent>
+          <TooltipContent side="bottom" className="text-xs">
             <div className="text-center">
               <p className="font-medium">Advanced Plan Required</p>
-              <p className="text-xs text-muted-foreground">Upgrade to access {label}</p>
+              <p className="text-muted-foreground">Upgrade to access {label}</p>
             </div>
           </TooltipContent>
         </Tooltip>
@@ -198,118 +194,62 @@ const Dashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-4 py-4 md:py-6">
+      <main className="container mx-auto px-3 py-3 md:px-4 md:py-6">
         <TrialStatus onUpgrade={() => setShowPlanSelection(true)} />
         
-        {/* Mobile: Prominent ride management button */}
+        {/* Mobile: Clean ride management section */}
         <div className="block md:hidden mb-4">
-          <Card className="bg-primary/5 border-primary/20">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-semibold text-primary">Manage Your Rides</h3>
-                  <p className="text-xs text-muted-foreground">Add and manage rides, stalls & equipment</p>
-                </div>
-                <Button 
-                  onClick={() => setActiveTab('rides')}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90"
-                >
-                  <Plus className="h-4 w-4 mr-1" />
-                  Rides
-                </Button>
+          <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 border border-primary/20">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-primary text-sm">Your Equipment</h3>
+                <p className="text-xs text-muted-foreground truncate">Add rides, stalls & equipment</p>
               </div>
-            </CardContent>
-          </Card>
+              <Button 
+                onClick={() => setActiveTab('rides')}
+                size="sm"
+                className="ml-3 flex-shrink-0"
+              >
+                <Plus className="h-3 w-3 mr-1" />
+                Add
+              </Button>
+            </div>
+          </div>
         </div>
         
-        <div className="space-y-4 md:space-y-6">
+        <div className="space-y-3 md:space-y-6">
           {/* Content Area - No duplicate titles */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-            {/* Mobile: Scrollable tabs with better spacing */}
+            {/* Mobile: Clean scrollable tabs */}
             <div className="md:hidden">
               <TooltipProvider>
                 <div className="overflow-x-auto scrollbar-hide">
-                  <TabsList className="flex w-max min-w-full gap-2 p-1 bg-muted/20">
+                  <TabsList className="flex w-max gap-1 p-1 bg-muted/20 h-auto">
                     <PlanAwareTabTrigger 
                       value="overview" 
                       icon={Plus} 
-                      label="Overview"
-                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
+                      label="Home"
+                      className="flex-shrink-0 px-3 py-2 text-xs"
                     />
                     <PlanAwareTabTrigger 
                       value="rides" 
                       icon={Settings} 
-                      label="My Rides"
-                      className="whitespace-nowrap flex-shrink-0 min-w-[70px] bg-primary/10"
+                      label="Rides"
+                      className="flex-shrink-0 px-3 py-2 text-xs font-medium bg-primary/10 text-primary"
                     />
                     <PlanAwareTabTrigger 
                       value="documents" 
                       icon={Shield} 
                       label="Docs"
-                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
-                    />
-                    <PlanAwareTabTrigger 
-                      value="calendar" 
-                      icon={CalendarIcon} 
-                      label="Calendar"
-                      requiresAdvanced={true}
-                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
-                    />
-                    <PlanAwareTabTrigger 
-                      value="maintenance" 
-                      icon={Wrench} 
-                      label="Maintenance"
-                      requiresAdvanced={true}
-                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
-                    />
-                    <PlanAwareTabTrigger 
-                      value="notifications" 
-                      icon={BellIcon} 
-                      label="Alerts"
-                      requiresAdvanced={true}
-                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
-                    />
-                    <PlanAwareTabTrigger 
-                      value="reports" 
-                      icon={FileText} 
-                      label="Reports"
-                      requiresAdvanced={true}
-                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
-                    />
-                    <PlanAwareTabTrigger 
-                      value="bulletins" 
-                      icon={AlertTriangle} 
-                      label="Bulletins"
-                      requiresAdvanced={true}
-                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
+                      className="flex-shrink-0 px-3 py-2 text-xs"
                     />
                     <PlanAwareTabTrigger 
                       value="profile" 
                       icon={User} 
                       label="Profile"
-                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
+                      className="flex-shrink-0 px-3 py-2 text-xs"
                     />
                   </TabsList>
-                </div>
-                {/* Mobile quick actions for key features */}
-                <div className="mt-2 flex gap-2 px-1">
-                  <Button 
-                    size="sm" 
-                    onClick={() => setActiveTab('rides')}
-                    className="flex-1 text-xs"
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Add Ride
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => setActiveTab('documents')}
-                    className="flex-1 text-xs"
-                  >
-                    <FileText className="h-3 w-3 mr-1" />
-                    Documents
-                  </Button>
                 </div>
               </TooltipProvider>
             </div>

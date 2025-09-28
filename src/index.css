@@ -138,7 +138,7 @@ All colors MUST be HSL.
     display: none;
   }
 
-  /* Mobile touch improvements */
+  /* Mobile touch improvements and UI optimizations */
   @media (max-width: 768px) {
     .touch-pan-x {
       touch-action: pan-x;
@@ -146,6 +146,18 @@ All colors MUST be HSL.
     
     .touch-manipulation {
       touch-action: manipulation;
+    }
+    
+    /* Better mobile container spacing */
+    .container {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+    
+    /* Improve mobile tab scrolling */
+    .mobile-tabs {
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
     }
   }
 }
