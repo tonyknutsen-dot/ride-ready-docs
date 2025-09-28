@@ -78,21 +78,22 @@ serve(async (req) => {
 
     console.log(`Found ${bulletins.length} bulletins to process`);
 
-    // Get default category (first one available)
+    // Get all categories for smart matching
     const { data: categories } = await supabase
       .from('ride_categories')
-      .select('id')
-      .limit(1);
+      .select('*')
+      .order('name');
 
-    const defaultCategoryId = categories?.[0]?.id;
-
-    if (!defaultCategoryId) {
+    if (!categories || categories.length === 0) {
       throw new Error('No ride categories found');
     }
 
-    // Store bulletins in database
+    // Store bulletins in database with smart categorization
     const storedBulletins = [];
     for (const bulletin of bulletins) {
+      // Try to find best category match, fallback to first category
+      const bestCategoryId = getBestCategoryForBulletin(bulletin, categories) || categories[0].id;
+      
       const { data, error } = await supabase
         .from('technical_bulletins')
         .upsert({
@@ -100,7 +101,7 @@ serve(async (req) => {
           content: bulletin.content,
           bulletin_number: bulletin.bulletinNumber,
           priority: bulletin.priority || 'medium',
-          category_id: defaultCategoryId,
+          category_id: bestCategoryId,
           issue_date: new Date().toISOString().split('T')[0]
         }, {
           onConflict: 'bulletin_number',
@@ -211,4 +212,63 @@ function parseRidesDbBulletins(markdown: string): Bulletin[] {
   });
   
   return bulletins;
+}
+
+/**
+ * Get the best category ID for a bulletin based on its content
+ */
+function getBestCategoryForBulletin(
+  bulletin: { title: string; content: string }, 
+  categories: any[]
+): string | null {
+  const content = `${bulletin.title} ${bulletin.content}`.toLowerCase();
+  
+  // Ride type keywords mapping
+  const rideTypeKeywords: Record<string, string[]> = {
+    'chair-o-plane': ['chair o plane', 'chair-o-plane', 'chairoplane', 'flying chairs', 'chair swing', 'wave swinger'],
+    'ferris-wheel': ['ferris wheel', 'big wheel', 'observation wheel', 'giant wheel'],
+    'carousel': ['carousel', 'merry-go-round', 'roundabout', 'horses'],
+    'roller-coaster': ['roller coaster', 'coaster', 'rollercoaster'],
+    'bumper-cars': ['bumper cars', 'dodgems', 'bumper car', 'dodgem'],
+    'helter-skelter': ['helter skelter', 'slide', 'spiral slide'],
+    'waltzers': ['waltzer', 'waltzers', 'spinning ride'],
+    'pirate-ship': ['pirate ship', 'pendulum', 'swinging ship'],
+    'spinning-ride': ['spinning', 'centrifuge', 'gravitron', 'rotor'],
+    'drop-tower': ['drop tower', 'drop ride', 'free fall', 'freefall'],
+    'swinging-ride': ['swing', 'swinging', 'pendulum'],
+    'dark-ride': ['dark ride', 'ghost train', 'haunted house'],
+    'water-ride': ['log flume', 'water ride', 'splash', 'rapids'],
+    'inflatable': ['inflatable', 'bouncy castle', 'bounce', 'air bag'],
+    'go-kart': ['go kart', 'go-kart', 'karting', 'racing'],
+    'train-ride': ['train', 'railway', 'locomotive'],
+    'playground': ['playground', 'climbing frame', 'play area', 'soft play']
+  };
+
+  // First, try direct category name matching
+  for (const category of categories) {
+    const categoryName = category.name.toLowerCase();
+    if (content.includes(categoryName)) {
+      return category.id;
+    }
+  }
+
+  // Then try keyword matching
+  for (const [rideType, keywords] of Object.entries(rideTypeKeywords)) {
+    for (const keyword of keywords) {
+      if (content.includes(keyword)) {
+        // Try to find a category that matches this ride type
+        for (const category of categories) {
+          const categoryName = category.name.toLowerCase();
+          if (categoryName.includes(rideType.replace('-', ' ')) || 
+              categoryName.includes(rideType) ||
+              keywords.some(k => categoryName.includes(k))) {
+            return category.id;
+          }
+        }
+      }
+    }
+  }
+
+  // Return null to use default
+  return null;
 }
