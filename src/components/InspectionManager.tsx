@@ -9,7 +9,7 @@ import MonthlyCheckTemplateManager from './MonthlyCheckTemplateManager';
 import YearlyCheckTemplateManager from './YearlyCheckTemplateManager';
 import InspectionChecklist from './InspectionChecklist';
 import NDTScheduleManager from './NDTScheduleManager';
-import AnnualInspectionManager from './AnnualInspectionManager';
+import InspectionScheduleManager from './InspectionScheduleManager';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -46,7 +46,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
           </TabsTrigger>
           <TabsTrigger value="annual" className="flex items-center space-x-2">
             <Building className="h-4 w-4" />
-            <span>In-Service</span>
+            <span>Schedules</span>
           </TabsTrigger>
           <TabsTrigger value="ndt" className="flex items-center space-x-2">
             <TestTube className="h-4 w-4" />
@@ -120,14 +120,14 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Building className="h-5 w-5" />
-                  <span>In-Service Inspection Reports</span>
+                  <span>Inspection Schedules</span>
                 </CardTitle>
                 <CardDescription>
-                  Manage annual in-service inspection reports issued by independent inspection bodies. Successful inspections result in a Declaration of Compliance (DOC).
+                  Track inspection due dates and manage advance notifications for all inspection types (in-service, electrical, NDT, etc.)
                 </CardDescription>
               </CardHeader>
             </Card>
-            <AnnualInspectionManager ride={ride} />
+            <InspectionScheduleManager ride={ride} />
           </div>
         </TabsContent>
 

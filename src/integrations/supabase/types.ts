@@ -404,6 +404,51 @@ export type Database = {
           },
         ]
       }
+      inspection_schedules: {
+        Row: {
+          advance_notice_days: number
+          created_at: string
+          due_date: string
+          id: string
+          inspection_name: string
+          inspection_type: string
+          is_active: boolean | null
+          last_notification_sent: string | null
+          notes: string | null
+          ride_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          advance_notice_days?: number
+          created_at?: string
+          due_date: string
+          id?: string
+          inspection_name: string
+          inspection_type: string
+          is_active?: boolean | null
+          last_notification_sent?: string | null
+          notes?: string | null
+          ride_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          advance_notice_days?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          inspection_name?: string
+          inspection_type?: string
+          is_active?: boolean | null
+          last_notification_sent?: string | null
+          notes?: string | null
+          ride_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       maintenance_records: {
         Row: {
           cost: number | null
