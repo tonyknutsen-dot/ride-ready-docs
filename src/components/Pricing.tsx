@@ -9,10 +9,10 @@ const Pricing = () => {
   const { user } = useAuth();
 
   const basicFeatures = [
-    "Ride management & setup",
+    "Equipment management & setup",
     "Document storage (up to 100 documents)",
     "Basic document types supported",
-    "Organize documents by ride",
+    "Organize documents by equipment",
     "Web-based dashboard access",
     "Email support"
   ];

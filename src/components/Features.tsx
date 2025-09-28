@@ -6,7 +6,7 @@ const Features = () => {
     {
       icon: <FileText className="h-12 w-12 text-primary" />,
       title: "All Documents in One Place",
-      description: "Risk assessments, method statements, insurance certificates, technical bulletins - everything organized by ride and easily accessible.",
+      description: "Risk assessments, method statements, insurance certificates, technical bulletins - everything organized by attraction and easily accessible.",
       items: ["Risk Assessments", "Method Statements", "Build Up/Down Procedures", "Manual Handling Documents"]
     },
     {
@@ -18,8 +18,8 @@ const Features = () => {
     {
       icon: <Gauge className="h-12 w-12 text-primary" />,
       title: "Technical Bulletins",
-      description: "Access the latest technical bulletins for your specific ride types. Stay informed about updates and modifications.",
-      items: ["Chair-o-Plane Bulletins", "Ride-Specific Updates", "Manufacturer Notices", "Safety Alerts"]
+      description: "Access the latest technical bulletins for your specific attraction types. Stay informed about updates and modifications.",
+      items: ["Chair-o-Plane Bulletins", "Equipment-Specific Updates", "Manufacturer Notices", "Safety Alerts"]
     },
     {
       icon: <Users className="h-12 w-12 text-primary" />,
