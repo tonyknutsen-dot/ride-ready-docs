@@ -241,7 +241,9 @@ function getBestCategoryForBulletin(
     'inflatable': ['inflatable', 'bouncy castle', 'bounce', 'air bag'],
     'go-kart': ['go kart', 'go-kart', 'karting', 'racing'],
     'train-ride': ['train', 'railway', 'locomotive'],
-    'playground': ['playground', 'climbing frame', 'play area', 'soft play']
+    'food-stall': ['fish & chips', 'burger van', 'hot dog', 'candy floss', 'toffee apple', 'ice cream', 'donut', 'pizza', 'tea & coffee', 'popcorn', 'crepe', 'jacket potato', 'noodle', 'sweet stall'],
+    'game-stall': ['hook-a-duck', 'ring toss', 'coconut shy', 'test your strength', 'shooting gallery', 'basketball', 'darts', 'arcade', 'penny arcade', 'hoopla', 'tombola'],
+    'generator': ['generator', 'power', 'electricity', 'diesel']
   };
 
   // First, try direct category name matching

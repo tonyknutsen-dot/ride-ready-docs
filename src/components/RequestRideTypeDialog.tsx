@@ -144,8 +144,8 @@ export const RequestRideTypeDialog = ({ open, onOpenChange }: RequestRideTypeDia
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ride">Fairground Ride</SelectItem>
-                <SelectItem value="stall">Food/Retail Stall</SelectItem>
-                <SelectItem value="service">Service/Facility</SelectItem>
+                <SelectItem value="stall">Food/Game Stall</SelectItem>
+                <SelectItem value="service">Generator/Equipment</SelectItem>
               </SelectContent>
             </Select>
             {errors.type && <p className="text-sm text-red-500">{errors.type}</p>}

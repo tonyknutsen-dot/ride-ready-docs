@@ -40,7 +40,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Generate email content
     const typeLabel = requestData.type === 'ride' ? 'Fairground Ride' : 
-                     requestData.type === 'stall' ? 'Food/Retail Stall' : 'Service/Facility';
+                     requestData.type === 'stall' ? 'Food/Game Stall' : 'Generator/Equipment';
     
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

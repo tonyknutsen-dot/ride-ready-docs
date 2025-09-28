@@ -184,7 +184,7 @@ const RideManagement = () => {
         <div className="space-y-2">
           <h2 className="text-3xl font-bold">My Rides & Stalls</h2>
           <p className="text-muted-foreground">
-            Manage your ride inventory, stalls, and documentation
+            Manage your rides, food stalls, games, and equipment
           </p>
         </div>
         <div className="flex items-center space-x-2">
@@ -198,7 +198,7 @@ const RideManagement = () => {
           </Button>
           <Button onClick={() => setShowAddForm(true)} className="flex items-center space-x-2">
             <Plus className="h-4 w-4" />
-            <span>Add New Ride/Stall</span>
+            <span>Add Item</span>
           </Button>
         </div>
       </div>
@@ -209,14 +209,14 @@ const RideManagement = () => {
             <div className="text-center space-y-4">
               <Settings className="mx-auto h-16 w-16 text-muted-foreground" />
               <div className="space-y-2">
-                <h3 className="text-xl font-semibold">No rides or stalls added yet</h3>
+                <h3 className="text-xl font-semibold">No rides, stalls, or equipment added yet</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  Start by adding your first ride or stall to begin managing documentation and daily checks.
+                  Start by adding your first ride, food stall, game, or equipment to begin managing documentation and daily checks.
                 </p>
               </div>
               <Button onClick={() => setShowAddForm(true)} className="flex items-center space-x-2">
                 <Plus className="h-4 w-4" />
-                <span>Add Your First Ride/Stall</span>
+                <span>Add Your First Item</span>
               </Button>
             </div>
           </CardContent>
