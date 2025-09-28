@@ -201,73 +201,116 @@ const Dashboard = () => {
       <main className="container mx-auto px-4 py-4 md:py-6">
         <TrialStatus onUpgrade={() => setShowPlanSelection(true)} />
         
+        {/* Mobile: Prominent ride management button */}
+        <div className="block md:hidden mb-4">
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-primary">Manage Your Rides</h3>
+                  <p className="text-xs text-muted-foreground">Add and manage rides, stalls & equipment</p>
+                </div>
+                <Button 
+                  onClick={() => setActiveTab('rides')}
+                  className="bg-primary text-primary-foreground hover:bg-primary/90"
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Rides
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
         <div className="space-y-4 md:space-y-6">
           {/* Content Area - No duplicate titles */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-            {/* Mobile: Scrollable tabs */}
+            {/* Mobile: Scrollable tabs with better spacing */}
             <div className="md:hidden">
               <TooltipProvider>
-                <TabsList className="flex w-full overflow-x-auto scrollbar-hide h-auto p-1 gap-1 bg-muted/20">
-                  <PlanAwareTabTrigger 
-                    value="overview" 
-                    icon={Plus} 
-                    label="Overview"
-                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
-                  />
-                  <PlanAwareTabTrigger 
-                    value="rides" 
-                    icon={Settings} 
-                    label="Rides"
-                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
-                  />
-                  <PlanAwareTabTrigger 
-                    value="documents" 
-                    icon={Shield} 
-                    label="Docs"
-                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
-                  />
-                  <PlanAwareTabTrigger 
-                    value="calendar" 
-                    icon={CalendarIcon} 
-                    label="Calendar"
-                    requiresAdvanced={true}
-                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
-                  />
-                  <PlanAwareTabTrigger 
-                    value="maintenance" 
-                    icon={Wrench} 
-                    label="Maintenance"
-                    requiresAdvanced={true}
-                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
-                  />
-                  <PlanAwareTabTrigger 
-                    value="notifications" 
-                    icon={BellIcon} 
-                    label="Alerts"
-                    requiresAdvanced={true}
-                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
-                  />
-                  <PlanAwareTabTrigger 
-                    value="reports" 
-                    icon={FileText} 
-                    label="Reports"
-                    requiresAdvanced={true}
-                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
-                  />
-                  <PlanAwareTabTrigger 
-                    value="bulletins" 
-                    icon={AlertTriangle} 
-                    label="Bulletins"
-                    requiresAdvanced={true}
-                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
-                  />
-                  <PlanAwareTabTrigger 
-                    value="profile" 
-                    icon={User} 
-                    label="Profile"
-                    className="whitespace-nowrap flex-shrink-0 py-2 px-3"
-                  />
-                </TabsList>
+                <div className="overflow-x-auto scrollbar-hide">
+                  <TabsList className="flex w-max min-w-full gap-2 p-1 bg-muted/20">
+                    <PlanAwareTabTrigger 
+                      value="overview" 
+                      icon={Plus} 
+                      label="Overview"
+                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
+                    />
+                    <PlanAwareTabTrigger 
+                      value="rides" 
+                      icon={Settings} 
+                      label="My Rides"
+                      className="whitespace-nowrap flex-shrink-0 min-w-[70px] bg-primary/10"
+                    />
+                    <PlanAwareTabTrigger 
+                      value="documents" 
+                      icon={Shield} 
+                      label="Docs"
+                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
+                    />
+                    <PlanAwareTabTrigger 
+                      value="calendar" 
+                      icon={CalendarIcon} 
+                      label="Calendar"
+                      requiresAdvanced={true}
+                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
+                    />
+                    <PlanAwareTabTrigger 
+                      value="maintenance" 
+                      icon={Wrench} 
+                      label="Maintenance"
+                      requiresAdvanced={true}
+                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
+                    />
+                    <PlanAwareTabTrigger 
+                      value="notifications" 
+                      icon={BellIcon} 
+                      label="Alerts"
+                      requiresAdvanced={true}
+                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
+                    />
+                    <PlanAwareTabTrigger 
+                      value="reports" 
+                      icon={FileText} 
+                      label="Reports"
+                      requiresAdvanced={true}
+                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
+                    />
+                    <PlanAwareTabTrigger 
+                      value="bulletins" 
+                      icon={AlertTriangle} 
+                      label="Bulletins"
+                      requiresAdvanced={true}
+                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
+                    />
+                    <PlanAwareTabTrigger 
+                      value="profile" 
+                      icon={User} 
+                      label="Profile"
+                      className="whitespace-nowrap flex-shrink-0 min-w-[70px]"
+                    />
+                  </TabsList>
+                </div>
+                {/* Mobile quick actions for key features */}
+                <div className="mt-2 flex gap-2 px-1">
+                  <Button 
+                    size="sm" 
+                    onClick={() => setActiveTab('rides')}
+                    className="flex-1 text-xs"
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Add Ride
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setActiveTab('documents')}
+                    className="flex-1 text-xs"
+                  >
+                    <FileText className="h-3 w-3 mr-1" />
+                    Documents
+                  </Button>
+                </div>
               </TooltipProvider>
             </div>
 

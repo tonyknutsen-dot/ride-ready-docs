@@ -180,27 +180,45 @@ const RideManagement = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <h2 className="text-3xl font-bold">My Rides & Stalls</h2>
-          <p className="text-muted-foreground">
-            Manage your rides, food stalls, games, and equipment
-          </p>
+      {/* Mobile-friendly header */}
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-2">
+            <h2 className="text-2xl sm:text-3xl font-bold">My Rides & Stalls</h2>
+            <p className="text-sm sm:text-base text-muted-foreground">
+              Manage your rides, food stalls, games, and equipment
+            </p>
+          </div>
+          
+          {/* Mobile: Full-width buttons */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:space-x-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowRequestDialog(true)}
+              className="flex items-center justify-center space-x-2 w-full sm:w-auto"
+            >
+              <HelpCircle className="h-4 w-4" />
+              <span>Request New Type</span>
+            </Button>
+            <Button 
+              onClick={() => setShowAddForm(true)} 
+              className="flex items-center justify-center space-x-2 w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Add Ride/Stall</span>
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowRequestDialog(true)}
-            className="flex items-center space-x-2"
-          >
-            <HelpCircle className="h-4 w-4" />
-            <span>Request New Type</span>
-          </Button>
-          <Button onClick={() => setShowAddForm(true)} className="flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
-            <span>Add Item</span>
-          </Button>
-        </div>
+        
+        {/* Mobile: Quick stats if rides exist */}
+        {rides.length > 0 && (
+          <div className="block sm:hidden bg-muted/50 rounded-lg p-3">
+            <div className="text-center">
+              <div className="text-lg font-semibold text-primary">{rides.length}</div>
+              <div className="text-xs text-muted-foreground">Total Items</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {rides.length === 0 ? (
