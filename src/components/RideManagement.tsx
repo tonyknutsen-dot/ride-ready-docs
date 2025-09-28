@@ -4,12 +4,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Settings, FileText, CheckSquare, Calendar, Mail } from 'lucide-react';
+import { Plus, Settings, FileText, CheckSquare, Calendar, Mail, HelpCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import RideForm from './RideForm';
 import RideDetail from './RideDetail';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
+import { RequestRideTypeDialog } from './RequestRideTypeDialog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -26,6 +27,7 @@ const RideManagement = () => {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
+  const [showRequestDialog, setShowRequestDialog] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -180,15 +182,25 @@ const RideManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <h2 className="text-3xl font-bold">My Rides</h2>
+          <h2 className="text-3xl font-bold">My Rides & Stalls</h2>
           <p className="text-muted-foreground">
-            Manage your ride inventory and documentation
+            Manage your ride inventory, stalls, and documentation
           </p>
         </div>
-        <Button onClick={() => setShowAddForm(true)} className="flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Add New Ride</span>
-        </Button>
+        <div className="flex items-center space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowRequestDialog(true)}
+            className="flex items-center space-x-2"
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span>Request New Type</span>
+          </Button>
+          <Button onClick={() => setShowAddForm(true)} className="flex items-center space-x-2">
+            <Plus className="h-4 w-4" />
+            <span>Add New Ride/Stall</span>
+          </Button>
+        </div>
       </div>
 
       {rides.length === 0 ? (
@@ -197,14 +209,14 @@ const RideManagement = () => {
             <div className="text-center space-y-4">
               <Settings className="mx-auto h-16 w-16 text-muted-foreground" />
               <div className="space-y-2">
-                <h3 className="text-xl font-semibold">No rides added yet</h3>
+                <h3 className="text-xl font-semibold">No rides or stalls added yet</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  Start by adding your first ride to begin managing documentation and daily checks.
+                  Start by adding your first ride or stall to begin managing documentation and daily checks.
                 </p>
               </div>
               <Button onClick={() => setShowAddForm(true)} className="flex items-center space-x-2">
                 <Plus className="h-4 w-4" />
-                <span>Add Your First Ride</span>
+                <span>Add Your First Ride/Stall</span>
               </Button>
             </div>
           </CardContent>
@@ -266,7 +278,7 @@ const RideManagement = () => {
                       className="flex-1"
                       variant="outline"
                     >
-                      Manage Ride
+                      Manage
                     </Button>
                     <SendDocumentsDialog 
                       ride={ride} 
@@ -283,6 +295,11 @@ const RideManagement = () => {
           ))}
         </div>
       )}
+
+      <RequestRideTypeDialog 
+        open={showRequestDialog} 
+        onOpenChange={setShowRequestDialog} 
+      />
     </div>
   );
 };
