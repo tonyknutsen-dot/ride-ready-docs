@@ -45,16 +45,16 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
             <span>Monthly</span>
           </TabsTrigger>
           <TabsTrigger value="annual" className="flex items-center space-x-2">
-            <CalendarDays className="h-4 w-4" />
-            <span>Annual</span>
+            <Building className="h-4 w-4" />
+            <span>In-Service</span>
           </TabsTrigger>
           <TabsTrigger value="ndt" className="flex items-center space-x-2">
             <TestTube className="h-4 w-4" />
             <span>NDT</span>
           </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center space-x-2">
-            <Building className="h-4 w-4" />
-            <span>In-Service</span>
+            <CalendarDays className="h-4 w-4" />
+            <span>Reports</span>
           </TabsTrigger>
         </TabsList>
 
@@ -119,26 +119,15 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
-                  <CalendarDays className="h-5 w-5" />
-                  <span>Yearly Safety Checks</span>
+                  <Building className="h-5 w-5" />
+                  <span>In-Service Inspection Reports</span>
                 </CardTitle>
                 <CardDescription>
-                  Perform and manage yearly safety inspections for this ride
+                  Manage annual in-service inspection reports issued by independent inspection bodies. Successful inspections result in a Declaration of Compliance (DOC).
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Tabs defaultValue="perform" className="space-y-4">  
-              <TabsList>
-                <TabsTrigger value="perform">Perform Checks</TabsTrigger>
-                <TabsTrigger value="templates">Manage Templates</TabsTrigger>
-              </TabsList>
-              <TabsContent value="perform">
-                <InspectionChecklist ride={ride} frequency="yearly" />
-              </TabsContent>
-              <TabsContent value="templates">
-                <YearlyCheckTemplateManager ride={ride} />
-              </TabsContent>
-            </Tabs>
+            <AnnualInspectionManager ride={ride} />
           </div>
         </TabsContent>
 
@@ -147,7 +136,24 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         </TabsContent>
 
         <TabsContent value="reports">
-          <AnnualInspectionManager ride={ride} />
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <CalendarDays className="h-5 w-5" />
+                  <span>Inspection History & Reports</span>
+                </CardTitle>
+                <CardDescription>
+                  View and manage historical inspection data and generate compliance reports
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            {/* TODO: Add ReportGenerator component for historical data and compliance reports */}
+            <div className="text-center text-muted-foreground p-8">
+              <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>Historical reports and compliance documentation coming soon</p>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
