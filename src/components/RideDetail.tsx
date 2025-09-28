@@ -3,12 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, FileText, CheckSquare, Calendar, Upload, Settings, AlertTriangle, Mail } from 'lucide-react';
+import { ArrowLeft, FileText, CheckSquare, Calendar, Upload, Settings, AlertTriangle, Mail, Wrench } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import RideDocuments from './RideDocuments';
 import InspectionManager from './InspectionManager';
+import MaintenanceManager from './MaintenanceManager';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
 import { FeatureGate } from './FeatureGate';
 import { RestrictedFeatureCard } from './RestrictedFeatureCard';
@@ -33,6 +34,7 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
     docCount: 0,
     todayChecks: 0,
     bulletinCount: 0,
+    maintenanceCount: 0,
     loading: true
   });
 
@@ -66,10 +68,18 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
         .select('*', { count: 'exact', head: true })
         .eq('category_id', ride.category_id);
 
+      // Get maintenance records count for this ride
+      const { count: maintenanceCount } = await supabase
+        .from('maintenance_records')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('ride_id', ride.id);
+
       setRideStats({
         docCount: docCount || 0,
         todayChecks: todayChecks || 0,
         bulletinCount: bulletinCount || 0,
+        maintenanceCount: maintenanceCount || 0,
         loading: false
       });
     } catch (error) {
@@ -143,7 +153,7 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="overview" className="flex items-center space-x-2">
             <FileText className="h-4 w-4" />
             <span>Overview</span>
@@ -156,6 +166,10 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
             <CheckSquare className="h-4 w-4" />
             <span>Inspections</span>
           </TabsTrigger>
+          <TabsTrigger value="maintenance" className="flex items-center space-x-2">
+            <Wrench className="h-4 w-4" />
+            <span>Maintenance</span>
+          </TabsTrigger>
           <TabsTrigger value="bulletins" className="flex items-center space-x-2">
             <AlertTriangle className="h-4 w-4" />
             <span>Bulletins</span>
@@ -163,7 +177,7 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
@@ -190,6 +204,46 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
                 </div>
               </CardContent>
             </Card>
+
+            <FeatureGate 
+              requiredPlan="advanced" 
+              feature="Maintenance Logging"
+              fallback={
+                <RestrictedFeatureCard
+                  title="Maintenance"
+                  description="Log maintenance activities with photos and documentation"
+                  icon={<Wrench className="h-5 w-5" />}
+                  requiredPlan="advanced"
+                />
+              }
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center space-x-2">
+                    <Wrench className="h-5 w-5 text-primary" />
+                    <span>Maintenance</span>
+                  </CardTitle>
+                  <CardDescription>
+                    Log maintenance with photos
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-primary">
+                        {rideStats.loading ? '...' : rideStats.maintenanceCount}
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Records logged
+                      </p>
+                    </div>
+                    <Button onClick={() => setActiveTab("maintenance")} className="w-full">
+                      Log Maintenance
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </FeatureGate>
 
             <FeatureGate 
               requiredPlan="advanced" 
@@ -280,6 +334,12 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
         <TabsContent value="inspections">
           <FeatureGate requiredPlan="advanced" feature="Daily Inspections & Checks">
             <InspectionManager ride={ride} />
+          </FeatureGate>
+        </TabsContent>
+
+        <TabsContent value="maintenance">
+          <FeatureGate requiredPlan="advanced" feature="Maintenance Logging">
+            <MaintenanceManager ride={ride} />
           </FeatureGate>
         </TabsContent>
 
