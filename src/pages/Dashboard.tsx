@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { User, Settings, FileText, Plus, Users, Wrench, Shield, LogOut, Calendar as CalendarIcon, Bell as BellIcon, Crown, AlertTriangle } from 'lucide-react';
+import { User, Settings, FileText, Plus, Users, Wrench, Shield, LogOut, Calendar as CalendarIcon, Bell as BellIcon, Crown, AlertTriangle, CheckSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import RideManagement from '@/components/RideManagement';
-import GlobalDocuments from '@/components/GlobalDocuments';
+import RideDocumentManager from '@/components/RideDocumentManager';
+import RideInspectionManager from '@/components/RideInspectionManager';
+import RideMaintenanceManager from '@/components/RideMaintenanceManager';
 import DashboardOverview from '@/components/DashboardOverview';
 import CalendarView from '@/components/CalendarView';
 import NotificationCenter from '@/components/NotificationCenter';
@@ -238,6 +240,18 @@ const Dashboard = () => {
                       className="flex-shrink-0 px-3 py-2 text-xs font-medium bg-primary/10 text-primary"
                     />
                     <PlanAwareTabTrigger 
+                      value="inspections" 
+                      icon={CheckSquare} 
+                      label="Checks"
+                      className="flex-shrink-0 px-3 py-2 text-xs"
+                    />
+                    <PlanAwareTabTrigger 
+                      value="maintenance" 
+                      icon={Wrench} 
+                      label="Service"
+                      className="flex-shrink-0 px-3 py-2 text-xs"
+                    />
+                    <PlanAwareTabTrigger 
                       value="documents" 
                       icon={Shield} 
                       label="Docs"
@@ -274,17 +288,21 @@ const Dashboard = () => {
                     label="Calendar"
                     requiresAdvanced={true}
                   />
-                  <PlanAwareTabTrigger 
-                    value="maintenance" 
-                    icon={Wrench} 
-                    label="Maintenance"
-                    requiresAdvanced={true}
-                  />
-                  <PlanAwareTabTrigger 
-                    value="documents" 
-                    icon={Shield} 
-                    label="Documents"
-                  />
+                    <PlanAwareTabTrigger 
+                      value="inspections" 
+                      icon={CheckSquare} 
+                      label="Inspections"
+                    />
+                    <PlanAwareTabTrigger 
+                      value="maintenance" 
+                      icon={Wrench} 
+                      label="Maintenance"
+                    />
+                    <PlanAwareTabTrigger 
+                      value="documents" 
+                      icon={Shield} 
+                      label="Documents"
+                    />
                   <PlanAwareTabTrigger 
                     value="notifications" 
                     icon={BellIcon} 
@@ -328,15 +346,21 @@ const Dashboard = () => {
               </FeatureGate>
             </TabsContent>
 
+            <TabsContent value="inspections">
+              <FeatureGate requiredPlan="basic" feature="Inspection Management">
+                <RideInspectionManager />
+              </FeatureGate>
+            </TabsContent>
+
             <TabsContent value="maintenance">
-              <FeatureGate requiredPlan="advanced" feature="Maintenance Tracking">
-                <MaintenanceTracker />
+              <FeatureGate requiredPlan="basic" feature="Maintenance Management">
+                <RideMaintenanceManager />
               </FeatureGate>
             </TabsContent>
 
             <TabsContent value="documents">
               <FeatureGate requiredPlan="basic" feature="Document Management">
-                <GlobalDocuments />
+                <RideDocumentManager />
               </FeatureGate>
             </TabsContent>
 
