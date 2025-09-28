@@ -36,7 +36,7 @@ const Hero = () => {
         
         <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90 leading-relaxed">
           The complete document management solution designed specifically for showmen. 
-          Store all your equipment documents, safety certificates, and technical bulletins in one secure place.
+          Store all your ride documents, safety certificates, and technical bulletins for rides, generators, and equipment in one secure place.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
