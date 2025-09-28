@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -8,12 +8,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, FileText, Calendar as CalendarIcon, Edit, Trash2 } from 'lucide-react';
-import { format } from 'date-fns';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { Plus, Edit2, Trash2, FileText, Calendar as CalendarIcon, Edit } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { BulletinScraper } from './BulletinScraper';
+import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 import { Tables } from '@/integrations/supabase/types';
 
 type RideCategory = Tables<'ride_categories'>;
@@ -218,21 +219,21 @@ const TechnicalBulletinManager = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-3xl font-bold">Technical Bulletin Manager</h2>
-          <p className="text-muted-foreground">
-            Manage technical bulletins for advanced plan users
-          </p>
+          <h2 className="text-2xl font-bold tracking-tight flex items-center space-x-2">
+            <FileText className="h-6 w-6" />
+            <span>Technical Bulletins</span>
+          </h2>
+          <p className="text-muted-foreground">Manage technical bulletins and safety alerts</p>
         </div>
-        <Button 
-          onClick={() => setShowAddForm(true)}
-          className="flex items-center space-x-2"
-        >
+        <Button onClick={() => setShowAddForm(true)} className="flex items-center space-x-2">
           <Plus className="h-4 w-4" />
-          <span>New Bulletin</span>
+          <span>Add Bulletin</span>
         </Button>
       </div>
+
+      <BulletinScraper />
 
       {(showAddForm || editingBulletin) && (
         <Card>
