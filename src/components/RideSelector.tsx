@@ -38,6 +38,7 @@ const RideSelector = ({
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [openRequest, setOpenRequest] = useState(false);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
 
   const getTileClasses = (categoryName: string) => {
     if (/generator/i.test(categoryName)) return "border-amber-400 bg-amber-50";
@@ -66,6 +67,37 @@ const RideSelector = ({
 
       if (error) throw error;
       setRides(data as Ride[]);
+
+      // Fetch thumbnails for rides with photos
+      if (Array.isArray(data) && data.length) {
+        try {
+          const next: Record<string, string> = {};
+          await Promise.all(
+            data.map(async (ride: Ride) => {
+              const { data: docs, error } = await supabase
+                .from('documents')
+                .select('id,file_path,document_type')
+                .eq('ride_id', ride.id)
+                .eq('document_type', 'photo')
+                .order('uploaded_at', { ascending: false })
+                .limit(1);
+
+              if (!error && docs && docs[0]?.file_path) {
+                const { data: urlData, error: urlErr } = await supabase
+                  .storage
+                  .from('ride-documents')
+                  .createSignedUrl(docs[0].file_path, 3600);
+                if (!urlErr && urlData?.signedUrl) {
+                  next[ride.id] = urlData.signedUrl;
+                }
+              }
+            })
+          );
+          setThumbs(next);
+        } catch (e) {
+          console.warn('Thumb load skipped:', e);
+        }
+      }
     } catch (error) {
       console.error('Error loading rides:', error);
     } finally {
@@ -133,6 +165,13 @@ const RideSelector = ({
               className={`hover:shadow-md transition-all cursor-pointer border ${getTileClasses(ride.ride_categories.name)}`}
               onClick={() => onRideSelect(ride)}
             >
+              {thumbs[ride.id] && (
+                <img
+                  src={thumbs[ride.id]}
+                  alt={`${ride.ride_name} photo`}
+                  className="w-full h-32 rounded-t-xl object-cover"
+                />
+              )}
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-base leading-tight flex-1 min-w-0">

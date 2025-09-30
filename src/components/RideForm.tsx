@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Plus } from 'lucide-react';
+import { ArrowLeft, Save, Plus, ImagePlus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { z } from 'zod';
@@ -43,6 +43,8 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
     owner_name: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     loadCategories();
@@ -62,6 +64,18 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
       }
     } catch (error) {
       console.error('Error loading categories:', error);
+    }
+  };
+
+  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      const url = URL.createObjectURL(file);
+      setPhotoPreview(url);
+    } else {
+      setPhotoFile(null);
+      setPhotoPreview(null);
     }
   };
 
@@ -85,7 +99,7 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
       setLoading(true);
 
       // Insert the ride
-      const { error } = await supabase
+      const { data: newRide, error } = await supabase
         .from('rides')
         .insert({
           user_id: user!.id,
@@ -95,7 +109,9 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
           year_manufactured: validatedData.year_manufactured || null,
           serial_number: validatedData.serial_number || null,
           owner_name: validatedData.owner_name || null,
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         toast({
@@ -104,6 +120,53 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
           variant: "destructive",
         });
       } else {
+        // Upload photo if provided
+        if (photoFile && newRide?.id && user) {
+          try {
+            const ts = Date.now();
+            const safeName = photoFile.name.replace(/\s+/g, '-');
+            const fileName = `device-photo-${ts}-${safeName}`;
+            const filePath = `${user.id}/${newRide.id}/${fileName}`;
+
+            // Upload to storage
+            const { error: upErr } = await supabase
+              .storage
+              .from('ride-documents')
+              .upload(filePath, photoFile, {
+                cacheControl: '3600',
+                upsert: true,
+                contentType: photoFile.type || 'image/jpeg',
+              });
+            if (upErr) throw upErr;
+
+            // Insert document record
+            const { error: docErr } = await supabase
+              .from('documents')
+              .insert({
+                user_id: user.id,
+                ride_id: newRide.id,
+                document_name: 'Device Photo',
+                document_type: 'photo',
+                file_path: filePath,
+                file_size: photoFile.size,
+                mime_type: photoFile.type || 'image/jpeg',
+                notes: 'Primary device photo',
+                is_latest_version: true,
+              });
+            if (docErr) throw docErr;
+          } catch (e: any) {
+            console.warn('Photo attach failed:', e?.message || e);
+            toast({
+              title: 'Ride created (photo not saved)',
+              description: 'The ride is saved but the photo upload failed. You can add a photo later.',
+              variant: 'destructive',
+            });
+          } finally {
+            if (photoPreview) URL.revokeObjectURL(photoPreview);
+            setPhotoFile(null);
+            setPhotoPreview(null);
+          }
+        }
         onSuccess();
       }
     } catch (error) {
@@ -256,6 +319,38 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
               )}
               <p className="text-xs text-muted-foreground">
                 The ride owner may be different from the controller (responsible for safety) or showmen (operator) in your profile.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="ride-photo" className="text-base font-semibold">Attach a photo (optional)</Label>
+              <Input
+                id="ride-photo"
+                type="file"
+                accept="image/*"
+                // @ts-ignore
+                capture="environment"
+                onChange={handlePhotoSelect}
+                className="h-11 text-base cursor-pointer"
+              />
+              {photoPreview && (
+                <div className="mt-2 flex items-center gap-2">
+                  <img src={photoPreview} alt="Preview" className="h-20 w-20 rounded-md object-cover border" />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => { 
+                      setPhotoFile(null); 
+                      setPhotoPreview(null); 
+                    }}
+                  >
+                    Remove photo
+                  </Button>
+                </div>
+              )}
+              <p className="text-xs text-muted-foreground">
+                Tip: Take a clear picture of the whole device and the ID plate.
               </p>
             </div>
 
