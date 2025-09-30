@@ -53,129 +53,120 @@ const CalendarView = () => {
     }
     
     setLoading(true);
+    setLoadError(null);
     try {
       const monthStart = startOfMonth(currentMonth);
       const monthEnd = endOfMonth(currentMonth);
       
       const allEvents: CalendarEvent[] = [];
+      const rideIds = new Set<string>();
 
       // Load inspection checks
-      const { data: inspections, error: inspectionsError } = await supabase
+      const { data: inspections } = await supabase
         .from('inspection_checks')
-        .select(`
-          id,
-          check_date,
-          status,
-          rides(id, ride_name)
-        `)
+        .select('id, check_date, status, ride_id')
         .eq('user_id', user?.id)
         .gte('check_date', format(monthStart, 'yyyy-MM-dd'))
         .lte('check_date', format(monthEnd, 'yyyy-MM-dd'));
 
-      if (inspectionsError) throw inspectionsError;
-
       inspections?.forEach(inspection => {
+        if (inspection.ride_id) rideIds.add(inspection.ride_id);
         allEvents.push({
           id: inspection.id,
-          title: `${(inspection.rides as any)?.ride_name || 'Unknown'} Inspection`,
+          title: `Inspection`,
           date: inspection.check_date,
           type: 'inspection',
           status: inspection.status as 'pending' | 'completed' | 'overdue',
-          rideId: (inspection.rides as any)?.id,
-          rideName: (inspection.rides as any)?.ride_name,
+          rideId: inspection.ride_id,
         });
       });
 
       // Load maintenance records (upcoming)
-      const { data: maintenance, error: maintenanceError } = await supabase
+      const { data: maintenance } = await supabase
         .from('maintenance_records')
-        .select(`
-          id,
-          next_maintenance_due,
-          maintenance_type,
-          rides(id, ride_name)
-        `)
+        .select('id, next_maintenance_due, maintenance_type, ride_id')
         .eq('user_id', user?.id)
         .not('next_maintenance_due', 'is', null)
         .gte('next_maintenance_due', format(monthStart, 'yyyy-MM-dd'))
         .lte('next_maintenance_due', format(monthEnd, 'yyyy-MM-dd'));
 
-      if (maintenanceError) throw maintenanceError;
-
       maintenance?.forEach(record => {
         if (record.next_maintenance_due) {
+          if (record.ride_id) rideIds.add(record.ride_id);
           allEvents.push({
             id: record.id,
-            title: `${(record.rides as any)?.ride_name || 'Unknown'} - ${record.maintenance_type}`,
+            title: record.maintenance_type,
             date: record.next_maintenance_due,
             type: 'maintenance',
             status: 'pending',
-            rideId: (record.rides as any)?.id,
-            rideName: (record.rides as any)?.ride_name,
+            rideId: record.ride_id,
           });
         }
       });
 
       // Load document expiry dates
-      const { data: documents, error: documentsError } = await supabase
+      const { data: documents } = await supabase
         .from('documents')
-        .select(`
-          id,
-          document_name,
-          expires_at,
-          rides(id, ride_name)
-        `)
+        .select('id, document_name, expires_at, ride_id')
         .eq('user_id', user?.id)
         .not('expires_at', 'is', null)
         .gte('expires_at', format(monthStart, 'yyyy-MM-dd'))
         .lte('expires_at', format(monthEnd, 'yyyy-MM-dd'));
 
-      if (documentsError) throw documentsError;
-
       documents?.forEach(doc => {
         if (doc.expires_at) {
+          if (doc.ride_id) rideIds.add(doc.ride_id);
           allEvents.push({
             id: doc.id,
             title: `${doc.document_name} Expires`,
             date: doc.expires_at,
             type: 'document_expiry',
             status: 'pending',
-            rideId: (doc.rides as any)?.id,
-            rideName: (doc.rides as any)?.ride_name,
+            rideId: doc.ride_id,
           });
         }
       });
 
       // Load NDT schedules
-      const { data: ndt, error: ndtError } = await supabase
+      const { data: ndt } = await supabase
         .from('ndt_schedules')
-        .select(`
-          id,
-          schedule_name,
-          next_inspection_due,
-          rides(id, ride_name)
-        `)
+        .select('id, schedule_name, next_inspection_due, ride_id')
         .eq('user_id', user?.id)
         .eq('is_active', true)
         .not('next_inspection_due', 'is', null)
         .gte('next_inspection_due', format(monthStart, 'yyyy-MM-dd'))
         .lte('next_inspection_due', format(monthEnd, 'yyyy-MM-dd'));
 
-      if (ndtError) throw ndtError;
-
       ndt?.forEach(schedule => {
         if (schedule.next_inspection_due) {
+          if (schedule.ride_id) rideIds.add(schedule.ride_id);
           allEvents.push({
             id: schedule.id,
-            title: `${(schedule.rides as any)?.ride_name || 'Unknown'} - ${schedule.schedule_name}`,
+            title: schedule.schedule_name,
             date: schedule.next_inspection_due,
             type: 'ndt',
             status: 'pending',
-            rideId: (schedule.rides as any)?.id,
-            rideName: (schedule.rides as any)?.ride_name,
+            rideId: schedule.ride_id,
           });
         }
       });
+
+      // Fetch all rides in one query
+      if (rideIds.size > 0) {
+        const { data: rides } = await supabase
+          .from('rides')
+          .select('id, ride_name')
+          .in('id', Array.from(rideIds));
+
+        const rideMap = new Map(rides?.map(r => [r.id, r.ride_name]) || []);
+        
+        allEvents.forEach(event => {
+          if (event.rideId) {
+            event.rideName = rideMap.get(event.rideId) || 'Unknown Ride';
+            event.title = `${event.rideName} - ${event.title}`;
+          }
+        });
+      }
 
       // Sort events by date
       allEvents.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
@@ -184,11 +175,6 @@ const CalendarView = () => {
     } catch (error) {
       console.error('Error loading calendar events:', error);
       setLoadError(error instanceof Error ? error.message : 'Unknown error');
-      toast({
-        title: "Error loading calendar",
-        description: "Failed to load calendar events",
-        variant: "destructive",
-      });
     } finally {
       setLoading(false);
     }
