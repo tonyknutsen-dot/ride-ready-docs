@@ -290,27 +290,27 @@ const HelpCenter = () => {
         <section className="container mx-auto px-6 py-16">
           <h2 className="text-3xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
           
-          <div className="max-w-4xl mx-auto space-y-8">
+          <div className="max-w-4xl mx-auto space-y-6">
             {faqs.map((category, catIndex) => (
-              <Card key={catIndex}>
-                <CardHeader>
-                  <CardTitle className="text-2xl">{category.category}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <Accordion type="single" collapsible className="w-full">
-                    {category.questions.map((item, qIndex) => (
-                      <AccordionItem key={qIndex} value={`${catIndex}-${qIndex}`}>
-                        <AccordionTrigger className="text-left">
-                          {item.q}
-                        </AccordionTrigger>
-                        <AccordionContent className="text-muted-foreground">
-                          {item.a}
-                        </AccordionContent>
-                      </AccordionItem>
-                    ))}
-                  </Accordion>
-                </CardContent>
-              </Card>
+              <div key={catIndex}>
+                <h3 className="text-2xl font-bold mb-4">{category.category}</h3>
+                <Accordion type="single" collapsible className="w-full space-y-2">
+                  {category.questions.map((item, qIndex) => (
+                    <AccordionItem 
+                      key={`faq-${catIndex}-${qIndex}`} 
+                      value={`faq-${catIndex}-${qIndex}`}
+                      className="border rounded-lg px-4 bg-card"
+                    >
+                      <AccordionTrigger className="text-left hover:no-underline py-4">
+                        <span className="font-medium">{item.q}</span>
+                      </AccordionTrigger>
+                      <AccordionContent className="text-muted-foreground pb-4">
+                        {item.a}
+                      </AccordionContent>
+                    </AccordionItem>
+                  ))}
+                </Accordion>
+              </div>
             ))}
           </div>
         </section>
