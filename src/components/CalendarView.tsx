@@ -219,10 +219,19 @@ const CalendarView = () => {
   };
 
   const getEventsForDate = (date: Date) => {
-    return events.filter(event => 
-      isSameDay(parseISO(event.date), date) && 
-      (filterType === 'all' || event.type === filterType)
-    );
+    const filtered = events.filter(event => {
+      const eventDate = parseISO(event.date);
+      const matches = isSameDay(eventDate, date);
+      console.log('Comparing:', {
+        eventDate: format(eventDate, 'yyyy-MM-dd'),
+        selectedDate: format(date, 'yyyy-MM-dd'),
+        matches,
+        eventTitle: event.title
+      });
+      return matches && (filterType === 'all' || event.type === filterType);
+    });
+    console.log('Filtered events for date:', format(date, 'yyyy-MM-dd'), filtered.length);
+    return filtered;
   };
 
   const getEventTypeColor = (type: string) => {
