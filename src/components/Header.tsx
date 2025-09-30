@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
-import { FileText, Menu, LogOut, User } from "lucide-react";
+import { Menu, LogOut, User } from "lucide-react";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import logo from "@/assets/logo.png";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -31,11 +32,8 @@ const Header = () => {
       <div className="container mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center space-x-2">
-            <div className="bg-primary p-2 rounded-lg">
-              <FileText className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-primary">Ride Ready Docs</span>
+          <Link to="/" className="flex items-center">
+            <img src={logo} alt="Ride Ready Docs" className="h-12 w-auto" />
           </Link>
 
           {/* Desktop Navigation */}
