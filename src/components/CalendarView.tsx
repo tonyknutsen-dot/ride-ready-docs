@@ -52,6 +52,7 @@ const CalendarView = () => {
       return;
     }
     
+    console.log('Loading calendar events for month:', format(currentMonth, 'yyyy-MM'));
     setLoading(true);
     setLoadError(null);
     try {
@@ -152,13 +153,20 @@ const CalendarView = () => {
       });
 
       // Load inspection schedules
-      const { data: inspectionSchedules } = await supabase
+      console.log('Fetching inspection schedules...');
+      const { data: inspectionSchedules, error: schedulesError } = await supabase
         .from('inspection_schedules')
         .select('id, inspection_name, due_date, ride_id, advance_notice_days')
         .eq('user_id', user?.id)
         .eq('is_active', true)
         .gte('due_date', format(monthStart, 'yyyy-MM-dd'))
         .lte('due_date', format(monthEnd, 'yyyy-MM-dd'));
+
+      if (schedulesError) {
+        console.error('Error fetching inspection schedules:', schedulesError);
+      } else {
+        console.log('Found inspection schedules:', inspectionSchedules?.length || 0, inspectionSchedules);
+      }
 
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -178,6 +186,8 @@ const CalendarView = () => {
           rideId: schedule.ride_id,
         });
       });
+
+      console.log('Total events loaded:', allEvents.length);
 
       // Fetch all rides in one query
       if (rideIds.size > 0) {
