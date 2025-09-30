@@ -5,7 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, AlertTriangle, Crown, Receipt } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 
 type Profile = {
   user_id: string;
@@ -40,6 +41,29 @@ export default function PlanBilling() {
     })();
   }, [user, toast]);
 
+  const upgrade = async () => {
+    if (!user) return;
+    setSaving(true);
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        subscription_status: "advanced",
+        subscription_plan: "advanced",
+        trial_started_at: null,
+        trial_ends_at: null,
+      })
+      .eq("user_id", user.id);
+    setSaving(false);
+
+    if (error) {
+      toast({ title: "Couldn't upgrade", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    toast({ title: "Upgraded to Advanced!", description: "All features are now unlocked.", variant: "default" });
+    setTimeout(() => nav("/dashboard"), 400);
+  };
+
   const downgrade = async () => {
     if (!user) return;
     setSaving(true);
@@ -60,7 +84,6 @@ export default function PlanBilling() {
     }
 
     toast({ title: "You're on Basic now", description: "Advanced features will be hidden.", variant: "default" });
-    // Small delay so FeatureGate picks up the change
     setTimeout(() => nav("/dashboard"), 400);
   };
 
@@ -81,35 +104,84 @@ export default function PlanBilling() {
     <div className="p-4 max-w-2xl mx-auto space-y-4">
       <Button variant="ghost" onClick={() => nav(-1)}><ArrowLeft className="w-4 h-4 mr-2" />Back</Button>
 
+      {/* Current Plan Card */}
       <Card className="border-2">
         <CardHeader>
-          <CardTitle>Plan & Billing</CardTitle>
-          <CardDescription>Manage your plan. Downgrading hides advanced features; your data stays.</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            {plan === "advanced" ? <Crown className="w-5 h-5 text-amber-500" /> : null}
+            Plan & Billing
+          </CardTitle>
+          <CardDescription>Manage your subscription plan and view billing history.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-md border p-3 flex items-center gap-2">
-            {plan === "advanced"
-              ? <><CheckCircle2 className="text-primary" /><div><b>Current plan:</b> Advanced</div></>
-              : <><CheckCircle2 className="text-primary" /><div><b>Current plan:</b> Basic</div></>
-            }
+          <div className="rounded-md border p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="text-primary" />
+              <div>
+                <div className="font-semibold">{plan === "advanced" ? "Advanced Plan" : "Basic Plan"}</div>
+                <div className="text-sm text-muted-foreground">
+                  {plan === "advanced" 
+                    ? "All features unlocked" 
+                    : "Essential features for ride management"}
+                </div>
+              </div>
+            </div>
+            {plan === "advanced" && <Crown className="w-6 h-6 text-amber-500" />}
           </div>
 
-          {plan === "advanced" ? (
+          <Separator />
+
+          {plan === "basic" ? (
+            <div className="space-y-3">
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-2">
+                <div className="font-medium flex items-center gap-2">
+                  <Crown className="w-4 h-4 text-amber-500" />
+                  Upgrade to Advanced
+                </div>
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <div>• Calendar & Scheduling</div>
+                  <div>• Notifications & Alerts</div>
+                  <div>• Advanced Reporting</div>
+                  <div>• Technical Bulletins</div>
+                  <div>• Global Documents</div>
+                </div>
+              </div>
+              <Button onClick={upgrade} disabled={saving} className="w-full">
+                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Crown className="w-4 h-4 mr-2" />}
+                Upgrade to Advanced
+              </Button>
+            </div>
+          ) : (
             <div className="space-y-3">
               <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                <AlertTriangle className="w-4 h-4 mt-0.5" />
-                <span>After downgrading you'll lose access to: Calendar & Scheduling, Global Documents, and other Advanced-only tools. You can upgrade again later—your data remains.</span>
+                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>Downgrading will hide advanced features like Calendar, Notifications, Reports, and Technical Bulletins. Your data remains safe and can be accessed again by upgrading.</span>
               </div>
-              <Button onClick={downgrade} disabled={saving} className="btn-bold-primary">
+              <Button onClick={downgrade} disabled={saving} variant="outline">
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
                 Downgrade to Basic
               </Button>
             </div>
-          ) : (
-            <div className="text-sm text-muted-foreground">
-              You're already on Basic. Advanced features are hidden.
-            </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Billing History Card */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Receipt className="w-5 h-5" />
+            Billing History
+          </CardTitle>
+          <CardDescription>View your invoices and payment history.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-lg border border-dashed p-8 text-center">
+            <Receipt className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+            <p className="text-sm text-muted-foreground">
+              No billing history yet. When payment processing is enabled, your invoices will appear here.
+            </p>
+          </div>
         </CardContent>
       </Card>
     </div>
