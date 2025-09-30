@@ -24,6 +24,7 @@ import { PlanSelection } from '@/components/PlanSelection';
 import { FeatureGate } from '@/components/FeatureGate';
 import { RestrictedFeatureCard } from '@/components/RestrictedFeatureCard';
 import { useSubscription } from '@/hooks/useSubscription';
+import OnboardingGuide from '@/components/OnboardingGuide';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -197,6 +198,10 @@ const Dashboard = () => {
       <main className="container mx-auto px-3 py-3 md:px-4 md:py-6">
         <TrialStatus onUpgrade={() => setShowPlanSelection(true)} />
         
+        <div className="mb-6">
+          <OnboardingGuide />
+        </div>
+        
         {/* Mobile: Clean ride management section */}
         <div className="block md:hidden mb-4">
           <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 border border-primary/20">
@@ -316,7 +321,7 @@ const Dashboard = () => {
               </FeatureGate>
             </TabsContent>
 
-            <TabsContent value="workspace">
+            <TabsContent value="workspace" id="workspace">
               <FeatureGate requiredPlan="basic" feature="Equipment Workspace">
                 <RideWorkspace onAddRide={() => setActiveTab('rides')} />
               </FeatureGate>
