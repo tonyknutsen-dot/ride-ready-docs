@@ -6,13 +6,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Upload, FileText, ArrowLeft, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { FeatureGate } from '@/components/FeatureGate';
+import { useIsMobile } from '@/hooks/use-mobile';
 import DocumentUpload from './DocumentUpload';
 import DocumentList from './DocumentList';
 
 const GlobalDocuments = () => {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedRide, setSelectedRide] = useState<{id: string, name: string, category: string} | null>(null);
+
+  // Hide on mobile
+  if (isMobile) return null;
 
   useEffect(() => {
     // Check if a ride was selected from the quick upload
@@ -66,7 +72,8 @@ const GlobalDocuments = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <FeatureGate requiredPlan="advanced" feature="Global Documents">
+      <div className="space-y-6">
       {selectedRide && (
         <Card className="bg-primary/5 border-primary/20">
           <CardContent className="p-4">
@@ -130,6 +137,7 @@ const GlobalDocuments = () => {
         </TabsContent>
       </Tabs>
     </div>
+    </FeatureGate>
   );
 };
 

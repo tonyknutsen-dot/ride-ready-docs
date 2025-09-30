@@ -59,8 +59,8 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   if (!rideId) {
     return (
       <Card>
-        <CardContent className="pt-6 text-center space-y-4">
-          <p className="text-muted-foreground">Pick a ride first to upload documents.</p>
+        <CardContent className="py-6">
+          <div className="text-sm">Pick a ride first to add a document.</div>
         </CardContent>
       </Card>
     );
@@ -171,7 +171,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
       }
 
       toast({
-        title: `Saved to ${rideName || 'your files'}`,
+        title: `Saved to ${rideName || 'this ride'}`,
         description: "View files →",
       });
 
@@ -209,7 +209,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   return (
     <Card>
       <CardHeader>
-        <CardTitle>You're adding a file to {rideName || 'this ride'}</CardTitle>
+        <CardTitle>You're adding a file to <b>{rideName || 'this ride'}</b></CardTitle>
         <CardDescription>
           Upload documents for this ride. Supported formats: PDF, Word, Excel, Images (max 50MB).
         </CardDescription>
@@ -252,7 +252,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
           <Label htmlFor="type" className="text-base font-semibold">What is this? *</Label>
           <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
             <SelectTrigger className="h-11 text-base">
-              <SelectValue placeholder="Risk Assessment, Method Statement, Insurance, Certificate, Other" />
+              <SelectValue placeholder="Risk Assessment (RA), Method Statement, Insurance, Certificate, Other" />
             </SelectTrigger>
             <SelectContent>
               {documentTypes.map((type) => (
@@ -384,7 +384,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
           )}
         </div>
 
-        <Button onClick={handleUpload} disabled={uploading} className="btn-bold-primary w-full md:w-auto">
+        <Button onClick={handleUpload} disabled={uploading} className="btn-bold-primary w-full md:w-auto h-11 text-base">
           <Upload className="mr-2 h-4 w-4" />
           {uploading ? 'Uploading...' : 'Upload'}
         </Button>

@@ -15,10 +15,11 @@ interface DocumentListProps {
   rideId?: string;
   rideName?: string;
   isGlobal?: boolean;
+  grouped?: boolean;
   onDocumentDeleted: () => void;
 }
 
-const DocumentList = ({ rideId, rideName, isGlobal = false, onDocumentDeleted }: DocumentListProps) => {
+const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onDocumentDeleted }: DocumentListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -167,6 +168,32 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, onDocumentDeleted }:
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const prettyType = (raw: string) => {
+    const t = raw.trim().toLowerCase();
+    if (t === 'risk_assessment' || t.includes('risk')) return "Risk Assessment (RA)";
+    if (t === 'method_statement' || t.includes('method')) return "Method Statement";
+    if (t.includes('insur')) return "Insurance";
+    if (t.includes('cert')) return "Certificate";
+    return "Other";
+  };
+
+  const groupByType = (docs: Document[]) => {
+    const ORDER = ["Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Other"];
+    const groups: Record<string, Document[]> = {};
+    docs.forEach(d => {
+      const k = prettyType(d.document_type);
+      (groups[k] ||= []).push(d);
+    });
+    const keys = Object.keys(groups).sort((a, b) => {
+      const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b);
+      if (ia === -1 && ib === -1) return a.localeCompare(b);
+      if (ia === -1) return 1;
+      if (ib === -1) return -1;
+      return ia - ib;
+    });
+    return keys.map(k => ({ type: k, items: groups[k] }));
+  };
+
   if (loading) {
     return (
       <Card>
@@ -196,6 +223,72 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, onDocumentDeleted }:
     );
   }
 
+  // Grouped render for mobile-first clarity
+  if (grouped) {
+    const groupedDocs = groupByType(documents);
+    return (
+      <div className="space-y-6">
+        {groupedDocs.map(g => (
+          <section key={g.type} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">{g.type}</h3>
+              <span className="text-xs px-2 py-1 rounded-full bg-secondary">
+                {g.items.length} file{g.items.length !== 1 ? "s" : ""}
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {g.items.map(d => (
+                <div key={d.id} className="border rounded-2xl p-3 flex items-start gap-3 hover:bg-muted/50 transition-colors">
+                  <FileText className="w-5 h-5 mt-0.5 text-primary" />
+                  <div className="flex-1 min-w-0">
+                    <div className="font-medium">{d.document_name}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {d.expires_at && ` • Expires ${new Date(d.expires_at).toLocaleDateString()}`}
+                      {` • Uploaded ${new Date(d.uploaded_at).toLocaleDateString()}`}
+                    </div>
+                    {d.notes && (
+                      <p className="text-xs text-muted-foreground mt-1 truncate">{d.notes}</p>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="outline" size="sm" onClick={() => handleDownload(d)}>
+                      <Download className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{d.document_name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(d)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    );
+  }
+
+  // Flat list (default)
   return (
     <div className="space-y-4">
       <Card>

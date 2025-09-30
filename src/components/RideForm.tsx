@@ -167,7 +167,7 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category_id">Ride Category *</Label>
+              <Label htmlFor="category_id" className="text-base font-semibold">Ride / Stall / Generator category *</Label>
               <Select
                 value={formData.category_id}
                 onValueChange={(value) => setFormData({ ...formData, category_id: value })}

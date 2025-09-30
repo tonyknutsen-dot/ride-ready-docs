@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, FileText } from 'lucide-react';
+import { Upload, FileText, Mail, Download } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import DocumentUpload from './DocumentUpload';
 import DocumentList from './DocumentList';
+import { SendDocumentsDialog } from './SendDocumentsDialog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -29,60 +30,90 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
     setRefreshKey(prev => prev + 1);
   };
 
+  // HARD GATES (no uploads without ride or category)
+  if (!ride) {
+    return (
+      <Card>
+        <CardContent className="py-6">
+          <div className="text-sm">Pick a ride first.</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!ride.category_id) {
+    return (
+      <Card className="border-2 border-warning">
+        <CardContent className="py-6 space-y-2">
+          <div className="text-lg font-semibold">Choose a category first</div>
+          <div className="text-sm text-muted-foreground">
+            Technical bulletins need this. Pick one for this ride.
+          </div>
+          <Button className="btn-bold-primary">Select category</Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="text-xl font-semibold">Document Management</h3>
-        <p className="text-muted-foreground">
-          Upload and manage documents for {ride.ride_name}
-        </p>
-      </div>
-
-      {!ride.category_id ? (
-        <Card className="border-2 border-warning">
-          <CardContent className="pt-6 space-y-4">
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold">Choose a category first</h3>
-              <p className="text-sm text-muted-foreground">
-                Technical bulletins need this. Pick a category for this ride to continue.
-              </p>
-            </div>
-            <Button className="btn-bold-primary" onClick={() => window.location.reload()}>
-              Refresh to select category
+    <div className="space-y-4">
+      {/* Bold header */}
+      <Card className="border-2">
+        <CardContent className="py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <div className="text-sm text-muted-foreground">You are looking at</div>
+            <h2 className="text-2xl font-bold">
+              {ride.ride_name} <span className="text-muted-foreground">→</span> Documents
+            </h2>
+            <p className="text-sm text-muted-foreground">All files for this ride. Send to council/insurer or download.</p>
+          </div>
+          <div className="flex gap-2">
+            <SendDocumentsDialog
+              ride={ride}
+              trigger={
+                <Button className="btn-bold-primary">
+                  <Mail className="w-4 h-4 mr-2" /> Send pack
+                </Button>
+              }
+            />
+            <Button variant="outline">
+              <Download className="w-4 h-4 mr-2" /> Download all
             </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <Tabs defaultValue="upload" className="space-y-6">
-          <TabsList className="tabs-bold grid w-full grid-cols-2">
-            <TabsTrigger value="upload" className="flex items-center space-x-2">
-              <Upload className="h-4 w-4" />
-              <span>Add a document</span>
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center space-x-2">
-              <FileText className="h-4 w-4" />
-              <span>All files</span>
-            </TabsTrigger>
-          </TabsList>
+          </div>
+        </CardContent>
+      </Card>
 
-          <TabsContent value="upload">
-            <DocumentUpload 
-              rideId={ride.id}
-              rideName={ride.ride_name}
-              onUploadSuccess={handleUploadSuccess}
-            />
-          </TabsContent>
+      {/* Tabs: default to LIST so they see everything first */}
+      <Tabs defaultValue="list" className="space-y-6">
+        <TabsList className="tabs-bold overflow-x-auto h-11">
+          <TabsTrigger value="list" className="flex items-center space-x-2 h-10">
+            <FileText className="h-4 w-4" />
+            <span>All files</span>
+          </TabsTrigger>
+          <TabsTrigger value="upload" className="flex items-center space-x-2 h-10">
+            <Upload className="h-4 w-4" />
+            <span>Add a document</span>
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="documents">
-            <DocumentList 
-              key={refreshKey}
-              rideId={ride.id}
-              rideName={ride.ride_name}
-              onDocumentDeleted={handleDocumentDeleted}
-            />
-          </TabsContent>
-        </Tabs>
-      )}
+        <TabsContent value="list">
+          <DocumentList 
+            key={refreshKey}
+            rideId={ride.id}
+            rideName={ride.ride_name}
+            onDocumentDeleted={handleDocumentDeleted}
+            grouped
+          />
+        </TabsContent>
+
+        <TabsContent value="upload">
+          <DocumentUpload 
+            rideId={ride.id}
+            rideName={ride.ride_name}
+            onUploadSuccess={handleUploadSuccess}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
