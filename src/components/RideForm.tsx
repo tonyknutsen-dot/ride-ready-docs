@@ -251,7 +251,7 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
             </div>
 
             <div className="flex space-x-4 pt-4">
-              <Button type="submit" disabled={loading} className="flex items-center space-x-2">
+              <Button type="submit" disabled={loading} className="btn-bold-primary flex items-center space-x-2">
                 <Save className="h-4 w-4" />
                 <span>{loading ? 'Adding...' : 'Add Ride'}</span>
               </Button>

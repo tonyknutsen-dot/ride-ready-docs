@@ -37,6 +37,11 @@ const RideSelector = ({
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const getTileClasses = (categoryName: string) => {
+    if (/generator/i.test(categoryName)) return "border-amber-400 bg-amber-50";
+    return "border-primary/30 bg-card";
+  };
+
   useEffect(() => {
     if (user) {
       loadRides();
@@ -94,13 +99,13 @@ const RideSelector = ({
           <CardContent className="pt-6 text-center space-y-4">
             <Settings className="mx-auto h-16 w-16 text-muted-foreground" />
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold">No rides added yet</h3>
+              <h3 className="text-lg font-semibold">Nothing here yet</h3>
               <p className="text-sm text-muted-foreground">
-                You need to add at least one ride, stall, or equipment before you can {actionLabel.toLowerCase()}
+                Press Add ride or Add generator to get started
               </p>
             </div>
             {showAddRide && onAddRide && (
-              <Button onClick={onAddRide} className="flex items-center space-x-2">
+              <Button onClick={onAddRide} className="btn-bold-primary flex items-center space-x-2">
                 <Plus className="h-4 w-4" />
                 <span>Add Your First Item</span>
               </Button>
@@ -112,7 +117,7 @@ const RideSelector = ({
           {rides.map((ride) => (
             <Card 
               key={ride.id} 
-              className="hover:shadow-md transition-all cursor-pointer border-muted/50 hover:border-primary/20"
+              className={`hover:shadow-md transition-all cursor-pointer border ${getTileClasses(ride.ride_categories.name)}`}
               onClick={() => onRideSelect(ride)}
             >
               <CardHeader className="pb-3">
@@ -144,7 +149,7 @@ const RideSelector = ({
                       e.stopPropagation();
                       onRideSelect(ride);
                     }}
-                    className="w-full"
+                    className="w-full btn-bold-primary"
                     size="sm"
                   >
                     <Icon className="h-4 w-4 mr-2" />

@@ -88,6 +88,18 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
         </CardHeader>
       </Card>
 
+      {/* Step bar */}
+      <ol className="grid grid-cols-2 gap-3 p-3 rounded-2xl bg-secondary mb-4">
+        <li className="flex items-center gap-2">
+          <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">1</span>
+          <span className="font-semibold">Pick your ride / generator</span>
+        </li>
+        <li className="flex items-center gap-2">
+          <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">2</span>
+          <span className="font-semibold">Add your documents</span>
+        </li>
+      </ol>
+
       {/* Function Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         {/* Mobile: Horizontal scroll tabs */}

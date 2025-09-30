@@ -36,30 +36,32 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
         </p>
       </div>
 
-      <Tabs defaultValue="documents" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="documents" className="flex items-center space-x-2">
-            <FileText className="h-4 w-4" />
-            <span>My Documents</span>
-          </TabsTrigger>
+      <Tabs defaultValue="upload" className="space-y-6">
+        <TabsList className="tabs-bold grid w-full grid-cols-2">
           <TabsTrigger value="upload" className="flex items-center space-x-2">
             <Upload className="h-4 w-4" />
-            <span>Upload New</span>
+            <span>Add a document</span>
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="flex items-center space-x-2">
+            <FileText className="h-4 w-4" />
+            <span>All files</span>
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="upload">
+          <DocumentUpload 
+            rideId={ride.id}
+            rideName={ride.ride_name}
+            onUploadSuccess={handleUploadSuccess}
+          />
+        </TabsContent>
 
         <TabsContent value="documents">
           <DocumentList 
             key={refreshKey}
             rideId={ride.id}
+            rideName={ride.ride_name}
             onDocumentDeleted={handleDocumentDeleted}
-          />
-        </TabsContent>
-
-        <TabsContent value="upload">
-          <DocumentUpload 
-            rideId={ride.id}
-            onUploadSuccess={handleUploadSuccess}
           />
         </TabsContent>
       </Tabs>

@@ -13,11 +13,12 @@ type Document = Tables<'documents'>;
 
 interface DocumentListProps {
   rideId?: string;
+  rideName?: string;
   isGlobal?: boolean;
   onDocumentDeleted: () => void;
 }
 
-const DocumentList = ({ rideId, isGlobal = false, onDocumentDeleted }: DocumentListProps) => {
+const DocumentList = ({ rideId, rideName, isGlobal = false, onDocumentDeleted }: DocumentListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -185,12 +186,9 @@ const DocumentList = ({ rideId, isGlobal = false, onDocumentDeleted }: DocumentL
         <CardContent className="pt-6">
           <div className="text-center py-8">
             <FileText className="mx-auto h-16 w-16 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mt-4">No documents yet</h3>
+            <h3 className="text-lg font-semibold mt-4">No files yet</h3>
             <p className="text-muted-foreground">
-              {isGlobal 
-                ? 'Upload global documents that apply to all your rides'
-                : 'Upload documents specific to this ride'
-              }
+              Press Add a document to upload files{rideName ? ` for ${rideName}` : ''}
             </p>
           </div>
         </CardContent>
