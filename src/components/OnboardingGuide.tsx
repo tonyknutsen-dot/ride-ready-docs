@@ -117,7 +117,7 @@ export default function OnboardingGuide() {
 
       {/* Add Ride dialog */}
       <Dialog open={openAdd} onOpenChange={setOpenAdd}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[92vw] max-w-3xl max-h-[85vh] overflow-y-auto p-0">
           <RideForm
             onCancel={() => setOpenAdd(false)}
             onSuccess={() => {

@@ -213,8 +213,9 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
             Enter the details for your new ride. Note: The ride owner may be different from the controller or showmen listed in your profile.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="pt-0">
+          <div className="max-h-[62vh] overflow-y-auto pr-1 md:pr-2">
+            <form id="ride-form-root" onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="ride_name">Ride Name *</Label>
               <Input
@@ -354,20 +355,27 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
               </p>
             </div>
 
-            <div className="flex space-x-4 pt-4">
+              <div className="h-4" />
+            </form>
+          </div>
+
+          {/* Sticky action bar */}
+          <div className="sticky bottom-0 left-0 right-0 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t mt-2">
+            <div className="flex items-center justify-end gap-2 p-3">
+              <Button type="button" variant="outline" onClick={onCancel}>
+                Cancel
+              </Button>
               <Button 
                 type="submit" 
+                form="ride-form-root"
                 disabled={loading || !formData.category_id} 
                 className="btn-bold-primary flex items-center space-x-2"
               >
                 <Save className="h-4 w-4" />
                 <span>{loading ? 'Adding...' : 'Add Ride'}</span>
               </Button>
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
             </div>
-          </form>
+          </div>
         </CardContent>
       </Card>
 
