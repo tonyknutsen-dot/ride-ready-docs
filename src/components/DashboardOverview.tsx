@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -242,6 +243,11 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
 
   return (
     <div className="space-y-6">
+      <Alert>
+        <AlertDescription>
+          Welcome to your dashboard! View key statistics, track upcoming inspections, and access quick actions for your rides. Click on cards to navigate to detailed sections.
+        </AlertDescription>
+      </Alert>
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {isAdvancedUser ? (

@@ -322,6 +322,11 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
   return (
     <div className="space-y-6">
+      <Alert>
+        <AlertDescription>
+          Complete all required inspection items, add detailed notes where necessary, and submit to save your {frequency} inspection record. You can export the results as a PDF.
+        </AlertDescription>
+      </Alert>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">

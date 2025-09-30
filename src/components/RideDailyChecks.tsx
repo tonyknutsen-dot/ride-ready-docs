@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { CheckSquare, AlertTriangle, Clock, User, Calendar, Save, Settings } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -243,6 +244,11 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
 
   return (
     <div className="space-y-6">
+      <Alert>
+        <AlertDescription>
+          Complete all required inspection items by checking them off. Add notes for any issues found. Enter inspector details and submit when finished.
+        </AlertDescription>
+      </Alert>
       {/* Header */}
       <Card>
         <CardHeader>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Wrench, History, FileText, Plus } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import MaintenanceLogger from './MaintenanceLogger';
@@ -28,6 +29,11 @@ const MaintenanceManager = ({ ride }: MaintenanceManagerProps) => {
 
   return (
     <div className="space-y-6">
+      <Alert>
+        <AlertDescription>
+          Log maintenance activities including repairs, part replacements, and servicing. Track maintenance history and generate compliance reports.
+        </AlertDescription>
+      </Alert>
       <div className="space-y-2">
         <h3 className="text-xl font-semibold">Maintenance Management</h3>
         <p className="text-muted-foreground">

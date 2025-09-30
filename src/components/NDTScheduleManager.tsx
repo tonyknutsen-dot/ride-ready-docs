@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -229,6 +230,11 @@ const NDTScheduleManager = ({ ride }: NDTScheduleManagerProps) => {
 
   return (
     <div className="space-y-6">
+      <Alert>
+        <AlertDescription>
+          Create and manage NDT (Non-Destructive Testing) schedules for ride components. Set inspection frequencies and track due dates for various NDT methods.
+        </AlertDescription>
+      </Alert>
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <h3 className="text-xl font-semibold">NDT Inspection Schedules</h3>

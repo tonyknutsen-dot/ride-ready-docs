@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { CalendarDays, Plus, Edit, Copy, Trash2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -207,6 +208,11 @@ const YearlyCheckTemplateManager = ({ ride }: YearlyCheckTemplateManagerProps) =
 
   return (
     <div className="space-y-6">
+      <Alert>
+        <AlertDescription>
+          Create and manage yearly inspection templates. Set one as active to use it for annual checks. You can edit, duplicate, or delete templates as needed.
+        </AlertDescription>
+      </Alert>
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-semibold">Yearly Check Templates</h3>

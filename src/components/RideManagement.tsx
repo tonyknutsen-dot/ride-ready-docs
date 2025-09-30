@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Settings, FileText, CheckSquare, Calendar, Mail, HelpCircle } from 'lucide-react';
@@ -180,6 +181,11 @@ const RideManagement = () => {
 
   return (
     <div className="space-y-6">
+      <Alert>
+        <AlertDescription>
+          Add and manage your rides, stalls, and equipment. Track documents, inspections, and maintenance for each item. Use the action buttons to view details, send documents, or manage settings.
+        </AlertDescription>
+      </Alert>
       {/* Mobile-friendly header */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

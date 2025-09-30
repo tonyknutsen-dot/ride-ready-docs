@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Plus, Settings, Trash2, Edit, Copy, CheckSquare, Wrench } from 'lucide-react';
@@ -219,6 +220,11 @@ const DailyCheckTemplateManager = ({ ride }: DailyCheckTemplateManagerProps) => 
 
   return (
     <div className="space-y-6">
+      <Alert>
+        <AlertDescription>
+          Create and manage daily inspection templates. Set one as active to use it for daily checks. You can edit, duplicate, or delete templates as needed.
+        </AlertDescription>
+      </Alert>
       <div className="flex items-center justify-between">
         <div className="space-y-2">
           <h3 className="text-xl font-semibold">Daily Check Templates</h3>

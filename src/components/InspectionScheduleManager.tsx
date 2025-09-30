@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -236,6 +237,11 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
 
   return (
     <div className="space-y-6">
+      <Alert>
+        <AlertDescription>
+          Schedule inspections with due dates and advance notifications. Track multiple inspection types including in-service, electrical, NDT, and more.
+        </AlertDescription>
+      </Alert>
       <div className="flex justify-between items-center">
         <div>
           <h3 className="text-lg font-semibold">Inspection Schedules</h3>
