@@ -123,8 +123,8 @@ const GlobalDocuments = () => {
 
         <TabsContent value="upload">
           <DocumentUpload 
-            isGlobal={!selectedRide}
             rideId={selectedRide?.id}
+            rideName={selectedRide?.name}
             onUploadSuccess={handleUploadSuccess}
           />
         </TabsContent>
