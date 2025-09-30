@@ -21,20 +21,20 @@ const Hero = () => {
           alt="Professional fairground with modern rides showcasing safety and organization"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-hero-gradient opacity-85" />
+        <div className="absolute inset-0 bg-hero-gradient opacity-90" />
       </div>
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-6 text-center text-white">
-        <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight">
+        <h1 className="text-5xl md:text-7xl font-bold mb-6 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
           Your Documents,
           <br />
-          <span className="bg-accent-gradient bg-clip-text text-transparent">
+          <span className="bg-accent-gradient bg-clip-text text-transparent drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
             Organized & Secure
           </span>
         </h1>
         
-        <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto opacity-90 leading-relaxed">
+        <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto leading-relaxed drop-shadow-[0_2px_6px_rgba(0,0,0,0.8)]">
           The complete document management solution designed specifically for showmen. 
           Store all your ride documents, safety certificates, and technical bulletins for rides, generators, and equipment in one secure place.
         </p>
@@ -57,7 +57,7 @@ const Hero = () => {
           </Button>
         </div>
         
-        <div className="mt-12 text-sm opacity-75">
+        <div className="mt-12 text-sm drop-shadow-[0_1px_4px_rgba(0,0,0,0.8)]">
           <p>✓ 30-day free trial • ✓ No setup fees • ✓ Cancel anytime</p>
         </div>
       </div>
