@@ -340,6 +340,29 @@ const CalendarView = () => {
               month={currentMonth}
               onMonthChange={setCurrentMonth}
               className="rounded-md border"
+              components={{
+                DayContent: ({ date }) => {
+                  const dayEvents = getEventsForDate(date);
+                  const hasInspection = dayEvents.some(e => e.type === 'inspection');
+                  const hasMaintenance = dayEvents.some(e => e.type === 'maintenance');
+                  const hasDocExpiry = dayEvents.some(e => e.type === 'document_expiry');
+                  const hasNDT = dayEvents.some(e => e.type === 'ndt');
+                  
+                  return (
+                    <div className="relative w-full h-full flex flex-col items-center justify-center">
+                      <span>{date.getDate()}</span>
+                      {dayEvents.length > 0 && (
+                        <div className="flex gap-0.5 mt-0.5">
+                          {hasInspection && <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
+                          {hasMaintenance && <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
+                          {hasDocExpiry && <div className="w-1.5 h-1.5 rounded-full bg-red-500" />}
+                          {hasNDT && <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+              }}
               modifiers={{
                 hasEvents: (date) => getEventsForDate(date).length > 0,
                 overdue: (date) => getEventsForDate(date).some(e => 
@@ -347,8 +370,8 @@ const CalendarView = () => {
                 ),
               }}
               modifiersClassNames={{
-                hasEvents: "bg-accent/50 font-bold",
-                overdue: "bg-destructive/20 text-destructive",
+                hasEvents: "font-bold",
+                overdue: "bg-destructive/10 text-destructive",
               }}
             />
           </CardContent>
