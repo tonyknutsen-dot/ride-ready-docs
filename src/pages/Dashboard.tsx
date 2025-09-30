@@ -185,7 +185,17 @@ const Dashboard = () => {
               </div>
               
               {/* Mobile user menu */}
-              <div className="sm:hidden">
+              <div className="sm:hidden flex items-center gap-1">
+                <Link to="/billing">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex items-center gap-1 px-2"
+                  >
+                    <Crown className="h-3 w-3" />
+                    <span className="text-xs">Plan</span>
+                  </Button>
+                </Link>
                 <Button
                   variant="ghost"
                   size="sm"
