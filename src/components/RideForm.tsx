@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { z } from 'zod';
+import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
 
 type RideCategory = Tables<'ride_categories'>;
 
@@ -32,6 +33,7 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
   const { toast } = useToast();
   const [categories, setCategories] = useState<RideCategory[]>([]);
   const [loading, setLoading] = useState(false);
+  const [openRequest, setOpenRequest] = useState(false);
   const [formData, setFormData] = useState({
     ride_name: '',
     category_id: '',
@@ -170,7 +172,7 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
                 value={formData.category_id}
                 onValueChange={(value) => setFormData({ ...formData, category_id: value })}
               >
-                <SelectTrigger className={errors.category_id ? "border-destructive" : ""}>
+                <SelectTrigger className={`h-11 text-base ${errors.category_id ? "border-destructive" : ""}`}>
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -184,6 +186,13 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
               {errors.category_id && (
                 <p className="text-sm text-destructive">{errors.category_id}</p>
               )}
+              {!formData.category_id && !errors.category_id && (
+                <p className="text-sm text-muted-foreground">Pick the category. If yours isn't listed, press 'Request category'.</p>
+              )}
+              <Button type="button" variant="outline" size="sm" onClick={() => setOpenRequest(true)}>
+                <Plus className="w-4 h-4 mr-2" />
+                Can't find my category
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -251,7 +260,11 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
             </div>
 
             <div className="flex space-x-4 pt-4">
-              <Button type="submit" disabled={loading} className="btn-bold-primary flex items-center space-x-2">
+              <Button 
+                type="submit" 
+                disabled={loading || !formData.category_id} 
+                className="btn-bold-primary flex items-center space-x-2"
+              >
                 <Save className="h-4 w-4" />
                 <span>{loading ? 'Adding...' : 'Add Ride'}</span>
               </Button>
@@ -262,6 +275,9 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
           </form>
         </CardContent>
       </Card>
+
+      {/* Request Category dialog */}
+      <RequestRideTypeDialog open={openRequest} onOpenChange={setOpenRequest} />
     </div>
   );
 };

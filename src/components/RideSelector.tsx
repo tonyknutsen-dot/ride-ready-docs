@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Settings, FileText, Wrench, Calendar, Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -36,6 +37,7 @@ const RideSelector = ({
   const { user } = useAuth();
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openRequest, setOpenRequest] = useState(false);
 
   const getTileClasses = (categoryName: string) => {
     if (/generator/i.test(categoryName)) return "border-amber-400 bg-amber-50";
@@ -105,15 +107,26 @@ const RideSelector = ({
               </p>
             </div>
             {showAddRide && onAddRide && (
-              <Button onClick={onAddRide} className="btn-bold-primary flex items-center space-x-2">
-                <Plus className="h-4 w-4" />
-                <span>Add Your First Item</span>
-              </Button>
+              <div className="space-y-2">
+                <Button onClick={onAddRide} className="btn-bold-primary flex items-center space-x-2">
+                  <Plus className="h-4 w-4" />
+                  <span>Add Your First Item</span>
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Don't see your category? <button onClick={() => setOpenRequest(true)} className="text-primary underline">Request category</button>
+                </p>
+              </div>
             )}
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
+        <>
+          <div className="text-center mb-4">
+            <p className="text-sm text-muted-foreground">
+              Don't see your category? <button onClick={() => setOpenRequest(true)} className="text-primary underline font-medium">Request category</button>
+            </p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
           {rides.map((ride) => (
             <Card 
               key={ride.id} 
@@ -160,7 +173,11 @@ const RideSelector = ({
             </Card>
           ))}
         </div>
+        </>
       )}
+      
+      {/* Request Category dialog */}
+      <RequestRideTypeDialog open={openRequest} onOpenChange={setOpenRequest} />
     </div>
   );
 };

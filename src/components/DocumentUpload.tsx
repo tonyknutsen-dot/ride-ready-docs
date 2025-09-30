@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Upload, FileText, Info } from 'lucide-react';
+import { Upload, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -36,11 +36,10 @@ const documentTypes = [
 interface DocumentUploadProps {
   rideId?: string;
   rideName?: string;
-  isGlobal?: boolean;
   onUploadSuccess: () => void;
 }
 
-const DocumentUpload = ({ rideId, rideName, isGlobal = false, onUploadSuccess }: DocumentUploadProps) => {
+const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -56,12 +55,23 @@ const DocumentUpload = ({ rideId, rideName, isGlobal = false, onUploadSuccess }:
   const [replacingDocumentId, setReplacingDocumentId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Early return: require ride
+  if (!rideId) {
+    return (
+      <Card>
+        <CardContent className="pt-6 text-center space-y-4">
+          <p className="text-muted-foreground">Pick a ride first to upload documents.</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
   // Load existing documents with same name for version control
   useEffect(() => {
     if (documentName && useVersionControl) {
       loadExistingDocuments();
     }
-  }, [documentName, useVersionControl, rideId, isGlobal]);
+  }, [documentName, useVersionControl, rideId]);
 
   const loadExistingDocuments = async () => {
     if (!user || !documentName) return;
@@ -72,8 +82,7 @@ const DocumentUpload = ({ rideId, rideName, isGlobal = false, onUploadSuccess }:
         .select('*')
         .eq('user_id', user.id)
         .eq('document_name', documentName)
-        .eq('is_global', isGlobal)
-        .eq('ride_id', isGlobal ? null : rideId)
+        .eq('ride_id', rideId)
         .order('created_at', { ascending: false });
 
       if (!error && data) {
@@ -113,11 +122,10 @@ const DocumentUpload = ({ rideId, rideName, isGlobal = false, onUploadSuccess }:
     setUploading(true);
 
     try {
-      // Create file path: userId/rideId/filename or userId/global/filename
-      const folder = isGlobal ? 'global' : rideId;
+      // Create file path: userId/rideId/filename
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${selectedFile.name}`;
-      const filePath = `${user.id}/${folder}/${fileName}`;
+      const filePath = `${user.id}/${rideId}/${fileName}`;
 
       // Upload file to Supabase Storage
       const { error: uploadError } = await supabase.storage
@@ -131,13 +139,13 @@ const DocumentUpload = ({ rideId, rideName, isGlobal = false, onUploadSuccess }:
       // Save document metadata to database
       const documentData: any = {
         user_id: user.id,
-        ride_id: isGlobal ? null : rideId,
+        ride_id: rideId,
         document_name: documentName,
         document_type: documentType,
         file_path: filePath,
         file_size: selectedFile.size,
         mime_type: selectedFile.type,
-        is_global: isGlobal,
+        is_global: false,
         expires_at: expiryDate || null,
         notes: notes || null,
         version_number: useVersionControl ? versionNumber : '1.0',
@@ -201,284 +209,187 @@ const DocumentUpload = ({ rideId, rideName, isGlobal = false, onUploadSuccess }:
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2">
-          <Upload className="h-5 w-5" />
-          <span>Upload {isGlobal ? 'Global' : 'Ride'} Document</span>
-        </CardTitle>
+        <CardTitle>You're adding a file to {rideName || 'this ride'}</CardTitle>
         <CardDescription>
-          {isGlobal 
-            ? 'Upload documents that apply to all your rides' 
-            : 'Upload documents specific to this ride'
-          }
+          Upload documents for this ride. Supported formats: PDF, Word, Excel, Images (max 50MB).
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="file">Select File *</Label>
-            <Input
-              ref={fileInputRef}
-              id="file"
-              type="file"
-              onChange={handleFileSelect}
-              accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf"
-              disabled={uploading}
-            />
-            <p className="text-xs text-muted-foreground mt-1">
-              Supported: PDF, Word, Excel, PowerPoint, Images (JPG, PNG, TIFF, BMP, GIF), 
-              Video (MP4, MOV, AVI), CAD files (DWG, DXF), Archives (ZIP, RAR), Text files
+      <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Label htmlFor="file" className="text-base font-semibold">Select File *</Label>
+          <Input
+            ref={fileInputRef}
+            id="file"
+            type="file"
+            onChange={handleFileSelect}
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf"
+            disabled={uploading}
+            className="h-11 text-base cursor-pointer"
+          />
+          <p className="text-xs text-muted-foreground mt-1">
+            Supported: PDF, Word, Excel, PowerPoint, Images, Video, CAD files, Archives
+          </p>
+          {selectedFile && (
+            <p className="text-sm text-muted-foreground">
+              Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
             </p>
-            {selectedFile && (
-              <p className="text-sm text-muted-foreground">
-                {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-              </p>
-            )}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="name">Document Name *</Label>
-            <Input
-              id="name"
-              value={documentName}
-              onChange={(e) => setDocumentName(e.target.value)}
-              placeholder="Enter document name"
-              disabled={uploading}
-            />
-          </div>
-        </div>
-
-        {/* Version Control Section */}
-        <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="version-control" 
-              checked={useVersionControl}
-              onCheckedChange={(checked) => setUseVersionControl(checked as boolean)}
-              disabled={uploading}
-            />
-            <Label htmlFor="version-control" className="flex items-center space-x-2">
-              <span>Enable version control</span>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>Version control lets you upload newer versions of the same document while keeping track of previous versions. This is useful for documents that get updated regularly, like risk assessments or manuals.</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </Label>
-          </div>
-          
-          {useVersionControl && (
-            <div className="space-y-4 ml-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="version">Version Number</Label>
-                  <Input
-                    id="version"
-                    value={versionNumber}
-                    onChange={(e) => setVersionNumber(e.target.value)}
-                    placeholder="e.g., 1.0, 2.1"
-                    disabled={uploading}
-                  />
-                </div>
-                
-                {existingDocuments.length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="replacing">Replacing Document</Label>
-                    <Select value={replacingDocumentId || ''} onValueChange={setReplacingDocumentId} disabled={uploading}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select document to replace" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">None (New document)</SelectItem>
-                        {existingDocuments.map((doc) => (
-                          <SelectItem key={doc.id} value={doc.id}>
-                            Version {doc.version_number} - {new Date(doc.created_at).toLocaleDateString()}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="version-notes">Version Notes</Label>
-                <Textarea
-                  id="version-notes"
-                  value={versionNotes}
-                  onChange={(e) => setVersionNotes(e.target.value)}
-                  placeholder="What changed in this version?"
-                  disabled={uploading}
-                />
-              </div>
-              
-              {existingDocuments.length > 0 && (
-                <div className="text-sm text-muted-foreground">
-                  <p className="font-medium">Existing versions:</p>
-                  <ul className="list-disc list-inside ml-2">
-                    {existingDocuments.slice(0, 3).map((doc) => (
-                      <li key={doc.id}>
-                        Version {doc.version_number} - {new Date(doc.created_at).toLocaleDateString()}
-                        {doc.is_latest_version && ' (Current)'}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="type" className="text-base font-semibold">What is this? *</Label>
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
-                  <SelectTrigger className="h-11 text-base">
-                    <SelectValue placeholder="Risk Assessment, Insurance, Certificate..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {documentTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>
-                        <div>
-                          <div className="font-medium">{type.name}</div>
-                          <div className="text-xs text-muted-foreground">{type.description}</div>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <RequestDocumentTypeDialog />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="expiry" className="text-base font-semibold">Expiry Date (Optional)</Label>
-            <Input
-              id="expiry"
-              type="date"
-              value={expiryDate}
-              onChange={(e) => setExpiryDate(e.target.value)}
-              disabled={uploading}
-              className="h-11 text-base"
-            />
-          </div>
+        <div className="space-y-2">
+          <Label htmlFor="name" className="text-base font-semibold">File name shown in your list *</Label>
+          <Input
+            id="name"
+            value={documentName}
+            onChange={(e) => setDocumentName(e.target.value)}
+            placeholder="e.g., Risk Assessment 2024"
+            disabled={uploading}
+            className="h-11 text-base"
+          />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="notes" className="text-base font-semibold">Notes (Optional)</Label>
+          <Label htmlFor="type" className="text-base font-semibold">What is this? *</Label>
+          <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
+            <SelectTrigger className="h-11 text-base">
+              <SelectValue placeholder="Risk Assessment, Method Statement, Insurance, Certificate, Other" />
+            </SelectTrigger>
+            <SelectContent>
+              {documentTypes.map((type) => (
+                <SelectItem key={type.id} value={type.id}>
+                  <div>
+                    <div className="font-medium">{type.name}</div>
+                    <div className="text-xs text-muted-foreground">{type.description}</div>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            type="button"
+            variant="link"
+            size="sm"
+            onClick={() => {}}
+            className="p-0 h-auto text-xs"
+          >
+            Don't see your type? Request one
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="expiry" className="text-base font-semibold">Expiry Date (optional)</Label>
+          <Input
+            id="expiry"
+            type="date"
+            value={expiryDate}
+            onChange={(e) => setExpiryDate(e.target.value)}
+            disabled={uploading}
+            className="h-11 text-base"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="notes" className="text-base font-semibold">Notes (optional)</Label>
           <Textarea
             id="notes"
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Additional notes about this document"
             disabled={uploading}
+            rows={3}
             className="text-base"
           />
         </div>
 
-        {/* Version Control Section - Collapsed */}
-        <div className="space-y-4 border rounded-lg p-4 bg-muted/50">
-          <div className="flex items-center space-x-2">
-            <Checkbox 
-              id="version-control" 
-              checked={useVersionControl}
-              onCheckedChange={(checked) => setUseVersionControl(checked as boolean)}
-              disabled={uploading}
-            />
-            <Label htmlFor="version-control" className="flex items-center space-x-2 text-base font-semibold">
-              <span>Track versions (optional)</span>
+        {/* Version Control - Collapsible */}
+        <div className="space-y-3 pt-2 border-t">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="version-toggle" className="text-base font-semibold cursor-pointer flex items-center gap-2">
+              Track versions (optional)
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>Version control lets you upload newer versions of the same document while keeping track of previous versions. This is useful for documents that get updated regularly, like risk assessments or manuals.</p>
+                    <p>Version control lets you upload newer versions of the same document while keeping track of previous versions.</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             </Label>
+            <input
+              id="version-toggle"
+              type="checkbox"
+              checked={useVersionControl}
+              onChange={(e) => setUseVersionControl(e.target.checked)}
+              disabled={uploading}
+              className="w-5 h-5 cursor-pointer"
+            />
           </div>
           
           {useVersionControl && (
-            <div className="space-y-4 ml-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="version" className="text-base font-semibold">Version Number</Label>
-                  <Input
-                    id="version"
-                    value={versionNumber}
-                    onChange={(e) => setVersionNumber(e.target.value)}
-                    placeholder="e.g., 1.0, 2.1"
-                    disabled={uploading}
-                    className="h-11 text-base"
-                  />
-                </div>
-                
-                {existingDocuments.length > 0 && (
-                  <div className="space-y-2">
-                    <Label htmlFor="replacing" className="text-base font-semibold">Replacing Document</Label>
-                    <Select value={replacingDocumentId || ''} onValueChange={setReplacingDocumentId} disabled={uploading}>
-                      <SelectTrigger className="h-11 text-base">
-                        <SelectValue placeholder="Select document to replace" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="">None (New document)</SelectItem>
-                        {existingDocuments.map((doc) => (
-                          <SelectItem key={doc.id} value={doc.id}>
-                            Version {doc.version_number} - {new Date(doc.created_at).toLocaleDateString()}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="version-notes" className="text-base font-semibold">Version Notes</Label>
-                <Textarea
-                  id="version-notes"
-                  value={versionNotes}
-                  onChange={(e) => setVersionNotes(e.target.value)}
-                  placeholder="What changed in this version?"
-                  disabled={uploading}
-                  className="text-base"
-                />
-              </div>
-              
+            <div className="space-y-3 pl-4 border-l-2 border-muted">
+              <p className="text-sm text-muted-foreground">
+                This will create a new version and mark previous versions as superseded.
+              </p>
+
               {existingDocuments.length > 0 && (
-                <div className="text-sm text-muted-foreground">
-                  <p className="font-medium">Existing versions:</p>
-                  <ul className="list-disc list-inside ml-2">
-                    {existingDocuments.slice(0, 3).map((doc) => (
-                      <li key={doc.id}>
-                        Version {doc.version_number} - {new Date(doc.created_at).toLocaleDateString()}
-                        {doc.is_latest_version && ' (Current)'}
-                      </li>
-                    ))}
-                  </ul>
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Replace existing document (optional)</Label>
+                  <Select
+                    value={replacingDocumentId || "new"}
+                    onValueChange={(value) => setReplacingDocumentId(value === "new" ? null : value)}
+                    disabled={uploading}
+                  >
+                    <SelectTrigger className="h-10">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="new">Create as new document</SelectItem>
+                      {existingDocuments.map((doc) => (
+                        <SelectItem key={doc.id} value={doc.id}>
+                          Replace v{doc.version_number} (uploaded {new Date(doc.uploaded_at).toLocaleDateString()})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               )}
+
+              <div className="space-y-2">
+                <Label htmlFor="version" className="text-sm">Version Number</Label>
+                <Input
+                  id="version"
+                  type="text"
+                  placeholder="e.g., 1.0, 2.1"
+                  value={versionNumber}
+                  onChange={(e) => setVersionNumber(e.target.value)}
+                  disabled={uploading}
+                  className="h-10"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="version-notes" className="text-sm">Version Notes</Label>
+                <Textarea
+                  id="version-notes"
+                  placeholder="What changed in this version?"
+                  value={versionNotes}
+                  onChange={(e) => setVersionNotes(e.target.value)}
+                  disabled={uploading}
+                  rows={2}
+                />
+              </div>
             </div>
           )}
         </div>
 
-        <Button 
-          onClick={handleUpload} 
-          disabled={!selectedFile || !documentType || !documentName || uploading}
-          className="w-full btn-bold-primary"
-        >
+        <Button onClick={handleUpload} disabled={uploading} className="btn-bold-primary w-full md:w-auto">
+          <Upload className="mr-2 h-4 w-4" />
           {uploading ? 'Uploading...' : 'Upload'}
         </Button>
       </CardContent>
+      <RequestDocumentTypeDialog />
     </Card>
   );
 };

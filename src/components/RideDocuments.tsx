@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Upload, FileText } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import DocumentUpload from './DocumentUpload';
@@ -36,35 +38,51 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
         </p>
       </div>
 
-      <Tabs defaultValue="upload" className="space-y-6">
-        <TabsList className="tabs-bold grid w-full grid-cols-2">
-          <TabsTrigger value="upload" className="flex items-center space-x-2">
-            <Upload className="h-4 w-4" />
-            <span>Add a document</span>
-          </TabsTrigger>
-          <TabsTrigger value="documents" className="flex items-center space-x-2">
-            <FileText className="h-4 w-4" />
-            <span>All files</span>
-          </TabsTrigger>
-        </TabsList>
+      {!ride.category_id ? (
+        <Card className="border-2 border-warning">
+          <CardContent className="pt-6 space-y-4">
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold">Choose a category first</h3>
+              <p className="text-sm text-muted-foreground">
+                Technical bulletins need this. Pick a category for this ride to continue.
+              </p>
+            </div>
+            <Button className="btn-bold-primary" onClick={() => window.location.reload()}>
+              Refresh to select category
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <Tabs defaultValue="upload" className="space-y-6">
+          <TabsList className="tabs-bold grid w-full grid-cols-2">
+            <TabsTrigger value="upload" className="flex items-center space-x-2">
+              <Upload className="h-4 w-4" />
+              <span>Add a document</span>
+            </TabsTrigger>
+            <TabsTrigger value="documents" className="flex items-center space-x-2">
+              <FileText className="h-4 w-4" />
+              <span>All files</span>
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="upload">
-          <DocumentUpload 
-            rideId={ride.id}
-            rideName={ride.ride_name}
-            onUploadSuccess={handleUploadSuccess}
-          />
-        </TabsContent>
+          <TabsContent value="upload">
+            <DocumentUpload 
+              rideId={ride.id}
+              rideName={ride.ride_name}
+              onUploadSuccess={handleUploadSuccess}
+            />
+          </TabsContent>
 
-        <TabsContent value="documents">
-          <DocumentList 
-            key={refreshKey}
-            rideId={ride.id}
-            rideName={ride.ride_name}
-            onDocumentDeleted={handleDocumentDeleted}
-          />
-        </TabsContent>
-      </Tabs>
+          <TabsContent value="documents">
+            <DocumentList 
+              key={refreshKey}
+              rideId={ride.id}
+              rideName={ride.ride_name}
+              onDocumentDeleted={handleDocumentDeleted}
+            />
+          </TabsContent>
+        </Tabs>
+      )}
     </div>
   );
 };
