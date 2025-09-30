@@ -81,6 +81,12 @@ verify_jwt = true
 [functions.send-inspection-reminders]
 verify_jwt = false
 
+[functions.send-welcome-email]
+verify_jwt = false
+
+[functions.send-daily-check-report]
+verify_jwt = true
+
 [analytics]
 enabled = false
 port = 54327

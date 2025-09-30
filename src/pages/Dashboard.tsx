@@ -91,8 +91,8 @@ const Dashboard = () => {
     );
   }
 
-  // Show profile setup if no profile exists
-  if (!profile) {
+  // Show profile setup if no profile exists or if profile is incomplete
+  if (!profile || !profile.company_name || !profile.controller_name) {
     return <ProfileSetup onComplete={loadProfile} />;
   }
 

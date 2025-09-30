@@ -65,6 +65,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         emailRedirectTo: redirectUrl
       }
     });
+
+    // Send welcome email
+    if (!error) {
+      setTimeout(async () => {
+        try {
+          await supabase.functions.invoke('send-welcome-email', {
+            body: { email }
+          });
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+        }
+      }, 0);
+    }
+
     return { error };
   };
 

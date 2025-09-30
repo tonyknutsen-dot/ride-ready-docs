@@ -5,6 +5,7 @@ import { Clock, Calendar, FileText, CalendarDays, TestTube, Building } from 'luc
 import { Tables } from '@/integrations/supabase/types';
 import RideDailyChecks from './RideDailyChecks';
 import DailyCheckTemplateManager from './DailyCheckTemplateManager';
+import DailyCheckHistory from './DailyCheckHistory';
 import MonthlyCheckTemplateManager from './MonthlyCheckTemplateManager';
 import YearlyCheckTemplateManager from './YearlyCheckTemplateManager';
 import InspectionChecklist from './InspectionChecklist';
@@ -76,12 +77,16 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               </CardHeader>
             </Card>
             <Tabs defaultValue="perform" className="space-y-4">
-              <TabsList>
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="perform">Perform Checks</TabsTrigger>
+                <TabsTrigger value="history">History</TabsTrigger>
                 <TabsTrigger value="templates">Manage Templates</TabsTrigger>
               </TabsList>
               <TabsContent value="perform">
                 <RideDailyChecks ride={ride} />
+              </TabsContent>
+              <TabsContent value="history">
+                <DailyCheckHistory rideId={ride.id} />
               </TabsContent>
               <TabsContent value="templates">
                 <DailyCheckTemplateManager ride={ride} />
