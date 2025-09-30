@@ -12,6 +12,11 @@ import Dashboard from "./pages/Dashboard";
 import Demo from "./pages/Demo";
 import NotFound from "./pages/NotFound";
 import PlanBilling from "./pages/PlanBilling";
+import HowItWorks from "./pages/HowItWorks";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
+import HelpCenter from "./pages/HelpCenter";
+import Security from "./pages/Security";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +31,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/demo" element={<Demo />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/help" element={<HelpCenter />} />
+            <Route path="/security" element={<Security />} />
             <Route 
               path="/dashboard" 
               element={
