@@ -24,6 +24,13 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
   const { toast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
+
+  // Helper to identify image documents
+  const isImageDoc = (doc: Document) => {
+    const name = (doc.file_path || doc.document_name || '').toLowerCase();
+    return /\.(jpg|jpeg|png|gif|bmp|webp|tif|tiff)$/.test(name);
+  };
 
   useEffect(() => {
     if (user) {
@@ -52,6 +59,38 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
       }
 
       setDocuments(data || []);
+      
+      // Fetch thumbnails for image documents
+      if (data && data.length > 0) {
+        const fetchThumbs = async () => {
+          try {
+            const next: Record<string, string> = {};
+            const imageDocs = data.filter(isImageDoc);
+
+            await Promise.all(
+              imageDocs.map(async (doc) => {
+                const { data: signedData, error } = await supabase
+                  .storage
+                  .from('ride-documents')
+                  .createSignedUrl(doc.file_path, 3600); // 1 hour preview
+
+                if (!error && signedData?.signedUrl) {
+                  next[doc.id] = signedData.signedUrl;
+                }
+              })
+            );
+
+            setThumbs(next);
+          } catch (e) {
+            // Silent fail – fall back to icon
+            console.warn('Thumbnail fetch skipped:', e);
+          }
+        };
+
+        fetchThumbs();
+      } else {
+        setThumbs({});
+      }
     } catch (error: any) {
       console.error('Error loading documents:', error);
       toast({
@@ -155,6 +194,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
       inspection: 'Inspection',
       manual: 'Manual',
       insurance: 'Insurance',
+      photo: 'Device Photo',
       other: 'Other'
     };
     return types[type] || type;
@@ -174,11 +214,12 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
     if (t === 'method_statement' || t.includes('method')) return "Method Statement";
     if (t.includes('insur')) return "Insurance";
     if (t.includes('cert')) return "Certificate";
+    if (t === 'photo' || t.includes('photo')) return "Device Photo";
     return "Other";
   };
 
   const groupByType = (docs: Document[]) => {
-    const ORDER = ["Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Other"];
+    const ORDER = ["Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Device Photo", "Other"];
     const groups: Record<string, Document[]> = {};
     docs.forEach(d => {
       const k = prettyType(d.document_type);
@@ -239,7 +280,15 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
             <div className="grid grid-cols-1 gap-3">
               {g.items.map(d => (
                 <div key={d.id} className="border rounded-2xl p-3 flex items-start gap-3 hover:bg-muted/50 transition-colors">
-                  <FileText className="w-5 h-5 mt-0.5 text-primary" />
+                  {thumbs[d.id] ? (
+                    <img
+                      src={thumbs[d.id]}
+                      alt={d.document_name}
+                      className="w-10 h-10 rounded-md object-cover border"
+                    />
+                  ) : (
+                    <FileText className="w-5 h-5 mt-0.5 text-primary" />
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="font-medium">{d.document_name}</div>
                     <div className="text-xs text-muted-foreground">
@@ -308,7 +357,15 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
             {documents.map((doc) => (
               <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                 <div className="flex items-center space-x-3 flex-1">
-                  <FileText className="h-8 w-8 text-primary" />
+                  {thumbs[doc.id] ? (
+                    <img
+                      src={thumbs[doc.id]}
+                      alt={doc.document_name}
+                      className="h-8 w-8 rounded-md object-cover border"
+                    />
+                  ) : (
+                    <FileText className="h-8 w-8 text-primary" />
+                  )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-2">
                       <h4 className="font-medium truncate">{doc.document_name}</h4>

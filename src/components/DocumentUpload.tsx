@@ -30,6 +30,7 @@ const documentTypes = [
   { id: 'ndt_schedule', name: 'NDT Schedule', description: 'Non-destructive testing schedules' },
   { id: 'operator_manual', name: 'Operator Manual', description: 'Operating manuals and instructions' },
   { id: 'other', name: 'Other Documents', description: 'Other document types' },
+  { id: 'photo', name: 'Device Photo', description: 'Pictures of the ride for identification and sharing' },
   { id: 'risk_assessment', name: 'Risk Assessment', description: 'General, fire, confined space, working at height, design, and maturity risk assessments' },
 ];
 
@@ -222,17 +223,33 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
             id="file"
             type="file"
             onChange={handleFileSelect}
-            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf"
+            accept={documentType === 'photo'
+              ? 'image/*'
+              : '.pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf'}
+            // @ts-ignore - capture attribute opens camera on mobile
+            capture={documentType === 'photo' ? 'environment' : undefined}
             disabled={uploading}
             className="h-11 text-base cursor-pointer"
           />
           <p className="text-xs text-muted-foreground mt-1">
             Supported: PDF, Word, Excel, PowerPoint, Images, Video, CAD files, Archives
+            {documentType === 'photo' && <br />}
+            {documentType === 'photo' && 'Tip: For photos, take a clear picture of the whole device and the ID plate.'}
           </p>
           {selectedFile && (
             <p className="text-sm text-muted-foreground">
               Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
             </p>
+          )}
+          {selectedFile && documentType === 'photo' && selectedFile.type.startsWith('image/') && (
+            <div className="mt-2">
+              <img
+                src={URL.createObjectURL(selectedFile)}
+                alt="Preview"
+                className="h-24 rounded-md border object-cover"
+                onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
+              />
+            </div>
           )}
         </div>
 
