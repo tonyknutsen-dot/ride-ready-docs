@@ -40,10 +40,18 @@ const CalendarView = () => {
   useEffect(() => {
     if (user) {
       loadCalendarEvents();
+    } else {
+      setLoading(false);
     }
   }, [user, currentMonth]);
 
   const loadCalendarEvents = async () => {
+    if (!user?.id) {
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
     try {
       const monthStart = startOfMonth(currentMonth);
       const monthEnd = endOfMonth(currentMonth);
@@ -211,8 +219,24 @@ const CalendarView = () => {
 
   const selectedDateEvents = getEventsForDate(selectedDate);
 
+  if (!user) {
+    return (
+      <Card>
+        <CardContent className="py-12 text-center">
+          <p className="text-muted-foreground">Please log in to view calendar</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  console.log('CalendarView rendering - user:', user?.id, 'loading:', loading, 'events:', events.length);
+
   return (
     <div className="space-y-6">
+      {/* Debug indicator */}
+      <div className="bg-green-100 border border-green-300 p-2 text-sm rounded">
+        Calendar component loaded. User: {user?.email} | Events: {events.length} | Loading: {loading.toString()}
+      </div>
       {/* Header with Navigation */}
       <Card>
         <CardHeader>
