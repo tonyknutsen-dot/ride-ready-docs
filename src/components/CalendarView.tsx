@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,6 +32,7 @@ interface CalendarEvent {
 const CalendarView = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -52,7 +54,7 @@ const CalendarView = () => {
       return;
     }
     
-    console.log('Loading calendar events for month:', format(currentMonth, 'yyyy-MM'));
+    
     setLoading(true);
     setLoadError(null);
     try {
@@ -164,8 +166,6 @@ const CalendarView = () => {
 
       if (schedulesError) {
         console.error('Error fetching inspection schedules:', schedulesError);
-      } else {
-        console.log('Found inspection schedules:', inspectionSchedules?.length || 0, inspectionSchedules);
       }
 
       const today = new Date();
@@ -186,8 +186,6 @@ const CalendarView = () => {
           rideId: schedule.ride_id,
         });
       });
-
-      console.log('Total events loaded:', allEvents.length);
 
       // Fetch all rides in one query
       if (rideIds.size > 0) {
@@ -219,19 +217,33 @@ const CalendarView = () => {
   };
 
   const getEventsForDate = (date: Date) => {
-    const filtered = events.filter(event => {
+    return events.filter(event => {
       const eventDate = parseISO(event.date);
       const matches = isSameDay(eventDate, date);
-      console.log('Comparing:', {
-        eventDate: format(eventDate, 'yyyy-MM-dd'),
-        selectedDate: format(date, 'yyyy-MM-dd'),
-        matches,
-        eventTitle: event.title
-      });
       return matches && (filterType === 'all' || event.type === filterType);
     });
-    console.log('Filtered events for date:', format(date, 'yyyy-MM-dd'), filtered.length);
-    return filtered;
+  };
+
+  const handleEventClick = (event: CalendarEvent) => {
+    if (!event.rideId) {
+      toast({
+        title: "Navigation Error",
+        description: "Cannot navigate to event without ride information",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Navigate to the ride workspace with the appropriate tab
+    const tabMap = {
+      'inspection': 'inspections',
+      'maintenance': 'maintenance',
+      'document_expiry': 'documents',
+      'ndt': 'ndt'
+    };
+    
+    const tab = tabMap[event.type] || 'inspections';
+    navigate(`/dashboard?ride=${event.rideId}&tab=${tab}`);
   };
 
   const getEventTypeColor = (type: string) => {
@@ -416,7 +428,8 @@ const CalendarView = () => {
                 {selectedDateEvents.map((event) => (
                   <div 
                     key={event.id} 
-                    className="p-3 rounded-lg border bg-card-hover hover:bg-accent/50 transition-smooth"
+                    onClick={() => handleEventClick(event)}
+                    className="p-3 rounded-lg border bg-card-hover hover:bg-accent/50 transition-smooth cursor-pointer"
                   >
                     <div className="flex items-start justify-between space-x-2">
                       <div className="flex-1 min-w-0">
@@ -474,8 +487,9 @@ const CalendarView = () => {
                 .slice(0, 5)
                 .map((event) => (
                   <div 
-                    key={event.id} 
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card-hover hover:bg-accent/50 transition-smooth"
+                    key={event.id}
+                    onClick={() => handleEventClick(event)}
+                    className="flex items-center justify-between p-3 rounded-lg border bg-card-hover hover:bg-accent/50 transition-smooth cursor-pointer"
                   >
                     <div className="flex items-center space-x-3">
                       {getStatusIcon(event.status)}
