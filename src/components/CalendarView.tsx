@@ -151,6 +151,34 @@ const CalendarView = () => {
         }
       });
 
+      // Load inspection schedules
+      const { data: inspectionSchedules } = await supabase
+        .from('inspection_schedules')
+        .select('id, inspection_name, due_date, ride_id, advance_notice_days')
+        .eq('user_id', user?.id)
+        .eq('is_active', true)
+        .gte('due_date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('due_date', format(monthEnd, 'yyyy-MM-dd'));
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      inspectionSchedules?.forEach(schedule => {
+        if (schedule.ride_id) rideIds.add(schedule.ride_id);
+        const dueDate = new Date(schedule.due_date);
+        dueDate.setHours(0, 0, 0, 0);
+        const isOverdue = dueDate < today;
+        
+        allEvents.push({
+          id: schedule.id,
+          title: `Scheduled: ${schedule.inspection_name}`,
+          date: schedule.due_date,
+          type: 'inspection',
+          status: isOverdue ? 'overdue' : 'pending',
+          rideId: schedule.ride_id,
+        });
+      });
+
       // Fetch all rides in one query
       if (rideIds.size > 0) {
         const { data: rides } = await supabase
