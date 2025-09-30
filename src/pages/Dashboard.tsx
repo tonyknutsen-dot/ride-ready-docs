@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -167,6 +168,11 @@ const Dashboard = () => {
                     {user?.email?.split('@')[0]}
                   </p>
                 </div>
+                <Link to="/billing">
+                  <Button variant="outline" size="sm">
+                    Plan & Billing
+                  </Button>
+                </Link>
                 <Button
                   variant="outline"
                   size="sm"
