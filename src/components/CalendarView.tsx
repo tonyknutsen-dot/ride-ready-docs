@@ -35,6 +35,7 @@ const CalendarView = () => {
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
 
   useEffect(() => {
@@ -182,6 +183,7 @@ const CalendarView = () => {
       setEvents(allEvents);
     } catch (error) {
       console.error('Error loading calendar events:', error);
+      setLoadError(error instanceof Error ? error.message : 'Unknown error');
       toast({
         title: "Error loading calendar",
         description: "Failed to load calendar events",
@@ -240,8 +242,9 @@ const CalendarView = () => {
               <div className="space-y-2">
                 <h3 className="font-semibold">Your calendar is empty</h3>
                 <p className="text-sm text-muted-foreground">
-                  Schedule events by adding inspections, maintenance records, or document expiry dates to your rides. 
-                  They'll automatically appear here.
+                  {loadError 
+                    ? 'No events yet (and we hit an error fetching some data). The calendar itself works — add checks/expiries to see them here.'
+                    : 'No events yet. Add inspections, maintenance, or document expiry dates to see them here.'}
                 </p>
               </div>
             </div>

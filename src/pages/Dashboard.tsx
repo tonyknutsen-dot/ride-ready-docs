@@ -333,7 +333,7 @@ const Dashboard = () => {
             </TabsContent>
 
             <TabsContent value="calendar">
-              <FeatureGate requiredPlan="advanced" feature="Calendar & Scheduling">
+              <FeatureGate requiredPlan="basic" feature="Calendar & Scheduling">
                 <CalendarView />
               </FeatureGate>
             </TabsContent>
