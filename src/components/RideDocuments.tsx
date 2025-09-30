@@ -49,7 +49,16 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
           <div className="text-sm text-muted-foreground">
             Technical bulletins need this. Pick one for this ride.
           </div>
-          <Button className="btn-bold-primary">Select category</Button>
+          <Button 
+            className="btn-bold-primary"
+            onClick={() => {
+              // TODO: Open edit flow for this ride to pick category
+              // Consider: navigate to edit form or open RideForm dialog
+              console.log('Edit ride to select category:', ride.id);
+            }}
+          >
+            Select category
+          </Button>
         </CardContent>
       </Card>
     );
@@ -76,7 +85,7 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
                 </Button>
               }
             />
-            <Button variant="outline">
+            <Button variant="outline" disabled title="Download all coming soon">
               <Download className="w-4 h-4 mr-2" /> Download all
             </Button>
           </div>

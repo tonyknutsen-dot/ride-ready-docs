@@ -25,6 +25,7 @@ import { FeatureGate } from '@/components/FeatureGate';
 import { RestrictedFeatureCard } from '@/components/RestrictedFeatureCard';
 import { useSubscription } from '@/hooks/useSubscription';
 import OnboardingGuide from '@/components/OnboardingGuide';
+import DeviceHintBanner from '@/components/DeviceHintBanner';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -197,6 +198,10 @@ const Dashboard = () => {
       {/* Main Content */}
       <main className="container mx-auto px-3 py-3 md:px-4 md:py-6">
         <TrialStatus onUpgrade={() => setShowPlanSelection(true)} />
+        
+        <div className="mb-4">
+          <DeviceHintBanner />
+        </div>
         
         <div className="mb-6">
           <OnboardingGuide />
