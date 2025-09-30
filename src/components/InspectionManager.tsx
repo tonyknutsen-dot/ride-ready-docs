@@ -35,7 +35,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="daily" className="flex items-center space-x-2">
             <Clock className="h-4 w-4" />
             <span>Daily</span>
@@ -43,6 +43,10 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
           <TabsTrigger value="monthly" className="flex items-center space-x-2">
             <Calendar className="h-4 w-4" />
             <span>Monthly</span>
+          </TabsTrigger>
+          <TabsTrigger value="yearly" className="flex items-center space-x-2">
+            <CalendarDays className="h-4 w-4" />
+            <span>Yearly</span>
           </TabsTrigger>
           <TabsTrigger value="annual" className="flex items-center space-x-2">
             <Building className="h-4 w-4" />
@@ -53,7 +57,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
             <span>NDT</span>
           </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center space-x-2">
-            <CalendarDays className="h-4 w-4" />
+            <FileText className="h-4 w-4" />
             <span>Reports</span>
           </TabsTrigger>
         </TabsList>
@@ -109,6 +113,34 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               </TabsContent>
               <TabsContent value="templates">
                 <MonthlyCheckTemplateManager ride={ride} />
+              </TabsContent>
+            </Tabs>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="yearly">
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <CalendarDays className="h-5 w-5" />
+                  <span>Yearly Safety Checks</span>
+                </CardTitle>
+                <CardDescription>
+                  Perform and manage yearly safety inspections for this ride
+                </CardDescription>
+              </CardHeader>
+            </Card>
+            <Tabs defaultValue="perform" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="perform">Perform Checks</TabsTrigger>
+                <TabsTrigger value="templates">Manage Templates</TabsTrigger>
+              </TabsList>
+              <TabsContent value="perform">
+                <InspectionChecklist ride={ride} frequency="yearly" />
+              </TabsContent>
+              <TabsContent value="templates">
+                <YearlyCheckTemplateManager ride={ride} />
               </TabsContent>
             </Tabs>
           </div>
