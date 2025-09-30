@@ -229,14 +229,25 @@ const CalendarView = () => {
     );
   }
 
-  console.log('CalendarView rendering - user:', user?.id, 'loading:', loading, 'events:', events.length);
-
   return (
     <div className="space-y-6">
-      {/* Debug indicator */}
-      <div className="bg-green-100 border border-green-300 p-2 text-sm rounded">
-        Calendar component loaded. User: {user?.email} | Events: {events.length} | Loading: {loading.toString()}
-      </div>
+      {/* Show helpful message when no events exist */}
+      {!loading && events.length === 0 && (
+        <Card className="border-2 border-primary/20 bg-primary/5">
+          <CardContent className="py-6">
+            <div className="flex items-start gap-3">
+              <CalendarIcon className="h-5 w-5 text-primary mt-0.5" />
+              <div className="space-y-2">
+                <h3 className="font-semibold">Your calendar is empty</h3>
+                <p className="text-sm text-muted-foreground">
+                  Schedule events by adding inspections, maintenance records, or document expiry dates to your rides. 
+                  They'll automatically appear here.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
       {/* Header with Navigation */}
       <Card>
         <CardHeader>
