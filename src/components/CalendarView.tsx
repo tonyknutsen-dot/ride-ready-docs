@@ -429,25 +429,25 @@ const CalendarView = () => {
                   <div 
                     key={event.id} 
                     onClick={() => handleEventClick(event)}
-                    className="p-3 rounded-lg border bg-card-hover hover:bg-accent/50 transition-smooth cursor-pointer"
+                    className="p-2 md:p-3 rounded-lg border bg-card-hover hover:bg-accent/50 transition-smooth cursor-pointer"
                   >
-                    <div className="flex items-start justify-between space-x-2">
+                    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
+                        <div className="flex items-center gap-1.5 mb-1">
                           {getStatusIcon(event.status)}
-                          <p className="font-medium text-sm truncate">
+                          <p className="font-medium text-xs md:text-sm break-words">
                             {event.title}
                           </p>
                         </div>
                         {event.rideName && (
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs text-muted-foreground break-words">
                             {event.rideName}
                           </p>
                         )}
                       </div>
                       <Badge 
                         variant="outline" 
-                        className={cn("text-xs shrink-0", getEventTypeColor(event.type))}
+                        className={cn("text-xs shrink-0 self-start", getEventTypeColor(event.type))}
                       >
                         {event.type.replace('_', ' ')}
                       </Badge>
