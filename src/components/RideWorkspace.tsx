@@ -118,7 +118,7 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
                 className="flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap"
               >
                 <CheckSquare className="h-4 w-4" />
-                Inspections
+                Checks & Inspections
               </TabsTrigger>
               <TabsTrigger 
                 value="maintenance" 
@@ -147,8 +147,8 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
               className="flex flex-col items-center gap-2 py-3"
             >
               <CheckSquare className="h-5 w-5" />
-              <span className="font-medium">Inspections</span>
-              <span className="text-xs text-muted-foreground">Daily Checks & Reports</span>
+              <span className="font-medium">Checks & Inspections</span>
+              <span className="text-xs text-muted-foreground">Self-checks & External Inspections</span>
             </TabsTrigger>
             <TabsTrigger 
               value="maintenance" 
@@ -174,9 +174,9 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
 
         <TabsContent value="inspections" className="space-y-6">
           <div className="text-center space-y-2 mb-6">
-            <h3 className="text-lg font-semibold">Inspection Management</h3>
+            <h3 className="text-lg font-semibold">Safety Checks & Inspections</h3>
             <p className="text-sm text-muted-foreground">
-              Manage daily checks, annual inspections and NDT testing for <strong>{selectedRide.ride_name}</strong>
+              <strong>Showmen checks:</strong> Daily, monthly, yearly • <strong>External inspections:</strong> Annual & NDT by independent bodies for <strong>{selectedRide.ride_name}</strong>
             </p>
           </div>
           <InspectionManager ride={selectedRide} />

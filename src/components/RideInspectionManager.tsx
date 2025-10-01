@@ -37,9 +37,9 @@ const RideInspectionManager = () => {
             Back to Selection
           </Button>
           <div>
-            <h2 className="text-2xl font-bold">{selectedRide.ride_name} - Inspections</h2>
+            <h2 className="text-2xl font-bold">{selectedRide.ride_name} - Checks & Inspections</h2>
             <p className="text-muted-foreground">
-              Manage inspections for {selectedRide.ride_name} ({selectedRide.ride_categories.name})
+              Safety checks (by showmen) and external inspections for {selectedRide.ride_name} ({selectedRide.ride_categories.name})
             </p>
           </div>
         </div>
@@ -51,9 +51,9 @@ const RideInspectionManager = () => {
 
   return (
     <RideSelector
-      title="Inspection Management"
-      description="Select a ride, stall, or equipment to manage its inspections. Perform daily checks, schedule annual inspections and NDT testing."
-      actionLabel="Manage Inspections"
+      title="Safety Checks & Inspections"
+      description="Select equipment to manage safety checks and inspections. Daily/monthly/yearly checks are done by showmen. Annual and NDT inspections are done by independent inspection bodies."
+      actionLabel="Manage Checks & Inspections"
       icon={({ className }) => <div className={className}>✅</div>}
       onRideSelect={handleRideSelect}
       showAddRide={true}

@@ -29,9 +29,9 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <h3 className="text-xl font-semibold">Inspection Management</h3>
+        <h3 className="text-xl font-semibold">Safety Checks & Inspections</h3>
         <p className="text-muted-foreground">
-          Manage all inspection types and schedules for {ride.ride_name}
+          <strong>Self-Checks:</strong> Daily, monthly & yearly checks performed by showmen • <strong>External Inspections:</strong> Annual & NDT inspections by independent bodies
         </p>
       </div>
 
@@ -69,10 +69,10 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Clock className="h-5 w-5" />
-                  <span>Daily Safety Checks</span>
+                  <span>Daily Safety Checks (Showmen)</span>
                 </CardTitle>
                 <CardDescription>
-                  Perform and manage daily safety inspections for this ride
+                  Perform and record daily safety checks - done by showmen before operation
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -101,10 +101,10 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Calendar className="h-5 w-5" />
-                  <span>Monthly Safety Checks</span>
+                  <span>Monthly Safety Checks (Showmen)</span>
                 </CardTitle>
                 <CardDescription>
-                  Perform and manage monthly safety inspections for this ride
+                  Perform and record monthly safety checks - done by showmen
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -129,10 +129,10 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <CalendarDays className="h-5 w-5" />
-                  <span>Yearly Safety Checks</span>
+                  <span>Yearly Safety Checks (Showmen)</span>
                 </CardTitle>
                 <CardDescription>
-                  Perform and manage yearly safety inspections for this ride
+                  Perform and record yearly safety checks - done by showmen
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -157,10 +157,10 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Building className="h-5 w-5" />
-                  <span>Inspection Schedules</span>
+                  <span>External Inspection Schedules</span>
                 </CardTitle>
                 <CardDescription>
-                  Track inspection due dates and manage advance notifications for all inspection types (in-service, electrical, NDT, etc.)
+                  Track and schedule inspections by independent inspection bodies (annual in-service, electrical, NDT, etc.)
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -178,10 +178,10 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <CalendarDays className="h-5 w-5" />
-                  <span>Inspection History & Reports</span>
+                  <span>External Inspection Reports</span>
                 </CardTitle>
                 <CardDescription>
-                  View and manage historical inspection data and generate compliance reports
+                  View reports from independent inspection bodies and generate compliance documentation
                 </CardDescription>
               </CardHeader>
             </Card>
