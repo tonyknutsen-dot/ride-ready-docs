@@ -8,7 +8,7 @@ import { useState } from "react";
 
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Home", icon: Home },
-  { to: "/dashboard?tab=rides", label: "Rides", icon: FolderOpen },
+  { to: "/dashboard?tab=workspace", label: "Rides", icon: FolderOpen },
   { to: "/dashboard?tab=calendar", label: "Checks", icon: BadgeCheck },
 ];
 
@@ -22,7 +22,7 @@ export default function MobileBottomNav() {
   // Active matcher
   const isActive = (to: string) => {
     if (to === "/dashboard" && loc.pathname === "/dashboard" && !loc.search) return true;
-    if (to.includes("tab=rides") && loc.search.includes("tab=rides")) return true;
+    if (to.includes("tab=workspace") && loc.search.includes("tab=workspace")) return true;
     if (to.includes("tab=calendar") && loc.search.includes("tab=calendar")) return true;
     return false;
   };
@@ -32,7 +32,7 @@ export default function MobileBottomNav() {
     const searchParams = new URLSearchParams(loc.search);
     const currentTab = searchParams.get("tab");
     
-    if (currentTab === "rides") {
+    if (currentTab === "workspace") {
       // Add new ride
       window.dispatchEvent(new CustomEvent("rrd:add-ride"));
     } else if (currentTab === "documents") {
@@ -42,8 +42,8 @@ export default function MobileBottomNav() {
       // Start check
       window.dispatchEvent(new CustomEvent("rrd:start-check"));
     } else {
-      // Default: go to rides and add
-      nav("/dashboard?tab=rides");
+      // Default: go to workspace and add
+      nav("/dashboard?tab=workspace");
       setTimeout(() => window.dispatchEvent(new CustomEvent("rrd:add-ride")), 250);
     }
   };
