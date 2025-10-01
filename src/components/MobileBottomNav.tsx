@@ -94,15 +94,7 @@ export default function MobileBottomNav() {
             </SheetHeader>
             <div className="grid grid-cols-2 gap-2 py-4">
               <Link 
-                to="/dashboard?tab=global-docs" 
-                className="btn-muted-tile"
-                onClick={() => setOpen(false)}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Global Docs
-              </Link>
-              <Link 
-                to="/plan-billing" 
+                to="/billing" 
                 className="btn-muted-tile"
                 onClick={() => setOpen(false)}
               >
@@ -120,7 +112,7 @@ export default function MobileBottomNav() {
                 </Link>
               )}
               <Link 
-                to="/help-center" 
+                to="/help" 
                 className="btn-muted-tile"
                 onClick={() => setOpen(false)}
               >
