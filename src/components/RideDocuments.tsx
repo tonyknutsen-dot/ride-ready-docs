@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,10 +25,21 @@ interface RideDocumentsProps {
 const RideDocuments = ({ ride }: RideDocumentsProps) => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [downloading, setDownloading] = useState(false);
+  const [activeTab, setActiveTab] = useState('list');
   const { toast } = useToast();
+
+  // Listen for mobile nav "upload doc" event
+  useEffect(() => {
+    const handler = () => {
+      setActiveTab('upload');
+    };
+    window.addEventListener("rrd:upload-doc", handler);
+    return () => window.removeEventListener("rrd:upload-doc", handler);
+  }, []);
 
   const handleUploadSuccess = () => {
     setRefreshKey(prev => prev + 1);
+    setActiveTab('list'); // Switch back to list after upload
   };
 
   const handleDocumentDeleted = () => {
@@ -178,7 +189,7 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
       </Card>
 
       {/* Tabs: default to LIST so they see everything first */}
-      <Tabs defaultValue="list" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="tabs-bold overflow-x-auto h-11">
           <TabsTrigger value="list" className="flex items-center space-x-2 h-10">
             <FileText className="h-4 w-4" />

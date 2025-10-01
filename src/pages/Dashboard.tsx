@@ -212,7 +212,7 @@ const Dashboard = () => {
       </header>
 
       {/* Main Content */}
-      <main className="container mx-auto px-3 py-3 md:px-4 md:py-6">
+      <main className="container mx-auto px-3 py-3 md:px-4 md:py-6 pb-20 md:pb-6">
         <TrialStatus onUpgrade={() => setShowPlanSelection(true)} />
         
         <div className="mb-4">

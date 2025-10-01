@@ -175,9 +175,24 @@ All colors MUST be HSL.
       touch-action: pan-x;
     }
     
-    .touch-manipulation {
-      touch-action: manipulation;
-    }
+  .touch-manipulation {
+    touch-action: manipulation;
+  }
+
+  .btn-muted-tile {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    border: 1px solid hsl(var(--border));
+    border-radius: 0.75rem;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+  }
+
+  .btn-muted-tile:hover {
+    background: hsl(var(--muted));
+  }
     
     /* Better mobile container spacing */
     .container {

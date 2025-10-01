@@ -101,7 +101,7 @@ export default function PlanBilling() {
   const plan = profile?.subscription_plan ?? "basic";
 
   return (
-    <div className="p-4 max-w-2xl mx-auto space-y-4">
+    <div className="p-4 max-w-2xl mx-auto space-y-4 pb-20 md:pb-4">
       <Button variant="ghost" onClick={() => nav(-1)}><ArrowLeft className="w-4 h-4 mr-2" />Back</Button>
 
       {/* Current Plan Card */}
