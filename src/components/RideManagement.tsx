@@ -246,24 +246,24 @@ const RideManagement = () => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
           {rides.map((ride) => (
             <Card key={ride.id} className="hover:shadow-md transition-all cursor-pointer border-muted/50">
-              <CardHeader className="pb-3">
-                <div className="flex flex-col space-y-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-base leading-tight flex-1 min-w-0 truncate">
-                      {ride.ride_name}
-                    </CardTitle>
-                    <Badge 
-                      variant="outline" 
-                      className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20 flex-shrink-0"
-                    >
-                      {ride.ride_categories.name}
-                    </Badge>
-                  </div>
-                  
-                  {/* Simplified details for mobile */}
+              <CardHeader className="pb-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <CardTitle className="text-base sm:text-lg leading-tight flex-1 min-w-0 break-words line-clamp-2">
+                    {ride.ride_name}
+                  </CardTitle>
+                  <Badge 
+                    variant="outline" 
+                    className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 bg-primary/10 text-primary border-primary/20 flex-shrink-0 whitespace-nowrap"
+                  >
+                    {ride.ride_categories.name}
+                  </Badge>
+                </div>
+                
+                {/* Simplified details for mobile */}
+                {(ride.manufacturer || ride.year_manufactured) && (
                   <div className="text-xs text-muted-foreground space-y-0.5">
                     {ride.manufacturer && (
                       <div className="truncate">Make: {ride.manufacturer}</div>
@@ -272,61 +272,59 @@ const RideManagement = () => {
                       <div>Year: {ride.year_manufactured}</div>
                     )}
                   </div>
-                </div>
+                )}
               </CardHeader>
               
-              <CardContent className="pt-0">
-                <div className="space-y-3">
-                  {/* Clean 2-column stats for mobile */}
-                  <div className="grid grid-cols-2 gap-2">
-                    <div className="p-2 rounded-md bg-muted/50 text-center">
-                      <FileText className="h-3 w-3 mx-auto text-primary mb-1" />
-                      <p className="text-xs font-medium">
-                        {rideStats[ride.id]?.docCount ?? 0}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">Documents</p>
-                    </div>
-                    <div className="p-2 rounded-md bg-muted/50 text-center">
-                      <CheckSquare className="h-3 w-3 mx-auto text-accent mb-1" />
-                      <p className="text-xs font-medium">
-                        {rideStats[ride.id]?.checkCount ?? 0}
-                      </p>
-                      <p className="text-[10px] text-muted-foreground">Checks</p>
-                    </div>
+              <CardContent className="pt-0 space-y-3">
+                {/* Clean 2-column stats for mobile */}
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2 rounded-md bg-muted/50 text-center">
+                    <FileText className="h-3 w-3 sm:h-4 sm:w-4 mx-auto text-primary mb-1" />
+                    <p className="text-xs sm:text-sm font-medium">
+                      {rideStats[ride.id]?.docCount ?? 0}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">Documents</p>
                   </div>
-
-                  {/* Next due - if exists */}
-                  {rideStats[ride.id]?.nextDue && (
-                    <div className="text-center p-2 rounded-md bg-amber-50 border border-amber-200">
-                      <p className="text-xs text-amber-700 font-medium">
-                        Due: {new Date(rideStats[ride.id].nextDue!).toLocaleDateString('en-GB', { 
-                          day: '2-digit', 
-                          month: 'short',
-                          year: '2-digit'
-                        })}
-                      </p>
-                    </div>
-                  )}
-
-                  {/* Simplified action buttons */}
-                  <div className="flex gap-2">
-                    <Button 
-                      onClick={() => setSelectedRide(ride)}
-                      className="flex-1 text-xs"
-                      variant="outline"
-                      size="sm"
-                    >
-                      Manage
-                    </Button>
-                    <SendDocumentsDialog 
-                      ride={ride} 
-                      trigger={
-                        <Button variant="ghost" size="sm" className="px-2">
-                          <Mail className="h-3 w-3" />
-                        </Button>
-                      }
-                    />
+                  <div className="p-2 rounded-md bg-muted/50 text-center">
+                    <CheckSquare className="h-3 w-3 sm:h-4 sm:w-4 mx-auto text-accent mb-1" />
+                    <p className="text-xs sm:text-sm font-medium">
+                      {rideStats[ride.id]?.checkCount ?? 0}
+                    </p>
+                    <p className="text-[10px] sm:text-xs text-muted-foreground">Checks</p>
                   </div>
+                </div>
+
+                {/* Next due - if exists */}
+                {rideStats[ride.id]?.nextDue && (
+                  <div className="text-center p-2 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                    <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                      Due: {new Date(rideStats[ride.id].nextDue!).toLocaleDateString('en-GB', { 
+                        day: '2-digit', 
+                        month: 'short',
+                        year: '2-digit'
+                      })}
+                    </p>
+                  </div>
+                )}
+
+                {/* Simplified action buttons */}
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => setSelectedRide(ride)}
+                    className="flex-1 text-xs sm:text-sm"
+                    variant="outline"
+                    size="sm"
+                  >
+                    Manage
+                  </Button>
+                  <SendDocumentsDialog 
+                    ride={ride} 
+                    trigger={
+                      <Button variant="ghost" size="sm" className="px-2">
+                        <Mail className="h-3 w-3 sm:h-4 sm:w-4" />
+                      </Button>
+                    }
+                  />
                 </div>
               </CardContent>
             </Card>

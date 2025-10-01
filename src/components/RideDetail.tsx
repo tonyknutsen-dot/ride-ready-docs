@@ -89,32 +89,32 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" onClick={onBack} className="flex items-center space-x-2">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <Button variant="outline" onClick={onBack} className="w-fit flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Rides</span>
         </Button>
-        <div className="flex items-center space-x-3">
-          <div className="flex-1">
-            <div className="flex items-center space-x-3">
-              <h2 className="text-3xl font-bold">{ride.ride_name}</h2>
-              <Badge variant="secondary">{ride.ride_categories.name}</Badge>
-            </div>
-            <p className="text-muted-foreground">
-              Manage documentation and daily checks for this ride
-            </p>
-          </div>
-          <SendDocumentsDialog 
-            ride={ride}
-            trigger={
-              <Button className="flex items-center space-x-2">
-                <Mail className="h-4 w-4" />
-                <span>Send Documents</span>
-              </Button>
-            }
-          />
+        <SendDocumentsDialog 
+          ride={ride}
+          trigger={
+            <Button className="w-fit flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              <span>Send Documents</span>
+            </Button>
+          }
+        />
+      </div>
+
+      {/* Ride Title & Badge */}
+      <div className="space-y-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <h2 className="text-2xl md:text-3xl font-bold break-words">{ride.ride_name}</h2>
+          <Badge variant="secondary" className="text-xs">{ride.ride_categories.name}</Badge>
         </div>
+        <p className="text-sm text-muted-foreground">
+          Manage documentation and safety checks for this equipment
+        </p>
       </div>
 
       {/* Ride Info Card */}
@@ -126,58 +126,63 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 text-sm">
-            <div>
-              <span className="font-medium">Category:</span>
-              <p className="text-muted-foreground">{ride.ride_categories.name}</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+            <div className="space-y-1">
+              <span className="font-medium text-xs uppercase text-muted-foreground">Category</span>
+              <p className="text-foreground">{ride.ride_categories.name}</p>
             </div>
-            <div>
-              <span className="font-medium">Manufacturer:</span>
-              <p className="text-muted-foreground">{ride.manufacturer || 'Not specified'}</p>
+            <div className="space-y-1">
+              <span className="font-medium text-xs uppercase text-muted-foreground">Manufacturer</span>
+              <p className="text-foreground break-words">{ride.manufacturer || 'Not specified'}</p>
             </div>
-            <div>
-              <span className="font-medium">Year:</span>
-              <p className="text-muted-foreground">{ride.year_manufactured || 'Not specified'}</p>
+            <div className="space-y-1">
+              <span className="font-medium text-xs uppercase text-muted-foreground">Year</span>
+              <p className="text-foreground">{ride.year_manufactured || 'Not specified'}</p>
             </div>
-            <div>
-              <span className="font-medium">Serial Number:</span>
-              <p className="text-muted-foreground">{ride.serial_number || 'Not specified'}</p>
+            <div className="space-y-1">
+              <span className="font-medium text-xs uppercase text-muted-foreground">Serial Number</span>
+              <p className="text-foreground break-all">{ride.serial_number || 'Not specified'}</p>
             </div>
-            <div>
-              <span className="font-medium">Owner:</span>
-              <p className="text-muted-foreground">{ride.owner_name || 'Not specified'}</p>
+            <div className="space-y-1">
+              <span className="font-medium text-xs uppercase text-muted-foreground">Owner</span>
+              <p className="text-foreground break-words">{ride.owner_name || 'Not specified'}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
-          <TabsTrigger value="overview" className="flex items-center space-x-2">
-            <FileText className="h-4 w-4" />
-            <span>Overview</span>
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-1">
+          <TabsTrigger value="overview" className="flex items-center gap-1 text-xs sm:text-sm">
+            <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Overview</span>
+            <span className="sm:hidden">Home</span>
           </TabsTrigger>
-          <TabsTrigger value="documents" className="flex items-center space-x-2">
-            <Upload className="h-4 w-4" />
-            <span>Documents</span>
+          <TabsTrigger value="documents" className="flex items-center gap-1 text-xs sm:text-sm">
+            <Upload className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Documents</span>
+            <span className="sm:hidden">Docs</span>
           </TabsTrigger>
-          <TabsTrigger value="inspections" className="flex items-center space-x-2">
-            <CheckSquare className="h-4 w-4" />
-            <span>Inspections</span>
+          <TabsTrigger value="inspections" className="flex items-center gap-1 text-xs sm:text-sm">
+            <CheckSquare className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Checks</span>
+            <span className="sm:hidden">Checks</span>
           </TabsTrigger>
-          <TabsTrigger value="maintenance" className="flex items-center space-x-2">
-            <Wrench className="h-4 w-4" />
-            <span>Maintenance</span>
+          <TabsTrigger value="maintenance" className="flex items-center gap-1 text-xs sm:text-sm">
+            <Wrench className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Maintenance</span>
+            <span className="sm:hidden">Maint</span>
           </TabsTrigger>
-          <TabsTrigger value="bulletins" className="flex items-center space-x-2">
-            <AlertTriangle className="h-4 w-4" />
-            <span>Bulletins</span>
+          <TabsTrigger value="bulletins" className="flex items-center gap-1 text-xs sm:text-sm">
+            <AlertTriangle className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Bulletins</span>
+            <span className="sm:hidden">Info</span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <TabsContent value="overview" className="space-y-4 md:space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">

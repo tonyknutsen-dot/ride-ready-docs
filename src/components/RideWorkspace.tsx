@@ -49,12 +49,12 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Selected Ride Header */}
       <Card className="bg-gradient-to-r from-primary/10 to-primary/5 border-primary/20">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4 min-w-0 flex-1">
+        <CardHeader className="pb-3 md:pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0 flex-1">
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -65,18 +65,18 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
                 <span className="hidden sm:inline">Back</span>
               </Button>
               
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1 space-y-1">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle className="text-xl text-primary truncate">
+                  <CardTitle className="text-lg sm:text-xl text-primary break-words">
                     {selectedRide.ride_name}
                   </CardTitle>
-                  <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30">
+                  <Badge variant="secondary" className="bg-primary/20 text-primary border-primary/30 text-xs whitespace-nowrap">
                     {selectedRide.ride_categories.name}
                   </Badge>
                 </div>
                 
                 {(selectedRide.manufacturer || selectedRide.year_manufactured) && (
-                  <div className="text-sm text-muted-foreground mt-1">
+                  <div className="text-xs sm:text-sm text-muted-foreground">
                     {selectedRide.manufacturer && `${selectedRide.manufacturer}`}
                     {selectedRide.manufacturer && selectedRide.year_manufactured && ' • '}
                     {selectedRide.year_manufactured && `${selectedRide.year_manufactured}`}
@@ -89,43 +89,43 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
       </Card>
 
       {/* Step bar */}
-      <ol className="grid grid-cols-2 gap-3 p-3 rounded-2xl bg-secondary mb-4">
+      <ol className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 p-3 rounded-2xl bg-secondary">
         <li className="flex items-center gap-2">
-          <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">1</span>
-          <span className="font-semibold">Pick your ride / generator</span>
+          <span className="inline-flex w-6 h-6 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs sm:text-base">1</span>
+          <span className="text-xs sm:text-sm font-semibold">Pick your ride / generator</span>
         </li>
         <li className="flex items-center gap-2">
-          <span className="inline-flex w-8 h-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">2</span>
-          <span className="font-semibold">Add your documents</span>
+          <span className="inline-flex w-6 h-6 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs sm:text-base">2</span>
+          <span className="text-xs sm:text-sm font-semibold">Add your documents</span>
         </li>
       </ol>
 
       {/* Function Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
         {/* Mobile: Horizontal scroll tabs */}
         <div className="md:hidden">
-          <div className="overflow-x-auto scrollbar-hide">
+          <div className="overflow-x-auto scrollbar-hide -mx-3 px-3">
             <TabsList className="flex w-max gap-1 p-1 bg-muted/20 h-auto">
               <TabsTrigger 
                 value="documents" 
-                className="flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap"
               >
-                <FileText className="h-4 w-4" />
+                <FileText className="h-3 w-3" />
                 Documents
               </TabsTrigger>
               <TabsTrigger 
                 value="inspections" 
-                className="flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap"
               >
-                <CheckSquare className="h-4 w-4" />
-                Checks & Inspections
+                <CheckSquare className="h-3 w-3" />
+                Checks
               </TabsTrigger>
               <TabsTrigger 
                 value="maintenance" 
-                className="flex items-center gap-2 px-4 py-2 text-sm whitespace-nowrap"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap"
               >
-                <Wrench className="h-4 w-4" />
-                Maintenance
+                <Wrench className="h-3 w-3" />
+                Maint
               </TabsTrigger>
             </TabsList>
           </div>
@@ -133,59 +133,59 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
 
         {/* Desktop: Grid tabs */}
         <div className="hidden md:block">
-          <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/20">
+          <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/20 gap-1">
             <TabsTrigger 
               value="documents" 
-              className="flex flex-col items-center gap-2 py-3"
+              className="flex flex-col items-center gap-1.5 py-3"
             >
               <FileText className="h-5 w-5" />
-              <span className="font-medium">Documents</span>
+              <span className="font-medium text-sm">Documents</span>
               <span className="text-xs text-muted-foreground">Certificates & Files</span>
             </TabsTrigger>
             <TabsTrigger 
               value="inspections" 
-              className="flex flex-col items-center gap-2 py-3"
+              className="flex flex-col items-center gap-1.5 py-3"
             >
               <CheckSquare className="h-5 w-5" />
-              <span className="font-medium">Checks & Inspections</span>
-              <span className="text-xs text-muted-foreground">Self-checks & External Inspections</span>
+              <span className="font-medium text-sm">Checks & Inspections</span>
+              <span className="text-xs text-muted-foreground">Self-checks & External</span>
             </TabsTrigger>
             <TabsTrigger 
               value="maintenance" 
-              className="flex flex-col items-center gap-2 py-3"
+              className="flex flex-col items-center gap-1.5 py-3"
             >
               <Wrench className="h-5 w-5" />
-              <span className="font-medium">Maintenance</span>
+              <span className="font-medium text-sm">Maintenance</span>
               <span className="text-xs text-muted-foreground">Service & Repairs</span>
             </TabsTrigger>
           </TabsList>
         </div>
 
         {/* Tab Content */}
-        <TabsContent value="documents" className="space-y-6">
-          <div className="text-center space-y-2 mb-6">
-            <h3 className="text-lg font-semibold">Document Management</h3>
-            <p className="text-sm text-muted-foreground">
+        <TabsContent value="documents" className="space-y-4 md:space-y-6">
+          <div className="text-center space-y-1 md:space-y-2 mb-4 md:mb-6">
+            <h3 className="text-base md:text-lg font-semibold">Document Management</h3>
+            <p className="text-xs md:text-sm text-muted-foreground">
               Upload and manage all documents for <strong>{selectedRide.ride_name}</strong>
             </p>
           </div>
           <RideDocuments ride={selectedRide} />
         </TabsContent>
 
-        <TabsContent value="inspections" className="space-y-6">
-          <div className="text-center space-y-2 mb-6">
-            <h3 className="text-lg font-semibold">Safety Checks & Inspections</h3>
-            <p className="text-sm text-muted-foreground">
+        <TabsContent value="inspections" className="space-y-4 md:space-y-6">
+          <div className="text-center space-y-1 md:space-y-2 mb-4 md:mb-6">
+            <h3 className="text-base md:text-lg font-semibold">Safety Checks & Inspections</h3>
+            <p className="text-xs md:text-sm text-muted-foreground">
               <strong>Showmen checks:</strong> Daily, monthly, yearly • <strong>External inspections:</strong> Annual & NDT by independent bodies for <strong>{selectedRide.ride_name}</strong>
             </p>
           </div>
           <InspectionManager ride={selectedRide} />
         </TabsContent>
 
-        <TabsContent value="maintenance" className="space-y-6">
-          <div className="text-center space-y-2 mb-6">
-            <h3 className="text-lg font-semibold">Maintenance Management</h3>
-            <p className="text-sm text-muted-foreground">
+        <TabsContent value="maintenance" className="space-y-4 md:space-y-6">
+          <div className="text-center space-y-1 md:space-y-2 mb-4 md:mb-6">
+            <h3 className="text-base md:text-lg font-semibold">Maintenance Management</h3>
+            <p className="text-xs md:text-sm text-muted-foreground">
               Log and track all maintenance activities for <strong>{selectedRide.ride_name}</strong>
             </p>
           </div>
