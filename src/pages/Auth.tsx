@@ -7,8 +7,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, FileText } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
+import logo from '@/assets/logo.png';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address').max(255, 'Email must be less than 255 characters'),
@@ -193,7 +194,7 @@ const Auth = () => {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
-            <FileText className="mx-auto h-12 w-12 text-primary" />
+            <img src={logo} alt="Ride Ready Docs" className="mx-auto h-16 w-auto" />
             <h1 className="text-2xl font-bold">Reset Password</h1>
             <p className="text-muted-foreground">
               Enter your email to receive reset instructions
@@ -260,7 +261,7 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <FileText className="mx-auto h-12 w-12 text-primary" />
+          <img src={logo} alt="Ride Ready Docs" className="mx-auto h-16 w-auto" />
           <h1 className="text-2xl font-bold">Ride Ready Docs</h1>
           <p className="text-muted-foreground">
             Access your ride documentation system
