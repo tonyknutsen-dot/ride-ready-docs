@@ -51,11 +51,11 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
           </TabsTrigger>
           <TabsTrigger value="annual" className="flex items-center space-x-2">
             <Building className="h-4 w-4" />
-            <span>Schedules</span>
+            <span>External</span>
           </TabsTrigger>
           <TabsTrigger value="ndt" className="flex items-center space-x-2">
             <TestTube className="h-4 w-4" />
-            <span>NDT</span>
+            <span>NDT Tracking</span>
           </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center space-x-2">
             <FileText className="h-4 w-4" />
@@ -169,6 +169,17 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         </TabsContent>
 
         <TabsContent value="ndt">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <TestTube className="h-5 w-5" />
+                <span>NDT Inspection Tracking (Showmen)</span>
+              </CardTitle>
+              <CardDescription>
+                Track when NDT inspections are due - actual inspections conducted by independent NDT inspectors
+              </CardDescription>
+            </CardHeader>
+          </Card>
           <NDTScheduleManager ride={ride} />
         </TabsContent>
 

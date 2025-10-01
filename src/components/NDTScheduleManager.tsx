@@ -232,14 +232,14 @@ const NDTScheduleManager = ({ ride }: NDTScheduleManagerProps) => {
     <div className="space-y-6">
       <Alert>
         <AlertDescription>
-          Create and manage NDT (Non-Destructive Testing) schedules for ride components. Set inspection frequencies and track due dates for various NDT methods.
+          <strong>NDT Schedule Tracking:</strong> Track when NDT (Non-Destructive Testing) inspections are due for ride components. Schedules are managed by showmen, but actual NDT inspections must be conducted by independent qualified NDT inspectors.
         </AlertDescription>
       </Alert>
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <h3 className="text-xl font-semibold">NDT Inspection Schedules</h3>
+          <h3 className="text-xl font-semibold">NDT Inspection Tracking (Showmen)</h3>
           <p className="text-muted-foreground">
-            Manage Non-Destructive Testing schedules for {ride.ride_name}
+            Track NDT inspection requirements for {ride.ride_name}. Actual inspections conducted by independent NDT inspectors.
           </p>
         </div>
         <Dialog open={showDialog} onOpenChange={setShowDialog}>
@@ -252,10 +252,10 @@ const NDTScheduleManager = ({ ride }: NDTScheduleManagerProps) => {
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle>
-                {editingSchedule ? 'Edit' : 'Create'} NDT Schedule
+                {editingSchedule ? 'Edit' : 'Create'} NDT Tracking Schedule
               </DialogTitle>
               <DialogDescription>
-                Set up a schedule for Non-Destructive Testing of ride components
+                Set up tracking for NDT inspections. Actual inspections will be performed by independent NDT inspectors.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
@@ -343,9 +343,9 @@ const NDTScheduleManager = ({ ride }: NDTScheduleManagerProps) => {
           <CardContent className="pt-6">
             <div className="text-center py-8">
               <TestTube className="mx-auto h-16 w-16 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mt-4">No NDT schedules</h3>
+              <h3 className="text-lg font-semibold mt-4">No NDT tracking schedules</h3>
               <p className="text-muted-foreground mb-4">
-                Create your first NDT inspection schedule to track component testing requirements.
+                Create tracking schedules for NDT inspections required for your equipment. Actual inspections will be conducted by independent NDT inspectors.
               </p>
             </div>
           </CardContent>
