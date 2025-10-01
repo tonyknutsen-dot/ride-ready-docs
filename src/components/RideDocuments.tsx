@@ -7,6 +7,9 @@ import { Tables } from '@/integrations/supabase/types';
 import DocumentUpload from './DocumentUpload';
 import DocumentList from './DocumentList';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import JSZip from 'jszip';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -21,6 +24,8 @@ interface RideDocumentsProps {
 
 const RideDocuments = ({ ride }: RideDocumentsProps) => {
   const [refreshKey, setRefreshKey] = useState(0);
+  const [downloading, setDownloading] = useState(false);
+  const { toast } = useToast();
 
   const handleUploadSuccess = () => {
     setRefreshKey(prev => prev + 1);
@@ -28,6 +33,79 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
 
   const handleDocumentDeleted = () => {
     setRefreshKey(prev => prev + 1);
+  };
+
+  const handleDownloadAll = async () => {
+    setDownloading(true);
+    try {
+      // Fetch all documents for this ride
+      const { data: documents, error } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('ride_id', ride.id);
+
+      if (error) throw error;
+
+      if (!documents || documents.length === 0) {
+        toast({
+          title: "No documents",
+          description: "There are no documents to download for this ride",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Preparing download",
+        description: `Downloading ${documents.length} document(s)...`,
+      });
+
+      // Create a zip file
+      const zip = new JSZip();
+
+      // Download each file and add to zip
+      await Promise.all(
+        documents.map(async (doc) => {
+          try {
+            const { data, error } = await supabase.storage
+              .from('ride-documents')
+              .download(doc.file_path);
+
+            if (error) throw error;
+
+            // Add file to zip
+            zip.file(doc.document_name, data);
+          } catch (err) {
+            console.error(`Failed to download ${doc.document_name}:`, err);
+          }
+        })
+      );
+
+      // Generate zip file
+      const content = await zip.generateAsync({ type: 'blob' });
+
+      // Trigger download
+      const url = window.URL.createObjectURL(content);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${ride.ride_name.replace(/[^a-z0-9]/gi, '_')}_documents.zip`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      toast({
+        title: "Download complete",
+        description: `Downloaded ${documents.length} document(s) as a ZIP file`,
+      });
+    } catch (error: any) {
+      console.error('Download all error:', error);
+      toast({
+        title: "Download failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setDownloading(false);
+    }
   };
 
   // HARD GATES (no uploads without ride or category)
@@ -86,8 +164,13 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
                   </Button>
                 }
               />
-              <Button variant="outline" disabled title="Download all coming soon">
-                <Download className="w-4 h-4 mr-2" /> Download all
+              <Button 
+                variant="outline" 
+                onClick={handleDownloadAll}
+                disabled={downloading}
+              >
+                <Download className="w-4 h-4 mr-2" /> 
+                {downloading ? 'Downloading...' : 'Download all'}
               </Button>
             </div>
           </div>
