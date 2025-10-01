@@ -59,10 +59,10 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         <TabsContent value="daily" className="relative">
           <div className="space-y-6 relative z-0">
             <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="perform">Perform Checks</TabsTrigger>
-                <TabsTrigger value="history">History</TabsTrigger>
-                <TabsTrigger value="templates">Manage Templates</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 gap-1">
+                <TabsTrigger value="perform" className="text-xs sm:text-sm">Perform</TabsTrigger>
+                <TabsTrigger value="history" className="text-xs sm:text-sm">History</TabsTrigger>
+                <TabsTrigger value="templates" className="text-xs sm:text-sm">Templates</TabsTrigger>
               </TabsList>
               <TabsContent value="perform">
                 <RideDailyChecks ride={ride} />
@@ -80,9 +80,9 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         <TabsContent value="monthly">
           <div className="space-y-6">
             <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList>
-                <TabsTrigger value="perform">Perform Checks</TabsTrigger>
-                <TabsTrigger value="templates">Manage Templates</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 gap-1">
+                <TabsTrigger value="perform" className="text-xs sm:text-sm">Perform</TabsTrigger>
+                <TabsTrigger value="templates" className="text-xs sm:text-sm">Templates</TabsTrigger>
               </TabsList>
               <TabsContent value="perform">
                 <InspectionChecklist ride={ride} frequency="monthly" />
@@ -97,9 +97,9 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         <TabsContent value="yearly">
           <div className="space-y-6">
             <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList>
-                <TabsTrigger value="perform">Perform Checks</TabsTrigger>
-                <TabsTrigger value="templates">Manage Templates</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 gap-1">
+                <TabsTrigger value="perform" className="text-xs sm:text-sm">Perform</TabsTrigger>
+                <TabsTrigger value="templates" className="text-xs sm:text-sm">Templates</TabsTrigger>
               </TabsList>
               <TabsContent value="perform">
                 <InspectionChecklist ride={ride} frequency="yearly" />
