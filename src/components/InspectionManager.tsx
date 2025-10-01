@@ -28,8 +28,8 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
   return (
     <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 relative">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-6 sticky top-0 z-20 bg-background">
           <TabsTrigger value="daily" className="flex items-center space-x-2">
             <Clock className="h-4 w-4" />
             <span>Daily</span>
@@ -56,9 +56,9 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="daily">
-          <div className="space-y-6">
-            <Card>
+        <TabsContent value="daily" className="relative">
+          <div className="space-y-6 relative z-0">
+            <Card className="relative z-0">
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <Clock className="h-5 w-5" />
