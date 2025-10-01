@@ -59,7 +59,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         <TabsContent value="daily" className="relative">
           <div className="space-y-6 relative z-0">
             <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList className="flex flex-col sm:grid sm:grid-cols-3 w-full sm:w-auto gap-2 h-auto p-1">
+              <TabsList className="flex flex-col sm:grid sm:grid-cols-3 w-full sm:w-auto gap-2 h-auto p-1 mt-4">
                 <TabsTrigger value="perform" className="text-sm px-4 py-2 w-full sm:w-auto">
                   Perform
                 </TabsTrigger>
