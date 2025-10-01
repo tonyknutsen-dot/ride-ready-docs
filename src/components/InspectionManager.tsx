@@ -59,14 +59,14 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         <TabsContent value="daily" className="relative">
           <div className="space-y-6 relative z-0">
             <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList className="grid w-full grid-cols-3 gap-0.5 h-auto">
-                <TabsTrigger value="perform" className="text-[10px] sm:text-xs px-1 sm:px-3 py-1.5 sm:py-2">
+              <TabsList className="grid w-full grid-cols-3 gap-1 sm:gap-2 h-auto p-1">
+                <TabsTrigger value="perform" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
                   Perform
                 </TabsTrigger>
-                <TabsTrigger value="history" className="text-[10px] sm:text-xs px-1 sm:px-3 py-1.5 sm:py-2">
+                <TabsTrigger value="history" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
                   History
                 </TabsTrigger>
-                <TabsTrigger value="templates" className="text-[10px] sm:text-xs px-1 sm:px-3 py-1.5 sm:py-2">
+                <TabsTrigger value="templates" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
                   Templates
                 </TabsTrigger>
               </TabsList>
@@ -86,11 +86,11 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         <TabsContent value="monthly">
           <div className="space-y-6">
             <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList className="grid w-full grid-cols-2 gap-0.5 h-auto">
-                <TabsTrigger value="perform" className="text-[10px] sm:text-xs px-1 sm:px-3 py-1.5 sm:py-2">
+              <TabsList className="grid w-full grid-cols-2 gap-1 sm:gap-2 h-auto p-1">
+                <TabsTrigger value="perform" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
                   Perform
                 </TabsTrigger>
-                <TabsTrigger value="templates" className="text-[10px] sm:text-xs px-1 sm:px-3 py-1.5 sm:py-2">
+                <TabsTrigger value="templates" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
                   Templates
                 </TabsTrigger>
               </TabsList>
@@ -107,11 +107,11 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         <TabsContent value="yearly">
           <div className="space-y-6">
             <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList className="grid w-full grid-cols-2 gap-0.5 h-auto">
-                <TabsTrigger value="perform" className="text-[10px] sm:text-xs px-1 sm:px-3 py-1.5 sm:py-2">
+              <TabsList className="grid w-full grid-cols-2 gap-1 sm:gap-2 h-auto p-1">
+                <TabsTrigger value="perform" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
                   Perform
                 </TabsTrigger>
-                <TabsTrigger value="templates" className="text-[10px] sm:text-xs px-1 sm:px-3 py-1.5 sm:py-2">
+                <TabsTrigger value="templates" className="text-xs sm:text-sm px-2 sm:px-4 py-2">
                   Templates
                 </TabsTrigger>
               </TabsList>
