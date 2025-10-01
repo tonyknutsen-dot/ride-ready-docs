@@ -216,42 +216,74 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="space-y-2">
-          <Label htmlFor="file" className="text-base font-semibold">Select File *</Label>
-          <Input
-            ref={fileInputRef}
-            id="file"
-            type="file"
-            onChange={handleFileSelect}
-            accept={documentType === 'photo'
-              ? 'image/*'
-              : '.pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf'}
-            // @ts-ignore - capture attribute opens camera on mobile
-            capture={documentType === 'photo' ? 'environment' : undefined}
-            disabled={uploading}
-            className="h-11 text-base cursor-pointer"
-          />
-          <p className="text-xs text-muted-foreground mt-1">
-            Supported: PDF, Word, Excel, PowerPoint, Images, Video, CAD files, Archives
-            {documentType === 'photo' && <br />}
-            {documentType === 'photo' && 'Tip: For photos, take a clear picture of the whole device and the ID plate.'}
-          </p>
-          {selectedFile && (
-            <p className="text-sm text-muted-foreground">
-              Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+        <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+          <div className="space-y-2 sm:flex-1 min-w-0">
+            <Label htmlFor="type" className="text-base font-semibold">What is this? *</Label>
+            <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
+              <SelectTrigger className="h-11 text-base">
+                <SelectValue placeholder="Risk Assessment (RA), Method Statement, Insurance, Certificate, Other" />
+              </SelectTrigger>
+              <SelectContent>
+                {documentTypes.map((type) => (
+                  <SelectItem key={type.id} value={type.id}>
+                    <div>
+                      <div className="font-medium">{type.name}</div>
+                      <div className="text-xs text-muted-foreground">{type.description}</div>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              type="button"
+              variant="link"
+              size="sm"
+              onClick={() => {}}
+              className="p-0 h-auto text-xs"
+            >
+              Don't see your type? Request one
+            </Button>
+          </div>
+          
+          <div className="space-y-2 sm:flex-1 min-w-0">
+            <Label htmlFor="file" className="text-base font-semibold">Select File *</Label>
+            <Input
+              ref={fileInputRef}
+              id="file"
+              type="file"
+              onChange={handleFileSelect}
+              accept={documentType === 'photo'
+                ? 'image/*'
+                : '.pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf'}
+              // @ts-ignore - capture attribute opens camera on mobile
+              capture={documentType === 'photo' ? 'environment' : undefined}
+              disabled={uploading}
+              className="h-11 text-base w-full cursor-pointer"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Supported: PDF, Word, Excel, PowerPoint, Images, Video, CAD files, Archives
+              {documentType === 'photo' && <br />}
+              {documentType === 'photo' && 'Tip: For photos, take a clear picture of the whole device and the ID plate.'}
             </p>
-          )}
-          {selectedFile && documentType === 'photo' && selectedFile.type.startsWith('image/') && (
-            <div className="mt-2">
-              <img
-                src={URL.createObjectURL(selectedFile)}
-                alt="Preview"
-                className="h-24 rounded-md border object-cover"
-                onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
-              />
-            </div>
-          )}
+          </div>
         </div>
+
+        {selectedFile && (
+          <p className="text-sm text-muted-foreground break-words">
+            Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
+          </p>
+        )}
+        
+        {selectedFile && documentType === 'photo' && selectedFile.type.startsWith('image/') && (
+          <div className="mt-2">
+            <img
+              src={URL.createObjectURL(selectedFile)}
+              alt="Preview"
+              className="h-24 rounded-md border object-cover"
+              onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
+            />
+          </div>
+        )}
 
         <div className="space-y-2">
           <Label htmlFor="name" className="text-base font-semibold">File name shown in your list *</Label>
@@ -263,34 +295,6 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
             disabled={uploading}
             className="h-11 text-base"
           />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="type" className="text-base font-semibold">What is this? *</Label>
-          <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
-            <SelectTrigger className="h-11 text-base">
-              <SelectValue placeholder="Risk Assessment (RA), Method Statement, Insurance, Certificate, Other" />
-            </SelectTrigger>
-            <SelectContent>
-              {documentTypes.map((type) => (
-                <SelectItem key={type.id} value={type.id}>
-                  <div>
-                    <div className="font-medium">{type.name}</div>
-                    <div className="text-xs text-muted-foreground">{type.description}</div>
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Button
-            type="button"
-            variant="link"
-            size="sm"
-            onClick={() => {}}
-            className="p-0 h-auto text-xs"
-          >
-            Don't see your type? Request one
-          </Button>
         </div>
 
         <div className="space-y-2">

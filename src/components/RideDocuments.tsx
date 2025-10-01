@@ -68,26 +68,28 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
     <div className="space-y-4">
       {/* Bold header */}
       <Card className="border-2">
-        <CardContent className="py-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <div className="text-sm text-muted-foreground">You are looking at</div>
-            <h2 className="text-2xl font-bold">
-              {ride.ride_name} <span className="text-muted-foreground">→</span> Documents
-            </h2>
-            <p className="text-sm text-muted-foreground">All files for this ride. Send to council/insurer or download.</p>
-          </div>
-          <div className="flex gap-2">
-            <SendDocumentsDialog
-              ride={ride}
-              trigger={
-                <Button className="btn-bold-primary">
-                  <Mail className="w-4 h-4 mr-2" /> Send pack
-                </Button>
-              }
-            />
-            <Button variant="outline" disabled title="Download all coming soon">
-              <Download className="w-4 h-4 mr-2" /> Download all
-            </Button>
+        <CardContent className="py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="text-sm text-muted-foreground">You are looking at</div>
+              <h2 className="text-2xl font-bold truncate">
+                {ride.ride_name} <span className="text-muted-foreground">→</span> Documents
+              </h2>
+              <p className="text-sm text-muted-foreground">All files for this ride. Send to council/insurer or download.</p>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
+              <SendDocumentsDialog
+                ride={ride}
+                trigger={
+                  <Button className="btn-bold-primary">
+                    <Mail className="w-4 h-4 mr-2" /> Send pack
+                  </Button>
+                }
+              />
+              <Button variant="outline" disabled title="Download all coming soon">
+                <Download className="w-4 h-4 mr-2" /> Download all
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>

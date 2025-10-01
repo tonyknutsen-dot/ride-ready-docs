@@ -159,7 +159,7 @@ const Dashboard = () => {
             </div>
             
             {/* User Actions */}
-            <div className="flex items-center gap-2 flex-shrink-0">
+            <div className="flex flex-wrap items-center gap-2">
               {/* Desktop user info */}
               <div className="hidden sm:flex items-center gap-3">
                 <div className="text-right min-w-0">

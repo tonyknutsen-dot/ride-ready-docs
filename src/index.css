@@ -141,6 +141,34 @@ All colors MUST be HSL.
     display: none;
   }
 
+  /* Prevent long strings (filenames, URLs) from blowing layouts */
+  .break-any { 
+    word-break: break-word; 
+    overflow-wrap: anywhere; 
+  }
+
+  /* Thin scrollbar (where supported) */
+  .scrollbar-thin { 
+    scrollbar-width: thin; 
+  }
+
+  .scrollbar-thin::-webkit-scrollbar { 
+    height: 6px; 
+    width: 6px; 
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb { 
+    border-radius: 4px; 
+  }
+
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thumb-muted-foreground\/20::-webkit-scrollbar-thumb {
+    background: hsl(var(--muted-foreground) / 0.2);
+  }
+
   /* Mobile touch improvements and UI optimizations */
   @media (max-width: 768px) {
     .touch-pan-x {

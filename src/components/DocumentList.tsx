@@ -279,27 +279,29 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
             </div>
             <div className="grid grid-cols-1 gap-3">
               {g.items.map(d => (
-                <div key={d.id} className="border rounded-2xl p-3 flex items-start gap-3 hover:bg-muted/50 transition-colors">
-                  {thumbs[d.id] ? (
-                    <img
-                      src={thumbs[d.id]}
-                      alt={d.document_name}
-                      className="w-10 h-10 rounded-md object-cover border"
-                    />
-                  ) : (
-                    <FileText className="w-5 h-5 mt-0.5 text-primary" />
-                  )}
+                <div key={d.id} className="border rounded-2xl p-3 flex items-start gap-3 hover:bg-muted/50 transition-colors min-w-0">
+                  <div className="shrink-0">
+                    {thumbs[d.id] ? (
+                      <img
+                        src={thumbs[d.id]}
+                        alt={d.document_name}
+                        className="w-10 h-10 rounded-md object-cover border"
+                      />
+                    ) : (
+                      <FileText className="w-5 h-5 mt-0.5 text-primary" />
+                    )}
+                  </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-medium">{d.document_name}</div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="font-medium text-[15px] truncate" title={d.document_name}>{d.document_name}</div>
+                    <div className="text-xs text-muted-foreground break-words">
                       {d.expires_at && ` • Expires ${new Date(d.expires_at).toLocaleDateString()}`}
                       {` • Uploaded ${new Date(d.uploaded_at).toLocaleDateString()}`}
                     </div>
                     {d.notes && (
-                      <p className="text-xs text-muted-foreground mt-1 truncate">{d.notes}</p>
+                      <p className="text-xs text-muted-foreground mt-1 break-words">{d.notes}</p>
                     )}
                   </div>
-                  <div className="flex gap-1">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <Button variant="outline" size="sm" onClick={() => handleDownload(d)}>
                       <Download className="h-4 w-4" />
                     </Button>
@@ -309,7 +311,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </AlertDialogTrigger>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Document</AlertDialogTitle>
                           <AlertDialogDescription>
@@ -355,8 +357,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
         <CardContent>
           <div className="space-y-3">
             {documents.map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                <div className="flex items-center space-x-3 flex-1">
+              <div key={doc.id} className="flex items-start gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors min-w-0">
+                <div className="shrink-0">
                   {thumbs[doc.id] ? (
                     <img
                       src={thumbs[doc.id]}
@@ -366,38 +368,38 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
                   ) : (
                     <FileText className="h-8 w-8 text-primary" />
                   )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-2">
-                      <h4 className="font-medium truncate">{doc.document_name}</h4>
-                      <Badge variant="secondary" className="text-xs">
-                        {getDocumentTypeDisplay(doc.document_type)}
-                      </Badge>
-                    </div>
-                    <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1">
-                      <span>{formatFileSize(doc.file_size || 0)}</span>
-                      <span>Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}</span>
-                    </div>
-                    {doc.expires_at && (
-                      <div className="flex items-center space-x-1 mt-1">
-                        <Calendar className="h-3 w-3" />
-                        <span className={`text-xs ${
-                          isExpired(doc.expires_at) ? 'text-red-600' :
-                          isExpiringSoon(doc.expires_at) ? 'text-yellow-600' :
-                          'text-muted-foreground'
-                        }`}>
-                          {isExpired(doc.expires_at) && <AlertTriangle className="h-3 w-3 inline mr-1" />}
-                          Expires: {new Date(doc.expires_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    )}
-                    {doc.notes && (
-                      <p className="text-xs text-muted-foreground mt-1 truncate">
-                        {doc.notes}
-                      </p>
-                    )}
-                  </div>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-2 flex-wrap">
+                    <h4 className="font-medium truncate" title={doc.document_name}>{doc.document_name}</h4>
+                    <Badge variant="secondary" className="text-xs">
+                      {getDocumentTypeDisplay(doc.document_type)}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1 break-words">
+                    <span>{formatFileSize(doc.file_size || 0)}</span>
+                    <span>Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}</span>
+                  </div>
+                  {doc.expires_at && (
+                    <div className="flex items-center space-x-1 mt-1">
+                      <Calendar className="h-3 w-3" />
+                      <span className={`text-xs ${
+                        isExpired(doc.expires_at) ? 'text-red-600' :
+                        isExpiringSoon(doc.expires_at) ? 'text-yellow-600' :
+                        'text-muted-foreground'
+                      }`}>
+                        {isExpired(doc.expires_at) && <AlertTriangle className="h-3 w-3 inline mr-1" />}
+                        Expires: {new Date(doc.expires_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                  )}
+                  {doc.notes && (
+                    <p className="text-xs text-muted-foreground mt-1 break-words">
+                      {doc.notes}
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-2 shrink-0">
                   <Button
                     size="sm"
                     variant="outline"
@@ -411,7 +413,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
-                    <AlertDialogContent>
+                    <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Document</AlertDialogTitle>
                         <AlertDialogDescription>

@@ -89,14 +89,14 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
       </Card>
 
       {/* Step bar */}
-      <ol className="grid grid-cols-1 sm:grid-cols-2 gap-2 md:gap-3 p-3 rounded-2xl bg-secondary">
+      <ol className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 gap-2 md:gap-3 p-3 rounded-2xl bg-secondary">
         <li className="flex items-center gap-2">
-          <span className="inline-flex w-6 h-6 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs sm:text-base">1</span>
-          <span className="text-xs sm:text-sm font-semibold">Pick your ride / generator</span>
+          <span className="inline-flex w-7 h-7 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs sm:text-sm">1</span>
+          <span className="text-xs sm:text-sm font-semibold break-words">Pick your ride / generator</span>
         </li>
         <li className="flex items-center gap-2">
-          <span className="inline-flex w-6 h-6 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs sm:text-base">2</span>
-          <span className="text-xs sm:text-sm font-semibold">Add your documents</span>
+          <span className="inline-flex w-7 h-7 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs sm:text-sm">2</span>
+          <span className="text-xs sm:text-sm font-semibold break-words">Add your documents</span>
         </li>
       </ol>
 
