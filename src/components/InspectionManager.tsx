@@ -69,7 +69,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Tabs defaultValue="perform" className="space-y-4">
+            <Tabs defaultValue="perform" className="space-y-4 relative z-10">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="perform">Perform Checks</TabsTrigger>
                 <TabsTrigger value="history">History</TabsTrigger>
@@ -101,7 +101,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Tabs defaultValue="perform" className="space-y-4">
+            <Tabs defaultValue="perform" className="space-y-4 relative z-10">
               <TabsList>
                 <TabsTrigger value="perform">Perform Checks</TabsTrigger>
                 <TabsTrigger value="templates">Manage Templates</TabsTrigger>
@@ -129,7 +129,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Tabs defaultValue="perform" className="space-y-4">
+            <Tabs defaultValue="perform" className="space-y-4 relative z-10">
               <TabsList>
                 <TabsTrigger value="perform">Perform Checks</TabsTrigger>
                 <TabsTrigger value="templates">Manage Templates</TabsTrigger>
