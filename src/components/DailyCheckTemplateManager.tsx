@@ -225,14 +225,14 @@ const DailyCheckTemplateManager = ({ ride }: DailyCheckTemplateManagerProps) => 
           Create and manage daily inspection templates. Set one as active to use it for daily checks. You can edit, duplicate, or delete templates as needed.
         </AlertDescription>
       </Alert>
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="space-y-2 min-w-0 flex-1">
           <h3 className="text-xl font-semibold">Daily Check Templates</h3>
           <p className="text-muted-foreground">
             Manage custom daily check templates for {ride.ride_name}
           </p>
         </div>
-        <Button onClick={() => setShowBuilder(true)} className="flex items-center space-x-2">
+        <Button onClick={() => setShowBuilder(true)} className="flex items-center space-x-2 shrink-0">
           <Plus className="h-4 w-4" />
           <span>Create Template</span>
         </Button>
@@ -260,17 +260,17 @@ const DailyCheckTemplateManager = ({ ride }: DailyCheckTemplateManagerProps) => 
           {templates.map((template) => (
             <Card key={template.id} className={template.is_active ? "border-primary" : ""}>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
                     <CardTitle className="flex items-center space-x-2">
                       <Wrench className="h-5 w-5" />
-                      <span>{template.template_name}</span>
+                      <span className="break-words">{template.template_name}</span>
                     </CardTitle>
                     {template.is_active && (
                       <Badge variant="default">Active</Badge>
                     )}
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex flex-wrap items-center gap-2 shrink-0">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
@@ -331,7 +331,7 @@ const DailyCheckTemplateManager = ({ ride }: DailyCheckTemplateManagerProps) => 
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
-                      <AlertDialogContent>
+                      <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Template</AlertDialogTitle>
                           <AlertDialogDescription>
