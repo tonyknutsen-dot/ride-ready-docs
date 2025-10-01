@@ -103,6 +103,50 @@ export type Database = {
         }
         Relationships: []
       }
+      check_library_items: {
+        Row: {
+          created_at: string
+          frequency: Database["public"]["Enums"]["check_frequency"]
+          hint: string | null
+          id: string
+          is_active: boolean
+          label: string
+          ride_category_id: string | null
+          risk_level: string | null
+          sort_index: number
+        }
+        Insert: {
+          created_at?: string
+          frequency: Database["public"]["Enums"]["check_frequency"]
+          hint?: string | null
+          id?: string
+          is_active?: boolean
+          label: string
+          ride_category_id?: string | null
+          risk_level?: string | null
+          sort_index?: number
+        }
+        Update: {
+          created_at?: string
+          frequency?: Database["public"]["Enums"]["check_frequency"]
+          hint?: string | null
+          id?: string
+          is_active?: boolean
+          label?: string
+          ride_category_id?: string | null
+          risk_level?: string | null
+          sort_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "check_library_items_ride_category_id_fkey"
+            columns: ["ride_category_id"]
+            isOneToOne: false
+            referencedRelation: "ride_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compliance_templates: {
         Row: {
           category_id: string | null
@@ -834,7 +878,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      check_frequency: "daily" | "monthly" | "yearly"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -961,6 +1005,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      check_frequency: ["daily", "monthly", "yearly"],
+    },
   },
 } as const

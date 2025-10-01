@@ -7,11 +7,12 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Trash2, GripVertical, Save, Library, Edit3 } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, GripVertical, Save, Library, Edit3, CheckSquare } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import CheckLibraryDialog from './CheckLibraryDialog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -380,6 +381,42 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
         {/* Item Library */}
         <div className="space-y-4">
+          {/* Bulk Add from Enhanced Library */}
+          <Card className="border-primary/20 bg-primary/5">
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <CheckSquare className="h-4 w-4" />
+                Quick Add: Bulk Select from Library
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Select multiple pre-built check items at once, including high-risk and ride-specific items
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <CheckLibraryDialog
+                trigger={
+                  <Button className="w-full">
+                    <Library className="w-4 h-4 mr-2" />
+                    Browse & Add Multiple Items
+                  </Button>
+                }
+                frequency={frequency as "daily" | "monthly" | "yearly"}
+                rideCategoryId={ride.category_id}
+                onAdd={async (labels: string[]) => {
+                  // Add all selected items to the template
+                  const newItems: BuilderItem[] = labels.map((label, i) => ({
+                    check_item_text: label,
+                    is_required: true,
+                    category: 'library',
+                    sort_order: selectedItems.length + i,
+                    isNew: true,
+                  }));
+                  setSelectedItems(prev => [...prev, ...newItems]);
+                }}
+              />
+            </CardContent>
+          </Card>
+
           <Tabs defaultValue="general" className="space-y-4">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="general">General</TabsTrigger>
