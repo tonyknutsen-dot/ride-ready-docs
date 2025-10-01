@@ -9,7 +9,7 @@ import { useState } from "react";
 const NAV_ITEMS = [
   { to: "/dashboard", label: "Home", icon: Home },
   { to: "/dashboard?tab=workspace", label: "Rides", icon: FolderOpen },
-  { to: "/dashboard?tab=calendar", label: "Checks", icon: BadgeCheck },
+  { to: "/checks", label: "Checks", icon: BadgeCheck },
 ];
 
 export default function MobileBottomNav() {
@@ -23,7 +23,7 @@ export default function MobileBottomNav() {
   const isActive = (to: string) => {
     if (to === "/dashboard" && loc.pathname === "/dashboard" && !loc.search) return true;
     if (to.includes("tab=workspace") && loc.search.includes("tab=workspace")) return true;
-    if (to.includes("tab=calendar") && loc.search.includes("tab=calendar")) return true;
+    if (to === "/checks" && loc.pathname === "/checks") return true;
     return false;
   };
 
@@ -32,19 +32,18 @@ export default function MobileBottomNav() {
     const searchParams = new URLSearchParams(loc.search);
     const currentTab = searchParams.get("tab");
     
-    if (currentTab === "workspace") {
+    if (loc.pathname === "/checks") {
+      // On checks page: start check
+      window.dispatchEvent(new CustomEvent("rrd:start-check"));
+    } else if (currentTab === "workspace") {
       // Add new ride
       window.dispatchEvent(new CustomEvent("rrd:add-ride"));
     } else if (currentTab === "documents") {
       // Upload document
       window.dispatchEvent(new CustomEvent("rrd:upload-doc"));
-    } else if (currentTab === "calendar") {
-      // Start check
-      window.dispatchEvent(new CustomEvent("rrd:start-check"));
     } else {
-      // Default: go to workspace and add
-      nav("/dashboard?tab=workspace");
-      setTimeout(() => window.dispatchEvent(new CustomEvent("rrd:add-ride")), 250);
+      // Default: go to checks
+      nav("/checks");
     }
   };
 

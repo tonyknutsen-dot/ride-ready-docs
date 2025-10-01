@@ -19,6 +19,7 @@ import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import HelpCenter from "./pages/HelpCenter";
 import Security from "./pages/Security";
+import Checks from "./pages/Checks";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <PlanBilling />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/checks" 
+              element={
+                <ProtectedRoute>
+                  <Checks />
                 </ProtectedRoute>
               } 
             />
