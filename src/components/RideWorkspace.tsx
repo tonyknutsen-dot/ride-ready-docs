@@ -163,32 +163,14 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
 
         {/* Tab Content */}
         <TabsContent value="documents" className="space-y-4 md:space-y-6">
-          <div className="text-center space-y-1 md:space-y-2 mb-4 md:mb-6">
-            <h3 className="text-base md:text-lg font-semibold">Document Management</h3>
-            <p className="text-xs md:text-sm text-muted-foreground">
-              Upload and manage all documents for <strong>{selectedRide.ride_name}</strong>
-            </p>
-          </div>
           <RideDocuments ride={selectedRide} />
         </TabsContent>
 
         <TabsContent value="inspections" className="space-y-4 md:space-y-6">
-          <div className="text-center space-y-1 md:space-y-2 mb-4 md:mb-6">
-            <h3 className="text-base md:text-lg font-semibold">Safety Checks & Inspections</h3>
-            <p className="text-xs md:text-sm text-muted-foreground">
-              <strong>Showmen checks:</strong> Daily, monthly, yearly • <strong>External inspections:</strong> Annual & NDT by independent bodies for <strong>{selectedRide.ride_name}</strong>
-            </p>
-          </div>
           <InspectionManager ride={selectedRide} />
         </TabsContent>
 
         <TabsContent value="maintenance" className="space-y-4 md:space-y-6">
-          <div className="text-center space-y-1 md:space-y-2 mb-4 md:mb-6">
-            <h3 className="text-base md:text-lg font-semibold">Maintenance Management</h3>
-            <p className="text-xs md:text-sm text-muted-foreground">
-              Log and track all maintenance activities for <strong>{selectedRide.ride_name}</strong>
-            </p>
-          </div>
           <MaintenanceManager ride={selectedRide} />
         </TabsContent>
       </Tabs>

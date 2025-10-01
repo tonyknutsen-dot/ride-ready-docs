@@ -58,17 +58,6 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
         <TabsContent value="daily" className="relative">
           <div className="space-y-6 relative z-0">
-            <Card className="relative z-0">
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Clock className="h-5 w-5" />
-                  <span>Daily Safety Checks (Showmen)</span>
-                </CardTitle>
-                <CardDescription>
-                  Perform and record daily safety checks - done by showmen before operation
-                </CardDescription>
-              </CardHeader>
-            </Card>
             <Tabs defaultValue="perform" className="space-y-4 relative z-10">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="perform">Perform Checks</TabsTrigger>
@@ -90,17 +79,6 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
         <TabsContent value="monthly">
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Calendar className="h-5 w-5" />
-                  <span>Monthly Safety Checks (Showmen)</span>
-                </CardTitle>
-                <CardDescription>
-                  Perform and record monthly safety checks - done by showmen
-                </CardDescription>
-              </CardHeader>
-            </Card>
             <Tabs defaultValue="perform" className="space-y-4 relative z-10">
               <TabsList>
                 <TabsTrigger value="perform">Perform Checks</TabsTrigger>
@@ -118,17 +96,6 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
         <TabsContent value="yearly">
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <CalendarDays className="h-5 w-5" />
-                  <span>Yearly Safety Checks (Showmen)</span>
-                </CardTitle>
-                <CardDescription>
-                  Perform and record yearly safety checks - done by showmen
-                </CardDescription>
-              </CardHeader>
-            </Card>
             <Tabs defaultValue="perform" className="space-y-4 relative z-10">
               <TabsList>
                 <TabsTrigger value="perform">Perform Checks</TabsTrigger>
@@ -146,54 +113,18 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
         <TabsContent value="annual">
           <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Building className="h-5 w-5" />
-                  <span>External Inspection Schedules</span>
-                </CardTitle>
-                <CardDescription>
-                  Track and schedule inspections by independent inspection bodies (annual in-service, electrical, NDT, etc.)
-                </CardDescription>
-              </CardHeader>
-            </Card>
             <InspectionScheduleManager ride={ride} />
           </div>
         </TabsContent>
 
         <TabsContent value="ndt">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <TestTube className="h-5 w-5" />
-                <span>NDT Inspection Tracking (Showmen)</span>
-              </CardTitle>
-              <CardDescription>
-                Track when NDT inspections are due - actual inspections conducted by independent NDT inspectors
-              </CardDescription>
-            </CardHeader>
-          </Card>
           <NDTScheduleManager ride={ride} />
         </TabsContent>
 
         <TabsContent value="reports">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <CalendarDays className="h-5 w-5" />
-                  <span>External Inspection Reports</span>
-                </CardTitle>
-                <CardDescription>
-                  View reports from independent inspection bodies and generate compliance documentation
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            {/* TODO: Add ReportGenerator component for historical data and compliance reports */}
-            <div className="text-center text-muted-foreground p-8">
-              <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Historical reports and compliance documentation coming soon</p>
-            </div>
+          <div className="text-center text-muted-foreground p-8">
+            <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>Historical reports and compliance documentation coming soon</p>
           </div>
         </TabsContent>
       </Tabs>
