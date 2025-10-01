@@ -28,13 +28,6 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-2">
-        <h3 className="text-xl font-semibold">Safety Checks & Inspections</h3>
-        <p className="text-muted-foreground">
-          <strong>Self-Checks:</strong> Daily, monthly & yearly checks performed by showmen • <strong>External Inspections:</strong> Annual & NDT inspections by independent bodies
-        </p>
-      </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="daily" className="flex items-center space-x-2">
