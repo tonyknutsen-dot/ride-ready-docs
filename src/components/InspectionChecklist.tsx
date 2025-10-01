@@ -9,13 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer } from 'lucide-react';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tables } from '@/integrations/supabase/types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import TemplateBuilder from './TemplateBuilder';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -48,6 +49,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const [signatureData, setSignatureData] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -305,15 +307,37 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   }
 
   if (!activeTemplate) {
+    if (showTemplateBuilder) {
+      return (
+        <TemplateBuilder
+          ride={ride}
+          frequency={frequency}
+          onSuccess={() => {
+            setShowTemplateBuilder(false);
+            loadActiveTemplate();
+            toast({
+              title: "Template created",
+              description: "Your template has been created. Don't forget to activate it!"
+            });
+          }}
+          onCancel={() => setShowTemplateBuilder(false)}
+        />
+      );
+    }
+
     return (
       <Card>
         <CardContent className="pt-6">
-          <div className="text-center py-8">
+          <div className="text-center py-8 space-y-4">
             <FileText className="mx-auto h-16 w-16 text-muted-foreground" />
             <h3 className="text-lg font-semibold mt-4">No Active Template Found</h3>
             <p className="text-muted-foreground">
-              Please create and activate a {frequency} inspection template first
+              Create a {frequency} inspection template to start performing checks
             </p>
+            <Button onClick={() => setShowTemplateBuilder(true)} className="mt-4">
+              <Plus className="h-4 w-4 mr-2" />
+              Create Template
+            </Button>
           </div>
         </CardContent>
       </Card>
