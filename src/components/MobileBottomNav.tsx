@@ -1,132 +1,186 @@
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Home, FolderOpen, BadgeCheck, PlusCircle, MoreHorizontal, Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, Mail, FileText } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useLocation, useNavigate } from "react-router-dom";
+import {
+  Home, FolderOpen, BadgeCheck, PlusCircle, MoreHorizontal,
+  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, Mail, FileText
+} from "lucide-react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useState } from "react";
 
-const NAV_ITEMS = [
-  { to: "/dashboard", label: "Home", icon: Home },
-  { to: "/dashboard?tab=workspace", label: "Rides", icon: FolderOpen },
-  { to: "/checks", label: "Checks", icon: BadgeCheck },
-];
+/**
+ * Mobile bottom bar:
+ * - Uses real routes you have (/dashboard, /checks, /billing, /help)
+ * - Calendar/Settings/Docs route to Dashboard tabs via ?tab=...
+ * - After navigate, fires events so pages perform the intended action
+ */
 
 export default function MobileBottomNav() {
-  const loc = useLocation();
   const nav = useNavigate();
+  const loc = useLocation();
   const { user } = useAuth();
   const { subscription } = useSubscription();
   const [open, setOpen] = useState(false);
 
-  // Active matcher
-  const isActive = (to: string) => {
-    if (to === "/dashboard" && loc.pathname === "/dashboard" && !loc.search) return true;
-    if (to.includes("tab=workspace") && loc.search.includes("tab=workspace")) return true;
-    if (to === "/checks" && loc.pathname === "/checks") return true;
-    return false;
-  };
-
-  // Primary action button behaviour (contextual by route)
-  const primaryAction = () => {
-    const searchParams = new URLSearchParams(loc.search);
-    const currentTab = searchParams.get("tab");
-    
-    if (loc.pathname === "/checks") {
-      // On checks page: start check
-      window.dispatchEvent(new CustomEvent("rrd:start-check"));
-    } else if (currentTab === "workspace") {
-      // Add new ride
-      window.dispatchEvent(new CustomEvent("rrd:add-ride"));
-    } else if (currentTab === "documents") {
-      // Upload document
-      window.dispatchEvent(new CustomEvent("rrd:upload-doc"));
-    } else {
-      // Default: go to checks
-      nav("/checks");
-    }
-  };
-
   if (!user) return null;
 
-  return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75 md:hidden">
-      <div className="mx-auto max-w-screen-sm grid grid-cols-5 gap-1 p-2">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          return (
-            <Link 
-              key={item.to} 
-              to={item.to} 
-              className={cn(
-                "flex flex-col items-center justify-center py-1 rounded-md text-xs transition-colors",
-                isActive(item.to) ? "text-primary font-medium" : "text-muted-foreground"
-              )}
-            >
-              <Icon className="h-5 w-5" />
-              <span className="mt-0.5">{item.label}</span>
-            </Link>
-          );
-        })}
+  const go = (path: string, after?: () => void) => {
+    if (loc.pathname + loc.search !== path) nav(path);
+    // Give Router a tick to mount the destination, then fire any event
+    setTimeout(() => { after?.(); }, 60);
+    setOpen(false);
+  };
 
-        {/* Primary Action (contextual) */}
+  const isActive = (match: (loc: ReturnType<typeof useLocation>) => boolean) => match(loc);
+
+  const primaryAction = () => {
+    const search = new URLSearchParams(loc.search);
+    const tab = search.get("tab");
+
+    if (loc.pathname === "/checks") {
+      // Start check on checks page
+      window.dispatchEvent(new CustomEvent("rrd:start-check"));
+      return;
+    }
+
+    if (loc.pathname === "/dashboard") {
+      if (tab === "workspace") {
+        // Add a ride
+        window.dispatchEvent(new CustomEvent("rrd:add-ride"));
+        return;
+      }
+      if (tab === "documents") {
+        // Upload a document
+        window.dispatchEvent(new CustomEvent("rrd:upload-doc"));
+        return;
+      }
+    }
+
+    // Default: go to rides workspace, then add ride
+    go("/dashboard?tab=workspace", () => {
+      window.dispatchEvent(new CustomEvent("rrd:add-ride"));
+    });
+  };
+
+  return (
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75 md:hidden pointer-events-auto">
+      <div className="mx-auto max-w-screen-sm grid grid-cols-5 gap-1 p-2">
+        {/* Home */}
+        <button
+          onClick={() => go("/dashboard")}
+          className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
+            isActive(l => l.pathname === "/dashboard" && !new URLSearchParams(l.search).get("tab")) ? "text-primary" : "text-muted-foreground"
+          }`}
+          aria-label="Home"
+        >
+          <Home className="h-5 w-5" />
+          <span className="mt-0.5">Home</span>
+        </button>
+
+        {/* Rides (Workspace tab) */}
+        <button
+          onClick={() => go("/dashboard?tab=workspace")}
+          className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
+            isActive(l => l.pathname === "/dashboard" && new URLSearchParams(l.search).get("tab") === "workspace") ? "text-primary" : "text-muted-foreground"
+          }`}
+          aria-label="Rides"
+        >
+          <FolderOpen className="h-5 w-5" />
+          <span className="mt-0.5">Rides</span>
+        </button>
+
+        {/* Checks page */}
+        <button
+          onClick={() => go("/checks")}
+          className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
+            isActive(l => l.pathname === "/checks") ? "text-primary" : "text-muted-foreground"
+          }`}
+          aria-label="Checks"
+        >
+          <BadgeCheck className="h-5 w-5" />
+          <span className="mt-0.5">Checks</span>
+        </button>
+
+        {/* Primary Add */}
         <button
           onClick={primaryAction}
           className="flex flex-col items-center justify-center py-1 rounded-md text-xs text-primary"
-          aria-label="Primary action"
+          aria-label="Add"
         >
           <PlusCircle className="h-6 w-6" />
           <span className="mt-0.5">Add</span>
         </button>
 
-        {/* More sheet */}
+        {/* More */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <button className="flex flex-col items-center justify-center py-1 rounded-md text-xs text-muted-foreground">
+            <button className="flex flex-col items-center justify-center py-1 rounded-md text-xs text-muted-foreground" aria-label="More">
               <MoreHorizontal className="h-5 w-5" />
               <span className="mt-0.5">More</span>
             </button>
           </SheetTrigger>
           <SheetContent side="bottom" className="max-h-[70vh]">
-            <SheetHeader>
-              <SheetTitle>More Options</SheetTitle>
-            </SheetHeader>
-            <div className="grid grid-cols-2 gap-2 py-4">
-              <Link 
-                to="/billing" 
+            <SheetHeader><SheetTitle>More</SheetTitle></SheetHeader>
+
+            <div className="grid grid-cols-2 gap-2 py-3">
+              {/* Global Docs -> workspace tab then open upload */}
+              <button
                 className="btn-muted-tile"
-                onClick={() => setOpen(false)}
+                onClick={() => go("/dashboard?tab=workspace", () => window.dispatchEvent(new CustomEvent("rrd:upload-doc")))}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                Global documents
+              </button>
+
+              {/* Plan & Billing */}
+              <button
+                className="btn-muted-tile"
+                onClick={() => go("/billing")}
               >
                 <CreditCard className="h-4 w-4 mr-2" />
-                Billing
-              </Link>
-              {subscription?.subscriptionPlan === "advanced" && (
-                <Link 
-                  to="/dashboard?tab=calendar" 
-                  className="btn-muted-tile"
-                  onClick={() => setOpen(false)}
-                >
-                  <CalendarIcon className="h-4 w-4 mr-2" />
-                  Calendar
-                </Link>
-              )}
-              <Link 
-                to="/help" 
+                Plan & billing
+              </button>
+
+              {/* Calendar -> dashboard calendar tab (no /calendar route) */}
+              <button
                 className="btn-muted-tile"
-                onClick={() => setOpen(false)}
+                onClick={() => go("/dashboard?tab=calendar")}
+                disabled={subscription?.subscriptionPlan === "basic"}
+                title={subscription?.subscriptionPlan === "basic" ? "Advanced feature" : undefined}
+              >
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                Calendar
+              </button>
+
+              {/* Help */}
+              <button
+                className="btn-muted-tile"
+                onClick={() => go("/help")}
               >
                 <HelpCircle className="h-4 w-4 mr-2" />
-                Help
-              </Link>
-              <a 
-                href="mailto:support@ridereadydocs.com" 
+                Help & support
+              </button>
+
+              {/* Settings -> dashboard profile tab */}
+              <button
+                className="btn-muted-tile"
+                onClick={() => go("/dashboard?tab=profile")}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Settings
+              </button>
+
+              {/* Email support */}
+              <a
+                href="mailto:support@ridereadydocs.com"
                 className="btn-muted-tile"
                 onClick={() => setOpen(false)}
               >
                 <Mail className="h-4 w-4 mr-2" />
-                Support
+                Email support
               </a>
             </div>
+
             <p className="text-xs text-muted-foreground text-center pt-2 border-t">
               Tip: Use the big "Add" button for common tasks
             </p>
