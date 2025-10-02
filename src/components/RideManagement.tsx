@@ -207,6 +207,7 @@ const RideManagement = () => {
               <span>Request New Type</span>
             </Button>
             <Button 
+              id="rrd-btn-add-ride"
               onClick={() => setShowAddForm(true)} 
               className="flex items-center justify-center space-x-2 w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
             >

@@ -195,7 +195,7 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
             <FileText className="h-4 w-4" />
             <span>All files</span>
           </TabsTrigger>
-          <TabsTrigger value="upload" className="flex items-center space-x-2 h-10">
+          <TabsTrigger id="rrd-btn-upload-doc" value="upload" className="flex items-center space-x-2 h-10">
             <Upload className="h-4 w-4" />
             <span>Add a document</span>
           </TabsTrigger>

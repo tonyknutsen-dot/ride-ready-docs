@@ -25,7 +25,7 @@ const Checks = () => {
     const handler = () => {
       // If a ride is selected, scroll to the check form
       if (selectedRide) {
-        const checkForm = document.getElementById('daily-check-form');
+        const checkForm = document.getElementById('inspection-checklist-form');
         if (checkForm) {
           checkForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -174,6 +174,11 @@ const Checks = () => {
   
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-6">
+      {/* Hidden button for event bridge to click */}
+      <button id="rrd-start-check" className="hidden" onClick={() => {
+        const form = document.getElementById('inspection-checklist-form');
+        if (form) form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }} />
       <header className="border-b bg-background/95 backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-3">
           <div className="flex items-center justify-between gap-4">
