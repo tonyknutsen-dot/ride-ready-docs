@@ -140,7 +140,7 @@ const RideSelector = ({
             </div>
             {showAddRide && onAddRide && (
               <div className="space-y-2">
-                <Button onClick={onAddRide} className="btn-bold-primary flex items-center space-x-2">
+                <Button id="rrd-btn-add-ride" onClick={onAddRide} className="btn-bold-primary flex items-center space-x-2">
                   <Plus className="h-4 w-4" />
                   <span>Add Your First Item</span>
                 </Button>

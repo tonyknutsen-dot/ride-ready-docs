@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -24,15 +24,6 @@ interface RideWorkspaceProps {
 const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
   const [activeTab, setActiveTab] = useState('documents');
-
-  // Listen for mobile nav "add ride" event
-  useEffect(() => {
-    const handler = () => {
-      if (onAddRide) onAddRide();
-    };
-    window.addEventListener("rrd:add-ride", handler);
-    return () => window.removeEventListener("rrd:add-ride", handler);
-  }, [onAddRide]);
 
   const handleRideSelect = (ride: Ride) => {
     setSelectedRide(ride);

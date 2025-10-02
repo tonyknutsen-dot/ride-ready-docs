@@ -9,11 +9,15 @@ export default function GlobalEventBridge() {
   const nav = useNavigate();
   const loc = useLocation();
 
-  const clickById = (id: string) => {
+  const clickById = (id: string, retries = 5) => {
     const el = document.getElementById(id) as HTMLButtonElement | null;
     if (el) {
       el.click();
       return true;
+    }
+    // Retry a few times with increasing delays if button not found
+    if (retries > 0) {
+      setTimeout(() => clickById(id, retries - 1), 150);
     }
     return false;
   };
@@ -21,28 +25,33 @@ export default function GlobalEventBridge() {
   useEffect(() => {
     const addRide = () => {
       // Try to click Add Ride button if present
-      if (clickById("rrd-btn-add-ride")) return;
-      // Go to Workspace tab, then click
-      if (loc.pathname !== "/dashboard" || new URLSearchParams(loc.search).get("tab") !== "workspace") {
-        nav("/dashboard?tab=workspace");
-        setTimeout(() => clickById("rrd-btn-add-ride"), 120);
+      if (document.getElementById("rrd-btn-add-ride")) {
+        clickById("rrd-btn-add-ride");
+        return;
       }
+      // Go to rides tab to show RideManagement
+      nav("/dashboard?tab=rides");
+      setTimeout(() => clickById("rrd-btn-add-ride"), 200);
     };
 
     const uploadDoc = () => {
-      if (clickById("rrd-btn-upload-doc")) return;
-      // Go to Documents tab within dashboard/workspace and then click
-      if (loc.pathname !== "/dashboard" || new URLSearchParams(loc.search).get("tab") !== "workspace") {
-        nav("/dashboard?tab=workspace");
+      if (document.getElementById("rrd-btn-upload-doc")) {
+        clickById("rrd-btn-upload-doc");
+        return;
       }
-      setTimeout(() => clickById("rrd-btn-upload-doc"), 120);
+      // Go to workspace tab for documents
+      nav("/dashboard?tab=workspace");
+      setTimeout(() => clickById("rrd-btn-upload-doc"), 200);
     };
 
     const startCheck = () => {
-      if (clickById("rrd-start-check")) return;
-      // Go to Checks page then click
-      if (loc.pathname !== "/checks") nav("/checks");
-      setTimeout(() => clickById("rrd-start-check"), 120);
+      if (document.getElementById("rrd-start-check")) {
+        clickById("rrd-start-check");
+        return;
+      }
+      // Go to Checks page
+      nav("/checks");
+      setTimeout(() => clickById("rrd-start-check"), 200);
     };
 
     window.addEventListener("rrd:add-ride", addRide);
