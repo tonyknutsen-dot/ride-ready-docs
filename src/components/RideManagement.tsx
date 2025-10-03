@@ -236,13 +236,9 @@ const RideManagement = () => {
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">No rides, stalls, or equipment added yet</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  Start by adding your first ride, food stall, game, or equipment to begin managing documentation and daily checks.
+                  Start by adding your first ride, food stall, game, or equipment using the "Add Ride/Stall" button above.
                 </p>
               </div>
-              <Button onClick={() => setShowAddForm(true)} className="flex items-center space-x-2">
-                <Plus className="h-4 w-4" />
-                <span>Add Your First Item</span>
-              </Button>
             </div>
           </CardContent>
         </Card>
