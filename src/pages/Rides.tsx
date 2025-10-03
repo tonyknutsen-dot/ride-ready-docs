@@ -225,18 +225,18 @@ const Rides = () => {
               className="hover:shadow-md transition-all cursor-pointer"
               onClick={() => navigate(`/rides/${ride.id}`)}
             >
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between gap-2">
+              <CardHeader className="pb-4">
+                <div className="flex items-start justify-between gap-3">
                   <CardTitle className="text-lg leading-tight flex-1 break-words">
                     {ride.ride_name}
                   </CardTitle>
-                  <Badge variant="outline" className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/20">
+                  <Badge variant="outline" className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/20 shrink-0">
                     {ride.ride_categories.name}
                   </Badge>
                 </div>
                 
                 {(ride.manufacturer || ride.year_manufactured) && (
-                  <div className="text-xs text-muted-foreground space-y-0.5 mt-2">
+                  <div className="text-xs text-muted-foreground space-y-0.5 mt-3">
                     {ride.manufacturer && (
                       <div>Make: {ride.manufacturer}</div>
                     )}
@@ -247,17 +247,17 @@ const Rides = () => {
                 )}
               </CardHeader>
               
-              <CardContent className="pt-0 space-y-3">
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2 rounded-md bg-muted/50 text-center">
-                    <FileText className="h-4 w-4 mx-auto text-primary mb-1" />
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-md bg-muted/50 text-center">
+                    <FileText className="h-4 w-4 mx-auto text-primary mb-1.5" />
                     <p className="text-sm font-medium">
                       {rideStats[ride.id]?.docCount ?? 0}
                     </p>
                     <p className="text-xs text-muted-foreground">Documents</p>
                   </div>
-                  <div className="p-2 rounded-md bg-muted/50 text-center">
-                    <CheckSquare className="h-4 w-4 mx-auto text-accent mb-1" />
+                  <div className="p-3 rounded-md bg-muted/50 text-center">
+                    <CheckSquare className="h-4 w-4 mx-auto text-accent mb-1.5" />
                     <p className="text-sm font-medium">
                       {rideStats[ride.id]?.checkCount ?? 0}
                     </p>
@@ -266,7 +266,7 @@ const Rides = () => {
                 </div>
 
                 {rideStats[ride.id]?.nextDue && (
-                  <div className="text-center p-2 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                  <div className="text-center p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
                     <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
                       Due: {new Date(rideStats[ride.id].nextDue!).toLocaleDateString('en-GB', { 
                         day: '2-digit', 
@@ -277,7 +277,7 @@ const Rides = () => {
                   </div>
                 )}
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 pt-1">
                   <Button 
                     onClick={(e) => {
                       e.stopPropagation();
