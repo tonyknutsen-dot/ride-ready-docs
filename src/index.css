@@ -63,13 +63,6 @@ All colors MUST be HSL.
     --info: 200 90% 40%;
     --info-foreground: 0 0% 100%;
 
-    /* Gradients and effects */
-    --hero-gradient: linear-gradient(135deg, hsl(225 95% 35%) 0%, hsl(225 85% 45%) 100%);
-    --accent-gradient: linear-gradient(135deg, hsl(225 95% 35%) 0%, hsl(225 85% 55%) 100%);
-    --shadow-elegant: 0 10px 30px -10px hsl(225 95% 35% / 0.3);
-    --shadow-glow: 0 0 40px hsl(225 85% 55% / 0.4);
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-
     --radius: 0.5rem;
   }
 

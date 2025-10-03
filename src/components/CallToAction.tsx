@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import heroImage from "@/assets/hero-fairground.jpg";
 
 const CallToAction = () => {
   const navigate = useNavigate();
@@ -20,14 +19,15 @@ const CallToAction = () => {
   };
 
   return (
-    <section className="py-20 text-primary-foreground relative overflow-hidden">
-      {/* Background Image */}
-      <div 
-        className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-        style={{ backgroundImage: `url(${heroImage})` }}
-      />
-      {/* Dark Overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-primary/95 via-primary/90 to-primary/95" />
+    <section className="py-20 bg-hero-gradient text-white relative overflow-hidden">
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-10">
+        <div className="absolute inset-0" 
+             style={{
+               backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.3'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+             }}
+        />
+      </div>
 
       <div className="container mx-auto px-6 text-center relative z-10">
         <h2 className="text-4xl md:text-5xl font-bold mb-6 drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">
@@ -54,7 +54,7 @@ const CallToAction = () => {
           <Button 
             variant="outline" 
             size="lg"
-            className="border-2 border-primary-foreground/30 bg-primary-foreground/5 text-primary-foreground hover:bg-primary-foreground/10 px-8 py-4 text-lg backdrop-blur-sm transition-smooth min-w-[250px]"
+            className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-4 text-lg backdrop-blur-sm transition-smooth min-w-[250px]"
             onClick={() => navigate('/demo')}
           >
             View Demo
