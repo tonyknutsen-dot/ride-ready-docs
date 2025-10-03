@@ -106,11 +106,24 @@ export default function MobileBottomNav() {
           </button>
         )}
 
-        {/* Third button: empty spacer for symmetry */}
-        <div className="flex flex-col items-center justify-center py-1 rounded-md text-xs text-transparent">
-          <div className="h-5 w-5" />
-          <span className="mt-0.5">-</span>
-        </div>
+        {/* Third button: Calendar (Docs flavor) or empty spacer (Checks flavor) */}
+        {isDocs ? (
+          <button
+            onClick={() => go("/dashboard?tab=calendar")}
+            className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
+              isActive(l => l.pathname === "/dashboard" && new URLSearchParams(l.search).get("tab") === "calendar") ? "text-primary" : "text-muted-foreground"
+            }`}
+            aria-label="Calendar"
+          >
+            <CalendarIcon className="h-5 w-5" />
+            <span className="mt-0.5">Calendar</span>
+          </button>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-1 rounded-md text-xs text-transparent">
+            <div className="h-5 w-5" />
+            <span className="mt-0.5">-</span>
+          </div>
+        )}
 
         {/* Primary Add */}
         <button
@@ -136,22 +149,13 @@ export default function MobileBottomNav() {
             <div className="grid grid-cols-2 gap-2 py-3">
               {/* Flavor-specific items */}
               {isDocs && (
-                <>
-                  <button
-                    className="btn-muted-tile"
-                    onClick={() => go("/dashboard?tab=workspace", () => window.dispatchEvent(new CustomEvent("rrd:upload-doc")))}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Global documents
-                  </button>
-                  <button
-                    className="btn-muted-tile"
-                    onClick={() => go("/dashboard?tab=calendar")}
-                  >
-                    <CalendarIcon className="h-4 w-4 mr-2" />
-                    Calendar
-                  </button>
-                </>
+                <button
+                  className="btn-muted-tile"
+                  onClick={() => go("/dashboard?tab=workspace", () => window.dispatchEvent(new CustomEvent("rrd:upload-doc")))}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Global documents
+                </button>
               )}
 
               {isChecks && (
