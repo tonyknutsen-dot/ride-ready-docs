@@ -14,6 +14,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Demo from "./pages/Demo";
+import Overview from "./pages/Overview";
 import NotFound from "./pages/NotFound";
 import PlanBilling from "./pages/PlanBilling";
 import HowItWorks from "./pages/HowItWorks";
@@ -38,6 +39,14 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/demo" element={<Demo />} />
+            <Route 
+              path="/overview" 
+              element={
+                <ProtectedRoute>
+                  <Overview />
+                </ProtectedRoute>
+              } 
+            />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/privacy" element={<PrivacyPolicy />} />
             <Route path="/terms" element={<TermsOfService />} />
