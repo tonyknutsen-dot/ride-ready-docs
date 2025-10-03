@@ -169,7 +169,7 @@ const Rides = () => {
   }
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-6 pb-24 md:pb-6 space-y-6">
       <Alert>
         <AlertDescription>
           Add and manage your rides, stalls, and equipment. Click on any item to view details and manage documents or checks.
