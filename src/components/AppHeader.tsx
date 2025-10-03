@@ -76,6 +76,16 @@ const AppHeader = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <Link to="/settings">
+            <Button 
+              variant={isActive('/settings') ? 'default' : 'ghost'} 
+              size="sm" 
+              className="gap-2"
+            >
+              <User className="h-4 w-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </Button>
+          </Link>
           <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2">
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Sign Out</span>

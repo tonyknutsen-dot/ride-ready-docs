@@ -188,15 +188,10 @@ export default function MobileBottomNav() {
                 Help & support
               </button>
 
-              {/* Settings -> dashboard profile tab */}
+              {/* Settings */}
               <button
                 className="btn-muted-tile"
-                onClick={() => {
-                  setOpen(false);
-                  if (loc.pathname + loc.search !== "/dashboard?tab=profile") {
-                    nav("/dashboard?tab=profile");
-                  }
-                }}
+                onClick={() => go("/settings")}
               >
                 <Settings className="h-4 w-4 mr-2" />
                 Settings

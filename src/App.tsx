@@ -32,6 +32,7 @@ import HelpCenter from "./pages/HelpCenter";
 import Security from "./pages/Security";
 import Checks from "./pages/Checks";
 import SetupAdmin from "./pages/SetupAdmin";
+import Settings from "./pages/Settings";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import RideTypeRequests from "./pages/admin/RideTypeRequests";
 import DocumentTypeRequests from "./pages/admin/DocumentTypeRequests";
@@ -151,6 +152,16 @@ const App = () => (
                   <ProtectedRoute>
                     <ProfileGuard>
                       <PlanBilling />
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <Settings />
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
