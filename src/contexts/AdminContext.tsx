@@ -34,6 +34,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
       }
 
       try {
+        console.log('Checking admin status for user:', user.id);
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
@@ -41,6 +42,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           .eq('role', 'admin')
           .single();
 
+        console.log('Admin check result:', { data, error });
         setIsAdmin(!!data && !error);
       } catch (error) {
         console.error('Error checking admin status:', error);
