@@ -37,7 +37,7 @@ const Hero = () => {
           <br />
           Documents
           <br />
-          <span className="text-accent drop-shadow-[0_4px_12px_rgba(0,0,0,1)] [text-shadow:_0_2px_20px_rgb(0_0_0_/_100%)]">
+          <span className="drop-shadow-[0_4px_12px_rgba(0,0,0,1)] [text-shadow:_0_2px_20px_rgb(0_0_0_/_100%)]">
             Organized & Secure
           </span>
         </h1>
