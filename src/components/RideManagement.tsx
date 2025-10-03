@@ -183,7 +183,7 @@ const RideManagement = () => {
     <div className="space-y-6">
       <Alert>
         <AlertDescription>
-          Add and manage your rides, stalls, and equipment. Track documents, inspections, and maintenance for each item. Use the action buttons to view details, send documents, or manage settings.
+          Add and manage your rides, stalls, and equipment. Track documents and certificates for each item. Use the action buttons to view details, send documents, or manage settings.
         </AlertDescription>
       </Alert>
       {/* Mobile-friendly header */}
