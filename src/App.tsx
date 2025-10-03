@@ -3,12 +3,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import ScrollToTop from "@/components/ScrollToTop";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import GlobalEventBridge from "@/components/GlobalEventBridge";
+import { isDocs, isChecks } from "@/config/appFlavor";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -58,12 +59,17 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
+            {/* Checks route - only available in Checks flavor */}
             <Route 
               path="/checks" 
               element={
-                <ProtectedRoute>
-                  <Checks />
-                </ProtectedRoute>
+                isChecks ? (
+                  <ProtectedRoute>
+                    <Checks />
+                  </ProtectedRoute>
+                ) : (
+                  <Navigate to="/dashboard" replace />
+                )
               } 
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

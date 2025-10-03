@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useState } from "react";
+import { isDocs, isChecks } from "@/config/appFlavor";
 
 /**
  * Mobile bottom bar:
@@ -34,29 +35,26 @@ export default function MobileBottomNav() {
   const isActive = (match: (loc: ReturnType<typeof useLocation>) => boolean) => match(loc);
 
   const primaryAction = () => {
-    const search = new URLSearchParams(loc.search);
-    const tab = search.get("tab");
-
-    if (loc.pathname === "/checks") {
-      // Start check on checks page
-      window.dispatchEvent(new CustomEvent("rrd:start-check"));
+    if (isChecks) {
+      // Checks flavor: always start a check
+      if (loc.pathname === "/checks") {
+        window.dispatchEvent(new CustomEvent("rrd:start-check"));
+        return;
+      }
+      go("/checks", () => window.dispatchEvent(new CustomEvent("rrd:start-check")));
       return;
     }
 
-    if (loc.pathname === "/dashboard") {
-      if (tab === "workspace") {
-        // Add a ride
-        window.dispatchEvent(new CustomEvent("rrd:add-ride"));
-        return;
-      }
-      if (tab === "documents") {
-        // Upload a document
-        window.dispatchEvent(new CustomEvent("rrd:upload-doc"));
-        return;
-      }
+    // Docs flavor: add ride or upload doc
+    const search = new URLSearchParams(loc.search);
+    const tab = search.get("tab");
+
+    if (loc.pathname === "/dashboard" && tab === "workspace") {
+      window.dispatchEvent(new CustomEvent("rrd:add-ride"));
+      return;
     }
 
-    // Default: go to rides workspace, then add ride
+    // Default: go to workspace and add ride
     go("/dashboard?tab=workspace", () => {
       window.dispatchEvent(new CustomEvent("rrd:add-ride"));
     });
@@ -77,29 +75,36 @@ export default function MobileBottomNav() {
           <span className="mt-0.5">Home</span>
         </button>
 
-        {/* Rides (Workspace tab) */}
-        <button
-          onClick={() => go("/dashboard?tab=workspace")}
-          className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-            isActive(l => l.pathname === "/dashboard" && new URLSearchParams(l.search).get("tab") === "workspace") ? "text-primary" : "text-muted-foreground"
-          }`}
-          aria-label="Rides"
-        >
-          <FolderOpen className="h-5 w-5" />
-          <span className="mt-0.5">Rides</span>
-        </button>
+        {/* Second button: Rides (Docs) or Checks (Checks flavor) */}
+        {isDocs ? (
+          <button
+            onClick={() => go("/dashboard?tab=workspace")}
+            className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
+              isActive(l => l.pathname === "/dashboard" && new URLSearchParams(l.search).get("tab") === "workspace") ? "text-primary" : "text-muted-foreground"
+            }`}
+            aria-label="Rides"
+          >
+            <FolderOpen className="h-5 w-5" />
+            <span className="mt-0.5">Rides</span>
+          </button>
+        ) : (
+          <button
+            onClick={() => go("/checks")}
+            className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
+              isActive(l => l.pathname === "/checks") ? "text-primary" : "text-muted-foreground"
+            }`}
+            aria-label="Checks"
+          >
+            <BadgeCheck className="h-5 w-5" />
+            <span className="mt-0.5">Checks</span>
+          </button>
+        )}
 
-        {/* Checks page */}
-        <button
-          onClick={() => go("/checks")}
-          className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-            isActive(l => l.pathname === "/checks") ? "text-primary" : "text-muted-foreground"
-          }`}
-          aria-label="Checks"
-        >
-          <BadgeCheck className="h-5 w-5" />
-          <span className="mt-0.5">Checks</span>
-        </button>
+        {/* Third button: empty spacer for symmetry */}
+        <div className="flex flex-col items-center justify-center py-1 rounded-md text-xs text-transparent">
+          <div className="h-5 w-5" />
+          <span className="mt-0.5">-</span>
+        </div>
 
         {/* Primary Add */}
         <button
@@ -123,14 +128,28 @@ export default function MobileBottomNav() {
             <SheetHeader><SheetTitle>More</SheetTitle></SheetHeader>
 
             <div className="grid grid-cols-2 gap-2 py-3">
-              {/* Global Docs -> workspace tab then open upload */}
-              <button
-                className="btn-muted-tile"
-                onClick={() => go("/dashboard?tab=workspace", () => window.dispatchEvent(new CustomEvent("rrd:upload-doc")))}
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Global documents
-              </button>
+              {/* Flavor-specific items */}
+              {isDocs && (
+                <button
+                  className="btn-muted-tile"
+                  onClick={() => go("/dashboard?tab=workspace", () => window.dispatchEvent(new CustomEvent("rrd:upload-doc")))}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Global documents
+                </button>
+              )}
+
+              {isChecks && (
+                <button
+                  className="btn-muted-tile"
+                  onClick={() => go("/dashboard?tab=calendar")}
+                  disabled={subscription?.subscriptionPlan === "basic"}
+                  title={subscription?.subscriptionPlan === "basic" ? "Advanced feature" : undefined}
+                >
+                  <CalendarIcon className="h-4 w-4 mr-2" />
+                  Calendar
+                </button>
+              )}
 
               {/* Plan & Billing */}
               <button
@@ -139,17 +158,6 @@ export default function MobileBottomNav() {
               >
                 <CreditCard className="h-4 w-4 mr-2" />
                 Plan & billing
-              </button>
-
-              {/* Calendar -> dashboard calendar tab (no /calendar route) */}
-              <button
-                className="btn-muted-tile"
-                onClick={() => go("/dashboard?tab=calendar")}
-                disabled={subscription?.subscriptionPlan === "basic"}
-                title={subscription?.subscriptionPlan === "basic" ? "Advanced feature" : undefined}
-              >
-                <CalendarIcon className="h-4 w-4 mr-2" />
-                Calendar
               </button>
 
               {/* Help */}

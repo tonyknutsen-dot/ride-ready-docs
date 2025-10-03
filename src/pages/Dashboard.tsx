@@ -27,6 +27,8 @@ import { RestrictedFeatureCard } from '@/components/RestrictedFeatureCard';
 import { useSubscription } from '@/hooks/useSubscription';
 import OnboardingGuide from '@/components/OnboardingGuide';
 import DeviceHintBanner from '@/components/DeviceHintBanner';
+import AppSwitchBanner from '@/components/AppSwitchBanner';
+import { isDocs, isChecks } from '@/config/appFlavor';
 
 const Dashboard = () => {
   const { user, signOut } = useAuth();
@@ -168,7 +170,7 @@ const Dashboard = () => {
               <div className="min-w-0 flex-1">
                 <h1 className="text-lg font-bold truncate">Dashboard</h1>
                 <p className="text-xs text-muted-foreground truncate">
-                  Ride Ready Docs
+                  {isDocs ? "Ride Ready Docs" : "Ride Ready Checks"}
                 </p>
               </div>
             </div>
@@ -228,6 +230,8 @@ const Dashboard = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-3 py-3 md:px-4 md:py-6 pb-20 md:pb-6">
+        <AppSwitchBanner />
+        
         <TrialStatus onUpgrade={() => setShowPlanSelection(true)} />
         
         <div className="mb-4">
@@ -272,18 +276,31 @@ const Dashboard = () => {
                       label="Home"
                       className="flex-shrink-0 px-3 py-2 text-xs"
                     />
-                    <PlanAwareTabTrigger 
-                      value="rides" 
-                      icon={Settings} 
-                      label="Manage"
-                      className="flex-shrink-0 px-3 py-2 text-xs"
-                    />
-                    <PlanAwareTabTrigger 
-                      value="workspace" 
-                      icon={Wrench} 
-                      label="Workspace"
-                      className="flex-shrink-0 px-3 py-2 text-xs font-medium bg-primary/10 text-primary"
-                    />
+                    {isDocs && (
+                      <>
+                        <PlanAwareTabTrigger 
+                          value="rides" 
+                          icon={Settings} 
+                          label="Manage"
+                          className="flex-shrink-0 px-3 py-2 text-xs"
+                        />
+                        <PlanAwareTabTrigger 
+                          value="workspace" 
+                          icon={Wrench} 
+                          label="Workspace"
+                          className="flex-shrink-0 px-3 py-2 text-xs font-medium bg-primary/10 text-primary"
+                        />
+                      </>
+                    )}
+                    {isChecks && (
+                      <PlanAwareTabTrigger 
+                        value="calendar" 
+                        icon={CalendarIcon} 
+                        label="Calendar"
+                        requiresAdvanced={true}
+                        className="flex-shrink-0 px-3 py-2 text-xs"
+                      />
+                    )}
                     <PlanAwareTabTrigger 
                       value="profile" 
                       icon={User} 
@@ -298,46 +315,52 @@ const Dashboard = () => {
             {/* Desktop: Grid layout */}
             <div className="hidden md:block">
               <TooltipProvider>
-                <TabsList className="grid w-full grid-cols-9 h-auto p-1 bg-muted/20">
+                <TabsList className={`grid w-full h-auto p-1 bg-muted/20 ${isDocs ? 'grid-cols-8' : 'grid-cols-3'}`}>
                   <PlanAwareTabTrigger 
                     value="overview" 
                     icon={Plus} 
                     label="Overview"
                   />
-                  <PlanAwareTabTrigger 
-                    value="rides" 
-                    icon={Settings} 
-                    label="Manage Rides"
-                  />
-                  <PlanAwareTabTrigger 
-                    value="workspace" 
-                    icon={Wrench} 
-                    label="Workspace"
-                  />
-                  <PlanAwareTabTrigger 
-                    value="calendar" 
-                    icon={CalendarIcon} 
-                    label="Calendar"
-                    requiresAdvanced={true}
-                  />
-                  <PlanAwareTabTrigger 
-                    value="notifications" 
-                    icon={BellIcon} 
-                    label="Notifications"
-                    requiresAdvanced={true}
-                  />
-                  <PlanAwareTabTrigger 
-                    value="reports" 
-                    icon={FileText} 
-                    label="Reports"
-                    requiresAdvanced={true}
-                  />
-                  <PlanAwareTabTrigger 
-                    value="bulletins" 
-                    icon={AlertTriangle} 
-                    label="Bulletins"
-                    requiresAdvanced={true}
-                  />
+                  {isDocs && (
+                    <>
+                      <PlanAwareTabTrigger 
+                        value="rides" 
+                        icon={Settings} 
+                        label="Manage Rides"
+                      />
+                      <PlanAwareTabTrigger 
+                        value="workspace" 
+                        icon={Wrench} 
+                        label="Workspace"
+                      />
+                      <PlanAwareTabTrigger 
+                        value="notifications" 
+                        icon={BellIcon} 
+                        label="Notifications"
+                        requiresAdvanced={true}
+                      />
+                      <PlanAwareTabTrigger 
+                        value="reports" 
+                        icon={FileText} 
+                        label="Reports"
+                        requiresAdvanced={true}
+                      />
+                      <PlanAwareTabTrigger 
+                        value="bulletins" 
+                        icon={AlertTriangle} 
+                        label="Bulletins"
+                        requiresAdvanced={true}
+                      />
+                    </>
+                  )}
+                  {isChecks && (
+                    <PlanAwareTabTrigger 
+                      value="calendar" 
+                      icon={CalendarIcon} 
+                      label="Calendar"
+                      requiresAdvanced={true}
+                    />
+                  )}
                   <PlanAwareTabTrigger 
                     value="profile" 
                     icon={User} 
@@ -351,56 +374,62 @@ const Dashboard = () => {
               <DashboardOverview onNavigate={setActiveTab} />
             </TabsContent>
 
-            <TabsContent value="rides">
-              <FeatureGate requiredPlan="basic" feature="Ride Management">
-                <RideManagement />
-              </FeatureGate>
-            </TabsContent>
+            {isDocs && (
+              <>
+                <TabsContent value="rides">
+                  <FeatureGate requiredPlan="basic" feature="Ride Management">
+                    <RideManagement />
+                  </FeatureGate>
+                </TabsContent>
 
-            <TabsContent value="workspace" id="workspace">
-              <FeatureGate requiredPlan="basic" feature="Equipment Workspace">
-                <RideWorkspace onAddRide={() => setActiveTab('rides')} />
-              </FeatureGate>
-            </TabsContent>
+                <TabsContent value="workspace" id="workspace">
+                  <FeatureGate requiredPlan="basic" feature="Equipment Workspace">
+                    <RideWorkspace onAddRide={() => setActiveTab('rides')} />
+                  </FeatureGate>
+                </TabsContent>
 
-            <TabsContent value="calendar">
-              <FeatureGate requiredPlan="basic" feature="Calendar & Scheduling">
-                <CalendarView />
-              </FeatureGate>
-            </TabsContent>
+                <TabsContent value="notifications">
+                  <FeatureGate requiredPlan="advanced" feature="Notifications & Alerts">
+                    <NotificationCenter />
+                  </FeatureGate>
+                </TabsContent>
 
-            <TabsContent value="notifications">
-              <FeatureGate requiredPlan="advanced" feature="Notifications & Alerts">
-                <NotificationCenter />
-              </FeatureGate>
-            </TabsContent>
+                <TabsContent value="reports">
+                  <FeatureGate requiredPlan="advanced" feature="Advanced Reporting">
+                    <ReportGenerator />
+                  </FeatureGate>
+                </TabsContent>
 
-            <TabsContent value="reports">
-              <FeatureGate requiredPlan="advanced" feature="Advanced Reporting">
-                <ReportGenerator />
-              </FeatureGate>
-            </TabsContent>
+                <TabsContent value="bulletins">
+                  <FeatureGate requiredPlan="advanced" feature="Technical Bulletins">
+                    <div className="space-y-6">
+                      <Tabs defaultValue="view" className="space-y-6">
+                        <TabsList className="grid w-full grid-cols-2">
+                          <TabsTrigger value="view">View Bulletins</TabsTrigger>
+                          <TabsTrigger value="manage">Manage Bulletins</TabsTrigger>
+                        </TabsList>
+                        
+                        <TabsContent value="view">
+                          <TechnicalBulletinList />
+                        </TabsContent>
+                        
+                        <TabsContent value="manage">
+                          <TechnicalBulletinManager />
+                        </TabsContent>
+                      </Tabs>
+                    </div>
+                  </FeatureGate>
+                </TabsContent>
+              </>
+            )}
 
-            <TabsContent value="bulletins">
-              <FeatureGate requiredPlan="advanced" feature="Technical Bulletins">
-                <div className="space-y-6">
-                  <Tabs defaultValue="view" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="view">View Bulletins</TabsTrigger>
-                      <TabsTrigger value="manage">Manage Bulletins</TabsTrigger>
-                    </TabsList>
-                    
-                    <TabsContent value="view">
-                      <TechnicalBulletinList />
-                    </TabsContent>
-                    
-                    <TabsContent value="manage">
-                      <TechnicalBulletinManager />
-                    </TabsContent>
-                  </Tabs>
-                </div>
-              </FeatureGate>
-            </TabsContent>
+            {isChecks && (
+              <TabsContent value="calendar">
+                <FeatureGate requiredPlan="basic" feature="Calendar & Scheduling">
+                  <CalendarView />
+                </FeatureGate>
+              </TabsContent>
+            )}
 
             <TabsContent value="profile">
               {/* Profile Info */}
