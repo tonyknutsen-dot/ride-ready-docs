@@ -19,6 +19,7 @@ import MaintenanceTracker from '@/components/MaintenanceTracker';
 import ReportGenerator from '@/components/ReportGenerator';
 import TechnicalBulletinManager from '@/components/TechnicalBulletinManager';
 import TechnicalBulletinList from '@/components/TechnicalBulletinList';
+import GlobalDocuments from '@/components/GlobalDocuments';
 import ProfileSetup from '@/components/ProfileSetup';
 import ProfileEdit from '@/components/ProfileEdit';
 import { TrialStatus } from '@/components/TrialStatus';
@@ -271,6 +272,12 @@ const Dashboard = () => {
                         label="Documents"
                       />
                       <PlanAwareTabTrigger 
+                        value="global-docs" 
+                        icon={Shield} 
+                        label="Global Docs"
+                        requiresAdvanced={true}
+                      />
+                      <PlanAwareTabTrigger 
                         value="calendar" 
                         icon={CalendarIcon} 
                         label="Calendar"
@@ -353,6 +360,10 @@ const Dashboard = () => {
 
             {isDocs && (
               <>
+                <TabsContent value="global-docs">
+                  <GlobalDocuments />
+                </TabsContent>
+
                 <TabsContent value="calendar" id="calendar-section">
                   <FeatureGate requiredPlan="basic" feature="Calendar & Document Expiry Tracking">
                     <CalendarView />
