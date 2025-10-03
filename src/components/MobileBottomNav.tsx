@@ -65,7 +65,12 @@ export default function MobileBottomNav() {
       <div className="mx-auto max-w-screen-sm grid grid-cols-5 gap-1 p-2">
         {/* Home */}
         <button
-          onClick={() => go("/dashboard")}
+          onClick={() => {
+            // Always scroll to top for feedback
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Navigate to overview tab
+            go("/dashboard");
+          }}
           className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
             isActive(l => l.pathname === "/dashboard" && !new URLSearchParams(l.search).get("tab")) ? "text-primary" : "text-muted-foreground"
           }`}
