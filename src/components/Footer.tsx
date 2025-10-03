@@ -1,10 +1,8 @@
 import { FileText, Mail, Phone, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
-
 const Footer = () => {
-  return (
-    <footer className="bg-primary text-primary-foreground py-16">
+  return <footer className="bg-primary text-primary-foreground py-0">
       <div className="container mx-auto px-6">
         <div className="grid md:grid-cols-4 gap-8">
           {/* Brand */}
@@ -60,8 +58,6 @@ const Footer = () => {
           <p>&copy; 2024 Ride Ready Docs. All rights reserved. Built for the fairground community.</p>
         </div>
       </div>
-    </footer>
-  );
+    </footer>;
 };
-
 export default Footer;
