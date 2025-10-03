@@ -93,7 +93,7 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
   };
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6 pb-24 md:pb-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <Button variant="outline" onClick={onBack} className="w-fit flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" />
