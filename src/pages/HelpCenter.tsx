@@ -3,209 +3,209 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { FileText, Calendar, Bell, Upload, CheckCircle, Shield, Mail } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { FileText, Calendar, Bell, Upload, CheckCircle, Shield, Mail, Crown } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const HelpCenter = () => {
+  const { subscription } = useSubscription();
+  const isAdvanced = subscription?.subscriptionStatus === 'advanced';
+
   const quickLinks = [
     {
       icon: Upload,
       title: "Adding Your First Ride",
-      description: "Learn how to add rides and upload documents"
+      description: "Learn how to add rides and upload documents",
+      planRequired: "basic"
     },
     {
       icon: Calendar,
       title: "Setting Up Inspections",
-      description: "Schedule annual inspections and NDT testing"
+      description: "Schedule annual inspections and NDT testing",
+      planRequired: "advanced"
     },
     {
       icon: CheckCircle,
       title: "Daily Checks",
-      description: "Create and complete safety check templates"
+      description: "Create and complete safety check templates",
+      planRequired: "advanced"
     },
     {
       icon: Bell,
       title: "Notifications",
-      description: "Configure reminders and alerts"
+      description: "Configure reminders and alerts",
+      planRequired: "advanced"
     },
     {
       icon: FileText,
       title: "Managing Documents",
-      description: "Upload, organize, and track document expiry"
+      description: "Upload, organize, and track document expiry",
+      planRequired: "basic"
     },
     {
       icon: Shield,
       title: "Compliance Reports",
-      description: "Generate inspection and maintenance reports"
+      description: "Generate inspection and maintenance reports",
+      planRequired: "advanced"
     }
   ];
 
   const faqs = [
     {
       category: "Getting Started",
+      planRequired: "basic",
       questions: [
         {
           q: "How do I start using Ride Ready Docs?",
-          a: "After signing up, start by completing your profile with your company and showman details. Then add your first ride with its details (manufacturer, serial number, etc.). Once added, you can upload documents and set up inspection schedules."
+          a: "After signing up, start by completing your profile with your company and showman details. Then add your first ride with its details (manufacturer, serial number, etc.). Once added, you can upload documents.",
+          planRequired: "basic"
         },
         {
           q: "What's included in the free trial?",
-          a: "The 30-day free trial includes full access to all features: unlimited rides, document storage, inspection scheduling, daily checks, maintenance tracking, and notifications. No credit card required to start."
+          a: "The 30-day free trial includes full access to all features: unlimited rides, document storage, inspection scheduling, daily checks, maintenance tracking, and notifications. No credit card required to start.",
+          planRequired: "basic"
         },
         {
           q: "Can I import existing documents?",
-          a: "Yes! You can upload documents in PDF, JPG, PNG, and other common formats. There's no limit to the number of documents you can upload per ride."
+          a: "Yes! You can upload documents in PDF, JPG, PNG, and other common formats. There's no limit to the number of documents you can upload per ride.",
+          planRequired: "basic"
         }
       ]
     },
     {
       category: "Rides and Equipment",
+      planRequired: "basic",
       questions: [
         {
           q: "How many rides can I add?",
-          a: "Basic plan allows up to 10 rides. Advanced plan supports unlimited rides, generators, and equipment."
+          a: "Basic plan allows up to 10 rides. Advanced plan supports unlimited rides, generators, and equipment.",
+          planRequired: "basic"
         },
         {
           q: "Can I manage generators and other equipment?",
-          a: "Yes! The system supports all types of fairground equipment - rides, generators, trailers, and any other equipment requiring documentation and inspections."
+          a: "Yes! The system supports all types of fairground equipment - rides, generators, trailers, and any other equipment requiring documentation.",
+          planRequired: "basic"
         },
         {
           q: "What information should I include for each ride?",
-          a: "Include the ride name, manufacturer, year manufactured, serial number, and select the appropriate category. You can also add owner name if managing rides for multiple owners."
+          a: "Include the ride name, manufacturer, year manufactured, serial number, and select the appropriate category. You can also add owner name if managing rides for multiple owners.",
+          planRequired: "basic"
         }
       ]
     },
     {
       category: "Documents",
+      planRequired: "basic",
       questions: [
         {
           q: "What types of documents can I upload?",
-          a: "You can upload any document related to your rides: ADIPS certificates, insurance documents, test certificates, manuals, risk assessments, electrical certificates, NDT reports, and more."
+          a: "You can upload any document related to your rides: ADIPS certificates, insurance documents, test certificates, manuals, risk assessments, electrical certificates, NDT reports, and more.",
+          planRequired: "basic"
         },
         {
           q: "How does document expiry tracking work?",
-          a: "When uploading documents, set an expiry date. The system automatically tracks expiry dates and sends notifications 30 days before, 7 days before, and when documents expire."
-        },
-        {
-          q: "What are Global Documents?",
-          a: "Global documents are accessible to all your rides. Examples include: employer's liability insurance, public liability insurance, or company-wide policies that apply to all equipment."
+          a: "When uploading documents, set an expiry date. The system automatically tracks expiry dates and sends notifications (Advanced plan feature).",
+          planRequired: "basic"
         },
         {
           q: "Can I replace an expired document?",
-          a: "Yes! When uploading a new version, you can link it to the old document. The system maintains version history so you can track document updates over time."
+          a: "Yes! When uploading a new version, you can link it to the old document. The system maintains version history so you can track document updates over time.",
+          planRequired: "basic"
         }
       ]
     },
     {
-      category: "Inspections",
+      category: "Inspections (Advanced Plan)",
+      planRequired: "advanced",
       questions: [
         {
           q: "How do I set up annual inspections?",
-          a: "Go to the Inspections tab for your ride, click 'Schedule Inspection', select the inspection type (Annual, ADIPS, etc.), and set the due date. The system will send automatic reminders."
+          a: "Go to the Inspections tab for your ride, click 'Schedule Inspection', select the inspection type (Annual, ADIPS, etc.), and set the due date. The system will send automatic reminders.",
+          planRequired: "advanced"
         },
         {
           q: "What is NDT testing?",
-          a: "NDT (Non-Destructive Testing) includes methods like ultrasonic testing, magnetic particle inspection, and dye penetrant testing to check structural integrity of ride components without damaging them."
-        },
-        {
-          q: "How often should I schedule NDT tests?",
-          a: "NDT frequency depends on your ride type and regulatory requirements. Common intervals are 6, 12, or 24 months. Consult your ride manufacturer's guidelines and ADIPS requirements."
+          a: "NDT (Non-Destructive Testing) includes methods like ultrasonic testing, magnetic particle inspection, and dye penetrant testing to check structural integrity of ride components without damaging them.",
+          planRequired: "advanced"
         },
         {
           q: "Can I record inspection results?",
-          a: "Yes! After inspections, you can log results, upload the inspection report, record the certificate number, note any conditions or recommendations, and set the next inspection due date."
+          a: "Yes! After inspections, you can log results, upload the inspection report, record the certificate number, note any conditions or recommendations, and set the next inspection due date.",
+          planRequired: "advanced"
         }
       ]
     },
     {
-      category: "Daily, Monthly, and Yearly Checks",
+      category: "Operations & Maintenance (Advanced Plan)",
+      planRequired: "advanced",
       questions: [
         {
           q: "What are check templates?",
-          a: "Templates are customizable checklists for routine safety inspections. Create daily, monthly, or yearly templates with specific items to check before operating your rides."
+          a: "Templates are customizable checklists for routine safety inspections. Create daily, monthly, or yearly templates with specific items to check before operating your rides.",
+          planRequired: "advanced"
         },
         {
           q: "How do I create a daily check template?",
-          a: "Go to your ride, select 'Daily Checks', click 'Manage Templates', then 'Create New Template'. Add check items like 'Check emergency stops', 'Inspect restraints', 'Check hydraulic pressure', etc."
-        },
-        {
-          q: "Can I use the same template for multiple rides?",
-          a: "Each template is currently specific to a ride, allowing you to customize checks for each ride's unique requirements. This ensures relevant safety checks for each piece of equipment."
+          a: "Go to your ride, select 'Daily Checks', click 'Manage Templates', then 'Create New Template'. Add check items like 'Check emergency stops', 'Inspect restraints', etc.",
+          planRequired: "advanced"
         },
         {
           q: "Do I need to complete checks every day?",
-          a: "ADIPS and HSE guidelines require pre-operational safety checks each day before public use. Our daily check system helps you document compliance with these requirements."
+          a: "ADIPS and HSE guidelines require pre-operational safety checks each day before public use. Our daily check system helps you document compliance with these requirements.",
+          planRequired: "advanced"
         },
-        {
-          q: "Can I add digital signatures to checks?",
-          a: "Yes! When completing checks, you can add the inspector's name, digital signature, weather conditions, and notes. This creates a complete, auditable record."
-        }
-      ]
-    },
-    {
-      category: "Maintenance",
-      questions: [
         {
           q: "How do I log maintenance activities?",
-          a: "In the Maintenance tab, click 'Log Maintenance', describe the work performed, list parts replaced, record costs, and attach any related documents like invoices or parts receipts."
-        },
-        {
-          q: "Can I schedule preventive maintenance?",
-          a: "Yes! When logging maintenance, set a 'Next Maintenance Due' date. The system will remind you when preventive maintenance is approaching."
-        },
-        {
-          q: "How do I track maintenance costs?",
-          a: "Record the cost when logging each maintenance activity. You can then view maintenance history to see total costs per ride and identify maintenance trends."
+          a: "In the Maintenance tab, click 'Log Maintenance', describe the work performed, list parts replaced, record costs, and attach any related documents like invoices or parts receipts.",
+          planRequired: "advanced"
         }
       ]
     },
     {
-      category: "Technical Bulletins",
+      category: "Technical Bulletins (Advanced Plan)",
+      planRequired: "advanced",
       questions: [
         {
           q: "What are technical bulletins?",
-          a: "Technical bulletins are safety notices and updates from ride manufacturers about potential issues, required modifications, or important operational information."
+          a: "Technical bulletins are safety notices and updates from ride manufacturers about potential issues, required modifications, or important operational information.",
+          planRequired: "advanced"
         },
         {
           q: "How do I find relevant bulletins for my rides?",
-          a: "The Technical Bulletins feature (Advanced plan) automatically matches bulletins to your rides based on manufacturer and category. You can also search the bulletin library."
-        },
-        {
-          q: "Who provides the technical bulletins?",
-          a: "Bulletins are collected from manufacturer websites, industry associations like ADIPS, and safety organizations. The system is regularly updated with new bulletins."
+          a: "The Technical Bulletins feature automatically matches bulletins to your rides based on manufacturer and category. You can also search the bulletin library.",
+          planRequired: "advanced"
         }
       ]
     },
     {
-      category: "Notifications and Reminders",
+      category: "Notifications (Advanced Plan)",
+      planRequired: "advanced",
       questions: [
         {
           q: "What notifications will I receive?",
-          a: "You'll receive reminders for: upcoming inspections (30 days before), expiring documents (30 days, 7 days, and on expiry), overdue maintenance, and NDT testing due dates."
-        },
-        {
-          q: "Can I customize notification timing?",
-          a: "Currently, notifications follow industry-standard advance notice periods. We're working on customizable reminder preferences."
+          a: "You'll receive reminders for: upcoming inspections (30 days before), expiring documents (30 days, 7 days, and on expiry), overdue maintenance, and NDT testing due dates.",
+          planRequired: "advanced"
         },
         {
           q: "How are notifications delivered?",
-          a: "Notifications appear in the app's Notification Center (bell icon) and are also sent via email to your registered email address."
+          a: "Notifications appear in the app's Notification Center (bell icon) and are also sent via email to your registered email address.",
+          planRequired: "advanced"
         }
       ]
     },
     {
-      category: "Reports and Compliance",
+      category: "Reports (Advanced Plan)",
+      planRequired: "advanced",
       questions: [
         {
           q: "What reports can I generate?",
-          a: "Generate inspection reports, maintenance history reports, daily check logs, and compliance summaries. Reports can be exported as PDFs for regulatory submissions."
+          a: "Generate inspection reports, maintenance history reports, daily check logs, and compliance summaries. Reports can be exported as PDFs for regulatory submissions.",
+          planRequired: "advanced"
         },
         {
           q: "How do I prepare for an ADIPS inspection?",
-          a: "Use the calendar view to ensure all inspections and documents are current. Generate a compliance report showing all active certificates, recent inspection reports, and maintenance history."
-        },
-        {
-          q: "Can I email documents to inspectors?",
-          a: "Yes! Use the 'Send Documents' feature to email selected documents directly from the platform. This is useful for sharing certificates with inspectors or local authorities."
+          a: "Use the calendar view to ensure all inspections and documents are current. Generate a compliance report showing all active certificates, recent inspection reports, and maintenance history.",
+          planRequired: "advanced"
         }
       ]
     },
@@ -273,10 +273,23 @@ const HelpCenter = () => {
           <h2 className="text-2xl font-bold mb-6">Quick Start Guides</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {quickLinks.map((link, index) => (
-              <Card key={index} className="hover:border-primary transition-smooth cursor-pointer">
+              <Card 
+                key={index} 
+                className={`hover:border-primary transition-smooth cursor-pointer ${
+                  link.planRequired === 'advanced' && !isAdvanced ? 'opacity-60' : ''
+                }`}
+              >
                 <CardHeader>
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
-                    <link.icon className="h-5 w-5 text-primary" />
+                  <div className="flex items-start justify-between">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
+                      <link.icon className="h-5 w-5 text-primary" />
+                    </div>
+                    {link.planRequired === 'advanced' && (
+                      <Badge variant="secondary" className="flex items-center gap-1">
+                        <Crown className="h-3 w-3" />
+                        Advanced
+                      </Badge>
+                    )}
                   </div>
                   <CardTitle className="text-lg">{link.title}</CardTitle>
                   <CardDescription>{link.description}</CardDescription>
@@ -291,9 +304,19 @@ const HelpCenter = () => {
           <h2 className="text-3xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
           
           <div className="max-w-4xl mx-auto space-y-6">
-            {faqs.map((category, catIndex) => (
+            {faqs
+              .filter(category => isAdvanced || category.planRequired === 'basic')
+              .map((category, catIndex) => (
               <div key={catIndex}>
-                <h3 className="text-2xl font-bold mb-4">{category.category}</h3>
+                <div className="flex items-center gap-2 mb-4">
+                  <h3 className="text-2xl font-bold">{category.category}</h3>
+                  {category.planRequired === 'advanced' && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
+                      <Crown className="h-3 w-3" />
+                      Advanced
+                    </Badge>
+                  )}
+                </div>
                 <Accordion type="single" collapsible className="w-full space-y-2">
                   {category.questions.map((item, qIndex) => (
                     <AccordionItem 
