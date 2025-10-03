@@ -283,9 +283,9 @@ const Rides = () => {
                       e.stopPropagation();
                       navigate(`/rides/${ride.id}`);
                     }}
-                    className="flex-1"
-                    variant="outline"
-                    size="sm"
+                    className="flex-1 font-medium"
+                    variant="default"
+                    size="default"
                   >
                     View Details
                   </Button>
@@ -293,8 +293,8 @@ const Rides = () => {
                     ride={ride} 
                     trigger={
                       <Button 
-                        variant="ghost" 
-                        size="sm" 
+                        variant="outline" 
+                        size="default" 
                         className="px-3"
                         onClick={(e) => e.stopPropagation()}
                       >
