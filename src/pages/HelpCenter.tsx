@@ -231,7 +231,7 @@ const HelpCenter = () => {
         </section>
 
         {/* FAQs */}
-        <section className="container mx-auto px-6 py-16">
+        <section className="container mx-auto px-6 py-0">
           <h2 className="text-3xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
           
           <div className="max-w-4xl mx-auto space-y-6">
