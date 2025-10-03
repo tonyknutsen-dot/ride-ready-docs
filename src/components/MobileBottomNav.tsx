@@ -64,21 +64,21 @@ export default function MobileBottomNav() {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75 md:hidden pointer-events-auto">
       <div className="mx-auto max-w-screen-sm grid grid-cols-5 gap-1 p-2">
-        {/* Home */}
+        {/* Overview */}
         <button
           onClick={() => {
             // Always scroll to top for feedback
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            // Navigate to overview tab
-            go("/dashboard");
+            // Navigate to overview page
+            go("/overview");
           }}
           className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-            isActive(l => l.pathname === "/dashboard" && !new URLSearchParams(l.search).get("tab")) ? "text-primary" : "text-muted-foreground"
+            isActive(l => l.pathname === "/overview") ? "text-primary" : "text-muted-foreground"
           }`}
-          aria-label="Home"
+          aria-label="Overview"
         >
           <Home className="h-5 w-5" />
-          <span className="mt-0.5">Home</span>
+          <span className="mt-0.5">Overview</span>
         </button>
 
         {/* Second button: Rides (Docs) or Checks (Checks flavor) */}
