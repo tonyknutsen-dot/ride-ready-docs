@@ -8,6 +8,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { AdminProvider } from "@/contexts/AdminContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
+import { ProfileGuard } from "@/components/ProfileGuard";
 import ScrollToTop from "@/components/ScrollToTop";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import GlobalEventBridge from "@/components/GlobalEventBridge";
@@ -21,6 +22,7 @@ import Rides from "./pages/Rides";
 import RideDetailPage from "./pages/RideDetailPage";
 import GlobalDocumentsPage from "./pages/GlobalDocumentsPage";
 import Calendar from "./pages/Calendar";
+import ProfileSetupPage from "./pages/ProfileSetupPage";
 import NotFound from "./pages/NotFound";
 import PlanBilling from "./pages/PlanBilling";
 import HowItWorks from "./pages/HowItWorks";
@@ -57,10 +59,12 @@ const App = () => (
                 path="/overview" 
                 element={
                   <ProtectedRoute>
-                    <>
-                      <AppHeader />
-                      <Overview />
-                    </>
+                    <ProfileGuard>
+                      <>
+                        <AppHeader />
+                        <Overview />
+                      </>
+                    </ProfileGuard>
                   </ProtectedRoute>
                 } 
               />
@@ -69,6 +73,14 @@ const App = () => (
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/help" element={<HelpCenter />} />
               <Route path="/security" element={<Security />} />
+              <Route 
+                path="/profile-setup" 
+                element={
+                  <ProtectedRoute>
+                    <ProfileSetupPage />
+                  </ProtectedRoute>
+                } 
+              />
               <Route 
                 path="/setup-admin" 
                 element={
@@ -85,10 +97,12 @@ const App = () => (
                 path="/rides" 
                 element={
                   <ProtectedRoute>
-                    <>
-                      <AppHeader />
-                      <Rides />
-                    </>
+                    <ProfileGuard>
+                      <>
+                        <AppHeader />
+                        <Rides />
+                      </>
+                    </ProfileGuard>
                   </ProtectedRoute>
                 } 
               />
@@ -96,10 +110,12 @@ const App = () => (
                 path="/rides/:id" 
                 element={
                   <ProtectedRoute>
-                    <>
-                      <AppHeader />
-                      <RideDetailPage />
-                    </>
+                    <ProfileGuard>
+                      <>
+                        <AppHeader />
+                        <RideDetailPage />
+                      </>
+                    </ProfileGuard>
                   </ProtectedRoute>
                 } 
               />
@@ -107,10 +123,12 @@ const App = () => (
                 path="/global-documents" 
                 element={
                   <ProtectedRoute>
-                    <>
-                      <AppHeader />
-                      <GlobalDocumentsPage />
-                    </>
+                    <ProfileGuard>
+                      <>
+                        <AppHeader />
+                        <GlobalDocumentsPage />
+                      </>
+                    </ProfileGuard>
                   </ProtectedRoute>
                 } 
               />
@@ -118,10 +136,12 @@ const App = () => (
                 path="/calendar" 
                 element={
                   <ProtectedRoute>
-                    <>
-                      <AppHeader />
-                      <Calendar />
-                    </>
+                    <ProfileGuard>
+                      <>
+                        <AppHeader />
+                        <Calendar />
+                      </>
+                    </ProfileGuard>
                   </ProtectedRoute>
                 } 
               />
@@ -129,7 +149,9 @@ const App = () => (
                 path="/billing"
                 element={
                   <ProtectedRoute>
-                    <PlanBilling />
+                    <ProfileGuard>
+                      <PlanBilling />
+                    </ProfileGuard>
                   </ProtectedRoute>
                 } 
               />
@@ -138,7 +160,9 @@ const App = () => (
                 path="/checks" 
                 element={
                   <ProtectedRoute>
-                    <Checks />
+                    <ProfileGuard>
+                      <Checks />
+                    </ProfileGuard>
                   </ProtectedRoute>
                 } 
               />
