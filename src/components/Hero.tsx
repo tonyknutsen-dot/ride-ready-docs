@@ -35,9 +35,9 @@ const Hero = () => {
         <h1 className="text-5xl sm:text-6xl md:text-8xl font-bold mb-6 leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,1)] [text-shadow:_0_2px_20px_rgb(0_0_0_/_100%)]">
           Your
           <br />
-          Documents,
+          Documents
           <br />
-          <span className="bg-accent-gradient bg-clip-text text-transparent drop-shadow-[0_4px_12px_rgba(0,0,0,1)] [text-shadow:_0_2px_20px_rgb(0_0_0_/_100%)]">
+          <span className="text-accent drop-shadow-[0_4px_12px_rgba(0,0,0,1)] [text-shadow:_0_2px_20px_rgb(0_0_0_/_100%)]">
             Organized & Secure
           </span>
         </h1>
