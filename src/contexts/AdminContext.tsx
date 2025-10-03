@@ -43,7 +43,9 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           .single();
 
         console.log('Admin check result:', { data, error });
-        setIsAdmin(!!data && !error);
+        const adminStatus = !!data && !error;
+        console.log('Setting isAdmin to:', adminStatus);
+        setIsAdmin(adminStatus);
       } catch (error) {
         console.error('Error checking admin status:', error);
         setIsAdmin(false);
