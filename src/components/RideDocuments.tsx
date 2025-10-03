@@ -155,49 +155,47 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
 
   return (
     <div className="space-y-4">
-      {/* Bold header */}
-      <Card className="border-2">
-        <CardContent className="py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="text-sm text-muted-foreground">You are looking at</div>
-              <h2 className="text-2xl font-bold truncate">
-                {ride.ride_name} <span className="text-muted-foreground">→</span> Documents
-              </h2>
-              <p className="text-sm text-muted-foreground">All files for this ride. Send to council/insurer or download.</p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
-              <SendDocumentsDialog
-                ride={ride}
-                trigger={
-                  <Button className="btn-bold-primary">
-                    <Mail className="w-4 h-4 mr-2" /> Send pack
-                  </Button>
-                }
-              />
-              <Button 
-                variant="outline" 
-                onClick={handleDownloadAll}
-                disabled={downloading}
-              >
-                <Download className="w-4 h-4 mr-2" /> 
-                {downloading ? 'Downloading...' : 'Download all'}
+      {/* Clean, modern header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold tracking-tight">Documents</h2>
+          <p className="text-sm text-muted-foreground">
+            Manage files for {ride.ride_name}
+          </p>
+        </div>
+        
+        <div className="flex flex-wrap gap-2">
+          <SendDocumentsDialog
+            ride={ride}
+            trigger={
+              <Button variant="outline" size="sm">
+                <Mail className="w-4 h-4 mr-2" /> 
+                Send
               </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+            }
+          />
+          <Button 
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadAll}
+            disabled={downloading}
+          >
+            <Download className="w-4 h-4 mr-2" /> 
+            {downloading ? 'Downloading...' : 'Download all'}
+          </Button>
+        </div>
+      </div>
 
-      {/* Tabs: default to LIST so they see everything first */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="tabs-bold overflow-x-auto h-11">
-          <TabsTrigger value="list" className="flex items-center space-x-2 h-10">
-            <FileText className="h-4 w-4" />
-            <span>All files</span>
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList className="w-full sm:w-auto">
+          <TabsTrigger value="list" className="flex-1 sm:flex-none">
+            <FileText className="h-4 w-4 mr-2" />
+            All Files
           </TabsTrigger>
-          <TabsTrigger id="rrd-btn-upload-doc" value="upload" className="flex items-center space-x-2 h-10">
-            <Upload className="h-4 w-4" />
-            <span>Add a document</span>
+          <TabsTrigger id="rrd-btn-upload-doc" value="upload" className="flex-1 sm:flex-none">
+            <Upload className="h-4 w-4 mr-2" />
+            Upload
           </TabsTrigger>
         </TabsList>
 
