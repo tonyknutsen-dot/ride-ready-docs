@@ -159,27 +159,27 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
         {/* Mobile: Horizontal scroll with compact tabs */}
         <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
-          <TabsList className="inline-flex w-max gap-1 p-1 bg-muted/30">
-            <TabsTrigger value="overview" className="flex items-center gap-1.5 px-3 py-1.5 text-xs">
-              <FileText className="h-3.5 w-3.5" />
+          <TabsList className="inline-flex w-max gap-1.5 p-1.5 bg-muted/30">
+            <TabsTrigger value="overview" className="flex items-center gap-2 px-4 py-2 text-sm">
+              <FileText className="h-4 w-4" />
               <span>Home</span>
             </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-1.5 px-3 py-1.5 text-xs">
-              <Upload className="h-3.5 w-3.5" />
+            <TabsTrigger value="documents" className="flex items-center gap-2 px-4 py-2 text-sm">
+              <Upload className="h-4 w-4" />
               <span>Docs</span>
             </TabsTrigger>
             {isAdvanced && (
               <>
-                <TabsTrigger value="inspections" className="flex items-center gap-1.5 px-3 py-1.5 text-xs">
-                  <CheckSquare className="h-3.5 w-3.5" />
+                <TabsTrigger value="inspections" className="flex items-center gap-2 px-4 py-2 text-sm">
+                  <CheckSquare className="h-4 w-4" />
                   <span>Checks</span>
                 </TabsTrigger>
-                <TabsTrigger value="maintenance" className="flex items-center gap-1.5 px-3 py-1.5 text-xs">
-                  <Wrench className="h-3.5 w-3.5" />
+                <TabsTrigger value="maintenance" className="flex items-center gap-2 px-4 py-2 text-sm">
+                  <Wrench className="h-4 w-4" />
                   <span>Maint</span>
                 </TabsTrigger>
-                <TabsTrigger value="bulletins" className="flex items-center gap-1.5 px-3 py-1.5 text-xs">
-                  <AlertTriangle className="h-3.5 w-3.5" />
+                <TabsTrigger value="bulletins" className="flex items-center gap-2 px-4 py-2 text-sm">
+                  <AlertTriangle className="h-4 w-4" />
                   <span>Info</span>
                 </TabsTrigger>
               </>
