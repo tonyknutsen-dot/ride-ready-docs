@@ -1,15 +1,33 @@
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { isDocs, isChecks } from "@/config/appFlavor";
 import heroImage from "@/assets/hero-fairground.jpg";
 
 const Hero = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  const handleStartTrial = () => {
-    const destination = user ? '/dashboard' : '/auth';
-    navigate(destination);
+  const handleDocsApp = () => {
+    if (isDocs) {
+      const destination = user ? '/dashboard' : '/auth';
+      navigate(destination);
+    } else {
+      // Link to docs app deployment
+      const docsUrl = import.meta.env.VITE_DOCS_APP_URL;
+      if (docsUrl) window.location.href = docsUrl;
+    }
+  };
+
+  const handleChecksApp = () => {
+    if (isChecks) {
+      const destination = user ? '/dashboard' : '/auth';
+      navigate(destination);
+    } else {
+      // Link to checks app deployment
+      const checksUrl = import.meta.env.VITE_CHECKS_APP_URL;
+      if (checksUrl) window.location.href = checksUrl;
+    }
   };
 
   return (
@@ -35,18 +53,28 @@ const Hero = () => {
         </h1>
         
         <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto leading-relaxed drop-shadow-[0_3px_10px_rgba(0,0,0,1)] [text-shadow:_0_1px_15px_rgb(0_0_0_/_100%)]">
-          The complete document management solution designed specifically for showmen. 
-          Store all your ride documents, safety certificates, and technical bulletins for rides, generators, and equipment in one secure place.
+          The complete management solution designed specifically for showmen. 
+          Choose your tool: manage documents & compliance, or handle daily/monthly/yearly checks.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button 
             size="lg" 
-            className="bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-4 text-lg font-semibold shadow-glow transition-smooth"
-            onClick={handleStartTrial}
+            className="bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-4 text-lg font-semibold shadow-glow transition-smooth min-w-[280px]"
+            onClick={handleDocsApp}
           >
-            Start Free Trial
+            📄 Documents & Compliance
           </Button>
+          <Button 
+            size="lg"
+            className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 text-lg font-semibold shadow-glow transition-smooth min-w-[280px]"
+            onClick={handleChecksApp}
+          >
+            ✓ Daily/Monthly/Yearly Checks
+          </Button>
+        </div>
+        
+        <div className="mt-6 flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button 
             variant="outline" 
             size="lg"
