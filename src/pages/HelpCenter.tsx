@@ -354,8 +354,6 @@ const HelpCenter = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="space-y-2 text-muted-foreground">
-                  <p><strong>Email:</strong> support@ridereadydocs.com</p>
-                  <p><strong>Phone:</strong> +44 (0) 1234 567890</p>
                   <p><strong>Response Time:</strong> Within 24 hours (business days)</p>
                 </div>
                 <div className="mt-4">
