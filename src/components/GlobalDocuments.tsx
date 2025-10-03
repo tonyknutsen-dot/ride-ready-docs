@@ -1,24 +1,18 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Upload, FileText, ArrowLeft, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeatureGate } from '@/components/FeatureGate';
-import { useIsMobile } from '@/hooks/use-mobile';
 import DocumentUpload from './DocumentUpload';
 import DocumentList from './DocumentList';
 
 const GlobalDocuments = () => {
   const { user } = useAuth();
-  const isMobile = useIsMobile();
   const [refreshKey, setRefreshKey] = useState(0);
   const [selectedRide, setSelectedRide] = useState<{id: string, name: string, category: string} | null>(null);
-
-  // Hide on mobile
-  if (isMobile) return null;
 
   useEffect(() => {
     // Check if a ride was selected from the quick upload
@@ -73,51 +67,50 @@ const GlobalDocuments = () => {
 
   return (
     <FeatureGate requiredPlan="advanced" feature="Global Documents">
-      <div className="space-y-6">
-      {selectedRide && (
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <Settings className="h-5 w-5 text-primary" />
-                <div>
-                  <p className="font-medium">Selected Ride: {selectedRide.name}</p>
-                  <p className="text-sm text-muted-foreground">{selectedRide.category}</p>
+      <div className="space-y-4">
+        {selectedRide && (
+          <Card className="bg-primary/5 border-primary/20">
+            <CardContent className="p-3 sm:p-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+                  <div className="min-w-0">
+                    <p className="font-medium text-sm sm:text-base truncate">{selectedRide.name}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{selectedRide.category}</p>
+                  </div>
                 </div>
-                <Badge variant="secondary" className="ml-2">Ride-Specific Upload</Badge>
+                <Button variant="ghost" size="sm" onClick={clearSelectedRide} className="self-start sm:self-center">
+                  <ArrowLeft className="h-4 w-4 mr-1" />
+                  Back
+                </Button>
               </div>
-              <Button variant="ghost" size="sm" onClick={clearSelectedRide}>
-                <ArrowLeft className="h-4 w-4 mr-1" />
-                Back to Global
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+            </CardContent>
+          </Card>
+        )}
 
-      <div className="space-y-2">
-        <h2 className="text-3xl font-bold">
-          {selectedRide ? `${selectedRide.name} Documents` : 'Global Documents'}
-        </h2>
-        <p className="text-muted-foreground">
-          {selectedRide 
-            ? `Manage documents specific to ${selectedRide.name}. These documents will only apply to this ride.`
-            : 'Manage documents that apply to all your rides, such as insurance certificates, operator licenses, and company policies.'
-          }
-        </p>
-      </div>
+        <div className="space-y-1">
+          <h2 className="text-2xl font-bold tracking-tight">
+            {selectedRide ? 'Ride Documents' : 'Global Documents'}
+          </h2>
+          <p className="text-sm text-muted-foreground">
+            {selectedRide 
+              ? `Documents for ${selectedRide.name}`
+              : 'Insurance, licenses, and company-wide documents'
+            }
+          </p>
+        </div>
 
-      <Tabs defaultValue="documents" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="documents" className="flex items-center space-x-2">
-            <FileText className="h-4 w-4" />
-            <span>My Documents</span>
-          </TabsTrigger>
-          <TabsTrigger value="upload" className="flex items-center space-x-2">
-            <Upload className="h-4 w-4" />
-            <span>Upload New</span>
-          </TabsTrigger>
-        </TabsList>
+        <Tabs defaultValue="documents" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2 gap-2 p-1.5 bg-muted/30 h-auto">
+            <TabsTrigger value="documents" className="flex items-center justify-center gap-2 py-2.5">
+              <FileText className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">View Files</span>
+            </TabsTrigger>
+            <TabsTrigger value="upload" className="flex items-center justify-center gap-2 py-2.5">
+              <Upload className="h-4 w-4" />
+              <span className="text-xs sm:text-sm">Upload New</span>
+            </TabsTrigger>
+          </TabsList>
 
         <TabsContent value="documents">
           <DocumentList 
