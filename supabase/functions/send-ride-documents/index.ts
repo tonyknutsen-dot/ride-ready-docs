@@ -74,7 +74,7 @@ const handler = async (req: Request): Promise<Response> => {
     // Get user profile for sender information
     const { data: profile } = await supabase
       .from("profiles")
-      .select("company_name, controller_name, showmen_name")
+      .select("company_name, controller_name, showmen_name, address")
       .eq("user_id", user.id)
       .single();
 
@@ -186,8 +186,16 @@ const handler = async (req: Request): Promise<Response> => {
         <html>
           <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
             <div style="border-bottom: 2px solid #007acc; padding-bottom: 20px; margin-bottom: 20px;">
-              <h1 style="color: #007acc; margin: 0;">Ride Documentation Package</h1>
-              <p style="color: #666; margin: 5px 0 0 0;">From: ${senderName}</p>
+              <h1 style="color: #007acc; margin: 0 0 10px 0;">Ride Documentation Package</h1>
+            </div>
+            
+            <div style="background-color: #e8f4f8; padding: 20px; border-left: 4px solid #007acc; margin-bottom: 20px;">
+              <h2 style="color: #005580; margin: 0 0 15px 0; font-size: 18px;">📧 From</h2>
+              ${profile?.company_name ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Company:</strong> ${profile.company_name}</p>` : ''}
+              ${profile?.controller_name ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Controller:</strong> ${profile.controller_name}</p>` : ''}
+              ${profile?.showmen_name ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Showmen:</strong> ${profile.showmen_name}</p>` : ''}
+              ${profile?.address ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Address:</strong> ${profile.address}</p>` : ''}
+              <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;"><strong>Email:</strong> ${user.email}</p>
             </div>
             
             ${batchInfo}
@@ -225,9 +233,7 @@ const handler = async (req: Request): Promise<Response> => {
 
             <div style="border-top: 1px solid #ddd; padding-top: 20px; margin-top: 30px; color: #666; font-size: 0.9em;">
               <p>This documentation package was sent via Ride Ready Docs system.</p>
-              <p>If you have any questions about these documents, please reply to this email.</p>
-              ${profile?.company_name ? `<p><strong>Company:</strong> ${profile.company_name}</p>` : ''}
-              ${profile?.controller_name ? `<p><strong>Controller:</strong> ${profile.controller_name}</p>` : ''}
+              <p>If you have any questions about these documents, please reply to this email or contact ${profile?.controller_name || 'the sender'} directly.</p>
             </div>
           </body>
         </html>
