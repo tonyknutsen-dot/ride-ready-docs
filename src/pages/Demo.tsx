@@ -73,9 +73,6 @@ const Demo = () => {
             Back to Home
           </Button>
           
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-accent-gradient bg-clip-text text-transparent">
-            Live Demo Dashboard
-          </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Experience how Ride Ready Docs streamlines document management for showmen. 
             This demo shows real functionality with sample data.
