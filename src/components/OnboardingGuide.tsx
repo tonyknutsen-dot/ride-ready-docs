@@ -5,8 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CheckCircle, Circle, FolderPlus, FileText, CalendarDays, Plus } from 'lucide-react';
-import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
+import { CheckCircle, FolderPlus, FileText, CalendarDays } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { APP_FLAVOR } from '@/config/appFlavor';
 
@@ -17,7 +16,6 @@ export default function OnboardingGuide() {
   const [rideCount, setRideCount] = useState<number | null>(null);
   const [categorizedCount, setCategorizedCount] = useState<number | null>(null);
   const [docCount, setDocCount] = useState<number | null>(null);
-  const [openRequest, setOpenRequest] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -77,12 +75,8 @@ export default function OnboardingGuide() {
                 <FolderPlus className="w-4 h-4" />
                 Go to Rides & Add Equipment
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setOpenRequest(true)} className="w-full">
-                <Plus className="w-4 h-4" />
-                Request category
-              </Button>
               <p className="text-xs text-muted-foreground">
-                Categories help match relevant bulletins to your equipment
+                Categories help match relevant bulletins. If your category isn't listed, you can request it from within the form.
               </p>
             </div>
           </div>
@@ -137,9 +131,6 @@ export default function OnboardingGuide() {
           </div>
         </div>
       </CardContent>
-
-      {/* Request Category dialog */}
-      <RequestRideTypeDialog open={openRequest} onOpenChange={setOpenRequest} />
     </Card>
   );
 }
