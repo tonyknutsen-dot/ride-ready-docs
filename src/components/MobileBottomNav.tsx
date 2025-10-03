@@ -27,7 +27,7 @@ export default function MobileBottomNav() {
   if (!user) return null;
 
   const go = (path: string, after?: () => void) => {
-    if (loc.pathname + loc.search !== path) nav(path);
+    nav(path);
     // Give Router a tick to mount the destination, then fire any event
     setTimeout(() => { after?.(); }, 60);
     setOpen(false);
@@ -109,7 +109,10 @@ export default function MobileBottomNav() {
         {/* Third button: Calendar (Docs flavor) or empty spacer (Checks flavor) */}
         {isDocs ? (
           <button
-            onClick={() => go("/dashboard?tab=calendar")}
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+              go("/dashboard?tab=calendar");
+            }}
             className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
               isActive(l => l.pathname === "/dashboard" && new URLSearchParams(l.search).get("tab") === "calendar") ? "text-primary" : "text-muted-foreground"
             }`}
