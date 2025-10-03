@@ -59,17 +59,13 @@ const App = () => (
                 </ProtectedRoute>
               } 
             />
-            {/* Checks route - only available in Checks flavor */}
+            {/* Checks route - available in all flavors for development */}
             <Route 
               path="/checks" 
               element={
-                isChecks ? (
-                  <ProtectedRoute>
-                    <Checks />
-                  </ProtectedRoute>
-                ) : (
-                  <Navigate to="/dashboard" replace />
-                )
+                <ProtectedRoute>
+                  <Checks />
+                </ProtectedRoute>
               } 
             />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

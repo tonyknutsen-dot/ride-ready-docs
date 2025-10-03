@@ -9,25 +9,13 @@ const Hero = () => {
   const { user } = useAuth();
 
   const handleDocsApp = () => {
-    if (isDocs) {
-      const destination = user ? '/dashboard' : '/auth';
-      navigate(destination);
-    } else {
-      // Link to docs app deployment
-      const docsUrl = import.meta.env.VITE_DOCS_APP_URL;
-      if (docsUrl) window.location.href = docsUrl;
-    }
+    const destination = user ? '/dashboard' : '/auth';
+    navigate(destination);
   };
 
   const handleChecksApp = () => {
-    if (isChecks) {
-      const destination = user ? '/dashboard' : '/auth';
-      navigate(destination);
-    } else {
-      // Link to checks app deployment
-      const checksUrl = import.meta.env.VITE_CHECKS_APP_URL;
-      if (checksUrl) window.location.href = checksUrl;
-    }
+    const destination = user ? '/checks' : '/auth';
+    navigate(destination);
   };
 
   return (
