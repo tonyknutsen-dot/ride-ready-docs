@@ -110,8 +110,10 @@ export default function MobileBottomNav() {
         {isDocs ? (
           <button
             onClick={() => {
+              // Force navigation by setting state first, then navigating
+              setOpen(false);
               window.scrollTo({ top: 0, behavior: 'smooth' });
-              go("/dashboard?tab=calendar");
+              nav("/dashboard?tab=calendar");
             }}
             className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
               isActive(l => l.pathname === "/dashboard" && new URLSearchParams(l.search).get("tab") === "calendar") ? "text-primary" : "text-muted-foreground"
