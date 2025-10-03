@@ -14,8 +14,6 @@ import {
   Clock,
   Wrench
 } from "lucide-react";
-import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -220,183 +218,176 @@ const Overview = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="container mx-auto px-6 py-12">
-          <div className="text-center mb-12">
-            <Skeleton className="h-12 w-64 mx-auto mb-4" />
-            <Skeleton className="h-6 w-96 mx-auto" />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
-          </div>
-        </main>
+      <div className="container mx-auto py-6 pb-24 md:pb-6">
+        <div className="text-center mb-8">
+          <Skeleton className="h-10 w-48 mx-auto mb-3" />
+          <Skeleton className="h-5 w-64 mx-auto" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          {[1, 2, 3, 4].map((i) => (
+            <Skeleton key={i} className="h-24" />
+          ))}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="container mx-auto px-6 py-12">
-        {/* Header Section */}
-        <div className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <h1 className="text-4xl md:text-5xl font-bold">
-              Operations Overview
-            </h1>
-            <Badge variant={userPlan === 'trial' ? 'secondary' : 'default'}>
-              {userPlan}
-            </Badge>
-          </div>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Your complete operations dashboard at a glance
-          </p>
+    <div className="container mx-auto py-6 pb-24 md:pb-6 space-y-6">
+      {/* Header Section */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-3">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Overview
+          </h1>
+          <Badge variant={userPlan === 'trial' ? 'secondary' : 'default'}>
+            {userPlan}
+          </Badge>
         </div>
+        <p className="text-muted-foreground">
+          Your complete operations dashboard at a glance
+        </p>
+      </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-primary mb-2">{stats.totalDocuments}</div>
-              <div className="text-sm text-muted-foreground">Total Documents</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-primary mb-2">{stats.activeRides}</div>
-              <div className="text-sm text-muted-foreground">Active Rides</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-primary mb-2">{stats.recentChecks}</div>
-              <div className="text-sm text-muted-foreground">Checks This Week</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-primary mb-2">{stats.upcomingInspections}</div>
-              <div className="text-sm text-muted-foreground">Due Soon</div>
-            </CardContent>
-          </Card>
-        </div>
+      {/* Stats Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl font-bold text-primary mb-1">{stats.totalDocuments}</div>
+            <div className="text-sm text-muted-foreground">Total Documents</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl font-bold text-primary mb-1">{stats.activeRides}</div>
+            <div className="text-sm text-muted-foreground">Active Equipment</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl font-bold text-primary mb-1">{stats.recentChecks}</div>
+            <div className="text-sm text-muted-foreground">Checks This Week</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-6 text-center">
+            <div className="text-3xl font-bold text-primary mb-1">{stats.upcomingInspections}</div>
+            <div className="text-sm text-muted-foreground">Due Soon</div>
+          </CardContent>
+        </Card>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Features */}
-          <div className="lg:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Features */}
+        <div className="lg:col-span-2 space-y-6">
+          <Card>
+            <CardHeader>
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-primary" />
+                System Status
+              </h2>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {demoFeatures.map((feature, index) => (
+                <div key={index} className="flex items-start gap-4 p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                  <div className="text-primary mt-1">{feature.icon}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <h3 className="font-semibold text-sm">{feature.title}</h3>
+                      <Badge variant={feature.status === "warning" ? "destructive" : "secondary"} className="shrink-0 text-xs">
+                        {feature.count}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{feature.description}</p>
+                  </div>
+                  <div className="mt-1 shrink-0">
+                    {feature.status === "warning" ? (
+                      <AlertCircle className="w-4 h-4 text-orange-500" />
+                    ) : feature.status === "pending" ? (
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                    ) : (
+                      <CheckCircle className="w-4 h-4 text-green-500" />
+                    )}
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+
+          {/* Recent Documents */}
+          {recentDocs.length > 0 && (
             <Card>
               <CardHeader>
-                <h2 className="text-2xl font-semibold flex items-center">
-                  <BarChart3 className="w-6 h-6 mr-2 text-primary" />
-                  System Status
+                <h2 className="text-xl font-semibold flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Recent Documents
                 </h2>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {demoFeatures.map((feature, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="text-primary mt-1">{feature.icon}</div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold">{feature.title}</h3>
-                        <Badge variant={feature.status === "warning" ? "destructive" : "secondary"}>
-                          {feature.count}
-                        </Badge>
+              <CardContent>
+                <div className="space-y-2">
+                  {recentDocs.map((doc, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <FileText className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm truncate">{doc.name}</div>
+                          <div className="text-xs text-muted-foreground">{doc.date}</div>
+                        </div>
                       </div>
-                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                      <Badge variant="secondary" className="shrink-0 text-xs">
+                        {doc.type}
+                      </Badge>
                     </div>
-                    <div className="mt-1">
-                      {feature.status === "warning" ? (
-                        <AlertCircle className="w-5 h-5 text-orange-500" />
-                      ) : feature.status === "pending" ? (
-                        <Clock className="w-5 h-5 text-muted-foreground" />
-                      ) : (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      )}
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* Sidebar */}
+        <div className="space-y-6">
+          {recentActivity.length > 0 && (
+            <Card>
+              <CardHeader>
+                <h2 className="text-lg font-semibold flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-primary" />
+                  Recent Activity
+                </h2>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {recentActivity.map((activity, index) => (
+                  <div key={index} className="flex items-start gap-2">
+                    <div className="w-2 h-2 bg-primary rounded-full mt-1.5 shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-medium text-xs">{activity.title}</div>
+                      <div className="text-xs text-muted-foreground">{activity.time}</div>
                     </div>
                   </div>
                 ))}
               </CardContent>
             </Card>
+          )}
 
-            {/* Recent Documents */}
-            {recentDocs.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <h2 className="text-2xl font-semibold flex items-center">
-                    <FileText className="w-6 h-6 mr-2 text-primary" />
-                    Recent Documents
-                  </h2>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {recentDocs.map((doc, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
-                        <div className="flex items-center space-x-3">
-                          <FileText className="w-5 h-5 text-muted-foreground" />
-                          <div>
-                            <div className="font-medium">{doc.name}</div>
-                            <div className="text-sm text-muted-foreground">{doc.date}</div>
-                          </div>
-                        </div>
-                        <Badge variant="secondary">
-                          {doc.type}
-                        </Badge>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            {recentActivity.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <h2 className="text-xl font-semibold flex items-center">
-                    <Clock className="w-5 h-5 mr-2 text-primary" />
-                    Recent Activity
-                  </h2>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {recentActivity.map((activity, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                      <div>
-                        <div className="font-medium text-sm">{activity.title}</div>
-                        <div className="text-xs text-muted-foreground">{activity.time}</div>
-                      </div>
-                    </div>
-                  ))}
-                </CardContent>
-              </Card>
-            )}
-
-            <Card>
-              <CardHeader>
-                <h2 className="text-xl font-semibold">Quick Actions</h2>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button className="w-full" onClick={() => navigate('/dashboard?tab=workspace')}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Document
+          <Card>
+            <CardHeader>
+              <h2 className="text-lg font-semibold">Quick Actions</h2>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button className="w-full" size="sm" onClick={() => navigate('/rides')}>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Document
+              </Button>
+              {userPlan !== 'basic' && (
+                <Button className="w-full" size="sm" variant="outline" onClick={() => navigate('/calendar')}>
+                  <Calendar className="w-4 h-4 mr-2" />
+                  View Calendar
                 </Button>
-                {userPlan !== 'basic' && (
-                  <Button className="w-full" variant="outline" onClick={() => navigate('/checks')}>
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Start Daily Check
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
-      </main>
-      <Footer />
+      </div>
     </div>
   );
 };
