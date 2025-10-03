@@ -16,8 +16,10 @@ import {
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO, isSameDay, addDays, startOfMonth, endOfMonth } from 'date-fns';
+import { isDocs } from '@/config/appFlavor';
 
 interface CalendarEvent {
   id: string;
@@ -32,6 +34,7 @@ interface CalendarEvent {
 const CalendarView = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { subscription } = useSubscription();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -39,6 +42,8 @@ const CalendarView = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
+
+  const isBasicPlan = subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic';
 
   useEffect(() => {
     if (user) {
@@ -64,128 +69,155 @@ const CalendarView = () => {
       const allEvents: CalendarEvent[] = [];
       const rideIds = new Set<string>();
 
-      // Load inspection checks
-      const { data: inspections } = await supabase
-        .from('inspection_checks')
-        .select('id, check_date, status, ride_id')
-        .eq('user_id', user?.id)
-        .gte('check_date', format(monthStart, 'yyyy-MM-dd'))
-        .lte('check_date', format(monthEnd, 'yyyy-MM-dd'));
+      // For basic plan docs app users, only load document expiry dates
+      if (isDocs && isBasicPlan) {
+        // Load document expiry dates only
+        const { data: documents } = await supabase
+          .from('documents')
+          .select('id, document_name, expires_at, ride_id')
+          .eq('user_id', user?.id)
+          .not('expires_at', 'is', null)
+          .gte('expires_at', format(monthStart, 'yyyy-MM-dd'))
+          .lte('expires_at', format(monthEnd, 'yyyy-MM-dd'));
 
-      inspections?.forEach(inspection => {
-        if (inspection.ride_id) rideIds.add(inspection.ride_id);
-        allEvents.push({
-          id: inspection.id,
-          title: `Inspection`,
-          date: inspection.check_date,
-          type: 'inspection',
-          status: inspection.status as 'pending' | 'completed' | 'overdue',
-          rideId: inspection.ride_id,
+        documents?.forEach(doc => {
+          if (doc.expires_at) {
+            if (doc.ride_id) rideIds.add(doc.ride_id);
+            allEvents.push({
+              id: doc.id,
+              title: `${doc.document_name} Expires`,
+              date: doc.expires_at,
+              type: 'document_expiry',
+              status: 'pending',
+              rideId: doc.ride_id,
+            });
+          }
         });
-      });
+      } else {
+        // Advanced plan: load all event types
+        // Load inspection checks
+        const { data: inspections } = await supabase
+          .from('inspection_checks')
+          .select('id, check_date, status, ride_id')
+          .eq('user_id', user?.id)
+          .gte('check_date', format(monthStart, 'yyyy-MM-dd'))
+          .lte('check_date', format(monthEnd, 'yyyy-MM-dd'));
 
-      // Load maintenance records (upcoming)
-      const { data: maintenance } = await supabase
-        .from('maintenance_records')
-        .select('id, next_maintenance_due, maintenance_type, ride_id')
-        .eq('user_id', user?.id)
-        .not('next_maintenance_due', 'is', null)
-        .gte('next_maintenance_due', format(monthStart, 'yyyy-MM-dd'))
-        .lte('next_maintenance_due', format(monthEnd, 'yyyy-MM-dd'));
-
-      maintenance?.forEach(record => {
-        if (record.next_maintenance_due) {
-          if (record.ride_id) rideIds.add(record.ride_id);
+        inspections?.forEach(inspection => {
+          if (inspection.ride_id) rideIds.add(inspection.ride_id);
           allEvents.push({
-            id: record.id,
-            title: record.maintenance_type,
-            date: record.next_maintenance_due,
-            type: 'maintenance',
-            status: 'pending',
-            rideId: record.ride_id,
+            id: inspection.id,
+            title: `Inspection`,
+            date: inspection.check_date,
+            type: 'inspection',
+            status: inspection.status as 'pending' | 'completed' | 'overdue',
+            rideId: inspection.ride_id,
           });
+        });
+
+        // Load maintenance records (upcoming)
+        const { data: maintenance } = await supabase
+          .from('maintenance_records')
+          .select('id, next_maintenance_due, maintenance_type, ride_id')
+          .eq('user_id', user?.id)
+          .not('next_maintenance_due', 'is', null)
+          .gte('next_maintenance_due', format(monthStart, 'yyyy-MM-dd'))
+          .lte('next_maintenance_due', format(monthEnd, 'yyyy-MM-dd'));
+
+        maintenance?.forEach(record => {
+          if (record.next_maintenance_due) {
+            if (record.ride_id) rideIds.add(record.ride_id);
+            allEvents.push({
+              id: record.id,
+              title: record.maintenance_type,
+              date: record.next_maintenance_due,
+              type: 'maintenance',
+              status: 'pending',
+              rideId: record.ride_id,
+            });
+          }
+        });
+
+        // Load document expiry dates
+        const { data: documents } = await supabase
+          .from('documents')
+          .select('id, document_name, expires_at, ride_id')
+          .eq('user_id', user?.id)
+          .not('expires_at', 'is', null)
+          .gte('expires_at', format(monthStart, 'yyyy-MM-dd'))
+          .lte('expires_at', format(monthEnd, 'yyyy-MM-dd'));
+
+        documents?.forEach(doc => {
+          if (doc.expires_at) {
+            if (doc.ride_id) rideIds.add(doc.ride_id);
+            allEvents.push({
+              id: doc.id,
+              title: `${doc.document_name} Expires`,
+              date: doc.expires_at,
+              type: 'document_expiry',
+              status: 'pending',
+              rideId: doc.ride_id,
+            });
+          }
+        });
+
+        // Load NDT schedules
+        const { data: ndt } = await supabase
+          .from('ndt_schedules')
+          .select('id, schedule_name, next_inspection_due, ride_id')
+          .eq('user_id', user?.id)
+          .eq('is_active', true)
+          .not('next_inspection_due', 'is', null)
+          .gte('next_inspection_due', format(monthStart, 'yyyy-MM-dd'))
+          .lte('next_inspection_due', format(monthEnd, 'yyyy-MM-dd'));
+
+        ndt?.forEach(schedule => {
+          if (schedule.next_inspection_due) {
+            if (schedule.ride_id) rideIds.add(schedule.ride_id);
+            allEvents.push({
+              id: schedule.id,
+              title: schedule.schedule_name,
+              date: schedule.next_inspection_due,
+              type: 'ndt',
+              status: 'pending',
+              rideId: schedule.ride_id,
+            });
+          }
+        });
+
+        // Load inspection schedules
+        console.log('Fetching inspection schedules...');
+        const { data: inspectionSchedules, error: schedulesError } = await supabase
+          .from('inspection_schedules')
+          .select('id, inspection_name, due_date, ride_id, advance_notice_days')
+          .eq('user_id', user?.id)
+          .eq('is_active', true)
+          .gte('due_date', format(monthStart, 'yyyy-MM-dd'))
+          .lte('due_date', format(monthEnd, 'yyyy-MM-dd'));
+
+        if (schedulesError) {
+          console.error('Error fetching inspection schedules:', schedulesError);
         }
-      });
 
-      // Load document expiry dates
-      const { data: documents } = await supabase
-        .from('documents')
-        .select('id, document_name, expires_at, ride_id')
-        .eq('user_id', user?.id)
-        .not('expires_at', 'is', null)
-        .gte('expires_at', format(monthStart, 'yyyy-MM-dd'))
-        .lte('expires_at', format(monthEnd, 'yyyy-MM-dd'));
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-      documents?.forEach(doc => {
-        if (doc.expires_at) {
-          if (doc.ride_id) rideIds.add(doc.ride_id);
-          allEvents.push({
-            id: doc.id,
-            title: `${doc.document_name} Expires`,
-            date: doc.expires_at,
-            type: 'document_expiry',
-            status: 'pending',
-            rideId: doc.ride_id,
-          });
-        }
-      });
-
-      // Load NDT schedules
-      const { data: ndt } = await supabase
-        .from('ndt_schedules')
-        .select('id, schedule_name, next_inspection_due, ride_id')
-        .eq('user_id', user?.id)
-        .eq('is_active', true)
-        .not('next_inspection_due', 'is', null)
-        .gte('next_inspection_due', format(monthStart, 'yyyy-MM-dd'))
-        .lte('next_inspection_due', format(monthEnd, 'yyyy-MM-dd'));
-
-      ndt?.forEach(schedule => {
-        if (schedule.next_inspection_due) {
+        inspectionSchedules?.forEach(schedule => {
           if (schedule.ride_id) rideIds.add(schedule.ride_id);
+          const dueDate = new Date(schedule.due_date);
+          dueDate.setHours(0, 0, 0, 0);
+          const isOverdue = dueDate < today;
+          
           allEvents.push({
             id: schedule.id,
-            title: schedule.schedule_name,
-            date: schedule.next_inspection_due,
-            type: 'ndt',
-            status: 'pending',
+            title: `Scheduled: ${schedule.inspection_name}`,
+            date: schedule.due_date,
+            type: 'inspection',
+            status: isOverdue ? 'overdue' : 'pending',
             rideId: schedule.ride_id,
           });
-        }
-      });
-
-      // Load inspection schedules
-      console.log('Fetching inspection schedules...');
-      const { data: inspectionSchedules, error: schedulesError } = await supabase
-        .from('inspection_schedules')
-        .select('id, inspection_name, due_date, ride_id, advance_notice_days')
-        .eq('user_id', user?.id)
-        .eq('is_active', true)
-        .gte('due_date', format(monthStart, 'yyyy-MM-dd'))
-        .lte('due_date', format(monthEnd, 'yyyy-MM-dd'));
-
-      if (schedulesError) {
-        console.error('Error fetching inspection schedules:', schedulesError);
-      }
-
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      inspectionSchedules?.forEach(schedule => {
-        if (schedule.ride_id) rideIds.add(schedule.ride_id);
-        const dueDate = new Date(schedule.due_date);
-        dueDate.setHours(0, 0, 0, 0);
-        const isOverdue = dueDate < today;
-        
-        allEvents.push({
-          id: schedule.id,
-          title: `Scheduled: ${schedule.inspection_name}`,
-          date: schedule.due_date,
-          type: 'inspection',
-          status: isOverdue ? 'overdue' : 'pending',
-          rideId: schedule.ride_id,
         });
-      });
+      }
 
       // Fetch all rides in one query
       if (rideIds.size > 0) {
@@ -354,10 +386,14 @@ const CalendarView = () => {
                   className="text-sm border rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="all">All Events</option>
-                  <option value="inspection">Inspections</option>
-                  <option value="maintenance">Maintenance</option>
+                  {!isBasicPlan && (
+                    <>
+                      <option value="inspection">Inspections</option>
+                      <option value="maintenance">Maintenance</option>
+                      <option value="ndt">NDT Tests</option>
+                    </>
+                  )}
                   <option value="document_expiry">Document Expiry</option>
-                  <option value="ndt">NDT Tests</option>
                 </select>
               </div>
             </div>
