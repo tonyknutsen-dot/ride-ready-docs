@@ -189,6 +189,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
 
   const getDocumentTypeDisplay = (type: string) => {
     const types: Record<string, string> = {
+      doc: '📜 DOC Certificate',
       safety: 'Safety',
       maintenance: 'Maintenance',
       inspection: 'Inspection',
@@ -210,6 +211,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
 
   const prettyType = (raw: string) => {
     const t = raw.trim().toLowerCase();
+    if (t === 'doc') return "📜 DOC Certificate";
     if (t === 'risk_assessment' || t.includes('risk')) return "Risk Assessment (RA)";
     if (t === 'method_statement' || t.includes('method')) return "Method Statement";
     if (t.includes('insur')) return "Insurance";
@@ -219,7 +221,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
   };
 
   const groupByType = (docs: Document[]) => {
-    const ORDER = ["Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Device Photo", "Other"];
+    const ORDER = ["📜 DOC Certificate", "Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Device Photo", "Other"];
     const groups: Record<string, Document[]> = {};
     docs.forEach(d => {
       const k = prettyType(d.document_type);

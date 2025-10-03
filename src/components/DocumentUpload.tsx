@@ -14,11 +14,11 @@ import { supabase } from '@/integrations/supabase/client';
 import RequestDocumentTypeDialog from './RequestDocumentTypeDialog';
 
 const documentTypes = [
+  { id: 'doc', name: '📜 DOC Certificate (Declaration of Compliance)', description: '⭐ REQUIRED - Your single-sheet certificate to operate in the UK', featured: true },
   { id: 'build_up_down', name: 'Build Up and Down Procedure', description: 'Procedures for ride assembly and dismantling' },
   { id: 'conformity_design', name: 'Conformity to Design', description: 'Design conformity certificates' },
   { id: 'controller_manual', name: 'Controller Manual', description: 'Control system manuals' },
   { id: 'design_review', name: 'Design Review', description: 'Design review documents' },
-  { id: 'docs', name: 'DOCs', description: 'Department of Culture approval documents' },
   { id: 'electrical_inspection', name: 'Electrical Inspection Report', description: 'Electrical safety inspection reports' },
   { id: 'emergency_action_plan', name: 'Emergency Action Plan', description: 'Emergency response and action procedures' },
   { id: 'evacuation_plan', name: 'Evacuation Plan', description: 'Evacuation procedures and plans' },
@@ -226,9 +226,9 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
               <SelectContent>
                 {documentTypes.map((type) => (
                   <SelectItem key={type.id} value={type.id}>
-                    <div>
-                      <div className="font-medium">{type.name}</div>
-                      <div className="text-xs text-muted-foreground">{type.description}</div>
+                    <div className={(type as any).featured ? 'py-1' : ''}>
+                      <div className={`font-medium ${(type as any).featured ? 'text-primary' : ''}`}>{type.name}</div>
+                      <div className={`text-xs ${(type as any).featured ? 'text-primary/70 font-medium' : 'text-muted-foreground'}`}>{type.description}</div>
                     </div>
                   </SelectItem>
                 ))}

@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { RestrictedFeatureCard } from '@/components/RestrictedFeatureCard';
 import { useSubscription } from '@/hooks/useSubscription';
+import DOCCertificateCard from '@/components/DOCCertificateCard';
 import { 
   FileText, 
   Calendar, 
@@ -248,6 +249,23 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
           Welcome to your dashboard! View key statistics, track upcoming inspections, and access quick actions for your rides. Click on cards to navigate to detailed sections.
         </AlertDescription>
       </Alert>
+
+      {/* DOC Certificate Prominence - Shows if user has rides */}
+      {rides.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {rides.slice(0, 2).map(ride => (
+            <DOCCertificateCard
+              key={ride.id}
+              rideId={ride.id}
+              rideName={ride.ride_name}
+              onUploadClick={() => {
+                setSelectedRideForUpload(ride.id);
+                handleUploadConfirm();
+              }}
+            />
+          ))}
+        </div>
+      )}
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {isAdvancedUser ? (
