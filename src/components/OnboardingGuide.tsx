@@ -5,9 +5,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { CheckCircle, Circle, FolderPlus, FileText, CalendarDays, Plus } from 'lucide-react';
-import RideForm from '@/components/RideForm';
 import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { APP_FLAVOR } from '@/config/appFlavor';
@@ -19,7 +17,6 @@ export default function OnboardingGuide() {
   const [rideCount, setRideCount] = useState<number | null>(null);
   const [categorizedCount, setCategorizedCount] = useState<number | null>(null);
   const [docCount, setDocCount] = useState<number | null>(null);
-  const [openAdd, setOpenAdd] = useState(false);
   const [openRequest, setOpenRequest] = useState(false);
 
   useEffect(() => {
@@ -67,9 +64,18 @@ export default function OnboardingGuide() {
           <div className="space-y-4">
             <Step done={(rideCount ?? 0) > 0 && (categorizedCount ?? 0) > 0} text="Add equipment and select category" number={1} />
             <div className="ml-11 space-y-3">
-              <Button className="w-full" onClick={() => setOpenAdd(true)}>
+              <Button 
+                className="w-full" 
+                onClick={() => {
+                  navigate('/dashboard?tab=rides');
+                  setTimeout(() => {
+                    const el = document.getElementById('rides-section');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }, 100);
+                }}
+              >
                 <FolderPlus className="w-4 h-4" />
-                Add Equipment
+                Go to Rides & Add Equipment
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setOpenRequest(true)} className="w-full">
                 <Plus className="w-4 h-4" />
@@ -131,21 +137,6 @@ export default function OnboardingGuide() {
           </div>
         </div>
       </CardContent>
-
-      {/* Add Ride dialog */}
-      <Dialog open={openAdd} onOpenChange={setOpenAdd}>
-        <DialogContent className="w-[92vw] max-w-3xl max-h-[85vh] overflow-y-auto p-0">
-          <RideForm
-            onCancel={() => setOpenAdd(false)}
-            onSuccess={() => {
-              setOpenAdd(false);
-              toast({ title: 'Ride added', description: 'Now add your documents.' });
-              const el = document.getElementById('workspace');
-              if (el) setTimeout(() => el.scrollIntoView({ behavior: 'smooth' }), 250);
-            }}
-          />
-        </DialogContent>
-      </Dialog>
 
       {/* Request Category dialog */}
       <RequestRideTypeDialog open={openRequest} onOpenChange={setOpenRequest} />
