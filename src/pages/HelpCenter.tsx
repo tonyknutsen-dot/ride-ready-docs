@@ -197,7 +197,7 @@ const HelpCenter = () => {
   return <div className="min-h-screen bg-background">
       <Header />
       
-      <main className="pt-24 pb-16 py-0">
+      <main className="pt-24 pb-16">
         {/* Hero Section */}
         <section className="container mx-auto px-6 py-16 text-center">
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
