@@ -25,6 +25,7 @@ import TermsOfService from "./pages/TermsOfService";
 import HelpCenter from "./pages/HelpCenter";
 import Security from "./pages/Security";
 import Checks from "./pages/Checks";
+import SetupAdmin from "./pages/SetupAdmin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import RideTypeRequests from "./pages/admin/RideTypeRequests";
 import DocumentTypeRequests from "./pages/admin/DocumentTypeRequests";
@@ -60,6 +61,14 @@ const App = () => (
               <Route path="/help" element={<HelpCenter />} />
               <Route path="/security" element={<Security />} />
               <Route 
+                path="/setup-admin" 
+                element={
+                  <ProtectedRoute>
+                    <SetupAdmin />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route
                 path="/dashboard" 
                 element={
                   <ProtectedRoute>
