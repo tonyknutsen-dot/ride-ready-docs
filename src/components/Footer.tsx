@@ -17,14 +17,6 @@ const Footer = () => {
             </p>
             <div className="space-y-1 text-primary-foreground/80">
               <div className="flex items-center space-x-2">
-                <Phone className="h-4 w-4" />
-                <span>+44 (0) 1234 567890</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Mail className="h-4 w-4" />
-                <span>support@showmendocs.com</span>
-              </div>
-              <div className="flex items-center space-x-2">
                 <MapPin className="h-4 w-4" />
                 <span>London, United Kingdom</span>
               </div>
