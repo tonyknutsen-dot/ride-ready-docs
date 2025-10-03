@@ -33,7 +33,7 @@ const CallToAction = () => {
         <h2 className="text-4xl md:text-5xl font-bold mb-6 drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">
           Ready to Transform Your
           <br />
-          <span className="bg-accent-gradient bg-clip-text text-transparent drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">
+          <span className="drop-shadow-[0_4px_12px_rgba(0,0,0,1)]">
             Fairground Operations?
           </span>
         </h2>
