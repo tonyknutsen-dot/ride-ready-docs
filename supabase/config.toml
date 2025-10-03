@@ -87,6 +87,9 @@ verify_jwt = false
 [functions.send-daily-check-report]
 verify_jwt = true
 
+[functions.setup-admin]
+verify_jwt = true
+
 [analytics]
 enabled = false
 port = 54327
