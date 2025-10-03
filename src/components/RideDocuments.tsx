@@ -188,14 +188,14 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="w-full sm:w-auto">
-          <TabsTrigger value="list" className="flex-1 sm:flex-none">
-            <FileText className="h-4 w-4 mr-2" />
-            All Files
+        <TabsList className="grid w-full grid-cols-2 gap-2 p-1 bg-muted/30 h-auto">
+          <TabsTrigger value="list" className="flex items-center justify-center gap-2 py-2.5">
+            <FileText className="h-4 w-4" />
+            <span>View Files</span>
           </TabsTrigger>
-          <TabsTrigger id="rrd-btn-upload-doc" value="upload" className="flex-1 sm:flex-none">
-            <Upload className="h-4 w-4 mr-2" />
-            Upload
+          <TabsTrigger id="rrd-btn-upload-doc" value="upload" className="flex items-center justify-center gap-2 py-2.5">
+            <Upload className="h-4 w-4" />
+            <span>Upload New</span>
           </TabsTrigger>
         </TabsList>
 
