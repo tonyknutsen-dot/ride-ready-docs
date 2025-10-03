@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -9,10 +10,12 @@ import { CheckCircle, Circle, FolderPlus, FileText, CalendarDays, Plus } from 'l
 import RideForm from '@/components/RideForm';
 import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { APP_FLAVOR } from '@/config/appFlavor';
 
 export default function OnboardingGuide() {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [rideCount, setRideCount] = useState<number | null>(null);
   const [categorizedCount, setCategorizedCount] = useState<number | null>(null);
   const [docCount, setDocCount] = useState<number | null>(null);
@@ -86,8 +89,12 @@ export default function OnboardingGuide() {
                       variant="outline"
                       disabled={(rideCount ?? 0) === 0 || (categorizedCount ?? 0) === 0}
                       onClick={() => {
-                        const el = document.getElementById('workspace');
-                        if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        const tab = APP_FLAVOR === 'docs' ? 'documents' : 'checks';
+                        navigate(`/dashboard?tab=${tab}`);
+                        setTimeout(() => {
+                          const el = document.getElementById('workspace');
+                          if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        }, 100);
                       }}
                       className="w-full"
                     >
