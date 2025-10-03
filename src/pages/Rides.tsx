@@ -222,23 +222,23 @@ const Rides = () => {
           {rides.map((ride) => (
             <Card 
               key={ride.id} 
-              className="hover:shadow-md transition-all cursor-pointer"
+              className="hover:shadow-md transition-all cursor-pointer flex flex-col min-h-[280px]"
               onClick={() => navigate(`/rides/${ride.id}`)}
             >
-              <CardHeader className="pb-4">
+              <CardHeader className="pb-3 space-y-3">
                 <div className="flex items-start justify-between gap-3">
-                  <CardTitle className="text-lg leading-tight flex-1 break-words">
+                  <CardTitle className="text-lg leading-tight flex-1 break-words line-clamp-2">
                     {ride.ride_name}
                   </CardTitle>
-                  <Badge variant="outline" className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/20 shrink-0">
+                  <Badge variant="outline" className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/20 shrink-0 whitespace-nowrap">
                     {ride.ride_categories.name}
                   </Badge>
                 </div>
                 
                 {(ride.manufacturer || ride.year_manufactured) && (
-                  <div className="text-xs text-muted-foreground space-y-0.5 mt-3">
+                  <div className="text-xs text-muted-foreground space-y-1">
                     {ride.manufacturer && (
-                      <div>Make: {ride.manufacturer}</div>
+                      <div className="truncate">Make: {ride.manufacturer}</div>
                     )}
                     {ride.year_manufactured && (
                       <div>Year: {ride.year_manufactured}</div>
@@ -247,7 +247,7 @@ const Rides = () => {
                 )}
               </CardHeader>
               
-              <CardContent className="space-y-4">
+              <CardContent className="flex-1 flex flex-col gap-3 pt-0">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="p-3 rounded-md bg-muted/50 text-center">
                     <FileText className="h-4 w-4 mx-auto text-primary mb-1.5" />
@@ -277,7 +277,7 @@ const Rides = () => {
                   </div>
                 )}
 
-                <div className="flex gap-2 pt-1">
+                <div className="flex gap-2 mt-auto">
                   <Button 
                     onClick={(e) => {
                       e.stopPropagation();
@@ -295,7 +295,7 @@ const Rides = () => {
                       <Button 
                         variant="ghost" 
                         size="sm" 
-                        className="px-2"
+                        className="px-3"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <Mail className="h-4 w-4" />
