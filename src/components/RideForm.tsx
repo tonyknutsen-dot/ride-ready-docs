@@ -192,37 +192,38 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" onClick={onCancel} className="flex items-center space-x-2">
+    <div className="max-w-3xl mx-auto p-4 md:p-6">
+      {/* Header */}
+      <div className="mb-6">
+        <Button 
+          variant="ghost" 
+          onClick={onCancel} 
+          className="mb-4 -ml-2"
+        >
           <ArrowLeft className="h-4 w-4" />
-          <span>Back to Rides</span>
+          Back
         </Button>
         <div>
-          <h2 className="text-3xl font-bold">Add New Ride</h2>
-          <p className="text-muted-foreground">
-            Add a new ride to your inventory
+          <h2 className="text-2xl font-bold tracking-tight">Add Equipment</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Enter the details for your new ride or generator
           </p>
         </div>
       </div>
 
-      <Card className="max-w-2xl">
-        <CardHeader>
-          <CardTitle>Ride Information</CardTitle>
-          <CardDescription>
-            Enter the details for your new ride. Note: The ride owner may be different from the controller or showmen listed in your profile.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="pt-0">
-          <div className="max-h-[62vh] overflow-y-auto pr-1 md:pr-2">
-            <form id="ride-form-root" onSubmit={handleSubmit} className="space-y-4">
+      <form id="ride-form-root" onSubmit={handleSubmit} className="space-y-8">
+        {/* Essential Information */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Essential Information</h3>
+          
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="ride_name">Ride Name *</Label>
+              <Label htmlFor="ride_name">Equipment Name *</Label>
               <Input
                 id="ride_name"
                 value={formData.ride_name}
                 onChange={(e) => setFormData({ ...formData, ride_name: e.target.value })}
-                placeholder="Enter ride name"
+                placeholder="e.g., Waltzer, Hook-a-Duck, Generator 45kVA"
                 className={errors.ride_name ? "border-destructive" : ""}
               />
               {errors.ride_name && (
@@ -231,12 +232,12 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category_id" className="text-base font-semibold">Ride / Stall / Generator category *</Label>
+              <Label htmlFor="category_id">Category *</Label>
               <Select
                 value={formData.category_id}
                 onValueChange={(value) => setFormData({ ...formData, category_id: value })}
               >
-                <SelectTrigger className={`h-11 text-base ${errors.category_id ? "border-destructive" : ""}`}>
+                <SelectTrigger className={errors.category_id ? "border-destructive" : ""}>
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
@@ -250,134 +251,164 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
               {errors.category_id && (
                 <p className="text-sm text-destructive">{errors.category_id}</p>
               )}
-              {!formData.category_id && !errors.category_id && (
-                <p className="text-sm text-muted-foreground">Pick the category. If yours isn't listed, press 'Request category'.</p>
-              )}
-              <Button type="button" variant="outline" size="sm" onClick={() => setOpenRequest(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Can't find my category
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="manufacturer">Manufacturer</Label>
-                <Input
-                  id="manufacturer"
-                  value={formData.manufacturer}
-                  onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
-                  placeholder="Enter manufacturer"
-                  className={errors.manufacturer ? "border-destructive" : ""}
-                />
-                {errors.manufacturer && (
-                  <p className="text-sm text-destructive">{errors.manufacturer}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="year_manufactured">Year Manufactured</Label>
-                <Input
-                  id="year_manufactured"
-                  type="number"
-                  value={formData.year_manufactured}
-                  onChange={(e) => setFormData({ ...formData, year_manufactured: e.target.value })}
-                  placeholder="Enter year"
-                  min="1800"
-                  max={new Date().getFullYear() + 1}
-                  className={errors.year_manufactured ? "border-destructive" : ""}
-                />
-                {errors.year_manufactured && (
-                  <p className="text-sm text-destructive">{errors.year_manufactured}</p>
-                )}
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Categories help match relevant bulletins
+                </p>
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setOpenRequest(true)}
+                  className="h-auto py-1 px-2 text-xs"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Request category
+                </Button>
               </div>
             </div>
+          </div>
+        </div>
 
+        {/* Technical Details */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Technical Details (Optional)</h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="serial_number">Serial Number</Label>
+              <Label htmlFor="manufacturer">Manufacturer</Label>
               <Input
-                id="serial_number"
-                value={formData.serial_number}
-                onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
-                placeholder="Enter serial number"
-                className={errors.serial_number ? "border-destructive" : ""}
+                id="manufacturer"
+                value={formData.manufacturer}
+                onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                placeholder="e.g., Wisdom Rides"
+                className={errors.manufacturer ? "border-destructive" : ""}
               />
-              {errors.serial_number && (
-                <p className="text-sm text-destructive">{errors.serial_number}</p>
+              {errors.manufacturer && (
+                <p className="text-sm text-destructive">{errors.manufacturer}</p>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="owner_name">Ride Owner</Label>
+              <Label htmlFor="year_manufactured">Year Manufactured</Label>
               <Input
-                id="owner_name"
-                value={formData.owner_name}
-                onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
-                placeholder="Enter owner name (if different from controller)"
-                className={errors.owner_name ? "border-destructive" : ""}
+                id="year_manufactured"
+                type="number"
+                value={formData.year_manufactured}
+                onChange={(e) => setFormData({ ...formData, year_manufactured: e.target.value })}
+                placeholder={new Date().getFullYear().toString()}
+                min="1800"
+                max={new Date().getFullYear() + 1}
+                className={errors.year_manufactured ? "border-destructive" : ""}
               />
-              {errors.owner_name && (
-                <p className="text-sm text-destructive">{errors.owner_name}</p>
+              {errors.year_manufactured && (
+                <p className="text-sm text-destructive">{errors.year_manufactured}</p>
               )}
-              <p className="text-xs text-muted-foreground">
-                The ride owner may be different from the controller (responsible for safety) or showmen (operator) in your profile.
-              </p>
             </div>
+          </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="ride-photo" className="text-base font-semibold">Attach a photo (optional)</Label>
-              <Input
-                id="ride-photo"
-                type="file"
-                accept="image/*"
-                // @ts-ignore
-                capture="environment"
-                onChange={handlePhotoSelect}
-                className="h-11 text-base cursor-pointer"
-              />
-              {photoPreview && (
-                <div className="mt-2 flex items-center gap-2">
-                  <img src={photoPreview} alt="Preview" className="h-20 w-20 rounded-md object-cover border" />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => { 
-                      setPhotoFile(null); 
-                      setPhotoPreview(null); 
-                    }}
-                  >
-                    Remove photo
-                  </Button>
+          <div className="space-y-2">
+            <Label htmlFor="serial_number">Serial Number</Label>
+            <Input
+              id="serial_number"
+              value={formData.serial_number}
+              onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
+              placeholder="Device serial or identification number"
+              className={errors.serial_number ? "border-destructive" : ""}
+            />
+            {errors.serial_number && (
+              <p className="text-sm text-destructive">{errors.serial_number}</p>
+            )}
+          </div>
+        </div>
+
+        {/* Ownership */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Ownership (Optional)</h3>
+          
+          <div className="space-y-2">
+            <Label htmlFor="owner_name">Owner Name</Label>
+            <Input
+              id="owner_name"
+              value={formData.owner_name}
+              onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
+              placeholder="If different from controller"
+              className={errors.owner_name ? "border-destructive" : ""}
+            />
+            {errors.owner_name && (
+              <p className="text-sm text-destructive">{errors.owner_name}</p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              May differ from the controller (safety) or showmen (operator) in your profile
+            </p>
+          </div>
+        </div>
+
+        {/* Photo Upload */}
+        <div className="space-y-4">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Photo (Optional)</h3>
+          
+          <div className="space-y-3">
+            {photoPreview ? (
+              <div className="relative inline-block">
+                <img 
+                  src={photoPreview} 
+                  alt="Preview" 
+                  className="h-32 w-32 rounded-lg object-cover border-2"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full"
+                  onClick={() => { 
+                    setPhotoFile(null); 
+                    setPhotoPreview(null); 
+                  }}
+                >
+                  ×
+                </Button>
+              </div>
+            ) : (
+              <label htmlFor="ride-photo" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                  <ImagePlus className="w-8 h-8 mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-semibold">Click to upload</span> or drag and drop
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 10MB</p>
                 </div>
-              )}
-              <p className="text-xs text-muted-foreground">
-                Tip: Take a clear picture of the whole device and the ID plate.
-              </p>
-            </div>
-
-              <div className="h-4" />
-            </form>
+                <Input
+                  id="ride-photo"
+                  type="file"
+                  accept="image/*"
+                  // @ts-ignore
+                  capture="environment"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+              </label>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Tip: Include the whole device and ID plate if possible
+            </p>
           </div>
+        </div>
 
-          {/* Sticky action bar */}
-          <div className="sticky bottom-0 left-0 right-0 bg-background/90 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-t mt-2">
-            <div className="flex items-center justify-end gap-2 p-3">
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-              <Button 
-                type="submit" 
-                form="ride-form-root"
-                disabled={loading || !formData.category_id} 
-                className="btn-bold-primary flex items-center space-x-2"
-              >
-                <Save className="h-4 w-4" />
-                <span>{loading ? 'Adding...' : 'Add Ride'}</span>
-              </Button>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Actions */}
+        <div className="flex items-center justify-end gap-3 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={loading || !formData.category_id}
+          >
+            <Save className="h-4 w-4" />
+            {loading ? 'Adding...' : 'Add Equipment'}
+          </Button>
+        </div>
+      </form>
 
       {/* Request Category dialog */}
       <RequestRideTypeDialog open={openRequest} onOpenChange={setOpenRequest} />
