@@ -15,12 +15,14 @@ import {
 import { Plus, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface RequestDocumentTypeDialogProps {
   trigger?: React.ReactNode;
 }
 
 const RequestDocumentTypeDialog = ({ trigger }: RequestDocumentTypeDialogProps) => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [documentTypeName, setDocumentTypeName] = useState('');
@@ -38,15 +40,25 @@ const RequestDocumentTypeDialog = ({ trigger }: RequestDocumentTypeDialogProps) 
       return;
     }
 
+    if (!user) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to submit a request",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      const { error } = await supabase.functions.invoke('send-document-type-request', {
-        body: {
-          documentTypeName: documentTypeName.trim(),
-          description: description.trim(),
-          justification: justification.trim(),
-        },
-      });
+      const { error } = await supabase
+        .from('document_type_requests')
+        .insert({
+          user_id: user.id,
+          document_type_name: documentTypeName.trim(),
+          description: description.trim() || null,
+          justification: justification.trim() || null,
+        });
 
       if (error) throw error;
 

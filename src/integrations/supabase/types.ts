@@ -268,6 +268,42 @@ export type Database = {
           },
         ]
       }
+      document_type_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          description: string | null
+          document_type_name: string
+          id: string
+          justification: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string | null
+          document_type_name: string
+          id?: string
+          justification?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          description?: string | null
+          document_type_name?: string
+          id?: string
+          justification?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       documents: {
         Row: {
           document_name: string
@@ -782,6 +818,48 @@ export type Database = {
         }
         Relationships: []
       }
+      ride_type_requests: {
+        Row: {
+          additional_info: string | null
+          admin_notes: string | null
+          created_at: string
+          description: string
+          id: string
+          manufacturer: string | null
+          name: string
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          additional_info?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          manufacturer?: string | null
+          name: string
+          status?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          additional_info?: string | null
+          admin_notes?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          manufacturer?: string | null
+          name?: string
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       rides: {
         Row: {
           category_id: string
@@ -870,14 +948,42 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "user"
       check_frequency: "daily" | "monthly" | "yearly"
     }
     CompositeTypes: {
@@ -1006,6 +1112,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "user"],
       check_frequency: ["daily", "monthly", "yearly"],
     },
   },

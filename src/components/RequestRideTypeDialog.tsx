@@ -63,14 +63,17 @@ export const RequestRideTypeDialog = ({ open, onOpenChange }: RequestRideTypeDia
         throw new Error('You must be logged in to submit a request');
       }
 
-      // Submit request via edge function
-      const { data, error } = await supabase.functions.invoke('send-ride-type-request', {
-        body: {
-          ...validatedData,
-          userEmail: user.email,
-          userName: user.user_metadata?.full_name || user.email
-        }
-      });
+      // Save request to database
+      const { error } = await supabase
+        .from('ride_type_requests')
+        .insert({
+          user_id: user.id,
+          name: validatedData.name,
+          type: validatedData.type,
+          description: validatedData.description,
+          manufacturer: validatedData.manufacturer || null,
+          additional_info: validatedData.additionalInfo || null,
+        });
 
       if (error) {
         throw error;
