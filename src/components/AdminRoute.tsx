@@ -5,6 +5,8 @@ import { Loader2 } from 'lucide-react';
 export const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAdmin, isLoading } = useAdmin();
 
+  console.log('AdminRoute - isAdmin:', isAdmin, 'isLoading:', isLoading);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
