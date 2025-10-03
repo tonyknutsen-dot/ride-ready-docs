@@ -20,6 +20,7 @@ import Overview from "./pages/Overview";
 import Rides from "./pages/Rides";
 import RideDetailPage from "./pages/RideDetailPage";
 import GlobalDocumentsPage from "./pages/GlobalDocumentsPage";
+import Calendar from "./pages/Calendar";
 import NotFound from "./pages/NotFound";
 import PlanBilling from "./pages/PlanBilling";
 import HowItWorks from "./pages/HowItWorks";
@@ -114,7 +115,18 @@ const App = () => (
                 } 
               />
               <Route 
-                path="/billing" 
+                path="/calendar" 
+                element={
+                  <ProtectedRoute>
+                    <>
+                      <AppHeader />
+                      <Calendar />
+                    </>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/billing"
                 element={
                   <ProtectedRoute>
                     <PlanBilling />

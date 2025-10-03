@@ -117,17 +117,10 @@ export default function MobileBottomNav() {
           <button
             onClick={() => {
               setOpen(false);
-              nav("/dashboard?tab=calendar");
-              // Scroll to calendar section after navigation
-              setTimeout(() => {
-                const calendarSection = document.getElementById('calendar-section');
-                if (calendarSection) {
-                  calendarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }, 100);
+              nav("/calendar");
             }}
             className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-              isActive(l => l.pathname === "/dashboard" && new URLSearchParams(l.search).get("tab") === "calendar") ? "text-primary" : "text-muted-foreground"
+              isActive(l => l.pathname === "/calendar") ? "text-primary" : "text-muted-foreground"
             }`}
             aria-label="Calendar"
           >
