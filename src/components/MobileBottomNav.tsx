@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
+import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useState } from "react";
@@ -23,6 +24,7 @@ export default function MobileBottomNav() {
   const { user } = useAuth();
   const { subscription } = useSubscription();
   const [open, setOpen] = useState(false);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   if (!user) return null;
 
@@ -46,19 +48,8 @@ export default function MobileBottomNav() {
       return;
     }
 
-    // Docs flavor: add ride or upload doc
-    const search = new URLSearchParams(loc.search);
-    const tab = search.get("tab");
-
-    if (loc.pathname === "/dashboard" && tab === "workspace") {
-      window.dispatchEvent(new CustomEvent("rrd:add-ride"));
-      return;
-    }
-
-    // Default: go to workspace and add ride
-    go("/dashboard?tab=workspace", () => {
-      window.dispatchEvent(new CustomEvent("rrd:add-ride"));
-    });
+    // Docs flavor: open quick document upload
+    setUploadDialogOpen(true);
   };
 
   return (
@@ -138,10 +129,10 @@ export default function MobileBottomNav() {
         <button
           onClick={primaryAction}
           className="flex flex-col items-center justify-center py-1 rounded-md text-xs text-primary"
-          aria-label="Add"
+          aria-label="Add Document"
         >
           <PlusCircle className="h-6 w-6" />
-          <span className="mt-0.5">Add</span>
+          <span className="mt-0.5">{isDocs ? 'Add Doc' : 'Add'}</span>
         </button>
 
         {/* More */}
@@ -221,6 +212,12 @@ export default function MobileBottomNav() {
           </SheetContent>
         </Sheet>
       </div>
+
+      {/* Quick Document Upload Dialog */}
+      <QuickDocumentUpload 
+        open={uploadDialogOpen} 
+        onOpenChange={setUploadDialogOpen} 
+      />
     </div>
   );
 }
