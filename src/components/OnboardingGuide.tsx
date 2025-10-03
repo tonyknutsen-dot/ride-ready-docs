@@ -42,82 +42,93 @@ export default function OnboardingGuide() {
     load();
   }, [user]);
 
-  const Step = ({ done, text }: { done: boolean; text: string }) => (
-    <div className="flex items-center gap-2">
-      {done ? <CheckCircle className="text-success" /> : <Circle className="text-muted-foreground" />}
-      <span className="font-medium">{text}</span>
+  const Step = ({ done, text, number }: { done: boolean; text: string; number: number }) => (
+    <div className="flex items-start gap-3">
+      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm ${
+        done ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+      }`}>
+        {done ? <CheckCircle className="w-4 h-4" /> : number}
+      </div>
+      <span className="font-medium text-base mt-1">{text}</span>
     </div>
   );
 
   return (
-    <Card className="border-2">
-      <CardHeader>
-        <CardTitle className="text-2xl">Start here</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Two steps to get going. We'll keep it simple and tell you what to do next.
+    <Card>
+      <CardHeader className="pb-4">
+        <CardTitle className="text-xl">Quick Start Guide</CardTitle>
+        <p className="text-sm text-muted-foreground mt-2">
+          Get up and running in two simple steps
         </p>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div className="space-y-6">
           {/* Step 1 */}
-          <div className="p-4 rounded-xl bg-secondary space-y-3">
-            <Step done={(rideCount ?? 0) > 0 && (categorizedCount ?? 0) > 0} text="Add a ride or generator and pick its category" />
-            <div className="flex flex-col gap-2">
-              <Button className="btn-bold-primary" onClick={() => setOpenAdd(true)}>
-                <FolderPlus className="w-4 h-4 mr-2" />
-                Add a ride or generator
+          <div className="space-y-4">
+            <Step done={(rideCount ?? 0) > 0 && (categorizedCount ?? 0) > 0} text="Add equipment and select category" number={1} />
+            <div className="ml-11 space-y-3">
+              <Button className="w-full" onClick={() => setOpenAdd(true)}>
+                <FolderPlus className="w-4 h-4" />
+                Add Equipment
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setOpenRequest(true)}>
-                <Plus className="w-4 h-4 mr-2" />
-                Can't find my category
+              <Button variant="ghost" size="sm" onClick={() => setOpenRequest(true)} className="w-full">
+                <Plus className="w-4 h-4" />
+                Request category
               </Button>
+              <p className="text-xs text-muted-foreground">
+                Categories help match relevant bulletins to your equipment
+              </p>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Categories help us match relevant bulletins to your equipment.
-            </p>
           </div>
+
+          <div className="h-px bg-border" />
 
           {/* Step 2 */}
           <TooltipProvider>
-            <div className="p-4 rounded-xl bg-secondary space-y-3">
-              <Step done={(docCount ?? 0) > 0} text="Put your documents in it" />
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <Button
-                      variant="outline"
-                      disabled={(rideCount ?? 0) === 0 || (categorizedCount ?? 0) === 0}
-                      onClick={() => {
-                        navigate('/dashboard?tab=workspace');
-                        setTimeout(() => {
-                          const el = document.getElementById('workspace');
-                          if (el) el.scrollIntoView({ behavior: 'smooth' });
-                        }, 100);
-                      }}
-                      className="w-full"
-                    >
-                      <FileText className="w-4 h-4 mr-2" />
-                      {APP_FLAVOR === 'docs' ? 'Go to documents' : 'Go to checks'}
-                    </Button>
-                  </div>
-                </TooltipTrigger>
-                {((rideCount ?? 0) === 0 || (categorizedCount ?? 0) === 0) && (
-                  <TooltipContent>
-                    <p>Add a ride and choose a category first.</p>
-                  </TooltipContent>
-                )}
-              </Tooltip>
-              <p className="text-xs text-muted-foreground">
-                Risk Assessments, Method Statements, Insurance, Certificates.
-              </p>
+            <div className="space-y-4">
+              <Step done={(docCount ?? 0) > 0} text="Upload your documents" number={2} />
+              <div className="ml-11 space-y-3">
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div>
+                      <Button
+                        variant="default"
+                        disabled={(rideCount ?? 0) === 0 || (categorizedCount ?? 0) === 0}
+                        onClick={() => {
+                          navigate('/dashboard?tab=workspace');
+                          setTimeout(() => {
+                            const el = document.getElementById('workspace');
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                          }, 100);
+                        }}
+                        className="w-full"
+                      >
+                        <FileText className="w-4 h-4" />
+                        {APP_FLAVOR === 'docs' ? 'Go to Documents' : 'Go to Checks'}
+                      </Button>
+                    </div>
+                  </TooltipTrigger>
+                  {((rideCount ?? 0) === 0 || (categorizedCount ?? 0) === 0) && (
+                    <TooltipContent>
+                      <p>Complete step 1 first</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+                <p className="text-xs text-muted-foreground">
+                  Add risk assessments, certificates, insurance, and more
+                </p>
+              </div>
             </div>
           </TooltipProvider>
         </div>
 
-        <div className="flex items-center gap-3 text-sm">
-          <CalendarDays className="w-4 h-4" />
-          <span>Turn on reminders in the ride workspace (Checks, Inspections, Calendar).</span>
+        <div className="pt-4 border-t">
+          <div className="flex items-start gap-3 text-sm">
+            <CalendarDays className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+            <p className="text-muted-foreground">
+              <span className="font-medium text-foreground">Pro tip:</span> Enable reminders in the workspace for checks, inspections, and maintenance schedules
+            </p>
+          </div>
         </div>
       </CardContent>
 
