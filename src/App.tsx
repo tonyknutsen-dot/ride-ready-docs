@@ -30,6 +30,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import RideTypeRequests from "./pages/admin/RideTypeRequests";
 import DocumentTypeRequests from "./pages/admin/DocumentTypeRequests";
 import UserManagement from "./pages/admin/UserManagement";
+import SupportMessages from "./pages/admin/SupportMessages";
 
 const queryClient = new QueryClient();
 
@@ -130,6 +131,16 @@ const App = () => (
                   <ProtectedRoute>
                     <AdminRoute>
                       <UserManagement />
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/support" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <SupportMessages />
                     </AdminRoute>
                   </ProtectedRoute>
                 } 

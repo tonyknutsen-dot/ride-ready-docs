@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Shield, FileText, FolderOpen, Users, LogOut, Menu } from 'lucide-react';
+import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +14,7 @@ const navigation = [
   { name: 'Dashboard', href: '/admin', icon: Shield },
   { name: 'Ride Type Requests', href: '/admin/ride-requests', icon: FolderOpen },
   { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText },
+  { name: 'Support Messages', href: '/admin/support', icon: MessageCircle },
   { name: 'User Management', href: '/admin/users', icon: Users },
 ];
 

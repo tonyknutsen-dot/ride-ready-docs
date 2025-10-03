@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { FileText, Calendar, Bell, Upload, CheckCircle, Shield, Mail, Crown } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
+import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 
 const HelpCenter = () => {
   const { subscription } = useSubscription();
@@ -357,10 +358,9 @@ const HelpCenter = () => {
                   <p><strong>Phone:</strong> +44 (0) 1234 567890</p>
                   <p><strong>Response Time:</strong> Within 24 hours (business days)</p>
                 </div>
-                <Button className="mt-4" size="lg">
-                  <Mail className="h-4 w-4 mr-2" />
-                  Contact Support
-                </Button>
+                <div className="mt-4">
+                  <ContactSupportDialog />
+                </div>
               </div>
             </CardContent>
           </Card>
