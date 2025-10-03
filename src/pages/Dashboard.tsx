@@ -243,27 +243,6 @@ const Dashboard = () => {
           <OnboardingGuide />
         </div>
         
-        {/* Mobile: Clean ride management section - only show if not on workspace tab */}
-        {activeTab !== 'workspace' && (
-          <div className="block md:hidden mb-4">
-            <div className="bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg p-4 border border-primary/20">
-              <div className="flex items-center justify-between">
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-primary text-sm">Your Equipment</h3>
-                  <p className="text-xs text-muted-foreground truncate">Add rides, stalls & equipment</p>
-                </div>
-                <Button 
-                  onClick={() => setActiveTab('workspace')}
-                  size="sm"
-                  className="ml-3 flex-shrink-0"
-                >
-                  <Wrench className="h-3 w-3 mr-1" />
-                  Open
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
         
         <div className="space-y-3 md:space-y-6">
           {/* Content Area - No duplicate titles */}
@@ -346,8 +325,8 @@ const Dashboard = () => {
               </TooltipProvider>
             </div>
 
-            <TabsContent value="overview">
-              <DashboardOverview onNavigate={setActiveTab} />
+            <TabsContent value="overview" className="mt-0">
+              <DashboardOverview onNavigate={handleTabChange} />
             </TabsContent>
 
             <TabsContent value="rides">

@@ -89,8 +89,7 @@ export default function OnboardingGuide() {
                       variant="outline"
                       disabled={(rideCount ?? 0) === 0 || (categorizedCount ?? 0) === 0}
                       onClick={() => {
-                        const tab = APP_FLAVOR === 'docs' ? 'documents' : 'checks';
-                        navigate(`/dashboard?tab=${tab}`);
+                        navigate('/dashboard?tab=workspace');
                         setTimeout(() => {
                           const el = document.getElementById('workspace');
                           if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -99,7 +98,7 @@ export default function OnboardingGuide() {
                       className="w-full"
                     >
                       <FileText className="w-4 h-4 mr-2" />
-                      Go to documents
+                      {APP_FLAVOR === 'docs' ? 'Go to documents' : 'Go to checks'}
                     </Button>
                   </div>
                 </TooltipTrigger>
