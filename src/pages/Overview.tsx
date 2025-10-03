@@ -381,7 +381,7 @@ const Overview = () => {
                 <h2 className="text-xl font-semibold">Quick Actions</h2>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button className="w-full" onClick={() => navigate('/dashboard')}>
+                <Button className="w-full" onClick={() => navigate('/dashboard?tab=workspace')}>
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Document
                 </Button>
