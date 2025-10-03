@@ -19,7 +19,7 @@ const CallToAction = () => {
   };
 
   return (
-    <section className="py-20 bg-hero-gradient text-white relative overflow-hidden">
+    <section className="py-20 bg-primary text-white relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" 
