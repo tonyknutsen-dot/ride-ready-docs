@@ -353,7 +353,7 @@ const Dashboard = () => {
 
             {isDocs && (
               <>
-                <TabsContent value="calendar">
+                <TabsContent value="calendar" id="calendar-section">
                   <FeatureGate requiredPlan="basic" feature="Calendar & Document Expiry Tracking">
                     <CalendarView />
                   </FeatureGate>

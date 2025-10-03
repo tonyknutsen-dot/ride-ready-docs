@@ -112,9 +112,12 @@ export default function MobileBottomNav() {
             onClick={() => {
               setOpen(false);
               nav("/dashboard?tab=calendar");
-              // Scroll after navigation has completed
+              // Scroll to calendar section after navigation
               setTimeout(() => {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
+                const calendarSection = document.getElementById('calendar-section');
+                if (calendarSection) {
+                  calendarSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
               }, 100);
             }}
             className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
