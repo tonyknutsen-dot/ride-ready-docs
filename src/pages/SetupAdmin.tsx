@@ -30,7 +30,7 @@ export default function SetupAdmin() {
 
       toast.success('Admin access granted successfully!');
       setTimeout(() => {
-        navigate('/admin');
+        window.location.href = '/admin';
       }, 1500);
     } catch (error: any) {
       console.error('Error setting up admin:', error);
