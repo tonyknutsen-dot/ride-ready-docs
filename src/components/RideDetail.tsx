@@ -157,65 +157,33 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-        {/* Mobile: Horizontal scroll with compact tabs */}
-        <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
-          <TabsList className="inline-flex w-max gap-1.5 p-1.5 bg-muted/30">
-            <TabsTrigger value="overview" className="flex items-center gap-2 px-4 py-2 text-sm">
-              <FileText className="h-4 w-4" />
-              <span>Home</span>
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2 px-4 py-2 text-sm">
-              <Upload className="h-4 w-4" />
-              <span>Docs</span>
-            </TabsTrigger>
-            {isAdvanced && (
-              <>
-                <TabsTrigger value="inspections" className="flex items-center gap-2 px-4 py-2 text-sm">
-                  <CheckSquare className="h-4 w-4" />
-                  <span>Checks</span>
-                </TabsTrigger>
-                <TabsTrigger value="maintenance" className="flex items-center gap-2 px-4 py-2 text-sm">
-                  <Wrench className="h-4 w-4" />
-                  <span>Maint</span>
-                </TabsTrigger>
-                <TabsTrigger value="bulletins" className="flex items-center gap-2 px-4 py-2 text-sm">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span>Info</span>
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
-        </div>
-
-        {/* Desktop: Dynamic grid based on plan */}
-        <div className="hidden md:block">
-          <TabsList className={`grid w-full gap-2 p-1 bg-muted/30 h-auto ${isAdvanced ? 'grid-cols-5' : 'grid-cols-2'}`}>
-            <TabsTrigger value="overview" className="flex items-center justify-center gap-2 py-3">
-              <FileText className="h-4 w-4" />
-              <span>Overview</span>
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center justify-center gap-2 py-3">
-              <Upload className="h-4 w-4" />
-              <span>Documents</span>
-            </TabsTrigger>
-            {isAdvanced && (
-              <>
-                <TabsTrigger value="inspections" className="flex items-center justify-center gap-2 py-3">
-                  <CheckSquare className="h-4 w-4" />
-                  <span>Checks</span>
-                </TabsTrigger>
-                <TabsTrigger value="maintenance" className="flex items-center justify-center gap-2 py-3">
-                  <Wrench className="h-4 w-4" />
-                  <span>Maintenance</span>
-                </TabsTrigger>
-                <TabsTrigger value="bulletins" className="flex items-center justify-center gap-2 py-3">
-                  <AlertTriangle className="h-4 w-4" />
-                  <span>Bulletins</span>
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
-        </div>
+        {/* Mobile & Desktop: Responsive grid */}
+        <TabsList className={`grid w-full gap-1.5 p-1.5 bg-muted/30 h-auto ${isAdvanced ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2'}`}>
+          <TabsTrigger value="overview" className="flex items-center justify-center gap-2 py-2.5">
+            <FileText className="h-4 w-4" />
+            <span className="text-xs sm:text-sm">Home</span>
+          </TabsTrigger>
+          <TabsTrigger value="documents" className="flex items-center justify-center gap-2 py-2.5">
+            <Upload className="h-4 w-4" />
+            <span className="text-xs sm:text-sm">Docs</span>
+          </TabsTrigger>
+          {isAdvanced && (
+            <>
+              <TabsTrigger value="inspections" className="flex items-center justify-center gap-2 py-2.5">
+                <CheckSquare className="h-4 w-4" />
+                <span className="text-xs sm:text-sm">Checks</span>
+              </TabsTrigger>
+              <TabsTrigger value="maintenance" className="flex items-center justify-center gap-2 py-2.5">
+                <Wrench className="h-4 w-4" />
+                <span className="text-xs sm:text-sm">Maint</span>
+              </TabsTrigger>
+              <TabsTrigger value="bulletins" className="flex items-center justify-center gap-2 py-2.5">
+                <AlertTriangle className="h-4 w-4" />
+                <span className="text-xs sm:text-sm">Info</span>
+              </TabsTrigger>
+            </>
+          )}
+        </TabsList>
 
         <TabsContent value="overview" className="space-y-4 md:space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
