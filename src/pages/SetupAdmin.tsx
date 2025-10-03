@@ -28,10 +28,17 @@ export default function SetupAdmin() {
 
       if (error) throw error;
 
-      toast.success('Admin access granted successfully!');
-      setTimeout(() => {
-        window.location.href = '/admin';
-      }, 1500);
+      toast.success('Admin access granted! Refreshing session...');
+      
+      // Sign out and back in to refresh the session and admin status
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        await supabase.auth.signOut();
+        // Wait a moment then reload to trigger login
+        setTimeout(() => {
+          window.location.href = '/auth?redirect=/admin';
+        }, 500);
+      }
     } catch (error: any) {
       console.error('Error setting up admin:', error);
       toast.error(error.message || 'Failed to grant admin access');
