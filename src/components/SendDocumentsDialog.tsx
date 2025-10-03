@@ -43,6 +43,7 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
   const [message, setMessage] = useState('');
   const [includeInsurance, setIncludeInsurance] = useState(true);
   const [insuranceDocuments, setInsuranceDocuments] = useState<Document[]>([]);
+  const [profile, setProfile] = useState<any>(null);
 
   useEffect(() => {
     if (open && user) {
@@ -52,6 +53,15 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
 
   const loadDocuments = async () => {
     try {
+      // Load user profile
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('company_name, controller_name, showmen_name, address')
+        .eq('user_id', user?.id)
+        .single();
+
+      setProfile(profileData);
+
       // Load ride-specific documents
       const { data: rideDocuments, error: rideError } = await supabase
         .from('documents')
@@ -186,6 +196,34 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto space-y-5 pr-2">
+          {/* Sender Information */}
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-2">
+            <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Your Information (will be included in email)
+            </h3>
+            <div className="text-xs space-y-1 text-muted-foreground">
+              {profile?.company_name && (
+                <p><span className="font-medium">Company:</span> {profile.company_name}</p>
+              )}
+              {profile?.controller_name && (
+                <p><span className="font-medium">Controller:</span> {profile.controller_name}</p>
+              )}
+              {profile?.showmen_name && (
+                <p><span className="font-medium">Showmen:</span> {profile.showmen_name}</p>
+              )}
+              {profile?.address && (
+                <p><span className="font-medium">Address:</span> {profile.address}</p>
+              )}
+              {user?.email && (
+                <p><span className="font-medium">Email:</span> {user.email}</p>
+              )}
+              {!profile?.company_name && !profile?.controller_name && (
+                <p className="text-destructive italic">⚠️ Please complete your profile in Settings</p>
+              )}
+            </div>
+          </div>
+
           {/* Recipient Information */}
           <div className="space-y-3">
             <h3 className="text-sm font-semibold">Recipient</h3>
