@@ -248,19 +248,33 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
           
           <div className="space-y-2">
             <Label htmlFor="file" className="text-sm font-medium">Select File *</Label>
-            <Input
-              ref={fileInputRef}
-              id="file"
-              type="file"
-              onChange={handleFileSelect}
-              accept={documentType === 'photo'
-                ? 'image/*'
-                : '.pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf'}
-              // @ts-ignore - capture attribute opens camera on mobile
-              capture={documentType === 'photo' ? 'environment' : undefined}
-              disabled={uploading}
-              className="h-10 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
-            />
+            <div className="flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="w-full justify-start gap-2 h-auto py-3"
+              >
+                <Upload className="h-4 w-4" />
+                <span className="flex-1 text-left truncate">
+                  {selectedFile ? selectedFile.name : 'Choose a file...'}
+                </span>
+              </Button>
+              <Input
+                ref={fileInputRef}
+                id="file"
+                type="file"
+                onChange={handleFileSelect}
+                accept={documentType === 'photo'
+                  ? 'image/*'
+                  : '.pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf'}
+                // @ts-ignore - capture attribute opens camera on mobile
+                capture={documentType === 'photo' ? 'environment' : undefined}
+                disabled={uploading}
+                className="hidden"
+              />
+            </div>
             {documentType === 'photo' && (
               <p className="text-xs text-muted-foreground">
                 Tip: Take a clear photo of the whole device and ID plate
