@@ -346,7 +346,7 @@ const Dashboard = () => {
                 {isDocs ? (
                   <DocsWorkspace />
                 ) : (
-                  <ChecksWorkspace onAddRide={() => setActiveTab('rides')} />
+                  <ChecksWorkspace />
                 )}
               </FeatureGate>
             </TabsContent>

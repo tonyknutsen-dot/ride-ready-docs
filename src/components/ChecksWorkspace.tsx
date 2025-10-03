@@ -16,11 +16,7 @@ type Ride = Tables<'rides'> & {
   };
 };
 
-interface ChecksWorkspaceProps {
-  onAddRide?: () => void;
-}
-
-const ChecksWorkspace = ({ onAddRide }: ChecksWorkspaceProps) => {
+const ChecksWorkspace = () => {
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
   const [activeTab, setActiveTab] = useState('inspections');
 
@@ -41,8 +37,6 @@ const ChecksWorkspace = ({ onAddRide }: ChecksWorkspaceProps) => {
         actionLabel="Open Checks & Maintenance"
         icon={({ className }) => <CheckSquare className={className} />}
         onRideSelect={handleRideSelect}
-        showAddRide={true}
-        onAddRide={onAddRide}
       />
     );
   }
