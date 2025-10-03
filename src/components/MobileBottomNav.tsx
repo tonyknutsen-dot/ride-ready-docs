@@ -189,10 +189,8 @@ export default function MobileBottomNav() {
                 Settings
               </button>
 
-              {/* Email support */}
-              <div onClick={() => setOpen(false)}>
-                <ContactSupportDialog />
-              </div>
+              {/* Contact Support */}
+              <ContactSupportDialog />
             </div>
 
             <p className="text-xs text-muted-foreground text-center pt-2 border-t">
