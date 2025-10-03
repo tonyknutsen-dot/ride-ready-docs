@@ -78,14 +78,7 @@ const App = () => (
               />
               <Route
                 path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <>
-                      <AppHeader />
-                      <Dashboard />
-                    </>
-                  </ProtectedRoute>
-                } 
+                element={<Navigate to="/overview" replace />} 
               />
               <Route 
                 path="/rides" 
