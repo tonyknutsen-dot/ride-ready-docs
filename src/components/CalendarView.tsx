@@ -46,12 +46,12 @@ const CalendarView = () => {
   const isBasicPlan = subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic';
 
   useEffect(() => {
-    if (user) {
+    if (user && subscription) {
       loadCalendarEvents();
     } else {
       setLoading(false);
     }
-  }, [user, currentMonth]);
+  }, [user, currentMonth, subscription?.subscriptionStatus]);
 
   const loadCalendarEvents = async () => {
     if (!user?.id) {
