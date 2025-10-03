@@ -19,7 +19,7 @@ const CallToAction = () => {
   };
 
   return (
-    <section className="py-20 bg-hero-gradient text-white relative overflow-hidden">
+    <section className="py-20 bg-hero-gradient text-primary-foreground relative overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute inset-0" 
@@ -54,7 +54,7 @@ const CallToAction = () => {
           <Button 
             variant="outline" 
             size="lg"
-            className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-4 text-lg backdrop-blur-sm transition-smooth min-w-[250px]"
+            className="border-2 border-primary-foreground/30 bg-primary-foreground/5 text-primary-foreground hover:bg-primary-foreground/10 px-8 py-4 text-lg backdrop-blur-sm transition-smooth min-w-[250px]"
             onClick={() => navigate('/demo')}
           >
             View Demo
