@@ -333,11 +333,11 @@ const CalendarView = () => {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <CalendarIcon className="h-4 w-4" />
                 Document Expiry Calendar
               </CardTitle>
-              <CardDescription>
+              <CardDescription className="text-xs">
                 Track when your documents and certificates expire
               </CardDescription>
             </div>
