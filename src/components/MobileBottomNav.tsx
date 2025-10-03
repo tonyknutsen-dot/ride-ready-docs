@@ -136,13 +136,22 @@ export default function MobileBottomNav() {
             <div className="grid grid-cols-2 gap-2 py-3">
               {/* Flavor-specific items */}
               {isDocs && (
-                <button
-                  className="btn-muted-tile"
-                  onClick={() => go("/dashboard?tab=workspace", () => window.dispatchEvent(new CustomEvent("rrd:upload-doc")))}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Global documents
-                </button>
+                <>
+                  <button
+                    className="btn-muted-tile"
+                    onClick={() => go("/dashboard?tab=workspace", () => window.dispatchEvent(new CustomEvent("rrd:upload-doc")))}
+                  >
+                    <FileText className="h-4 w-4 mr-2" />
+                    Global documents
+                  </button>
+                  <button
+                    className="btn-muted-tile"
+                    onClick={() => go("/dashboard?tab=calendar")}
+                  >
+                    <CalendarIcon className="h-4 w-4 mr-2" />
+                    Calendar
+                  </button>
+                </>
               )}
 
               {isChecks && (

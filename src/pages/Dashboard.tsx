@@ -252,7 +252,7 @@ const Dashboard = () => {
             {/* Desktop: Grid layout */}
             <div className="hidden md:block">
               <TooltipProvider>
-                <TabsList className={`grid w-full h-auto p-1 bg-muted/20 ${isDocs ? 'grid-cols-7' : 'grid-cols-6'}`}>
+                <TabsList className={`grid w-full h-auto p-1 bg-muted/20 ${isDocs ? 'grid-cols-8' : 'grid-cols-6'}`}>
                   <PlanAwareTabTrigger 
                     value="overview" 
                     icon={Plus} 
@@ -269,6 +269,12 @@ const Dashboard = () => {
                         value="workspace" 
                         icon={FileText} 
                         label="Documents"
+                      />
+                      <PlanAwareTabTrigger 
+                        value="calendar" 
+                        icon={CalendarIcon} 
+                        label="Calendar"
+                        requiresAdvanced={false}
                       />
                       <PlanAwareTabTrigger 
                         value="notifications" 
@@ -347,6 +353,12 @@ const Dashboard = () => {
 
             {isDocs && (
               <>
+                <TabsContent value="calendar">
+                  <FeatureGate requiredPlan="basic" feature="Calendar & Document Expiry Tracking">
+                    <CalendarView />
+                  </FeatureGate>
+                </TabsContent>
+
                 <TabsContent value="notifications">
                   <FeatureGate requiredPlan="advanced" feature="Notifications & Alerts">
                     <NotificationCenter />
