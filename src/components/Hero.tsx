@@ -19,7 +19,7 @@ const Hero = () => {
   };
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center md:items-center overflow-hidden">
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
         <img 
@@ -31,7 +31,7 @@ const Hero = () => {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 container mx-auto px-6 text-center text-white">
+      <div className="relative z-10 container mx-auto px-6 pt-32 md:pt-0 text-center text-white">
         <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold mb-6 leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,1)] [text-shadow:_0_2px_20px_rgb(0_0_0_/_100%)]">
           Your Documents,
           <br />
