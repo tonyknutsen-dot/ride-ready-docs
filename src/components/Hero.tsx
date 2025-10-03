@@ -27,7 +27,7 @@ const Hero = () => {
           alt="Professional fairground with modern rides showcasing safety and organization"
           className="w-full h-full object-cover"
         />
-        <div className="absolute inset-0 bg-hero-gradient opacity-[0.97]" />
+        <div className="absolute inset-0 bg-hero-gradient opacity-[0.65]" />
       </div>
 
       {/* Content */}
