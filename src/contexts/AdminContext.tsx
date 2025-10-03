@@ -23,16 +23,21 @@ export const useAdmin = () => {
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true); // Always start with true
+  const [hasChecked, setHasChecked] = useState(false);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
       if (!user) {
-        setIsAdmin(false);
-        setIsLoading(false);
+        // If user check is done and there's no user, we're done loading
+        if (hasChecked) {
+          setIsAdmin(false);
+          setIsLoading(false);
+        }
         return;
       }
 
+      setHasChecked(true);
       setIsLoading(true); // Set loading when starting the check
 
       try {
@@ -57,7 +62,7 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
     };
 
     checkAdminStatus();
-  }, [user]);
+  }, [user, hasChecked]);
 
   return (
     <AdminContext.Provider value={{ isAdmin, isLoading }}>
