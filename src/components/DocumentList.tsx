@@ -270,7 +270,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
   if (grouped) {
     const groupedDocs = groupByType(documents);
     return (
-      <div className="space-y-6">
+      <div className="space-y-6 pb-24 md:pb-0">
         {groupedDocs.map(g => (
           <section key={g.type} className="space-y-2">
             <div className="flex items-center justify-between">
@@ -343,7 +343,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
 
   // Flat list (default)
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-24 md:pb-0">
       <Card>
         <CardHeader>
           <CardTitle>
