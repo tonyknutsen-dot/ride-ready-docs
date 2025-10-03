@@ -3,36 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-
 const Pricing = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-
-  const basicFeatures = [
-    "Ride & equipment management",
-    "Document storage (up to 100 documents)",
-    "Basic document types supported",
-    "Organize documents by ride and equipment",
-    "Web-based dashboard access",
-    "Email support"
-  ];
-
-  const advancedFeatures = [
-    "All Basic plan features",
-    "Unlimited document storage",
-    "All document types supported", 
-    "Technical bulletin access",
-    "Maintenance tracking & scheduling",
-    "Calendar & inspection scheduling",
-    "Automated compliance reminders",
-    "Council-ready document packages",
-    "Advanced reporting & analytics",
-    "Priority 24/7 support",
-    "Multi-user collaboration"
-  ];
-
-  return (
-    <section className="py-20 bg-background">
+  const {
+    user
+  } = useAuth();
+  const basicFeatures = ["Ride & equipment management", "Document storage (up to 100 documents)", "Basic document types supported", "Organize documents by ride and equipment", "Web-based dashboard access", "Email support"];
+  const advancedFeatures = ["All Basic plan features", "Unlimited document storage", "All document types supported", "Technical bulletin access", "Maintenance tracking & scheduling", "Calendar & inspection scheduling", "Automated compliance reminders", "Council-ready document packages", "Advanced reporting & analytics", "Priority 24/7 support", "Multi-user collaboration"];
+  return <section className="bg-background py-[22px]">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
           <h2 className="text-4xl md:text-5xl font-bold mb-6 text-primary">
@@ -61,22 +39,15 @@ const Pricing = () => {
 
             <CardContent className="px-6 pb-8">
               <ul className="space-y-3 mb-8">
-                {basicFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-center">
+                {basicFeatures.map((feature, index) => <li key={index} className="flex items-center">
                     <div className="bg-primary/10 rounded-full p-1 mr-3 flex-shrink-0">
                       <Check className="h-4 w-4 text-primary" />
                     </div>
                     <span className="text-foreground text-sm">{feature}</span>
-                  </li>
-                ))}
+                  </li>)}
               </ul>
 
-              <Button 
-                variant="outline"
-                className="w-full py-3 text-lg font-semibold transition-smooth"
-                size="lg"
-                onClick={() => navigate(user ? '/dashboard' : '/auth')}
-              >
+              <Button variant="outline" className="w-full py-3 text-lg font-semibold transition-smooth" size="lg" onClick={() => navigate(user ? '/dashboard' : '/auth')}>
                 {user ? 'Go to Dashboard' : 'Start Free Trial'}
               </Button>
             </CardContent>
@@ -106,21 +77,15 @@ const Pricing = () => {
 
             <CardContent className="px-6 pb-8">
               <ul className="space-y-3 mb-8">
-                {advancedFeatures.map((feature, index) => (
-                  <li key={index} className="flex items-center">
+                {advancedFeatures.map((feature, index) => <li key={index} className="flex items-center">
                     <div className="bg-primary/10 rounded-full p-1 mr-3 flex-shrink-0">
                       <Check className="h-4 w-4 text-primary" />
                     </div>
                     <span className="text-foreground text-sm">{feature}</span>
-                  </li>
-                ))}
+                  </li>)}
               </ul>
 
-              <Button 
-                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-lg font-semibold shadow-elegant transition-smooth"
-                size="lg"
-                onClick={() => navigate(user ? '/dashboard' : '/auth')}
-              >
+              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-lg font-semibold shadow-elegant transition-smooth" size="lg" onClick={() => navigate(user ? '/dashboard' : '/auth')}>
                 {user ? 'Go to Dashboard' : 'Start Free Trial'}
               </Button>
 
@@ -141,8 +106,6 @@ const Pricing = () => {
           </Button>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default Pricing;
