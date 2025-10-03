@@ -2,11 +2,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ArrowLeft, FileText, CheckSquare, Wrench, Calendar, BarChart3 } from 'lucide-react';
+import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { ArrowLeft, CheckSquare, Wrench } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import RideSelector from './RideSelector';
-import RideDocuments from './RideDocuments';
 import InspectionManager from './InspectionManager';
 import MaintenanceManager from './MaintenanceManager';
 
@@ -17,17 +16,17 @@ type Ride = Tables<'rides'> & {
   };
 };
 
-interface RideWorkspaceProps {
+interface ChecksWorkspaceProps {
   onAddRide?: () => void;
 }
 
-const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
+const ChecksWorkspace = ({ onAddRide }: ChecksWorkspaceProps) => {
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
-  const [activeTab, setActiveTab] = useState('documents');
+  const [activeTab, setActiveTab] = useState('inspections');
 
   const handleRideSelect = (ride: Ride) => {
     setSelectedRide(ride);
-    setActiveTab('documents'); // Reset to first tab when selecting a new ride
+    setActiveTab('inspections');
   };
 
   const handleBack = () => {
@@ -38,9 +37,9 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
     return (
       <RideSelector
         title="Select Equipment"
-        description="Choose a ride, stall, or equipment to manage its documents, inspections, and maintenance records."
-        actionLabel="Open Workspace"
-        icon={({ className }) => <div className={className}>⚙️</div>}
+        description="Choose a ride, stall, or equipment to perform safety checks and log maintenance."
+        actionLabel="Open Checks & Maintenance"
+        icon={({ className }) => <CheckSquare className={className} />}
         onRideSelect={handleRideSelect}
         showAddRide={true}
         onAddRide={onAddRide}
@@ -96,7 +95,7 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
         </li>
         <li className="flex items-center gap-2">
           <span className="inline-flex w-7 h-7 sm:w-8 sm:h-8 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold text-xs sm:text-sm">2</span>
-          <span className="text-xs sm:text-sm font-semibold break-words">Add your documents</span>
+          <span className="text-xs sm:text-sm font-semibold break-words">Perform checks & log maintenance</span>
         </li>
       </ol>
 
@@ -106,13 +105,6 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
         <div className="md:hidden">
           <div className="overflow-x-auto scrollbar-hide -mx-3 px-3">
             <TabsList className="flex w-max gap-1 p-1 bg-muted/20 h-auto">
-              <TabsTrigger 
-                value="documents" 
-                className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap"
-              >
-                <FileText className="h-3 w-3" />
-                Documents
-              </TabsTrigger>
               <TabsTrigger 
                 value="inspections" 
                 className="flex items-center gap-1.5 px-3 py-2 text-xs whitespace-nowrap"
@@ -133,22 +125,14 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
 
         {/* Desktop: Grid tabs */}
         <div className="hidden md:block">
-          <TabsList className="grid w-full grid-cols-3 h-auto p-1 bg-muted/20 gap-1">
-            <TabsTrigger 
-              value="documents" 
-              className="flex flex-col items-center gap-1.5 py-3"
-            >
-              <FileText className="h-5 w-5" />
-              <span className="font-medium text-sm">Documents</span>
-              <span className="text-xs text-muted-foreground">Certificates & Files</span>
-            </TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 h-auto p-1 bg-muted/20 gap-1">
             <TabsTrigger 
               value="inspections" 
               className="flex flex-col items-center gap-1.5 py-3"
             >
               <CheckSquare className="h-5 w-5" />
               <span className="font-medium text-sm">Checks & Inspections</span>
-              <span className="text-xs text-muted-foreground">Self-checks & External</span>
+              <span className="text-xs text-muted-foreground">Daily/Monthly/Yearly & External</span>
             </TabsTrigger>
             <TabsTrigger 
               value="maintenance" 
@@ -162,10 +146,6 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
         </div>
 
         {/* Tab Content */}
-        <TabsContent value="documents" className="space-y-4 md:space-y-6">
-          <RideDocuments ride={selectedRide} />
-        </TabsContent>
-
         <TabsContent value="inspections" className="space-y-4 md:space-y-6">
           <InspectionManager ride={selectedRide} />
         </TabsContent>
@@ -178,4 +158,4 @@ const RideWorkspace = ({ onAddRide }: RideWorkspaceProps) => {
   );
 };
 
-export default RideWorkspace;
+export default ChecksWorkspace;

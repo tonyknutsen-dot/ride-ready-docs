@@ -10,7 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import RideManagement from '@/components/RideManagement';
-import RideWorkspace from '@/components/RideWorkspace';
+import DocsWorkspace from '@/components/DocsWorkspace';
+import ChecksWorkspace from '@/components/ChecksWorkspace';
 import DashboardOverview from '@/components/DashboardOverview';
 import CalendarView from '@/components/CalendarView';
 import NotificationCenter from '@/components/NotificationCenter';
@@ -286,20 +287,41 @@ const Dashboard = () => {
                         />
                         <PlanAwareTabTrigger 
                           value="workspace" 
-                          icon={Wrench} 
-                          label="Workspace"
+                          icon={FileText} 
+                          label="Documents"
                           className="flex-shrink-0 px-3 py-2 text-xs font-medium bg-primary/10 text-primary"
                         />
                       </>
                     )}
                     {isChecks && (
-                      <PlanAwareTabTrigger 
-                        value="calendar" 
-                        icon={CalendarIcon} 
-                        label="Calendar"
-                        requiresAdvanced={true}
-                        className="flex-shrink-0 px-3 py-2 text-xs"
-                      />
+                      <>
+                        <PlanAwareTabTrigger 
+                          value="rides" 
+                          icon={Settings} 
+                          label="Manage"
+                          className="flex-shrink-0 px-3 py-2 text-xs"
+                        />
+                        <PlanAwareTabTrigger 
+                          value="workspace" 
+                          icon={CheckSquare} 
+                          label="Checks"
+                          className="flex-shrink-0 px-3 py-2 text-xs font-medium bg-primary/10 text-primary"
+                        />
+                        <PlanAwareTabTrigger 
+                          value="calendar" 
+                          icon={CalendarIcon} 
+                          label="Calendar"
+                          requiresAdvanced={true}
+                          className="flex-shrink-0 px-3 py-2 text-xs"
+                        />
+                        <PlanAwareTabTrigger 
+                          value="reports" 
+                          icon={FileText} 
+                          label="Reports"
+                          requiresAdvanced={true}
+                          className="flex-shrink-0 px-3 py-2 text-xs"
+                        />
+                      </>
                     )}
                     <PlanAwareTabTrigger 
                       value="profile" 
@@ -315,7 +337,7 @@ const Dashboard = () => {
             {/* Desktop: Grid layout */}
             <div className="hidden md:block">
               <TooltipProvider>
-                <TabsList className={`grid w-full h-auto p-1 bg-muted/20 ${isDocs ? 'grid-cols-8' : 'grid-cols-3'}`}>
+                <TabsList className={`grid w-full h-auto p-1 bg-muted/20 ${isDocs ? 'grid-cols-7' : 'grid-cols-6'}`}>
                   <PlanAwareTabTrigger 
                     value="overview" 
                     icon={Plus} 
@@ -330,8 +352,8 @@ const Dashboard = () => {
                       />
                       <PlanAwareTabTrigger 
                         value="workspace" 
-                        icon={Wrench} 
-                        label="Workspace"
+                        icon={FileText} 
+                        label="Documents"
                       />
                       <PlanAwareTabTrigger 
                         value="notifications" 
@@ -354,12 +376,30 @@ const Dashboard = () => {
                     </>
                   )}
                   {isChecks && (
-                    <PlanAwareTabTrigger 
-                      value="calendar" 
-                      icon={CalendarIcon} 
-                      label="Calendar"
-                      requiresAdvanced={true}
-                    />
+                    <>
+                      <PlanAwareTabTrigger 
+                        value="rides" 
+                        icon={Settings} 
+                        label="Manage Rides"
+                      />
+                      <PlanAwareTabTrigger 
+                        value="workspace" 
+                        icon={CheckSquare} 
+                        label="Checks & Maintenance"
+                      />
+                      <PlanAwareTabTrigger 
+                        value="calendar" 
+                        icon={CalendarIcon} 
+                        label="Calendar"
+                        requiresAdvanced={true}
+                      />
+                      <PlanAwareTabTrigger 
+                        value="reports" 
+                        icon={FileText} 
+                        label="Reports"
+                        requiresAdvanced={true}
+                      />
+                    </>
                   )}
                   <PlanAwareTabTrigger 
                     value="profile" 
@@ -374,20 +414,24 @@ const Dashboard = () => {
               <DashboardOverview onNavigate={setActiveTab} />
             </TabsContent>
 
+            <TabsContent value="rides">
+              <FeatureGate requiredPlan="basic" feature="Ride Management">
+                <RideManagement />
+              </FeatureGate>
+            </TabsContent>
+
+            <TabsContent value="workspace" id="workspace">
+              <FeatureGate requiredPlan="basic" feature="Equipment Workspace">
+                {isDocs ? (
+                  <DocsWorkspace onAddRide={() => setActiveTab('rides')} />
+                ) : (
+                  <ChecksWorkspace onAddRide={() => setActiveTab('rides')} />
+                )}
+              </FeatureGate>
+            </TabsContent>
+
             {isDocs && (
               <>
-                <TabsContent value="rides">
-                  <FeatureGate requiredPlan="basic" feature="Ride Management">
-                    <RideManagement />
-                  </FeatureGate>
-                </TabsContent>
-
-                <TabsContent value="workspace" id="workspace">
-                  <FeatureGate requiredPlan="basic" feature="Equipment Workspace">
-                    <RideWorkspace onAddRide={() => setActiveTab('rides')} />
-                  </FeatureGate>
-                </TabsContent>
-
                 <TabsContent value="notifications">
                   <FeatureGate requiredPlan="advanced" feature="Notifications & Alerts">
                     <NotificationCenter />
@@ -424,11 +468,19 @@ const Dashboard = () => {
             )}
 
             {isChecks && (
-              <TabsContent value="calendar">
-                <FeatureGate requiredPlan="basic" feature="Calendar & Scheduling">
-                  <CalendarView />
-                </FeatureGate>
-              </TabsContent>
+              <>
+                <TabsContent value="calendar">
+                  <FeatureGate requiredPlan="advanced" feature="Calendar & Scheduling">
+                    <CalendarView />
+                  </FeatureGate>
+                </TabsContent>
+
+                <TabsContent value="reports">
+                  <FeatureGate requiredPlan="advanced" feature="Advanced Reporting">
+                    <ReportGenerator />
+                  </FeatureGate>
+                </TabsContent>
+              </>
             )}
 
             <TabsContent value="profile">
