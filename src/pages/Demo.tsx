@@ -61,7 +61,7 @@ const Demo = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <main className="container mx-auto px-6 py-12">
+      <main className="container mx-auto px-6 pt-24 pb-12">
         {/* Header Section */}
         <div className="text-center mb-12">
           <Button 
