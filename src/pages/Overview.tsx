@@ -385,14 +385,12 @@ const Overview = () => {
                   <Upload className="w-4 h-4 mr-2" />
                   Upload Document
                 </Button>
-                <Button className="w-full" variant="outline" onClick={() => navigate('/checks')}>
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Start Daily Check
-                </Button>
-                <Button className="w-full" variant="outline" onClick={() => navigate('/dashboard')}>
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  View Reports
-                </Button>
+                {userPlan !== 'basic' && (
+                  <Button className="w-full" variant="outline" onClick={() => navigate('/checks')}>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    Start Daily Check
+                  </Button>
+                )}
               </CardContent>
             </Card>
           </div>
