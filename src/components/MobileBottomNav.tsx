@@ -4,6 +4,7 @@ import {
   Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, Mail, FileText
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useState } from "react";
@@ -189,14 +190,9 @@ export default function MobileBottomNav() {
               </button>
 
               {/* Email support */}
-              <a
-                href="mailto:support@ridereadydocs.com"
-                className="btn-muted-tile"
-                onClick={() => setOpen(false)}
-              >
-                <Mail className="h-4 w-4 mr-2" />
-                Email support
-              </a>
+              <div onClick={() => setOpen(false)}>
+                <ContactSupportDialog />
+              </div>
             </div>
 
             <p className="text-xs text-muted-foreground text-center pt-2 border-t">
