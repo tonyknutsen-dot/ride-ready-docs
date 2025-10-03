@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Upload, Info } from 'lucide-react';
+import { Upload, Info, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -208,20 +208,21 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>You're adding a file to <b>{rideName || 'this ride'}</b></CardTitle>
-        <CardDescription>
-          Upload documents for this ride. Supported formats: PDF, Word, Excel, Images (max 50MB).
+    <Card className="shadow-sm">
+      <CardHeader className="space-y-1 pb-4">
+        <CardTitle className="text-xl">Upload Document</CardTitle>
+        <CardDescription className="text-sm">
+          Adding to: <span className="font-semibold text-foreground">{rideName || 'this ride'}</span>
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
-          <div className="space-y-2 sm:flex-1 min-w-0">
-            <Label htmlFor="type" className="text-base font-semibold">What is this? *</Label>
+      <CardContent className="space-y-5">
+        {/* Document Type & File Selection - Side by side on desktop */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label htmlFor="type" className="text-sm font-medium">Document Type *</Label>
             <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
-              <SelectTrigger className="h-11 text-base">
-                <SelectValue placeholder="Risk Assessment (RA), Method Statement, Insurance, Certificate, Other" />
+              <SelectTrigger className="h-10">
+                <SelectValue placeholder="Select document type..." />
               </SelectTrigger>
               <SelectContent>
                 {documentTypes.map((type) => (
@@ -239,14 +240,14 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
               variant="link"
               size="sm"
               onClick={() => {}}
-              className="p-0 h-auto text-xs"
+              className="p-0 h-auto text-xs text-muted-foreground hover:text-primary"
             >
               Don't see your type? Request one
             </Button>
           </div>
           
-          <div className="space-y-2 sm:flex-1 min-w-0">
-            <Label htmlFor="file" className="text-base font-semibold">Select File *</Label>
+          <div className="space-y-2">
+            <Label htmlFor="file" className="text-sm font-medium">Select File *</Label>
             <Input
               ref={fileInputRef}
               id="file"
@@ -258,82 +259,94 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
               // @ts-ignore - capture attribute opens camera on mobile
               capture={documentType === 'photo' ? 'environment' : undefined}
               disabled={uploading}
-              className="h-11 text-base w-full cursor-pointer"
+              className="h-10 cursor-pointer file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary file:text-primary-foreground hover:file:bg-primary/90"
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              Supported: PDF, Word, Excel, PowerPoint, Images, Video, CAD files, Archives
-              {documentType === 'photo' && <br />}
-              {documentType === 'photo' && 'Tip: For photos, take a clear picture of the whole device and the ID plate.'}
-            </p>
+            {documentType === 'photo' && (
+              <p className="text-xs text-muted-foreground">
+                Tip: Take a clear photo of the whole device and ID plate
+              </p>
+            )}
           </div>
         </div>
 
+        {/* File Preview */}
         {selectedFile && (
-          <p className="text-sm text-muted-foreground break-words">
-            Selected: {selectedFile.name} ({(selectedFile.size / 1024 / 1024).toFixed(2)} MB)
-          </p>
-        )}
-        
-        {selectedFile && documentType === 'photo' && selectedFile.type.startsWith('image/') && (
-          <div className="mt-2">
-            <img
-              src={URL.createObjectURL(selectedFile)}
-              alt="Preview"
-              className="h-24 rounded-md border object-cover"
-              onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
-            />
+          <div className="rounded-lg border bg-muted/30 p-4">
+            <div className="flex items-start gap-3">
+              {selectedFile.type.startsWith('image/') && documentType === 'photo' ? (
+                <img
+                  src={URL.createObjectURL(selectedFile)}
+                  alt="Preview"
+                  className="h-16 w-16 rounded border object-cover"
+                  onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
+                />
+              ) : (
+                <div className="flex h-16 w-16 items-center justify-center rounded border bg-background">
+                  <FileText className="h-8 w-8 text-muted-foreground" />
+                </div>
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+                <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+              </div>
+            </div>
           </div>
         )}
 
-        <div className="space-y-2">
-          <Label htmlFor="name" className="text-base font-semibold">File name shown in your list *</Label>
-          <Input
-            id="name"
-            value={documentName}
-            onChange={(e) => setDocumentName(e.target.value)}
-            placeholder="e.g., Risk Assessment 2024"
-            disabled={uploading}
-            className="h-11 text-base"
-          />
-        </div>
+        {/* Document Details */}
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="name" className="text-sm font-medium">Document Name *</Label>
+            <Input
+              id="name"
+              value={documentName}
+              onChange={(e) => setDocumentName(e.target.value)}
+              placeholder="e.g., Risk Assessment 2024"
+              disabled={uploading}
+              className="h-10"
+            />
+          </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="expiry" className="text-base font-semibold">Expiry Date (optional)</Label>
-          <Input
-            id="expiry"
-            type="date"
-            value={expiryDate}
-            onChange={(e) => setExpiryDate(e.target.value)}
-            disabled={uploading}
-            className="h-11 text-base"
-          />
-        </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="expiry" className="text-sm font-medium">Expiry Date (optional)</Label>
+              <Input
+                id="expiry"
+                type="date"
+                value={expiryDate}
+                onChange={(e) => setExpiryDate(e.target.value)}
+                disabled={uploading}
+                className="h-10"
+              />
+            </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="notes" className="text-base font-semibold">Notes (optional)</Label>
-          <Textarea
-            id="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            placeholder="Additional notes about this document"
-            disabled={uploading}
-            rows={3}
-            className="text-base"
-          />
+            <div className="space-y-2">
+              <Label htmlFor="notes" className="text-sm font-medium">Notes (optional)</Label>
+              <Textarea
+                id="notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="Additional notes..."
+                disabled={uploading}
+                rows={1}
+                className="resize-none"
+              />
+            </div>
+          </div>
         </div>
 
         {/* Version Control - Collapsible */}
-        <div className="space-y-3 pt-2 border-t">
+        <div className="space-y-3 pt-3 border-t">
           <div className="flex items-center justify-between">
-            <Label htmlFor="version-toggle" className="text-base font-semibold cursor-pointer flex items-center gap-2">
-              Track versions (optional)
+            <Label htmlFor="version-toggle" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+              Version Control
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Info className="h-4 w-4 text-muted-foreground cursor-help" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>Version control lets you upload newer versions of the same document while keeping track of previous versions.</p>
+                    <p>Track document versions and keep history of previous versions</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -344,32 +357,32 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
               checked={useVersionControl}
               onChange={(e) => setUseVersionControl(e.target.checked)}
               disabled={uploading}
-              className="w-5 h-5 cursor-pointer"
+              className="w-4 h-4 cursor-pointer accent-primary"
             />
           </div>
           
           {useVersionControl && (
-            <div className="space-y-3 pl-4 border-l-2 border-muted">
-              <p className="text-sm text-muted-foreground">
-                This will create a new version and mark previous versions as superseded.
+            <div className="space-y-3 pl-3 border-l-2 border-primary/20 mt-3">
+              <p className="text-xs text-muted-foreground">
+                Create a new version and mark previous versions as superseded
               </p>
 
               {existingDocuments.length > 0 && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Replace existing document (optional)</Label>
+                  <Label className="text-sm font-medium">Replace Document</Label>
                   <Select
                     value={replacingDocumentId || "new"}
                     onValueChange={(value) => setReplacingDocumentId(value === "new" ? null : value)}
                     disabled={uploading}
                   >
-                    <SelectTrigger className="h-10">
+                    <SelectTrigger className="h-9">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="new">Create as new document</SelectItem>
                       {existingDocuments.map((doc) => (
                         <SelectItem key={doc.id} value={doc.id}>
-                          Replace v{doc.version_number} (uploaded {new Date(doc.uploaded_at).toLocaleDateString()})
+                          v{doc.version_number} ({new Date(doc.uploaded_at).toLocaleDateString()})
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -377,38 +390,47 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
                 </div>
               )}
 
-              <div className="space-y-2">
-                <Label htmlFor="version" className="text-sm">Version Number</Label>
-                <Input
-                  id="version"
-                  type="text"
-                  placeholder="e.g., 1.0, 2.1"
-                  value={versionNumber}
-                  onChange={(e) => setVersionNumber(e.target.value)}
-                  disabled={uploading}
-                  className="h-10"
-                />
-              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="version" className="text-sm">Version</Label>
+                  <Input
+                    id="version"
+                    type="text"
+                    placeholder="e.g., 2.0"
+                    value={versionNumber}
+                    onChange={(e) => setVersionNumber(e.target.value)}
+                    disabled={uploading}
+                    className="h-9"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="version-notes" className="text-sm">Version Notes</Label>
-                <Textarea
-                  id="version-notes"
-                  placeholder="What changed in this version?"
-                  value={versionNotes}
-                  onChange={(e) => setVersionNotes(e.target.value)}
-                  disabled={uploading}
-                  rows={2}
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="version-notes" className="text-sm">What Changed</Label>
+                  <Input
+                    id="version-notes"
+                    placeholder="Brief description..."
+                    value={versionNotes}
+                    onChange={(e) => setVersionNotes(e.target.value)}
+                    disabled={uploading}
+                    className="h-9"
+                  />
+                </div>
               </div>
             </div>
           )}
         </div>
 
-        <Button onClick={handleUpload} disabled={uploading} className="btn-bold-primary w-full md:w-auto h-11 text-base">
-          <Upload className="mr-2 h-4 w-4" />
-          {uploading ? 'Uploading...' : 'Upload'}
-        </Button>
+        {/* Upload Button */}
+        <div className="flex gap-3 pt-2">
+          <Button 
+            onClick={handleUpload} 
+            disabled={uploading || !selectedFile || !documentName || !documentType} 
+            className="flex-1 sm:flex-none h-10"
+          >
+            <Upload className="mr-2 h-4 w-4" />
+            {uploading ? 'Uploading...' : 'Upload Document'}
+          </Button>
+        </div>
       </CardContent>
       <RequestDocumentTypeDialog />
     </Card>
