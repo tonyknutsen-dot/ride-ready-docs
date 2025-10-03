@@ -33,6 +33,8 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
         return;
       }
 
+      setIsLoading(true); // Set loading when starting the check
+
       try {
         console.log('Checking admin status for user:', user.id);
         const { data, error } = await supabase
