@@ -17,6 +17,9 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Demo from "./pages/Demo";
 import Overview from "./pages/Overview";
+import Rides from "./pages/Rides";
+import RideDetailPage from "./pages/RideDetailPage";
+import GlobalDocumentsPage from "./pages/GlobalDocumentsPage";
 import NotFound from "./pages/NotFound";
 import PlanBilling from "./pages/PlanBilling";
 import HowItWorks from "./pages/HowItWorks";
@@ -31,6 +34,7 @@ import RideTypeRequests from "./pages/admin/RideTypeRequests";
 import DocumentTypeRequests from "./pages/admin/DocumentTypeRequests";
 import UserManagement from "./pages/admin/UserManagement";
 import SupportMessages from "./pages/admin/SupportMessages";
+import AppHeader from "./components/AppHeader";
 
 const queryClient = new QueryClient();
 
@@ -52,7 +56,10 @@ const App = () => (
                 path="/overview" 
                 element={
                   <ProtectedRoute>
-                    <Overview />
+                    <>
+                      <AppHeader />
+                      <Overview />
+                    </>
                   </ProtectedRoute>
                 } 
               />
@@ -73,7 +80,43 @@ const App = () => (
                 path="/dashboard" 
                 element={
                   <ProtectedRoute>
-                    <Dashboard />
+                    <>
+                      <AppHeader />
+                      <Dashboard />
+                    </>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/rides" 
+                element={
+                  <ProtectedRoute>
+                    <>
+                      <AppHeader />
+                      <Rides />
+                    </>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/rides/:id" 
+                element={
+                  <ProtectedRoute>
+                    <>
+                      <AppHeader />
+                      <RideDetailPage />
+                    </>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/global-documents" 
+                element={
+                  <ProtectedRoute>
+                    <>
+                      <AppHeader />
+                      <GlobalDocumentsPage />
+                    </>
                   </ProtectedRoute>
                 } 
               />

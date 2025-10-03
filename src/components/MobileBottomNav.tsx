@@ -86,17 +86,10 @@ export default function MobileBottomNav() {
           <button
             onClick={() => {
               setOpen(false);
-              nav("/dashboard?tab=rides");
-              // Scroll to rides section after navigation
-              setTimeout(() => {
-                const ridesSection = document.getElementById('rides-section');
-                if (ridesSection) {
-                  ridesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-              }, 100);
+              nav("/rides");
             }}
             className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-              isActive(l => l.pathname === "/dashboard" && new URLSearchParams(l.search).get("tab") === "rides") ? "text-primary" : "text-muted-foreground"
+              isActive(l => l.pathname === "/rides" || l.pathname.startsWith("/rides/")) ? "text-primary" : "text-muted-foreground"
             }`}
             aria-label="Rides"
           >
@@ -105,14 +98,17 @@ export default function MobileBottomNav() {
           </button>
         ) : (
           <button
-            onClick={() => go("/checks")}
+            onClick={() => {
+              setOpen(false);
+              nav("/rides");
+            }}
             className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-              isActive(l => l.pathname === "/checks") ? "text-primary" : "text-muted-foreground"
+              isActive(l => l.pathname === "/rides" || l.pathname.startsWith("/rides/")) ? "text-primary" : "text-muted-foreground"
             }`}
-            aria-label="Checks"
+            aria-label="Equipment"
           >
-            <BadgeCheck className="h-5 w-5" />
-            <span className="mt-0.5">Checks</span>
+            <FolderOpen className="h-5 w-5" />
+            <span className="mt-0.5">Equipment</span>
           </button>
         )}
 
