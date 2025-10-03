@@ -7,6 +7,7 @@ import { ArrowLeft, FileText, CheckSquare, Calendar, Upload, Settings, AlertTria
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import RideDocuments from './RideDocuments';
 import InspectionManager from './InspectionManager';
 import MaintenanceManager from './MaintenanceManager';
@@ -29,6 +30,7 @@ interface RideDetailProps {
 
 const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
   const { user } = useAuth();
+  const { subscription } = useSubscription();
   const [activeTab, setActiveTab] = useState("overview");
   const [rideStats, setRideStats] = useState({
     docCount: 0,
@@ -37,6 +39,8 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
     maintenanceCount: 0,
     loading: true
   });
+
+  const isAdvanced = subscription?.subscriptionStatus === 'advanced';
 
   useEffect(() => {
     loadRideStatistics();
@@ -153,35 +157,39 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-        {/* Mobile: Horizontal scroll */}
+        {/* Mobile: Horizontal scroll with compact tabs */}
         <div className="md:hidden overflow-x-auto scrollbar-hide -mx-4 px-4">
-          <TabsList className="inline-flex w-max gap-2 p-1 bg-muted/30">
-            <TabsTrigger value="overview" className="flex items-center gap-2 px-4 py-2">
-              <FileText className="h-4 w-4" />
-              <span>Overview</span>
+          <TabsList className="inline-flex w-max gap-1 p-1 bg-muted/30">
+            <TabsTrigger value="overview" className="flex items-center gap-1.5 px-3 py-1.5 text-xs">
+              <FileText className="h-3.5 w-3.5" />
+              <span>Home</span>
             </TabsTrigger>
-            <TabsTrigger value="documents" className="flex items-center gap-2 px-4 py-2">
-              <Upload className="h-4 w-4" />
-              <span>Documents</span>
+            <TabsTrigger value="documents" className="flex items-center gap-1.5 px-3 py-1.5 text-xs">
+              <Upload className="h-3.5 w-3.5" />
+              <span>Docs</span>
             </TabsTrigger>
-            <TabsTrigger value="inspections" className="flex items-center gap-2 px-4 py-2">
-              <CheckSquare className="h-4 w-4" />
-              <span>Checks</span>
-            </TabsTrigger>
-            <TabsTrigger value="maintenance" className="flex items-center gap-2 px-4 py-2">
-              <Wrench className="h-4 w-4" />
-              <span>Maintenance</span>
-            </TabsTrigger>
-            <TabsTrigger value="bulletins" className="flex items-center gap-2 px-4 py-2">
-              <AlertTriangle className="h-4 w-4" />
-              <span>Bulletins</span>
-            </TabsTrigger>
+            {isAdvanced && (
+              <>
+                <TabsTrigger value="inspections" className="flex items-center gap-1.5 px-3 py-1.5 text-xs">
+                  <CheckSquare className="h-3.5 w-3.5" />
+                  <span>Checks</span>
+                </TabsTrigger>
+                <TabsTrigger value="maintenance" className="flex items-center gap-1.5 px-3 py-1.5 text-xs">
+                  <Wrench className="h-3.5 w-3.5" />
+                  <span>Maint</span>
+                </TabsTrigger>
+                <TabsTrigger value="bulletins" className="flex items-center gap-1.5 px-3 py-1.5 text-xs">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  <span>Info</span>
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
         </div>
 
-        {/* Desktop: Full width grid */}
+        {/* Desktop: Dynamic grid based on plan */}
         <div className="hidden md:block">
-          <TabsList className="grid w-full grid-cols-5 gap-2 p-1 bg-muted/30 h-auto">
+          <TabsList className={`grid w-full gap-2 p-1 bg-muted/30 h-auto ${isAdvanced ? 'grid-cols-5' : 'grid-cols-2'}`}>
             <TabsTrigger value="overview" className="flex items-center justify-center gap-2 py-3">
               <FileText className="h-4 w-4" />
               <span>Overview</span>
@@ -190,18 +198,22 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
               <Upload className="h-4 w-4" />
               <span>Documents</span>
             </TabsTrigger>
-            <TabsTrigger value="inspections" className="flex items-center justify-center gap-2 py-3">
-              <CheckSquare className="h-4 w-4" />
-              <span>Checks</span>
-            </TabsTrigger>
-            <TabsTrigger value="maintenance" className="flex items-center justify-center gap-2 py-3">
-              <Wrench className="h-4 w-4" />
-              <span>Maintenance</span>
-            </TabsTrigger>
-            <TabsTrigger value="bulletins" className="flex items-center justify-center gap-2 py-3">
-              <AlertTriangle className="h-4 w-4" />
-              <span>Bulletins</span>
-            </TabsTrigger>
+            {isAdvanced && (
+              <>
+                <TabsTrigger value="inspections" className="flex items-center justify-center gap-2 py-3">
+                  <CheckSquare className="h-4 w-4" />
+                  <span>Checks</span>
+                </TabsTrigger>
+                <TabsTrigger value="maintenance" className="flex items-center justify-center gap-2 py-3">
+                  <Wrench className="h-4 w-4" />
+                  <span>Maintenance</span>
+                </TabsTrigger>
+                <TabsTrigger value="bulletins" className="flex items-center justify-center gap-2 py-3">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Bulletins</span>
+                </TabsTrigger>
+              </>
+            )}
           </TabsList>
         </div>
 
