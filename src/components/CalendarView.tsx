@@ -248,11 +248,11 @@ const CalendarView = () => {
 
   const getEventTypeColor = (type: string) => {
     switch (type) {
-      case 'inspection': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'maintenance': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'document_expiry': return 'bg-red-100 text-red-800 border-red-200';
-      case 'ndt': return 'bg-purple-100 text-purple-800 border-purple-200';
-      default: return 'bg-secondary text-secondary-foreground';
+      case 'inspection': return 'bg-primary/10 text-primary border-primary/20';
+      case 'maintenance': return 'bg-accent/50 text-accent-foreground border-accent';
+      case 'document_expiry': return 'bg-destructive/10 text-destructive border-destructive/20';
+      case 'ndt': return 'bg-secondary text-secondary-foreground border-secondary';
+      default: return 'bg-muted text-muted-foreground border-border';
     }
   };
 
@@ -296,20 +296,20 @@ const CalendarView = () => {
           </CardContent>
         </Card>
       )}
-      {/* Header with Navigation */}
+      {/* Header */}
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <CalendarIcon className="h-5 w-5" />
-                Calendar View
+                Document Expiry Calendar
               </CardTitle>
               <CardDescription>
-                View and manage inspection schedules and important dates
+                Track when your documents and certificates expire
               </CardDescription>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="sm"
@@ -321,7 +321,7 @@ const CalendarView = () => {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm font-medium px-3">
+              <span className="text-sm font-medium min-w-[140px] text-center">
                 {format(currentMonth, 'MMMM yyyy')}
               </span>
               <Button
@@ -343,15 +343,15 @@ const CalendarView = () => {
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Calendar */}
         <Card className="lg:col-span-2">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-semibold">Schedule</h3>
-              <div className="flex items-center space-x-2">
+          <CardContent className="p-4 sm:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <h3 className="font-semibold text-lg">Your Events</h3>
+              <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <select 
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="text-sm border rounded px-2 py-1 bg-background"
+                  className="text-sm border rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="all">All Events</option>
                   <option value="inspection">Inspections</option>
@@ -382,10 +382,10 @@ const CalendarView = () => {
                       <span>{date.getDate()}</span>
                       {dayEvents.length > 0 && (
                         <div className="flex gap-0.5 mt-0.5">
-                          {hasInspection && <div className="w-1.5 h-1.5 rounded-full bg-blue-500" />}
-                          {hasMaintenance && <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />}
-                          {hasDocExpiry && <div className="w-1.5 h-1.5 rounded-full bg-red-500" />}
-                          {hasNDT && <div className="w-1.5 h-1.5 rounded-full bg-purple-500" />}
+                          {hasInspection && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
+                          {hasMaintenance && <div className="w-1.5 h-1.5 rounded-full bg-accent" />}
+                          {hasDocExpiry && <div className="w-1.5 h-1.5 rounded-full bg-destructive" />}
+                          {hasNDT && <div className="w-1.5 h-1.5 rounded-full bg-secondary" />}
                         </div>
                       )}
                     </div>
