@@ -344,7 +344,7 @@ const Dashboard = () => {
             <TabsContent value="workspace" id="workspace">
               <FeatureGate requiredPlan="basic" feature="Equipment Workspace">
                 {isDocs ? (
-                  <DocsWorkspace onAddRide={() => setActiveTab('rides')} />
+                  <DocsWorkspace />
                 ) : (
                   <ChecksWorkspace onAddRide={() => setActiveTab('rides')} />
                 )}

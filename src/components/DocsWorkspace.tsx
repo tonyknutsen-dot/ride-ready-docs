@@ -14,11 +14,7 @@ type Ride = Tables<'rides'> & {
   };
 };
 
-interface DocsWorkspaceProps {
-  onAddRide?: () => void;
-}
-
-const DocsWorkspace = ({ onAddRide }: DocsWorkspaceProps) => {
+const DocsWorkspace = () => {
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
 
   const handleRideSelect = (ride: Ride) => {
@@ -37,8 +33,6 @@ const DocsWorkspace = ({ onAddRide }: DocsWorkspaceProps) => {
         actionLabel="Open Documents"
         icon={({ className }) => <FileText className={className} />}
         onRideSelect={handleRideSelect}
-        showAddRide={true}
-        onAddRide={onAddRide}
       />
     );
   }
