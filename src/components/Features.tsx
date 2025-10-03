@@ -66,7 +66,7 @@ const Features = () => {
         {/* Documents & Compliance App */}
         <div className="mb-16">
           <div className="flex items-center justify-center gap-3 mb-8">
-            <h3 className="text-2xl font-bold text-accent">
+            <h3 className="text-xl md:text-2xl font-bold text-foreground">
               📄 Documents & Compliance App
             </h3>
           </div>
@@ -110,7 +110,7 @@ const Features = () => {
         {/* Daily/Monthly/Yearly Checks App */}
         <div>
           <div className="flex items-center justify-center gap-3 mb-8">
-            <h3 className="text-2xl font-bold text-primary">
+            <h3 className="text-xl md:text-2xl font-bold text-foreground">
               ✓ Daily/Monthly/Yearly Checks App
             </h3>
           </div>
