@@ -44,7 +44,7 @@ const Hero = () => {
         
         <p className="text-xl md:text-2xl mb-8 max-w-3xl mx-auto leading-relaxed drop-shadow-[0_3px_10px_rgba(0,0,0,1)] [text-shadow:_0_1px_15px_rgb(0_0_0_/_100%)]">
           The complete management solution designed specifically for showmen. 
-          Choose your tool: manage documents & compliance, or handle daily/monthly/yearly checks.
+          Choose your tool: manage documents & compliance, or handle operations & maintenance.
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -60,7 +60,7 @@ const Hero = () => {
             className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 text-lg font-semibold shadow-glow transition-smooth min-w-[280px]"
             onClick={handleChecksApp}
           >
-            ✓ Daily/Monthly/Yearly Checks
+            ⚙️ Operations & Maintenance
           </Button>
         </div>
         

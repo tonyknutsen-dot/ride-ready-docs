@@ -9,9 +9,9 @@ export default function AppSwitchBanner() {
 
   return (
     <div className="md:hidden text-center text-xs py-2 bg-secondary">
-      {isDocs ? "Need Daily/Monthly/Yearly checks?" : "Need documents & sending to councils?"}{" "}
+      {isDocs ? "Need operations & maintenance?" : "Need documents & sending to councils?"}{" "}
       <a href={otherUrl} className="font-semibold underline">
-        Open the {isDocs ? "Checks" : "Docs"} app
+        Open the {isDocs ? "Operations" : "Docs"} app
       </a>
     </div>
   );

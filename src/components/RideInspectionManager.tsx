@@ -52,7 +52,7 @@ const RideInspectionManager = () => {
   return (
     <RideSelector
       title="Safety Checks & Inspections"
-      description="Select equipment to manage safety checks and inspections. Daily/monthly/yearly checks are done by showmen. Annual and NDT inspections are done by independent inspection bodies."
+      description="Select equipment to manage safety checks and inspections. Daily, monthly, and yearly checks are done by showmen. Annual and NDT inspections are done by independent inspection bodies."
       actionLabel="Manage Checks & Inspections"
       icon={({ className }) => <div className={className}>✅</div>}
       onRideSelect={handleRideSelect}

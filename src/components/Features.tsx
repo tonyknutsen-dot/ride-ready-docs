@@ -107,11 +107,11 @@ const Features = () => {
           </div>
         </div>
 
-        {/* Daily/Monthly/Yearly Checks App */}
+        {/* Operations & Maintenance App */}
         <div>
           <div className="flex items-center justify-center gap-3 mb-8">
             <h3 className="text-xl md:text-2xl font-bold text-foreground">
-              ✓ Daily/Monthly/Yearly Checks App
+              ⚙️ Operations & Maintenance
             </h3>
           </div>
           <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
