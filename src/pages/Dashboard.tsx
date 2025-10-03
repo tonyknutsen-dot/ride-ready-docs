@@ -268,74 +268,8 @@ const Dashboard = () => {
         <div className="space-y-3 md:space-y-6">
           {/* Content Area - No duplicate titles */}
           <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4 md:space-y-6">
-            {/* Mobile: Clean scrollable tabs */}
-            <div className="md:hidden">
-              <TooltipProvider>
-                <div className="overflow-x-auto scrollbar-hide">
-                  <TabsList className="flex w-max gap-1 p-1 bg-muted/20 h-auto">
-                    <PlanAwareTabTrigger 
-                      value="overview" 
-                      icon={Plus} 
-                      label="Home"
-                      className="flex-shrink-0 px-3 py-2 text-xs"
-                    />
-                    {isDocs && (
-                      <>
-                        <PlanAwareTabTrigger 
-                          value="rides" 
-                          icon={Settings} 
-                          label="Manage"
-                          className="flex-shrink-0 px-3 py-2 text-xs"
-                        />
-                        <PlanAwareTabTrigger 
-                          value="workspace" 
-                          icon={FileText} 
-                          label="Documents"
-                          className="flex-shrink-0 px-3 py-2 text-xs font-medium bg-primary/10 text-primary"
-                        />
-                      </>
-                    )}
-                    {isChecks && (
-                      <>
-                        <PlanAwareTabTrigger 
-                          value="rides" 
-                          icon={Settings} 
-                          label="Manage"
-                          className="flex-shrink-0 px-3 py-2 text-xs"
-                        />
-                        <PlanAwareTabTrigger 
-                          value="workspace" 
-                          icon={CheckSquare} 
-                          label="Checks"
-                          className="flex-shrink-0 px-3 py-2 text-xs font-medium bg-primary/10 text-primary"
-                        />
-                        <PlanAwareTabTrigger 
-                          value="calendar" 
-                          icon={CalendarIcon} 
-                          label="Calendar"
-                          requiresAdvanced={true}
-                          className="flex-shrink-0 px-3 py-2 text-xs"
-                        />
-                        <PlanAwareTabTrigger 
-                          value="reports" 
-                          icon={FileText} 
-                          label="Reports"
-                          requiresAdvanced={true}
-                          className="flex-shrink-0 px-3 py-2 text-xs"
-                        />
-                      </>
-                    )}
-                    <PlanAwareTabTrigger 
-                      value="profile" 
-                      icon={User} 
-                      label="Profile"
-                      className="flex-shrink-0 px-3 py-2 text-xs"
-                    />
-                  </TabsList>
-                </div>
-              </TooltipProvider>
-            </div>
-
+            {/* Mobile: Tabs hidden - using bottom nav instead */}
+            
             {/* Desktop: Grid layout */}
             <div className="hidden md:block">
               <TooltipProvider>
