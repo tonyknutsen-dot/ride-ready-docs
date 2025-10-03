@@ -335,7 +335,7 @@ const Dashboard = () => {
               <DashboardOverview onNavigate={handleTabChange} />
             </TabsContent>
 
-            <TabsContent value="rides">
+            <TabsContent value="rides" id="rides-section">
               <FeatureGate requiredPlan="basic" feature="Ride Management">
                 <RideManagement />
               </FeatureGate>

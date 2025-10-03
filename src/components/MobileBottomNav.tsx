@@ -84,9 +84,19 @@ export default function MobileBottomNav() {
         {/* Second button: Rides (Docs) or Checks (Checks flavor) */}
         {isDocs ? (
           <button
-            onClick={() => go("/dashboard?tab=workspace")}
+            onClick={() => {
+              setOpen(false);
+              nav("/dashboard?tab=rides");
+              // Scroll to rides section after navigation
+              setTimeout(() => {
+                const ridesSection = document.getElementById('rides-section');
+                if (ridesSection) {
+                  ridesSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+              }, 100);
+            }}
             className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-              isActive(l => l.pathname === "/dashboard" && new URLSearchParams(l.search).get("tab") === "workspace") ? "text-primary" : "text-muted-foreground"
+              isActive(l => l.pathname === "/dashboard" && new URLSearchParams(l.search).get("tab") === "rides") ? "text-primary" : "text-muted-foreground"
             }`}
             aria-label="Rides"
           >
