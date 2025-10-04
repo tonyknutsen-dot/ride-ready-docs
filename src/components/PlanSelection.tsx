@@ -25,6 +25,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
   const basicFeatures = [
     'File upload & storage',
     'Document management',
+    'Email alerts 30 & 7 days before document expiry',
     'Basic organization',
     'Email support'
   ];
