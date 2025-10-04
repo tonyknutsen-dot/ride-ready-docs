@@ -907,6 +907,96 @@ export type Database = {
           },
         ]
       }
+      risk_assessment_items: {
+        Row: {
+          action_owner: string | null
+          additional_actions: string | null
+          created_at: string
+          existing_controls: string | null
+          hazard_description: string
+          id: string
+          likelihood: string
+          risk_assessment_id: string
+          risk_level: string
+          severity: string
+          sort_order: number | null
+          status: string
+          target_date: string | null
+          who_at_risk: string
+        }
+        Insert: {
+          action_owner?: string | null
+          additional_actions?: string | null
+          created_at?: string
+          existing_controls?: string | null
+          hazard_description: string
+          id?: string
+          likelihood?: string
+          risk_assessment_id: string
+          risk_level?: string
+          severity?: string
+          sort_order?: number | null
+          status?: string
+          target_date?: string | null
+          who_at_risk: string
+        }
+        Update: {
+          action_owner?: string | null
+          additional_actions?: string | null
+          created_at?: string
+          existing_controls?: string | null
+          hazard_description?: string
+          id?: string
+          likelihood?: string
+          risk_assessment_id?: string
+          risk_level?: string
+          severity?: string
+          sort_order?: number | null
+          status?: string
+          target_date?: string | null
+          who_at_risk?: string
+        }
+        Relationships: []
+      }
+      risk_assessments: {
+        Row: {
+          assessment_date: string
+          assessor_name: string
+          created_at: string
+          id: string
+          notes: string | null
+          overall_status: string
+          review_date: string | null
+          ride_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          assessment_date?: string
+          assessor_name: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          overall_status?: string
+          review_date?: string | null
+          ride_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          assessment_date?: string
+          assessor_name?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          overall_status?: string
+          review_date?: string | null
+          ride_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
           admin_response: string | null

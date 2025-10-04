@@ -27,7 +27,8 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
     'Document management',
     'Email alerts 30 & 7 days before document expiry',
     'Basic organization',
-    'Email support'
+    'Email support',
+    'Risk assessments (Advanced only)'
   ];
 
   const advancedFeatures = [
@@ -36,6 +37,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
     'Inspection scheduling',
     'Maintenance tracking',
     'Calendar integration',
+    'Risk assessment builder (downloadable, printable, emailable)',
     'Advanced reporting',
     'Priority support'
   ];

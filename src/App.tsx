@@ -39,6 +39,7 @@ import DocumentTypeRequests from "./pages/admin/DocumentTypeRequests";
 import UserManagement from "./pages/admin/UserManagement";
 import SupportMessages from "./pages/admin/SupportMessages";
 import AppHeader from "./components/AppHeader";
+import RiskAssessments from "./pages/RiskAssessments";
 
 const queryClient = new QueryClient();
 
@@ -162,6 +163,19 @@ const App = () => (
                   <ProtectedRoute>
                     <ProfileGuard>
                       <Settings />
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/risk-assessments"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <>
+                        <AppHeader />
+                        <RiskAssessments />
+                      </>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
