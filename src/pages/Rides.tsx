@@ -6,13 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Settings, FileText, CheckSquare, Mail, HelpCircle, Lock } from 'lucide-react';
+import { Plus, Settings, FileText, CheckSquare, Mail, Lock } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import RideForm from '@/components/RideForm';
 import { SendDocumentsDialog } from '@/components/SendDocumentsDialog';
-import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
 type Ride = Tables<'rides'> & {
   ride_categories: {
     name: string;
@@ -38,7 +37,6 @@ const Rides = () => {
   }>>({});
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [showRequestDialog, setShowRequestDialog] = useState(false);
   useEffect(() => {
     if (user) {
       loadRides();
@@ -157,16 +155,10 @@ const Rides = () => {
           <p className="text-muted-foreground">Manage your rides, stalls, and equipment</p>
         </div>
         
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={() => setShowRequestDialog(true)} className="flex items-center justify-center gap-2">
-            <HelpCircle className="h-4 w-4" />
-            <span>Request Category</span>
-          </Button>
-          <Button onClick={() => setShowAddForm(true)} className="flex items-center justify-center gap-2">
-            <Plus className="h-4 w-4" />
-            <span>Add Ride or Stall</span>
-          </Button>
-        </div>
+        <Button onClick={() => setShowAddForm(true)} className="flex items-center justify-center gap-2">
+          <Plus className="h-4 w-4" />
+          <span>Add Ride or Stall</span>
+        </Button>
       </div>
 
       {rides.length === 0 ? <Card>
@@ -254,8 +246,6 @@ const Rides = () => {
               </CardContent>
             </Card>)}
         </div>}
-
-      <RequestRideTypeDialog open={showRequestDialog} onOpenChange={setShowRequestDialog} />
     </div>;
 };
 export default Rides;
