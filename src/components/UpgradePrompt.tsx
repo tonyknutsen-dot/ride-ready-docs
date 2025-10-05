@@ -4,24 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { PlanSelection } from './PlanSelection';
-
 interface UpgradePromptProps {
   feature: string;
   requiredPlan: 'basic' | 'advanced';
   compact?: boolean;
 }
-
-export const UpgradePrompt: React.FC<UpgradePromptProps> = ({ 
-  feature, 
+export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
+  feature,
   requiredPlan,
-  compact = false 
+  compact = false
 }) => {
   const planName = requiredPlan === 'basic' ? 'Basic' : 'Advanced';
   const price = requiredPlan === 'basic' ? '$9.99' : '$29.99';
-
   if (compact) {
-    return (
-      <Card className="border-primary/20 bg-primary/5">
+    return <Card className="border-primary/20 bg-primary/5">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -45,12 +41,9 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
             </Dialog>
           </div>
         </CardContent>
-      </Card>
-    );
+      </Card>;
   }
-
-  return (
-    <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
+  return <Card className="border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10">
       <CardHeader className="text-center">
         <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
           <Lock className="h-8 w-8 text-primary" />
@@ -86,11 +79,8 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
             </DialogContent>
           </Dialog>
           
-          <p className="text-xs text-muted-foreground">
-            Cancel anytime • Instant access • 24/7 support
-          </p>
+          <p className="text-xs text-muted-foreground">Cancel anytime • Instant access • 364 days support</p>
         </div>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
