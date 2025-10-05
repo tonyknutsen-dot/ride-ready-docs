@@ -164,7 +164,7 @@ const Rides = () => {
           </Button>
           <Button onClick={() => setShowAddForm(true)} className="flex items-center justify-center gap-2">
             <Plus className="h-4 w-4" />
-            <span>Add Equipment</span>
+            <span>Add Ride or Stall</span>
           </Button>
         </div>
       </div>
