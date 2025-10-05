@@ -20,6 +20,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { FeatureGate } from "@/components/FeatureGate";
+import { Lock } from "lucide-react";
 
 interface OverviewStats {
   totalDocuments: number;
@@ -273,7 +274,29 @@ const Overview = () => {
             <div className="text-sm text-muted-foreground">Active Equipment</div>
           </CardContent>
         </Card>
-        <FeatureGate requiredPlan="advanced" feature="Daily Checks">
+        <FeatureGate 
+          requiredPlan="advanced" 
+          feature="Daily Checks"
+          fallback={
+            <Card className="border-dashed relative overflow-hidden">
+              <div className="absolute top-2 right-2">
+                <Lock className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <CardContent className="p-6 text-center">
+                <div className="text-2xl font-bold text-muted-foreground mb-1">•••</div>
+                <div className="text-sm text-muted-foreground mb-2">Checks This Week</div>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="text-xs"
+                  onClick={() => navigate('/billing')}
+                >
+                  Unlock Daily Checks
+                </Button>
+              </CardContent>
+            </Card>
+          }
+        >
           <Card>
             <CardContent className="p-6 text-center">
               <div className="text-3xl font-bold text-primary mb-1">{stats.recentChecks}</div>
@@ -281,7 +304,29 @@ const Overview = () => {
             </CardContent>
           </Card>
         </FeatureGate>
-        <FeatureGate requiredPlan="advanced" feature="Inspection Schedules">
+        <FeatureGate 
+          requiredPlan="advanced" 
+          feature="Inspection Schedules"
+          fallback={
+            <Card className="border-dashed relative overflow-hidden">
+              <div className="absolute top-2 right-2">
+                <Lock className="w-4 h-4 text-muted-foreground" />
+              </div>
+              <CardContent className="p-6 text-center">
+                <div className="text-2xl font-bold text-muted-foreground mb-1">•••</div>
+                <div className="text-sm text-muted-foreground mb-2">Due Soon</div>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="text-xs"
+                  onClick={() => navigate('/billing')}
+                >
+                  Unlock Scheduling
+                </Button>
+              </CardContent>
+            </Card>
+          }
+        >
           <Card>
             <CardContent className="p-6 text-center">
               <div className="text-3xl font-bold text-primary mb-1">{stats.upcomingInspections}</div>
@@ -361,7 +406,32 @@ const Overview = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <FeatureGate requiredPlan="advanced" feature="Activity Tracking">
+          <FeatureGate 
+            requiredPlan="advanced" 
+            feature="Activity Tracking"
+            fallback={
+              <Card className="border-dashed">
+                <CardHeader>
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <Lock className="w-4 h-4 text-muted-foreground" />
+                    Recent Activity
+                  </h2>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Track all maintenance, checks, and inspections in real-time. Never miss important updates.
+                  </p>
+                  <Button 
+                    size="sm" 
+                    className="w-full"
+                    onClick={() => navigate('/billing')}
+                  >
+                    Upgrade to Advanced
+                  </Button>
+                </CardContent>
+              </Card>
+            }
+          >
             {recentActivity.length > 0 && (
               <Card>
                 <CardHeader>
