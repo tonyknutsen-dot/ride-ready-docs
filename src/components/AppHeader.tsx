@@ -99,6 +99,13 @@ const AppHeader = () => {
               <DropdownMenuLabel>More Options</DropdownMenuLabel>
               <DropdownMenuSeparator />
               
+              <DropdownMenuItem asChild>
+                <Link to="/" className="flex items-center cursor-pointer">
+                  <Home className="h-4 w-4 mr-2" />
+                  Homepage
+                </Link>
+              </DropdownMenuItem>
+              
               {isDocs && (
                 <>
                   <DropdownMenuItem asChild>
@@ -107,9 +114,10 @@ const AppHeader = () => {
                       Global Documents
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator />
                 </>
               )}
+              
+              <DropdownMenuSeparator />
               
               <DropdownMenuItem asChild>
                 <Link to="/billing" className="flex items-center cursor-pointer">
