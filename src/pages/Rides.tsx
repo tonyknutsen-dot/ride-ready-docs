@@ -27,7 +27,9 @@ const Rides = () => {
     toast
   } = useToast();
   const navigate = useNavigate();
-  const { subscription } = useSubscription();
+  const {
+    subscription
+  } = useSubscription();
   const [rides, setRides] = useState<Ride[]>([]);
   const [rideStats, setRideStats] = useState<Record<string, {
     docCount: number;
@@ -149,7 +151,9 @@ const Rides = () => {
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">My Equipment</h1>
+          <h1 className="text-3xl font-bold tracking-tight">My Rides, Stalls
+
+        </h1>
           <p className="text-muted-foreground">Manage your rides, stalls, and equipment</p>
         </div>
         
@@ -204,22 +208,16 @@ const Rides = () => {
                     </p>
                     <p className="text-xs text-muted-foreground">Documents</p>
                   </div>
-                  {subscription?.subscriptionStatus === 'advanced' ? (
-                    <div className="p-3 rounded-md bg-muted/50 text-center">
+                  {subscription?.subscriptionStatus === 'advanced' ? <div className="p-3 rounded-md bg-muted/50 text-center">
                       <CheckSquare className="h-4 w-4 mx-auto text-accent mb-1.5" />
                       <p className="text-sm font-medium">
                         {rideStats[ride.id]?.checkCount ?? 0}
                       </p>
                       <p className="text-xs text-muted-foreground">Checks</p>
-                    </div>
-                  ) : (
-                    <div 
-                      className="p-3 rounded-md bg-muted/30 text-center border border-dashed border-muted-foreground/30 relative cursor-pointer hover:border-primary/50 hover:bg-muted/40 transition-all"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate('/billing');
-                      }}
-                    >
+                    </div> : <div className="p-3 rounded-md bg-muted/30 text-center border border-dashed border-muted-foreground/30 relative cursor-pointer hover:border-primary/50 hover:bg-muted/40 transition-all" onClick={e => {
+              e.stopPropagation();
+              navigate('/billing');
+            }}>
                       <Lock className="h-3 w-3 absolute top-2 right-2 text-muted-foreground/50" />
                       <CheckSquare className="h-4 w-4 mx-auto text-muted-foreground/40 mb-1.5" />
                       <p className="text-sm font-medium text-muted-foreground/60">-</p>
@@ -229,8 +227,7 @@ const Rides = () => {
                       <p className="text-[9px] text-primary/60 font-medium mt-1">
                         Operations Plan
                       </p>
-                    </div>
-                  )}
+                    </div>}
                 </div>
 
                 {rideStats[ride.id]?.nextDue && <div className="text-center p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
