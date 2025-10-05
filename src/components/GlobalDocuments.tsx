@@ -99,14 +99,30 @@ const GlobalDocuments = () => {
         </p>
         {!selectedRide && (
           <div className="bg-muted/50 border rounded-lg p-3 text-sm">
-            <p className="font-medium mb-1">Examples of Global Documents:</p>
-            <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
-              <li>Public Liability Insurance</li>
-              <li>Employers Liability Insurance</li>
-              <li>Business licenses and permits</li>
-              <li>Showmen's Guild membership</li>
-              <li>Health & Safety policies</li>
-            </ul>
+            <p className="font-medium mb-2">What belongs in Global Documents?</p>
+            <div className="space-y-3">
+              <div>
+                <p className="font-medium text-primary mb-1">📋 Insurance Documents (Highly Recommended)</p>
+                <ul className="list-disc list-inside space-y-0.5 text-muted-foreground ml-2">
+                  <li>Public Liability Insurance - covers all equipment</li>
+                  <li>Employers Liability Insurance - covers all employees</li>
+                  <li>Equipment insurance - if covering multiple rides</li>
+                </ul>
+              </div>
+              <div>
+                <p className="font-medium mb-1">📄 Business & Compliance Documents</p>
+                <ul className="list-disc list-inside space-y-0.5 text-muted-foreground ml-2">
+                  <li>Showmen's Guild membership certificate</li>
+                  <li>Trading licenses and permits</li>
+                  <li>Company Health & Safety policies</li>
+                  <li>Business registration documents</li>
+                </ul>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3 pt-3 border-t">
+              💡 <strong>Tip:</strong> If a document covers your entire business operation (not just one specific ride), 
+              it belongs here. Ride-specific documents like DOC certificates and inspection reports should be added to individual rides.
+            </p>
           </div>
         )}
       </div>

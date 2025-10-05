@@ -24,7 +24,7 @@ const documentTypes = [
   { id: 'evacuation_plan', name: 'Evacuation Plan', description: 'Evacuation procedures and plans' },
   { id: 'initial_test_report', name: 'Initial Test Report', description: 'Initial testing and commissioning reports' },
   { id: 'inservice_inspection', name: 'In-Service Inspection Report', description: 'Regular in-service inspection reports' },
-  { id: 'insurance', name: 'Insurance Documents', description: 'Insurance certificates and policies' },
+  { id: 'insurance', name: '🛡️ Insurance Documents', description: '💼 Liability, employers, equipment insurance - Usually Global Documents', suggestGlobal: true },
   { id: 'method_statement', name: 'Method Statement', description: 'Work method statements and procedures' },
   { id: 'ndt_inspection', name: 'NDT Inspection Report', description: 'Non-destructive testing reports' },
   { id: 'ndt_schedule', name: 'NDT Schedule', description: 'Non-destructive testing schedules' },
@@ -120,6 +120,14 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
       console.error('Error loading existing documents:', error);
     }
   };
+
+  // Auto-suggest global for insurance documents
+  useEffect(() => {
+    const selectedType = documentTypes.find(t => t.id === documentType);
+    if (selectedType && (selectedType as any).suggestGlobal && !rideId) {
+      setIsGlobal(true);
+    }
+  }, [documentType, rideId]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -390,9 +398,15 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
                 This is a Global Document
               </Label>
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Global documents apply to all your equipment (e.g., Public Liability Insurance covering all rides, 
-                Showmen's Guild membership, business licenses). They'll appear at the top of every ride's document list.
+                Global documents apply to all your equipment (e.g., <strong>Public Liability Insurance</strong> covering all rides, 
+                <strong> Employers Liability Insurance</strong>, Showmen's Guild membership, business licenses). 
+                They'll appear at the top of every ride's document list.
               </p>
+              {documentType === 'insurance' && !isGlobal && (
+                <p className="text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded px-2 py-1.5 mt-2">
+                  💡 <strong>Tip:</strong> Most insurance documents should be marked as Global Documents since they typically cover your entire business.
+                </p>
+              )}
             </div>
           </div>
         </div>
