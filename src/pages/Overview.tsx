@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
+import { FeatureGate } from "@/components/FeatureGate";
 
 interface OverviewStats {
   totalDocuments: number;
@@ -187,7 +188,7 @@ const Overview = () => {
     }
   };
 
-  const demoFeatures = [
+  const basicFeatures = [
     {
       icon: <FileText className="w-6 h-6" />,
       title: "Document Management",
@@ -199,9 +200,12 @@ const Overview = () => {
       icon: <Shield className="w-6 h-6" />,
       title: "Safety Compliance",
       description: "Track safety inspections and ensure all rides meet regulatory requirements",
-      status: stats.upcomingInspections > 0 ? "warning" : "active",
-      count: stats.upcomingInspections > 0 ? `${stats.upcomingInspections} due soon` : "All current"
-    },
+      status: "active",
+      count: "Basic tracking"
+    }
+  ];
+
+  const advancedFeatures = [
     {
       icon: <Calendar className="w-6 h-6" />,
       title: "Inspection Schedule",
@@ -217,6 +221,10 @@ const Overview = () => {
       count: `${stats.maintenanceRecords} records`
     }
   ];
+
+  const demoFeatures = userPlan === 'advanced' 
+    ? [...basicFeatures, ...advancedFeatures]
+    : basicFeatures;
 
   if (loading) {
     return (
@@ -265,18 +273,22 @@ const Overview = () => {
             <div className="text-sm text-muted-foreground">Active Equipment</div>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-6 text-center">
-            <div className="text-3xl font-bold text-primary mb-1">{stats.recentChecks}</div>
-            <div className="text-sm text-muted-foreground">Checks This Week</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-6 text-center">
-            <div className="text-3xl font-bold text-primary mb-1">{stats.upcomingInspections}</div>
-            <div className="text-sm text-muted-foreground">Due Soon</div>
-          </CardContent>
-        </Card>
+        <FeatureGate requiredPlan="advanced" feature="Daily Checks">
+          <Card>
+            <CardContent className="p-6 text-center">
+              <div className="text-3xl font-bold text-primary mb-1">{stats.recentChecks}</div>
+              <div className="text-sm text-muted-foreground">Checks This Week</div>
+            </CardContent>
+          </Card>
+        </FeatureGate>
+        <FeatureGate requiredPlan="advanced" feature="Inspection Schedules">
+          <Card>
+            <CardContent className="p-6 text-center">
+              <div className="text-3xl font-bold text-primary mb-1">{stats.upcomingInspections}</div>
+              <div className="text-sm text-muted-foreground">Due Soon</div>
+            </CardContent>
+          </Card>
+        </FeatureGate>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -349,27 +361,29 @@ const Overview = () => {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {recentActivity.length > 0 && (
-            <Card>
-              <CardHeader>
-                <h2 className="text-lg font-semibold flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-primary" />
-                  Recent Activity
-                </h2>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-1.5 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="font-medium text-xs">{activity.title}</div>
-                      <div className="text-xs text-muted-foreground">{activity.time}</div>
+          <FeatureGate requiredPlan="advanced" feature="Activity Tracking">
+            {recentActivity.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <h2 className="text-lg font-semibold flex items-center gap-2">
+                    <Clock className="w-4 h-4 text-primary" />
+                    Recent Activity
+                  </h2>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {recentActivity.map((activity, index) => (
+                    <div key={index} className="flex items-start gap-2">
+                      <div className="w-2 h-2 bg-primary rounded-full mt-1.5 shrink-0" />
+                      <div className="min-w-0">
+                        <div className="font-medium text-xs">{activity.title}</div>
+                        <div className="text-xs text-muted-foreground">{activity.time}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          )}
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+          </FeatureGate>
 
           <Card>
             <CardHeader>
@@ -393,9 +407,9 @@ const Overview = () => {
                 }}
               >
                 <Wrench className="w-4 h-4 mr-2" />
-                Operations & Maintenance
+                {userPlan === 'advanced' ? 'Operations & Maintenance' : 'Upgrade for Advanced Features'}
               </Button>
-              {userPlan !== 'basic' && (
+              {userPlan === 'advanced' && (
                 <Button className="w-full" size="sm" variant="outline" onClick={() => navigate('/calendar')}>
                   <Calendar className="w-4 h-4 mr-2" />
                   View Calendar
