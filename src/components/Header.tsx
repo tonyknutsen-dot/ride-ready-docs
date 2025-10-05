@@ -52,14 +52,9 @@ const Header = () => {
               </>
             )}
             {user && (
-              <>
-                <Link to="/overview" className="text-foreground hover:text-primary transition-smooth">
-                  Overview
-                </Link>
-                <Link to="/dashboard" className="text-foreground hover:text-primary transition-smooth">
-                  Dashboard
-                </Link>
-              </>
+              <Link to="/overview" className="text-foreground hover:text-primary transition-smooth">
+                Overview
+              </Link>
             )}
           </nav>
 
@@ -116,9 +111,9 @@ const Header = () => {
               </>
             ) : (
               <>
-                <Link to="/dashboard">
+                <Link to="/overview">
                   <Button size="sm" variant="outline">
-                    Dashboard
+                    Overview
                   </Button>
                 </Link>
                 <button

@@ -16,7 +16,6 @@ import GlobalEventBridge from "@/components/GlobalEventBridge";
 import { isDocs, isChecks } from "@/config/appFlavor";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Dashboard from "./pages/Dashboard";
 import Demo from "./pages/Demo";
 import Overview from "./pages/Overview";
 import Rides from "./pages/Rides";
@@ -88,16 +87,6 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <SetupAdmin />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <ProfileGuard>
-                      <Dashboard />
-                    </ProfileGuard>
                   </ProtectedRoute>
                 } 
               />
