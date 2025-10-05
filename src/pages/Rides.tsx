@@ -213,11 +213,21 @@ const Rides = () => {
                       <p className="text-xs text-muted-foreground">Checks</p>
                     </div>
                   ) : (
-                    <div className="p-3 rounded-md bg-muted/30 text-center border border-dashed border-muted-foreground/30 relative">
+                    <div 
+                      className="p-3 rounded-md bg-muted/30 text-center border border-dashed border-muted-foreground/30 relative cursor-pointer hover:border-primary/50 hover:bg-muted/40 transition-all"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate('/plan-billing');
+                      }}
+                    >
                       <Lock className="h-3 w-3 absolute top-2 right-2 text-muted-foreground/50" />
                       <CheckSquare className="h-4 w-4 mx-auto text-muted-foreground/40 mb-1.5" />
-                      <p className="text-[10px] font-medium text-muted-foreground/70 leading-tight">
-                        Available in<br />Operations Plan
+                      <p className="text-sm font-medium text-muted-foreground/60">-</p>
+                      <p className="text-[10px] text-muted-foreground/70 leading-tight mt-0.5">
+                        Checks
+                      </p>
+                      <p className="text-[9px] text-primary/60 font-medium mt-1">
+                        Operations Plan
                       </p>
                     </div>
                   )}
