@@ -118,10 +118,10 @@ export default function PlanBilling() {
             <div className="flex items-center gap-2">
               <CheckCircle2 className="text-primary" />
               <div>
-                <div className="font-semibold">{plan === "advanced" ? "Operations Plan (Advanced)" : "Basic Plan"}</div>
+                <div className="font-semibold">{plan === "advanced" ? "Documents + Operations Plan" : "Documents Plan"}</div>
                 <div className="text-sm text-muted-foreground">
                   {plan === "advanced" 
-                    ? "All operations features unlocked" 
+                    ? "Document storage + operations & maintenance features" 
                     : "Essential document storage for ride management"}
                 </div>
               </div>
@@ -136,10 +136,10 @@ export default function PlanBilling() {
               <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-3">
                 <div className="font-medium flex items-center gap-2">
                   <Crown className="w-4 h-4 text-amber-500" />
-                  Upgrade to Operations Plan (Advanced)
+                  Upgrade to Documents + Operations Plan
                 </div>
                 <div className="text-sm space-y-2">
-                  <div className="font-medium text-foreground">Everything in Basic, plus:</div>
+                  <div className="font-medium text-foreground">Everything in Documents Plan, plus:</div>
                   <div className="text-muted-foreground space-y-1">
                     <div>• Daily, monthly & yearly checks</div>
                     <div>• Inspection management & scheduling</div>
@@ -162,11 +162,11 @@ export default function PlanBilling() {
             <div className="space-y-3">
               <div className="flex items-start gap-2 text-sm text-muted-foreground">
                 <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>Downgrading will hide Operations Plan features like checks, inspections, maintenance tracking, calendar, notifications, reports, technical bulletins, and risk assessments. Your data remains safe and can be accessed again by upgrading.</span>
+                <span>Downgrading will hide Operations & Maintenance features like checks, inspections, maintenance tracking, calendar, notifications, reports, technical bulletins, and risk assessments. Your data remains safe and can be accessed again by upgrading.</span>
               </div>
               <Button onClick={downgrade} disabled={saving} variant="outline">
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
-                Downgrade to Basic
+                Downgrade to Documents Plan
               </Button>
             </div>
           )}

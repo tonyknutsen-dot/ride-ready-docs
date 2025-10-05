@@ -27,17 +27,19 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
     'Document management',
     'Email alerts 30 & 7 days before document expiry',
     'Basic organization',
-    'Email support',
-    'Risk assessments (Advanced only)'
+    'Email support'
   ];
 
   const advancedFeatures = [
-    'Everything in Basic',
-    'Full ride management system',
+    'Everything in Documents Plan',
+    'Daily, monthly & yearly checks',
     'Inspection scheduling',
+    'NDT testing schedules',
     'Maintenance tracking',
     'Calendar integration',
+    'Notifications & alerts',
     'Risk assessment builder (downloadable, printable, emailable)',
+    'Technical bulletins',
     'Advanced reporting',
     'Priority support'
   ];
@@ -57,10 +59,10 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
-              <CardTitle>Basic Plan</CardTitle>
+              <CardTitle>Documents Plan</CardTitle>
             </div>
             <CardDescription>
-              Perfect for simple document management
+              Essential document storage & management
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -81,7 +83,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
               onClick={() => handleUpgrade('basic')}
               disabled={subscription?.subscriptionStatus === 'basic'}
             >
-              {subscription?.subscriptionStatus === 'basic' ? 'Current Plan' : 'Choose Basic'}
+              {subscription?.subscriptionStatus === 'basic' ? 'Current Plan' : 'Choose Documents Plan'}
             </Button>
           </CardContent>
         </Card>
@@ -94,10 +96,10 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Cog className="h-5 w-5 text-primary" />
-              <CardTitle>Advanced Plan</CardTitle>
+              <CardTitle>Documents + Operations Plan</CardTitle>
             </div>
             <CardDescription>
-              Complete ride management solution
+              Complete documents + operations & maintenance solution
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -117,7 +119,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
               onClick={() => handleUpgrade('advanced')}
               disabled={subscription?.subscriptionStatus === 'advanced'}
             >
-              {subscription?.subscriptionStatus === 'advanced' ? 'Current Plan' : 'Choose Advanced'}
+              {subscription?.subscriptionStatus === 'advanced' ? 'Current Plan' : 'Choose Operations Plan'}
             </Button>
           </CardContent>
         </Card>
