@@ -9,6 +9,7 @@ import { AdminProvider } from "@/contexts/AdminContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { ProfileGuard } from "@/components/ProfileGuard";
+import { FeatureGate } from "@/components/FeatureGate";
 import ScrollToTop from "@/components/ScrollToTop";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import GlobalEventBridge from "@/components/GlobalEventBridge";
@@ -180,13 +181,15 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              {/* Checks route - available in all flavors for development */}
+              {/* Checks route - requires advanced plan */}
               <Route 
                 path="/checks" 
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <Checks />
+                      <FeatureGate requiredPlan="advanced" feature="Operations & Maintenance">
+                        <Checks />
+                      </FeatureGate>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
