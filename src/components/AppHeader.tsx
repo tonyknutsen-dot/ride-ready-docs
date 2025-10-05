@@ -1,11 +1,20 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Home, FolderOpen, Shield, User, LogOut } from 'lucide-react';
+import { Home, FolderOpen, Shield, User, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { isDocs } from '@/config/appFlavor';
 import { QuickDocumentUpload } from '@/components/QuickDocumentUpload';
 import { useState } from 'react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 
 const AppHeader = () => {
   const location = useLocation();
@@ -71,18 +80,69 @@ const AppHeader = () => {
                 onClick={() => setUploadDialogOpen(true)}
               >
                 <Shield className="h-4 w-4" />
-                Docs
+                Add Doc
               </Button>
             )}
           </nav>
         </div>
 
         <div className="flex items-center gap-2">
+          {/* More Menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-2">
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="hidden sm:inline">More</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>More Options</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              
+              {isDocs && (
+                <>
+                  <DropdownMenuItem asChild>
+                    <Link to="/global-documents" className="flex items-center cursor-pointer">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Global Documents
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </>
+              )}
+              
+              <DropdownMenuItem asChild>
+                <Link to="/billing" className="flex items-center cursor-pointer">
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Plan & Billing
+                </Link>
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem asChild>
+                <Link to="/help" className="flex items-center cursor-pointer">
+                  <HelpCircle className="h-4 w-4 mr-2" />
+                  Help & Support
+                </Link>
+              </DropdownMenuItem>
+
+              <DropdownMenuItem asChild>
+                <Link to="/settings" className="flex items-center cursor-pointer">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Link>
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
+              <ContactSupportDialog />
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           <Link to="/settings">
             <Button 
               variant={isActive('/settings') ? 'default' : 'ghost'} 
               size="sm" 
-              className="gap-2"
+              className="gap-2 hidden sm:flex"
             >
               <User className="h-4 w-4" />
               <span className="hidden sm:inline">Settings</span>
