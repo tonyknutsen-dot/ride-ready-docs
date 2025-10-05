@@ -186,7 +186,7 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
         )}
       </DialogTrigger>
       
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+      <DialogContent className="max-w-xl max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <Mail className="h-5 w-5 text-primary" />
