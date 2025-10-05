@@ -4,7 +4,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { PlanSelection } from './PlanSelection';
 import { RestrictedFeatureCard } from '@/components/RestrictedFeatureCard';
 import { useSubscription } from '@/hooks/useSubscription';
 import DOCCertificateCard from '@/components/DOCCertificateCard';
@@ -361,7 +362,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            {isAdvancedUser && (
+            {isAdvancedUser ? (
               <Button 
                 variant="outline" 
                 className="justify-start h-auto p-4"
@@ -375,6 +376,31 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
                   <span className="text-xs text-muted-foreground">Perform daily checks</span>
                 </div>
               </Button>
+            ) : (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="justify-start h-auto p-4 relative opacity-60 hover:opacity-100"
+                  >
+                    <div className="flex flex-col items-start space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <CheckCircle className="h-4 w-4" />
+                        <span className="font-medium">New Inspection</span>
+                        <Badge variant="secondary" className="text-[10px] px-1 py-0">Advanced</Badge>
+                      </div>
+                      <span className="text-xs text-muted-foreground">Perform daily checks</span>
+                    </div>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogTitle>Upgrade to Advanced Plan</DialogTitle>
+                  <DialogDescription>
+                    Unlock inspection tracking and all advanced operational features
+                  </DialogDescription>
+                  <PlanSelection />
+                </DialogContent>
+              </Dialog>
             )}
             
             <Button 
@@ -391,7 +417,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
               </div>
             </Button>
 
-            {isAdvancedUser && (
+            {isAdvancedUser ? (
               <Button 
                 variant="outline" 
                 className="justify-start h-auto p-4"
@@ -405,9 +431,34 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
                   <span className="text-xs text-muted-foreground">Record repairs</span>
                 </div>
               </Button>
+            ) : (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="justify-start h-auto p-4 relative opacity-60 hover:opacity-100"
+                  >
+                    <div className="flex flex-col items-start space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <Wrench className="h-4 w-4" />
+                        <span className="font-medium">Log Maintenance</span>
+                        <Badge variant="secondary" className="text-[10px] px-1 py-0">Advanced</Badge>
+                      </div>
+                      <span className="text-xs text-muted-foreground">Record repairs</span>
+                    </div>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogTitle>Upgrade to Advanced Plan</DialogTitle>
+                  <DialogDescription>
+                    Unlock maintenance tracking and all advanced operational features
+                  </DialogDescription>
+                  <PlanSelection />
+                </DialogContent>
+              </Dialog>
             )}
 
-            {isAdvancedUser && (
+            {isAdvancedUser ? (
               <Button 
                 variant="outline" 
                 className="justify-start h-auto p-4"
@@ -421,6 +472,31 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
                   <span className="text-xs text-muted-foreground">See schedule</span>
                 </div>
               </Button>
+            ) : (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    className="justify-start h-auto p-4 relative opacity-60 hover:opacity-100"
+                  >
+                    <div className="flex flex-col items-start space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <Calendar className="h-4 w-4" />
+                        <span className="font-medium">View Calendar</span>
+                        <Badge variant="secondary" className="text-[10px] px-1 py-0">Advanced</Badge>
+                      </div>
+                      <span className="text-xs text-muted-foreground">See schedule</span>
+                    </div>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl">
+                  <DialogTitle>Upgrade to Advanced Plan</DialogTitle>
+                  <DialogDescription>
+                    Unlock calendar scheduling and all advanced operational features
+                  </DialogDescription>
+                  <PlanSelection />
+                </DialogContent>
+              </Dialog>
             )}
           </div>
         </CardContent>
