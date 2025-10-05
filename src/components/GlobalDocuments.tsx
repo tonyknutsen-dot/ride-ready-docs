@@ -88,16 +88,28 @@ const GlobalDocuments = () => {
           </Card>
         )}
 
-        <div className="space-y-1">
+        <div className="space-y-2">
           <h2 className="text-2xl font-bold tracking-tight">
             {selectedRide ? 'Ride Documents' : 'Global Documents'}
           </h2>
           <p className="text-sm text-muted-foreground">
             {selectedRide 
               ? `Documents for ${selectedRide.name}`
-              : 'Insurance, licenses, and company-wide documents'
+              : 'Store documents that apply across your entire business, not tied to a specific ride or piece of equipment.'
             }
           </p>
+          {!selectedRide && (
+            <div className="bg-muted/50 border rounded-lg p-3 text-sm">
+              <p className="font-medium mb-1">Examples of Global Documents:</p>
+              <ul className="list-disc list-inside space-y-0.5 text-muted-foreground">
+                <li>Public Liability Insurance</li>
+                <li>Employers Liability Insurance</li>
+                <li>Business licenses and permits</li>
+                <li>Showmen's Guild membership</li>
+                <li>Health & Safety policies</li>
+              </ul>
+            </div>
+          )}
         </div>
 
         <Tabs defaultValue="documents" className="space-y-4">

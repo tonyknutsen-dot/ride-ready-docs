@@ -151,7 +151,7 @@ export default function MobileBottomNav() {
               {isDocs && (
                 <button
                   className="btn-muted-tile"
-                  onClick={() => go("/dashboard?tab=workspace", () => window.dispatchEvent(new CustomEvent("rrd:upload-doc")))}
+                  onClick={() => go("/global-documents")}
                 >
                   <FileText className="h-4 w-4 mr-2" />
                   Global documents
