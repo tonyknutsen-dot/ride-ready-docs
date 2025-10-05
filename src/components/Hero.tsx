@@ -2,11 +2,17 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { isDocs, isChecks } from "@/config/appFlavor";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { PlanSelection } from "./PlanSelection";
+import { useState } from "react";
 import heroImage from "@/assets/hero-fairground.jpg";
 
 const Hero = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { subscription } = useSubscription();
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   const handleDocsApp = () => {
     const destination = user ? '/dashboard' : '/auth';
@@ -14,8 +20,19 @@ const Hero = () => {
   };
 
   const handleChecksApp = () => {
-    const destination = user ? '/checks' : '/auth';
-    navigate(destination);
+    if (!user) {
+      navigate('/auth');
+      return;
+    }
+
+    // Check if user has advanced plan
+    const hasAdvancedAccess = subscription?.subscriptionStatus === 'advanced';
+    
+    if (hasAdvancedAccess) {
+      navigate('/checks');
+    } else {
+      setShowUpgradeDialog(true);
+    }
   };
 
   return (
@@ -86,6 +103,13 @@ const Hero = () => {
           <div className="w-1 h-3 bg-white/60 rounded-full mt-2 animate-pulse" />
         </div>
       </div>
+
+      {/* Upgrade Dialog */}
+      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+        <DialogContent className="max-w-4xl">
+          <PlanSelection />
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };
