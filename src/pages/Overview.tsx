@@ -278,20 +278,21 @@ const Overview = () => {
           requiredPlan="advanced" 
           feature="Daily Checks"
           fallback={
-            <Card className="border-dashed relative overflow-hidden">
+            <Card className="border-dashed relative overflow-hidden bg-muted/20">
               <div className="absolute top-2 right-2">
                 <Lock className="w-4 h-4 text-muted-foreground" />
               </div>
               <CardContent className="p-6 text-center">
                 <div className="text-2xl font-bold text-muted-foreground mb-1">•••</div>
-                <div className="text-sm text-muted-foreground mb-2">Checks This Week</div>
+                <div className="text-xs font-semibold text-primary mb-1">Advanced Plan Feature</div>
+                <div className="text-sm font-medium mb-2">Daily Safety Checks</div>
+                <p className="text-xs text-muted-foreground mb-3">Complete digital checklists, track compliance, and never miss a safety inspection</p>
                 <Button 
                   size="sm" 
-                  variant="outline" 
                   className="text-xs"
                   onClick={() => navigate('/billing')}
                 >
-                  Unlock Daily Checks
+                  Upgrade to Advanced
                 </Button>
               </CardContent>
             </Card>
@@ -308,20 +309,21 @@ const Overview = () => {
           requiredPlan="advanced" 
           feature="Inspection Schedules"
           fallback={
-            <Card className="border-dashed relative overflow-hidden">
+            <Card className="border-dashed relative overflow-hidden bg-muted/20">
               <div className="absolute top-2 right-2">
                 <Lock className="w-4 h-4 text-muted-foreground" />
               </div>
               <CardContent className="p-6 text-center">
                 <div className="text-2xl font-bold text-muted-foreground mb-1">•••</div>
-                <div className="text-sm text-muted-foreground mb-2">Due Soon</div>
+                <div className="text-xs font-semibold text-primary mb-1">Advanced Plan Feature</div>
+                <div className="text-sm font-medium mb-2">Inspection Scheduling</div>
+                <p className="text-xs text-muted-foreground mb-3">Automated reminders ensure you never miss critical inspection deadlines</p>
                 <Button 
                   size="sm" 
-                  variant="outline" 
                   className="text-xs"
                   onClick={() => navigate('/billing')}
                 >
-                  Unlock Scheduling
+                  Upgrade to Advanced
                 </Button>
               </CardContent>
             </Card>
@@ -410,23 +412,26 @@ const Overview = () => {
             requiredPlan="advanced" 
             feature="Activity Tracking"
             fallback={
-              <Card className="border-dashed">
+              <Card className="border-dashed bg-muted/20">
                 <CardHeader>
-                  <h2 className="text-lg font-semibold flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-muted-foreground" />
-                    Recent Activity
-                  </h2>
+                  <div className="flex items-center justify-between">
+                    <h2 className="text-lg font-semibold flex items-center gap-2">
+                      <Lock className="w-4 h-4 text-muted-foreground" />
+                      Recent Activity
+                    </h2>
+                    <Badge variant="secondary" className="text-xs">Advanced</Badge>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <p className="text-sm text-muted-foreground mb-4">
-                    Track all maintenance, checks, and inspections in real-time. Never miss important updates.
+                    See all your maintenance work, safety checks, and inspections in one live feed. Stay on top of everything happening across your equipment fleet.
                   </p>
                   <Button 
                     size="sm" 
                     className="w-full"
                     onClick={() => navigate('/billing')}
                   >
-                    Upgrade to Advanced
+                    Upgrade to Advanced Plan
                   </Button>
                 </CardContent>
               </Card>
