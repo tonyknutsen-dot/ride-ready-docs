@@ -167,8 +167,10 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
         throw error;
       }
 
-      // Create download link
-      const blob = new Blob([data]);
+      // Create download link with proper MIME type
+      const blob = new Blob([data], { 
+        type: document.mime_type || 'application/octet-stream' 
+      });
       const url = window.URL.createObjectURL(blob);
       const a = window.document.createElement('a');
       a.href = url;
