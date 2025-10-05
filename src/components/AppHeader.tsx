@@ -4,11 +4,14 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Home, FolderOpen, Shield, User, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { isDocs } from '@/config/appFlavor';
+import { QuickDocumentUpload } from '@/components/QuickDocumentUpload';
+import { useState } from 'react';
 
 const AppHeader = () => {
   const location = useLocation();
   const { signOut } = useAuth();
   const { toast } = useToast();
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -61,16 +64,15 @@ const AppHeader = () => {
               </Button>
             </Link>
             {isDocs && (
-              <Link to="/global-documents">
-                <Button
-                  variant={isActive('/global-documents') ? 'default' : 'ghost'}
-                  size="sm"
-                  className="gap-2"
-                >
-                  <Shield className="h-4 w-4" />
-                  Docs
-                </Button>
-              </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2"
+                onClick={() => setUploadDialogOpen(true)}
+              >
+                <Shield className="h-4 w-4" />
+                Docs
+              </Button>
             )}
           </nav>
         </div>
@@ -92,6 +94,12 @@ const AppHeader = () => {
           </Button>
         </div>
       </div>
+
+      {/* Quick Document Upload Dialog */}
+      <QuickDocumentUpload 
+        open={uploadDialogOpen} 
+        onOpenChange={setUploadDialogOpen} 
+      />
     </header>
   );
 };
