@@ -17,6 +17,12 @@ type RideCategory = Tables<'ride_categories'>;
 interface RideFormProps {
   onSuccess: () => void;
   onCancel: () => void;
+  ride?: Tables<'rides'> & {
+    ride_categories?: {
+      name: string;
+      description: string | null;
+    };
+  };
 }
 
 const rideSchema = z.object({
@@ -28,19 +34,20 @@ const rideSchema = z.object({
   owner_name: z.string().trim().max(100, "Owner name must be less than 100 characters").optional(),
 });
 
-const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
+const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
+  const isEditMode = !!ride;
   const { user } = useAuth();
   const { toast } = useToast();
   const [categories, setCategories] = useState<RideCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [openRequest, setOpenRequest] = useState(false);
   const [formData, setFormData] = useState({
-    ride_name: '',
-    category_id: '',
-    manufacturer: '',
-    year_manufactured: '',
-    serial_number: '',
-    owner_name: '',
+    ride_name: ride?.ride_name || '',
+    category_id: ride?.category_id || '',
+    manufacturer: ride?.manufacturer || '',
+    year_manufactured: ride?.year_manufactured?.toString() || '',
+    serial_number: ride?.serial_number || '',
+    owner_name: ride?.owner_name || '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -98,76 +105,149 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
 
       setLoading(true);
 
-      // Insert the ride
-      const { data: newRide, error } = await supabase
-        .from('rides')
-        .insert({
-          user_id: user!.id,
-          ride_name: validatedData.ride_name,
-          category_id: validatedData.category_id,
-          manufacturer: validatedData.manufacturer || null,
-          year_manufactured: validatedData.year_manufactured || null,
-          serial_number: validatedData.serial_number || null,
-          owner_name: validatedData.owner_name || null,
-        })
-        .select()
-        .single();
+      if (isEditMode && ride) {
+        // Update existing ride
+        const { error } = await supabase
+          .from('rides')
+          .update({
+            ride_name: validatedData.ride_name,
+            category_id: validatedData.category_id,
+            manufacturer: validatedData.manufacturer || null,
+            year_manufactured: validatedData.year_manufactured || null,
+            serial_number: validatedData.serial_number || null,
+            owner_name: validatedData.owner_name || null,
+          })
+          .eq('id', ride.id)
+          .eq('user_id', user!.id);
 
-      if (error) {
-        toast({
-          title: "Error adding ride",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        // Upload photo if provided
-        if (photoFile && newRide?.id && user) {
-          try {
-            const ts = Date.now();
-            const safeName = photoFile.name.replace(/\s+/g, '-');
-            const fileName = `device-photo-${ts}-${safeName}`;
-            const filePath = `${user.id}/${newRide.id}/${fileName}`;
+        if (error) {
+          toast({
+            title: "Error updating equipment",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          // Upload photo if provided
+          if (photoFile && user) {
+              try {
+                const ts = Date.now();
+                const safeName = photoFile.name.replace(/\s+/g, '-');
+                const fileName = `device-photo-${ts}-${safeName}`;
+                const filePath = `${user.id}/${ride.id}/${fileName}`;
 
-            // Upload to storage
-            const { error: upErr } = await supabase
-              .storage
-              .from('ride-documents')
-              .upload(filePath, photoFile, {
-                cacheControl: '3600',
-                upsert: true,
-                contentType: photoFile.type || 'image/jpeg',
-              });
-            if (upErr) throw upErr;
+                // Upload to storage
+                const { error: upErr } = await supabase
+                  .storage
+                  .from('ride-documents')
+                  .upload(filePath, photoFile, {
+                    cacheControl: '3600',
+                    upsert: true,
+                    contentType: photoFile.type || 'image/jpeg',
+                  });
+                if (upErr) throw upErr;
 
-            // Insert document record
-            const { error: docErr } = await supabase
-              .from('documents')
-              .insert({
-                user_id: user.id,
-                ride_id: newRide.id,
-                document_name: 'Device Photo',
-                document_type: 'photo',
-                file_path: filePath,
-                file_size: photoFile.size,
-                mime_type: photoFile.type || 'image/jpeg',
-                notes: 'Primary device photo',
-                is_latest_version: true,
-              });
-            if (docErr) throw docErr;
-          } catch (e: any) {
-            console.warn('Photo attach failed:', e?.message || e);
-            toast({
-              title: 'Ride created (photo not saved)',
-              description: 'The ride is saved but the photo upload failed. You can add a photo later.',
-              variant: 'destructive',
-            });
-          } finally {
-            if (photoPreview) URL.revokeObjectURL(photoPreview);
-            setPhotoFile(null);
-            setPhotoPreview(null);
+                // Insert document record
+                const { error: docErr } = await supabase
+                  .from('documents')
+                  .insert({
+                    user_id: user.id,
+                    ride_id: ride.id,
+                    document_name: 'Device Photo',
+                    document_type: 'photo',
+                    file_path: filePath,
+                    file_size: photoFile.size,
+                    mime_type: photoFile.type || 'image/jpeg',
+                    notes: 'Primary device photo',
+                    is_latest_version: true,
+                  });
+                if (docErr) throw docErr;
+              } catch (e: any) {
+                console.warn('Photo attach failed:', e?.message || e);
+                toast({
+                  title: 'Equipment updated (photo not saved)',
+                  description: 'The equipment is updated but the photo upload failed. You can add a photo later.',
+                  variant: 'destructive',
+                });
+              } finally {
+                if (photoPreview) URL.revokeObjectURL(photoPreview);
+                setPhotoFile(null);
+                setPhotoPreview(null);
+              }
+            }
+            onSuccess();
           }
+      } else {
+        // Insert new ride
+        const { data: newRide, error } = await supabase
+          .from('rides')
+          .insert({
+            user_id: user!.id,
+            ride_name: validatedData.ride_name,
+            category_id: validatedData.category_id,
+            manufacturer: validatedData.manufacturer || null,
+            year_manufactured: validatedData.year_manufactured || null,
+            serial_number: validatedData.serial_number || null,
+            owner_name: validatedData.owner_name || null,
+          })
+          .select()
+          .single();
+
+        if (error) {
+          toast({
+            title: "Error adding ride",
+            description: error.message,
+            variant: "destructive",
+          });
+        } else {
+          // Upload photo if provided
+          if (photoFile && newRide?.id && user) {
+            try {
+              const ts = Date.now();
+              const safeName = photoFile.name.replace(/\s+/g, '-');
+              const fileName = `device-photo-${ts}-${safeName}`;
+              const filePath = `${user.id}/${newRide.id}/${fileName}`;
+
+              // Upload to storage
+              const { error: upErr } = await supabase
+                .storage
+                .from('ride-documents')
+                .upload(filePath, photoFile, {
+                  cacheControl: '3600',
+                  upsert: true,
+                  contentType: photoFile.type || 'image/jpeg',
+                });
+              if (upErr) throw upErr;
+
+              // Insert document record
+              const { error: docErr } = await supabase
+                .from('documents')
+                .insert({
+                  user_id: user.id,
+                  ride_id: newRide.id,
+                  document_name: 'Device Photo',
+                  document_type: 'photo',
+                  file_path: filePath,
+                  file_size: photoFile.size,
+                  mime_type: photoFile.type || 'image/jpeg',
+                  notes: 'Primary device photo',
+                  is_latest_version: true,
+                });
+              if (docErr) throw docErr;
+            } catch (e: any) {
+              console.warn('Photo attach failed:', e?.message || e);
+              toast({
+                title: 'Ride created (photo not saved)',
+                description: 'The ride is saved but the photo upload failed. You can add a photo later.',
+                variant: 'destructive',
+              });
+            } finally {
+              if (photoPreview) URL.revokeObjectURL(photoPreview);
+              setPhotoFile(null);
+              setPhotoPreview(null);
+            }
+          }
+          onSuccess();
         }
-        onSuccess();
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -204,9 +284,9 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
           Back
         </Button>
         <div>
-          <h2 className="text-2xl font-bold tracking-tight">Add Equipment</h2>
+          <h2 className="text-2xl font-bold tracking-tight">{isEditMode ? 'Edit Equipment' : 'Add Equipment'}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Enter the details for your new ride or generator
+            {isEditMode ? 'Update the details for your ride or generator' : 'Enter the details for your new ride or generator'}
           </p>
         </div>
       </div>
@@ -403,7 +483,7 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
             disabled={loading || !formData.category_id}
           >
             <Save className="h-4 w-4" />
-            {loading ? 'Adding...' : 'Add Equipment'}
+            {loading ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update Equipment' : 'Add Equipment')}
           </Button>
         </div>
       </form>

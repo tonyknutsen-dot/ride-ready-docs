@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, FileText, CheckSquare, Calendar, Upload, Settings, AlertTriangle, Mail, Wrench } from 'lucide-react';
+import { ArrowLeft, FileText, CheckSquare, Calendar, Upload, Settings, AlertTriangle, Mail, Wrench, Pencil } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +14,7 @@ import MaintenanceManager from './MaintenanceManager';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
 import { FeatureGate } from './FeatureGate';
 import { RestrictedFeatureCard } from './RestrictedFeatureCard';
+import RideForm from './RideForm';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -32,6 +33,7 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
   const { user } = useAuth();
   const { subscription } = useSubscription();
   const [activeTab, setActiveTab] = useState("overview");
+  const [isEditing, setIsEditing] = useState(false);
   const [rideStats, setRideStats] = useState({
     docCount: 0,
     todayChecks: 0,
@@ -92,6 +94,23 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
     }
   };
 
+  const handleEditSuccess = () => {
+    setIsEditing(false);
+    onUpdate();
+  };
+
+  if (isEditing) {
+    return (
+      <div className="pb-24 md:pb-6">
+        <RideForm 
+          ride={ride} 
+          onSuccess={handleEditSuccess} 
+          onCancel={() => setIsEditing(false)} 
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4 md:space-y-6 pb-24 md:pb-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -99,15 +118,21 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
           <ArrowLeft className="h-4 w-4" />
           <span>Back to Rides</span>
         </Button>
-        <SendDocumentsDialog 
-          ride={ride}
-          trigger={
-            <Button className="w-fit flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              <span>Send Documents</span>
-            </Button>
-          }
-        />
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setIsEditing(true)} className="w-fit flex items-center gap-2">
+            <Pencil className="h-4 w-4" />
+            <span>Edit</span>
+          </Button>
+          <SendDocumentsDialog 
+            ride={ride}
+            trigger={
+              <Button className="w-fit flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                <span>Send Documents</span>
+              </Button>
+            }
+          />
+        </div>
       </div>
 
       {/* Ride Title & Badge */}
