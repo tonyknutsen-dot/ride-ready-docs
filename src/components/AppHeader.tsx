@@ -68,7 +68,7 @@ const AppHeader = () => {
                   className="gap-2"
                 >
                   <Shield className="h-4 w-4" />
-                  Global Docs
+                  Docs
                 </Button>
               </Link>
             )}
