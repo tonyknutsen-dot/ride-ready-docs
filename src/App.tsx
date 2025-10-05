@@ -91,9 +91,15 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              <Route
+              <Route 
                 path="/dashboard" 
-                element={<Navigate to="/overview" replace />} 
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <Dashboard />
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
               />
               <Route 
                 path="/rides" 
