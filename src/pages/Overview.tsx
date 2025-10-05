@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 
 interface OverviewStats {
   totalDocuments: number;
@@ -54,6 +55,7 @@ const Overview = () => {
   const [recentDocs, setRecentDocs] = useState<RecentDocument[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [userPlan, setUserPlan] = useState<string>('trial');
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -374,7 +376,7 @@ const Overview = () => {
               <h2 className="text-lg font-semibold">Quick Actions</h2>
             </CardHeader>
             <CardContent className="space-y-2">
-              <Button className="w-full" size="sm" onClick={() => navigate('/rides')}>
+              <Button className="w-full" size="sm" onClick={() => setShowDocumentUpload(true)}>
                 <Upload className="w-4 h-4 mr-2" />
                 Upload Document
               </Button>
@@ -403,6 +405,11 @@ const Overview = () => {
           </Card>
         </div>
       </div>
+
+      <QuickDocumentUpload 
+        open={showDocumentUpload} 
+        onOpenChange={setShowDocumentUpload}
+      />
     </div>
   );
 };
