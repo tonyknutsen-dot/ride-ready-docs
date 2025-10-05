@@ -251,21 +251,19 @@ const RideForm = ({ onSuccess, onCancel }: RideFormProps) => {
               {errors.category_id && (
                 <p className="text-sm text-destructive">{errors.category_id}</p>
               )}
-              <div className="flex items-center justify-between">
-                <p className="text-xs text-muted-foreground">
-                  Categories help match relevant bulletins
-                </p>
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => setOpenRequest(true)}
-                  className="h-auto py-1 px-2 text-xs"
-                >
-                  <Plus className="w-3 h-3 mr-1" />
-                  Request category
-                </Button>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                Categories help match relevant bulletins
+              </p>
+              <Button 
+                type="button" 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setOpenRequest(true)}
+                className="h-auto py-1 px-2 text-xs w-fit"
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Request category
+              </Button>
             </div>
           </div>
         </div>
