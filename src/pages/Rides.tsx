@@ -8,7 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Settings, FileText, CheckSquare, Mail, HelpCircle, Lock } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
-import { useNavigate as useNavigateUpgrade } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import RideForm from '@/components/RideForm';
@@ -28,7 +27,6 @@ const Rides = () => {
     toast
   } = useToast();
   const navigate = useNavigate();
-  const navigateUpgrade = useNavigateUpgrade();
   const { subscription } = useSubscription();
   const [rides, setRides] = useState<Ride[]>([]);
   const [rideStats, setRideStats] = useState<Record<string, {
@@ -215,19 +213,12 @@ const Rides = () => {
                       <p className="text-xs text-muted-foreground">Checks</p>
                     </div>
                   ) : (
-                    <div 
-                      className="p-3 rounded-md bg-muted/30 text-center border border-dashed border-muted-foreground/30 cursor-pointer hover:border-primary/50 transition-colors relative group"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigateUpgrade('/plan-billing');
-                      }}
-                    >
+                    <div className="p-3 rounded-md bg-muted/30 text-center border border-dashed border-muted-foreground/30 relative">
                       <Lock className="h-3 w-3 absolute top-2 right-2 text-muted-foreground/50" />
                       <CheckSquare className="h-4 w-4 mx-auto text-muted-foreground/40 mb-1.5" />
-                      <p className="text-sm font-medium text-muted-foreground/60">
-                        Advanced
+                      <p className="text-[10px] font-medium text-muted-foreground/70 leading-tight">
+                        Available in<br />Operations Plan
                       </p>
-                      <p className="text-xs text-muted-foreground/50">Checks</p>
                     </div>
                   )}
                 </div>
