@@ -39,6 +39,7 @@ import UserManagement from "./pages/admin/UserManagement";
 import SupportMessages from "./pages/admin/SupportMessages";
 import AppHeader from "./components/AppHeader";
 import RiskAssessments from "./pages/RiskAssessments";
+import GlobalDocumentsPage from "./pages/GlobalDocumentsPage";
 
 const queryClient = new QueryClient();
 
@@ -157,6 +158,19 @@ const App = () => (
                       <>
                         <AppHeader />
                         <RiskAssessments />
+                      </>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/global-documents"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <>
+                        <AppHeader />
+                        <GlobalDocumentsPage />
                       </>
                     </ProfileGuard>
                   </ProtectedRoute>
