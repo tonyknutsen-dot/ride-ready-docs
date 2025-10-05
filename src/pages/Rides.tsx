@@ -217,7 +217,7 @@ const Rides = () => {
                       className="p-3 rounded-md bg-muted/30 text-center border border-dashed border-muted-foreground/30 relative cursor-pointer hover:border-primary/50 hover:bg-muted/40 transition-all"
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate('/plan-billing');
+                        navigate('/billing');
                       }}
                     >
                       <Lock className="h-3 w-3 absolute top-2 right-2 text-muted-foreground/50" />
