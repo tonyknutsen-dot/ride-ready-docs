@@ -13,7 +13,7 @@ const CallToAction = () => {
       return;
     }
     
-    const destination = user ? '/overview' : '/auth';
+    const destination = user ? '/dashboard' : '/auth';
     console.log('Navigating to:', destination);
     navigate(destination);
   };

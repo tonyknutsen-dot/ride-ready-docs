@@ -18,7 +18,6 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Demo from "./pages/Demo";
-import Overview from "./pages/Overview";
 import Rides from "./pages/Rides";
 import RideDetailPage from "./pages/RideDetailPage";
 import Calendar from "./pages/Calendar";
@@ -58,42 +57,14 @@ const App = () => (
               <Route path="/auth" element={<Auth />} />
               <Route path="/demo" element={<Demo />} />
               <Route 
-                path="/overview" 
+                path="/dashboard" 
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <>
-                        <AppHeader />
-                        <Overview />
-                      </>
+                      <Dashboard />
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
-              />
-              <Route path="/how-it-works" element={<HowItWorks />} />
-              <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/terms" element={<TermsOfService />} />
-              <Route path="/help" element={<HelpCenter />} />
-              <Route path="/security" element={<Security />} />
-              <Route 
-                path="/profile-setup" 
-                element={
-                  <ProtectedRoute>
-                    <ProfileSetupPage />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/setup-admin" 
-                element={
-                  <ProtectedRoute>
-                    <SetupAdmin />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route
-                path="/dashboard" 
-                element={<Navigate to="/overview" replace />} 
               />
               <Route 
                 path="/rides" 

@@ -35,7 +35,7 @@ const Auth = () => {
 
   useEffect(() => {
     if (user) {
-      const from = (location.state as any)?.from?.pathname || '/overview';
+      const from = (location.state as any)?.from?.pathname || '/dashboard';
       navigate(from, { replace: true });
     }
   }, [user, navigate, location]);

@@ -5,7 +5,7 @@ const ProfileSetupPage = () => {
   const navigate = useNavigate();
 
   const handleComplete = () => {
-    navigate('/overview');
+    navigate('/dashboard');
   };
 
   return <ProfileSetup onComplete={handleComplete} />;
