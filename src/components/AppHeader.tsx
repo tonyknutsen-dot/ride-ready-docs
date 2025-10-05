@@ -57,7 +57,7 @@ const AppHeader = () => {
                 className="gap-2"
               >
                 <FolderOpen className="h-4 w-4" />
-                Equipment
+                {isDocs ? 'Rides' : 'Equipment'}
               </Button>
             </Link>
             {isDocs && (
