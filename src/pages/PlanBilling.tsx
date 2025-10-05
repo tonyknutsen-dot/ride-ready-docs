@@ -118,11 +118,11 @@ export default function PlanBilling() {
             <div className="flex items-center gap-2">
               <CheckCircle2 className="text-primary" />
               <div>
-                <div className="font-semibold">{plan === "advanced" ? "Advanced Plan" : "Basic Plan"}</div>
+                <div className="font-semibold">{plan === "advanced" ? "Operations Plan (Advanced)" : "Basic Plan"}</div>
                 <div className="text-sm text-muted-foreground">
                   {plan === "advanced" 
-                    ? "All features unlocked" 
-                    : "Essential features for ride management"}
+                    ? "All operations features unlocked" 
+                    : "Essential document storage for ride management"}
                 </div>
               </div>
             </div>
@@ -133,29 +133,36 @@ export default function PlanBilling() {
 
           {plan === "basic" ? (
             <div className="space-y-3">
-              <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-2">
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-3">
                 <div className="font-medium flex items-center gap-2">
                   <Crown className="w-4 h-4 text-amber-500" />
-                  Upgrade to Advanced
+                  Upgrade to Operations Plan (Advanced)
                 </div>
-                <div className="text-sm text-muted-foreground space-y-1">
-                  <div>• Calendar & Scheduling</div>
-                  <div>• Notifications & Alerts</div>
-                  <div>• Advanced Reporting</div>
-                  <div>• Technical Bulletins</div>
-                  <div>• Global Documents</div>
+                <div className="text-sm space-y-2">
+                  <div className="font-medium text-foreground">Everything in Basic, plus:</div>
+                  <div className="text-muted-foreground space-y-1">
+                    <div>• Daily, monthly & yearly checks</div>
+                    <div>• Inspection management & scheduling</div>
+                    <div>• NDT testing schedules</div>
+                    <div>• Maintenance tracking</div>
+                    <div>• Calendar & scheduling system</div>
+                    <div>• Notifications & alerts</div>
+                    <div>• Advanced reporting & analytics</div>
+                    <div>• Technical bulletins library</div>
+                    <div>• Risk assessment builder (downloadable, printable, emailable)</div>
+                  </div>
                 </div>
               </div>
               <Button onClick={upgrade} disabled={saving} className="w-full">
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Crown className="w-4 h-4 mr-2" />}
-                Upgrade to Advanced
+                Upgrade to Operations Plan
               </Button>
             </div>
           ) : (
             <div className="space-y-3">
               <div className="flex items-start gap-2 text-sm text-muted-foreground">
                 <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>Downgrading will hide advanced features like Calendar, Notifications, Reports, and Technical Bulletins. Your data remains safe and can be accessed again by upgrading.</span>
+                <span>Downgrading will hide Operations Plan features like checks, inspections, maintenance tracking, calendar, notifications, reports, technical bulletins, and risk assessments. Your data remains safe and can be accessed again by upgrading.</span>
               </div>
               <Button onClick={downgrade} disabled={saving} variant="outline">
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
