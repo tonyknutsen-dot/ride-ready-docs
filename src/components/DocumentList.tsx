@@ -3,11 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { FileText, Download, Trash2, Calendar, AlertTriangle } from 'lucide-react';
+import { FileText, Download, Trash2, Calendar, AlertTriangle, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import ImageViewer from './ImageViewer';
+import PDFViewer from './PDFViewer';
 
 type Document = Tables<'documents'>;
 
@@ -25,11 +27,28 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const [viewerState, setViewerState] = useState<{
+    type: 'image' | 'pdf' | null;
+    url: string;
+    name: string;
+    document: Document | null;
+  }>({ type: null, url: '', name: '', document: null });
 
   // Helper to identify image documents
   const isImageDoc = (doc: Document) => {
     const name = (doc.file_path || doc.document_name || '').toLowerCase();
     return /\.(jpg|jpeg|png|gif|bmp|webp|tif|tiff)$/.test(name);
+  };
+
+  // Helper to identify PDF documents
+  const isPDFDoc = (doc: Document) => {
+    const name = (doc.file_path || doc.document_name || '').toLowerCase();
+    return name.endsWith('.pdf');
+  };
+
+  // Helper to check if document is viewable
+  const isViewable = (doc: Document) => {
+    return isImageDoc(doc) || isPDFDoc(doc);
   };
 
   useEffect(() => {
@@ -100,6 +119,41 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleView = async (document: Document) => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('ride-documents')
+        .createSignedUrl(document.file_path, 3600); // 1 hour
+
+      if (error) throw error;
+
+      if (data?.signedUrl) {
+        if (isImageDoc(document)) {
+          setViewerState({
+            type: 'image',
+            url: data.signedUrl,
+            name: document.document_name,
+            document
+          });
+        } else if (isPDFDoc(document)) {
+          setViewerState({
+            type: 'pdf',
+            url: data.signedUrl,
+            name: document.document_name,
+            document
+          });
+        }
+      }
+    } catch (error: any) {
+      console.error('View error:', error);
+      toast({
+        title: "Unable to view document",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
 
@@ -270,7 +324,22 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
   if (grouped) {
     const groupedDocs = groupByType(documents);
     return (
-      <div className="space-y-6 pb-24 md:pb-0">
+      <>
+        <ImageViewer
+          isOpen={viewerState.type === 'image'}
+          onClose={() => setViewerState({ type: null, url: '', name: '', document: null })}
+          imageUrl={viewerState.url}
+          imageName={viewerState.name}
+          onDownload={() => viewerState.document && handleDownload(viewerState.document)}
+        />
+        <PDFViewer
+          isOpen={viewerState.type === 'pdf'}
+          onClose={() => setViewerState({ type: null, url: '', name: '', document: null })}
+          pdfUrl={viewerState.url}
+          pdfName={viewerState.name}
+          onDownload={() => viewerState.document && handleDownload(viewerState.document)}
+        />
+        <div className="space-y-6 pb-24 md:pb-0">
         {groupedDocs.map(g => (
           <section key={g.type} className="space-y-2">
             <div className="flex items-center justify-between">
@@ -287,7 +356,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
                       <img
                         src={thumbs[d.id]}
                         alt={d.document_name}
-                        className="w-10 h-10 rounded-md object-cover border"
+                        className="w-10 h-10 rounded-md object-cover border cursor-pointer"
+                        onClick={() => handleView(d)}
                       />
                     ) : (
                       <FileText className="w-5 h-5 mt-0.5 text-primary" />
@@ -304,6 +374,11 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
                     )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
+                    {isViewable(d) && (
+                      <Button variant="outline" size="sm" onClick={() => handleView(d)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button variant="outline" size="sm" onClick={() => handleDownload(d)}>
                       <Download className="h-4 w-4" />
                     </Button>
@@ -337,14 +412,30 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
             </div>
           </section>
         ))}
-      </div>
+        </div>
+      </>
     );
   }
 
   // Flat list (default)
   return (
-    <div className="space-y-4 pb-24 md:pb-0">
-      <Card>
+    <>
+      <ImageViewer
+        isOpen={viewerState.type === 'image'}
+        onClose={() => setViewerState({ type: null, url: '', name: '', document: null })}
+        imageUrl={viewerState.url}
+        imageName={viewerState.name}
+        onDownload={() => viewerState.document && handleDownload(viewerState.document)}
+      />
+      <PDFViewer
+        isOpen={viewerState.type === 'pdf'}
+        onClose={() => setViewerState({ type: null, url: '', name: '', document: null })}
+        pdfUrl={viewerState.url}
+        pdfName={viewerState.name}
+        onDownload={() => viewerState.document && handleDownload(viewerState.document)}
+      />
+      <div className="space-y-4 pb-24 md:pb-0">
+        <Card>
         <CardHeader>
           <CardTitle>
             {isGlobal ? 'Global Documents' : 'Ride Documents'} ({documents.length})
@@ -365,7 +456,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
                     <img
                       src={thumbs[doc.id]}
                       alt={doc.document_name}
-                      className="h-8 w-8 rounded-md object-cover border"
+                      className="h-8 w-8 rounded-md object-cover border cursor-pointer"
+                      onClick={() => handleView(doc)}
                     />
                   ) : (
                     <FileText className="h-8 w-8 text-primary" />
@@ -402,6 +494,15 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2 shrink-0">
+                  {isViewable(doc) && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleView(doc)}
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                  )}
                   <Button
                     size="sm"
                     variant="outline"
@@ -439,7 +540,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 };
 
