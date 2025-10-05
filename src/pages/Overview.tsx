@@ -379,10 +379,16 @@ const Overview = () => {
                 Upload Document
               </Button>
               {userPlan !== 'basic' && (
-                <Button className="w-full" size="sm" variant="outline" onClick={() => navigate('/calendar')}>
-                  <Calendar className="w-4 h-4 mr-2" />
-                  View Calendar
-                </Button>
+                <>
+                  <Button className="w-full" size="sm" variant="outline" onClick={() => navigate('/checks')}>
+                    <Wrench className="w-4 h-4 mr-2" />
+                    Operations & Maintenance
+                  </Button>
+                  <Button className="w-full" size="sm" variant="outline" onClick={() => navigate('/calendar')}>
+                    <Calendar className="w-4 h-4 mr-2" />
+                    View Calendar
+                  </Button>
+                </>
               )}
             </CardContent>
           </Card>
