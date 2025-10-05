@@ -60,16 +60,16 @@ export default function MobileBottomNav() {
           onClick={() => {
             // Always scroll to top for feedback
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            // Navigate to dashboard page
-            go("/dashboard");
+            // Navigate to overview page
+            go("/overview");
           }}
           className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-            isActive(l => l.pathname === "/dashboard") ? "text-primary" : "text-muted-foreground"
+            isActive(l => l.pathname === "/overview") ? "text-primary" : "text-muted-foreground"
           }`}
-          aria-label="Home"
+          aria-label="Overview"
         >
           <Home className="h-5 w-5" />
-          <span className="mt-0.5">Home</span>
+          <span className="mt-0.5">Overview</span>
         </button>
 
         {/* Second button: Rides (Docs) or Checks (Checks flavor) */}

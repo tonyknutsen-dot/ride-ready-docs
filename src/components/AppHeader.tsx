@@ -35,19 +35,19 @@ const AppHeader = () => {
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link to="/dashboard" className="flex items-center space-x-2">
+          <Link to="/overview" className="flex items-center space-x-2">
             <span className="font-bold text-lg">Ride Ready</span>
           </Link>
           
           <nav className="hidden md:flex items-center gap-1">
-            <Link to="/dashboard">
+            <Link to="/overview">
               <Button
-                variant={isActive('/dashboard') ? 'default' : 'ghost'}
+                variant={isActive('/overview') ? 'default' : 'ghost'}
                 size="sm"
                 className="gap-2"
               >
                 <Home className="h-4 w-4" />
-                Dashboard
+                Overview
               </Button>
             </Link>
             <Link to="/rides">
