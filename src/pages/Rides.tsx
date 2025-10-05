@@ -7,6 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Plus, Settings, FileText, CheckSquare, Mail, HelpCircle } from 'lucide-react';
+import { FeatureGate } from '@/components/FeatureGate';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import RideForm from '@/components/RideForm';
@@ -202,13 +203,15 @@ const Rides = () => {
                     </p>
                     <p className="text-xs text-muted-foreground">Documents</p>
                   </div>
-                  <div className="p-3 rounded-md bg-muted/50 text-center">
-                    <CheckSquare className="h-4 w-4 mx-auto text-accent mb-1.5" />
-                    <p className="text-sm font-medium">
-                      {rideStats[ride.id]?.checkCount ?? 0}
-                    </p>
-                    <p className="text-xs text-muted-foreground">Checks</p>
-                  </div>
+                  <FeatureGate requiredPlan="advanced" feature="Inspection Checks" fallback={null}>
+                    <div className="p-3 rounded-md bg-muted/50 text-center">
+                      <CheckSquare className="h-4 w-4 mx-auto text-accent mb-1.5" />
+                      <p className="text-sm font-medium">
+                        {rideStats[ride.id]?.checkCount ?? 0}
+                      </p>
+                      <p className="text-xs text-muted-foreground">Checks</p>
+                    </div>
+                  </FeatureGate>
                 </div>
 
                 {rideStats[ride.id]?.nextDue && <div className="text-center p-2.5 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
