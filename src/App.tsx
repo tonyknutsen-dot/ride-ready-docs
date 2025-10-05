@@ -21,7 +21,6 @@ import Demo from "./pages/Demo";
 import Overview from "./pages/Overview";
 import Rides from "./pages/Rides";
 import RideDetailPage from "./pages/RideDetailPage";
-import GlobalDocumentsPage from "./pages/GlobalDocumentsPage";
 import Calendar from "./pages/Calendar";
 import ProfileSetupPage from "./pages/ProfileSetupPage";
 import NotFound from "./pages/NotFound";
@@ -123,20 +122,7 @@ const App = () => (
                 } 
               />
               <Route 
-                path="/global-documents" 
-                element={
-                  <ProtectedRoute>
-                    <ProfileGuard>
-                      <>
-                        <AppHeader />
-                        <GlobalDocumentsPage />
-                      </>
-                    </ProfileGuard>
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/calendar" 
+                path="/calendar"
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>

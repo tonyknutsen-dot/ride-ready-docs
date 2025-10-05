@@ -65,10 +65,11 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
         .eq('user_id', user?.id)
         .order('uploaded_at', { ascending: false });
 
-      if (isGlobal) {
+      if (rideId) {
+        // When showing documents for a specific ride, get both ride-specific AND global documents
+        query = query.or(`ride_id.eq.${rideId},is_global.eq.true`);
+      } else if (isGlobal) {
         query = query.eq('is_global', true);
-      } else if (rideId) {
-        query = query.eq('ride_id', rideId);
       }
 
       const { data, error } = await query;
@@ -279,10 +280,25 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
   const groupByType = (docs: Document[]) => {
     const ORDER = ["📜 DOC Certificate", "Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Device Photo", "Other"];
     const groups: Record<string, Document[]> = {};
+    
+    // Separate global and ride-specific documents
+    const globalDocs: Document[] = [];
+    const rideDocs: Document[] = [];
+    
     docs.forEach(d => {
+      if (d.is_global) {
+        globalDocs.push(d);
+      } else {
+        rideDocs.push(d);
+      }
+    });
+    
+    // Group ride-specific documents by type
+    rideDocs.forEach(d => {
       const k = prettyType(d.document_type);
       (groups[k] ||= []).push(d);
     });
+    
     const keys = Object.keys(groups).sort((a, b) => {
       const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b);
       if (ia === -1 && ib === -1) return a.localeCompare(b);
@@ -290,7 +306,15 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
       if (ib === -1) return -1;
       return ia - ib;
     });
-    return keys.map(k => ({ type: k, items: groups[k] }));
+    
+    const result = keys.map(k => ({ type: k, items: groups[k] }));
+    
+    // Add global documents at the top if they exist
+    if (globalDocs.length > 0) {
+      result.unshift({ type: "🌐 Global Documents", items: globalDocs });
+    }
+    
+    return result;
   };
 
   if (loading) {

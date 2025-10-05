@@ -151,10 +151,10 @@ export default function MobileBottomNav() {
               {isDocs && (
                 <button
                   className="btn-muted-tile"
-                  onClick={() => go("/global-documents")}
+                  onClick={() => go("/rides")}
                 >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Global documents
+                  <Settings className="h-4 w-4 mr-2" />
+                  Equipment
                 </button>
               )}
 

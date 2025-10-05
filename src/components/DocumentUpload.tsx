@@ -55,6 +55,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   const [versionNotes, setVersionNotes] = useState('');
   const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
   const [replacingDocumentId, setReplacingDocumentId] = useState<string | null>(null);
+  const [isGlobal, setIsGlobal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch user's versioning preference
@@ -76,12 +77,12 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
     fetchVersioningPreference();
   }, [user]);
 
-  // Early return: require ride
-  if (!rideId) {
+  // Early return: require ride unless it's a global document
+  if (!rideId && !isGlobal) {
     return (
       <Card>
         <CardContent className="py-6">
-          <div className="text-sm">Pick a ride first to add a document.</div>
+          <div className="text-sm">Pick a ride first to add a document, or check the "Global Document" option below.</div>
         </CardContent>
       </Card>
     );
@@ -143,10 +144,12 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
     setUploading(true);
 
     try {
-      // Create file path: userId/rideId/filename
+      // Create file path: userId/rideId/filename or userId/global/filename for global docs
       const fileExt = selectedFile.name.split('.').pop();
       const fileName = `${Date.now()}-${selectedFile.name}`;
-      const filePath = `${user.id}/${rideId}/${fileName}`;
+      const filePath = isGlobal 
+        ? `${user.id}/global/${fileName}`
+        : `${user.id}/${rideId}/${fileName}`;
 
       // Upload file to Supabase Storage
       const { error: uploadError } = await supabase.storage
@@ -160,13 +163,13 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
       // Save document metadata to database
       const documentData: any = {
         user_id: user.id,
-        ride_id: rideId,
+        ride_id: isGlobal ? null : rideId,
         document_name: documentName,
         document_type: documentType,
         file_path: filePath,
         file_size: selectedFile.size,
         mime_type: selectedFile.type,
-        is_global: false,
+        is_global: isGlobal,
         expires_at: expiryDate || null,
         notes: notes || null,
         version_number: useVersionControl ? versionNumber : '1.0',
@@ -192,7 +195,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
       }
 
       toast({
-        title: `Saved to ${rideName || 'this ride'}`,
+        title: isGlobal ? "Global document saved" : `Saved to ${rideName || 'this ride'}`,
         description: "View files →",
       });
 
@@ -202,6 +205,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
       setDocumentName('');
       setExpiryDate('');
       setNotes('');
+      setIsGlobal(false);
       setUseVersionControl(false);
       setVersionNumber('1.0');
       setVersionNotes('');
@@ -232,7 +236,10 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
       <CardHeader className="space-y-1 pb-4">
         <CardTitle className="text-xl">Upload Document</CardTitle>
         <CardDescription className="text-sm">
-          Adding to: <span className="font-semibold text-foreground">{rideName || 'this ride'}</span>
+          {isGlobal 
+            ? 'Adding a global document (applies to all equipment)'
+            : `Adding to: ${rideName || 'this ride'}`
+          }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -365,6 +372,27 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
                 rows={1}
                 className="resize-none"
               />
+            </div>
+          </div>
+        </div>
+
+        {/* Global Document Checkbox */}
+        <div className="space-y-3 pt-3 border-t">
+          <div className="flex items-start gap-3">
+            <Checkbox
+              id="is-global"
+              checked={isGlobal}
+              onCheckedChange={(checked) => setIsGlobal(checked as boolean)}
+              disabled={uploading}
+            />
+            <div className="space-y-1">
+              <Label htmlFor="is-global" className="text-sm font-medium cursor-pointer">
+                This is a Global Document
+              </Label>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Global documents apply to all your equipment (e.g., Public Liability Insurance covering all rides, 
+                Showmen's Guild membership, business licenses). They'll appear at the top of every ride's document list.
+              </p>
             </div>
           </div>
         </div>
