@@ -4,12 +4,20 @@ import { supabase } from '@/integrations/supabase/client';
 import ProfileEdit from '@/components/ProfileEdit';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
+import { Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import AppHeader from '@/components/AppHeader';
 
 const Settings = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [versioningEnabled, setVersioningEnabled] = useState(true);
+  const [updatingVersioning, setUpdatingVersioning] = useState(false);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -23,8 +31,34 @@ const Settings = () => {
 
     if (!error && data) {
       setProfile(data);
+      setVersioningEnabled(data.enable_document_versioning ?? true);
     }
     setLoading(false);
+  };
+
+  const handleVersioningToggle = async (enabled: boolean) => {
+    if (!user) return;
+    
+    setUpdatingVersioning(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ enable_document_versioning: enabled })
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update version control setting",
+        variant: "destructive",
+      });
+    } else {
+      setVersioningEnabled(enabled);
+      toast({
+        title: "Settings updated",
+        description: `Document version control ${enabled ? 'enabled' : 'disabled'}`,
+      });
+    }
+    setUpdatingVersioning(false);
   };
 
   useEffect(() => {
@@ -63,6 +97,47 @@ const Settings = () => {
             ) : (
               <ProfileEdit profile={profile} onComplete={handleComplete} />
             )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Document Management</CardTitle>
+            <CardDescription>
+              Configure how documents are handled when uploading
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between space-x-4">
+              <div className="flex-1 space-y-1">
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="version-control" className="text-sm font-medium">
+                    Enable Version Control
+                  </Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent className="max-w-sm">
+                        <p className="font-semibold mb-2">What is Document Version Control?</p>
+                        <p className="mb-2"><strong>When ON (Recommended):</strong> Uploading a document with the same name creates a new version (v1.0, v2.0, etc.). All previous versions are kept in history and remain accessible.</p>
+                        <p><strong>When OFF:</strong> Uploading a document with the same name completely replaces and deletes the old one. No version history is maintained.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  When enabled, uploading a document with the same name creates a new version instead of replacing the original. All versions are kept for your records.
+                </p>
+              </div>
+              <Switch
+                id="version-control"
+                checked={versioningEnabled}
+                onCheckedChange={handleVersioningToggle}
+                disabled={loading || updatingVersioning}
+              />
+            </div>
           </CardContent>
         </Card>
 

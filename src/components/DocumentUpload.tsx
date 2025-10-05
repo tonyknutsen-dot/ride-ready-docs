@@ -49,12 +49,32 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   const [expiryDate, setExpiryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [userVersioningEnabled, setUserVersioningEnabled] = useState(true);
   const [useVersionControl, setUseVersionControl] = useState(false);
   const [versionNumber, setVersionNumber] = useState('1.0');
   const [versionNotes, setVersionNotes] = useState('');
   const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
   const [replacingDocumentId, setReplacingDocumentId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch user's versioning preference
+  useEffect(() => {
+    const fetchVersioningPreference = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from('profiles')
+        .select('enable_document_versioning')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (data) {
+        setUserVersioningEnabled(data.enable_document_versioning ?? true);
+      }
+    };
+    
+    fetchVersioningPreference();
+  }, [user]);
 
   // Early return: require ride
   if (!rideId) {
@@ -349,33 +369,34 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
           </div>
         </div>
 
-        {/* Version Control - Collapsible */}
-        <div className="space-y-3 pt-3 border-t">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="version-toggle" className="text-sm font-medium cursor-pointer flex items-center gap-2">
-              Version Control
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
-                    <p>Track document versions and keep history of previous versions</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </Label>
-            <input
-              id="version-toggle"
-              type="checkbox"
-              checked={useVersionControl}
-              onChange={(e) => setUseVersionControl(e.target.checked)}
-              disabled={uploading}
-              className="w-4 h-4 cursor-pointer accent-primary"
-            />
-          </div>
-          
-          {useVersionControl && (
+        {/* Version Control - Only show if user has it enabled in settings */}
+        {userVersioningEnabled && (
+          <div className="space-y-3 pt-3 border-t">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="version-toggle" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                Version Control
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-xs">
+                      <p>Track document versions and keep history of previous versions</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </Label>
+              <input
+                id="version-toggle"
+                type="checkbox"
+                checked={useVersionControl}
+                onChange={(e) => setUseVersionControl(e.target.checked)}
+                disabled={uploading}
+                className="w-4 h-4 cursor-pointer accent-primary"
+              />
+            </div>
+            
+            {useVersionControl && (
             <div className="space-y-3 pl-3 border-l-2 border-primary/20 mt-3">
               <p className="text-xs text-muted-foreground">
                 Create a new version and mark previous versions as superseded
@@ -430,9 +451,10 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
                   />
                 </div>
               </div>
-            </div>
-          )}
-        </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Upload Button */}
         <div className="flex gap-3 pt-2">
