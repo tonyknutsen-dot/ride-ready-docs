@@ -28,6 +28,9 @@ const Pricing = () => {
               <CardTitle className="text-2xl font-bold text-primary mb-2">
                 Documents Plan
               </CardTitle>
+              <div className="text-sm text-muted-foreground font-medium mb-3">
+                Basic Plan
+              </div>
               <div className="mb-4">
                 <span className="text-4xl font-bold text-primary">£12.99</span>
                 <span className="text-xl text-muted-foreground">/month</span>
@@ -66,6 +69,9 @@ const Pricing = () => {
               <CardTitle className="text-2xl font-bold text-primary mb-2">
                 Documents + Operations Plan
               </CardTitle>
+              <div className="text-sm text-muted-foreground font-medium mb-3">
+                Advanced Plan
+              </div>
               <div className="mb-4">
                 <span className="text-4xl font-bold text-primary">£27.99</span>
                 <span className="text-xl text-muted-foreground">/month</span>

@@ -61,6 +61,9 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
               <FileText className="h-5 w-5 text-primary" />
               <CardTitle>Documents Plan</CardTitle>
             </div>
+            <div className="text-xs text-muted-foreground font-medium mt-1">
+              Basic Plan
+            </div>
             <CardDescription>
               Essential document storage & management
             </CardDescription>
@@ -97,6 +100,9 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
             <div className="flex items-center gap-2">
               <Cog className="h-5 w-5 text-primary" />
               <CardTitle>Documents + Operations Plan</CardTitle>
+            </div>
+            <div className="text-xs text-muted-foreground font-medium mt-1">
+              Advanced Plan
             </div>
             <CardDescription>
               Complete documents + operations & maintenance solution

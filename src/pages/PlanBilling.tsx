@@ -118,7 +118,9 @@ export default function PlanBilling() {
             <div className="flex items-center gap-2">
               <CheckCircle2 className="text-primary" />
               <div>
-                <div className="font-semibold">{plan === "advanced" ? "Documents + Operations Plan" : "Documents Plan"}</div>
+                <div className="font-semibold">
+                  {plan === "advanced" ? "Documents + Operations Plan (Advanced)" : "Documents Plan (Basic)"}
+                </div>
                 <div className="text-sm text-muted-foreground">
                   {plan === "advanced" 
                     ? "Document storage + operations & maintenance features" 
