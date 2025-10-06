@@ -376,6 +376,45 @@ export type Database = {
           },
         ]
       }
+      feature_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          feature_description: string
+          feature_title: string
+          id: string
+          status: string
+          updated_at: string
+          use_case: string | null
+          user_id: string | null
+          votes_count: number
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          feature_description: string
+          feature_title: string
+          id?: string
+          status?: string
+          updated_at?: string
+          use_case?: string | null
+          user_id?: string | null
+          votes_count?: number
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          feature_description?: string
+          feature_title?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          use_case?: string | null
+          user_id?: string | null
+          votes_count?: number
+        }
+        Relationships: []
+      }
       inspection_check_results: {
         Row: {
           created_at: string
