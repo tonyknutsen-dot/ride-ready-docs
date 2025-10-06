@@ -12,7 +12,12 @@ import {
   CheckCircle, 
   AlertCircle,
   Clock,
-  ArrowLeft
+  ArrowLeft,
+  Wrench,
+  CheckSquare,
+  Bell,
+  FolderOpen,
+  Share2
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -20,34 +25,58 @@ import Footer from "@/components/Footer";
 const Demo = () => {
   const navigate = useNavigate();
 
-  const demoFeatures = [
+  const basicFeatures = [
     {
-      icon: <FileText className="w-6 h-6" />,
-      title: "Document Management",
-      description: "Store and organize all your ride documents, certificates, and technical bulletins",
+      icon: <FolderOpen className="w-6 h-6" />,
+      title: "Organized Document Storage",
+      description: "All your compliance documents organized by ride and equipment",
       status: "active",
       count: "127 documents"
     },
     {
       icon: <Shield className="w-6 h-6" />,
-      title: "Safety Compliance",
-      description: "Track safety inspections and ensure all rides meet regulatory requirements",
+      title: "Compliance Tracking",
+      description: "Automated reminders for insurance, certifications, and compliance deadlines",
       status: "warning",
       count: "3 due soon"
     },
     {
-      icon: <Calendar className="w-6 h-6" />,
-      title: "Inspection Schedule",
-      description: "Never miss an inspection with automated reminders and scheduling",
+      icon: <Share2 className="w-6 h-6" />,
+      title: "Easy Document Sharing",
+      description: "Share documents instantly with councils, landowners, and inspectors",
       status: "active",
-      count: "Next: Today"
+      count: "5 shared today"
+    }
+  ];
+
+  const advancedFeatures = [
+    {
+      icon: <CheckSquare className="w-6 h-6" />,
+      title: "Daily, Monthly & Yearly Checks",
+      description: "Complete safety checks digitally with custom templates and detailed history",
+      status: "active",
+      count: "8 completed"
     },
     {
-      icon: <Upload className="w-6 h-6" />,
-      title: "Easy Upload",
-      description: "Drag and drop documents or scan directly with your mobile device",
+      icon: <Wrench className="w-6 h-6" />,
+      title: "Maintenance Logging",
+      description: "Track all maintenance, repairs, and servicing with complete service history",
       status: "active",
-      count: "Instant sync"
+      count: "12 logs"
+    },
+    {
+      icon: <Bell className="w-6 h-6" />,
+      title: "Technical Bulletins",
+      description: "Receive latest technical bulletins for your specific equipment",
+      status: "active",
+      count: "3 new"
+    },
+    {
+      icon: <Calendar className="w-6 h-6" />,
+      title: "Inspection Scheduling",
+      description: "Schedule external inspections and track ADIPS, NDT, and third-party requirements",
+      status: "active",
+      count: "Next: Today"
     }
   ];
 
@@ -113,17 +142,26 @@ const Demo = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Features */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Basic Plan Features */}
             <Card>
               <CardHeader>
-                <h2 className="text-2xl font-semibold flex items-center">
-                  <BarChart3 className="w-6 h-6 mr-2 text-primary" />
-                  Key Features
-                </h2>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-semibold flex items-center">
+                    <FileText className="w-6 h-6 mr-2 text-accent" />
+                    Documents & Compliance Features
+                  </h2>
+                  <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">
+                    Basic Plan
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Store, organize, and share all your compliance documents
+                </p>
               </CardHeader>
               <CardContent className="space-y-4">
-                {demoFeatures.map((feature, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="text-primary mt-1">{feature.icon}</div>
+                {basicFeatures.map((feature, index) => (
+                  <div key={index} className="flex items-start space-x-4 p-4 border border-accent/20 rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="text-accent mt-1">{feature.icon}</div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="font-semibold">{feature.title}</h3>
@@ -139,6 +177,43 @@ const Demo = () => {
                       ) : (
                         <CheckCircle className="w-5 h-5 text-green-500" />
                       )}
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            {/* Advanced Plan Features */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <h2 className="text-2xl font-semibold flex items-center">
+                    <Wrench className="w-6 h-6 mr-2 text-primary" />
+                    Operations & Maintenance Features
+                  </h2>
+                  <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">
+                    Advanced Plan
+                  </Badge>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Complete safety checks, track maintenance, and manage inspections
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {advancedFeatures.map((feature, index) => (
+                  <div key={index} className="flex items-start space-x-4 p-4 border border-primary/20 rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="text-primary mt-1">{feature.icon}</div>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold">{feature.title}</h3>
+                        <Badge variant="secondary">
+                          {feature.count}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                    </div>
+                    <div className="mt-1">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
                     </div>
                   </div>
                 ))}
