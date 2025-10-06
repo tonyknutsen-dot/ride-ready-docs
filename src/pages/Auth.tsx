@@ -195,7 +195,7 @@ const Auth = () => {
         <div className="w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
             <div className="inline-block bg-white/95 p-4 rounded-2xl mx-auto">
-              <img src={logo} alt="Ride Ready Docs" className="h-28 w-auto" />
+              <img src={logo} alt="Showmen's Ride Ready" className="h-28 w-auto" />
             </div>
             <h1 className="text-2xl font-bold">Reset Password</h1>
             <p className="text-muted-foreground">
@@ -264,11 +264,11 @@ const Auth = () => {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
           <div className="inline-block bg-white/95 p-4 rounded-2xl mx-auto">
-            <img src={logo} alt="Ride Ready Docs" className="h-28 w-auto" />
+            <img src={logo} alt="Showmen's Ride Ready" className="h-28 w-auto" />
           </div>
-          <h1 className="text-2xl font-bold">Ride Ready Docs</h1>
+          <h1 className="text-2xl font-bold">Showmen's Ride Ready</h1>
           <p className="text-muted-foreground">
-            Access your ride documentation system
+            Access your ride operations system
           </p>
         </div>
 

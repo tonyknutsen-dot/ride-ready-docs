@@ -7,7 +7,7 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="md:col-span-2 py-[22px]">
-            <h3 className="text-2xl font-bold mb-4">Ride Ready Docs</h3>
+            <h3 className="text-2xl font-bold mb-4">Showmen's Ride Ready</h3>
             <p className="text-primary-foreground/80 mb-6 max-w-md">
               The complete document management solution designed specifically for fairground 
               professionals. Keep all your ride documents, safety certificates, and technical 
@@ -45,7 +45,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-primary-foreground/20 mt-12 pt-8 text-center text-primary-foreground/60">
-          <p>&copy; 2024 Ride Ready Docs. All rights reserved. Built for the fairground community.</p>
+          <p>&copy; 2024 Showmen's Ride Ready. All rights reserved. Built for the fairground community.</p>
         </div>
       </div>
     </footer>;
