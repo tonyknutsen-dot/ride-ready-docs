@@ -141,37 +141,41 @@ const Demo = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Features */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-8">
             {/* Basic Plan Features */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold flex items-center">
-                    <FileText className="w-6 h-6 mr-2 text-accent" />
-                    Documents & Compliance Features
-                  </h2>
-                  <Badge variant="secondary" className="bg-accent/10 text-accent border-accent/20">
-                    Basic Plan
+            <Card className="border-2 border-accent/30 shadow-lg bg-accent/5 animate-fade-in">
+              <CardHeader className="pb-4 bg-accent/10 rounded-t-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-accent/20 rounded-lg">
+                      <FileText className="w-7 h-7 text-accent" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Documents & Compliance
+                    </h2>
+                  </div>
+                  <Badge className="bg-accent text-accent-foreground text-base px-4 py-1.5 font-semibold self-start sm:self-center">
+                    📄 Basic Plan
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm text-muted-foreground mt-3 ml-14">
                   Store, organize, and share all your compliance documents
                 </p>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 pt-6">
                 {basicFeatures.map((feature, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 border border-accent/20 rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="text-accent mt-1">{feature.icon}</div>
+                  <div key={index} className="flex items-start space-x-4 p-4 bg-card border-2 border-accent/20 rounded-lg hover:bg-accent/5 hover:shadow-md transition-all hover:scale-[1.02]">
+                    <div className="text-accent mt-1 p-2 bg-accent/10 rounded-lg">{feature.icon}</div>
                     <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold">{feature.title}</h3>
-                        <Badge variant={feature.status === "warning" ? "destructive" : "secondary"}>
+                      <div className="flex items-center justify-between mb-2 gap-2">
+                        <h3 className="font-semibold text-base">{feature.title}</h3>
+                        <Badge variant={feature.status === "warning" ? "destructive" : "secondary"} className="shrink-0">
                           {feature.count}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
                     </div>
-                    <div className="mt-1">
+                    <div className="mt-1 shrink-0">
                       {feature.status === "warning" ? (
                         <AlertCircle className="w-5 h-5 text-orange-500" />
                       ) : (
@@ -183,36 +187,52 @@ const Demo = () => {
               </CardContent>
             </Card>
 
+            {/* Divider */}
+            <div className="relative py-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t-2 border-dashed border-muted-foreground/20"></div>
+              </div>
+              <div className="relative flex justify-center">
+                <span className="bg-background px-4 text-sm font-medium text-muted-foreground">
+                  Advanced Features Below
+                </span>
+              </div>
+            </div>
+
             {/* Advanced Plan Features */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-semibold flex items-center">
-                    <Wrench className="w-6 h-6 mr-2 text-primary" />
-                    Operations & Maintenance Features
-                  </h2>
-                  <Badge variant="default" className="bg-primary/10 text-primary border-primary/20">
-                    Advanced Plan
+            <Card className="border-2 border-primary/30 shadow-lg bg-primary/5 animate-fade-in">
+              <CardHeader className="pb-4 bg-primary/10 rounded-t-lg">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/20 rounded-lg">
+                      <Wrench className="w-7 h-7 text-primary" />
+                    </div>
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Operations & Maintenance
+                    </h2>
+                  </div>
+                  <Badge className="bg-primary text-primary-foreground text-base px-4 py-1.5 font-semibold self-start sm:self-center">
+                    ⚙️ Advanced Plan
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm text-muted-foreground mt-3 ml-14">
                   Complete safety checks, track maintenance, and manage inspections
                 </p>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 pt-6">
                 {advancedFeatures.map((feature, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 border border-primary/20 rounded-lg hover:bg-muted/50 transition-colors">
-                    <div className="text-primary mt-1">{feature.icon}</div>
+                  <div key={index} className="flex items-start space-x-4 p-4 bg-card border-2 border-primary/20 rounded-lg hover:bg-primary/5 hover:shadow-md transition-all hover:scale-[1.02]">
+                    <div className="text-primary mt-1 p-2 bg-primary/10 rounded-lg">{feature.icon}</div>
                     <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-semibold">{feature.title}</h3>
-                        <Badge variant="secondary">
+                      <div className="flex items-center justify-between mb-2 gap-2">
+                        <h3 className="font-semibold text-base">{feature.title}</h3>
+                        <Badge variant="secondary" className="shrink-0">
                           {feature.count}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground">{feature.description}</p>
+                      <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
                     </div>
-                    <div className="mt-1">
+                    <div className="mt-1 shrink-0">
                       <CheckCircle className="w-5 h-5 text-green-500" />
                     </div>
                   </div>
