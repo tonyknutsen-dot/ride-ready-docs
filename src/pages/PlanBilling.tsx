@@ -136,7 +136,10 @@ export default function PlanBilling() {
               <div className="rounded-lg bg-primary/5 border border-primary/20 p-4 space-y-3">
                 <div className="font-medium flex items-center gap-2">
                   <Crown className="w-4 h-4 text-amber-500" />
-                  Upgrade to Documents + Operations Plan
+                  Upgrade to Advanced Plan
+                </div>
+                <div className="text-xs text-muted-foreground mb-2">
+                  Full Operations & Maintenance features
                 </div>
                 <div className="text-sm space-y-2">
                   <div className="font-medium text-foreground">Everything in Documents Plan, plus:</div>
@@ -155,7 +158,7 @@ export default function PlanBilling() {
               </div>
               <Button onClick={upgrade} disabled={saving} className="w-full">
                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Crown className="w-4 h-4 mr-2" />}
-                Upgrade to Operations Plan
+                Upgrade to Advanced Plan
               </Button>
             </div>
           ) : (
