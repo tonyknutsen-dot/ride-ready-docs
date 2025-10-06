@@ -495,25 +495,35 @@ const HelpCenter = () => {
           <h2 className="text-3xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
           
           <div className="max-w-4xl mx-auto space-y-6">
-            {faqs.filter(category => isAdvanced || category.planRequired === 'basic').map((category, catIndex) => <div key={catIndex}>
+            {faqs.map((category, catIndex) => (
+              <div key={catIndex}>
                 <div className="flex items-center gap-2 mb-4">
                   <h3 className="text-2xl font-bold">{category.category}</h3>
-                  {category.planRequired === 'advanced' && <Badge variant="secondary" className="flex items-center gap-1">
+                  {category.planRequired === 'advanced' && (
+                    <Badge variant="secondary" className="flex items-center gap-1">
                       <Crown className="h-3 w-3" />
                       Advanced
-                    </Badge>}
+                    </Badge>
+                  )}
                 </div>
                 <Accordion type="single" collapsible className="w-full space-y-2">
-                  {category.questions.map((item, qIndex) => <AccordionItem key={`faq-${catIndex}-${qIndex}`} value={`faq-${catIndex}-${qIndex}`} className="border rounded-lg px-4 bg-card">
+                  {category.questions.map((item, qIndex) => (
+                    <AccordionItem 
+                      key={`faq-${catIndex}-${qIndex}`} 
+                      value={`faq-${catIndex}-${qIndex}`} 
+                      className="border rounded-lg px-4 bg-card"
+                    >
                       <AccordionTrigger className="text-left hover:no-underline py-4">
                         <span className="font-medium">{item.q}</span>
                       </AccordionTrigger>
                       <AccordionContent className="text-muted-foreground pb-4">
                         {item.a}
                       </AccordionContent>
-                    </AccordionItem>)}
+                    </AccordionItem>
+                  ))}
                 </Accordion>
-              </div>)}
+              </div>
+            ))}
           </div>
         </section>
 
