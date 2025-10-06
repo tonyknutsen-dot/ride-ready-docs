@@ -7,6 +7,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { PlanSelection } from "./PlanSelection";
 import { useState } from "react";
 import heroImage from "@/assets/hero-fairground.jpg";
+import logo from "@/assets/logo.png";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -49,6 +50,15 @@ const Hero = () => {
 
       {/* Content */}
       <div className="relative z-10 container mx-auto px-6 pt-32 md:pt-24 text-center text-white">
+        {/* Logo */}
+        <div className="mb-8">
+          <img 
+            src={logo} 
+            alt="Ride Ready Docs" 
+            className="h-32 md:h-40 w-auto mx-auto drop-shadow-[0_8px_24px_rgba(0,0,0,0.8)]"
+          />
+        </div>
+        
         <h1 className="text-5xl sm:text-6xl md:text-8xl font-bold mb-6 leading-tight drop-shadow-[0_4px_12px_rgba(0,0,0,1)] [text-shadow:_0_2px_20px_rgb(0_0_0_/_100%)]">
           Complete
           <br />

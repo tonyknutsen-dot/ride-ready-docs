@@ -7,8 +7,8 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="md:col-span-2 py-[22px]">
-            <Link to="/" className="inline-block mb-4 bg-white/95 p-4 rounded-2xl">
-              <img src={logo} alt="Ride Ready Docs" className="h-20 w-auto" />
+            <Link to="/" className="inline-block mb-4">
+              <img src={logo} alt="Ride Ready Docs" className="h-20 w-auto drop-shadow-lg" />
             </Link>
             <p className="text-primary-foreground/80 mb-6 max-w-md">
               The complete document management solution designed specifically for fairground 
