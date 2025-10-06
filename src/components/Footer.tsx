@@ -7,9 +7,7 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="md:col-span-2 py-[22px]">
-            <Link to="/" className="inline-block mb-4">
-              <img src={logo} alt="Ride Ready Docs" className="h-20 w-auto drop-shadow-lg" />
-            </Link>
+            <h3 className="text-2xl font-bold mb-4">Ride Ready Docs</h3>
             <p className="text-primary-foreground/80 mb-6 max-w-md">
               The complete document management solution designed specifically for fairground 
               professionals. Keep all your ride documents, safety certificates, and technical 
