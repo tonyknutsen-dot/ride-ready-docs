@@ -23,10 +23,19 @@ import {
 } from '@/components/ui/select';
 import { MessageCircle } from 'lucide-react';
 
-export const ContactSupportDialog = () => {
+interface ContactSupportDialogProps {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
+
+export const ContactSupportDialog = ({ open: externalOpen, onOpenChange: externalOnOpenChange }: ContactSupportDialogProps = {}) => {
   const { user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Use external state if provided, otherwise use internal state
+  const open = externalOpen !== undefined ? externalOpen : internalOpen;
+  const setOpen = externalOnOpenChange || setInternalOpen;
   const [formData, setFormData] = useState({
     subject: '',
     message: '',
@@ -84,12 +93,14 @@ export const ContactSupportDialog = () => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <MessageCircle className="h-4 w-4 mr-2" />
-          Contact Support
-        </Button>
-      </DialogTrigger>
+      {externalOpen === undefined && (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm">
+            <MessageCircle className="h-4 w-4 mr-2" />
+            Contact Support
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Contact Support</DialogTitle>

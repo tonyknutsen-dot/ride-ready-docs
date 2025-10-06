@@ -5,9 +5,11 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
+import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const { user, signOut } = useAuth();
   const { toast } = useToast();
 
@@ -46,9 +48,12 @@ const Header = () => {
                 <a href="#pricing" className="text-foreground hover:text-primary transition-smooth">
                   Pricing
                 </a>
-                <a href="#contact" className="text-foreground hover:text-primary transition-smooth">
+                <button 
+                  onClick={() => setContactDialogOpen(true)}
+                  className="text-foreground hover:text-primary transition-smooth"
+                >
                   Contact
-                </a>
+                </button>
               </>
             )}
             {user && (
@@ -148,13 +153,15 @@ const Header = () => {
                   >
                     Pricing
                   </a>
-                  <a 
-                    href="#contact" 
-                    className="text-foreground hover:text-primary transition-smooth py-2 px-2 rounded-lg hover:bg-muted"
-                    onClick={() => setIsMenuOpen(false)}
+                  <button 
+                    className="text-foreground hover:text-primary transition-smooth py-2 px-2 rounded-lg hover:bg-muted text-left"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      setContactDialogOpen(true);
+                    }}
                   >
                     Contact
-                  </a>
+                  </button>
                   <div className="border-t border-border/50 pt-4 mt-2">
                     <Link to="/auth" onClick={() => setIsMenuOpen(false)}>
                       <Button className="bg-primary hover:bg-primary/90 text-primary-foreground w-full mb-2">
@@ -183,6 +190,11 @@ const Header = () => {
           </div>
         )}
       </div>
+      
+      <ContactSupportDialog 
+        open={contactDialogOpen} 
+        onOpenChange={setContactDialogOpen} 
+      />
     </header>
   );
 };
