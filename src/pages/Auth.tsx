@@ -194,7 +194,7 @@ const Auth = () => {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-6">
           <div className="text-center space-y-2">
-            <img src={logo} alt="Ride Ready Docs" className="mx-auto h-16 w-auto" />
+            <img src={logo} alt="Ride Ready Docs" className="mx-auto h-24 w-auto" />
             <h1 className="text-2xl font-bold">Reset Password</h1>
             <p className="text-muted-foreground">
               Enter your email to receive reset instructions
@@ -261,7 +261,7 @@ const Auth = () => {
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-2">
-          <img src={logo} alt="Ride Ready Docs" className="mx-auto h-16 w-auto" />
+          <img src={logo} alt="Ride Ready Docs" className="mx-auto h-24 w-auto" />
           <h1 className="text-2xl font-bold">Ride Ready Docs</h1>
           <p className="text-muted-foreground">
             Access your ride documentation system
