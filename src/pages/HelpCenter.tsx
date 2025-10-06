@@ -4,45 +4,110 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Calendar, Bell, Upload, CheckCircle, Shield, Mail, Crown } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FileText, Calendar, Bell, Upload, CheckCircle, Shield, Mail, Crown, ArrowRight } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 const HelpCenter = () => {
-  const {
-    subscription
-  } = useSubscription();
+  const { subscription } = useSubscription();
+  const navigate = useNavigate();
+  const [selectedGuide, setSelectedGuide] = useState<number | null>(null);
   const isAdvanced = subscription?.subscriptionStatus === 'advanced';
-  const quickLinks = [{
-    icon: Upload,
-    title: "Adding Your First Ride",
-    description: "Learn how to add rides and upload documents",
-    planRequired: "basic"
-  }, {
-    icon: Calendar,
-    title: "Setting Up Inspections",
-    description: "Schedule annual inspections and NDT testing",
-    planRequired: "advanced"
-  }, {
-    icon: CheckCircle,
-    title: "Daily Checks",
-    description: "Create and complete safety check templates",
-    planRequired: "advanced"
-  }, {
-    icon: Bell,
-    title: "Notifications",
-    description: "Configure reminders and alerts",
-    planRequired: "advanced"
-  }, {
-    icon: FileText,
-    title: "Managing Documents",
-    description: "Upload, organize, and track document expiry",
-    planRequired: "basic"
-  }, {
-    icon: Shield,
-    title: "Compliance Reports",
-    description: "Generate inspection and maintenance reports",
-    planRequired: "advanced"
-  }];
+  
+  const quickLinks = [
+    {
+      icon: Upload,
+      title: "Adding Your First Ride",
+      description: "Learn how to add rides and upload documents",
+      planRequired: "basic",
+      route: "/rides",
+      steps: [
+        "Navigate to the Rides page from the main menu",
+        "Click the 'Add Ride' button in the top right",
+        "Fill in ride details: name, manufacturer, serial number, year",
+        "Select the appropriate category for your ride",
+        "Click 'Save' to create your ride",
+        "Once created, you can upload documents from the ride detail page"
+      ]
+    },
+    {
+      icon: Calendar,
+      title: "Setting Up Inspections",
+      description: "Schedule annual inspections and NDT testing",
+      planRequired: "advanced",
+      route: "/calendar",
+      steps: [
+        "Go to your ride's detail page",
+        "Select the 'Inspections' tab",
+        "Click 'Schedule Inspection'",
+        "Choose inspection type (Annual, ADIPS, NDT, etc.)",
+        "Set the due date and add any notes",
+        "The system will automatically send reminders before the due date"
+      ]
+    },
+    {
+      icon: CheckCircle,
+      title: "Daily Checks",
+      description: "Create and complete safety check templates",
+      planRequired: "advanced",
+      route: "/checks",
+      steps: [
+        "Navigate to the Checks page",
+        "Click 'Manage Templates' to create a new template",
+        "Add check items relevant to your ride (e.g., 'Check emergency stops')",
+        "Save your template",
+        "Each day before operation, complete the check",
+        "Mark each item as passed or failed with optional notes"
+      ]
+    },
+    {
+      icon: Bell,
+      title: "Notifications",
+      description: "Configure reminders and alerts",
+      planRequired: "advanced",
+      route: "/overview",
+      steps: [
+        "Notifications are automatically set up for your account",
+        "You'll receive alerts for: expiring documents (30 & 7 days), upcoming inspections, overdue maintenance",
+        "Check the notification center (bell icon) for in-app alerts",
+        "Email notifications are sent to your registered email",
+        "Ensure documents have expiry dates set to receive timely reminders"
+      ]
+    },
+    {
+      icon: FileText,
+      title: "Managing Documents",
+      description: "Upload, organize, and track document expiry",
+      planRequired: "basic",
+      route: "/rides",
+      steps: [
+        "Open your ride's detail page",
+        "Go to the 'Documents' tab",
+        "Click 'Upload Document'",
+        "Select document type and expiry date",
+        "Choose your file (PDF, JPG, PNG supported)",
+        "Add notes if needed and save",
+        "View all documents organized by type and track expiry dates"
+      ]
+    },
+    {
+      icon: Shield,
+      title: "Compliance Reports",
+      description: "Generate inspection and maintenance reports",
+      planRequired: "advanced",
+      route: "/overview",
+      steps: [
+        "Access the Reports section from your dashboard",
+        "Select report type: Inspection History, Maintenance Log, or Daily Checks",
+        "Choose date range and specific rides",
+        "Click 'Generate Report'",
+        "Review the compiled report",
+        "Export as PDF for regulatory submissions or record keeping"
+      ]
+    }
+  ];
   const faqs = [{
     category: "Getting Started",
     planRequired: "basic",
@@ -212,23 +277,95 @@ const HelpCenter = () => {
         <section className="container mx-auto px-6 py-8">
           <h2 className="text-2xl font-bold mb-6">Quick Start Guides</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {quickLinks.map((link, index) => <Card key={index} className={`hover:border-primary transition-smooth cursor-pointer ${link.planRequired === 'advanced' && !isAdvanced ? 'opacity-60' : ''}`}>
+            {quickLinks.map((link, index) => (
+              <Card 
+                key={index} 
+                className={`hover:border-primary transition-smooth cursor-pointer hover:shadow-lg ${
+                  link.planRequired === 'advanced' && !isAdvanced ? 'opacity-60' : ''
+                }`}
+                onClick={() => setSelectedGuide(index)}
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
                       <link.icon className="h-5 w-5 text-primary" />
                     </div>
-                    {link.planRequired === 'advanced' && <Badge variant="secondary" className="flex items-center gap-1">
+                    {link.planRequired === 'advanced' && (
+                      <Badge variant="secondary" className="flex items-center gap-1">
                         <Crown className="h-3 w-3" />
                         Advanced
-                      </Badge>}
+                      </Badge>
+                    )}
                   </div>
                   <CardTitle className="text-lg">{link.title}</CardTitle>
                   <CardDescription>{link.description}</CardDescription>
                 </CardHeader>
-              </Card>)}
+                <CardContent>
+                  <div className="flex items-center text-sm text-primary font-medium">
+                    View step-by-step guide
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </section>
+
+        {/* Guide Dialog */}
+        <Dialog open={selectedGuide !== null} onOpenChange={() => setSelectedGuide(null)}>
+          <DialogContent className="max-w-2xl">
+            {selectedGuide !== null && (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
+                      {(() => {
+                        const Icon = quickLinks[selectedGuide].icon;
+                        return <Icon className="h-6 w-6 text-primary" />;
+                      })()}
+                    </div>
+                    <div>
+                      <DialogTitle className="text-2xl">{quickLinks[selectedGuide].title}</DialogTitle>
+                      <DialogDescription>{quickLinks[selectedGuide].description}</DialogDescription>
+                    </div>
+                  </div>
+                </DialogHeader>
+                
+                <div className="space-y-4 mt-4">
+                  <h4 className="font-semibold text-lg">Step-by-Step Guide:</h4>
+                  <div className="space-y-3">
+                    {quickLinks[selectedGuide].steps.map((step, idx) => (
+                      <div key={idx} className="flex gap-3">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
+                          {idx + 1}
+                        </div>
+                        <p className="text-muted-foreground pt-0.5">{step}</p>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <div className="pt-4 flex gap-3">
+                    <Button 
+                      onClick={() => {
+                        navigate(quickLinks[selectedGuide].route);
+                        setSelectedGuide(null);
+                      }}
+                      className="flex-1"
+                    >
+                      Go to {quickLinks[selectedGuide].title.split(' ')[0]} Page
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setSelectedGuide(null)}
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* FAQs */}
         <section className="container mx-auto px-6 py-0">
