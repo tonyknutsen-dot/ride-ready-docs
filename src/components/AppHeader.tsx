@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Home, FolderOpen, Shield, User, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText } from 'lucide-react';
+import { Home, FolderOpen, Shield, User, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { isDocs } from '@/config/appFlavor';
 import { QuickDocumentUpload } from '@/components/QuickDocumentUpload';
@@ -15,6 +15,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
+import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
 
 const AppHeader = () => {
   const location = useLocation();
@@ -132,6 +133,8 @@ const AppHeader = () => {
                   Help & Support
                 </Link>
               </DropdownMenuItem>
+              
+              <RequestFeatureDialog />
 
               <DropdownMenuItem asChild>
                 <Link to="/settings" className="flex items-center cursor-pointer">
