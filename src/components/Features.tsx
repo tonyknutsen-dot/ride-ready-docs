@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, FileText, CheckSquare, Wrench, Calendar, Bell, FolderOpen, Share2 } from "lucide-react";
+import { Shield, FileText, CheckSquare, Wrench, Calendar, Bell, FolderOpen, Share2, FileCheck, BarChart3, CalendarDays, Building2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+
 const Features = () => {
   const docsFeatures = [{
     icon: <FolderOpen className="h-10 w-10 text-accent" />,
@@ -13,10 +14,25 @@ const Features = () => {
     description: "Never miss a renewal with automated reminders for insurance, certifications, and compliance deadlines.",
     items: ["Insurance Renewals", "Certificate Tracking", "Compliance Deadlines", "Document Expiry Alerts"]
   }, {
+    icon: <FileCheck className="h-10 w-10 text-accent" />,
+    title: "DOC Certificates",
+    description: "Manage Declaration of Conformity (DOC) certificates with expiry tracking and automated reminders.",
+    items: ["DOC Certificate Storage", "Expiry Tracking", "Renewal Reminders", "Quick Access"]
+  }, {
+    icon: <Building2 className="h-10 w-10 text-accent" />,
+    title: "Global Documents",
+    description: "Store company-wide documents that apply to all rides. Share policies, procedures, and certifications across your operation.",
+    items: ["Company Policies", "Insurance Certificates", "Shared Procedures", "Company-Wide Access"]
+  }, {
     icon: <Share2 className="h-10 w-10 text-accent" />,
     title: "Easy Document Sharing",
     description: "Share documents instantly with councils, landowners, and inspectors. Send complete compliance packs in seconds.",
     items: ["Council Requirements", "Landowner Packs", "Quick Sharing", "Email Integration"]
+  }, {
+    icon: <BarChart3 className="h-10 w-10 text-accent" />,
+    title: "Report Generation",
+    description: "Generate professional compliance reports with one click. Export complete documentation packs for audits and inspections.",
+    items: ["Compliance Reports", "PDF Export", "Custom Templates", "Audit-Ready Documentation"]
   }];
   const checksFeatures = [{
     icon: <CheckSquare className="h-10 w-10 text-primary" />,
@@ -28,6 +44,11 @@ const Features = () => {
     title: "Maintenance Logging",
     description: "Track all maintenance, repairs, and servicing. Keep a complete service history for every piece of equipment.",
     items: ["Service Records", "Repair Logs", "Parts Tracking", "Maintenance History"]
+  }, {
+    icon: <CalendarDays className="h-10 w-10 text-primary" />,
+    title: "Calendar Overview",
+    description: "Visual calendar displaying all upcoming inspections, renewals, and maintenance. Never miss a deadline again.",
+    items: ["Visual Dashboard", "All Deadlines in One Place", "Color-Coded Priorities", "Month/Week Views"]
   }, {
     icon: <Bell className="h-10 w-10 text-primary" />,
     title: "Technical Bulletins",
@@ -56,11 +77,12 @@ const Features = () => {
             <h3 className="text-xl md:text-2xl font-bold text-foreground">
               📄 Documents & Compliance App
             </h3>
+            <Badge variant="secondary" className="text-xs">Basic Plan</Badge>
           </div>
           <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
             Store, organize, and share all your compliance documents. Keep everything accessible and up-to-date.
           </p>
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {docsFeatures.map((feature, index) => <Card key={index} className="transition-smooth hover:shadow-elegant hover:bg-card-hover group cursor-default border-accent/20">
                 <CardHeader className="text-center pb-4">
                   <div className="mx-auto mb-4 p-3 bg-accent/5 rounded-full w-fit group-hover:bg-accent/10 transition-smooth">
@@ -91,11 +113,12 @@ const Features = () => {
         <div>
           <div className="flex items-center justify-center gap-3 mb-8">
             <h3 className="text-xl md:text-2xl font-bold text-foreground">⚙️ Operations & Maintenance App</h3>
+            <Badge variant="default" className="text-xs">Advanced Plan</Badge>
           </div>
           <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
             Complete safety checks, log maintenance, track inspections, and receive technical bulletins for your equipment.
           </p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {checksFeatures.map((feature, index) => <Card key={index} className="transition-smooth hover:shadow-elegant hover:bg-card-hover group cursor-default border-primary/20">
                 <CardHeader className="text-center pb-4">
                   <div className="mx-auto mb-4 p-3 bg-primary/5 rounded-full w-fit group-hover:bg-primary/10 transition-smooth">
