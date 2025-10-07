@@ -54,27 +54,40 @@ export const useAppMode = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
+          console.log('[useAppMode] Realtime update received:', payload);
           if (payload.new && 'app_mode' in payload.new) {
-            setAppModeState(payload.new.app_mode as AppMode);
+            const newMode = payload.new.app_mode as AppMode;
+            console.log('[useAppMode] Setting mode from realtime:', newMode);
+            setAppModeState(newMode);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[useAppMode] Realtime subscription status:', status);
+      });
 
     return () => {
+      console.log('[useAppMode] Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, [user]);
 
   const setAppMode = async (mode: AppMode) => {
-    if (!user) return;
+    if (!user) {
+      console.log('[useAppMode] No user, cannot switch mode');
+      return false;
+    }
+
+    console.log('[useAppMode] Attempting to switch to:', mode, 'Current mode:', appMode);
 
     // Check if trying to switch to operations mode without advanced plan
     if (mode === 'operations' && subscription?.subscriptionStatus !== 'advanced') {
+      console.log('[useAppMode] Cannot switch to operations - no advanced plan');
       return false;
     }
 
     try {
+      console.log('[useAppMode] Updating database...');
       const { error } = await supabase
         .from('profiles')
         .update({ app_mode: mode })
@@ -82,10 +95,15 @@ export const useAppMode = () => {
 
       if (error) throw error;
 
+      console.log('[useAppMode] Database updated, setting local state');
       setAppModeState(mode);
+      
+      // Force a re-render by dispatching a custom event
+      window.dispatchEvent(new CustomEvent('app-mode-changed', { detail: { mode } }));
+      
       return true;
     } catch (error) {
-      console.error('Error updating app mode:', error);
+      console.error('[useAppMode] Error updating app mode:', error);
       return false;
     }
   };
