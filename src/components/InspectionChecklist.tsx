@@ -210,18 +210,6 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     if (!activeTemplate) return;
 
     // Validation
-    const requiredItems = activeTemplate.daily_check_template_items.filter(item => item.is_required);
-    const uncheckedRequired = requiredItems.filter(item => !checkedItems[item.id]);
-
-    if (uncheckedRequired.length > 0) {
-      toast({
-        title: "Required items not checked",
-        description: `Please check all required items: ${uncheckedRequired.map(item => item.check_item_text).join(', ')}`,
-        variant: "destructive"
-      });
-      return;
-    }
-
     if (!inspectorName.trim()) {
       toast({
         title: "Inspector name required",
@@ -418,11 +406,6 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                         <div className="flex-1">
                           <Label htmlFor={item.id} className="text-sm font-medium">
                             {item.check_item_text}
-                            {item.is_required && (
-                              <Badge variant="destructive" className="ml-2 text-xs">
-                                Required
-                              </Badge>
-                            )}
                           </Label>
                           <div className="text-xs text-muted-foreground mt-1">
                             Category: {item.category}
