@@ -907,22 +907,24 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <TooltipProvider>
+                <TooltipProvider delayDuration={0}>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={saveToDocuments}
-                        disabled={selectedAssessment.overall_status !== 'completed' || assessmentItems.length === 0}
-                        className="group hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50"
-                      >
-                        <Save className="h-3.5 w-3.5 mr-1.5 group-hover:scale-110 transition-transform" /> 
-                        Save to Documents
-                      </Button>
+                      <span className="inline-block">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={saveToDocuments}
+                          disabled={selectedAssessment.overall_status !== 'completed' || assessmentItems.length === 0}
+                          className="group hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50"
+                        >
+                          <Save className="h-3.5 w-3.5 mr-1.5 group-hover:scale-110 transition-transform" /> 
+                          Save to Documents
+                        </Button>
+                      </span>
                     </TooltipTrigger>
-                    <TooltipContent>
-                      <p className="text-xs">
+                    <TooltipContent side="bottom">
+                      <p className="text-xs max-w-[200px]">
                         {assessmentItems.length === 0 
                           ? 'Add risk items before saving to documents' 
                           : selectedAssessment.overall_status !== 'completed'
