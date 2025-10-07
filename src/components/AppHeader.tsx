@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { Home, FolderOpen, Shield, User, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { isDocs } from '@/config/appFlavor';
 import { QuickDocumentUpload } from '@/components/QuickDocumentUpload';
 import { useState } from 'react';
 import {
@@ -16,12 +15,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
+import { AppModeToggle } from '@/components/AppModeToggle';
+import { useAppMode } from '@/hooks/useAppMode';
 
 const AppHeader = () => {
   const location = useLocation();
   const { signOut } = useAuth();
   const { toast } = useToast();
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const { isDocumentsMode } = useAppMode();
 
   const handleSignOut = async () => {
     try {
@@ -70,10 +72,10 @@ const AppHeader = () => {
                 className="gap-2"
               >
                 <FolderOpen className="h-4 w-4" />
-                {isDocs ? 'Rides' : 'Equipment'}
+                {isDocumentsMode ? 'Rides' : 'Equipment'}
               </Button>
             </Link>
-            {isDocs && (
+            {isDocumentsMode && (
               <Button
                 variant="ghost"
                 size="sm"
@@ -88,6 +90,9 @@ const AppHeader = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          {/* App Mode Toggle */}
+          <AppModeToggle variant="compact" />
+          
           {/* More Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -107,7 +112,7 @@ const AppHeader = () => {
                 </Link>
               </DropdownMenuItem>
               
-              {isDocs && (
+              {isDocumentsMode && (
                 <>
                   <DropdownMenuItem asChild>
                     <Link to="/global-documents" className="flex items-center cursor-pointer">

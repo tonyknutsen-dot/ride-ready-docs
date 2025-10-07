@@ -794,6 +794,7 @@ export type Database = {
       profiles: {
         Row: {
           address: string | null
+          app_mode: string
           company_name: string | null
           controller_name: string | null
           created_at: string
@@ -809,6 +810,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          app_mode?: string
           company_name?: string | null
           controller_name?: string | null
           created_at?: string
@@ -824,6 +826,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          app_mode?: string
           company_name?: string | null
           controller_name?: string | null
           created_at?: string
