@@ -7,11 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { CheckSquare, AlertTriangle, Clock, User, Calendar, Save, Settings } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { CheckSquare, AlertTriangle, Clock, User, Calendar, Save, Settings, History } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import ChecksHistory from './ChecksHistory';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -40,6 +42,7 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
   const [inspectorName, setInspectorName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -252,13 +255,31 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
       {/* Header */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <CheckSquare className="h-5 w-5" />
-            <span>Daily Safety Checks - {ride.ride_name}</span>
-          </CardTitle>
-          <CardDescription>
-            Complete the daily safety inspection for this {ride.ride_categories.name}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center space-x-2">
+                <CheckSquare className="h-5 w-5" />
+                <span>Daily Safety Checks - {ride.ride_name}</span>
+              </CardTitle>
+              <CardDescription>
+                Complete the daily safety inspection for this {ride.ride_categories.name}
+              </CardDescription>
+            </div>
+            <Dialog open={historyOpen} onOpenChange={setHistoryOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <History className="h-4 w-4 mr-2" />
+                  View History
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Checks History - {ride.ride_name}</DialogTitle>
+                </DialogHeader>
+                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} />
+              </DialogContent>
+            </Dialog>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -369,13 +390,21 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
       {/* Recent Checks History */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Calendar className="h-5 w-5" />
-            <span>Recent Checks</span>
-          </CardTitle>
-          <CardDescription>
-            History of daily safety checks for this ride
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center space-x-2">
+                <Calendar className="h-5 w-5" />
+                <span>Recent Checks</span>
+              </CardTitle>
+              <CardDescription>
+                Last 5 daily safety checks for this ride
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setHistoryOpen(true)}>
+              <History className="h-4 w-4 mr-2" />
+              View All
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">

@@ -11,6 +11,7 @@ import YearlyCheckTemplateManager from './YearlyCheckTemplateManager';
 import InspectionChecklist from './InspectionChecklist';
 import NDTScheduleManager from './NDTScheduleManager';
 import InspectionScheduleManager from './InspectionScheduleManager';
+import ChecksHistory from './ChecksHistory';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -86,9 +87,12 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         <TabsContent value="monthly">
           <div className="space-y-6">
             <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList className="flex flex-col sm:grid sm:grid-cols-2 w-full sm:w-auto gap-2 h-auto p-1">
+              <TabsList className="flex flex-col sm:grid sm:grid-cols-3 w-full sm:w-auto gap-2 h-auto p-1">
                 <TabsTrigger value="perform" className="text-sm px-4 py-2 w-full sm:w-auto">
                   Perform
+                </TabsTrigger>
+                <TabsTrigger value="history" className="text-sm px-4 py-2 w-full sm:w-auto">
+                  History
                 </TabsTrigger>
                 <TabsTrigger value="templates" className="text-sm px-4 py-2 w-full sm:w-auto">
                   Templates
@@ -96,6 +100,9 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               </TabsList>
               <TabsContent value="perform">
                 <InspectionChecklist ride={ride} frequency="monthly" />
+              </TabsContent>
+              <TabsContent value="history">
+                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} />
               </TabsContent>
               <TabsContent value="templates">
                 <MonthlyCheckTemplateManager ride={ride} />
@@ -107,9 +114,12 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         <TabsContent value="yearly">
           <div className="space-y-6">
             <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList className="flex flex-col sm:grid sm:grid-cols-2 w-full sm:w-auto gap-2 h-auto p-1">
+              <TabsList className="flex flex-col sm:grid sm:grid-cols-3 w-full sm:w-auto gap-2 h-auto p-1">
                 <TabsTrigger value="perform" className="text-sm px-4 py-2 w-full sm:w-auto">
                   Perform
+                </TabsTrigger>
+                <TabsTrigger value="history" className="text-sm px-4 py-2 w-full sm:w-auto">
+                  History
                 </TabsTrigger>
                 <TabsTrigger value="templates" className="text-sm px-4 py-2 w-full sm:w-auto">
                   Templates
@@ -117,6 +127,9 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               </TabsList>
               <TabsContent value="perform">
                 <InspectionChecklist ride={ride} frequency="yearly" />
+              </TabsContent>
+              <TabsContent value="history">
+                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} />
               </TabsContent>
               <TabsContent value="templates">
                 <YearlyCheckTemplateManager ride={ride} />
