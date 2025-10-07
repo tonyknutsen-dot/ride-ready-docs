@@ -28,6 +28,7 @@ interface RiskAssessmentManagerProps {
     id: string;
     ride_name: string;
     manufacturer?: string;
+    year_manufactured?: number;
   };
 }
 
@@ -65,6 +66,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const [editingItem, setEditingItem] = useState<RiskAssessmentItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
+  const [ridePhotoUrl, setRidePhotoUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     assessor_name: '',
@@ -97,6 +99,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   useEffect(() => {
     loadAssessments();
     loadProfile();
+    loadRidePhoto();
   }, [ride.id, user]);
 
   useEffect(() => {
@@ -113,6 +116,31 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       .eq('user_id', user.id)
       .single();
     if (data) setProfile(data);
+  };
+
+  const loadRidePhoto = async () => {
+    if (!user) return;
+    
+    // Find the primary device photo
+    const { data: docs } = await supabase
+      .from('documents')
+      .select('file_path')
+      .eq('ride_id', ride.id)
+      .eq('user_id', user.id)
+      .or('notes.eq.Primary device photo,document_type.ilike.%photo%')
+      .order('uploaded_at', { ascending: false })
+      .limit(1);
+    
+    if (docs && docs.length > 0) {
+      // Generate a signed URL that expires in 1 hour
+      const { data } = await supabase.storage
+        .from('ride-documents')
+        .createSignedUrl(docs[0].file_path, 3600);
+      
+      if (data?.signedUrl) {
+        setRidePhotoUrl(data.signedUrl);
+      }
+    }
   };
 
   const loadAssessments = async () => {
@@ -274,12 +302,12 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     const doc = new jsPDF({ orientation: 'landscape' });
     
     // Add logo
-    const img = new Image();
-    img.src = logoImage;
+    const logoImg = new Image();
+    logoImg.src = logoImage;
     await new Promise((resolve) => {
-      img.onload = resolve;
+      logoImg.onload = resolve;
     });
-    doc.addImage(img, 'PNG', 14, 5, 20, 20);
+    doc.addImage(logoImg, 'PNG', 14, 5, 20, 20);
     
     // App name next to logo
     doc.setFontSize(14);
@@ -290,6 +318,22 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
     doc.text('Operational & Maintenance Docs', 38, 18);
+    
+    // Add ride photo if available
+    if (ridePhotoUrl) {
+      try {
+        const rideImg = new Image();
+        rideImg.crossOrigin = 'anonymous';
+        rideImg.src = ridePhotoUrl;
+        await new Promise((resolve, reject) => {
+          rideImg.onload = resolve;
+          rideImg.onerror = reject;
+        });
+        doc.addImage(rideImg, 'JPEG', 235, 5, 50, 30);
+      } catch (e) {
+        console.warn('Failed to load ride photo for PDF');
+      }
+    }
     
     // Title
     doc.setFontSize(18);
@@ -316,6 +360,14 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       doc.text('Manufacturer:', leftCol, yPos);
       doc.setFont('helvetica', 'normal');
       doc.text(ride.manufacturer, leftCol + 35, yPos);
+    }
+    
+    if (ride.year_manufactured) {
+      yPos += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Year Manufactured:', leftCol, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(ride.year_manufactured.toString(), leftCol + 35, yPos);
     }
     
     // Right column - Controller details
@@ -441,12 +493,12 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       const doc = new jsPDF({ orientation: 'landscape' });
       
       // Add logo
-      const img = new Image();
-      img.src = logoImage;
+      const logoImg = new Image();
+      logoImg.src = logoImage;
       await new Promise((resolve) => {
-        img.onload = resolve;
+        logoImg.onload = resolve;
       });
-      doc.addImage(img, 'PNG', 14, 5, 20, 20);
+      doc.addImage(logoImg, 'PNG', 14, 5, 20, 20);
       
       // App name next to logo
       doc.setFontSize(14);
@@ -457,6 +509,22 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 100, 100);
       doc.text('Operational & Maintenance Docs', 38, 18);
+      
+      // Add ride photo if available
+      if (ridePhotoUrl) {
+        try {
+          const rideImg = new Image();
+          rideImg.crossOrigin = 'anonymous';
+          rideImg.src = ridePhotoUrl;
+          await new Promise((resolve, reject) => {
+            rideImg.onload = resolve;
+            rideImg.onerror = reject;
+          });
+          doc.addImage(rideImg, 'JPEG', 235, 5, 50, 30);
+        } catch (e) {
+          console.warn('Failed to load ride photo for PDF');
+        }
+      }
       
       // Title
       doc.setFontSize(18);
@@ -483,6 +551,14 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         doc.text('Manufacturer:', leftCol, yPos);
         doc.setFont('helvetica', 'normal');
         doc.text(ride.manufacturer, leftCol + 35, yPos);
+      }
+      
+      if (ride.year_manufactured) {
+        yPos += 6;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Year Manufactured:', leftCol, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(ride.year_manufactured.toString(), leftCol + 35, yPos);
       }
       
       // Right column - Controller details
