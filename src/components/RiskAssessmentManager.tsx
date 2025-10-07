@@ -1037,7 +1037,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                         Need help choosing a hazard?
                       </CollapsibleTrigger>
                       <CollapsibleContent className="text-xs text-muted-foreground mb-2 ml-4">
-                        Browse categories: Mechanical, Electrical, Structural, Environmental, Operator factors, Patron safety, or Emergency hazards.
+                        Browse categories: Mechanical, Electrical, Hydraulics & Pneumatics, Structural, Stability & Anchoring, Transport/Packing/Setup, Environmental, Operator factors, Patron safety, or Emergency hazards.
                       </CollapsibleContent>
                     </Collapsible>
                     
@@ -1066,6 +1066,27 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                         <SelectItem value="Overloaded electrical circuits">Overloaded electrical circuits</SelectItem>
                         <SelectItem value="Water ingress to electrical components">Water ingress to electrical components</SelectItem>
                         <SelectItem value="Inadequate earthing or grounding">Inadequate earthing or grounding</SelectItem>
+                        <SelectItem value="Damaged or worn electrical cables">Damaged or worn electrical cables</SelectItem>
+                        <SelectItem value="Inadequate or missing RCD protection">Inadequate or missing RCD protection</SelectItem>
+                        <SelectItem value="Poor cable management creating trip hazards">Poor cable management creating trip hazards</SelectItem>
+                        <SelectItem value="Incompatible voltage supply">Incompatible voltage supply</SelectItem>
+                        <SelectItem value="Electrical equipment not PAT tested">Electrical equipment not PAT tested</SelectItem>
+                        <SelectItem value="Control panel or distribution board faults">Control panel or distribution board faults</SelectItem>
+                        <SelectItem value="Emergency electrical shutdown failure">Emergency electrical shutdown failure</SelectItem>
+                        <SelectItem value="Inadequate electrical isolation during maintenance">Inadequate electrical isolation during maintenance</SelectItem>
+                        
+                        {/* Hydraulics & Pneumatics */}
+                        <SelectItem value="__hydraulics" disabled className="font-semibold text-primary">── Hydraulics & Pneumatics ──</SelectItem>
+                        <SelectItem value="Hydraulic hose or pipe rupture">Hydraulic hose or pipe rupture</SelectItem>
+                        <SelectItem value="Hydraulic oil leak creating slip hazard">Hydraulic oil leak creating slip hazard</SelectItem>
+                        <SelectItem value="Pneumatic system pressure loss">Pneumatic system pressure loss</SelectItem>
+                        <SelectItem value="Air compressor failure">Air compressor failure</SelectItem>
+                        <SelectItem value="Hydraulic cylinder seal failure">Hydraulic cylinder seal failure</SelectItem>
+                        <SelectItem value="Uncontrolled release of stored pressure">Uncontrolled release of stored pressure</SelectItem>
+                        <SelectItem value="Hydraulic pump malfunction">Hydraulic pump malfunction</SelectItem>
+                        <SelectItem value="Contaminated hydraulic fluid">Contaminated hydraulic fluid</SelectItem>
+                        <SelectItem value="Pressure relief valve failure">Pressure relief valve failure</SelectItem>
+                        <SelectItem value="Pneumatic line disconnection">Pneumatic line disconnection</SelectItem>
                         
                         {/* Structural Hazards */}
                         <SelectItem value="__structural" disabled className="font-semibold text-primary">── Structural Hazards ──</SelectItem>
@@ -1077,6 +1098,34 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                         <SelectItem value="Overloading beyond design capacity">Overloading beyond design capacity</SelectItem>
                         <SelectItem value="Inadequate support or bracing">Inadequate support or bracing</SelectItem>
                         <SelectItem value="Platform or deck deterioration">Platform or deck deterioration</SelectItem>
+                        
+                        {/* Stability & Anchoring */}
+                        <SelectItem value="__stability" disabled className="font-semibold text-primary">── Stability & Anchoring ──</SelectItem>
+                        <SelectItem value="Inadequate ballast or counterweights">Inadequate ballast or counterweights</SelectItem>
+                        <SelectItem value="Ground anchors not properly installed">Ground anchors not properly installed</SelectItem>
+                        <SelectItem value="Uneven or unsuitable ground surface">Uneven or unsuitable ground surface</SelectItem>
+                        <SelectItem value="Insufficient stabiliser legs or outriggers">Insufficient stabiliser legs or outriggers</SelectItem>
+                        <SelectItem value="Stake or anchor pull-out risk">Stake or anchor pull-out risk</SelectItem>
+                        <SelectItem value="Center of gravity shift during operation">Center of gravity shift during operation</SelectItem>
+                        <SelectItem value="Wind loading exceeding stability limits">Wind loading exceeding stability limits</SelectItem>
+                        <SelectItem value="Leveling issues causing instability">Leveling issues causing instability</SelectItem>
+                        <SelectItem value="Inadequate guy wire or tensioning">Inadequate guy wire or tensioning</SelectItem>
+                        <SelectItem value="Ground subsidence or soft ground">Ground subsidence or soft ground</SelectItem>
+                        
+                        {/* Transport, Packing & Setup */}
+                        <SelectItem value="__transport" disabled className="font-semibold text-primary">── Transport, Packing & Setup ──</SelectItem>
+                        <SelectItem value="Load shifting during transport">Load shifting during transport</SelectItem>
+                        <SelectItem value="Inadequate load securing or lashing">Inadequate load securing or lashing</SelectItem>
+                        <SelectItem value="Overloading transport vehicle">Overloading transport vehicle</SelectItem>
+                        <SelectItem value="Improper trailer coupling or hitching">Improper trailer coupling or hitching</SelectItem>
+                        <SelectItem value="Manual handling injuries during build-up">Manual handling injuries during build-up</SelectItem>
+                        <SelectItem value="Crane or lifting equipment failure during setup">Crane or lifting equipment failure during setup</SelectItem>
+                        <SelectItem value="Collision with overhead lines or structures">Collision with overhead lines or structures</SelectItem>
+                        <SelectItem value="Inadequate traffic management during setup">Inadequate traffic management during setup</SelectItem>
+                        <SelectItem value="Components damaged during transport">Components damaged during transport</SelectItem>
+                        <SelectItem value="Missing or damaged transport securing points">Missing or damaged transport securing points</SelectItem>
+                        <SelectItem value="Incorrect assembly sequence">Incorrect assembly sequence</SelectItem>
+                        <SelectItem value="Working at height during build-up/breakdown">Working at height during build-up/breakdown</SelectItem>
                         
                         {/* Environmental Hazards */}
                         <SelectItem value="__environmental" disabled className="font-semibold text-primary">── Environmental Hazards ──</SelectItem>
