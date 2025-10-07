@@ -366,56 +366,76 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
-        <div>
-          <Button variant="ghost" onClick={() => setSelectedAssessment(null)}>← Back to Assessments</Button>
-          <h3 className="text-xl font-semibold mt-2">Risk Assessment - {format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')}</h3>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handlePrint}>
-            <Printer className="h-4 w-4 mr-2" /> Print
-          </Button>
-          <Button variant="outline" size="sm" onClick={exportToPDF}>
-            <Download className="h-4 w-4 mr-2" /> Download PDF
-          </Button>
-          <Button onClick={() => setShowItemDialog(true)}>
-            <Plus className="h-4 w-4 mr-2" /> Add Risk Item
-          </Button>
-        </div>
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="space-y-4">
+        <Button variant="ghost" onClick={() => setSelectedAssessment(null)} className="mb-2">
+          ← Back to Assessments
+        </Button>
+        
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <CardTitle className="text-2xl">Risk Assessment</CardTitle>
+                <CardDescription className="text-base mt-1">
+                  {format(new Date(selectedAssessment.assessment_date), 'dd MMMM yyyy')} • {selectedAssessment.assessor_name}
+                </CardDescription>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button variant="outline" size="sm" onClick={handlePrint}>
+                  <Printer className="h-4 w-4 mr-2" /> Print
+                </Button>
+                <Button variant="outline" size="sm" onClick={exportToPDF}>
+                  <Download className="h-4 w-4 mr-2" /> PDF
+                </Button>
+                <Button onClick={() => setShowItemDialog(true)} className="btn-bold-primary">
+                  <Plus className="h-4 w-4 mr-2" /> Add Risk Item
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+        </Card>
       </div>
 
-      <Card>
-        <CardContent className="pt-6">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Hazard</TableHead>
-                <TableHead>Who at Risk</TableHead>
-                <TableHead>Existing Controls</TableHead>
-                <TableHead>Risk Level</TableHead>
-                <TableHead>Additional Actions</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {assessmentItems.map((item) => (
-                <TableRow key={item.id}>
-                  <TableCell className="font-medium">{item.hazard_description}</TableCell>
-                  <TableCell>{item.who_at_risk}</TableCell>
-                  <TableCell>{item.existing_controls || '-'}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${getRiskColor(item.risk_level)}`}>
-                      {item.risk_level.toUpperCase()}
-                    </span>
-                  </TableCell>
-                  <TableCell>{item.additional_actions || '-'}</TableCell>
-                  <TableCell>{item.status}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
+      {/* Risk Items Section */}
+      {assessmentItems.length === 0 ? (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
+              <Plus className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="text-lg font-semibold mb-2">No Risk Items Yet</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Start by adding hazards and risks to assess
+            </p>
+            <Button onClick={() => setShowItemDialog(true)} className="btn-bold-primary">
+              <Plus className="h-4 w-4 mr-2" /> Add Your First Risk Item
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4">
+          {assessmentItems.map((item) => (
+            <Card key={item.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  {/* Header with Risk Level and Actions */}
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${getRiskColor(item.risk_level)}`}>
+                          {item.risk_level.toUpperCase()}
+                        </span>
+                        <span className="px-2 py-1 rounded-md text-xs bg-muted">
+                          {item.status}
+                        </span>
+                      </div>
+                      <h4 className="font-semibold text-lg">{item.hazard_description}</h4>
+                    </div>
+                    <div className="flex gap-2 shrink-0">
                       <Button 
-                        variant="ghost" 
+                        variant="outline" 
                         size="sm"
                         onClick={() => {
                           setEditingItem(item);
@@ -426,27 +446,61 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                         Edit
                       </Button>
                       <Button 
-                        variant="ghost" 
+                        variant="outline" 
                         size="sm"
                         onClick={() => handleDeleteItem(item.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-              {assessmentItems.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
-                    No risk items added yet. Click "Add Risk Item" to get started.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  </div>
+
+                  {/* Content Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Who at Risk</p>
+                      <p>{item.who_at_risk}</p>
+                    </div>
+                    
+                    {item.existing_controls && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Existing Controls</p>
+                        <p>{item.existing_controls}</p>
+                      </div>
+                    )}
+                    
+                    {item.additional_actions && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Additional Actions</p>
+                        <p>{item.additional_actions}</p>
+                      </div>
+                    )}
+                    
+                    {item.action_owner && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Action Owner</p>
+                        <p>{item.action_owner}</p>
+                      </div>
+                    )}
+                    
+                    {item.target_date && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Target Date</p>
+                        <p>{format(new Date(item.target_date), 'dd MMM yyyy')}</p>
+                      </div>
+                    )}
+                    
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Risk Assessment</p>
+                      <p>Likelihood: {item.likelihood} • Severity: {item.severity}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <Dialog open={showItemDialog} onOpenChange={(open) => {
         setShowItemDialog(open);
