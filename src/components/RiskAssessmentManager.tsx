@@ -522,15 +522,76 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                   <SelectValue placeholder="Select a hazard or choose Custom to add your own" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  <SelectItem value="Slips, trips and falls from ride platform">Slips, trips and falls from ride platform</SelectItem>
+                  {/* Mechanical Hazards */}
+                  <SelectItem value="__mechanical" disabled className="font-semibold text-primary">── Mechanical Hazards ──</SelectItem>
                   <SelectItem value="Mechanical failure during operation">Mechanical failure during operation</SelectItem>
-                  <SelectItem value="Rider entrapment or ejection">Rider entrapment or ejection</SelectItem>
-                  <SelectItem value="Electrical shock from exposed wiring">Electrical shock from exposed wiring</SelectItem>
                   <SelectItem value="Moving parts causing crush injuries">Moving parts causing crush injuries</SelectItem>
-                  <SelectItem value="Fire or explosion risk">Fire or explosion risk</SelectItem>
+                  <SelectItem value="Rotating or spinning components without guards">Rotating or spinning components without guards</SelectItem>
+                  <SelectItem value="Belt, chain or pulley entanglement">Belt, chain or pulley entanglement</SelectItem>
+                  <SelectItem value="Hydraulic or pneumatic system failure">Hydraulic or pneumatic system failure</SelectItem>
+                  <SelectItem value="Brake system malfunction">Brake system malfunction</SelectItem>
+                  <SelectItem value="Bearing or shaft failure">Bearing or shaft failure</SelectItem>
+                  <SelectItem value="Wear and fatigue of mechanical components">Wear and fatigue of mechanical components</SelectItem>
+                  <SelectItem value="Inadequate lubrication leading to seizure">Inadequate lubrication leading to seizure</SelectItem>
+                  <SelectItem value="Vibration causing loose connections">Vibration causing loose connections</SelectItem>
+                  
+                  {/* Electrical Hazards */}
+                  <SelectItem value="__electrical" disabled className="font-semibold text-primary">── Electrical Hazards ──</SelectItem>
+                  <SelectItem value="Electrical shock from exposed wiring">Electrical shock from exposed wiring</SelectItem>
+                  <SelectItem value="Short circuit or electrical fire">Short circuit or electrical fire</SelectItem>
+                  <SelectItem value="Overloaded electrical circuits">Overloaded electrical circuits</SelectItem>
+                  <SelectItem value="Water ingress to electrical components">Water ingress to electrical components</SelectItem>
+                  <SelectItem value="Inadequate earthing or grounding">Inadequate earthing or grounding</SelectItem>
+                  
+                  {/* Structural Hazards */}
+                  <SelectItem value="__structural" disabled className="font-semibold text-primary">── Structural Hazards ──</SelectItem>
                   <SelectItem value="Structural collapse or failure">Structural collapse or failure</SelectItem>
-                  <SelectItem value="Weather-related hazards">Weather-related hazards</SelectItem>
+                  <SelectItem value="Metal fatigue or stress cracks">Metal fatigue or stress cracks</SelectItem>
+                  <SelectItem value="Corrosion weakening structural integrity">Corrosion weakening structural integrity</SelectItem>
+                  <SelectItem value="Weld failure at critical joints">Weld failure at critical joints</SelectItem>
+                  <SelectItem value="Foundation settlement or instability">Foundation settlement or instability</SelectItem>
+                  <SelectItem value="Overloading beyond design capacity">Overloading beyond design capacity</SelectItem>
+                  <SelectItem value="Inadequate support or bracing">Inadequate support or bracing</SelectItem>
+                  <SelectItem value="Platform or deck deterioration">Platform or deck deterioration</SelectItem>
+                  
+                  {/* Environmental Hazards */}
+                  <SelectItem value="__environmental" disabled className="font-semibold text-primary">── Environmental Hazards ──</SelectItem>
+                  <SelectItem value="Weather-related hazards (wind, rain, lightning)">Weather-related hazards (wind, rain, lightning)</SelectItem>
+                  <SelectItem value="High wind causing instability">High wind causing instability</SelectItem>
+                  <SelectItem value="Lightning strike risk">Lightning strike risk</SelectItem>
+                  <SelectItem value="Temperature extremes affecting operation">Temperature extremes affecting operation</SelectItem>
+                  <SelectItem value="Poor ground conditions">Poor ground conditions</SelectItem>
+                  <SelectItem value="Slips, trips and falls from ride platform">Slips, trips and falls from ride platform</SelectItem>
+                  <SelectItem value="Inadequate lighting causing visibility issues">Inadequate lighting causing visibility issues</SelectItem>
+                  <SelectItem value="Noise hazards affecting communication">Noise hazards affecting communication</SelectItem>
+                  
+                  {/* Operator & Human Factors */}
+                  <SelectItem value="__operator" disabled className="font-semibold text-primary">── Operator & Human Factors ──</SelectItem>
+                  <SelectItem value="Operator error or inadequate training">Operator error or inadequate training</SelectItem>
+                  <SelectItem value="Fatigue affecting operator performance">Fatigue affecting operator performance</SelectItem>
+                  <SelectItem value="Communication failure between staff">Communication failure between staff</SelectItem>
+                  <SelectItem value="Inadequate supervision">Inadequate supervision</SelectItem>
+                  <SelectItem value="Emergency procedure not followed">Emergency procedure not followed</SelectItem>
+                  <SelectItem value="Lack of competency or qualification">Lack of competency or qualification</SelectItem>
+                  <SelectItem value="Maintenance errors during servicing">Maintenance errors during servicing</SelectItem>
+                  <SelectItem value="Bypassing safety systems">Bypassing safety systems</SelectItem>
+                  
+                  {/* Patron Safety */}
+                  <SelectItem value="__patron" disabled className="font-semibold text-primary">── Patron Safety ──</SelectItem>
+                  <SelectItem value="Rider entrapment or ejection">Rider entrapment or ejection</SelectItem>
                   <SelectItem value="Inadequate restraint systems">Inadequate restraint systems</SelectItem>
+                  <SelectItem value="Patron not meeting height or health restrictions">Patron not meeting height or health restrictions</SelectItem>
+                  <SelectItem value="Loose articles becoming projectiles">Loose articles becoming projectiles</SelectItem>
+                  <SelectItem value="Overcrowding or queue management issues">Overcrowding or queue management issues</SelectItem>
+                  
+                  {/* Emergency & Fire */}
+                  <SelectItem value="__emergency" disabled className="font-semibold text-primary">── Emergency & Fire ──</SelectItem>
+                  <SelectItem value="Fire or explosion risk">Fire or explosion risk</SelectItem>
+                  <SelectItem value="Inadequate emergency evacuation routes">Inadequate emergency evacuation routes</SelectItem>
+                  <SelectItem value="Fire suppression system failure">Fire suppression system failure</SelectItem>
+                  <SelectItem value="Fuel or oil leak creating fire hazard">Fuel or oil leak creating fire hazard</SelectItem>
+                  <SelectItem value="Emergency stop system malfunction">Emergency stop system malfunction</SelectItem>
+                  
                   <SelectItem value="Custom">Custom (enter below)</SelectItem>
                 </SelectContent>
               </Select>
@@ -582,15 +643,62 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                   <SelectValue placeholder="Select existing controls or choose Custom to add your own" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  <SelectItem value="Non-slip surface applied to platform">Non-slip surface applied to platform</SelectItem>
-                  <SelectItem value="Daily pre-operation safety checks">Daily pre-operation safety checks</SelectItem>
-                  <SelectItem value="Emergency stop button within reach">Emergency stop button within reach</SelectItem>
-                  <SelectItem value="Safety restraints inspected before each use">Safety restraints inspected before each use</SelectItem>
-                  <SelectItem value="Warning signage clearly displayed">Warning signage clearly displayed</SelectItem>
-                  <SelectItem value="Regular maintenance schedule in place">Regular maintenance schedule in place</SelectItem>
-                  <SelectItem value="Staff training on safety procedures">Staff training on safety procedures</SelectItem>
+                  {/* Engineering Controls */}
+                  <SelectItem value="__engineering" disabled className="font-semibold text-primary">── Engineering Controls ──</SelectItem>
+                  <SelectItem value="Machine guards and safety interlocks installed">Machine guards and safety interlocks installed</SelectItem>
+                  <SelectItem value="Emergency stop buttons strategically positioned">Emergency stop buttons strategically positioned</SelectItem>
+                  <SelectItem value="Safety restraints and harnesses fitted">Safety restraints and harnesses fitted</SelectItem>
+                  <SelectItem value="Non-slip surfaces applied to platforms">Non-slip surfaces applied to platforms</SelectItem>
                   <SelectItem value="Safety barriers and fencing installed">Safety barriers and fencing installed</SelectItem>
+                  <SelectItem value="Perimeter fencing and access control">Perimeter fencing and access control</SelectItem>
+                  <SelectItem value="Two-hand control systems for operator stations">Two-hand control systems for operator stations</SelectItem>
+                  <SelectItem value="Pressure relief valves on hydraulic systems">Pressure relief valves on hydraulic systems</SelectItem>
+                  <SelectItem value="Residual current devices (RCD) on electrical circuits">Residual current devices (RCD) on electrical circuits</SelectItem>
+                  <SelectItem value="Lightning protection system installed">Lightning protection system installed</SelectItem>
+                  <SelectItem value="Fire suppression and detection systems">Fire suppression and detection systems</SelectItem>
+                  <SelectItem value="Speed limiters and overspeed detection">Speed limiters and overspeed detection</SelectItem>
+                  
+                  {/* Administrative Controls */}
+                  <SelectItem value="__administrative" disabled className="font-semibold text-primary">── Administrative Controls ──</SelectItem>
+                  <SelectItem value="Safe operating procedures documented">Safe operating procedures documented</SelectItem>
+                  <SelectItem value="Staff training on safety procedures completed">Staff training on safety procedures completed</SelectItem>
+                  <SelectItem value="Height and health restriction signage displayed">Height and health restriction signage displayed</SelectItem>
+                  <SelectItem value="Warning signage clearly displayed at hazard points">Warning signage clearly displayed at hazard points</SelectItem>
+                  <SelectItem value="Operating manual accessible to operators">Operating manual accessible to operators</SelectItem>
+                  <SelectItem value="Weather monitoring and wind speed limits established">Weather monitoring and wind speed limits established</SelectItem>
+                  <SelectItem value="Permit to work system for maintenance">Permit to work system for maintenance</SelectItem>
                   <SelectItem value="Lockout/tagout procedures implemented">Lockout/tagout procedures implemented</SelectItem>
+                  <SelectItem value="Competency requirements defined for operators">Competency requirements defined for operators</SelectItem>
+                  <SelectItem value="Emergency response plan in place">Emergency response plan in place</SelectItem>
+                  
+                  {/* Inspection & Maintenance */}
+                  <SelectItem value="__inspection" disabled className="font-semibold text-primary">── Inspection & Maintenance ──</SelectItem>
+                  <SelectItem value="Daily pre-operation safety checks performed">Daily pre-operation safety checks performed</SelectItem>
+                  <SelectItem value="Regular maintenance schedule in place">Regular maintenance schedule in place</SelectItem>
+                  <SelectItem value="Annual independent inspection completed">Annual independent inspection completed</SelectItem>
+                  <SelectItem value="Safety restraints inspected before each use">Safety restraints inspected before each use</SelectItem>
+                  <SelectItem value="NDT testing on critical components scheduled">NDT testing on critical components scheduled</SelectItem>
+                  <SelectItem value="Maintenance records kept up to date">Maintenance records kept up to date</SelectItem>
+                  <SelectItem value="Periodic structural integrity inspections">Periodic structural integrity inspections</SelectItem>
+                  <SelectItem value="Electrical testing and PAT completed">Electrical testing and PAT completed</SelectItem>
+                  
+                  {/* Emergency Preparedness */}
+                  <SelectItem value="__emergency" disabled className="font-semibold text-primary">── Emergency Preparedness ──</SelectItem>
+                  <SelectItem value="Emergency evacuation procedures established">Emergency evacuation procedures established</SelectItem>
+                  <SelectItem value="First aid station and trained personnel available">First aid station and trained personnel available</SelectItem>
+                  <SelectItem value="Emergency contact numbers displayed">Emergency contact numbers displayed</SelectItem>
+                  <SelectItem value="Fire extinguishers positioned and serviced">Fire extinguishers positioned and serviced</SelectItem>
+                  <SelectItem value="Emergency lighting installed">Emergency lighting installed</SelectItem>
+                  <SelectItem value="Communication systems for emergencies">Communication systems for emergencies</SelectItem>
+                  
+                  {/* Training & Competency */}
+                  <SelectItem value="__training" disabled className="font-semibold text-primary">── Training & Competency ──</SelectItem>
+                  <SelectItem value="Operator training and certification program">Operator training and certification program</SelectItem>
+                  <SelectItem value="Refresher training conducted annually">Refresher training conducted annually</SelectItem>
+                  <SelectItem value="Induction training for new staff">Induction training for new staff</SelectItem>
+                  <SelectItem value="Toolbox talks on specific hazards">Toolbox talks on specific hazards</SelectItem>
+                  <SelectItem value="Competency assessments completed">Competency assessments completed</SelectItem>
+                  
                   <SelectItem value="Custom">Custom (enter below)</SelectItem>
                 </SelectContent>
               </Select>
@@ -647,15 +755,67 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                   <SelectValue placeholder="Select additional actions or choose Custom to add your own" />
                 </SelectTrigger>
                 <SelectContent className="bg-background z-50">
-                  <SelectItem value="Improve lighting in the area">Improve lighting in the area</SelectItem>
-                  <SelectItem value="Install additional safety barriers">Install additional safety barriers</SelectItem>
-                  <SelectItem value="Provide additional staff training">Provide additional staff training</SelectItem>
-                  <SelectItem value="Review and update procedures">Review and update procedures</SelectItem>
+                  {/* Technical Improvements */}
+                  <SelectItem value="__technical" disabled className="font-semibold text-primary">── Technical Improvements ──</SelectItem>
+                  <SelectItem value="Install additional safety barriers or guards">Install additional safety barriers or guards</SelectItem>
+                  <SelectItem value="Upgrade to more reliable safety systems">Upgrade to more reliable safety systems</SelectItem>
                   <SelectItem value="Replace worn or damaged equipment">Replace worn or damaged equipment</SelectItem>
+                  <SelectItem value="Install additional emergency stop buttons">Install additional emergency stop buttons</SelectItem>
+                  <SelectItem value="Improve lighting in operational areas">Improve lighting in operational areas</SelectItem>
+                  <SelectItem value="Install CCTV monitoring system">Install CCTV monitoring system</SelectItem>
+                  <SelectItem value="Upgrade electrical systems to current standards">Upgrade electrical systems to current standards</SelectItem>
+                  <SelectItem value="Install weather monitoring equipment">Install weather monitoring equipment</SelectItem>
+                  <SelectItem value="Improve non-slip surfaces on platforms">Improve non-slip surfaces on platforms</SelectItem>
+                  <SelectItem value="Install better signage and warnings">Install better signage and warnings</SelectItem>
+                  
+                  {/* Documentation & Procedures */}
+                  <SelectItem value="__documentation" disabled className="font-semibold text-primary">── Documentation & Procedures ──</SelectItem>
+                  <SelectItem value="Review and update operating procedures">Review and update operating procedures</SelectItem>
+                  <SelectItem value="Create or revise emergency response plan">Create or revise emergency response plan</SelectItem>
+                  <SelectItem value="Develop maintenance schedule and checklists">Develop maintenance schedule and checklists</SelectItem>
+                  <SelectItem value="Document safe work method statements">Document safe work method statements</SelectItem>
+                  <SelectItem value="Update risk assessment and control measures">Update risk assessment and control measures</SelectItem>
+                  <SelectItem value="Create operator competency matrix">Create operator competency matrix</SelectItem>
+                  <SelectItem value="Review manufacturer's recommendations">Review manufacturer's recommendations</SelectItem>
+                  <SelectItem value="Implement permit-to-work system">Implement permit-to-work system</SelectItem>
+                  
+                  {/* Training & Awareness */}
+                  <SelectItem value="__training" disabled className="font-semibold text-primary">── Training & Awareness ──</SelectItem>
+                  <SelectItem value="Provide additional staff training on hazards">Provide additional staff training on hazards</SelectItem>
+                  <SelectItem value="Conduct refresher training for all operators">Conduct refresher training for all operators</SelectItem>
+                  <SelectItem value="Provide emergency response training">Provide emergency response training</SelectItem>
+                  <SelectItem value="Train staff on new equipment or procedures">Train staff on new equipment or procedures</SelectItem>
+                  <SelectItem value="Conduct toolbox talks on specific risks">Conduct toolbox talks on specific risks</SelectItem>
+                  <SelectItem value="Arrange competency assessments">Arrange competency assessments</SelectItem>
+                  
+                  {/* Inspection & Testing */}
+                  <SelectItem value="__inspection" disabled className="font-semibold text-primary">── Inspection & Testing ──</SelectItem>
+                  <SelectItem value="Schedule NDT testing on critical components">Schedule NDT testing on critical components</SelectItem>
+                  <SelectItem value="Arrange independent safety inspection">Arrange independent safety inspection</SelectItem>
+                  <SelectItem value="Conduct load testing on structural elements">Conduct load testing on structural elements</SelectItem>
+                  <SelectItem value="Increase frequency of daily checks">Increase frequency of daily checks</SelectItem>
+                  <SelectItem value="Arrange electrical testing and certification">Arrange electrical testing and certification</SelectItem>
+                  <SelectItem value="Implement regular audits of safety systems">Implement regular audits of safety systems</SelectItem>
+                  <SelectItem value="Schedule hydraulic pressure testing">Schedule hydraulic pressure testing</SelectItem>
+                  <SelectItem value="Conduct emergency stop function tests">Conduct emergency stop function tests</SelectItem>
+                  
+                  {/* Communication & Management */}
+                  <SelectItem value="__communication" disabled className="font-semibold text-primary">── Communication & Management ──</SelectItem>
+                  <SelectItem value="Improve communication systems between staff">Improve communication systems between staff</SelectItem>
+                  <SelectItem value="Hold safety meeting with all operators">Hold safety meeting with all operators</SelectItem>
+                  <SelectItem value="Report findings to management">Report findings to management</SelectItem>
+                  <SelectItem value="Consult with manufacturer or specialist">Consult with manufacturer or specialist</SelectItem>
+                  <SelectItem value="Notify relevant regulatory authorities">Notify relevant regulatory authorities</SelectItem>
+                  
+                  {/* Monitoring & Review */}
+                  <SelectItem value="__monitoring" disabled className="font-semibold text-primary">── Monitoring & Review ──</SelectItem>
                   <SelectItem value="Conduct risk assessment review">Conduct risk assessment review</SelectItem>
-                  <SelectItem value="Implement regular audits">Implement regular audits</SelectItem>
-                  <SelectItem value="Update signage and warnings">Update signage and warnings</SelectItem>
-                  <SelectItem value="Install CCTV monitoring">Install CCTV monitoring</SelectItem>
+                  <SelectItem value="Monitor effectiveness of control measures">Monitor effectiveness of control measures</SelectItem>
+                  <SelectItem value="Track maintenance completion rates">Track maintenance completion rates</SelectItem>
+                  <SelectItem value="Review incident and near-miss reports">Review incident and near-miss reports</SelectItem>
+                  <SelectItem value="Schedule follow-up inspection">Schedule follow-up inspection</SelectItem>
+                  <SelectItem value="Review and update after any modifications">Review and update after any modifications</SelectItem>
+                  
                   <SelectItem value="Custom">Custom (enter below)</SelectItem>
                 </SelectContent>
               </Select>
