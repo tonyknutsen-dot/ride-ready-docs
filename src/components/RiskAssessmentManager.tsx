@@ -390,7 +390,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           {assessments.map((assessment) => (
             <Card 
               key={assessment.id} 
-              className="cursor-pointer hover:bg-muted/50 transition-colors border-l-4"
+              className="cursor-pointer hover:bg-muted/50 transition-all group border-l-4"
               style={{
                 borderLeftColor: 
                   assessment.overall_status === 'completed' ? 'rgb(34, 197, 94)' :
@@ -400,20 +400,28 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
               onClick={() => setSelectedAssessment(assessment)}
             >
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <p className="font-medium text-sm">{format(new Date(assessment.assessment_date), 'dd MMM yyyy')}</p>
-                      <p className="text-xs text-muted-foreground">{assessment.assessor_name}</p>
+                <div className="flex items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      <p className="font-medium text-sm">Risk Assessment</p>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{format(new Date(assessment.assessment_date), 'dd MMM yyyy')}</span>
+                      <span>•</span>
+                      <span>{assessment.assessor_name}</span>
                     </div>
                   </div>
-                  <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                    assessment.overall_status === 'completed' ? 'bg-green-100 text-green-800' :
-                    assessment.overall_status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                    'bg-gray-100 text-gray-800'
-                  }`}>
-                    {assessment.overall_status.replace('_', ' ')}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 rounded-md text-xs font-medium ${
+                      assessment.overall_status === 'completed' ? 'bg-green-100 text-green-800' :
+                      assessment.overall_status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {assessment.overall_status.replace('_', ' ')}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform rotate-[-90deg]" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
