@@ -457,167 +457,171 @@ const CalendarView = () => {
         </Card>
       )}
       {/* Header */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <CalendarIcon className="h-4 w-4" />
-                {isOperationsMode ? 'Operations Calendar' : 'Document Expiry Calendar'}
-              </CardTitle>
-              <CardDescription className="text-xs">
-                {isOperationsMode 
-                  ? 'Track inspections, maintenance, and document expiry dates'
-                  : 'Track when your documents and certificates expire'}
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-2">
-              {isOperationsMode && (
-                <Dialog open={addDialogOpen} onOpenChange={(open) => {
-                  setAddDialogOpen(open);
-                  if (!open) resetForm();
-                }}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Inspection
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">
+              {isOperationsMode ? 'Operations Calendar' : 'Document Expiry Calendar'}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isOperationsMode 
+                ? 'Track inspections, maintenance, and document expiry dates'
+                : 'Track when your documents and certificates expire'}
+            </p>
+          </div>
+          
+          {isOperationsMode && (
+            <Dialog open={addDialogOpen} onOpenChange={(open) => {
+              setAddDialogOpen(open);
+              if (!open) resetForm();
+            }}>
+              <DialogTrigger asChild>
+                <Button className="shrink-0">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Inspection
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Add Inspection Schedule</DialogTitle>
+                  <DialogDescription>
+                    Schedule an inspection with automatic reminders
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="ride_id">Ride *</Label>
+                    <Select
+                      value={formData.ride_id}
+                      onValueChange={(value) => setFormData({ ...formData, ride_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a ride" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover z-50">
+                        {rides.map((ride) => (
+                          <SelectItem key={ride.id} value={ride.id}>
+                            {ride.ride_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrors.ride_id && <p className="text-xs text-destructive">{formErrors.ride_id}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="inspection_type">Inspection Type *</Label>
+                    <Select
+                      value={formData.inspection_type}
+                      onValueChange={(value) => setFormData({ ...formData, inspection_type: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select inspection type" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-popover z-50">
+                        {INSPECTION_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {type.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrors.inspection_type && <p className="text-xs text-destructive">{formErrors.inspection_type}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="inspection_name">Inspection Name *</Label>
+                    <Input
+                      id="inspection_name"
+                      value={formData.inspection_name}
+                      onChange={(e) => setFormData({ ...formData, inspection_name: e.target.value })}
+                      placeholder="e.g., Annual Safety Inspection"
+                      maxLength={200}
+                    />
+                    {formErrors.inspection_name && <p className="text-xs text-destructive">{formErrors.inspection_name}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Due Date *</Label>
+                    <Popover open={calendarPickerOpen} onOpenChange={setCalendarPickerOpen}>
+                      <PopoverTrigger asChild>
+                        <Button
+                          variant="outline"
+                          className={cn(
+                            "w-full justify-start text-left font-normal",
+                            !formData.due_date && "text-muted-foreground"
+                          )}
+                        >
+                          <CalendarIcon className="mr-2 h-4 w-4" />
+                          {formData.due_date ? format(formData.due_date, "PPP") : "Select due date"}
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0 bg-popover z-50" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={formData.due_date}
+                          onSelect={(date) => {
+                            setFormData({ ...formData, due_date: date });
+                            setCalendarPickerOpen(false);
+                          }}
+                          initialFocus
+                          disabled={(date) => date < new Date()}
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    {formErrors.due_date && <p className="text-xs text-destructive">{formErrors.due_date}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="advance_notice_days">Advance Notice (Days)</Label>
+                    <Input
+                      id="advance_notice_days"
+                      type="number"
+                      min="1"
+                      max="365"
+                      value={formData.advance_notice_days}
+                      onChange={(e) => setFormData({ ...formData, advance_notice_days: parseInt(e.target.value) || 30 })}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Reminders start this many days before the due date
+                    </p>
+                    {formErrors.advance_notice_days && <p className="text-xs text-destructive">{formErrors.advance_notice_days}</p>}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Notes</Label>
+                    <Textarea
+                      id="notes"
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder="Additional notes or requirements"
+                      rows={3}
+                      maxLength={1000}
+                    />
+                    {formErrors.notes && <p className="text-xs text-destructive">{formErrors.notes}</p>}
+                  </div>
+
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+                      Cancel
                     </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Add Inspection Schedule</DialogTitle>
-                      <DialogDescription>
-                        Schedule an inspection with automatic reminders
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="ride_id">Ride *</Label>
-                        <Select
-                          value={formData.ride_id}
-                          onValueChange={(value) => setFormData({ ...formData, ride_id: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a ride" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {rides.map((ride) => (
-                              <SelectItem key={ride.id} value={ride.id}>
-                                {ride.ride_name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {formErrors.ride_id && <p className="text-xs text-destructive">{formErrors.ride_id}</p>}
-                      </div>
+                    <Button onClick={handleAddInspection}>
+                      Create Schedule
+                    </Button>
+                  </div>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
+        </div>
 
-                      <div className="space-y-2">
-                        <Label htmlFor="inspection_type">Inspection Type *</Label>
-                        <Select
-                          value={formData.inspection_type}
-                          onValueChange={(value) => setFormData({ ...formData, inspection_type: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select inspection type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {INSPECTION_TYPES.map((type) => (
-                              <SelectItem key={type.value} value={type.value}>
-                                {type.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        {formErrors.inspection_type && <p className="text-xs text-destructive">{formErrors.inspection_type}</p>}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="inspection_name">Inspection Name *</Label>
-                        <Input
-                          id="inspection_name"
-                          value={formData.inspection_name}
-                          onChange={(e) => setFormData({ ...formData, inspection_name: e.target.value })}
-                          placeholder="e.g., Annual Safety Inspection"
-                          maxLength={200}
-                        />
-                        {formErrors.inspection_name && <p className="text-xs text-destructive">{formErrors.inspection_name}</p>}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Due Date *</Label>
-                        <Popover open={calendarPickerOpen} onOpenChange={setCalendarPickerOpen}>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full justify-start text-left font-normal",
-                                !formData.due_date && "text-muted-foreground"
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {formData.due_date ? format(formData.due_date, "PPP") : "Select due date"}
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={formData.due_date}
-                              onSelect={(date) => {
-                                setFormData({ ...formData, due_date: date });
-                                setCalendarPickerOpen(false);
-                              }}
-                              initialFocus
-                              disabled={(date) => date < new Date()}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        {formErrors.due_date && <p className="text-xs text-destructive">{formErrors.due_date}</p>}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="advance_notice_days">Advance Notice (Days)</Label>
-                        <Input
-                          id="advance_notice_days"
-                          type="number"
-                          min="1"
-                          max="365"
-                          value={formData.advance_notice_days}
-                          onChange={(e) => setFormData({ ...formData, advance_notice_days: parseInt(e.target.value) || 30 })}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Reminders start this many days before the due date
-                        </p>
-                        {formErrors.advance_notice_days && <p className="text-xs text-destructive">{formErrors.advance_notice_days}</p>}
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label htmlFor="notes">Notes</Label>
-                        <Textarea
-                          id="notes"
-                          value={formData.notes}
-                          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                          placeholder="Additional notes or requirements"
-                          rows={3}
-                          maxLength={1000}
-                        />
-                        {formErrors.notes && <p className="text-xs text-destructive">{formErrors.notes}</p>}
-                      </div>
-
-                      <div className="flex justify-end space-x-2 pt-4">
-                        <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
-                          Cancel
-                        </Button>
-                        <Button onClick={handleAddInspection}>
-                          Create Schedule
-                        </Button>
-                      </div>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              )}
+        {/* Month Navigation */}
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-center gap-4">
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={() => {
                   const newMonth = addDays(currentMonth, -30);
                   setCurrentMonth(newMonth);
@@ -626,12 +630,14 @@ const CalendarView = () => {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm font-medium min-w-[140px] text-center">
-                {format(currentMonth, 'MMMM yyyy')}
-              </span>
+              <div className="text-center min-w-[200px]">
+                <p className="text-lg font-semibold">
+                  {format(currentMonth, 'MMMM yyyy')}
+                </p>
+              </div>
               <Button
                 variant="outline"
-                size="sm"
+                size="icon"
                 onClick={() => {
                   const newMonth = addDays(currentMonth, 30);
                   setCurrentMonth(newMonth);
@@ -641,9 +647,9 @@ const CalendarView = () => {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-          </div>
-        </CardHeader>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Calendar */}
