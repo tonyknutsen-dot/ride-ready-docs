@@ -1010,7 +1010,17 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     </div>
                     
                     <div className="col-span-2">
-                      <Label htmlFor="status">Status</Label>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Label htmlFor="status">Status</Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>Track the progress of actions for this risk item</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                       <Select value={itemFormData.status} onValueChange={(value) => setItemFormData({ ...itemFormData, status: value })}>
                         <SelectTrigger>
                           <SelectValue>
