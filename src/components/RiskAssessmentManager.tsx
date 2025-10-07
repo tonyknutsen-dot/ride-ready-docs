@@ -18,7 +18,7 @@ import { format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { cn } from '@/lib/utils';
 
 interface RiskAssessmentManagerProps {
@@ -275,7 +275,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       item.status
     ]);
 
-    (doc as any).autoTable({
+    autoTable(doc, {
       startY: 50,
       head: [['Hazard', 'Who at Risk', 'Controls', 'Risk Level', 'Actions', 'Status']],
       body: tableData,
@@ -310,7 +310,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         item.status
       ]);
 
-      (doc as any).autoTable({
+      autoTable(doc, {
         startY: 50,
         head: [['Hazard', 'Who at Risk', 'Controls', 'Risk Level', 'Actions', 'Status']],
         body: tableData,
