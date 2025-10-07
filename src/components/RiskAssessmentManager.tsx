@@ -524,11 +524,20 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             </div>
             <div className="col-span-2">
               <Label htmlFor="who_at_risk">Who is at Risk *</Label>
-              <Input
-                id="who_at_risk"
-                value={itemFormData.who_at_risk}
-                onChange={(e) => setItemFormData({ ...itemFormData, who_at_risk: e.target.value })}
-              />
+              <Select value={itemFormData.who_at_risk} onValueChange={(value) => setItemFormData({ ...itemFormData, who_at_risk: value })}>
+                <SelectTrigger><SelectValue placeholder="Select who is at risk" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Generally speaking">Generally speaking</SelectItem>
+                  <SelectItem value="Public">Public</SelectItem>
+                  <SelectItem value="Staff">Staff</SelectItem>
+                  <SelectItem value="Contractors">Contractors</SelectItem>
+                  <SelectItem value="Spectators">Spectators</SelectItem>
+                  <SelectItem value="Operators">Operators</SelectItem>
+                  <SelectItem value="Maintenance personnel">Maintenance personnel</SelectItem>
+                  <SelectItem value="Children">Children</SelectItem>
+                  <SelectItem value="All persons">All persons</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="col-span-2">
               <Label htmlFor="existing_controls">Existing Controls</Label>
