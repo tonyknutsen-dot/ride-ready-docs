@@ -478,19 +478,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     // Get final Y position after table
     const finalY = (doc as any).lastAutoTable.finalY + 10;
     
-    // Review guidance text
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Review Requirements:', leftCol, finalY);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    const reviewText = 'IMPORTANT: This guidance is for informational purposes only and should not be considered definitive. Risk assessments should be reviewed regularly and at least every 12 months, and following any incidents, ' +
-      'accidents, near misses, or changes to the device or operating procedures. If in any doubt, contact your inspection body, local authority, or regulatory body. Always seek and comply with local laws and regulations for accurate and legally binding information.';
-    const splitText = doc.splitTextToSize(reviewText, 270);
-    doc.text(splitText, leftCol, finalY + 6);
-    
     // Signature section
-    const sigY = finalY + 20;
+    const sigY = finalY;
     doc.setFontSize(8);
     doc.setFont('helvetica', 'normal');
     doc.text('Compiled by: ___________________________________', leftCol, sigY);
@@ -689,19 +678,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       // Get final Y position after table
       const finalY = (doc as any).lastAutoTable.finalY + 10;
       
-      // Review guidance text
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Review Requirements:', leftCol, finalY);
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
-      const reviewText = 'IMPORTANT: This guidance is for informational purposes only and should not be considered definitive. Risk assessments should be reviewed regularly and at least every 12 months, and following any incidents, ' +
-        'accidents, near misses, or changes to the device or operating procedures. If in any doubt, contact your inspection body, local authority, or regulatory body. Always seek and comply with local laws and regulations for accurate and legally binding information.';
-      const splitText = doc.splitTextToSize(reviewText, 270);
-      doc.text(splitText, leftCol, finalY + 6);
-      
       // Signature section
-      const sigY = finalY + 20;
+      const sigY = finalY;
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
       doc.text('Compiled by: ___________________________________', leftCol, sigY);
@@ -1051,15 +1029,6 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         </div>
       )}
 
-      {/* Review Requirements Alert */}
-      {assessmentItems.length > 0 && (
-        <Alert className="mt-4">
-          <Info className="h-4 w-4" />
-          <AlertDescription className="text-sm">
-            <strong>IMPORTANT:</strong> This guidance is for informational purposes only and should not be considered definitive. Risk assessments should be reviewed regularly and at least every 12 months, and following any incidents, accidents, near misses, or changes to the device or operating procedures. If in any doubt, contact your inspection body, local authority, or regulatory body. Always seek and comply with local laws and regulations for accurate and legally binding information.
-          </AlertDescription>
-        </Alert>
-      )}
 
       <Dialog open={showItemDialog} onOpenChange={(open) => {
         setShowItemDialog(open);
