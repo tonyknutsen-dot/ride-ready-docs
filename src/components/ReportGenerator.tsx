@@ -138,9 +138,9 @@ const ReportGenerator = () => {
       const startDate = formatDate(start, 'yyyy-MM-dd');
       const endDate = formatDate(end, 'yyyy-MM-dd');
 
-      // Load inspection data
-      const { data: inspections, error: inspectionsError } = await supabase
-        .from('inspection_checks')
+      // Load check data
+      const { data: checks, error: checksError } = await supabase
+        .from('checks')
         .select(`
           id,
           status,
@@ -153,7 +153,7 @@ const ReportGenerator = () => {
         .gte('check_date', startDate)
         .lte('check_date', endDate);
 
-      if (inspectionsError) throw inspectionsError;
+      if (checksError) throw checksError;
 
       // Load maintenance data
       const { data: maintenance, error: maintenanceError } = await supabase
@@ -173,26 +173,26 @@ const ReportGenerator = () => {
       if (maintenanceError) throw maintenanceError;
 
       // Calculate report data
-      const totalInspections = inspections?.length || 0;
-      const completedInspections = inspections?.filter(i => i.status === 'completed').length || 0;
-      const overdueInspections = inspections?.filter(i => 
-        i.status === 'pending' && i.check_date < formatDate(new Date(), 'yyyy-MM-dd')
+      const totalChecks = checks?.length || 0;
+      const completedChecks = checks?.filter(c => c.status === 'completed').length || 0;
+      const overdueChecks = checks?.filter(c => 
+        c.status === 'pending' && c.check_date < formatDate(new Date(), 'yyyy-MM-dd')
       ).length || 0;
       const maintenanceRecords = maintenance?.length || 0;
       const totalCost = maintenance?.reduce((sum, m) => sum + (m.cost || 0), 0) || 0;
-      const complianceRate = totalInspections > 0 ? (completedInspections / totalInspections) * 100 : 0;
+      const complianceRate = totalChecks > 0 ? (completedChecks / totalChecks) * 100 : 0;
 
       // Ride breakdown
       const rideBreakdown: { [key: string]: number } = {};
-      inspections?.forEach(inspection => {
-        const rideName = (inspection.rides as any)?.ride_name || 'Unknown';
+      checks?.forEach(check => {
+        const rideName = (check.rides as any)?.ride_name || 'Unknown';
         rideBreakdown[rideName] = (rideBreakdown[rideName] || 0) + 1;
       });
 
       const data: ReportData = {
-        totalInspections,
-        completedInspections,
-        overdueInspections,
+        totalInspections: totalChecks,
+        completedInspections: completedChecks,
+        overdueInspections: overdueChecks,
         maintenanceRecords,
         totalCost,
         complianceRate,

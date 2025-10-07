@@ -24,7 +24,7 @@ type Template = Tables<'daily_check_templates'> & {
   daily_check_template_items: Tables<'daily_check_template_items'>[];
 };
 
-type InspectionCheck = Tables<'inspection_checks'>;
+type Check = Tables<'checks'>;
 
 interface RideDailyChecksProps {
   ride: Ride;
@@ -34,7 +34,7 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [template, setTemplate] = useState<Template | null>(null);
-  const [recentChecks, setRecentChecks] = useState<InspectionCheck[]>([]);
+  const [recentChecks, setRecentChecks] = useState<Check[]>([]);
   const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [notes, setNotes] = useState('');
   const [inspectorName, setInspectorName] = useState('');
@@ -82,7 +82,7 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
   const loadRecentChecks = async () => {
     try {
       const { data, error } = await supabase
-        .from('inspection_checks')
+        .from('checks')
         .select('*')
         .eq('user_id', user?.id)
         .eq('ride_id', ride.id)
@@ -154,7 +154,7 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
 
       // Create daily check record
       const { data: dailyCheck, error: checkError } = await supabase
-        .from('inspection_checks')
+        .from('checks')
         .insert({
           user_id: user?.id,
           ride_id: ride.id,
@@ -173,14 +173,14 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
 
       // Create individual check results
       const resultsToInsert = template.daily_check_template_items.map(item => ({
-        inspection_check_id: dailyCheck.id,
+        check_id: dailyCheck.id,
         template_item_id: item.id,
         is_checked: checkedItems[item.id] || false,
         notes: null, // Could be extended to support per-item notes
       }));
 
       const { error: resultsError } = await supabase
-        .from('inspection_check_results')
+        .from('check_results')
         .insert(resultsToInsert);
 
       if (resultsError) {

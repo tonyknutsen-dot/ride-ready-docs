@@ -93,7 +93,7 @@ const Overview = () => {
       // Fetch recent checks (last 7 days)
       const {
         count: checksCount
-      } = await supabase.from('inspection_checks').select('*', {
+      } = await supabase.from('checks').select('*', {
         count: 'exact',
         head: true
       }).eq('user_id', user?.id).gte('check_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
@@ -133,7 +133,7 @@ const Overview = () => {
       // Add recent check activity
       const {
         data: recentChecks
-      } = await supabase.from('inspection_checks').select('check_date, ride_id, rides(ride_name)').eq('user_id', user?.id).order('check_date', {
+      } = await supabase.from('checks').select('check_date, ride_id, rides(ride_name)').eq('user_id', user?.id).order('check_date', {
         ascending: false
       }).limit(2);
       if (recentChecks) {

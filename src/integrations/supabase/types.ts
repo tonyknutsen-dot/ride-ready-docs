@@ -147,6 +147,114 @@ export type Database = {
           },
         ]
       }
+      check_results: {
+        Row: {
+          check_id: string
+          created_at: string
+          id: string
+          is_checked: boolean
+          notes: string | null
+          template_item_id: string
+        }
+        Insert: {
+          check_id: string
+          created_at?: string
+          id?: string
+          is_checked: boolean
+          notes?: string | null
+          template_item_id: string
+        }
+        Update: {
+          check_id?: string
+          created_at?: string
+          id?: string
+          is_checked?: boolean
+          notes?: string | null
+          template_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_check_results_daily_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_check_results_template_item_id_fkey"
+            columns: ["template_item_id"]
+            isOneToOne: false
+            referencedRelation: "daily_check_template_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checks: {
+        Row: {
+          check_date: string
+          check_frequency: string
+          compliance_officer: string | null
+          created_at: string
+          environment_notes: string | null
+          id: string
+          inspector_name: string
+          notes: string | null
+          ride_id: string
+          signature_data: string | null
+          status: string
+          template_id: string
+          user_id: string
+          weather_conditions: string | null
+        }
+        Insert: {
+          check_date?: string
+          check_frequency?: string
+          compliance_officer?: string | null
+          created_at?: string
+          environment_notes?: string | null
+          id?: string
+          inspector_name: string
+          notes?: string | null
+          ride_id: string
+          signature_data?: string | null
+          status: string
+          template_id: string
+          user_id: string
+          weather_conditions?: string | null
+        }
+        Update: {
+          check_date?: string
+          check_frequency?: string
+          compliance_officer?: string | null
+          created_at?: string
+          environment_notes?: string | null
+          id?: string
+          inspector_name?: string
+          notes?: string | null
+          ride_id?: string
+          signature_data?: string | null
+          status?: string
+          template_id?: string
+          user_id?: string
+          weather_conditions?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_checks_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_checks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "daily_check_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compliance_templates: {
         Row: {
           category_id: string | null
@@ -415,114 +523,6 @@ export type Database = {
         }
         Relationships: []
       }
-      inspection_check_results: {
-        Row: {
-          created_at: string
-          id: string
-          inspection_check_id: string
-          is_checked: boolean
-          notes: string | null
-          template_item_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          inspection_check_id: string
-          is_checked: boolean
-          notes?: string | null
-          template_item_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          inspection_check_id?: string
-          is_checked?: boolean
-          notes?: string | null
-          template_item_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "daily_check_results_daily_check_id_fkey"
-            columns: ["inspection_check_id"]
-            isOneToOne: false
-            referencedRelation: "inspection_checks"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "daily_check_results_template_item_id_fkey"
-            columns: ["template_item_id"]
-            isOneToOne: false
-            referencedRelation: "daily_check_template_items"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      inspection_checks: {
-        Row: {
-          check_date: string
-          check_frequency: string
-          compliance_officer: string | null
-          created_at: string
-          environment_notes: string | null
-          id: string
-          inspector_name: string
-          notes: string | null
-          ride_id: string
-          signature_data: string | null
-          status: string
-          template_id: string
-          user_id: string
-          weather_conditions: string | null
-        }
-        Insert: {
-          check_date?: string
-          check_frequency?: string
-          compliance_officer?: string | null
-          created_at?: string
-          environment_notes?: string | null
-          id?: string
-          inspector_name: string
-          notes?: string | null
-          ride_id: string
-          signature_data?: string | null
-          status: string
-          template_id: string
-          user_id: string
-          weather_conditions?: string | null
-        }
-        Update: {
-          check_date?: string
-          check_frequency?: string
-          compliance_officer?: string | null
-          created_at?: string
-          environment_notes?: string | null
-          id?: string
-          inspector_name?: string
-          notes?: string | null
-          ride_id?: string
-          signature_data?: string | null
-          status?: string
-          template_id?: string
-          user_id?: string
-          weather_conditions?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "daily_checks_ride_id_fkey"
-            columns: ["ride_id"]
-            isOneToOne: false
-            referencedRelation: "rides"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "daily_checks_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "daily_check_templates"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       inspection_schedules: {
         Row: {
           advance_notice_days: number
@@ -535,6 +535,7 @@ export type Database = {
           last_notification_sent: string | null
           notes: string | null
           ride_id: string
+          schedule_type: string
           updated_at: string
           user_id: string
         }
@@ -549,6 +550,7 @@ export type Database = {
           last_notification_sent?: string | null
           notes?: string | null
           ride_id: string
+          schedule_type?: string
           updated_at?: string
           user_id: string
         }
@@ -563,6 +565,7 @@ export type Database = {
           last_notification_sent?: string | null
           notes?: string | null
           ride_id?: string
+          schedule_type?: string
           updated_at?: string
           user_id?: string
         }

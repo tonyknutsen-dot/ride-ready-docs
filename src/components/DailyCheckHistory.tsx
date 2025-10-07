@@ -33,7 +33,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import jsPDF from 'jspdf';
 
-type InspectionCheck = Tables<'inspection_checks'> & {
+type Check = Tables<'checks'> & {
   rides: {
     ride_name: string;
     manufacturer: string | null;
@@ -42,7 +42,7 @@ type InspectionCheck = Tables<'inspection_checks'> & {
       name: string;
     };
   };
-  inspection_check_results: Array<{
+  check_results: Array<{
     is_checked: boolean;
     notes: string | null;
     daily_check_template_items: {
@@ -60,9 +60,9 @@ interface DailyCheckHistoryProps {
 const DailyCheckHistory = ({ rideId }: DailyCheckHistoryProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [checks, setChecks] = useState<InspectionCheck[]>([]);
+  const [checks, setChecks] = useState<Check[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCheck, setSelectedCheck] = useState<InspectionCheck | null>(null);
+  const [selectedCheck, setSelectedCheck] = useState<Check | null>(null);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [recipientEmail, setRecipientEmail] = useState('');
   const [recipientName, setRecipientName] = useState('');
@@ -79,16 +79,11 @@ const DailyCheckHistory = ({ rideId }: DailyCheckHistoryProps) => {
   const loadChecks = async () => {
     try {
       let query = supabase
-        .from('inspection_checks')
+        .from('checks')
         .select(`
-          *,
-          rides:ride_id (
-            ride_name,
-            manufacturer,
-            serial_number,
-            ride_categories (name)
+...
           ),
-          inspection_check_results (
+          check_results (
             is_checked,
             notes,
             daily_check_template_items:template_item_id (
@@ -110,7 +105,7 @@ const DailyCheckHistory = ({ rideId }: DailyCheckHistoryProps) => {
 
       if (error) throw error;
 
-      setChecks(data as InspectionCheck[] || []);
+      setChecks(data as any || []);
     } catch (error: any) {
       console.error('Error loading checks:', error);
       toast({
@@ -123,7 +118,7 @@ const DailyCheckHistory = ({ rideId }: DailyCheckHistoryProps) => {
     }
   };
 
-  const generatePDF = (checksToGenerate: InspectionCheck[], isBulk: boolean = false) => {
+  const generatePDF = (checksToGenerate: Check[], isBulk: boolean = false) => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.width;
     const pageHeight = doc.internal.pageSize.height;
@@ -208,8 +203,8 @@ const DailyCheckHistory = ({ rideId }: DailyCheckHistoryProps) => {
       infoY += 5;
       doc.text(`Inspector: ${check.inspector_name}`, rightCol, infoY);
       
-      const checkedCount = check.inspection_check_results.filter(r => r.is_checked).length;
-      const totalCount = check.inspection_check_results.length;
+      const checkedCount = check.check_results.filter(r => r.is_checked).length;
+      const totalCount = check.check_results.length;
       const percentage = Math.round((checkedCount/totalCount)*100);
       infoY += 5;
       doc.text(`Completion: ${checkedCount}/${totalCount} (${percentage}%)`, rightCol, infoY);
@@ -224,7 +219,7 @@ const DailyCheckHistory = ({ rideId }: DailyCheckHistoryProps) => {
       yPos += 8;
 
       // Items in a clean table format
-      check.inspection_check_results.forEach((result, index) => {
+      check.check_results.forEach((result, index) => {
         if (yPos > pageHeight - 30) {
           doc.addPage();
           yPos = margin;
@@ -318,7 +313,7 @@ const DailyCheckHistory = ({ rideId }: DailyCheckHistoryProps) => {
     return doc;
   };
 
-  const handleDownload = (check: InspectionCheck) => {
+  const handleDownload = (check: Check) => {
     const doc = generatePDF([check]);
     doc.save(`daily-check-${check.rides.ride_name}-${check.check_date}.pdf`);
     toast({
@@ -327,7 +322,7 @@ const DailyCheckHistory = ({ rideId }: DailyCheckHistoryProps) => {
     });
   };
 
-  const handlePrint = (check: InspectionCheck) => {
+  const handlePrint = (check: Check) => {
     const doc = generatePDF([check]);
     doc.autoPrint();
     window.open(doc.output('bloburl'), '_blank');
@@ -571,8 +566,8 @@ const DailyCheckHistory = ({ rideId }: DailyCheckHistoryProps) => {
               )}
               <div className="space-y-3">
                 {checks.map((check) => {
-                  const checkedCount = check.inspection_check_results.filter(r => r.is_checked).length;
-                  const totalCount = check.inspection_check_results.length;
+                  const checkedCount = check.check_results.filter(r => r.is_checked).length;
+                  const totalCount = check.check_results.length;
 
                   return (
                     <Card key={check.id} className="border">
@@ -699,7 +694,7 @@ const DailyCheckHistory = ({ rideId }: DailyCheckHistoryProps) => {
               <div>
                 <Label className="text-muted-foreground mb-2 block">Inspection Items</Label>
                 <div className="space-y-2">
-                  {selectedCheck.inspection_check_results.map((result, index) => (
+                  {selectedCheck.check_results.map((result, index) => (
                     <div key={index} className={`p-3 rounded border ${
                       result.is_checked ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
                     }`}>

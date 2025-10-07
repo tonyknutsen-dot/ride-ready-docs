@@ -83,7 +83,7 @@ const RideManagement = () => {
 
         // Get daily check count for this ride
         const { count: checkCount } = await supabase
-          .from('inspection_checks')
+          .from('checks')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user?.id)
           .eq('ride_id', ride.id);

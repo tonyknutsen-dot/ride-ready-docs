@@ -110,13 +110,13 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
         ridesDataForStats = rides;
 
         // Load inspection checks
-        const { data: inspections, error: inspectionsError } = await supabase
-          .from('inspection_checks')
+        const { data: checks, error: checksError } = await supabase
+          .from('checks')
           .select('id, check_date, status')
           .eq('user_id', user?.id);
 
-        if (inspectionsError) throw inspectionsError;
-        inspectionsData = inspections;
+        if (checksError) throw checksError;
+        inspectionsData = checks;
 
         // Load maintenance records
         const { data: maintenance, error: maintenanceError } = await supabase
@@ -129,7 +129,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
 
         // Load recent activity (last 5 inspection checks)
         const { data: activity } = await supabase
-          .from('inspection_checks')
+          .from('checks')
           .select(`
             id,
             check_date,

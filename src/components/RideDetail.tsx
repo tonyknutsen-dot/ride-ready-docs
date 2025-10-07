@@ -62,7 +62,7 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
       // Get today's inspection checks count
       const today = new Date().toISOString().split('T')[0];
       const { count: todayChecks } = await supabase
-        .from('inspection_checks')
+        .from('checks')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('ride_id', ride.id)

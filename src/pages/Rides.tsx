@@ -89,7 +89,7 @@ const Rides = () => {
         }).eq('user_id', user?.id).eq('ride_id', ride.id);
         const {
           count: checkCount
-        } = await supabase.from('inspection_checks').select('*', {
+        } = await supabase.from('checks').select('*', {
           count: 'exact',
           head: true
         }).eq('user_id', user?.id).eq('ride_id', ride.id);

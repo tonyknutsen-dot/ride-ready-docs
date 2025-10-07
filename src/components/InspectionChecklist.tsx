@@ -29,7 +29,7 @@ type Template = Tables<'daily_check_templates'> & {
   daily_check_template_items: Tables<'daily_check_template_items'>[];
 };
 
-type InspectionCheck = Tables<'inspection_checks'>;
+type Check = Tables<'checks'>;
 
 interface InspectionChecklistProps {
   ride: Ride;
@@ -38,7 +38,7 @@ interface InspectionChecklistProps {
 
 const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
-  const [recentChecks, setRecentChecks] = useState<InspectionCheck[]>([]);
+  const [recentChecks, setRecentChecks] = useState<Check[]>([]);
   const [checkedItems, setCheckedItems] = useState<{ [key: string]: boolean }>({});
   const [notes, setNotes] = useState<{ [key: string]: string }>({});
   const [inspectorName, setInspectorName] = useState('');
@@ -94,7 +94,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const loadRecentChecks = async () => {
     try {
       const { data, error } = await supabase
-        .from('inspection_checks')
+        .from('checks')
         .select('*')
         .eq('user_id', user?.id)
         .eq('ride_id', ride.id)
@@ -235,8 +235,8 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
     try {
       // Create inspection check record
-      const { data: inspectionCheck, error: checkError } = await supabase
-        .from('inspection_checks')
+      const { data: check, error: checkError } = await supabase
+        .from('checks')
         .insert({
           user_id: user?.id,
           ride_id: ride.id,
@@ -257,14 +257,14 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
       // Create inspection results
       const results = activeTemplate.daily_check_template_items.map(item => ({
-        inspection_check_id: inspectionCheck.id,
+        check_id: check.id,
         template_item_id: item.id,
         is_checked: checkedItems[item.id] || false,
         notes: notes[item.id]?.trim() || null
       }));
 
       const { error: resultsError } = await supabase
-        .from('inspection_check_results')
+        .from('check_results')
         .insert(results);
 
       if (resultsError) throw resultsError;

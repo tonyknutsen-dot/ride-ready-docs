@@ -25,7 +25,7 @@ interface CalendarEvent {
   id: string;
   title: string;
   date: string;
-  type: 'inspection' | 'maintenance' | 'document_expiry' | 'ndt';
+  type: 'check' | 'inspection' | 'maintenance' | 'document_expiry' | 'ndt';
   status: 'pending' | 'completed' | 'overdue';
   rideId?: string;
   rideName?: string;
@@ -96,22 +96,22 @@ const CalendarView = () => {
       } else {
         // Advanced plan: load all event types
         // Load inspection checks
-        const { data: inspections } = await supabase
-          .from('inspection_checks')
+        const { data: checks } = await supabase
+          .from('checks')
           .select('id, check_date, status, ride_id')
           .eq('user_id', user?.id)
           .gte('check_date', format(monthStart, 'yyyy-MM-dd'))
           .lte('check_date', format(monthEnd, 'yyyy-MM-dd'));
 
-        inspections?.forEach(inspection => {
-          if (inspection.ride_id) rideIds.add(inspection.ride_id);
+        checks?.forEach(check => {
+          if (check.ride_id) rideIds.add(check.ride_id);
           allEvents.push({
-            id: inspection.id,
-            title: `Inspection`,
-            date: inspection.check_date,
-            type: 'inspection',
-            status: inspection.status as 'pending' | 'completed' | 'overdue',
-            rideId: inspection.ride_id,
+            id: check.id,
+            title: `Check`,
+            date: check.check_date,
+            type: 'check',
+            status: check.status as 'pending' | 'completed' | 'overdue',
+            rideId: check.ride_id,
           });
         });
 

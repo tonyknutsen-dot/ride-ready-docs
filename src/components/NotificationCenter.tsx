@@ -87,17 +87,17 @@ const NotificationCenter = () => {
     try {
       // Check for overdue inspections
       const today = new Date().toISOString().split('T')[0];
-      const { data: overdueInspections } = await supabase
-        .from('inspection_checks')
+      const { data: overdueChecks } = await supabase
+        .from('checks')
         .select('id, rides(ride_name)')
         .eq('user_id', user?.id)
         .eq('status', 'pending')
         .lt('check_date', today);
 
-      if (overdueInspections && overdueInspections.length > 0) {
+      if (overdueChecks && overdueChecks.length > 0) {
         await createNotification(
-          'Overdue Inspections',
-          `You have ${overdueInspections.length} overdue inspection(s) requiring immediate attention.`,
+          'Overdue Checks',
+          `You have ${overdueChecks.length} overdue check(s) requiring immediate attention.`,
           'warning'
         );
       }
