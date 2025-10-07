@@ -859,12 +859,14 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                   <Button
                     variant="outline"
                     className={cn(
-                      "w-full justify-start text-left font-normal",
+                      "w-full justify-start text-left font-normal h-10",
                       !itemFormData.target_date && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {itemFormData.target_date ? format(new Date(itemFormData.target_date), 'PPP') : <span>Pick a date</span>}
+                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                    <span className="truncate">
+                      {itemFormData.target_date ? format(new Date(itemFormData.target_date), 'dd MMM yyyy') : 'Pick a date'}
+                    </span>
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
