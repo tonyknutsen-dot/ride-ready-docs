@@ -842,6 +842,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                   <CardTitle className="text-lg">Risk Assessment</CardTitle>
                 </div>
                 <CardDescription className="text-sm">
+                  <span className="font-medium text-foreground">{ride.ride_name}</span>
+                  {' • '}
                   {format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')} • {selectedAssessment.assessor_name}
                 </CardDescription>
               </div>
