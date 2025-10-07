@@ -526,7 +526,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             <div className="col-span-2">
               <Label>Who is at Risk * (Select all that apply)</Label>
               <div className="grid grid-cols-2 gap-3 mt-2 p-4 border rounded-md">
-                {['Generally speaking', 'Public', 'Staff', 'Contractors', 'Spectators', 'Operators', 'Maintenance personnel', 'All persons'].map((option) => {
+                {['Public', 'Staff', 'Contractors', 'Spectators', 'Operators', 'Maintenance personnel', 'All persons'].map((option) => {
                   const selectedGroups = itemFormData.who_at_risk ? itemFormData.who_at_risk.split(', ') : [];
                   const isChecked = selectedGroups.includes(option);
                   
