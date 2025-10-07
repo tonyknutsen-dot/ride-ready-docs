@@ -72,18 +72,18 @@ const Features = () => {
         </div>
 
         {/* Documents & Compliance App */}
-        <div className="mb-12 p-8 rounded-2xl bg-accent/5 border border-accent/20">
+        <div className="mb-12 p-8 rounded-2xl bg-accent/10 border-2 border-accent/40">
           <div className="flex items-center justify-center gap-3 mb-6">
-            <h3 className="text-2xl md:text-3xl font-bold text-accent">
+            <h3 className="text-2xl md:text-3xl font-bold text-accent-foreground">
               📄 Documents & Compliance App
             </h3>
-            <Badge variant="secondary" className="text-xs">Basic Plan</Badge>
+            <Badge className="text-xs bg-accent text-accent-foreground">Basic Plan</Badge>
           </div>
           <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
             Store, organize, and share all your compliance documents. Keep everything accessible and up-to-date.
           </p>
           <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {docsFeatures.map((feature, index) => <Card key={index} className="transition-smooth hover:shadow-elegant hover:bg-card-hover group cursor-default border-accent/30 bg-background">
+            {docsFeatures.map((feature, index) => <Card key={index} className="transition-smooth hover:shadow-elegant hover:bg-card-hover group cursor-default border-accent/40 bg-background shadow-md">
                 <CardHeader className="text-center pb-4">
                   <div className="mx-auto mb-4 p-3 bg-accent/10 rounded-full w-fit group-hover:bg-accent/20 transition-smooth">
                     {feature.icon}
@@ -110,16 +110,16 @@ const Features = () => {
         </div>
 
         {/* Operations & Maintenance App */}
-        <div className="p-8 rounded-2xl bg-primary/5 border border-primary/20">
+        <div className="p-8 rounded-2xl bg-primary/10 border-2 border-primary/40">
           <div className="flex items-center justify-center gap-3 mb-6">
-            <h3 className="text-2xl md:text-3xl font-bold text-primary">⚙️ Operations & Maintenance App</h3>
-            <Badge variant="default" className="text-xs">Advanced Plan</Badge>
+            <h3 className="text-2xl md:text-3xl font-bold text-primary-foreground">⚙️ Operations & Maintenance App</h3>
+            <Badge className="text-xs bg-primary text-primary-foreground">Advanced Plan</Badge>
           </div>
           <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
             Complete safety checks, log maintenance, track inspections, and receive technical bulletins for your equipment.
           </p>
           <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-            {checksFeatures.map((feature, index) => <Card key={index} className="transition-smooth hover:shadow-elegant hover:bg-card-hover group cursor-default border-primary/30 bg-background">
+            {checksFeatures.map((feature, index) => <Card key={index} className="transition-smooth hover:shadow-elegant hover:bg-card-hover group cursor-default border-primary/40 bg-background shadow-md">
                 <CardHeader className="text-center pb-4">
                   <div className="mx-auto mb-4 p-3 bg-primary/10 rounded-full w-fit group-hover:bg-primary/20 transition-smooth">
                     {feature.icon}
