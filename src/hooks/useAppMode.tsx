@@ -41,6 +41,29 @@ export const useAppMode = () => {
     };
 
     fetchAppMode();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('profile-app-mode-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          if (payload.new && 'app_mode' in payload.new) {
+            setAppModeState(payload.new.app_mode as AppMode);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user]);
 
   const setAppMode = async (mode: AppMode) => {
