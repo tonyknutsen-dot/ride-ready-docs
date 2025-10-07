@@ -9,6 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from '@/hooks/use-toast';
 import { Plus, Trash2, Download, Mail, Printer } from 'lucide-react';
 import { format } from 'date-fns';
@@ -523,21 +524,36 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
               />
             </div>
             <div className="col-span-2">
-              <Label htmlFor="who_at_risk">Who is at Risk *</Label>
-              <Select value={itemFormData.who_at_risk} onValueChange={(value) => setItemFormData({ ...itemFormData, who_at_risk: value })}>
-                <SelectTrigger><SelectValue placeholder="Select who is at risk" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Generally speaking">Generally speaking</SelectItem>
-                  <SelectItem value="Public">Public</SelectItem>
-                  <SelectItem value="Staff">Staff</SelectItem>
-                  <SelectItem value="Contractors">Contractors</SelectItem>
-                  <SelectItem value="Spectators">Spectators</SelectItem>
-                  <SelectItem value="Operators">Operators</SelectItem>
-                  <SelectItem value="Maintenance personnel">Maintenance personnel</SelectItem>
-                  <SelectItem value="Children">Children</SelectItem>
-                  <SelectItem value="All persons">All persons</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Who is at Risk * (Select all that apply)</Label>
+              <div className="grid grid-cols-2 gap-3 mt-2 p-4 border rounded-md">
+                {['Generally speaking', 'Public', 'Staff', 'Contractors', 'Spectators', 'Operators', 'Maintenance personnel', 'All persons'].map((option) => {
+                  const selectedGroups = itemFormData.who_at_risk ? itemFormData.who_at_risk.split(', ') : [];
+                  const isChecked = selectedGroups.includes(option);
+                  
+                  return (
+                    <div key={option} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`risk-${option}`}
+                        checked={isChecked}
+                        onCheckedChange={(checked) => {
+                          let newGroups = [...selectedGroups];
+                          if (checked) {
+                            if (!newGroups.includes(option)) {
+                              newGroups.push(option);
+                            }
+                          } else {
+                            newGroups = newGroups.filter(g => g !== option);
+                          }
+                          setItemFormData({ ...itemFormData, who_at_risk: newGroups.join(', ') });
+                        }}
+                      />
+                      <Label htmlFor={`risk-${option}`} className="text-sm font-normal cursor-pointer">
+                        {option}
+                      </Label>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
             <div className="col-span-2">
               <Label htmlFor="existing_controls">Existing Controls</Label>
