@@ -17,9 +17,11 @@ import { Plus, Trash2, Download, Mail, Printer, CalendarIcon, Info, ChevronDown,
 import { format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { cn } from '@/lib/utils';
+import logoImage from '@/assets/logo.png';
 
 interface RiskAssessmentManagerProps {
   ride: {
@@ -266,26 +268,41 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     }
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     if (!selectedAssessment) return;
 
     const doc = new jsPDF({ orientation: 'landscape' });
     
-    // App name in top right corner
+    // Add logo
+    const img = new Image();
+    img.src = logoImage;
+    await new Promise((resolve) => {
+      img.onload = resolve;
+    });
+    doc.addImage(img, 'PNG', 14, 5, 20, 20);
+    
+    // App name next to logo
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Showmans Ride Ready', 38, 13);
     doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
-    doc.text('RideRight', doc.internal.pageSize.getWidth() - 25, 10);
+    doc.text('Operational & Maintenance Docs', 38, 18);
     
     // Title
     doc.setFontSize(18);
     doc.setTextColor(0, 0, 0);
-    doc.text('Risk Assessment', 14, 15);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Risk Assessment', 14, 35);
     
     // Details section
     doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
     const leftCol = 14;
     const rightCol = 160;
-    let yPos = 25;
+    let yPos = 45;
     
     // Left column - Ride details
     doc.setFont('helvetica', 'bold');
@@ -302,7 +319,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     }
     
     // Right column - Controller details
-    yPos = 25;
+    yPos = 45;
     if (profile) {
       if (profile.controller_name) {
         doc.setFont('helvetica', 'bold');
@@ -327,7 +344,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     }
     
     // Assessment info
-    yPos = 43;
+    yPos = 63;
     doc.setFont('helvetica', 'bold');
     doc.text('Assessment Date:', leftCol, yPos);
     doc.setFont('helvetica', 'normal');
@@ -350,7 +367,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     ]);
 
     autoTable(doc, {
-      startY: 52,
+      startY: 72,
       head: [['Hazard', 'Who at Risk', 'Existing Controls', 'Risk', 'Likelihood', 'Severity', 'Additional Actions', 'Status']],
       body: tableData,
       styles: { 
@@ -373,22 +390,45 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         7: { cellWidth: 20 }
       },
       didParseCell: function(data) {
-        // Color code the risk level column
         if (data.column.index === 3 && data.section === 'body') {
           const risk = data.cell.raw as string;
           if (risk === 'HIGH') {
-            data.cell.styles.fillColor = [239, 68, 68]; // red
-            data.cell.styles.textColor = [255, 255, 255]; // white text
+            data.cell.styles.fillColor = [239, 68, 68];
+            data.cell.styles.textColor = [255, 255, 255];
           } else if (risk === 'MEDIUM') {
-            data.cell.styles.fillColor = [251, 146, 60]; // orange
-            data.cell.styles.textColor = [255, 255, 255]; // white text
+            data.cell.styles.fillColor = [251, 146, 60];
+            data.cell.styles.textColor = [255, 255, 255];
           } else if (risk === 'LOW') {
-            data.cell.styles.fillColor = [34, 197, 94]; // green
-            data.cell.styles.textColor = [255, 255, 255]; // white text
+            data.cell.styles.fillColor = [34, 197, 94];
+            data.cell.styles.textColor = [255, 255, 255];
           }
         }
       }
     });
+
+    // Get final Y position after table
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    
+    // Review guidance text
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Review Requirements:', leftCol, finalY);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7);
+    const reviewText = 'This risk assessment must be reviewed regularly, at minimum every 12 months, and immediately following any incidents, near misses, modifications to the equipment, ' +
+      'changes in operating procedures, or alterations to the site layout. Reviews should also be conducted when introducing new staff or when industry best practices are updated. ' +
+      'All control measures must be monitored for effectiveness and the assessment updated accordingly to ensure continued safe operation.';
+    const splitText = doc.splitTextToSize(reviewText, 270);
+    doc.text(splitText, leftCol, finalY + 6);
+    
+    // Signature section
+    const sigY = finalY + 20;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Compiled by: ___________________________________', leftCol, sigY);
+    doc.text(`${selectedAssessment.assessor_name}`, leftCol + 25, sigY);
+    doc.text('Date: ___________________________________', rightCol, sigY);
+    doc.text(format(new Date(), 'dd/MM/yyyy'), rightCol + 12, sigY);
 
     doc.save(`risk-assessment-${ride.ride_name}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
     toast({ title: 'Success', description: 'PDF downloaded' });
@@ -401,21 +441,36 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       // Generate PDF
       const doc = new jsPDF({ orientation: 'landscape' });
       
-      // App name in top right corner
+      // Add logo
+      const img = new Image();
+      img.src = logoImage;
+      await new Promise((resolve) => {
+        img.onload = resolve;
+      });
+      doc.addImage(img, 'PNG', 14, 5, 20, 20);
+      
+      // App name next to logo
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Showmans Ride Ready', 38, 13);
       doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
       doc.setTextColor(100, 100, 100);
-      doc.text('RideRight', doc.internal.pageSize.getWidth() - 25, 10);
+      doc.text('Operational & Maintenance Docs', 38, 18);
       
       // Title
       doc.setFontSize(18);
       doc.setTextColor(0, 0, 0);
-      doc.text('Risk Assessment', 14, 15);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Risk Assessment', 14, 35);
       
       // Details section
       doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
       const leftCol = 14;
       const rightCol = 160;
-      let yPos = 25;
+      let yPos = 45;
       
       // Left column - Ride details
       doc.setFont('helvetica', 'bold');
@@ -432,7 +487,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       }
       
       // Right column - Controller details
-      yPos = 25;
+      yPos = 45;
       if (profile) {
         if (profile.controller_name) {
           doc.setFont('helvetica', 'bold');
@@ -457,7 +512,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       }
       
       // Assessment info
-      yPos = 43;
+      yPos = 63;
       doc.setFont('helvetica', 'bold');
       doc.text('Assessment Date:', leftCol, yPos);
       doc.setFont('helvetica', 'normal');
@@ -480,7 +535,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       ]);
 
       autoTable(doc, {
-        startY: 52,
+        startY: 72,
         head: [['Hazard', 'Who at Risk', 'Existing Controls', 'Risk', 'Likelihood', 'Severity', 'Additional Actions', 'Status']],
         body: tableData,
         styles: { 
@@ -503,22 +558,45 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           7: { cellWidth: 20 }
         },
         didParseCell: function(data) {
-          // Color code the risk level column
           if (data.column.index === 3 && data.section === 'body') {
             const risk = data.cell.raw as string;
             if (risk === 'HIGH') {
-              data.cell.styles.fillColor = [239, 68, 68]; // red
-              data.cell.styles.textColor = [255, 255, 255]; // white text
+              data.cell.styles.fillColor = [239, 68, 68];
+              data.cell.styles.textColor = [255, 255, 255];
             } else if (risk === 'MEDIUM') {
-              data.cell.styles.fillColor = [251, 146, 60]; // orange
-              data.cell.styles.textColor = [255, 255, 255]; // white text
+              data.cell.styles.fillColor = [251, 146, 60];
+              data.cell.styles.textColor = [255, 255, 255];
             } else if (risk === 'LOW') {
-              data.cell.styles.fillColor = [34, 197, 94]; // green
-              data.cell.styles.textColor = [255, 255, 255]; // white text
+              data.cell.styles.fillColor = [34, 197, 94];
+              data.cell.styles.textColor = [255, 255, 255];
             }
           }
         }
       });
+
+      // Get final Y position after table
+      const finalY = (doc as any).lastAutoTable.finalY + 10;
+      
+      // Review guidance text
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Review Requirements:', leftCol, finalY);
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      const reviewText = 'This risk assessment must be reviewed regularly, at minimum every 12 months, and immediately following any incidents, near misses, modifications to the equipment, ' +
+        'changes in operating procedures, or alterations to the site layout. Reviews should also be conducted when introducing new staff or when industry best practices are updated. ' +
+        'All control measures must be monitored for effectiveness and the assessment updated accordingly to ensure continued safe operation.';
+      const splitText = doc.splitTextToSize(reviewText, 270);
+      doc.text(splitText, leftCol, finalY + 6);
+      
+      // Signature section
+      const sigY = finalY + 20;
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Compiled by: ___________________________________', leftCol, sigY);
+      doc.text(`${selectedAssessment.assessor_name}`, leftCol + 25, sigY);
+      doc.text('Date: ___________________________________', rightCol, sigY);
+      doc.text(format(new Date(), 'dd/MM/yyyy'), rightCol + 12, sigY);
 
       // Convert PDF to blob
       const pdfBlob = doc.output('blob');
@@ -829,6 +907,18 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             </Card>
           ))}
         </div>
+      )}
+
+      {/* Review Requirements Alert */}
+      {assessmentItems.length > 0 && (
+        <Alert className="mt-4">
+          <Info className="h-4 w-4" />
+          <AlertDescription className="text-sm">
+            <strong>Review Requirements:</strong> This risk assessment must be reviewed regularly, at minimum every 12 months, and immediately following any incidents, near misses, modifications to the equipment, 
+            changes in operating procedures, or alterations to the site layout. Reviews should also be conducted when introducing new staff or when industry best practices are updated. 
+            All control measures must be monitored for effectiveness and the assessment updated accordingly to ensure continued safe operation.
+          </AlertDescription>
+        </Alert>
       )}
 
       <Dialog open={showItemDialog} onOpenChange={(open) => {
