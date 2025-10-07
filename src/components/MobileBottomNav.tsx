@@ -130,10 +130,10 @@ export default function MobileBottomNav() {
             className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
               isActive(l => l.pathname === "/rides" || l.pathname.startsWith("/rides/")) ? "text-primary" : "text-muted-foreground"
             }`}
-            aria-label="Equipment"
+            aria-label="Rides"
           >
             <FolderOpen className="h-5 w-5" />
-            <span className="mt-0.5">Equipment</span>
+            <span className="mt-0.5">Rides</span>
           </button>
         )}
 
