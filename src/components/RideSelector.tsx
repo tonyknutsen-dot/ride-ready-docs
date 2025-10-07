@@ -153,11 +153,6 @@ const RideSelector = ({
         </Card>
       ) : (
         <>
-          <div className="text-center mb-4">
-            <p className="text-sm text-muted-foreground">
-              Don't see your category? <button onClick={() => setOpenRequest(true)} className="text-primary underline font-medium">Request category</button>
-            </p>
-          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-6xl mx-auto">
           {rides.map((ride) => (
             <Card 
