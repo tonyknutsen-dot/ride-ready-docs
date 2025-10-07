@@ -101,7 +101,7 @@ const AppHeader = () => {
                 <span className="hidden sm:inline">More</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuContent align="end" className="w-56 z-[100] bg-background">
               <DropdownMenuLabel>More Options</DropdownMenuLabel>
               <DropdownMenuSeparator />
               
