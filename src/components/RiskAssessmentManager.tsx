@@ -522,394 +522,525 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
               A risk assessment helps identify hazards and controls to keep everyone safe. Answer each question as accurately as possible.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="col-span-2">
-              <Label htmlFor="hazard_description">Hazard Description *</Label>
-              <p className="text-xs text-muted-foreground mb-2">What is the danger or hazard? Describe what could cause harm or injury.</p>
-              <Select value={itemFormData.hazard_description} onValueChange={(value) => setItemFormData({ ...itemFormData, hazard_description: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a hazard or choose Custom to add your own" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {/* Mechanical Hazards */}
-                  <SelectItem value="__mechanical" disabled className="font-semibold text-primary">── Mechanical Hazards ──</SelectItem>
-                  <SelectItem value="Mechanical failure during operation">Mechanical failure during operation</SelectItem>
-                  <SelectItem value="Moving parts causing crush injuries">Moving parts causing crush injuries</SelectItem>
-                  <SelectItem value="Rotating or spinning components without guards">Rotating or spinning components without guards</SelectItem>
-                  <SelectItem value="Belt, chain or pulley entanglement">Belt, chain or pulley entanglement</SelectItem>
-                  <SelectItem value="Hydraulic or pneumatic system failure">Hydraulic or pneumatic system failure</SelectItem>
-                  <SelectItem value="Brake system malfunction">Brake system malfunction</SelectItem>
-                  <SelectItem value="Bearing or shaft failure">Bearing or shaft failure</SelectItem>
-                  <SelectItem value="Wear and fatigue of mechanical components">Wear and fatigue of mechanical components</SelectItem>
-                  <SelectItem value="Inadequate lubrication leading to seizure">Inadequate lubrication leading to seizure</SelectItem>
-                  <SelectItem value="Vibration causing loose connections">Vibration causing loose connections</SelectItem>
-                  
-                  {/* Electrical Hazards */}
-                  <SelectItem value="__electrical" disabled className="font-semibold text-primary">── Electrical Hazards ──</SelectItem>
-                  <SelectItem value="Electrical shock from exposed wiring">Electrical shock from exposed wiring</SelectItem>
-                  <SelectItem value="Short circuit or electrical fire">Short circuit or electrical fire</SelectItem>
-                  <SelectItem value="Overloaded electrical circuits">Overloaded electrical circuits</SelectItem>
-                  <SelectItem value="Water ingress to electrical components">Water ingress to electrical components</SelectItem>
-                  <SelectItem value="Inadequate earthing or grounding">Inadequate earthing or grounding</SelectItem>
-                  
-                  {/* Structural Hazards */}
-                  <SelectItem value="__structural" disabled className="font-semibold text-primary">── Structural Hazards ──</SelectItem>
-                  <SelectItem value="Structural collapse or failure">Structural collapse or failure</SelectItem>
-                  <SelectItem value="Metal fatigue or stress cracks">Metal fatigue or stress cracks</SelectItem>
-                  <SelectItem value="Corrosion weakening structural integrity">Corrosion weakening structural integrity</SelectItem>
-                  <SelectItem value="Weld failure at critical joints">Weld failure at critical joints</SelectItem>
-                  <SelectItem value="Foundation settlement or instability">Foundation settlement or instability</SelectItem>
-                  <SelectItem value="Overloading beyond design capacity">Overloading beyond design capacity</SelectItem>
-                  <SelectItem value="Inadequate support or bracing">Inadequate support or bracing</SelectItem>
-                  <SelectItem value="Platform or deck deterioration">Platform or deck deterioration</SelectItem>
-                  
-                  {/* Environmental Hazards */}
-                  <SelectItem value="__environmental" disabled className="font-semibold text-primary">── Environmental Hazards ──</SelectItem>
-                  <SelectItem value="Weather-related hazards (wind, rain, lightning)">Weather-related hazards (wind, rain, lightning)</SelectItem>
-                  <SelectItem value="High wind causing instability">High wind causing instability</SelectItem>
-                  <SelectItem value="Lightning strike risk">Lightning strike risk</SelectItem>
-                  <SelectItem value="Temperature extremes affecting operation">Temperature extremes affecting operation</SelectItem>
-                  <SelectItem value="Poor ground conditions">Poor ground conditions</SelectItem>
-                  <SelectItem value="Slips, trips and falls from ride platform">Slips, trips and falls from ride platform</SelectItem>
-                  <SelectItem value="Inadequate lighting causing visibility issues">Inadequate lighting causing visibility issues</SelectItem>
-                  <SelectItem value="Noise hazards affecting communication">Noise hazards affecting communication</SelectItem>
-                  
-                  {/* Operator & Human Factors */}
-                  <SelectItem value="__operator" disabled className="font-semibold text-primary">── Operator & Human Factors ──</SelectItem>
-                  <SelectItem value="Operator error or inadequate training">Operator error or inadequate training</SelectItem>
-                  <SelectItem value="Fatigue affecting operator performance">Fatigue affecting operator performance</SelectItem>
-                  <SelectItem value="Communication failure between staff">Communication failure between staff</SelectItem>
-                  <SelectItem value="Inadequate supervision">Inadequate supervision</SelectItem>
-                  <SelectItem value="Emergency procedure not followed">Emergency procedure not followed</SelectItem>
-                  <SelectItem value="Lack of competency or qualification">Lack of competency or qualification</SelectItem>
-                  <SelectItem value="Maintenance errors during servicing">Maintenance errors during servicing</SelectItem>
-                  <SelectItem value="Bypassing safety systems">Bypassing safety systems</SelectItem>
-                  
-                  {/* Patron Safety */}
-                  <SelectItem value="__patron" disabled className="font-semibold text-primary">── Patron Safety ──</SelectItem>
-                  <SelectItem value="Rider entrapment or ejection">Rider entrapment or ejection</SelectItem>
-                  <SelectItem value="Inadequate restraint systems">Inadequate restraint systems</SelectItem>
-                  <SelectItem value="Patron not meeting height or health restrictions">Patron not meeting height or health restrictions</SelectItem>
-                  <SelectItem value="Loose articles becoming projectiles">Loose articles becoming projectiles</SelectItem>
-                  <SelectItem value="Overcrowding or queue management issues">Overcrowding or queue management issues</SelectItem>
-                  
-                  {/* Emergency & Fire */}
-                  <SelectItem value="__emergency" disabled className="font-semibold text-primary">── Emergency & Fire ──</SelectItem>
-                  <SelectItem value="Fire or explosion risk">Fire or explosion risk</SelectItem>
-                  <SelectItem value="Inadequate emergency evacuation routes">Inadequate emergency evacuation routes</SelectItem>
-                  <SelectItem value="Fire suppression system failure">Fire suppression system failure</SelectItem>
-                  <SelectItem value="Fuel or oil leak creating fire hazard">Fuel or oil leak creating fire hazard</SelectItem>
-                  <SelectItem value="Emergency stop system malfunction">Emergency stop system malfunction</SelectItem>
-                  
-                  <SelectItem value="Custom">Custom (enter below)</SelectItem>
-                </SelectContent>
-              </Select>
-              {itemFormData.hazard_description === 'Custom' && (
-                <Textarea
-                  className="mt-2"
-                  placeholder="Enter your custom hazard description"
-                  value={itemFormData.hazard_description}
-                  onChange={(e) => setItemFormData({ ...itemFormData, hazard_description: e.target.value })}
-                />
-              )}
-            </div>
-            <div className="col-span-2">
-              <Label>Who is at Risk * (Select all that apply)</Label>
-              <p className="text-xs text-muted-foreground mb-2">Identify who could be harmed by this hazard</p>
-              <div className="grid grid-cols-2 gap-3 mt-2 p-4 border rounded-md">
-                {['Public', 'Staff', 'Contractors', 'Spectators', 'Operators', 'Maintenance personnel', 'All persons'].map((option) => {
-                  const selectedGroups = itemFormData.who_at_risk ? itemFormData.who_at_risk.split(', ') : [];
-                  const isChecked = selectedGroups.includes(option);
-                  
-                  return (
-                    <div key={option} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={`risk-${option}`}
-                        checked={isChecked}
-                        onCheckedChange={(checked) => {
-                          let newGroups = [...selectedGroups];
-                          if (checked) {
-                            if (!newGroups.includes(option)) {
-                              newGroups.push(option);
-                            }
-                          } else {
-                            newGroups = newGroups.filter(g => g !== option);
-                          }
-                          setItemFormData({ ...itemFormData, who_at_risk: newGroups.join(', ') });
-                        }}
+          
+          <TooltipProvider>
+            <div className="space-y-6">
+              {/* Section 1: Risk Identification */}
+              <Card className="border-l-4 border-l-primary/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <span className="text-primary">1.</span> Risk Identification
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Label htmlFor="hazard_description">Hazard Description *</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>What is the danger or hazard? Describe what could cause harm or injury.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    
+                    <Collapsible>
+                      <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2">
+                        <ChevronDown className="h-3 w-3" />
+                        Need help choosing a hazard?
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="text-xs text-muted-foreground mb-2 ml-4">
+                        Browse categories: Mechanical, Electrical, Structural, Environmental, Operator factors, Patron safety, or Emergency hazards.
+                      </CollapsibleContent>
+                    </Collapsible>
+                    
+                    <Select value={itemFormData.hazard_description} onValueChange={(value) => setItemFormData({ ...itemFormData, hazard_description: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a hazard or choose Custom" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        {/* Mechanical Hazards */}
+                        <SelectItem value="__mechanical" disabled className="font-semibold text-primary">── Mechanical Hazards ──</SelectItem>
+                        <SelectItem value="Mechanical failure during operation">Mechanical failure during operation</SelectItem>
+                        <SelectItem value="Moving parts causing crush injuries">Moving parts causing crush injuries</SelectItem>
+                        <SelectItem value="Rotating or spinning components without guards">Rotating or spinning components without guards</SelectItem>
+                        <SelectItem value="Belt, chain or pulley entanglement">Belt, chain or pulley entanglement</SelectItem>
+                        <SelectItem value="Hydraulic or pneumatic system failure">Hydraulic or pneumatic system failure</SelectItem>
+                        <SelectItem value="Brake system malfunction">Brake system malfunction</SelectItem>
+                        <SelectItem value="Bearing or shaft failure">Bearing or shaft failure</SelectItem>
+                        <SelectItem value="Wear and fatigue of mechanical components">Wear and fatigue of mechanical components</SelectItem>
+                        <SelectItem value="Inadequate lubrication leading to seizure">Inadequate lubrication leading to seizure</SelectItem>
+                        <SelectItem value="Vibration causing loose connections">Vibration causing loose connections</SelectItem>
+                        
+                        {/* Electrical Hazards */}
+                        <SelectItem value="__electrical" disabled className="font-semibold text-primary">── Electrical Hazards ──</SelectItem>
+                        <SelectItem value="Electrical shock from exposed wiring">Electrical shock from exposed wiring</SelectItem>
+                        <SelectItem value="Short circuit or electrical fire">Short circuit or electrical fire</SelectItem>
+                        <SelectItem value="Overloaded electrical circuits">Overloaded electrical circuits</SelectItem>
+                        <SelectItem value="Water ingress to electrical components">Water ingress to electrical components</SelectItem>
+                        <SelectItem value="Inadequate earthing or grounding">Inadequate earthing or grounding</SelectItem>
+                        
+                        {/* Structural Hazards */}
+                        <SelectItem value="__structural" disabled className="font-semibold text-primary">── Structural Hazards ──</SelectItem>
+                        <SelectItem value="Structural collapse or failure">Structural collapse or failure</SelectItem>
+                        <SelectItem value="Metal fatigue or stress cracks">Metal fatigue or stress cracks</SelectItem>
+                        <SelectItem value="Corrosion weakening structural integrity">Corrosion weakening structural integrity</SelectItem>
+                        <SelectItem value="Weld failure at critical joints">Weld failure at critical joints</SelectItem>
+                        <SelectItem value="Foundation settlement or instability">Foundation settlement or instability</SelectItem>
+                        <SelectItem value="Overloading beyond design capacity">Overloading beyond design capacity</SelectItem>
+                        <SelectItem value="Inadequate support or bracing">Inadequate support or bracing</SelectItem>
+                        <SelectItem value="Platform or deck deterioration">Platform or deck deterioration</SelectItem>
+                        
+                        {/* Environmental Hazards */}
+                        <SelectItem value="__environmental" disabled className="font-semibold text-primary">── Environmental Hazards ──</SelectItem>
+                        <SelectItem value="Weather-related hazards (wind, rain, lightning)">Weather-related hazards (wind, rain, lightning)</SelectItem>
+                        <SelectItem value="High wind causing instability">High wind causing instability</SelectItem>
+                        <SelectItem value="Lightning strike risk">Lightning strike risk</SelectItem>
+                        <SelectItem value="Temperature extremes affecting operation">Temperature extremes affecting operation</SelectItem>
+                        <SelectItem value="Poor ground conditions">Poor ground conditions</SelectItem>
+                        <SelectItem value="Slips, trips and falls from ride platform">Slips, trips and falls from ride platform</SelectItem>
+                        <SelectItem value="Inadequate lighting causing visibility issues">Inadequate lighting causing visibility issues</SelectItem>
+                        <SelectItem value="Noise hazards affecting communication">Noise hazards affecting communication</SelectItem>
+                        
+                        {/* Operator & Human Factors */}
+                        <SelectItem value="__operator" disabled className="font-semibold text-primary">── Operator & Human Factors ──</SelectItem>
+                        <SelectItem value="Operator error or inadequate training">Operator error or inadequate training</SelectItem>
+                        <SelectItem value="Fatigue affecting operator performance">Fatigue affecting operator performance</SelectItem>
+                        <SelectItem value="Communication failure between staff">Communication failure between staff</SelectItem>
+                        <SelectItem value="Inadequate supervision">Inadequate supervision</SelectItem>
+                        <SelectItem value="Emergency procedure not followed">Emergency procedure not followed</SelectItem>
+                        <SelectItem value="Lack of competency or qualification">Lack of competency or qualification</SelectItem>
+                        <SelectItem value="Maintenance errors during servicing">Maintenance errors during servicing</SelectItem>
+                        <SelectItem value="Bypassing safety systems">Bypassing safety systems</SelectItem>
+                        
+                        {/* Patron Safety */}
+                        <SelectItem value="__patron" disabled className="font-semibold text-primary">── Patron Safety ──</SelectItem>
+                        <SelectItem value="Rider entrapment or ejection">Rider entrapment or ejection</SelectItem>
+                        <SelectItem value="Inadequate restraint systems">Inadequate restraint systems</SelectItem>
+                        <SelectItem value="Patron not meeting height or health restrictions">Patron not meeting height or health restrictions</SelectItem>
+                        <SelectItem value="Loose articles becoming projectiles">Loose articles becoming projectiles</SelectItem>
+                        <SelectItem value="Overcrowding or queue management issues">Overcrowding or queue management issues</SelectItem>
+                        
+                        {/* Emergency & Fire */}
+                        <SelectItem value="__emergency" disabled className="font-semibold text-primary">── Emergency & Fire ──</SelectItem>
+                        <SelectItem value="Fire or explosion risk">Fire or explosion risk</SelectItem>
+                        <SelectItem value="Inadequate emergency evacuation routes">Inadequate emergency evacuation routes</SelectItem>
+                        <SelectItem value="Fire suppression system failure">Fire suppression system failure</SelectItem>
+                        <SelectItem value="Fuel or oil leak creating fire hazard">Fuel or oil leak creating fire hazard</SelectItem>
+                        <SelectItem value="Emergency stop system malfunction">Emergency stop system malfunction</SelectItem>
+                        
+                        <SelectItem value="Custom">Custom (enter below)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {itemFormData.hazard_description === 'Custom' && (
+                      <Textarea
+                        className="mt-2"
+                        placeholder="Enter your custom hazard description"
+                        value={itemFormData.hazard_description}
+                        onChange={(e) => setItemFormData({ ...itemFormData, hazard_description: e.target.value })}
                       />
-                      <Label htmlFor={`risk-${option}`} className="text-sm font-normal cursor-pointer">
-                        {option}
-                      </Label>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="col-span-2">
-              <Label htmlFor="existing_controls">Existing Controls</Label>
-              <p className="text-xs text-muted-foreground mb-2">What safety measures are already in place to prevent or reduce this risk?</p>
-              <Select value={itemFormData.existing_controls} onValueChange={(value) => setItemFormData({ ...itemFormData, existing_controls: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select existing controls or choose Custom to add your own" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {/* Engineering Controls */}
-                  <SelectItem value="__engineering" disabled className="font-semibold text-primary">── Engineering Controls ──</SelectItem>
-                  <SelectItem value="Machine guards and safety interlocks installed">Machine guards and safety interlocks installed</SelectItem>
-                  <SelectItem value="Emergency stop buttons strategically positioned">Emergency stop buttons strategically positioned</SelectItem>
-                  <SelectItem value="Safety restraints and harnesses fitted">Safety restraints and harnesses fitted</SelectItem>
-                  <SelectItem value="Non-slip surfaces applied to platforms">Non-slip surfaces applied to platforms</SelectItem>
-                  <SelectItem value="Safety barriers and fencing installed">Safety barriers and fencing installed</SelectItem>
-                  <SelectItem value="Perimeter fencing and access control">Perimeter fencing and access control</SelectItem>
-                  <SelectItem value="Two-hand control systems for operator stations">Two-hand control systems for operator stations</SelectItem>
-                  <SelectItem value="Pressure relief valves on hydraulic systems">Pressure relief valves on hydraulic systems</SelectItem>
-                  <SelectItem value="Residual current devices (RCD) on electrical circuits">Residual current devices (RCD) on electrical circuits</SelectItem>
-                  <SelectItem value="Lightning protection system installed">Lightning protection system installed</SelectItem>
-                  <SelectItem value="Fire suppression and detection systems">Fire suppression and detection systems</SelectItem>
-                  <SelectItem value="Speed limiters and overspeed detection">Speed limiters and overspeed detection</SelectItem>
-                  
-                  {/* Administrative Controls */}
-                  <SelectItem value="__administrative" disabled className="font-semibold text-primary">── Administrative Controls ──</SelectItem>
-                  <SelectItem value="Safe operating procedures documented">Safe operating procedures documented</SelectItem>
-                  <SelectItem value="Staff training on safety procedures completed">Staff training on safety procedures completed</SelectItem>
-                  <SelectItem value="Height and health restriction signage displayed">Height and health restriction signage displayed</SelectItem>
-                  <SelectItem value="Warning signage clearly displayed at hazard points">Warning signage clearly displayed at hazard points</SelectItem>
-                  <SelectItem value="Operating manual accessible to operators">Operating manual accessible to operators</SelectItem>
-                  <SelectItem value="Weather monitoring and wind speed limits established">Weather monitoring and wind speed limits established</SelectItem>
-                  <SelectItem value="Permit to work system for maintenance">Permit to work system for maintenance</SelectItem>
-                  <SelectItem value="Lockout/tagout procedures implemented">Lockout/tagout procedures implemented</SelectItem>
-                  <SelectItem value="Competency requirements defined for operators">Competency requirements defined for operators</SelectItem>
-                  <SelectItem value="Emergency response plan in place">Emergency response plan in place</SelectItem>
-                  
-                  {/* Inspection & Maintenance */}
-                  <SelectItem value="__inspection" disabled className="font-semibold text-primary">── Inspection & Maintenance ──</SelectItem>
-                  <SelectItem value="Daily pre-operation safety checks performed">Daily pre-operation safety checks performed</SelectItem>
-                  <SelectItem value="Regular maintenance schedule in place">Regular maintenance schedule in place</SelectItem>
-                  <SelectItem value="Annual independent inspection completed">Annual independent inspection completed</SelectItem>
-                  <SelectItem value="Safety restraints inspected before each use">Safety restraints inspected before each use</SelectItem>
-                  <SelectItem value="NDT testing on critical components scheduled">NDT testing on critical components scheduled</SelectItem>
-                  <SelectItem value="Maintenance records kept up to date">Maintenance records kept up to date</SelectItem>
-                  <SelectItem value="Periodic structural integrity inspections">Periodic structural integrity inspections</SelectItem>
-                  <SelectItem value="Electrical testing and PAT completed">Electrical testing and PAT completed</SelectItem>
-                  
-                  {/* Emergency Preparedness */}
-                  <SelectItem value="__emergency" disabled className="font-semibold text-primary">── Emergency Preparedness ──</SelectItem>
-                  <SelectItem value="Emergency evacuation procedures established">Emergency evacuation procedures established</SelectItem>
-                  <SelectItem value="First aid station and trained personnel available">First aid station and trained personnel available</SelectItem>
-                  <SelectItem value="Emergency contact numbers displayed">Emergency contact numbers displayed</SelectItem>
-                  <SelectItem value="Fire extinguishers positioned and serviced">Fire extinguishers positioned and serviced</SelectItem>
-                  <SelectItem value="Emergency lighting installed">Emergency lighting installed</SelectItem>
-                  <SelectItem value="Communication systems for emergencies">Communication systems for emergencies</SelectItem>
-                  
-                  {/* Training & Competency */}
-                  <SelectItem value="__training" disabled className="font-semibold text-primary">── Training & Competency ──</SelectItem>
-                  <SelectItem value="Operator training and certification program">Operator training and certification program</SelectItem>
-                  <SelectItem value="Refresher training conducted annually">Refresher training conducted annually</SelectItem>
-                  <SelectItem value="Induction training for new staff">Induction training for new staff</SelectItem>
-                  <SelectItem value="Toolbox talks on specific hazards">Toolbox talks on specific hazards</SelectItem>
-                  <SelectItem value="Competency assessments completed">Competency assessments completed</SelectItem>
-                  
-                  <SelectItem value="Custom">Custom (enter below)</SelectItem>
-                </SelectContent>
-              </Select>
-              {itemFormData.existing_controls === 'Custom' && (
-                <Textarea
-                  className="mt-2"
-                  placeholder="Enter your custom existing controls"
-                  value={itemFormData.existing_controls}
-                  onChange={(e) => setItemFormData({ ...itemFormData, existing_controls: e.target.value })}
-                />
-              )}
-            </div>
-            <div>
-              <Label htmlFor="likelihood">Likelihood</Label>
-              <p className="text-xs text-muted-foreground mb-2">How likely is this hazard to cause harm?</p>
-              <Select value={itemFormData.likelihood} onValueChange={(value) => setItemFormData({ ...itemFormData, likelihood: value })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="rare">Rare - May occur only in exceptional circumstances</SelectItem>
-                  <SelectItem value="unlikely">Unlikely - Could occur at some time</SelectItem>
-                  <SelectItem value="possible">Possible - Might occur at some time</SelectItem>
-                  <SelectItem value="likely">Likely - Will probably occur in most circumstances</SelectItem>
-                  <SelectItem value="certain">Certain - Expected to occur in most circumstances</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="severity">Severity</Label>
-              <p className="text-xs text-muted-foreground mb-2">How serious would the injury or harm be?</p>
-              <Select value={itemFormData.severity} onValueChange={(value) => setItemFormData({ ...itemFormData, severity: value })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="negligible">Negligible - No injury or minimal impact</SelectItem>
-                  <SelectItem value="minor">Minor - First aid treatment, minor injuries</SelectItem>
-                  <SelectItem value="moderate">Moderate - Medical attention required</SelectItem>
-                  <SelectItem value="major">Major - Serious injury or long-term health effects</SelectItem>
-                  <SelectItem value="catastrophic">Catastrophic - Death or permanent disability</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-2">
-              <Label htmlFor="risk_level">Overall Risk Level</Label>
-              <p className="text-xs text-muted-foreground mb-2">Combine likelihood and severity to determine overall risk. High risk requires immediate action.</p>
-              <Select value={itemFormData.risk_level} onValueChange={(value) => setItemFormData({ ...itemFormData, risk_level: value })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="low">Low - Acceptable risk with controls in place</SelectItem>
-                  <SelectItem value="medium">Medium - Risk requires additional controls</SelectItem>
-                  <SelectItem value="high">High - Unacceptable risk, immediate action required</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="col-span-2">
-              <Label htmlFor="additional_actions">Additional Actions Required</Label>
-              <p className="text-xs text-muted-foreground mb-2">What extra steps need to be taken to further reduce the risk?</p>
-              <Select value={itemFormData.additional_actions} onValueChange={(value) => setItemFormData({ ...itemFormData, additional_actions: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select additional actions or choose Custom to add your own" />
-                </SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  {/* Technical Improvements */}
-                  <SelectItem value="__technical" disabled className="font-semibold text-primary">── Technical Improvements ──</SelectItem>
-                  <SelectItem value="Install additional safety barriers or guards">Install additional safety barriers or guards</SelectItem>
-                  <SelectItem value="Upgrade to more reliable safety systems">Upgrade to more reliable safety systems</SelectItem>
-                  <SelectItem value="Replace worn or damaged equipment">Replace worn or damaged equipment</SelectItem>
-                  <SelectItem value="Install additional emergency stop buttons">Install additional emergency stop buttons</SelectItem>
-                  <SelectItem value="Improve lighting in operational areas">Improve lighting in operational areas</SelectItem>
-                  <SelectItem value="Install CCTV monitoring system">Install CCTV monitoring system</SelectItem>
-                  <SelectItem value="Upgrade electrical systems to current standards">Upgrade electrical systems to current standards</SelectItem>
-                  <SelectItem value="Install weather monitoring equipment">Install weather monitoring equipment</SelectItem>
-                  <SelectItem value="Improve non-slip surfaces on platforms">Improve non-slip surfaces on platforms</SelectItem>
-                  <SelectItem value="Install better signage and warnings">Install better signage and warnings</SelectItem>
-                  
-                  {/* Documentation & Procedures */}
-                  <SelectItem value="__documentation" disabled className="font-semibold text-primary">── Documentation & Procedures ──</SelectItem>
-                  <SelectItem value="Review and update operating procedures">Review and update operating procedures</SelectItem>
-                  <SelectItem value="Create or revise emergency response plan">Create or revise emergency response plan</SelectItem>
-                  <SelectItem value="Develop maintenance schedule and checklists">Develop maintenance schedule and checklists</SelectItem>
-                  <SelectItem value="Document safe work method statements">Document safe work method statements</SelectItem>
-                  <SelectItem value="Update risk assessment and control measures">Update risk assessment and control measures</SelectItem>
-                  <SelectItem value="Create operator competency matrix">Create operator competency matrix</SelectItem>
-                  <SelectItem value="Review manufacturer's recommendations">Review manufacturer's recommendations</SelectItem>
-                  <SelectItem value="Implement permit-to-work system">Implement permit-to-work system</SelectItem>
-                  
-                  {/* Training & Awareness */}
-                  <SelectItem value="__training" disabled className="font-semibold text-primary">── Training & Awareness ──</SelectItem>
-                  <SelectItem value="Provide additional staff training on hazards">Provide additional staff training on hazards</SelectItem>
-                  <SelectItem value="Conduct refresher training for all operators">Conduct refresher training for all operators</SelectItem>
-                  <SelectItem value="Provide emergency response training">Provide emergency response training</SelectItem>
-                  <SelectItem value="Train staff on new equipment or procedures">Train staff on new equipment or procedures</SelectItem>
-                  <SelectItem value="Conduct toolbox talks on specific risks">Conduct toolbox talks on specific risks</SelectItem>
-                  <SelectItem value="Arrange competency assessments">Arrange competency assessments</SelectItem>
-                  
-                  {/* Inspection & Testing */}
-                  <SelectItem value="__inspection" disabled className="font-semibold text-primary">── Inspection & Testing ──</SelectItem>
-                  <SelectItem value="Schedule NDT testing on critical components">Schedule NDT testing on critical components</SelectItem>
-                  <SelectItem value="Arrange independent safety inspection">Arrange independent safety inspection</SelectItem>
-                  <SelectItem value="Conduct load testing on structural elements">Conduct load testing on structural elements</SelectItem>
-                  <SelectItem value="Increase frequency of daily checks">Increase frequency of daily checks</SelectItem>
-                  <SelectItem value="Arrange electrical testing and certification">Arrange electrical testing and certification</SelectItem>
-                  <SelectItem value="Implement regular audits of safety systems">Implement regular audits of safety systems</SelectItem>
-                  <SelectItem value="Schedule hydraulic pressure testing">Schedule hydraulic pressure testing</SelectItem>
-                  <SelectItem value="Conduct emergency stop function tests">Conduct emergency stop function tests</SelectItem>
-                  
-                  {/* Communication & Management */}
-                  <SelectItem value="__communication" disabled className="font-semibold text-primary">── Communication & Management ──</SelectItem>
-                  <SelectItem value="Improve communication systems between staff">Improve communication systems between staff</SelectItem>
-                  <SelectItem value="Hold safety meeting with all operators">Hold safety meeting with all operators</SelectItem>
-                  <SelectItem value="Report findings to management">Report findings to management</SelectItem>
-                  <SelectItem value="Consult with manufacturer or specialist">Consult with manufacturer or specialist</SelectItem>
-                  <SelectItem value="Notify relevant regulatory authorities">Notify relevant regulatory authorities</SelectItem>
-                  
-                  {/* Monitoring & Review */}
-                  <SelectItem value="__monitoring" disabled className="font-semibold text-primary">── Monitoring & Review ──</SelectItem>
-                  <SelectItem value="Conduct risk assessment review">Conduct risk assessment review</SelectItem>
-                  <SelectItem value="Monitor effectiveness of control measures">Monitor effectiveness of control measures</SelectItem>
-                  <SelectItem value="Track maintenance completion rates">Track maintenance completion rates</SelectItem>
-                  <SelectItem value="Review incident and near-miss reports">Review incident and near-miss reports</SelectItem>
-                  <SelectItem value="Schedule follow-up inspection">Schedule follow-up inspection</SelectItem>
-                  <SelectItem value="Review and update after any modifications">Review and update after any modifications</SelectItem>
-                  
-                  <SelectItem value="Custom">Custom (enter below)</SelectItem>
-                </SelectContent>
-              </Select>
-              {itemFormData.additional_actions === 'Custom' && (
-                <Textarea
-                  className="mt-2"
-                  placeholder="Enter your custom additional actions"
-                  value={itemFormData.additional_actions}
-                  onChange={(e) => setItemFormData({ ...itemFormData, additional_actions: e.target.value })}
-                />
-              )}
-            </div>
-            <div>
-              <Label htmlFor="action_owner">Action Owner</Label>
-              <p className="text-xs text-muted-foreground mb-2">Who is responsible for completing the additional actions?</p>
-              <Input
-                id="action_owner"
-                placeholder="e.g., Site Manager, Chief Engineer"
-                value={itemFormData.action_owner}
-                onChange={(e) => setItemFormData({ ...itemFormData, action_owner: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="target_date">Target Date</Label>
-              <p className="text-xs text-muted-foreground mb-2">When should the actions be completed by?</p>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal h-10",
-                      !itemFormData.target_date && "text-muted-foreground"
                     )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                    <span className="truncate">
-                      {itemFormData.target_date ? format(new Date(itemFormData.target_date), 'dd MMM yyyy') : 'Pick a date'}
-                    </span>
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={itemFormData.target_date ? new Date(itemFormData.target_date) : undefined}
-                    onSelect={(date) => setItemFormData({ ...itemFormData, target_date: date ? format(date, 'yyyy-MM-dd') : '' })}
-                    initialFocus
-                    className={cn("p-3 pointer-events-auto")}
-                  />
-                </PopoverContent>
-              </Popover>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Label>Who is at Risk * (Select all that apply)</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>Identify who could be harmed by this hazard</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3 p-4 border rounded-md bg-muted/30">
+                      {['Public', 'Staff', 'Contractors', 'Spectators', 'Operators', 'Maintenance personnel', 'All persons'].map((option) => {
+                        const selectedGroups = itemFormData.who_at_risk ? itemFormData.who_at_risk.split(', ') : [];
+                        const isChecked = selectedGroups.includes(option);
+                        
+                        return (
+                          <div key={option} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`risk-${option}`}
+                              checked={isChecked}
+                              onCheckedChange={(checked) => {
+                                let newGroups = [...selectedGroups];
+                                if (checked) {
+                                  if (!newGroups.includes(option)) {
+                                    newGroups.push(option);
+                                  }
+                                } else {
+                                  newGroups = newGroups.filter(g => g !== option);
+                                }
+                                setItemFormData({ ...itemFormData, who_at_risk: newGroups.join(', ') });
+                              }}
+                            />
+                            <Label htmlFor={`risk-${option}`} className="text-sm font-normal cursor-pointer">
+                              {option}
+                            </Label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="flex items-center gap-2 mb-2">
+                      <Label htmlFor="existing_controls">Existing Controls</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>What safety measures are already in place to prevent or reduce this risk?</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    
+                    <Collapsible>
+                      <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2">
+                        <ChevronDown className="h-3 w-3" />
+                        Need help choosing controls?
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="text-xs text-muted-foreground mb-2 ml-4">
+                        Browse categories: Engineering controls, Administrative procedures, Inspection & maintenance, Emergency preparedness, or Training programs.
+                      </CollapsibleContent>
+                    </Collapsible>
+                    
+                    <Select value={itemFormData.existing_controls} onValueChange={(value) => setItemFormData({ ...itemFormData, existing_controls: value })}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select existing controls or choose Custom" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        {/* Engineering Controls */}
+                        <SelectItem value="__engineering" disabled className="font-semibold text-primary">── Engineering Controls ──</SelectItem>
+                        <SelectItem value="Machine guards and safety interlocks installed">Machine guards and safety interlocks installed</SelectItem>
+                        <SelectItem value="Emergency stop buttons strategically positioned">Emergency stop buttons strategically positioned</SelectItem>
+                        <SelectItem value="Safety restraints and harnesses fitted">Safety restraints and harnesses fitted</SelectItem>
+                        <SelectItem value="Non-slip surfaces applied to platforms">Non-slip surfaces applied to platforms</SelectItem>
+                        <SelectItem value="Safety barriers and fencing installed">Safety barriers and fencing installed</SelectItem>
+                        <SelectItem value="Perimeter fencing and access control">Perimeter fencing and access control</SelectItem>
+                        <SelectItem value="Two-hand control systems for operator stations">Two-hand control systems for operator stations</SelectItem>
+                        <SelectItem value="Pressure relief valves on hydraulic systems">Pressure relief valves on hydraulic systems</SelectItem>
+                        <SelectItem value="Residual current devices (RCD) on electrical circuits">Residual current devices (RCD) on electrical circuits</SelectItem>
+                        <SelectItem value="Lightning protection system installed">Lightning protection system installed</SelectItem>
+                        <SelectItem value="Fire suppression and detection systems">Fire suppression and detection systems</SelectItem>
+                        <SelectItem value="Speed limiters and overspeed detection">Speed limiters and overspeed detection</SelectItem>
+                        
+                        {/* Administrative Controls */}
+                        <SelectItem value="__administrative" disabled className="font-semibold text-primary">── Administrative Controls ──</SelectItem>
+                        <SelectItem value="Safe operating procedures documented">Safe operating procedures documented</SelectItem>
+                        <SelectItem value="Staff training on safety procedures completed">Staff training on safety procedures completed</SelectItem>
+                        <SelectItem value="Height and health restriction signage displayed">Height and health restriction signage displayed</SelectItem>
+                        <SelectItem value="Warning signage clearly displayed at hazard points">Warning signage clearly displayed at hazard points</SelectItem>
+                        <SelectItem value="Operating manual accessible to operators">Operating manual accessible to operators</SelectItem>
+                        <SelectItem value="Weather monitoring and wind speed limits established">Weather monitoring and wind speed limits established</SelectItem>
+                        <SelectItem value="Permit to work system for maintenance">Permit to work system for maintenance</SelectItem>
+                        <SelectItem value="Lockout/tagout procedures implemented">Lockout/tagout procedures implemented</SelectItem>
+                        <SelectItem value="Competency requirements defined for operators">Competency requirements defined for operators</SelectItem>
+                        <SelectItem value="Emergency response plan in place">Emergency response plan in place</SelectItem>
+                        
+                        {/* Inspection & Maintenance */}
+                        <SelectItem value="__inspection" disabled className="font-semibold text-primary">── Inspection & Maintenance ──</SelectItem>
+                        <SelectItem value="Daily pre-operation safety checks performed">Daily pre-operation safety checks performed</SelectItem>
+                        <SelectItem value="Regular maintenance schedule in place">Regular maintenance schedule in place</SelectItem>
+                        <SelectItem value="Annual independent inspection completed">Annual independent inspection completed</SelectItem>
+                        <SelectItem value="Safety restraints inspected before each use">Safety restraints inspected before each use</SelectItem>
+                        <SelectItem value="NDT testing on critical components scheduled">NDT testing on critical components scheduled</SelectItem>
+                        <SelectItem value="Maintenance records kept up to date">Maintenance records kept up to date</SelectItem>
+                        <SelectItem value="Periodic structural integrity inspections">Periodic structural integrity inspections</SelectItem>
+                        <SelectItem value="Electrical testing and PAT completed">Electrical testing and PAT completed</SelectItem>
+                        
+                        {/* Emergency Preparedness */}
+                        <SelectItem value="__emergency" disabled className="font-semibold text-primary">── Emergency Preparedness ──</SelectItem>
+                        <SelectItem value="Emergency evacuation procedures established">Emergency evacuation procedures established</SelectItem>
+                        <SelectItem value="First aid station and trained personnel available">First aid station and trained personnel available</SelectItem>
+                        <SelectItem value="Emergency contact numbers displayed">Emergency contact numbers displayed</SelectItem>
+                        <SelectItem value="Fire extinguishers positioned and serviced">Fire extinguishers positioned and serviced</SelectItem>
+                        <SelectItem value="Emergency lighting installed">Emergency lighting installed</SelectItem>
+                        <SelectItem value="Communication systems for emergencies">Communication systems for emergencies</SelectItem>
+                        
+                        {/* Training & Competency */}
+                        <SelectItem value="__training" disabled className="font-semibold text-primary">── Training & Competency ──</SelectItem>
+                        <SelectItem value="Operator training and certification program">Operator training and certification program</SelectItem>
+                        <SelectItem value="Refresher training conducted annually">Refresher training conducted annually</SelectItem>
+                        <SelectItem value="Induction training for new staff">Induction training for new staff</SelectItem>
+                        <SelectItem value="Toolbox talks on specific hazards">Toolbox talks on specific hazards</SelectItem>
+                        <SelectItem value="Competency assessments completed">Competency assessments completed</SelectItem>
+                        
+                        <SelectItem value="Custom">Custom (enter below)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    {itemFormData.existing_controls === 'Custom' && (
+                      <Textarea
+                        className="mt-2"
+                        placeholder="Enter your custom existing controls"
+                        value={itemFormData.existing_controls}
+                        onChange={(e) => setItemFormData({ ...itemFormData, existing_controls: e.target.value })}
+                      />
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Section 2: Risk Evaluation */}
+              <Card className="border-l-4 border-l-orange-500/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <span className="text-orange-600">2.</span> Risk Evaluation
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="likelihood">Likelihood</Label>
+                      <p className="text-xs text-muted-foreground italic mb-2">How likely is this hazard to cause harm?</p>
+                      <Select value={itemFormData.likelihood} onValueChange={(value) => setItemFormData({ ...itemFormData, likelihood: value })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="rare">Rare - May occur only in exceptional circumstances</SelectItem>
+                          <SelectItem value="unlikely">Unlikely - Could occur at some time</SelectItem>
+                          <SelectItem value="possible">Possible - Might occur at some time</SelectItem>
+                          <SelectItem value="likely">Likely - Will probably occur in most circumstances</SelectItem>
+                          <SelectItem value="certain">Certain - Expected to occur in most circumstances</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="severity">Severity</Label>
+                      <p className="text-xs text-muted-foreground italic mb-2">How serious would the injury or harm be?</p>
+                      <Select value={itemFormData.severity} onValueChange={(value) => setItemFormData({ ...itemFormData, severity: value })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="negligible">Negligible - No injury or minimal impact</SelectItem>
+                          <SelectItem value="minor">Minor - First aid treatment, minor injuries</SelectItem>
+                          <SelectItem value="moderate">Moderate - Medical attention required</SelectItem>
+                          <SelectItem value="major">Major - Serious injury or long-term health effects</SelectItem>
+                          <SelectItem value="catastrophic">Catastrophic - Death or permanent disability</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="col-span-2">
+                      <Label htmlFor="risk_level">Overall Risk Level</Label>
+                      <p className="text-xs text-muted-foreground italic mb-2">Combine likelihood and severity to determine overall risk. High risk requires immediate action.</p>
+                      <Select value={itemFormData.risk_level} onValueChange={(value) => setItemFormData({ ...itemFormData, risk_level: value })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low - Acceptable risk with controls in place</SelectItem>
+                          <SelectItem value="medium">Medium - Risk requires additional controls</SelectItem>
+                          <SelectItem value="high">High - Unacceptable risk, immediate action required</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Section 3: Risk Controls & Actions */}
+              <Card className="border-l-4 border-l-green-500/30">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <span className="text-green-600">3.</span> Risk Controls & Actions
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="col-span-2">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Label htmlFor="additional_actions">Additional Actions Required</Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>What extra steps need to be taken to further reduce the risk?</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      
+                      <Collapsible>
+                        <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2">
+                          <ChevronDown className="h-3 w-3" />
+                          Need help choosing actions?
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="text-xs text-muted-foreground mb-2 ml-4">
+                          Browse categories: Technical improvements, Documentation, Training, Inspection & testing, Communication, or Monitoring & review.
+                        </CollapsibleContent>
+                      </Collapsible>
+                      
+                      <Select value={itemFormData.additional_actions} onValueChange={(value) => setItemFormData({ ...itemFormData, additional_actions: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select additional actions or choose Custom" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {/* Technical Improvements */}
+                          <SelectItem value="__technical" disabled className="font-semibold text-primary">── Technical Improvements ──</SelectItem>
+                          <SelectItem value="Install additional safety barriers or guards">Install additional safety barriers or guards</SelectItem>
+                          <SelectItem value="Upgrade to more reliable safety systems">Upgrade to more reliable safety systems</SelectItem>
+                          <SelectItem value="Replace worn or damaged equipment">Replace worn or damaged equipment</SelectItem>
+                          <SelectItem value="Install additional emergency stop buttons">Install additional emergency stop buttons</SelectItem>
+                          <SelectItem value="Improve lighting in operational areas">Improve lighting in operational areas</SelectItem>
+                          <SelectItem value="Install CCTV monitoring system">Install CCTV monitoring system</SelectItem>
+                          <SelectItem value="Upgrade electrical systems to current standards">Upgrade electrical systems to current standards</SelectItem>
+                          <SelectItem value="Install weather monitoring equipment">Install weather monitoring equipment</SelectItem>
+                          <SelectItem value="Improve non-slip surfaces on platforms">Improve non-slip surfaces on platforms</SelectItem>
+                          <SelectItem value="Install better signage and warnings">Install better signage and warnings</SelectItem>
+                          
+                          {/* Documentation & Procedures */}
+                          <SelectItem value="__documentation" disabled className="font-semibold text-primary">── Documentation & Procedures ──</SelectItem>
+                          <SelectItem value="Review and update operating procedures">Review and update operating procedures</SelectItem>
+                          <SelectItem value="Create or revise emergency response plan">Create or revise emergency response plan</SelectItem>
+                          <SelectItem value="Develop maintenance schedule and checklists">Develop maintenance schedule and checklists</SelectItem>
+                          <SelectItem value="Document safe work method statements">Document safe work method statements</SelectItem>
+                          <SelectItem value="Update risk assessment and control measures">Update risk assessment and control measures</SelectItem>
+                          <SelectItem value="Create operator competency matrix">Create operator competency matrix</SelectItem>
+                          <SelectItem value="Review manufacturer's recommendations">Review manufacturer's recommendations</SelectItem>
+                          <SelectItem value="Implement permit-to-work system">Implement permit-to-work system</SelectItem>
+                          
+                          {/* Training & Awareness */}
+                          <SelectItem value="__training" disabled className="font-semibold text-primary">── Training & Awareness ──</SelectItem>
+                          <SelectItem value="Provide additional staff training on hazards">Provide additional staff training on hazards</SelectItem>
+                          <SelectItem value="Conduct refresher training for all operators">Conduct refresher training for all operators</SelectItem>
+                          <SelectItem value="Provide emergency response training">Provide emergency response training</SelectItem>
+                          <SelectItem value="Train staff on new equipment or procedures">Train staff on new equipment or procedures</SelectItem>
+                          <SelectItem value="Conduct toolbox talks on specific risks">Conduct toolbox talks on specific risks</SelectItem>
+                          <SelectItem value="Arrange competency assessments">Arrange competency assessments</SelectItem>
+                          
+                          {/* Inspection & Testing */}
+                          <SelectItem value="__inspection" disabled className="font-semibold text-primary">── Inspection & Testing ──</SelectItem>
+                          <SelectItem value="Schedule NDT testing on critical components">Schedule NDT testing on critical components</SelectItem>
+                          <SelectItem value="Arrange independent safety inspection">Arrange independent safety inspection</SelectItem>
+                          <SelectItem value="Conduct load testing on structural elements">Conduct load testing on structural elements</SelectItem>
+                          <SelectItem value="Increase frequency of daily checks">Increase frequency of daily checks</SelectItem>
+                          <SelectItem value="Arrange electrical testing and certification">Arrange electrical testing and certification</SelectItem>
+                          <SelectItem value="Implement regular audits of safety systems">Implement regular audits of safety systems</SelectItem>
+                          <SelectItem value="Schedule hydraulic pressure testing">Schedule hydraulic pressure testing</SelectItem>
+                          <SelectItem value="Conduct emergency stop function tests">Conduct emergency stop function tests</SelectItem>
+                          
+                          {/* Communication & Management */}
+                          <SelectItem value="__communication" disabled className="font-semibold text-primary">── Communication & Management ──</SelectItem>
+                          <SelectItem value="Improve communication systems between staff">Improve communication systems between staff</SelectItem>
+                          <SelectItem value="Hold safety meeting with all operators">Hold safety meeting with all operators</SelectItem>
+                          <SelectItem value="Report findings to management">Report findings to management</SelectItem>
+                          <SelectItem value="Consult with manufacturer or specialist">Consult with manufacturer or specialist</SelectItem>
+                          <SelectItem value="Notify relevant regulatory authorities">Notify relevant regulatory authorities</SelectItem>
+                          
+                          {/* Monitoring & Review */}
+                          <SelectItem value="__monitoring" disabled className="font-semibold text-primary">── Monitoring & Review ──</SelectItem>
+                          <SelectItem value="Conduct risk assessment review">Conduct risk assessment review</SelectItem>
+                          <SelectItem value="Monitor effectiveness of control measures">Monitor effectiveness of control measures</SelectItem>
+                          <SelectItem value="Track maintenance completion rates">Track maintenance completion rates</SelectItem>
+                          <SelectItem value="Review incident and near-miss reports">Review incident and near-miss reports</SelectItem>
+                          <SelectItem value="Schedule follow-up inspection">Schedule follow-up inspection</SelectItem>
+                          <SelectItem value="Review and update after any modifications">Review and update after any modifications</SelectItem>
+                          
+                          <SelectItem value="Custom">Custom (enter below)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {itemFormData.additional_actions === 'Custom' && (
+                        <Textarea
+                          className="mt-2"
+                          placeholder="Enter your custom additional actions"
+                          value={itemFormData.additional_actions}
+                          onChange={(e) => setItemFormData({ ...itemFormData, additional_actions: e.target.value })}
+                        />
+                      )}
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Label htmlFor="action_owner">Action Owner</Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>Who is responsible for completing the additional actions?</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <Input
+                        id="action_owner"
+                        placeholder="e.g., Site Manager"
+                        value={itemFormData.action_owner}
+                        onChange={(e) => setItemFormData({ ...itemFormData, action_owner: e.target.value })}
+                      />
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Label htmlFor="target_date">Target Date</Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>When should the actions be completed by?</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal h-10",
+                              !itemFormData.target_date && "text-muted-foreground"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                            <span className="truncate">
+                              {itemFormData.target_date ? format(new Date(itemFormData.target_date), 'dd MMM yyyy') : 'Pick a date'}
+                            </span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={itemFormData.target_date ? new Date(itemFormData.target_date) : undefined}
+                            onSelect={(date) => setItemFormData({ ...itemFormData, target_date: date ? format(date, 'yyyy-MM-dd') : '' })}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                    
+                    <div className="col-span-2">
+                      <Label htmlFor="status">Status</Label>
+                      <Select value={itemFormData.status} onValueChange={(value) => setItemFormData({ ...itemFormData, status: value })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          <SelectItem value="open">
+                            <div className="flex flex-col">
+                              <span className="font-medium">Open</span>
+                              <span className="text-xs text-muted-foreground">Not yet started - This risk needs attention</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="in_progress">
+                            <div className="flex flex-col">
+                              <span className="font-medium">In Progress</span>
+                              <span className="text-xs text-muted-foreground">Currently being addressed - Actions are underway</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="completed">
+                            <div className="flex flex-col">
+                              <span className="font-medium">Completed</span>
+                              <span className="text-xs text-muted-foreground">Fully addressed - Controls implemented and verified</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-            <div className="col-span-2">
-              <Label htmlFor="status">Status</Label>
-              <p className="text-xs text-muted-foreground mb-2">What is the current status of this risk item?</p>
-              <Select value={itemFormData.status} onValueChange={(value) => setItemFormData({ ...itemFormData, status: value })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent className="bg-background z-50">
-                  <SelectItem value="open">
-                    <div className="flex flex-col">
-                      <span className="font-medium">Open</span>
-                      <span className="text-xs text-muted-foreground">Not yet started - This risk needs attention</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="in_progress">
-                    <div className="flex flex-col">
-                      <span className="font-medium">In Progress</span>
-                      <span className="text-xs text-muted-foreground">Currently being addressed - Actions are underway</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="completed">
-                    <div className="flex flex-col">
-                      <span className="font-medium">Completed</span>
-                      <span className="text-xs text-muted-foreground">Fully addressed - Controls implemented and verified</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+          </TooltipProvider>
+          
           <DialogFooter>
             <Button variant="outline" onClick={() => {
               setShowItemDialog(false);
