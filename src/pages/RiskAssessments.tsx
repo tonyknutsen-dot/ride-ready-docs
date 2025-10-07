@@ -29,20 +29,12 @@ const RiskAssessments = () => {
   return (
     <FeatureGate requiredPlan="advanced" feature="Risk Assessments">
       <div className="container mx-auto py-8 px-4 pb-24 md:pb-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold mb-2">Risk Assessments</h1>
-          <p className="text-muted-foreground">
-            Create and manage comprehensive risk assessments for your equipment
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold mb-1">Risk Assessments</h1>
+          <p className="text-sm text-muted-foreground">
+            Identify hazards and implement controls for safe operation
           </p>
         </div>
-
-        <Alert className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
-            Risk assessments help identify hazards and implement controls to ensure safe operation of your rides and equipment.
-            You can download, print, or email completed assessments.
-          </AlertDescription>
-        </Alert>
 
         {!selectedRide ? (
           <RideSelector
