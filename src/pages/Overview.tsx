@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { FeatureGate } from "@/components/FeatureGate";
 import { Lock } from "lucide-react";
+import { formatPlanWithDescription } from "@/utils/planFormatter";
 interface OverviewStats {
   totalDocuments: number;
   activeRides: number;
@@ -217,7 +218,7 @@ const Overview = () => {
             Overview
           </h1>
           <Badge variant={userPlan === 'trial' ? 'secondary' : 'default'}>
-            {userPlan}
+            {formatPlanWithDescription(userPlan)}
           </Badge>
         </div>
         <p className="text-muted-foreground">

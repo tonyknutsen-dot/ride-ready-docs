@@ -18,7 +18,7 @@ export const RestrictedFeatureCard: React.FC<RestrictedFeatureCardProps> = ({
   icon,
   requiredPlan
 }) => {
-  const planName = requiredPlan === 'basic' ? 'Basic' : 'Advanced';
+  const planName = requiredPlan === 'basic' ? 'Basic Plan' : 'Advanced Plan';
   
   return (
     <Card className="relative overflow-hidden border-muted-foreground/20 bg-muted/30">
