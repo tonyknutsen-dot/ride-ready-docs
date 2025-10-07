@@ -944,17 +944,26 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       doc.text(format(new Date(), 'dd/MM/yyyy'), rightCol + 12, sigY);
 
       // Open PDF in new window for printing
+      doc.autoPrint();
       const pdfBlob = doc.output('blob');
       const pdfUrl = URL.createObjectURL(pdfBlob);
-      const printWindow = window.open(pdfUrl);
       
-      if (printWindow) {
-        printWindow.onload = () => {
-          printWindow.print();
-          // Clean up the URL after a delay
-          setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
-        };
-      }
+      // Use iframe instead of popup to avoid blockers
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = pdfUrl;
+      document.body.appendChild(iframe);
+      
+      iframe.onload = () => {
+        setTimeout(() => {
+          iframe.contentWindow?.print();
+          // Clean up after printing
+          setTimeout(() => {
+            document.body.removeChild(iframe);
+            URL.revokeObjectURL(pdfUrl);
+          }, 100);
+        }, 100);
+      };
     } catch (error: any) {
       console.error('Error generating PDF for print:', error);
       toast({ 
