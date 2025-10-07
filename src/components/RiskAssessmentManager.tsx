@@ -132,13 +132,20 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const handleCreateAssessment = async () => {
     if (!user) return;
 
+    // Prepare data, converting empty strings to null for date fields
+    const insertData = {
+      user_id: user.id,
+      ride_id: ride.id,
+      assessor_name: formData.assessor_name,
+      assessment_date: formData.assessment_date,
+      review_date: formData.review_date || null,
+      overall_status: formData.overall_status,
+      notes: formData.notes || null
+    };
+
     const { data, error } = await supabase
       .from('risk_assessments')
-      .insert({
-        user_id: user.id,
-        ride_id: ride.id,
-        ...formData
-      })
+      .insert(insertData)
       .select()
       .single();
 
@@ -162,10 +169,16 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const handleSaveItem = async () => {
     if (!selectedAssessment) return;
 
+    // Convert empty strings to null for date fields
+    const itemData = {
+      ...itemFormData,
+      target_date: itemFormData.target_date || null
+    };
+
     if (editingItem) {
       const { error } = await supabase
         .from('risk_assessment_items')
-        .update(itemFormData)
+        .update(itemData)
         .eq('id', editingItem.id);
 
       if (error) {
@@ -183,7 +196,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         .insert({
           risk_assessment_id: selectedAssessment.id,
           sort_order: assessmentItems.length,
-          ...itemFormData
+          ...itemData
         });
 
       if (error) {
