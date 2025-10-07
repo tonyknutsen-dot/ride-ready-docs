@@ -517,8 +517,30 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <Label htmlFor="hazard_description">Hazard Description *</Label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                <span className="text-xs text-muted-foreground">Quick examples:</span>
+                {[
+                  'Slips, trips and falls from ride platform',
+                  'Mechanical failure during operation',
+                  'Rider entrapment or ejection',
+                  'Electrical shock from exposed wiring',
+                  'Moving parts causing crush injuries'
+                ].map((example) => (
+                  <Button
+                    key={example}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setItemFormData({ ...itemFormData, hazard_description: example })}
+                  >
+                    {example.substring(0, 30)}...
+                  </Button>
+                ))}
+              </div>
               <Textarea
                 id="hazard_description"
+                placeholder="e.g., Slips, trips and falls from ride platform due to wet surface"
                 value={itemFormData.hazard_description}
                 onChange={(e) => setItemFormData({ ...itemFormData, hazard_description: e.target.value })}
               />
@@ -557,8 +579,30 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             </div>
             <div className="col-span-2">
               <Label htmlFor="existing_controls">Existing Controls</Label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                <span className="text-xs text-muted-foreground">Quick examples:</span>
+                {[
+                  'Non-slip surface applied to platform',
+                  'Daily pre-operation safety checks',
+                  'Emergency stop button within reach',
+                  'Safety restraints inspected before each use',
+                  'Warning signage clearly displayed'
+                ].map((example) => (
+                  <Button
+                    key={example}
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => setItemFormData({ ...itemFormData, existing_controls: example })}
+                  >
+                    {example.substring(0, 30)}...
+                  </Button>
+                ))}
+              </div>
               <Textarea
                 id="existing_controls"
+                placeholder="e.g., Non-slip surface applied to platform, regular cleaning schedule, warning signs displayed"
                 value={itemFormData.existing_controls}
                 onChange={(e) => setItemFormData({ ...itemFormData, existing_controls: e.target.value })}
               />
