@@ -49,8 +49,8 @@ const CallToAction = () => {
         </div>
         
         <div className="mt-8 text-sm opacity-90 drop-shadow-[0_2px_8px_rgba(0,0,0,1)]">
-          <p>✓ No credit card required • ✓ Both apps included •
- ✓ Cancel anytime</p>
+          <p>✓ No credit card required • ✓ Both apps included 
+•  ✓ Cancel anytime</p>
         </div>
       </div>
     </section>;
