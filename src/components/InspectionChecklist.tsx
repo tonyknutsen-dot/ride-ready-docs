@@ -130,8 +130,8 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     return totalItems > 0 ? (checkedCount / totalItems) * 100 : 0;
   };
 
-  const generatePDF = async () => {
-    if (!activeTemplate) return;
+  const generatePDFBlob = async (): Promise<Blob | null> => {
+    if (!activeTemplate) return null;
 
     try {
       const pdf = new jsPDF();
@@ -141,7 +141,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
       // Header
       pdf.setFontSize(20);
-      pdf.text(`${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Inspection Report`, margin, currentY);
+      pdf.text(`${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check Report`, margin, currentY);
       currentY += 15;
 
       pdf.setFontSize(12);
@@ -156,7 +156,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
       // Check items
       pdf.setFontSize(14);
-      pdf.text('Inspection Items:', margin, currentY);
+      pdf.text('Check Items:', margin, currentY);
       currentY += 10;
 
       pdf.setFontSize(10);
@@ -190,20 +190,35 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         pdf.text(splitNotes, margin, currentY);
       }
 
-      pdf.save(`${frequency}-inspection-${ride.ride_name}-${new Date().toISOString().split('T')[0]}.pdf`);
-      
-      toast({
-        title: "PDF Generated",
-        description: "Inspection report has been downloaded"
-      });
+      return pdf.output('blob');
     } catch (error) {
       console.error('Error generating PDF:', error);
+      return null;
+    }
+  };
+
+  const generatePDF = async () => {
+    const blob = await generatePDFBlob();
+    if (!blob) {
       toast({
         title: "Error",
         description: "Failed to generate PDF",
         variant: "destructive"
       });
+      return;
     }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${frequency}-check-${ride.ride_name}-${new Date().toISOString().split('T')[0]}.pdf`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "PDF Generated",
+      description: "Check report has been downloaded"
+    });
   };
 
   const handleSubmitChecks = async () => {
@@ -257,9 +272,40 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
       if (resultsError) throw resultsError;
 
+      // Generate and save PDF to documents
+      const pdfBlob = await generatePDFBlob();
+      if (pdfBlob) {
+        const fileName = `${frequency}-check-${ride.ride_name}-${new Date().toISOString()}.pdf`;
+        const filePath = `${user?.id}/${ride.id}/check-records/${fileName}`;
+        
+        // Upload to storage
+        const { error: uploadError } = await supabase.storage
+          .from('ride-documents')
+          .upload(filePath, pdfBlob, {
+            contentType: 'application/pdf',
+            upsert: false
+          });
+
+        if (!uploadError) {
+          // Create document record
+          await supabase
+            .from('documents')
+            .insert({
+              user_id: user?.id,
+              ride_id: ride.id,
+              document_name: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check - ${new Date().toLocaleDateString()}`,
+              document_type: 'Check Record',
+              file_path: filePath,
+              mime_type: 'application/pdf',
+              file_size: pdfBlob.size,
+              notes: `Inspector: ${inspectorName}${weatherConditions ? ` | Weather: ${weatherConditions}` : ''}`
+            });
+        }
+      }
+
       toast({
-        title: "Inspection completed",
-        description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} inspection has been saved successfully`
+        title: "Check completed",
+        description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check has been saved successfully`
       });
 
       // Reset form
