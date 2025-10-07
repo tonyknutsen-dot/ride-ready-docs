@@ -1012,7 +1012,13 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     <div className="col-span-2">
                       <Label htmlFor="status">Status</Label>
                       <Select value={itemFormData.status} onValueChange={(value) => setItemFormData({ ...itemFormData, status: value })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectTrigger>
+                          <SelectValue>
+                            {itemFormData.status === 'open' && 'Open'}
+                            {itemFormData.status === 'in_progress' && 'In Progress'}
+                            {itemFormData.status === 'completed' && 'Completed'}
+                          </SelectValue>
+                        </SelectTrigger>
                         <SelectContent className="bg-background z-50">
                           <SelectItem value="open">
                             <div className="flex flex-col">
