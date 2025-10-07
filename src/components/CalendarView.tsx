@@ -4,6 +4,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar } from '@/components/ui/calendar';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   Calendar as CalendarIcon,
   ChevronLeft,
@@ -17,9 +23,12 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useAppMode } from '@/contexts/AppModeContext';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO, isSameDay, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { isDocs } from '@/config/appFlavor';
+import { z } from 'zod';
+import { Tables } from '@/integrations/supabase/types';
 
 interface CalendarEvent {
   id: string;
@@ -31,10 +40,33 @@ interface CalendarEvent {
   rideName?: string;
 }
 
+type Ride = Tables<'rides'>;
+
+const INSPECTION_TYPES = [
+  { value: 'in-service', label: 'In-Service Inspection' },
+  { value: 'electrical', label: 'Electrical Inspection' },
+  { value: 'ndt', label: 'NDT Inspection' },
+  { value: 'structural', label: 'Structural Inspection' },
+  { value: 'hydraulic', label: 'Hydraulic Inspection' },
+  { value: 'mechanical', label: 'Mechanical Inspection' },
+  { value: 'safety', label: 'Safety Inspection' },
+  { value: 'other', label: 'Other' },
+];
+
+const inspectionSchema = z.object({
+  ride_id: z.string().uuid({ message: "Please select a ride" }),
+  inspection_type: z.string().min(1, { message: "Please select an inspection type" }),
+  inspection_name: z.string().trim().min(1, { message: "Inspection name is required" }).max(200, { message: "Inspection name must be less than 200 characters" }),
+  due_date: z.date({ required_error: "Due date is required" }),
+  advance_notice_days: z.number().min(1, { message: "Advance notice must be at least 1 day" }).max(365, { message: "Advance notice cannot exceed 365 days" }),
+  notes: z.string().max(1000, { message: "Notes must be less than 1000 characters" }).optional(),
+});
+
 const CalendarView = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { subscription } = useSubscription();
+  const { isOperationsMode } = useAppMode();
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
@@ -42,16 +74,48 @@ const CalendarView = () => {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [calendarPickerOpen, setCalendarPickerOpen] = useState(false);
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [formData, setFormData] = useState({
+    ride_id: '',
+    inspection_type: '',
+    inspection_name: '',
+    due_date: undefined as Date | undefined,
+    advance_notice_days: 30,
+    notes: '',
+  });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const isBasicPlan = subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic';
 
   useEffect(() => {
     if (user && subscription) {
       loadCalendarEvents();
+      if (isOperationsMode) {
+        loadRides();
+      }
     } else {
       setLoading(false);
     }
-  }, [user, currentMonth, subscription?.subscriptionStatus]);
+  }, [user, currentMonth, subscription?.subscriptionStatus, isOperationsMode]);
+
+  const loadRides = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('rides')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('ride_name');
+
+      if (error) throw error;
+      setRides(data || []);
+    } catch (error) {
+      console.error('Error loading rides:', error);
+    }
+  };
 
   const loadCalendarEvents = async () => {
     if (!user?.id) {
@@ -296,6 +360,70 @@ const CalendarView = () => {
     }
   };
 
+  const resetForm = () => {
+    setFormData({
+      ride_id: '',
+      inspection_type: '',
+      inspection_name: '',
+      due_date: undefined,
+      advance_notice_days: 30,
+      notes: '',
+    });
+    setFormErrors({});
+  };
+
+  const handleAddInspection = async () => {
+    setFormErrors({});
+
+    // Validate form data
+    try {
+      const validatedData = inspectionSchema.parse(formData);
+
+      const scheduleData = {
+        user_id: user!.id,
+        ride_id: validatedData.ride_id,
+        inspection_type: validatedData.inspection_type,
+        inspection_name: validatedData.inspection_name,
+        due_date: format(validatedData.due_date, 'yyyy-MM-dd'),
+        advance_notice_days: validatedData.advance_notice_days,
+        notes: validatedData.notes || null,
+        schedule_type: 'inspection',
+      };
+
+      const { error } = await supabase
+        .from('inspection_schedules')
+        .insert([scheduleData]);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Inspection schedule created successfully",
+      });
+
+      setAddDialogOpen(false);
+      resetForm();
+      loadCalendarEvents();
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            errors[err.path[0].toString()] = err.message;
+          }
+        });
+        setFormErrors(errors);
+      } else {
+        console.error('Error saving inspection schedule:', error);
+        toast({
+          title: "Error",
+          description: "Failed to create inspection schedule",
+          variant: "destructive",
+        });
+      }
+    }
+  };
+
   const selectedDateEvents = getEventsForDate(selectedDate);
 
   if (!user) {
@@ -335,13 +463,158 @@ const CalendarView = () => {
             <div>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <CalendarIcon className="h-4 w-4" />
-                Document Expiry Calendar
+                {isOperationsMode ? 'Operations Calendar' : 'Document Expiry Calendar'}
               </CardTitle>
               <CardDescription className="text-xs">
-                Track when your documents and certificates expire
+                {isOperationsMode 
+                  ? 'Track inspections, maintenance, and document expiry dates'
+                  : 'Track when your documents and certificates expire'}
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
+              {isOperationsMode && (
+                <Dialog open={addDialogOpen} onOpenChange={(open) => {
+                  setAddDialogOpen(open);
+                  if (!open) resetForm();
+                }}>
+                  <DialogTrigger asChild>
+                    <Button size="sm">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Inspection
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Add Inspection Schedule</DialogTitle>
+                      <DialogDescription>
+                        Schedule an inspection with automatic reminders
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="ride_id">Ride *</Label>
+                        <Select
+                          value={formData.ride_id}
+                          onValueChange={(value) => setFormData({ ...formData, ride_id: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a ride" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {rides.map((ride) => (
+                              <SelectItem key={ride.id} value={ride.id}>
+                                {ride.ride_name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {formErrors.ride_id && <p className="text-xs text-destructive">{formErrors.ride_id}</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="inspection_type">Inspection Type *</Label>
+                        <Select
+                          value={formData.inspection_type}
+                          onValueChange={(value) => setFormData({ ...formData, inspection_type: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select inspection type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {INSPECTION_TYPES.map((type) => (
+                              <SelectItem key={type.value} value={type.value}>
+                                {type.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {formErrors.inspection_type && <p className="text-xs text-destructive">{formErrors.inspection_type}</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="inspection_name">Inspection Name *</Label>
+                        <Input
+                          id="inspection_name"
+                          value={formData.inspection_name}
+                          onChange={(e) => setFormData({ ...formData, inspection_name: e.target.value })}
+                          placeholder="e.g., Annual Safety Inspection"
+                          maxLength={200}
+                        />
+                        {formErrors.inspection_name && <p className="text-xs text-destructive">{formErrors.inspection_name}</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Due Date *</Label>
+                        <Popover open={calendarPickerOpen} onOpenChange={setCalendarPickerOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !formData.due_date && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {formData.due_date ? format(formData.due_date, "PPP") : "Select due date"}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={formData.due_date}
+                              onSelect={(date) => {
+                                setFormData({ ...formData, due_date: date });
+                                setCalendarPickerOpen(false);
+                              }}
+                              initialFocus
+                              disabled={(date) => date < new Date()}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        {formErrors.due_date && <p className="text-xs text-destructive">{formErrors.due_date}</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="advance_notice_days">Advance Notice (Days)</Label>
+                        <Input
+                          id="advance_notice_days"
+                          type="number"
+                          min="1"
+                          max="365"
+                          value={formData.advance_notice_days}
+                          onChange={(e) => setFormData({ ...formData, advance_notice_days: parseInt(e.target.value) || 30 })}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Reminders start this many days before the due date
+                        </p>
+                        {formErrors.advance_notice_days && <p className="text-xs text-destructive">{formErrors.advance_notice_days}</p>}
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="notes">Notes</Label>
+                        <Textarea
+                          id="notes"
+                          value={formData.notes}
+                          onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                          placeholder="Additional notes or requirements"
+                          rows={3}
+                          maxLength={1000}
+                        />
+                        {formErrors.notes && <p className="text-xs text-destructive">{formErrors.notes}</p>}
+                      </div>
+
+                      <div className="flex justify-end space-x-2 pt-4">
+                        <Button variant="outline" onClick={() => setAddDialogOpen(false)}>
+                          Cancel
+                        </Button>
+                        <Button onClick={handleAddInspection}>
+                          Create Schedule
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              )}
               <Button
                 variant="outline"
                 size="sm"
