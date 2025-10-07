@@ -17,18 +17,16 @@ const Calendar = () => {
   }
 
   return (
-    <FeatureGate requiredPlan="advanced" feature="Calendar View">
-      <div className="container mx-auto py-6 pb-24 md:pb-6 space-y-6">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
-          <p className="text-muted-foreground">
-            View all your upcoming inspections, maintenance, and document expiry dates
-          </p>
-        </div>
-        
-        <CalendarView />
+    <div className="container mx-auto py-6 pb-24 md:pb-6 space-y-6">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-bold tracking-tight">Calendar</h1>
+        <p className="text-muted-foreground">
+          View all your upcoming inspections, maintenance, and document expiry dates
+        </p>
       </div>
-    </FeatureGate>
+      
+      <CalendarView />
+    </div>
   );
 };
 
