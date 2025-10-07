@@ -512,97 +512,92 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             <p className="text-sm text-muted-foreground mb-4">
               Start by adding hazards and risks to assess
             </p>
-            <Button onClick={() => setShowItemDialog(true)} className="btn-bold-primary">
+            <Button onClick={() => setShowItemDialog(true)} className="bg-primary hover:bg-primary/90">
               <Plus className="h-4 w-4 mr-2" /> Add Your First Risk Item
             </Button>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
-          {assessmentItems.map((item) => (
-            <Card key={item.id} className="hover:shadow-md transition-shadow">
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  {/* Header with Risk Level and Actions */}
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${getRiskColor(item.risk_level)}`}>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Risk Items ({assessmentItems.length})</CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="w-[40%]">Hazard Description</TableHead>
+                    <TableHead className="w-[100px]">Risk Level</TableHead>
+                    <TableHead className="w-[100px]">Status</TableHead>
+                    <TableHead className="w-[200px]">Who at Risk</TableHead>
+                    <TableHead className="w-[150px]">Assessment</TableHead>
+                    <TableHead className="w-[100px] text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {assessmentItems.map((item) => (
+                    <TableRow key={item.id} className="hover:bg-muted/30 transition-colors">
+                      <TableCell className="font-medium">
+                        <div className="space-y-1">
+                          <div className="font-semibold text-sm">{item.hazard_description}</div>
+                          {item.existing_controls && (
+                            <div className="text-xs text-muted-foreground">
+                              Controls: {item.existing_controls.substring(0, 80)}{item.existing_controls.length > 80 ? '...' : ''}
+                            </div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs font-bold whitespace-nowrap ${getRiskColor(item.risk_level)}`}>
                           {item.risk_level.toUpperCase()}
                         </span>
-                        <span className="px-2 py-1 rounded-md text-xs bg-muted">
-                          {item.status}
+                      </TableCell>
+                      <TableCell>
+                        <span className="text-xs px-2 py-1 rounded-md bg-muted whitespace-nowrap">
+                          {item.status === 'open' && 'Open'}
+                          {item.status === 'in_progress' && 'In Progress'}
+                          {item.status === 'completed' && 'Completed'}
                         </span>
-                      </div>
-                      <h4 className="font-semibold text-lg">{item.hazard_description}</h4>
-                    </div>
-                    <div className="flex gap-2 shrink-0">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => {
-                          setEditingItem(item);
-                          setItemFormData(item);
-                          setShowItemDialog(true);
-                        }}
-                      >
-                        Edit
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleDeleteItem(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Content Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Who at Risk</p>
-                      <p>{item.who_at_risk}</p>
-                    </div>
-                    
-                    {item.existing_controls && (
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Existing Controls</p>
-                        <p>{item.existing_controls}</p>
-                      </div>
-                    )}
-                    
-                    {item.additional_actions && (
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Additional Actions</p>
-                        <p>{item.additional_actions}</p>
-                      </div>
-                    )}
-                    
-                    {item.action_owner && (
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Action Owner</p>
-                        <p>{item.action_owner}</p>
-                      </div>
-                    )}
-                    
-                    {item.target_date && (
-                      <div>
-                        <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Target Date</p>
-                        <p>{format(new Date(item.target_date), 'dd MMM yyyy')}</p>
-                      </div>
-                    )}
-                    
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground uppercase mb-1">Risk Assessment</p>
-                      <p>Likelihood: {item.likelihood} • Severity: {item.severity}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                      </TableCell>
+                      <TableCell className="text-xs">{item.who_at_risk}</TableCell>
+                      <TableCell className="text-xs">
+                        <div className="space-y-0.5">
+                          <div>L: {item.likelihood}</div>
+                          <div>S: {item.severity}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex gap-1 justify-end">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="h-8 w-8 p-0"
+                            onClick={() => {
+                              setEditingItem(item);
+                              setItemFormData(item);
+                              setShowItemDialog(true);
+                            }}
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="h-8 w-8 p-0 hover:bg-destructive/10"
+                            onClick={() => handleDeleteItem(item.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       <Dialog open={showItemDialog} onOpenChange={(open) => {
