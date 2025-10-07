@@ -54,7 +54,7 @@ const CallToAction = () => {
           <Button 
             variant="outline" 
             size="lg"
-            className="border-2 border-white/30 text-white hover:bg-white/10 px-8 py-4 text-lg backdrop-blur-sm transition-smooth min-w-[250px]"
+            className="border-2 border-white text-white bg-black/40 hover:bg-black/60 px-8 py-4 text-lg backdrop-blur-sm transition-smooth min-w-[250px]"
             onClick={() => navigate('/demo')}
           >
             View Demo
