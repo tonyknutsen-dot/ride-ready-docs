@@ -272,6 +272,23 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     }
   };
 
+  const handleStatusChange = async (newStatus: string) => {
+    if (!selectedAssessment) return;
+
+    const { error } = await supabase
+      .from('risk_assessments')
+      .update({ overall_status: newStatus })
+      .eq('id', selectedAssessment.id);
+
+    if (error) {
+      toast({ title: 'Error updating status', description: error.message, variant: 'destructive' });
+    } else {
+      setSelectedAssessment({ ...selectedAssessment, overall_status: newStatus });
+      toast({ title: 'Success', description: 'Assessment status updated' });
+      loadAssessments(); // Refresh the list
+    }
+  };
+
   const resetItemForm = () => {
     setItemFormData({
       hazard_description: '',
@@ -487,6 +504,26 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
 
   const saveToDocuments = async () => {
     if (!selectedAssessment || !user) return;
+
+    // Check if assessment is completed
+    if (selectedAssessment.overall_status !== 'completed') {
+      toast({ 
+        title: 'Cannot save incomplete assessment', 
+        description: 'Please mark the assessment as "Completed" before saving to documents.',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    // Check if there are any risk items
+    if (assessmentItems.length === 0) {
+      toast({ 
+        title: 'Cannot save empty assessment', 
+        description: 'Please add at least one risk item before saving to documents.',
+        variant: 'destructive'
+      });
+      return;
+    }
 
     try {
       // Generate PDF
@@ -841,22 +878,66 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                   <FileText className="h-5 w-5 text-primary" />
                   <CardTitle className="text-lg">Risk Assessment</CardTitle>
                 </div>
-                <CardDescription className="text-sm">
+                <CardDescription className="text-sm mb-2">
                   <span className="font-medium text-foreground">{ride.ride_name}</span>
                   {' • '}
                   {format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')} • {selectedAssessment.assessor_name}
                 </CardDescription>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-muted-foreground">Status:</Label>
+                  <Select value={selectedAssessment.overall_status} onValueChange={handleStatusChange}>
+                    <SelectTrigger className="h-7 w-[140px] text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                          Pending
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="in_progress">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                          In Progress
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="completed">
+                        <span className="flex items-center gap-2">
+                          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                          Completed
+                        </span>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={saveToDocuments}
-                  className="group hover:bg-primary hover:text-primary-foreground transition-all"
-                >
-                  <Save className="h-3.5 w-3.5 mr-1.5 group-hover:scale-110 transition-transform" /> 
-                  Save
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={saveToDocuments}
+                        disabled={selectedAssessment.overall_status !== 'completed' || assessmentItems.length === 0}
+                        className="group hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50"
+                      >
+                        <Save className="h-3.5 w-3.5 mr-1.5 group-hover:scale-110 transition-transform" /> 
+                        Save
+                      </Button>
+                    </TooltipTrigger>
+                    {(selectedAssessment.overall_status !== 'completed' || assessmentItems.length === 0) && (
+                      <TooltipContent>
+                        <p className="text-xs">
+                          {assessmentItems.length === 0 
+                            ? 'Add risk items before saving' 
+                            : 'Mark assessment as completed before saving'}
+                        </p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
                 <Button 
                   variant="outline" 
                   size="sm" 
