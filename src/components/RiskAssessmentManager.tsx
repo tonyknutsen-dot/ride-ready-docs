@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Trash2, Download, Mail, Printer, CalendarIcon, Info, ChevronDown, Save, FileText } from 'lucide-react';
+import { Plus, Trash2, Download, Mail, Printer, CalendarIcon, Info, ChevronDown, Save, FileText, ArrowLeft } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -474,48 +474,49 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="space-y-4">
-        <Button variant="ghost" onClick={() => setSelectedAssessment(null)} className="mb-2">
-          ← Back to Assessments
+      <div className="space-y-3">
+        <Button variant="ghost" onClick={() => setSelectedAssessment(null)} size="sm" className="px-2">
+          <ArrowLeft className="h-4 w-4 mr-1" /> Back
         </Button>
         
         <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <CardHeader className="pb-3">
+            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
               <div>
-                <CardTitle className="text-2xl">Risk Assessment</CardTitle>
-                <CardDescription className="text-base mt-1">
-                  {format(new Date(selectedAssessment.assessment_date), 'dd MMMM yyyy')} • {selectedAssessment.assessor_name}
+                <div className="flex items-center gap-2 mb-1">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Risk Assessment</CardTitle>
+                </div>
+                <CardDescription className="text-sm">
+                  {format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')} • {selectedAssessment.assessor_name}
                 </CardDescription>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={saveToDocuments}
-                  className="group hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                  className="group hover:bg-primary hover:text-primary-foreground transition-all"
                 >
-                  <Save className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" /> 
-                  Save to Documents
+                  <Save className="h-3.5 w-3.5 mr-1.5 group-hover:scale-110 transition-transform" /> 
+                  Save
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={handlePrint}
-                  className="hover:bg-muted transition-colors"
                 >
-                  <Printer className="h-4 w-4 mr-2" /> Print
+                  <Printer className="h-3.5 w-3.5 mr-1.5" /> Print
                 </Button>
                 <Button 
                   variant="outline" 
                   size="sm" 
                   onClick={exportToPDF}
-                  className="hover:bg-muted transition-colors"
                 >
-                  <Download className="h-4 w-4 mr-2" /> Download PDF
+                  <Download className="h-3.5 w-3.5 mr-1.5" /> PDF
                 </Button>
-                <Button onClick={() => setShowItemDialog(true)} className="bg-primary hover:bg-primary/90">
-                  <Plus className="h-4 w-4 mr-2" /> Add Risk Item
+                <Button onClick={() => setShowItemDialog(true)} size="sm" className="bg-primary hover:bg-primary/90">
+                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Item
                 </Button>
               </div>
             </div>
