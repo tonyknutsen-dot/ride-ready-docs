@@ -28,7 +28,7 @@ const RiskAssessments = () => {
 
   return (
     <FeatureGate requiredPlan="advanced" feature="Risk Assessments">
-      <div className="container mx-auto py-8 px-4">
+      <div className="container mx-auto py-8 px-4 pb-24 md:pb-8">
         <div className="mb-6">
           <h1 className="text-3xl font-bold mb-2">Risk Assessments</h1>
           <p className="text-muted-foreground">
