@@ -885,10 +885,25 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
               <p className="text-xs text-muted-foreground mb-2">What is the current status of this risk item?</p>
               <Select value={itemFormData.status} onValueChange={(value) => setItemFormData({ ...itemFormData, status: value })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="completed">Completed</SelectItem>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="open">
+                    <div className="flex flex-col">
+                      <span className="font-medium">Open</span>
+                      <span className="text-xs text-muted-foreground">Not yet started - This risk needs attention</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="in_progress">
+                    <div className="flex flex-col">
+                      <span className="font-medium">In Progress</span>
+                      <span className="text-xs text-muted-foreground">Currently being addressed - Actions are underway</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="completed">
+                    <div className="flex flex-col">
+                      <span className="font-medium">Completed</span>
+                      <span className="text-xs text-muted-foreground">Fully addressed - Controls implemented and verified</span>
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
