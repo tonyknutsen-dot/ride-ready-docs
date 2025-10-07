@@ -72,7 +72,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     assessor_name: '',
     assessment_date: format(new Date(), 'yyyy-MM-dd'),
     review_date: '',
-    overall_status: 'pending',
+    overall_status: 'in_progress',
     notes: ''
   });
 
@@ -206,7 +206,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         assessor_name: '',
         assessment_date: format(new Date(), 'yyyy-MM-dd'),
         review_date: '',
-        overall_status: 'pending',
+        overall_status: 'in_progress',
         notes: ''
       });
       loadAssessments();
@@ -890,12 +890,6 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pending">
-                        <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-gray-400"></span>
-                          Pending
-                        </span>
-                      </SelectItem>
                       <SelectItem value="in_progress">
                         <span className="flex items-center gap-2">
                           <span className="w-2 h-2 rounded-full bg-blue-500"></span>
@@ -924,18 +918,18 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                         className="group hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50"
                       >
                         <Save className="h-3.5 w-3.5 mr-1.5 group-hover:scale-110 transition-transform" /> 
-                        Save
+                        Save to Documents
                       </Button>
                     </TooltipTrigger>
-                    {(selectedAssessment.overall_status !== 'completed' || assessmentItems.length === 0) && (
-                      <TooltipContent>
-                        <p className="text-xs">
-                          {assessmentItems.length === 0 
-                            ? 'Add risk items before saving' 
-                            : 'Mark assessment as completed before saving'}
-                        </p>
-                      </TooltipContent>
-                    )}
+                    <TooltipContent>
+                      <p className="text-xs">
+                        {assessmentItems.length === 0 
+                          ? 'Add risk items before saving to documents' 
+                          : selectedAssessment.overall_status !== 'completed'
+                          ? 'Mark assessment as completed to save to documents'
+                          : 'Save this assessment as a PDF in the Documents section'}
+                      </p>
+                    </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 <Button 
