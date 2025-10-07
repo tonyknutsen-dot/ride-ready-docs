@@ -10,11 +10,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Trash2, Download, Mail, Printer } from 'lucide-react';
+import { Plus, Trash2, Download, Mail, Printer, CalendarIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { cn } from '@/lib/utils';
 
 interface RiskAssessmentManagerProps {
   ride: {
@@ -851,12 +854,29 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             <div>
               <Label htmlFor="target_date">Target Date</Label>
               <p className="text-xs text-muted-foreground mb-2">When should the actions be completed by?</p>
-              <Input
-                id="target_date"
-                type="date"
-                value={itemFormData.target_date}
-                onChange={(e) => setItemFormData({ ...itemFormData, target_date: e.target.value })}
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !itemFormData.target_date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {itemFormData.target_date ? format(new Date(itemFormData.target_date), 'PPP') : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={itemFormData.target_date ? new Date(itemFormData.target_date) : undefined}
+                    onSelect={(date) => setItemFormData({ ...itemFormData, target_date: date ? format(date, 'yyyy-MM-dd') : '' })}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="col-span-2">
               <Label htmlFor="status">Status</Label>
