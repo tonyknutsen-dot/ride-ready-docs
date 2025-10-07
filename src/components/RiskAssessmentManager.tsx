@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Trash2, Download, Mail, Printer, CalendarIcon, Info, ChevronDown } from 'lucide-react';
+import { Plus, Trash2, Download, Mail, Printer, CalendarIcon, Info, ChevronDown, Save, FileText } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -287,6 +287,84 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     toast({ title: 'Success', description: 'PDF downloaded' });
   };
 
+  const saveToDocuments = async () => {
+    if (!selectedAssessment || !user) return;
+
+    try {
+      // Generate PDF
+      const doc = new jsPDF();
+      
+      doc.setFontSize(16);
+      doc.text('Risk Assessment', 14, 20);
+      doc.setFontSize(10);
+      doc.text(`Ride: ${ride.ride_name}`, 14, 30);
+      doc.text(`Assessor: ${selectedAssessment.assessor_name}`, 14, 36);
+      doc.text(`Date: ${format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy')}`, 14, 42);
+
+      const tableData = assessmentItems.map(item => [
+        item.hazard_description,
+        item.who_at_risk,
+        item.existing_controls || '-',
+        item.risk_level.toUpperCase(),
+        item.additional_actions || '-',
+        item.status
+      ]);
+
+      (doc as any).autoTable({
+        startY: 50,
+        head: [['Hazard', 'Who at Risk', 'Controls', 'Risk Level', 'Actions', 'Status']],
+        body: tableData,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [66, 139, 202] }
+      });
+
+      // Convert PDF to blob
+      const pdfBlob = doc.output('blob');
+      
+      // Upload to storage
+      const fileName = `risk-assessment-${ride.ride_name}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      const filePath = `${user.id}/${ride.id}/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('ride-documents')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Add to documents table
+      const { error: dbError } = await supabase
+        .from('documents')
+        .insert({
+          user_id: user.id,
+          ride_id: ride.id,
+          document_name: `Risk Assessment - ${format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')}`,
+          document_type: 'Risk Assessment',
+          file_path: filePath,
+          mime_type: 'application/pdf',
+          file_size: pdfBlob.size,
+          notes: `Generated from risk assessment by ${selectedAssessment.assessor_name}`
+        });
+
+      if (dbError) throw dbError;
+
+      toast({ 
+        title: 'Success!', 
+        description: 'Risk assessment saved to documents. You can now email it from the Documents section.',
+        duration: 5000
+      });
+    } catch (error: any) {
+      console.error('Error saving to documents:', error);
+      toast({ 
+        title: 'Error', 
+        description: error.message || 'Failed to save to documents', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -389,13 +467,32 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                 </CardDescription>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" size="sm" onClick={handlePrint}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={saveToDocuments}
+                  className="group hover:bg-primary hover:text-primary-foreground transition-all duration-200"
+                >
+                  <Save className="h-4 w-4 mr-2 group-hover:scale-110 transition-transform" /> 
+                  Save to Documents
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handlePrint}
+                  className="hover:bg-muted transition-colors"
+                >
                   <Printer className="h-4 w-4 mr-2" /> Print
                 </Button>
-                <Button variant="outline" size="sm" onClick={exportToPDF}>
-                  <Download className="h-4 w-4 mr-2" /> PDF
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={exportToPDF}
+                  className="hover:bg-muted transition-colors"
+                >
+                  <Download className="h-4 w-4 mr-2" /> Download PDF
                 </Button>
-                <Button onClick={() => setShowItemDialog(true)} className="btn-bold-primary">
+                <Button onClick={() => setShowItemDialog(true)} className="bg-primary hover:bg-primary/90">
                   <Plus className="h-4 w-4 mr-2" /> Add Risk Item
                 </Button>
               </div>
