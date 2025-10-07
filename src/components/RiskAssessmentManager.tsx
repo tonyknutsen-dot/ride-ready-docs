@@ -517,33 +517,31 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <Label htmlFor="hazard_description">Hazard Description *</Label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                <span className="text-xs text-muted-foreground">Quick examples:</span>
-                {[
-                  'Slips, trips and falls from ride platform',
-                  'Mechanical failure during operation',
-                  'Rider entrapment or ejection',
-                  'Electrical shock from exposed wiring',
-                  'Moving parts causing crush injuries'
-                ].map((example) => (
-                  <Button
-                    key={example}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => setItemFormData({ ...itemFormData, hazard_description: example })}
-                  >
-                    {example.substring(0, 30)}...
-                  </Button>
-                ))}
-              </div>
-              <Textarea
-                id="hazard_description"
-                placeholder="e.g., Slips, trips and falls from ride platform due to wet surface"
-                value={itemFormData.hazard_description}
-                onChange={(e) => setItemFormData({ ...itemFormData, hazard_description: e.target.value })}
-              />
+              <Select value={itemFormData.hazard_description} onValueChange={(value) => setItemFormData({ ...itemFormData, hazard_description: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a hazard or choose Custom to add your own" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="Slips, trips and falls from ride platform">Slips, trips and falls from ride platform</SelectItem>
+                  <SelectItem value="Mechanical failure during operation">Mechanical failure during operation</SelectItem>
+                  <SelectItem value="Rider entrapment or ejection">Rider entrapment or ejection</SelectItem>
+                  <SelectItem value="Electrical shock from exposed wiring">Electrical shock from exposed wiring</SelectItem>
+                  <SelectItem value="Moving parts causing crush injuries">Moving parts causing crush injuries</SelectItem>
+                  <SelectItem value="Fire or explosion risk">Fire or explosion risk</SelectItem>
+                  <SelectItem value="Structural collapse or failure">Structural collapse or failure</SelectItem>
+                  <SelectItem value="Weather-related hazards">Weather-related hazards</SelectItem>
+                  <SelectItem value="Inadequate restraint systems">Inadequate restraint systems</SelectItem>
+                  <SelectItem value="Custom">Custom (enter below)</SelectItem>
+                </SelectContent>
+              </Select>
+              {itemFormData.hazard_description === 'Custom' && (
+                <Textarea
+                  className="mt-2"
+                  placeholder="Enter your custom hazard description"
+                  value={itemFormData.hazard_description}
+                  onChange={(e) => setItemFormData({ ...itemFormData, hazard_description: e.target.value })}
+                />
+              )}
             </div>
             <div className="col-span-2">
               <Label>Who is at Risk * (Select all that apply)</Label>
