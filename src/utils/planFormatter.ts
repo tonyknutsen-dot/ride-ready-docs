@@ -3,9 +3,9 @@ export const formatPlanName = (plan: string | null | undefined): string => {
     case 'trial':
       return 'Trial';
     case 'basic':
-      return 'Basic Plan';
+      return 'Documents & Compliance';
     case 'advanced':
-      return 'Advanced Plan';
+      return 'Operations & Maintenance';
     default:
       return 'Trial';
   }
@@ -14,11 +14,11 @@ export const formatPlanName = (plan: string | null | undefined): string => {
 export const formatPlanWithDescription = (plan: string | null | undefined): string => {
   switch (plan) {
     case 'trial':
-      return 'Trial (Documents)';
+      return 'Trial';
     case 'basic':
-      return 'Basic Plan (Documents)';
+      return 'Documents & Compliance';
     case 'advanced':
-      return 'Advanced Plan (Operations & Maintenance)';
+      return 'Operations & Maintenance';
     default:
       return 'Trial';
   }
@@ -27,12 +27,12 @@ export const formatPlanWithDescription = (plan: string | null | undefined): stri
 export const getPlanDescription = (plan: string | null | undefined): string => {
   switch (plan) {
     case 'trial':
-      return 'Documents';
+      return 'Documents & Compliance';
     case 'basic':
-      return 'Documents';
+      return 'Documents & Compliance';
     case 'advanced':
       return 'Operations & Maintenance';
     default:
-      return 'Documents';
+      return 'Documents & Compliance';
   }
 };

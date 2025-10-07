@@ -18,7 +18,7 @@ export const RestrictedFeatureCard: React.FC<RestrictedFeatureCardProps> = ({
   icon,
   requiredPlan
 }) => {
-  const planName = requiredPlan === 'basic' ? 'Basic Plan' : 'Advanced Plan';
+  const planName = requiredPlan === 'basic' ? 'Documents & Compliance' : 'Operations & Maintenance';
   
   return (
     <Card className="relative overflow-hidden border-muted-foreground/20 bg-muted/30">
@@ -42,11 +42,11 @@ export const RestrictedFeatureCard: React.FC<RestrictedFeatureCardProps> = ({
         <Dialog>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" className="w-full">
-              Upgrade to Advanced Plan
+              Upgrade to {planName}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-            <DialogTitle>Upgrade to Advanced Plan - £27.99/month</DialogTitle>
+            <DialogTitle>Upgrade to {planName} - £{requiredPlan === 'basic' ? '12.99' : '27.99'}/month</DialogTitle>
             <DialogDescription>
               Unlock {title.toLowerCase()} and all premium features
             </DialogDescription>
@@ -66,7 +66,7 @@ export const RestrictedFeatureCard: React.FC<RestrictedFeatureCardProps> = ({
                 </div>
                 
                 <div>
-                  <h3 className="font-medium text-sm mb-2">Advanced Plan includes:</h3>
+                  <h3 className="font-medium text-sm mb-2">{planName} includes:</h3>
                   <div className="grid grid-cols-1 gap-1 text-xs">
                     <div className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>

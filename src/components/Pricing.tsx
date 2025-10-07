@@ -9,7 +9,7 @@ const Pricing = () => {
     user
   } = useAuth();
   const basicFeatures = ["Ride & equipment management", "Document storage (up to 100 documents)", "Email alerts 30 & 7 days before document expiry", "Basic document types supported", "Organize documents by ride and equipment", "Web-based dashboard access", "Email support"];
-  const advancedFeatures = ["All Documents Plan features", "Unlimited document storage", "All document types supported", "Daily, monthly & yearly checks", "Inspection management & scheduling", "NDT testing schedules", "Maintenance tracking", "Calendar & scheduling system", "Notifications & alerts", "Risk assessment builder (downloadable, printable, emailable)", "Technical bulletin access", "Automated compliance reminders", "Council-ready document packages", "Advanced reporting & analytics", "Priority 24/7 support", "Multi-user collaboration"];
+  const advancedFeatures = ["All Documents & Compliance features", "Unlimited document storage", "All document types supported", "Daily, monthly & yearly checks", "Inspection management & scheduling", "NDT testing schedules", "Maintenance tracking", "Calendar & scheduling system", "Notifications & alerts", "Risk assessment builder (downloadable, printable, emailable)", "Technical bulletin access", "Automated compliance reminders", "Council-ready document packages", "Advanced reporting & analytics", "Priority 24/7 support", "Multi-user collaboration"];
   return <section className="bg-background py-[22px]">
       <div className="container mx-auto px-6">
         <div className="text-center mb-16">
@@ -26,10 +26,10 @@ const Pricing = () => {
           <Card className="relative shadow-elegant hover:shadow-glow transition-smooth border-2 border-muted/20">
             <CardHeader className="text-center pt-8 pb-6">
               <CardTitle className="text-2xl font-bold text-primary mb-2">
-                Documents Plan
+                Documents & Compliance
               </CardTitle>
               <div className="text-sm text-muted-foreground font-medium mb-3">
-                Basic Plan
+                Essential plan for fairground operators
               </div>
               <div className="mb-4">
                 <span className="text-4xl font-bold text-primary">£12.99</span>
@@ -67,10 +67,10 @@ const Pricing = () => {
 
             <CardHeader className="text-center pt-12 pb-6">
               <CardTitle className="text-2xl font-bold text-primary mb-2">
-                Documents + Operations Plan
+                Operations & Maintenance
               </CardTitle>
               <div className="text-sm text-muted-foreground font-medium mb-3">
-                Advanced Plan
+                Complete documents + operations solution
               </div>
               <div className="mb-4">
                 <span className="text-4xl font-bold text-primary">£27.99</span>

@@ -394,7 +394,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
-                  <DialogTitle>Upgrade to Advanced Plan</DialogTitle>
+                  <DialogTitle>Upgrade to Operations & Maintenance</DialogTitle>
                   <DialogDescription>
                     Unlock inspection tracking and all advanced operational features
                   </DialogDescription>
@@ -449,7 +449,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
-                  <DialogTitle>Upgrade to Advanced Plan</DialogTitle>
+                  <DialogTitle>Upgrade to Operations & Maintenance</DialogTitle>
                   <DialogDescription>
                     Unlock maintenance tracking and all advanced operational features
                   </DialogDescription>
@@ -490,7 +490,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-2xl">
-                  <DialogTitle>Upgrade to Advanced Plan</DialogTitle>
+                  <DialogTitle>Upgrade to Operations & Maintenance</DialogTitle>
                   <DialogDescription>
                     Unlock calendar scheduling and all advanced operational features
                   </DialogDescription>
@@ -529,7 +529,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
               <p>Advanced activity tracking</p>
-              <p className="text-sm">Upgrade to Advanced plan to see inspection activity</p>
+              <p className="text-sm">Upgrade to Operations & Maintenance to see inspection activity</p>
             </div>
           ) : recentActivity.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">

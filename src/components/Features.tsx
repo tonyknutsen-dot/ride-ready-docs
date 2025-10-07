@@ -77,7 +77,7 @@ const Features = () => {
             <h3 className="text-2xl md:text-3xl font-bold text-accent-foreground">
               📄 Documents & Compliance App
             </h3>
-            <Badge className="text-xs bg-accent text-accent-foreground">Basic Plan</Badge>
+            <Badge className="text-xs bg-accent text-accent-foreground">Documents & Compliance</Badge>
           </div>
           <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
             Store, organize, and share all your compliance documents. Keep everything accessible and up-to-date.
@@ -113,7 +113,7 @@ const Features = () => {
         <div className="p-8 rounded-2xl bg-primary/10 border-2 border-primary/40">
           <div className="flex items-center justify-center gap-3 mb-6">
             <h3 className="text-2xl md:text-3xl font-bold text-primary-foreground">⚙️ Operations & Maintenance App</h3>
-            <Badge className="text-xs bg-primary text-primary-foreground">Advanced Plan</Badge>
+            <Badge className="text-xs bg-primary text-primary-foreground">Operations & Maintenance</Badge>
           </div>
           <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
             Complete safety checks, log maintenance, track inspections, and receive technical bulletins for your equipment.

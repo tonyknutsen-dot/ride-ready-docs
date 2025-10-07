@@ -246,11 +246,11 @@ const Overview = () => {
               </div>
               <CardContent className="p-6 text-center">
                 <div className="text-2xl font-bold text-muted-foreground mb-1">•••</div>
-                <div className="text-xs font-semibold text-primary mb-1">Advanced Plan Feature</div>
+                <div className="text-xs font-semibold text-primary mb-1">Operations & Maintenance</div>
                 <div className="text-sm font-medium mb-2">Daily Safety Checks</div>
                 <p className="text-xs text-muted-foreground mb-3">Complete digital checklists, track compliance, and never miss a safety inspection</p>
                 <Button size="sm" className="text-xs" onClick={() => navigate('/billing')}>
-                  Upgrade to Advanced
+                  Upgrade Plan
                 </Button>
               </CardContent>
             </Card>}>
@@ -267,11 +267,11 @@ const Overview = () => {
               </div>
               <CardContent className="p-6 text-center">
                 <div className="text-2xl font-bold text-muted-foreground mb-1">•••</div>
-                <div className="text-xs font-semibold text-primary mb-1">Advanced Plan Feature</div>
+                <div className="text-xs font-semibold text-primary mb-1">Operations & Maintenance</div>
                 <div className="text-sm font-medium mb-2">Inspection Scheduling</div>
                 <p className="text-xs text-muted-foreground mb-3">Automated reminders ensure you never miss critical inspection deadlines</p>
                 <Button size="sm" className="text-xs" onClick={() => navigate('/billing')}>
-                  Upgrade to Advanced
+                  Upgrade Plan
                 </Button>
               </CardContent>
             </Card>}>
@@ -349,7 +349,7 @@ const Overview = () => {
                       <Lock className="w-4 h-4 text-muted-foreground" />
                       Recent Activity
                     </h2>
-                    <Badge variant="secondary" className="text-xs">Advanced</Badge>
+                    <Badge variant="secondary" className="text-xs">Operations & Maintenance</Badge>
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
@@ -357,7 +357,7 @@ const Overview = () => {
                     See all your maintenance work, safety checks, and inspections in one live feed. Stay on top of everything happening across your equipment fleet.
                   </p>
                   <Button size="sm" className="w-full" onClick={() => navigate('/billing')}>
-                    Upgrade to Advanced Plan
+                    Upgrade Plan
                   </Button>
                 </CardContent>
               </Card>}>

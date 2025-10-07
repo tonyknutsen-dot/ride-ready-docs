@@ -31,7 +31,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
   ];
 
   const advancedFeatures = [
-    'Everything in Documents Plan',
+    'Everything in Documents & Compliance',
     'Daily, monthly & yearly checks',
     'Inspection scheduling',
     'NDT testing schedules',
@@ -59,13 +59,10 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
-              <CardTitle>Basic Plan</CardTitle>
-            </div>
-            <div className="text-xs text-muted-foreground font-medium mt-1">
-              Documents App
+              <CardTitle>Documents & Compliance</CardTitle>
             </div>
             <CardDescription>
-              Essential document storage & management
+              Essential document storage & compliance management
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -86,7 +83,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
               onClick={() => handleUpgrade('basic')}
               disabled={subscription?.subscriptionStatus === 'basic'}
             >
-              {subscription?.subscriptionStatus === 'basic' ? 'Current Plan' : 'Choose Documents Plan'}
+              {subscription?.subscriptionStatus === 'basic' ? 'Current Plan' : 'Choose This Plan'}
             </Button>
           </CardContent>
         </Card>
@@ -99,10 +96,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
           <CardHeader>
             <div className="flex items-center gap-2">
               <Cog className="h-5 w-5 text-primary" />
-              <CardTitle>Advanced Plan</CardTitle>
-            </div>
-            <div className="text-xs text-muted-foreground font-medium mt-1">
-              Documents + Operations & Maintenance App
+              <CardTitle>Operations & Maintenance</CardTitle>
             </div>
             <CardDescription>
               Complete documents + operations & maintenance solution
@@ -125,7 +119,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
               onClick={() => handleUpgrade('advanced')}
               disabled={subscription?.subscriptionStatus === 'advanced'}
             >
-              {subscription?.subscriptionStatus === 'advanced' ? 'Current Plan' : 'Choose Operations Plan'}
+              {subscription?.subscriptionStatus === 'advanced' ? 'Current Plan' : 'Choose This Plan'}
             </Button>
           </CardContent>
         </Card>

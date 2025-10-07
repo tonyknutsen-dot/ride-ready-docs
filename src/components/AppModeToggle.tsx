@@ -64,10 +64,10 @@ export const AppModeToggle: React.FC<AppModeToggleProps> = ({ variant = 'default
         <Dialog open={upgradeDialogOpen} onOpenChange={setUpgradeDialogOpen}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Upgrade to Advanced Plan</DialogTitle>
-              <DialogDescription>
-                Operations Mode includes checks, maintenance, inspections, and more advanced features.
-              </DialogDescription>
+            <DialogTitle>Upgrade to Operations & Maintenance</DialogTitle>
+            <DialogDescription>
+              Operations Mode includes checks, maintenance, inspections, and more advanced features.
+            </DialogDescription>
             </DialogHeader>
             <PlanSelection onClose={() => setUpgradeDialogOpen(false)} />
           </DialogContent>
@@ -113,7 +113,7 @@ export const AppModeToggle: React.FC<AppModeToggleProps> = ({ variant = 'default
       <Dialog open={upgradeDialogOpen} onOpenChange={setUpgradeDialogOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Upgrade to Advanced Plan</DialogTitle>
+            <DialogTitle>Upgrade to Operations & Maintenance</DialogTitle>
             <DialogDescription>
               Operations Mode includes checks, maintenance, inspections, and more advanced features.
             </DialogDescription>

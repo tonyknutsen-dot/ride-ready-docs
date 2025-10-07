@@ -64,8 +64,8 @@ const TermsOfService = () => {
 
                 <h3 className="text-xl font-semibold mb-2">4.2 Subscription Plans</h3>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
-                  <li><strong>Basic Plan:</strong> £29.99/month - Up to 10 rides, core features</li>
-                  <li><strong>Advanced Plan:</strong> £49.99/month - Unlimited rides, all features including technical bulletins and advanced reporting</li>
+                  <li><strong>Documents & Compliance:</strong> £12.99/month - Up to 10 rides, core document management features</li>
+                  <li><strong>Operations & Maintenance:</strong> £27.99/month - Unlimited rides, all features including technical bulletins, checks, inspections, maintenance tracking, and advanced reporting</li>
                 </ul>
 
                 <h3 className="text-xl font-semibold mb-2">4.3 Payment Terms</h3>
@@ -130,7 +130,7 @@ const TermsOfService = () => {
 
                 <h3 className="text-xl font-semibold mb-2">7.2 Support</h3>
                 <p className="text-muted-foreground">
-                  Email support is available to all subscribers. Advanced plan users receive priority support. We aim to respond within 24 hours during business days.
+                  Email support is available to all subscribers. Operations & Maintenance users receive priority support. We aim to respond within 24 hours during business days.
                 </p>
               </section>
 

@@ -217,7 +217,7 @@ const Rides = () => {
                         Checks
                       </p>
                       <p className="text-[9px] text-primary/60 font-medium mt-1">
-                        Advanced Plan
+                        Operations & Maintenance
                       </p>
                     </div>}
                 </div>

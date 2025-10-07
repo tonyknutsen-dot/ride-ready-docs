@@ -136,7 +136,7 @@ const HelpCenter = () => {
       questions: [
         {
           q: "How many rides can I add?",
-          a: "Basic plan allows up to 10 rides. Advanced plan supports unlimited rides, generators, and equipment.",
+          a: "Documents & Compliance allows up to 10 rides. Operations & Maintenance supports unlimited rides, generators, and equipment.",
           planRequired: "basic"
         },
         {
@@ -162,7 +162,7 @@ const HelpCenter = () => {
         },
         {
           q: "How does document expiry tracking work?",
-          a: "When uploading documents, set an expiry date. The system automatically tracks expiry dates and sends notifications (Advanced plan feature).",
+          a: "When uploading documents, set an expiry date. The system automatically tracks expiry dates and sends notifications (Operations & Maintenance feature).",
           planRequired: "basic"
         },
         {
@@ -183,7 +183,7 @@ const HelpCenter = () => {
       ]
     },
     {
-      category: "Inspections (Advanced Plan)",
+      category: "Inspections (Operations & Maintenance)",
       planRequired: "advanced",
       questions: [
         {
@@ -204,7 +204,7 @@ const HelpCenter = () => {
       ]
     },
     {
-      category: "Safety Checks (Advanced Plan)",
+      category: "Safety Checks (Operations & Maintenance)",
       planRequired: "advanced",
       questions: [
         {
@@ -240,7 +240,7 @@ const HelpCenter = () => {
       ]
     },
     {
-      category: "Maintenance Tracking (Advanced Plan)",
+      category: "Maintenance Tracking (Operations & Maintenance)",
       planRequired: "advanced",
       questions: [
         {
@@ -261,7 +261,7 @@ const HelpCenter = () => {
       ]
     },
     {
-      category: "Risk Assessments (Advanced Plan)",
+      category: "Risk Assessments (Operations & Maintenance)",
       planRequired: "advanced",
       questions: [
         {
@@ -292,7 +292,7 @@ const HelpCenter = () => {
       ]
     },
     {
-      category: "Technical Bulletins (Advanced Plan)",
+      category: "Technical Bulletins (Operations & Maintenance)",
       planRequired: "advanced",
       questions: [
         {
@@ -308,7 +308,7 @@ const HelpCenter = () => {
       ]
     },
     {
-      category: "Notifications (Advanced Plan)",
+      category: "Notifications (Operations & Maintenance)",
       planRequired: "advanced",
       questions: [
         {
@@ -324,7 +324,7 @@ const HelpCenter = () => {
       ]
     },
     {
-      category: "Reports (Advanced Plan)",
+      category: "Reports (Operations & Maintenance)",
       planRequired: "advanced",
       questions: [
         {
@@ -343,8 +343,8 @@ const HelpCenter = () => {
       category: "Account and Billing",
       questions: [
         {
-          q: "How do I upgrade from Documents to Advanced plan?",
-          a: "Go to Settings > Plan & Billing and select 'Upgrade to Advanced Plan'. You'll immediately gain access to operations & maintenance features and be billed the difference for the current period."
+          q: "How do I upgrade from Documents & Compliance to Operations & Maintenance?",
+          a: "Go to Settings > Plan & Billing and select 'Upgrade'. You'll immediately gain access to operations & maintenance features and be billed the difference for the current period."
         },
         {
           q: "What happens if I don't upgrade after the trial?",

@@ -14,8 +14,8 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   requiredPlan,
   compact = false
 }) => {
-  const planName = requiredPlan === 'basic' ? 'Basic Plan (Documents)' : 'Advanced Plan (Operations & Maintenance)';
-  const price = requiredPlan === 'basic' ? '$9.99' : '$29.99';
+  const planName = requiredPlan === 'basic' ? 'Documents & Compliance' : 'Operations & Maintenance';
+  const price = requiredPlan === 'basic' ? '£12.99' : '£27.99';
   if (compact) {
     return <Card className="border-primary/20 bg-primary/5">
         <CardContent className="p-4">

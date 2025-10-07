@@ -155,7 +155,7 @@ const Demo = () => {
                     </h2>
                   </div>
                   <Badge className="bg-accent text-accent-foreground text-base px-4 py-1.5 font-semibold self-start sm:self-center">
-                    📄 Basic Plan
+                    📄 Documents & Compliance
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-3 ml-14">
@@ -212,7 +212,7 @@ const Demo = () => {
                     </h2>
                   </div>
                   <Badge className="bg-primary text-primary-foreground text-base px-4 py-1.5 font-semibold self-start sm:self-center">
-                    ⚙️ Advanced Plan
+                    ⚙️ Operations & Maintenance
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-3 ml-14">
