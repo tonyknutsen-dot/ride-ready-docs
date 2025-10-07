@@ -520,6 +520,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
               <Label htmlFor="hazard_description">Hazard Description *</Label>
+              <p className="text-xs text-muted-foreground mb-2">What is the danger or hazard? Describe what could cause harm or injury.</p>
               <Select value={itemFormData.hazard_description} onValueChange={(value) => setItemFormData({ ...itemFormData, hazard_description: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a hazard or choose Custom to add your own" />
@@ -642,6 +643,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             </div>
             <div className="col-span-2">
               <Label htmlFor="existing_controls">Existing Controls</Label>
+              <p className="text-xs text-muted-foreground mb-2">What safety measures are already in place to prevent or reduce this risk?</p>
               <Select value={itemFormData.existing_controls} onValueChange={(value) => setItemFormData({ ...itemFormData, existing_controls: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select existing controls or choose Custom to add your own" />
@@ -757,6 +759,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             </div>
             <div className="col-span-2">
               <Label htmlFor="additional_actions">Additional Actions Required</Label>
+              <p className="text-xs text-muted-foreground mb-2">What extra steps need to be taken to further reduce the risk?</p>
               <Select value={itemFormData.additional_actions} onValueChange={(value) => setItemFormData({ ...itemFormData, additional_actions: value })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select additional actions or choose Custom to add your own" />
@@ -837,14 +840,17 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             </div>
             <div>
               <Label htmlFor="action_owner">Action Owner</Label>
+              <p className="text-xs text-muted-foreground mb-2">Who is responsible for completing the additional actions?</p>
               <Input
                 id="action_owner"
+                placeholder="e.g., Site Manager, Chief Engineer"
                 value={itemFormData.action_owner}
                 onChange={(e) => setItemFormData({ ...itemFormData, action_owner: e.target.value })}
               />
             </div>
             <div>
               <Label htmlFor="target_date">Target Date</Label>
+              <p className="text-xs text-muted-foreground mb-2">When should the actions be completed by?</p>
               <Input
                 id="target_date"
                 type="date"
@@ -854,6 +860,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             </div>
             <div className="col-span-2">
               <Label htmlFor="status">Status</Label>
+              <p className="text-xs text-muted-foreground mb-2">What is the current status of this risk item?</p>
               <Select value={itemFormData.status} onValueChange={(value) => setItemFormData({ ...itemFormData, status: value })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
