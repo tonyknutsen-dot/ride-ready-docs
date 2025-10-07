@@ -375,30 +375,44 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
 
   if (!selectedAssessment) {
     return (
-      <div className="space-y-4">
-        <div className="flex justify-between items-center">
-          <h3 className="text-xl font-semibold">Risk Assessments for {ride.ride_name}</h3>
-          <Button onClick={() => setShowNewAssessment(true)}>
-            <Plus className="mr-2 h-4 w-4" /> New Assessment
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">{ride.ride_name}</h3>
+            <p className="text-sm text-muted-foreground">Risk Assessments</p>
+          </div>
+          <Button onClick={() => setShowNewAssessment(true)} size="sm">
+            <Plus className="mr-1.5 h-4 w-4" /> New
           </Button>
         </div>
 
-        <div className="grid gap-4">
+        <div className="space-y-2">
           {assessments.map((assessment) => (
-            <Card key={assessment.id} className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setSelectedAssessment(assessment)}>
-              <CardHeader>
-                <CardTitle>{format(new Date(assessment.assessment_date), 'dd MMM yyyy')}</CardTitle>
-                <CardDescription>By {assessment.assessor_name}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">Status:</span>
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+            <Card 
+              key={assessment.id} 
+              className="cursor-pointer hover:bg-muted/50 transition-colors border-l-4"
+              style={{
+                borderLeftColor: 
+                  assessment.overall_status === 'completed' ? 'rgb(34, 197, 94)' :
+                  assessment.overall_status === 'in_progress' ? 'rgb(59, 130, 246)' :
+                  'rgb(156, 163, 175)'
+              }}
+              onClick={() => setSelectedAssessment(assessment)}
+            >
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div>
+                      <p className="font-medium text-sm">{format(new Date(assessment.assessment_date), 'dd MMM yyyy')}</p>
+                      <p className="text-xs text-muted-foreground">{assessment.assessor_name}</p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 rounded-md text-xs font-medium ${
                     assessment.overall_status === 'completed' ? 'bg-green-100 text-green-800' :
                     assessment.overall_status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {assessment.overall_status}
+                    {assessment.overall_status.replace('_', ' ')}
                   </span>
                 </div>
               </CardContent>
