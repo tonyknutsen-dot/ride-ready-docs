@@ -513,6 +513,9 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingItem ? 'Edit' : 'Add'} Risk Item</DialogTitle>
+            <DialogDescription>
+              A risk assessment helps identify hazards and controls to keep everyone safe. Answer each question as accurately as possible.
+            </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-2 gap-4">
             <div className="col-span-2">
@@ -606,6 +609,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             </div>
             <div className="col-span-2">
               <Label>Who is at Risk * (Select all that apply)</Label>
+              <p className="text-xs text-muted-foreground mb-2">Identify who could be harmed by this hazard</p>
               <div className="grid grid-cols-2 gap-3 mt-2 p-4 border rounded-md">
                 {['Public', 'Staff', 'Contractors', 'Spectators', 'Operators', 'Maintenance personnel', 'All persons'].map((option) => {
                   const selectedGroups = itemFormData.who_at_risk ? itemFormData.who_at_risk.split(', ') : [];
@@ -713,38 +717,41 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             </div>
             <div>
               <Label htmlFor="likelihood">Likelihood</Label>
+              <p className="text-xs text-muted-foreground mb-2">How likely is this hazard to cause harm?</p>
               <Select value={itemFormData.likelihood} onValueChange={(value) => setItemFormData({ ...itemFormData, likelihood: value })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="rare">Rare</SelectItem>
-                  <SelectItem value="unlikely">Unlikely</SelectItem>
-                  <SelectItem value="possible">Possible</SelectItem>
-                  <SelectItem value="likely">Likely</SelectItem>
-                  <SelectItem value="certain">Certain</SelectItem>
+                  <SelectItem value="rare">Rare - May occur only in exceptional circumstances</SelectItem>
+                  <SelectItem value="unlikely">Unlikely - Could occur at some time</SelectItem>
+                  <SelectItem value="possible">Possible - Might occur at some time</SelectItem>
+                  <SelectItem value="likely">Likely - Will probably occur in most circumstances</SelectItem>
+                  <SelectItem value="certain">Certain - Expected to occur in most circumstances</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
               <Label htmlFor="severity">Severity</Label>
+              <p className="text-xs text-muted-foreground mb-2">How serious would the injury or harm be?</p>
               <Select value={itemFormData.severity} onValueChange={(value) => setItemFormData({ ...itemFormData, severity: value })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="negligible">Negligible</SelectItem>
-                  <SelectItem value="minor">Minor</SelectItem>
-                  <SelectItem value="moderate">Moderate</SelectItem>
-                  <SelectItem value="major">Major</SelectItem>
-                  <SelectItem value="catastrophic">Catastrophic</SelectItem>
+                  <SelectItem value="negligible">Negligible - No injury or minimal impact</SelectItem>
+                  <SelectItem value="minor">Minor - First aid treatment, minor injuries</SelectItem>
+                  <SelectItem value="moderate">Moderate - Medical attention required</SelectItem>
+                  <SelectItem value="major">Major - Serious injury or long-term health effects</SelectItem>
+                  <SelectItem value="catastrophic">Catastrophic - Death or permanent disability</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="col-span-2">
               <Label htmlFor="risk_level">Overall Risk Level</Label>
+              <p className="text-xs text-muted-foreground mb-2">Combine likelihood and severity to determine overall risk. High risk requires immediate action.</p>
               <Select value={itemFormData.risk_level} onValueChange={(value) => setItemFormData({ ...itemFormData, risk_level: value })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="low">Low</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="low">Low - Acceptable risk with controls in place</SelectItem>
+                  <SelectItem value="medium">Medium - Risk requires additional controls</SelectItem>
+                  <SelectItem value="high">High - Unacceptable risk, immediate action required</SelectItem>
                 </SelectContent>
               </Select>
             </div>
