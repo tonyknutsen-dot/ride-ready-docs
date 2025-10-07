@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AdminProvider } from "@/contexts/AdminContext";
+import { AppModeProvider } from "@/contexts/AppModeContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { ProfileGuard } from "@/components/ProfileGuard";
@@ -52,8 +53,9 @@ const App = () => (
         <ScrollToTop />
         <AuthProvider>
           <AdminProvider>
-            <GlobalEventBridge />
-            <Routes>
+            <AppModeProvider>
+              <GlobalEventBridge />
+              <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/demo" element={<Demo />} />
@@ -242,8 +244,9 @@ const App = () => (
               />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
-            <MobileBottomNav />
+              </Routes>
+              <MobileBottomNav />
+            </AppModeProvider>
           </AdminProvider>
         </AuthProvider>
       </BrowserRouter>

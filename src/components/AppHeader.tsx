@@ -16,7 +16,7 @@ import {
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
 import { AppModeToggle } from '@/components/AppModeToggle';
-import { useAppMode } from '@/hooks/useAppMode';
+import { useAppMode } from '@/contexts/AppModeContext';
 
 const AppHeader = () => {
   const location = useLocation();

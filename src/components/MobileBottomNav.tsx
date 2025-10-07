@@ -10,7 +10,7 @@ import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useState } from "react";
-import { useAppMode } from "@/hooks/useAppMode";
+import { useAppMode } from "@/contexts/AppModeContext";
 import { AppModeToggle } from "@/components/AppModeToggle";
 
 /**

@@ -1,11 +1,30 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useSubscription } from './useSubscription';
+import { useAuth } from './AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 
 export type AppMode = 'documents' | 'operations';
 
+interface AppModeContextType {
+  appMode: AppMode;
+  setAppMode: (mode: AppMode) => Promise<boolean>;
+  loading: boolean;
+  canAccessOperations: boolean;
+  isDocumentsMode: boolean;
+  isOperationsMode: boolean;
+}
+
+const AppModeContext = createContext<AppModeContextType | undefined>(undefined);
+
 export const useAppMode = () => {
+  const context = useContext(AppModeContext);
+  if (!context) {
+    throw new Error('useAppMode must be used within AppModeProvider');
+  }
+  return context;
+};
+
+export const AppModeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const { subscription } = useSubscription();
   const [appMode, setAppModeState] = useState<AppMode>('documents');
@@ -54,40 +73,31 @@ export const useAppMode = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('[useAppMode] Realtime update received:', payload);
           if (payload.new && 'app_mode' in payload.new) {
             const newMode = payload.new.app_mode as AppMode;
-            console.log('[useAppMode] Setting mode from realtime:', newMode);
+            console.log('[AppModeContext] Setting mode from realtime:', newMode);
             setAppModeState(newMode);
           }
         }
       )
-      .subscribe((status) => {
-        console.log('[useAppMode] Realtime subscription status:', status);
-      });
+      .subscribe();
 
     return () => {
-      console.log('[useAppMode] Cleaning up realtime subscription');
       supabase.removeChannel(channel);
     };
   }, [user]);
 
   const setAppMode = async (mode: AppMode) => {
     if (!user) {
-      console.log('[useAppMode] No user, cannot switch mode');
       return false;
     }
 
-    console.log('[useAppMode] Attempting to switch to:', mode, 'Current mode:', appMode);
-
     // Check if trying to switch to operations mode without advanced plan
     if (mode === 'operations' && subscription?.subscriptionStatus !== 'advanced') {
-      console.log('[useAppMode] Cannot switch to operations - no advanced plan');
       return false;
     }
 
     try {
-      console.log('[useAppMode] Updating database...');
       const { error } = await supabase
         .from('profiles')
         .update({ app_mode: mode })
@@ -95,22 +105,18 @@ export const useAppMode = () => {
 
       if (error) throw error;
 
-      console.log('[useAppMode] Database updated, setting local state');
       setAppModeState(mode);
-      
-      // Force a re-render by dispatching a custom event
-      window.dispatchEvent(new CustomEvent('app-mode-changed', { detail: { mode } }));
       
       return true;
     } catch (error) {
-      console.error('[useAppMode] Error updating app mode:', error);
+      console.error('[AppModeContext] Error updating app mode:', error);
       return false;
     }
   };
 
   const canAccessOperations = subscription?.subscriptionStatus === 'advanced';
 
-  return {
+  const value = {
     appMode,
     setAppMode,
     loading,
@@ -118,4 +124,10 @@ export const useAppMode = () => {
     isDocumentsMode: appMode === 'documents',
     isOperationsMode: appMode === 'operations'
   };
+
+  return (
+    <AppModeContext.Provider value={value}>
+      {children}
+    </AppModeContext.Provider>
+  );
 };
