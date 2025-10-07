@@ -642,11 +642,31 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             </div>
             <div className="col-span-2">
               <Label htmlFor="additional_actions">Additional Actions Required</Label>
-              <Textarea
-                id="additional_actions"
-                value={itemFormData.additional_actions}
-                onChange={(e) => setItemFormData({ ...itemFormData, additional_actions: e.target.value })}
-              />
+              <Select value={itemFormData.additional_actions} onValueChange={(value) => setItemFormData({ ...itemFormData, additional_actions: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select additional actions or choose Custom to add your own" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="Improve lighting in the area">Improve lighting in the area</SelectItem>
+                  <SelectItem value="Install additional safety barriers">Install additional safety barriers</SelectItem>
+                  <SelectItem value="Provide additional staff training">Provide additional staff training</SelectItem>
+                  <SelectItem value="Review and update procedures">Review and update procedures</SelectItem>
+                  <SelectItem value="Replace worn or damaged equipment">Replace worn or damaged equipment</SelectItem>
+                  <SelectItem value="Conduct risk assessment review">Conduct risk assessment review</SelectItem>
+                  <SelectItem value="Implement regular audits">Implement regular audits</SelectItem>
+                  <SelectItem value="Update signage and warnings">Update signage and warnings</SelectItem>
+                  <SelectItem value="Install CCTV monitoring">Install CCTV monitoring</SelectItem>
+                  <SelectItem value="Custom">Custom (enter below)</SelectItem>
+                </SelectContent>
+              </Select>
+              {itemFormData.additional_actions === 'Custom' && (
+                <Textarea
+                  className="mt-2"
+                  placeholder="Enter your custom additional actions"
+                  value={itemFormData.additional_actions}
+                  onChange={(e) => setItemFormData({ ...itemFormData, additional_actions: e.target.value })}
+                />
+              )}
             </div>
             <div>
               <Label htmlFor="action_owner">Action Owner</Label>
