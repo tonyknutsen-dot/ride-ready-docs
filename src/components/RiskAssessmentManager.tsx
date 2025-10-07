@@ -62,6 +62,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const [showItemDialog, setShowItemDialog] = useState(false);
   const [editingItem, setEditingItem] = useState<RiskAssessmentItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<any>(null);
 
   const [formData, setFormData] = useState({
     assessor_name: '',
@@ -93,6 +94,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
 
   useEffect(() => {
     loadAssessments();
+    loadProfile();
   }, [ride.id, user]);
 
   useEffect(() => {
@@ -100,6 +102,16 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       loadAssessmentItems();
     }
   }, [selectedAssessment]);
+
+  const loadProfile = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+    if (data) setProfile(data);
+  };
 
   const loadAssessments = async () => {
     if (!user) return;
@@ -257,30 +269,125 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const exportToPDF = () => {
     if (!selectedAssessment) return;
 
-    const doc = new jsPDF();
+    const doc = new jsPDF({ orientation: 'landscape' });
     
-    doc.setFontSize(16);
-    doc.text('Risk Assessment', 14, 20);
-    doc.setFontSize(10);
-    doc.text(`Ride: ${ride.ride_name}`, 14, 30);
-    doc.text(`Assessor: ${selectedAssessment.assessor_name}`, 14, 36);
-    doc.text(`Date: ${format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy')}`, 14, 42);
+    // App name in top right corner
+    doc.setFontSize(8);
+    doc.setTextColor(100, 100, 100);
+    doc.text('RideRight', doc.internal.pageSize.getWidth() - 25, 10);
+    
+    // Title
+    doc.setFontSize(18);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Risk Assessment', 14, 15);
+    
+    // Details section
+    doc.setFontSize(9);
+    const leftCol = 14;
+    const rightCol = 160;
+    let yPos = 25;
+    
+    // Left column - Ride details
+    doc.setFont('helvetica', 'bold');
+    doc.text('Ride/Equipment:', leftCol, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(ride.ride_name, leftCol + 35, yPos);
+    
+    if (ride.manufacturer) {
+      yPos += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Manufacturer:', leftCol, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(ride.manufacturer, leftCol + 35, yPos);
+    }
+    
+    // Right column - Controller details
+    yPos = 25;
+    if (profile) {
+      if (profile.controller_name) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Controller:', rightCol, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(profile.controller_name, rightCol + 25, yPos);
+        yPos += 6;
+      }
+      if (profile.company_name) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Company:', rightCol, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(profile.company_name, rightCol + 25, yPos);
+        yPos += 6;
+      }
+      if (profile.showmen_name) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Showmen:', rightCol, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(profile.showmen_name, rightCol + 25, yPos);
+      }
+    }
+    
+    // Assessment info
+    yPos = 43;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Assessment Date:', leftCol, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy'), leftCol + 35, yPos);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Assessor:', rightCol, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(selectedAssessment.assessor_name, rightCol + 25, yPos);
 
     const tableData = assessmentItems.map(item => [
       item.hazard_description,
       item.who_at_risk,
       item.existing_controls || '-',
       item.risk_level.toUpperCase(),
+      item.likelihood,
+      item.severity,
       item.additional_actions || '-',
       item.status
     ]);
 
     autoTable(doc, {
-      startY: 50,
-      head: [['Hazard', 'Who at Risk', 'Controls', 'Risk Level', 'Actions', 'Status']],
+      startY: 52,
+      head: [['Hazard', 'Who at Risk', 'Existing Controls', 'Risk', 'Likelihood', 'Severity', 'Additional Actions', 'Status']],
       body: tableData,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [66, 139, 202] }
+      styles: { 
+        fontSize: 7,
+        cellPadding: 2
+      },
+      headStyles: { 
+        fillColor: [66, 139, 202],
+        fontSize: 8,
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { cellWidth: 50 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 18 },
+        4: { cellWidth: 22 },
+        5: { cellWidth: 20 },
+        6: { cellWidth: 45 },
+        7: { cellWidth: 20 }
+      },
+      didParseCell: function(data) {
+        // Color code the risk level column
+        if (data.column.index === 3 && data.section === 'body') {
+          const risk = data.cell.raw as string;
+          if (risk === 'HIGH') {
+            data.cell.styles.fillColor = [239, 68, 68]; // red
+            data.cell.styles.textColor = [255, 255, 255]; // white text
+          } else if (risk === 'MEDIUM') {
+            data.cell.styles.fillColor = [251, 146, 60]; // orange
+            data.cell.styles.textColor = [255, 255, 255]; // white text
+          } else if (risk === 'LOW') {
+            data.cell.styles.fillColor = [34, 197, 94]; // green
+            data.cell.styles.textColor = [255, 255, 255]; // white text
+          }
+        }
+      }
     });
 
     doc.save(`risk-assessment-${ride.ride_name}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
@@ -292,30 +399,125 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
 
     try {
       // Generate PDF
-      const doc = new jsPDF();
+      const doc = new jsPDF({ orientation: 'landscape' });
       
-      doc.setFontSize(16);
-      doc.text('Risk Assessment', 14, 20);
-      doc.setFontSize(10);
-      doc.text(`Ride: ${ride.ride_name}`, 14, 30);
-      doc.text(`Assessor: ${selectedAssessment.assessor_name}`, 14, 36);
-      doc.text(`Date: ${format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy')}`, 14, 42);
+      // App name in top right corner
+      doc.setFontSize(8);
+      doc.setTextColor(100, 100, 100);
+      doc.text('RideRight', doc.internal.pageSize.getWidth() - 25, 10);
+      
+      // Title
+      doc.setFontSize(18);
+      doc.setTextColor(0, 0, 0);
+      doc.text('Risk Assessment', 14, 15);
+      
+      // Details section
+      doc.setFontSize(9);
+      const leftCol = 14;
+      const rightCol = 160;
+      let yPos = 25;
+      
+      // Left column - Ride details
+      doc.setFont('helvetica', 'bold');
+      doc.text('Ride/Equipment:', leftCol, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(ride.ride_name, leftCol + 35, yPos);
+      
+      if (ride.manufacturer) {
+        yPos += 6;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Manufacturer:', leftCol, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(ride.manufacturer, leftCol + 35, yPos);
+      }
+      
+      // Right column - Controller details
+      yPos = 25;
+      if (profile) {
+        if (profile.controller_name) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Controller:', rightCol, yPos);
+          doc.setFont('helvetica', 'normal');
+          doc.text(profile.controller_name, rightCol + 25, yPos);
+          yPos += 6;
+        }
+        if (profile.company_name) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Company:', rightCol, yPos);
+          doc.setFont('helvetica', 'normal');
+          doc.text(profile.company_name, rightCol + 25, yPos);
+          yPos += 6;
+        }
+        if (profile.showmen_name) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Showmen:', rightCol, yPos);
+          doc.setFont('helvetica', 'normal');
+          doc.text(profile.showmen_name, rightCol + 25, yPos);
+        }
+      }
+      
+      // Assessment info
+      yPos = 43;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Assessment Date:', leftCol, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy'), leftCol + 35, yPos);
+      
+      doc.setFont('helvetica', 'bold');
+      doc.text('Assessor:', rightCol, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(selectedAssessment.assessor_name, rightCol + 25, yPos);
 
       const tableData = assessmentItems.map(item => [
         item.hazard_description,
         item.who_at_risk,
         item.existing_controls || '-',
         item.risk_level.toUpperCase(),
+        item.likelihood,
+        item.severity,
         item.additional_actions || '-',
         item.status
       ]);
 
       autoTable(doc, {
-        startY: 50,
-        head: [['Hazard', 'Who at Risk', 'Controls', 'Risk Level', 'Actions', 'Status']],
+        startY: 52,
+        head: [['Hazard', 'Who at Risk', 'Existing Controls', 'Risk', 'Likelihood', 'Severity', 'Additional Actions', 'Status']],
         body: tableData,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [66, 139, 202] }
+        styles: { 
+          fontSize: 7,
+          cellPadding: 2
+        },
+        headStyles: { 
+          fillColor: [66, 139, 202],
+          fontSize: 8,
+          fontStyle: 'bold'
+        },
+        columnStyles: {
+          0: { cellWidth: 50 },
+          1: { cellWidth: 30 },
+          2: { cellWidth: 40 },
+          3: { cellWidth: 18 },
+          4: { cellWidth: 22 },
+          5: { cellWidth: 20 },
+          6: { cellWidth: 45 },
+          7: { cellWidth: 20 }
+        },
+        didParseCell: function(data) {
+          // Color code the risk level column
+          if (data.column.index === 3 && data.section === 'body') {
+            const risk = data.cell.raw as string;
+            if (risk === 'HIGH') {
+              data.cell.styles.fillColor = [239, 68, 68]; // red
+              data.cell.styles.textColor = [255, 255, 255]; // white text
+            } else if (risk === 'MEDIUM') {
+              data.cell.styles.fillColor = [251, 146, 60]; // orange
+              data.cell.styles.textColor = [255, 255, 255]; // white text
+            } else if (risk === 'LOW') {
+              data.cell.styles.fillColor = [34, 197, 94]; // green
+              data.cell.styles.textColor = [255, 255, 255]; // white text
+            }
+          }
+        }
       });
 
       // Convert PDF to blob
