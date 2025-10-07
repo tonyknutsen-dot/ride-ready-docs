@@ -424,52 +424,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                 ))}
             </div>
 
-            {/* Additional Information */}
-            <div className="space-y-4">
-              <h4 className="font-semibold">Additional Information</h4>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="environment">Environment Notes</Label>
-                  <Textarea
-                    id="environment"
-                    value={environmentNotes}
-                    onChange={(e) => setEnvironmentNotes(e.target.value)}
-                    placeholder="Environmental conditions, setup notes, etc."
-                    rows={3}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="compliance">Compliance Officer</Label>
-                  <Input
-                    id="compliance"
-                    value={complianceOfficer}
-                    onChange={(e) => setComplianceOfficer(e.target.value)}
-                    placeholder="Name of compliance officer (if applicable)"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="inspector-notes">Inspector Notes</Label>
-                <Textarea
-                  id="inspector-notes"
-                  value={inspectorNotes}
-                  onChange={(e) => setInspectorNotes(e.target.value)}
-                  placeholder="Additional notes, observations, or concerns"
-                  rows={4}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="signature">Digital Signature</Label>
-                <Input
-                  id="signature"
-                  value={signatureData}
-                  onChange={(e) => setSignatureData(e.target.value)}
-                  placeholder="Type your name to serve as digital signature"
-                />
-              </div>
-            </div>
-
-            <Button 
+            <Button
               onClick={handleSubmitChecks} 
               disabled={submitting}
               className="w-full"
