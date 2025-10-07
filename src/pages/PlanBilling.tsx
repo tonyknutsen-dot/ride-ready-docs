@@ -61,7 +61,7 @@ export default function PlanBilling() {
     }
 
     toast({ title: "Upgraded to Advanced!", description: "All features are now unlocked.", variant: "default" });
-    setTimeout(() => nav("/dashboard"), 400);
+    setTimeout(() => nav("/overview"), 400);
   };
 
   const downgrade = async () => {
@@ -84,7 +84,7 @@ export default function PlanBilling() {
     }
 
     toast({ title: "You're on Basic now", description: "Advanced features will be hidden.", variant: "default" });
-    setTimeout(() => nav("/dashboard"), 400);
+    setTimeout(() => nav("/overview"), 400);
   };
 
   if (loading) {
