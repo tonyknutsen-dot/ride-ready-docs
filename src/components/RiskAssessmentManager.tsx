@@ -577,33 +577,31 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             </div>
             <div className="col-span-2">
               <Label htmlFor="existing_controls">Existing Controls</Label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                <span className="text-xs text-muted-foreground">Quick examples:</span>
-                {[
-                  'Non-slip surface applied to platform',
-                  'Daily pre-operation safety checks',
-                  'Emergency stop button within reach',
-                  'Safety restraints inspected before each use',
-                  'Warning signage clearly displayed'
-                ].map((example) => (
-                  <Button
-                    key={example}
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => setItemFormData({ ...itemFormData, existing_controls: example })}
-                  >
-                    {example.substring(0, 30)}...
-                  </Button>
-                ))}
-              </div>
-              <Textarea
-                id="existing_controls"
-                placeholder="e.g., Non-slip surface applied to platform, regular cleaning schedule, warning signs displayed"
-                value={itemFormData.existing_controls}
-                onChange={(e) => setItemFormData({ ...itemFormData, existing_controls: e.target.value })}
-              />
+              <Select value={itemFormData.existing_controls} onValueChange={(value) => setItemFormData({ ...itemFormData, existing_controls: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select existing controls or choose Custom to add your own" />
+                </SelectTrigger>
+                <SelectContent className="bg-background z-50">
+                  <SelectItem value="Non-slip surface applied to platform">Non-slip surface applied to platform</SelectItem>
+                  <SelectItem value="Daily pre-operation safety checks">Daily pre-operation safety checks</SelectItem>
+                  <SelectItem value="Emergency stop button within reach">Emergency stop button within reach</SelectItem>
+                  <SelectItem value="Safety restraints inspected before each use">Safety restraints inspected before each use</SelectItem>
+                  <SelectItem value="Warning signage clearly displayed">Warning signage clearly displayed</SelectItem>
+                  <SelectItem value="Regular maintenance schedule in place">Regular maintenance schedule in place</SelectItem>
+                  <SelectItem value="Staff training on safety procedures">Staff training on safety procedures</SelectItem>
+                  <SelectItem value="Safety barriers and fencing installed">Safety barriers and fencing installed</SelectItem>
+                  <SelectItem value="Lockout/tagout procedures implemented">Lockout/tagout procedures implemented</SelectItem>
+                  <SelectItem value="Custom">Custom (enter below)</SelectItem>
+                </SelectContent>
+              </Select>
+              {itemFormData.existing_controls === 'Custom' && (
+                <Textarea
+                  className="mt-2"
+                  placeholder="Enter your custom existing controls"
+                  value={itemFormData.existing_controls}
+                  onChange={(e) => setItemFormData({ ...itemFormData, existing_controls: e.target.value })}
+                />
+              )}
             </div>
             <div>
               <Label htmlFor="likelihood">Likelihood</Label>
