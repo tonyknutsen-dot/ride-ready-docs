@@ -415,9 +415,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     doc.text('Review Requirements:', leftCol, finalY);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
-    const reviewText = 'This risk assessment must be reviewed regularly, at minimum every 12 months, and immediately following any incidents, near misses, modifications to the equipment, ' +
-      'changes in operating procedures, or alterations to the site layout. Reviews should also be conducted when introducing new staff or when industry best practices are updated. ' +
-      'All control measures must be monitored for effectiveness and the assessment updated accordingly to ensure continued safe operation.';
+    const reviewText = 'IMPORTANT: This guidance is for informational purposes only and should not be considered definitive. Risk assessments should be reviewed regularly and at least every 12 months, and following any incidents, ' +
+      'accidents, near misses, or changes to the device or operating procedures. If in any doubt, contact your inspection body, local authority, or regulatory body. Always seek and comply with local laws and regulations for accurate and legally binding information.';
     const splitText = doc.splitTextToSize(reviewText, 270);
     doc.text(splitText, leftCol, finalY + 6);
     
@@ -583,9 +582,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       doc.text('Review Requirements:', leftCol, finalY);
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
-      const reviewText = 'This risk assessment must be reviewed regularly, at minimum every 12 months, and immediately following any incidents, near misses, modifications to the equipment, ' +
-        'changes in operating procedures, or alterations to the site layout. Reviews should also be conducted when introducing new staff or when industry best practices are updated. ' +
-        'All control measures must be monitored for effectiveness and the assessment updated accordingly to ensure continued safe operation.';
+      const reviewText = 'IMPORTANT: This guidance is for informational purposes only and should not be considered definitive. Risk assessments should be reviewed regularly and at least every 12 months, and following any incidents, ' +
+        'accidents, near misses, or changes to the device or operating procedures. If in any doubt, contact your inspection body, local authority, or regulatory body. Always seek and comply with local laws and regulations for accurate and legally binding information.';
       const splitText = doc.splitTextToSize(reviewText, 270);
       doc.text(splitText, leftCol, finalY + 6);
       
@@ -914,9 +912,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         <Alert className="mt-4">
           <Info className="h-4 w-4" />
           <AlertDescription className="text-sm">
-            <strong>Review Requirements:</strong> This risk assessment must be reviewed regularly, at minimum every 12 months, and immediately following any incidents, near misses, modifications to the equipment, 
-            changes in operating procedures, or alterations to the site layout. Reviews should also be conducted when introducing new staff or when industry best practices are updated. 
-            All control measures must be monitored for effectiveness and the assessment updated accordingly to ensure continued safe operation.
+            <strong>IMPORTANT:</strong> This guidance is for informational purposes only and should not be considered definitive. Risk assessments should be reviewed regularly and at least every 12 months, and following any incidents, accidents, near misses, or changes to the device or operating procedures. If in any doubt, contact your inspection body, local authority, or regulatory body. Always seek and comply with local laws and regulations for accurate and legally binding information.
           </AlertDescription>
         </Alert>
       )}
