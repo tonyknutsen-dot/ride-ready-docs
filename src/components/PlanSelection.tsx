@@ -39,7 +39,6 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
     'Calendar integration',
     'Notifications & alerts',
     'Risk assessment builder (downloadable, printable, emailable)',
-    'Technical bulletins',
     'Advanced reporting',
     'Priority support'
   ];

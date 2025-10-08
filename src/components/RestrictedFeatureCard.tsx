@@ -82,10 +82,6 @@ export const RestrictedFeatureCard: React.FC<RestrictedFeatureCardProps> = ({
                     </div>
                     <div className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                      <span>Technical bulletins access</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                       <span>Priority support</span>
                     </div>
                   </div>

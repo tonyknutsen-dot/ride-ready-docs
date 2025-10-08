@@ -37,7 +37,6 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
   const [rideStats, setRideStats] = useState({
     docCount: 0,
     todayChecks: 0,
-    bulletinCount: 0,
     maintenanceCount: 0,
     loading: true
   });
@@ -68,12 +67,6 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
         .eq('ride_id', ride.id)
         .eq('check_date', today);
 
-      // Get technical bulletins count for this ride category
-      const { count: bulletinCount } = await supabase
-        .from('technical_bulletins')
-        .select('*', { count: 'exact', head: true })
-        .eq('category_id', ride.category_id);
-
       // Get maintenance records count for this ride
       const { count: maintenanceCount } = await supabase
         .from('maintenance_records')
@@ -84,7 +77,6 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
       setRideStats({
         docCount: docCount || 0,
         todayChecks: todayChecks || 0,
-        bulletinCount: bulletinCount || 0,
         maintenanceCount: maintenanceCount || 0,
         loading: false
       });
@@ -202,10 +194,6 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
                 <Wrench className="h-4 w-4" />
                 <span className="text-xs sm:text-sm">Maint</span>
               </TabsTrigger>
-              <TabsTrigger value="bulletins" className="flex items-center justify-center gap-2 py-2.5">
-                <AlertTriangle className="h-4 w-4" />
-                <span className="text-xs sm:text-sm">Info</span>
-              </TabsTrigger>
             </>
           )}
         </TabsList>
@@ -319,45 +307,6 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
               </Card>
             </FeatureGate>
 
-            <FeatureGate 
-              requiredPlan="advanced" 
-              feature="Technical Bulletins"
-              fallback={
-                <RestrictedFeatureCard
-                  title="Technical Bulletins"
-                  description="Access safety bulletins and technical notices relevant to your ride category"
-                  icon={<AlertTriangle className="h-5 w-5" />}
-                  requiredPlan="advanced"
-                />
-              }
-            >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <AlertTriangle className="h-5 w-5 text-secondary-foreground" />
-                    <span>Technical Bulletins</span>
-                  </CardTitle>
-                  <CardDescription>
-                    View relevant safety bulletins
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-secondary-foreground">
-                        {rideStats.loading ? '...' : rideStats.bulletinCount}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Available bulletins
-                      </p>
-                    </div>
-                    <Button onClick={() => setActiveTab("bulletins")} variant="secondary" className="w-full">
-                      View Bulletins
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </FeatureGate>
           </div>
         </TabsContent>
 
@@ -374,31 +323,6 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
         <TabsContent value="maintenance">
           <FeatureGate requiredPlan="advanced" feature="Maintenance Logging">
             <MaintenanceManager ride={ride} />
-          </FeatureGate>
-        </TabsContent>
-
-        <TabsContent value="bulletins">
-          <FeatureGate requiredPlan="advanced" feature="Technical Bulletins">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <AlertTriangle className="h-5 w-5" />
-                  <span>Technical Bulletins for {ride.ride_categories.name}</span>
-                </CardTitle>
-                <CardDescription>
-                  Safety bulletins and technical notices relevant to this ride category
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <AlertTriangle className="mx-auto h-16 w-16 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mt-4">No bulletins available</h3>
-                  <p className="text-muted-foreground">
-                    There are currently no technical bulletins for this ride category.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
           </FeatureGate>
         </TabsContent>
       </Tabs>

@@ -50,11 +50,6 @@ const Features = () => {
     description: "Visual calendar displaying all upcoming inspections, renewals, and maintenance. Never miss a deadline again.",
     items: ["Visual Dashboard", "All Deadlines in One Place", "Color-Coded Priorities", "Month/Week Views"]
   }, {
-    icon: <Bell className="h-10 w-10 text-primary" />,
-    title: "Technical Bulletins",
-    description: "Receive the latest technical bulletins for your specific equipment. Stay informed about safety updates and modifications.",
-    items: ["Equipment-Specific Bulletins", "Safety Alerts", "Manufacturer Updates", "Automatic Matching"]
-  }, {
     icon: <Calendar className="h-10 w-10 text-primary" />,
     title: "Inspection Scheduling",
     description: "Schedule external inspections and get reminders. Track ADIPS, NDT, and other third-party inspection requirements.",
@@ -116,7 +111,7 @@ const Features = () => {
             <Badge className="text-xs bg-primary text-primary-foreground">Operations & Maintenance</Badge>
           </div>
           <p className="text-center text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Complete safety checks, log maintenance, track inspections, and receive technical bulletins for your equipment.
+            Complete safety checks, log maintenance, track inspections, and manage all your equipment operations.
           </p>
           <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
             {checksFeatures.map((feature, index) => <Card key={index} className="transition-smooth hover:shadow-elegant hover:bg-card-hover group cursor-default border-primary/40 bg-background shadow-md">
