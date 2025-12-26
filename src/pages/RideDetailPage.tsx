@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Settings } from 'lucide-react';
@@ -17,6 +17,8 @@ type Ride = Tables<'rides'> & {
 
 const RideDetailPage = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'overview';
   const navigate = useNavigate();
   const { user } = useAuth();
   const [ride, setRide] = useState<Ride | null>(null);
@@ -87,6 +89,7 @@ const RideDetailPage = () => {
         ride={ride}
         onBack={() => navigate('/rides')}
         onUpdate={loadRide}
+        initialTab={initialTab}
       />
     </div>
   );
