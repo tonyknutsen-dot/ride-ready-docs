@@ -35,7 +35,7 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
   const [loading, setLoading] = useState(true);
   const [showBuilder, setShowBuilder] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
-  const [linkedChecksCount, setLinkedChecksCount] = useState<{ [key: string]: number }>({});
+  const [linkedChecksInfo, setLinkedChecksInfo] = useState<{ [key: string]: { count: number; earliest: string | null; latest: string | null } }>({});
   const [checkingLinked, setCheckingLinked] = useState<string | null>(null);
 
   useEffect(() => {
@@ -163,13 +163,21 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
   const checkLinkedRecords = async (templateId: string) => {
     setCheckingLinked(templateId);
     try {
-      const { count, error } = await supabase
+      const { data, error } = await supabase
         .from('checks')
-        .select('*', { count: 'exact', head: true })
-        .eq('template_id', templateId);
+        .select('check_date')
+        .eq('template_id', templateId)
+        .order('check_date', { ascending: true });
 
-      if (!error) {
-        setLinkedChecksCount(prev => ({ ...prev, [templateId]: count || 0 }));
+      if (!error && data) {
+        setLinkedChecksInfo(prev => ({
+          ...prev,
+          [templateId]: {
+            count: data.length,
+            earliest: data.length > 0 ? data[0].check_date : null,
+            latest: data.length > 0 ? data[data.length - 1].check_date : null,
+          }
+        }));
       }
     } catch (error) {
       console.error('Error checking linked records:', error);
@@ -355,18 +363,30 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
                       <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Template</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{template.template_name}"?
-                            {checkingLinked === template.id ? (
-                              <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
-                            ) : (linkedChecksCount[template.id] || 0) > 0 ? (
-                              <span className="block mt-2 text-destructive font-medium">
-                                ⚠️ Warning: This template has {linkedChecksCount[template.id]} check record{linkedChecksCount[template.id] !== 1 ? 's' : ''} linked to it. 
-                                Deleting it may affect historical data.
-                              </span>
-                            ) : (
-                              <span className="block mt-2">This action cannot be undone.</span>
-                            )}
+                          <AlertDialogDescription asChild>
+                            <div>
+                              <span>Are you sure you want to delete "{template.template_name}"?</span>
+                              {checkingLinked === template.id ? (
+                                <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
+                              ) : linkedChecksInfo[template.id]?.count > 0 ? (
+                                <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                                  <span className="block text-destructive font-medium">
+                                    ⚠️ Warning: This template has linked check records
+                                  </span>
+                                  <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
+                                    <li>• Total records: <strong className="text-foreground">{linkedChecksInfo[template.id].count}</strong></li>
+                                    <li>• Date range: <strong className="text-foreground">
+                                      {new Date(linkedChecksInfo[template.id].earliest!).toLocaleDateString()} — {new Date(linkedChecksInfo[template.id].latest!).toLocaleDateString()}
+                                    </strong></li>
+                                  </ul>
+                                  <span className="block mt-2 text-xs text-destructive">
+                                    Deleting this template may affect historical reporting.
+                                  </span>
+                                </div>
+                              ) : (
+                                <span className="block mt-2 text-muted-foreground">This action cannot be undone.</span>
+                              )}
+                            </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
