@@ -366,11 +366,11 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
             <FileText className="mx-auto h-16 w-16 text-muted-foreground" />
             <h3 className="text-lg font-semibold mt-4">No Active Template Found</h3>
             <p className="text-muted-foreground">
-              Create a {frequency} safety check template to start performing checks.
+              First, build your {frequency} safety check template. Then you can start recording checks.
             </p>
             <Button onClick={() => setShowTemplateBuilder(true)} className="mt-4">
               <Plus className="h-4 w-4 mr-2" />
-              Create Template
+              Build Template
             </Button>
           </div>
         </CardContent>

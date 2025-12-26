@@ -273,7 +273,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       <div className="flex items-center space-x-4">
         <Button variant="ghost" onClick={onCancel} className="flex items-center space-x-2">
           <ArrowLeft className="h-4 w-4" />
-          <span>Back to Templates</span>
+          <span>Back to check</span>
         </Button>
         <div className="flex-1">
           <h3 className="text-xl font-semibold">
@@ -348,18 +348,11 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                           <Badge variant={item.category === 'custom' ? 'secondary' : 'outline'} className="text-xs">
                             {item.category === 'custom' ? 'Custom' : item.category}
                           </Badge>
-                          <Checkbox
-                            checked={item.is_required}
-                            onCheckedChange={() => handleToggleRequired(index)}
-                          />
+                          <Checkbox checked={item.is_required} onCheckedChange={() => handleToggleRequired(index)} />
                           <Label className="text-xs">Required</Label>
                         </div>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleRemoveItem(index)}
-                      >
+                      <Button size="sm" variant="ghost" onClick={() => handleRemoveItem(index)}>
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -372,7 +365,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           <div className="flex space-x-2">
             <Button onClick={handleSaveTemplate} disabled={loading} className="flex-1">
               <Save className="h-4 w-4 mr-2" />
-              {loading ? 'Saving...' : template ? 'Update Template' : 'Create Template'}
+              {loading ? 'Saving...' : template ? 'Save changes' : 'Save template'}
             </Button>
             <Button variant="outline" onClick={onCancel}>
               Cancel
