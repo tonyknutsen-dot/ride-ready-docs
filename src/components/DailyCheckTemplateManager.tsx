@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Settings, Trash2, Edit, Copy, CheckSquare, Wrench } from 'lucide-react';
+import { Plus, Settings, Trash2, Edit, Copy, CheckSquare, Wrench, Archive, ArchiveRestore, MoreVertical } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,16 +38,17 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [linkedChecksInfo, setLinkedChecksInfo] = useState<{ [key: string]: { count: number; earliest: string | null; latest: string | null } }>({});
   const [checkingLinked, setCheckingLinked] = useState<string | null>(null);
+  const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
     if (user) {
       loadTemplates();
     }
-  }, [user, ride.id]);
+  }, [user, ride.id, showArchived]);
 
   const loadTemplates = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('daily_check_templates')
         .select(`
           *,
@@ -56,6 +58,12 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
         .eq('ride_id', ride.id)
         .eq('check_frequency', frequency)
         .order('created_at', { ascending: false });
+
+      if (!showArchived) {
+        query = query.eq('is_archived', false);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         throw error;
@@ -186,6 +194,56 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
     }
   };
 
+  const handleArchiveTemplate = async (templateId: string) => {
+    try {
+      const { error } = await supabase
+        .from('daily_check_templates')
+        .update({ is_archived: true, is_active: false })
+        .eq('id', templateId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Template archived",
+        description: "Template has been archived and can be restored later",
+      });
+
+      loadTemplates();
+    } catch (error: any) {
+      console.error('Error archiving template:', error);
+      toast({
+        title: "Error archiving template",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRestoreTemplate = async (templateId: string) => {
+    try {
+      const { error } = await supabase
+        .from('daily_check_templates')
+        .update({ is_archived: false })
+        .eq('id', templateId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Template restored",
+        description: "Template has been restored and is now available for use",
+      });
+
+      loadTemplates();
+    } catch (error: any) {
+      console.error('Error restoring template:', error);
+      toast({
+        title: "Error restoring template",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleDeleteTemplate = async (templateId: string) => {
     try {
       const { error } = await supabase
@@ -199,7 +257,7 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
 
       toast({
         title: "Template deleted",
-        description: "Template has been successfully deleted",
+        description: "Template has been permanently deleted",
       });
 
       loadTemplates();
@@ -261,10 +319,20 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
             Manage custom daily check templates for {ride.ride_name}
           </p>
         </div>
-        <Button onClick={() => setShowBuilder(true)} className="flex items-center space-x-2 shrink-0">
-          <Plus className="h-4 w-4" />
-          <span>Create Template</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant={showArchived ? "secondary" : "outline"} 
+            size="sm"
+            onClick={() => setShowArchived(!showArchived)}
+          >
+            <Archive className="h-4 w-4 mr-2" />
+            {showArchived ? "Hide Archived" : "Show Archived"}
+          </Button>
+          <Button onClick={() => setShowBuilder(true)} className="flex items-center space-x-2 shrink-0">
+            <Plus className="h-4 w-4" />
+            <span>Create Template</span>
+          </Button>
+        </div>
       </div>
 
       {templates.length === 0 ? (
@@ -287,7 +355,7 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
       ) : (
         <div className="space-y-4">
           {templates.map((template) => (
-            <Card key={template.id} className={template.is_active ? "border-primary" : ""}>
+            <Card key={template.id} className={`${template.is_active ? "border-primary" : ""} ${(template as any).is_archived ? "opacity-60" : ""}`}>
               <CardHeader>
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                   <div className="flex items-center gap-2 flex-wrap min-w-0 flex-1">
@@ -298,108 +366,169 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
                     {template.is_active && (
                       <Badge variant="default">Active</Badge>
                     )}
+                    {(template as any).is_archived && (
+                      <Badge variant="outline">Archived</Badge>
+                    )}
                   </div>
                   <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => {
-                              setEditingTemplate(template);
-                              setShowBuilder(true);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Edit template</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleDuplicateTemplate(template)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Duplicate template</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                    {!template.is_active ? (
-                      <Button
-                        size="sm"
-                        onClick={() => handleSetActive(template.id)}
-                      >
-                        Set Active
-                      </Button>
-                    ) : (
-                      <Badge variant="secondary">In Use</Badge>
-                    )}
-                    <AlertDialog onOpenChange={(open) => open && checkLinkedRecords(template.id)}>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <AlertDialogTrigger asChild>
+                    {!(template as any).is_archived && (
+                      <>
+                        <TooltipProvider>
+                          <Tooltip>
                             <TooltipTrigger asChild>
-                              <Button size="sm" variant="outline">
-                                <Trash2 className="h-4 w-4" />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingTemplate(template);
+                                  setShowBuilder(true);
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
-                          </AlertDialogTrigger>
-                          <TooltipContent>
-                            <p>Delete template</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                      <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Template</AlertDialogTitle>
-                          <AlertDialogDescription asChild>
-                            <div>
-                              <span>Are you sure you want to delete "{template.template_name}"?</span>
-                              {checkingLinked === template.id ? (
-                                <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
-                              ) : linkedChecksInfo[template.id]?.count > 0 ? (
-                                <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                                  <span className="block text-destructive font-medium">
-                                    ⚠️ Warning: This template has linked check records
-                                  </span>
-                                  <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
-                                    <li>• Total records: <strong className="text-foreground">{linkedChecksInfo[template.id].count}</strong></li>
-                                    <li>• Date range: <strong className="text-foreground">
-                                      {new Date(linkedChecksInfo[template.id].earliest!).toLocaleDateString()} — {new Date(linkedChecksInfo[template.id].latest!).toLocaleDateString()}
-                                    </strong></li>
-                                  </ul>
-                                  <span className="block mt-2 text-xs text-destructive">
-                                    Deleting this template may affect historical reporting.
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="block mt-2 text-muted-foreground">This action cannot be undone.</span>
-                              )}
-                            </div>
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDeleteTemplate(template.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            <TooltipContent>
+                              <p>Edit template</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDuplicateTemplate(template)}
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Duplicate template</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                        {!template.is_active ? (
+                          <Button
+                            size="sm"
+                            onClick={() => handleSetActive(template.id)}
                           >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                            Set Active
+                          </Button>
+                        ) : (
+                          <Badge variant="secondary">In Use</Badge>
+                        )}
+                      </>
+                    )}
+                    {(template as any).is_archived ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleRestoreTemplate(template.id)}
+                      >
+                        <ArchiveRestore className="h-4 w-4 mr-2" />
+                        Restore
+                      </Button>
+                    ) : null}
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button size="sm" variant="outline">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {!(template as any).is_archived && (
+                          <AlertDialog onOpenChange={(open) => open && checkLinkedRecords(template.id)}>
+                            <AlertDialogTrigger asChild>
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                <Archive className="h-4 w-4 mr-2" />
+                                Archive
+                              </DropdownMenuItem>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Archive Template</AlertDialogTitle>
+                                <AlertDialogDescription asChild>
+                                  <div>
+                                    <span>Archive "{template.template_name}"? It will be hidden from active use but preserved for historical records.</span>
+                                    {checkingLinked === template.id ? (
+                                      <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
+                                    ) : linkedChecksInfo[template.id]?.count > 0 ? (
+                                      <div className="mt-3 p-3 bg-muted border rounded-md">
+                                        <span className="block font-medium">This template has linked check records:</span>
+                                        <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
+                                          <li>• Total records: <strong className="text-foreground">{linkedChecksInfo[template.id].count}</strong></li>
+                                          <li>• Date range: <strong className="text-foreground">
+                                            {new Date(linkedChecksInfo[template.id].earliest!).toLocaleDateString()} — {new Date(linkedChecksInfo[template.id].latest!).toLocaleDateString()}
+                                          </strong></li>
+                                        </ul>
+                                        <span className="block mt-2 text-xs text-muted-foreground">
+                                          Archiving preserves all historical data.
+                                        </span>
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleArchiveTemplate(template.id)}>
+                                  Archive
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                        {!(template as any).is_archived && <DropdownMenuSeparator />}
+                        <AlertDialog onOpenChange={(open) => open && checkLinkedRecords(template.id)}>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete Permanently
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                              <AlertDialogDescription asChild>
+                                <div>
+                                  <span>Are you sure you want to permanently delete "{template.template_name}"?</span>
+                                  {checkingLinked === template.id ? (
+                                    <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
+                                  ) : linkedChecksInfo[template.id]?.count > 0 ? (
+                                    <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                                      <span className="block text-destructive font-medium">
+                                        ⚠️ Warning: This template has linked check records
+                                      </span>
+                                      <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
+                                        <li>• Total records: <strong className="text-foreground">{linkedChecksInfo[template.id].count}</strong></li>
+                                        <li>• Date range: <strong className="text-foreground">
+                                          {new Date(linkedChecksInfo[template.id].earliest!).toLocaleDateString()} — {new Date(linkedChecksInfo[template.id].latest!).toLocaleDateString()}
+                                        </strong></li>
+                                      </ul>
+                                      <span className="block mt-2 text-xs text-destructive">
+                                        Consider archiving instead to preserve historical data.
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <span className="block mt-2 text-muted-foreground">This action cannot be undone.</span>
+                                  )}
+                                </div>
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => handleDeleteTemplate(template.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Delete Permanently
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
                 <CardDescription>
