@@ -8,12 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { CheckSquare, AlertTriangle, Clock, User, Calendar, Save, Settings, History } from 'lucide-react';
+import { CheckSquare, AlertTriangle, Clock, User, Calendar, Save, Settings, History, Plus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import ChecksHistory from './ChecksHistory';
+import TemplateBuilder from './TemplateBuilder';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -43,6 +44,7 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -230,15 +232,33 @@ const RideDailyChecks = ({ ride }: RideDailyChecksProps) => {
   }
 
   if (!template) {
+    if (showTemplateBuilder) {
+      return (
+        <TemplateBuilder 
+          ride={ride} 
+          frequency="daily"
+          onSuccess={() => {
+            setShowTemplateBuilder(false);
+            loadActiveTemplate();
+          }}
+          onCancel={() => setShowTemplateBuilder(false)}
+        />
+      );
+    }
+
     return (
       <Card>
         <CardContent className="pt-6">
           <div className="text-center py-8">
             <CheckSquare className="mx-auto h-16 w-16 text-muted-foreground" />
             <h3 className="text-lg font-semibold mt-4">No daily check template</h3>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-4">
               Create a daily check template for this ride to start performing safety checks.
             </p>
+            <Button onClick={() => setShowTemplateBuilder(true)} size="lg">
+              <Plus className="h-4 w-4 mr-2" />
+              Build Daily Check Template
+            </Button>
           </div>
         </CardContent>
       </Card>
