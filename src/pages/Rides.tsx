@@ -35,6 +35,7 @@ const Rides = () => {
   }>>({});
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [activeGroup, setActiveGroup] = useState<string>('All');
 
   useEffect(() => {
     if (user) {
@@ -152,7 +153,6 @@ const Rides = () => {
   }
 
   const categoryGroups = ['All', 'Rides', 'Food Stalls', 'Games', 'Equipment'] as const;
-  const [activeGroup, setActiveGroup] = useState<string>('All');
 
   const getCategoryIcon = (group: string) => {
     switch (group) {
