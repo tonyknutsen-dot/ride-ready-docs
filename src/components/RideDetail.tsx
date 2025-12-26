@@ -28,12 +28,13 @@ interface RideDetailProps {
   ride: Ride;
   onBack: () => void;
   onUpdate: () => void;
+  initialTab?: string;
 }
 
-const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
+const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDetailProps) => {
   const { user } = useAuth();
   const { subscription } = useSubscription();
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [isEditing, setIsEditing] = useState(false);
   const [rideStats, setRideStats] = useState({
     docCount: 0,

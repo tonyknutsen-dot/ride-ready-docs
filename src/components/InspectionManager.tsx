@@ -3,9 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle } from 'lucide-react';
 import { Ride } from '@/types/ride';
-import RideDailyChecks from './RideDailyChecks';
 import DailyCheckTemplateManager from './DailyCheckTemplateManager';
-import DailyCheckHistory from './DailyCheckHistory';
 import MonthlyCheckTemplateManager from './MonthlyCheckTemplateManager';
 import YearlyCheckTemplateManager from './YearlyCheckTemplateManager';
 import InspectionChecklist from './InspectionChecklist';
@@ -114,10 +112,10 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="perform">
-                <RideDailyChecks ride={ride} />
+                <InspectionChecklist ride={ride} frequency="daily" />
               </TabsContent>
               <TabsContent value="history">
-                <DailyCheckHistory rideId={ride.id} />
+                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} frequency="daily" />
               </TabsContent>
               <TabsContent value="templates">
                 <DailyCheckTemplateManager ride={ride} />
@@ -144,7 +142,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 <InspectionChecklist ride={ride} frequency="monthly" />
               </TabsContent>
               <TabsContent value="history">
-                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} />
+                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} frequency="monthly" />
               </TabsContent>
               <TabsContent value="templates">
                 <MonthlyCheckTemplateManager ride={ride} />
@@ -171,7 +169,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 <InspectionChecklist ride={ride} frequency="yearly" />
               </TabsContent>
               <TabsContent value="history">
-                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} />
+                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} frequency="yearly" />
               </TabsContent>
               <TabsContent value="templates">
                 <YearlyCheckTemplateManager ride={ride} />
