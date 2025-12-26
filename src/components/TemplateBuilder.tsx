@@ -48,7 +48,8 @@ interface BuilderItem {
 const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCancel }: TemplateBuilderProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [templateName, setTemplateName] = useState(template?.template_name || '');
+  const defaultTemplateName = `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Safety Check`;
+  const [templateName, setTemplateName] = useState(template?.template_name || defaultTemplateName);
   const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<BuilderItem[]>([]);
   const [customItemText, setCustomItemText] = useState('');
