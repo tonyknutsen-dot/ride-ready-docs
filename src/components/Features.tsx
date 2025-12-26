@@ -63,7 +63,7 @@ const Features = () => {
     <section className="py-20 md:py-28 bg-secondary/50">
       <div className="container mx-auto px-4 md:px-6">
         {/* Section Header */}
-        <div className="text-center mb-16 max-w-3xl mx-auto">
+        <div className="text-center mb-10 max-w-3xl mx-auto">
           <Badge variant="outline" className="mb-4 border-primary/30 text-primary">
             Features
           </Badge>
@@ -77,7 +77,7 @@ const Features = () => {
         </div>
 
         {/* Documents & Compliance App */}
-        <div className="mb-16">
+        <div className="mb-10">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-8">
             <div className="flex items-center gap-3">
               <div className="p-2.5 bg-accent/10 rounded-xl">
