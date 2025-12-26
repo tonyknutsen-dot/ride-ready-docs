@@ -334,6 +334,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
+          is_archived: boolean
           ride_id: string
           template_name: string
           template_type: string | null
@@ -347,6 +348,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_archived?: boolean
           ride_id: string
           template_name: string
           template_type?: string | null
@@ -360,6 +362,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
+          is_archived?: boolean
           ride_id?: string
           template_name?: string
           template_type?: string | null
