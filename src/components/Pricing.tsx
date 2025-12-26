@@ -9,7 +9,7 @@ const Pricing = () => {
   const { user } = useAuth();
 
   const basicFeatures = [
-    "Ride & equipment management",
+    "Up to 8 rides or equipment",
     "Document storage (up to 100 documents)",
     "Email alerts 30 & 7 days before expiry",
     "Basic document types supported",
@@ -20,6 +20,7 @@ const Pricing = () => {
 
   const advancedFeatures = [
     "Everything in Essential, plus:",
+    "Up to 8 rides or equipment",
     "Unlimited document storage",
     "All document types supported",
     "Daily, monthly & yearly checks",

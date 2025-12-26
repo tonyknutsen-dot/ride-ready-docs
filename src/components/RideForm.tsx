@@ -6,12 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Plus, ImagePlus } from 'lucide-react';
+import { ArrowLeft, Save, Plus, ImagePlus, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { z } from 'zod';
 import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
-
+import { useSubscription, RIDE_LIMITS } from '@/hooks/useSubscription';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useNavigate } from 'react-router-dom';
 type RideCategory = Tables<'ride_categories'>;
 
 interface RideFormProps {
@@ -38,6 +40,8 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const isEditMode = !!ride;
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const { subscription, loading: subscriptionLoading } = useSubscription();
   const [categories, setCategories] = useState<RideCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [openRequest, setOpenRequest] = useState(false);
@@ -52,6 +56,9 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+
+  // Check if user can add more rides (only for new rides, not edits)
+  const atRideLimit = !isEditMode && subscription && !subscription.canAddRide;
 
   useEffect(() => {
     loadCategories();
@@ -271,6 +278,44 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     }
   };
 
+  // Show ride limit message if at limit
+  if (atRideLimit && !subscriptionLoading) {
+    return (
+      <div className="max-w-3xl mx-auto p-4 md:p-6">
+        <div className="mb-6">
+          <Button 
+            variant="ghost" 
+            onClick={onCancel} 
+            className="mb-4 -ml-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </div>
+        
+        <Alert variant="destructive" className="mb-6">
+          <AlertTriangle className="h-5 w-5" />
+          <AlertTitle className="text-lg">Equipment Limit Reached</AlertTitle>
+          <AlertDescription className="mt-2">
+            <p className="mb-4">
+              You've reached the limit of <strong>{subscription?.rideLimit} rides/equipment</strong> on your current plan.
+              You currently have <strong>{subscription?.rideCount} items</strong> registered.
+            </p>
+            <p className="mb-4">
+              To add more equipment, please contact us to discuss an extended plan for larger operations.
+            </p>
+            <Button 
+              onClick={() => navigate('/settings?tab=billing')}
+              className="mt-2"
+            >
+              View Plan & Billing
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-6">
       {/* Header */}
@@ -288,6 +333,11 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           <p className="text-sm text-muted-foreground mt-1">
             {isEditMode ? 'Update the details for your ride or generator' : 'Enter the details for your new ride or generator'}
           </p>
+          {subscription && !isEditMode && (
+            <p className="text-xs text-muted-foreground mt-2">
+              {subscription.rideCount} of {subscription.rideLimit} equipment slots used
+            </p>
+          )}
         </div>
       </div>
 
