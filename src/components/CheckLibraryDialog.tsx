@@ -153,10 +153,31 @@ export default function CheckLibraryDialog({
 
           <div className="rounded-md border p-3 bg-muted/20">
             <div className="text-xs text-muted-foreground">
-              <b>Tip:</b> These are pre-built safety check items. Select multiple items and add them all at once.
-              Items marked as <Badge variant="default" className="text-[10px] px-1 py-0 h-4 inline-flex">Ride-specific</Badge> are tailored to your ride type.
+              <b>Tip:</b> Select multiple items and add them all at once.
+              <div className="flex flex-wrap gap-2 mt-2">
+                <Badge variant="outline" className="text-[10px]">Generic</Badge>
+                <span>= General safety checks for all equipment</span>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-1">
+                <Badge variant="default" className="text-[10px]">Ride-specific</Badge>
+                <span>= Tailored to your equipment type</span>
+              </div>
             </div>
           </div>
+
+          {/* Summary counts */}
+          {!loading && rows.length > 0 && (
+            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+              <span>
+                <strong className="text-foreground">{rows.filter(r => !r.ride_category_id).length}</strong> generic items
+              </span>
+              {rows.filter(r => r.ride_category_id).length > 0 && (
+                <span>
+                  • <strong className="text-foreground">{rows.filter(r => r.ride_category_id).length}</strong> ride-specific items
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2 max-h-[50vh] overflow-y-auto">
             {loading ? (
