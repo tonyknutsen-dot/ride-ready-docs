@@ -174,30 +174,40 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-        <div className="overflow-x-auto -mx-4 px-4">
-          <TabsList className={`inline-flex gap-1 p-1 bg-muted/50 h-auto min-w-full ${isAdvanced ? '' : ''}`}>
-            <TabsTrigger value="overview" className="flex-1 min-w-[72px] flex items-center justify-center gap-1.5 py-3 px-3 text-xs active:scale-95 transition-transform">
-              <FileText className="h-4 w-4" />
-              <span>Home</span>
-            </TabsTrigger>
-            <TabsTrigger value="documents" className="flex-1 min-w-[72px] flex items-center justify-center gap-1.5 py-3 px-3 text-xs active:scale-95 transition-transform">
-              <Upload className="h-4 w-4" />
-              <span>Docs</span>
-            </TabsTrigger>
-            {isAdvanced && (
-              <>
-                <TabsTrigger value="inspections" className="flex-1 min-w-[72px] flex items-center justify-center gap-1.5 py-3 px-3 text-xs active:scale-95 transition-transform">
-                  <CheckSquare className="h-4 w-4" />
-                  <span>Checks</span>
-                </TabsTrigger>
-                <TabsTrigger value="maintenance" className="flex-1 min-w-[72px] flex items-center justify-center gap-1.5 py-3 px-3 text-xs active:scale-95 transition-transform">
-                  <Wrench className="h-4 w-4" />
-                  <span>Maint</span>
-                </TabsTrigger>
-              </>
-            )}
-          </TabsList>
-        </div>
+        <TabsList className="grid w-full h-auto p-1.5 gap-1.5 bg-muted/60" style={{ gridTemplateColumns: isAdvanced ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)' }}>
+          <TabsTrigger 
+            value="overview" 
+            className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-h-[60px]"
+          >
+            <FileText className="h-5 w-5" />
+            <span>Home</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="documents" 
+            className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-h-[60px]"
+          >
+            <Upload className="h-5 w-5" />
+            <span>Documents</span>
+          </TabsTrigger>
+          {isAdvanced && (
+            <>
+              <TabsTrigger 
+                value="inspections" 
+                className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-h-[60px]"
+              >
+                <CheckSquare className="h-5 w-5" />
+                <span>Checks</span>
+              </TabsTrigger>
+              <TabsTrigger 
+                value="maintenance" 
+                className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-h-[60px]"
+              >
+                <Wrench className="h-5 w-5" />
+                <span>Maintenance</span>
+              </TabsTrigger>
+            </>
+          )}
+        </TabsList>
 
         <TabsContent value="overview" className="space-y-4 animate-fade-in">
           <div className="grid grid-cols-1 gap-3">
