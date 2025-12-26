@@ -48,6 +48,29 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const { user } = useAuth();
   const { toast } = useToast();
   const defaultTemplateName = `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Safety Check`;
+
+  // Background spell-check function - runs without blocking UI
+  const spellcheckItems = async (items: Array<{ id: string; check_item_text: string }>) => {
+    for (const item of items) {
+      try {
+        // Call the spellcheck edge function in the background
+        const { error } = await supabase.functions.invoke('spellcheck-items', {
+          body: { 
+            item_id: item.id, 
+            text: item.check_item_text,
+            table: 'daily_check_template_items'
+          }
+        });
+        
+        if (error) {
+          console.log('Spellcheck skipped for item:', item.id, error);
+        }
+      } catch (e) {
+        // Silently fail - this is a background enhancement
+        console.log('Spellcheck failed for item:', item.id);
+      }
+    }
+  };
   const [templateName, setTemplateName] = useState(template?.template_name || defaultTemplateName);
   const [selectedItems, setSelectedItems] = useState<BuilderItem[]>([]);
   const [customItemText, setCustomItemText] = useState('');
@@ -178,9 +201,10 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         sort_order: index,
       }));
 
-      const { error: itemsError } = await supabase
+      const { data: insertedItems, error: itemsError } = await supabase
         .from('daily_check_template_items')
-        .insert(itemsToInsert);
+        .insert(itemsToInsert)
+        .select();
 
       if (itemsError) throw itemsError;
 
@@ -188,6 +212,19 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         title: template ? "Template updated" : "Template created",
         description: `Your ${frequency} check template is ready to use`,
       });
+
+      // Trigger background spell-check for custom items (non-blocking)
+      if (insertedItems && insertedItems.length > 0) {
+        // Only spell-check items that were custom-added (not from library)
+        const customItems = insertedItems.filter((item, index) => 
+          selectedItems[index]?.isNew === true
+        );
+        
+        if (customItems.length > 0) {
+          // Run in background - don't await
+          spellcheckItems(customItems);
+        }
+      }
 
       onSuccess();
     } catch (error: any) {
