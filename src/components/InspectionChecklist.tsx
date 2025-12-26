@@ -333,6 +333,28 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     }
   };
 
+  const [linkedChecksCount, setLinkedChecksCount] = useState(0);
+  const [checkingLinked, setCheckingLinked] = useState(false);
+
+  const checkLinkedRecords = async () => {
+    if (!activeTemplate) return;
+    setCheckingLinked(true);
+    try {
+      const { count, error } = await supabase
+        .from('checks')
+        .select('*', { count: 'exact', head: true })
+        .eq('template_id', activeTemplate.id);
+
+      if (!error) {
+        setLinkedChecksCount(count || 0);
+      }
+    } catch (error) {
+      console.error('Error checking linked records:', error);
+    } finally {
+      setCheckingLinked(false);
+    }
+  };
+
   const handleDeleteTemplate = async () => {
     if (!activeTemplate) return;
 
@@ -427,7 +449,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                 <Download className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Export PDF</span>
               </Button>
-              <AlertDialog>
+              <AlertDialog onOpenChange={(open) => open && checkLinkedRecords()}>
                 <AlertDialogTrigger asChild>
                   <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
                     <Trash2 className="h-4 w-4 sm:mr-2" />
@@ -438,8 +460,17 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Delete Template</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete "{activeTemplate.template_name}"? 
-                      This action cannot be undone.
+                      Are you sure you want to delete "{activeTemplate.template_name}"?
+                      {checkingLinked ? (
+                        <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
+                      ) : linkedChecksCount > 0 ? (
+                        <span className="block mt-2 text-destructive font-medium">
+                          ⚠️ Warning: This template has {linkedChecksCount} check record{linkedChecksCount !== 1 ? 's' : ''} linked to it. 
+                          Deleting it may affect historical data.
+                        </span>
+                      ) : (
+                        <span className="block mt-2">This action cannot be undone.</span>
+                      )}
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>

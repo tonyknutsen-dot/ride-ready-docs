@@ -35,6 +35,8 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
   const [loading, setLoading] = useState(true);
   const [showBuilder, setShowBuilder] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
+  const [linkedChecksCount, setLinkedChecksCount] = useState<{ [key: string]: number }>({});
+  const [checkingLinked, setCheckingLinked] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -155,6 +157,24 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
         description: error.message,
         variant: "destructive",
       });
+    }
+  };
+
+  const checkLinkedRecords = async (templateId: string) => {
+    setCheckingLinked(templateId);
+    try {
+      const { count, error } = await supabase
+        .from('checks')
+        .select('*', { count: 'exact', head: true })
+        .eq('template_id', templateId);
+
+      if (!error) {
+        setLinkedChecksCount(prev => ({ ...prev, [templateId]: count || 0 }));
+      }
+    } catch (error) {
+      console.error('Error checking linked records:', error);
+    } finally {
+      setCheckingLinked(null);
     }
   };
 
@@ -317,7 +337,7 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
                     ) : (
                       <Badge variant="secondary">In Use</Badge>
                     )}
-                    <AlertDialog>
+                    <AlertDialog onOpenChange={(open) => open && checkLinkedRecords(template.id)}>
                       <TooltipProvider>
                         <Tooltip>
                           <AlertDialogTrigger asChild>
@@ -336,8 +356,17 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Template</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Are you sure you want to delete "{template.template_name}"? 
-                            This action cannot be undone and will affect any existing daily check records.
+                            Are you sure you want to delete "{template.template_name}"?
+                            {checkingLinked === template.id ? (
+                              <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
+                            ) : (linkedChecksCount[template.id] || 0) > 0 ? (
+                              <span className="block mt-2 text-destructive font-medium">
+                                ⚠️ Warning: This template has {linkedChecksCount[template.id]} check record{linkedChecksCount[template.id] !== 1 ? 's' : ''} linked to it. 
+                                Deleting it may affect historical data.
+                              </span>
+                            ) : (
+                              <span className="block mt-2">This action cannot be undone.</span>
+                            )}
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
