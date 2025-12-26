@@ -12,6 +12,7 @@ type Ride = Tables<'rides'> & {
   ride_categories: {
     name: string;
     description: string | null;
+    category_group: string;
   };
 };
 
@@ -59,7 +60,8 @@ const RideSelector = ({
           *,
           ride_categories (
             name,
-            description
+            description,
+            category_group
           )
         `)
         .eq('user_id', user?.id)

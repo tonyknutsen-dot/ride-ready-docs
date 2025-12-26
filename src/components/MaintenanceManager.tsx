@@ -3,16 +3,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Wrench, History, FileText, Plus } from 'lucide-react';
-import { Tables } from '@/integrations/supabase/types';
+import { Ride } from '@/types/ride';
 import MaintenanceLogger from './MaintenanceLogger';
 import MaintenanceHistory from './MaintenanceHistory';
-
-type Ride = Tables<'rides'> & {
-  ride_categories: {
-    name: string;
-    description: string | null;
-  };
-};
 
 interface MaintenanceManagerProps {
   ride: Ride;

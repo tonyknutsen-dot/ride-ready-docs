@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Clock, Calendar, FileText, CalendarDays, TestTube, Building } from 'lucide-react';
-import { Tables } from '@/integrations/supabase/types';
+import { Ride } from '@/types/ride';
 import RideDailyChecks from './RideDailyChecks';
 import DailyCheckTemplateManager from './DailyCheckTemplateManager';
 import DailyCheckHistory from './DailyCheckHistory';
@@ -12,13 +12,6 @@ import InspectionChecklist from './InspectionChecklist';
 import NDTScheduleManager from './NDTScheduleManager';
 import InspectionScheduleManager from './InspectionScheduleManager';
 import ChecksHistory from './ChecksHistory';
-
-type Ride = Tables<'rides'> & {
-  ride_categories: {
-    name: string;
-    description: string | null;
-  };
-};
 
 interface InspectionManagerProps {
   ride: Ride;

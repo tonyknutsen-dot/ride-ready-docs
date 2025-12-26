@@ -3,20 +3,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Upload, FileText, Mail, Download } from 'lucide-react';
-import { Tables } from '@/integrations/supabase/types';
+import { Ride } from '@/types/ride';
 import DocumentUpload from './DocumentUpload';
 import DocumentList from './DocumentList';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import JSZip from 'jszip';
-
-type Ride = Tables<'rides'> & {
-  ride_categories: {
-    name: string;
-    description: string | null;
-  };
-};
 
 interface RideDocumentsProps {
   ride: Ride;

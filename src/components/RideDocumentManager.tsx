@@ -1,16 +1,9 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
-import { Tables } from '@/integrations/supabase/types';
+import { Ride } from '@/types/ride';
 import RideSelector from './RideSelector';
 import RideDocuments from './RideDocuments';
-
-type Ride = Tables<'rides'> & {
-  ride_categories: {
-    name: string;
-    description: string | null;
-  };
-};
 
 const RideDocumentManager = () => {
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);

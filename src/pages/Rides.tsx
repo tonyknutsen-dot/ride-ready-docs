@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Settings, FileText, CheckSquare, Mail, Lock } from 'lucide-react';
+import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -17,6 +18,7 @@ type Ride = Tables<'rides'> & {
   ride_categories: {
     name: string;
     description: string | null;
+    category_group: string;
   };
 };
 
@@ -48,7 +50,8 @@ const Rides = () => {
           *,
           ride_categories (
             name,
-            description
+            description,
+            category_group
           )
         `)
         .eq('user_id', user?.id)
@@ -148,6 +151,31 @@ const Rides = () => {
     );
   }
 
+  const categoryGroups = ['All', 'Rides', 'Food Stalls', 'Games', 'Equipment'] as const;
+  const [activeGroup, setActiveGroup] = useState<string>('All');
+
+  const getCategoryIcon = (group: string) => {
+    switch (group) {
+      case 'Rides': return <FerrisWheel className="h-4 w-4" />;
+      case 'Food Stalls': return <Utensils className="h-4 w-4" />;
+      case 'Games': return <Gamepad2 className="h-4 w-4" />;
+      case 'Equipment': return <Zap className="h-4 w-4" />;
+      default: return null;
+    }
+  };
+
+  const filteredRides = activeGroup === 'All' 
+    ? rides 
+    : rides.filter(r => r.ride_categories.category_group === activeGroup);
+
+  const groupCounts = {
+    All: rides.length,
+    Rides: rides.filter(r => r.ride_categories.category_group === 'Rides').length,
+    'Food Stalls': rides.filter(r => r.ride_categories.category_group === 'Food Stalls').length,
+    Games: rides.filter(r => r.ride_categories.category_group === 'Games').length,
+    Equipment: rides.filter(r => r.ride_categories.category_group === 'Equipment').length,
+  };
+
   return (
     <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5">
       {/* Header */}
@@ -166,12 +194,28 @@ const Rides = () => {
         </Button>
       </div>
 
-      {/* Info Alert */}
-      <Alert className="bg-muted/50">
-        <AlertDescription className="text-sm">
-          Tap on any item to view details and manage documents or checks.
-        </AlertDescription>
-      </Alert>
+      {/* Category Filter Tabs */}
+      {rides.length > 0 && (
+        <div className="overflow-x-auto -mx-4 px-4">
+          <div className="flex gap-2 pb-2 min-w-max">
+            {categoryGroups.map(group => (
+              <Button
+                key={group}
+                variant={activeGroup === group ? "default" : "outline"}
+                size="sm"
+                onClick={() => setActiveGroup(group)}
+                className="h-9 gap-1.5 whitespace-nowrap"
+              >
+                {getCategoryIcon(group)}
+                <span>{group}</span>
+                <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px] bg-background/20">
+                  {groupCounts[group as keyof typeof groupCounts]}
+                </Badge>
+              </Button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       {rides.length === 0 ? (
@@ -190,11 +234,20 @@ const Rides = () => {
             </div>
           </CardContent>
         </Card>
+      ) : filteredRides.length === 0 ? (
+        <Card className="shadow-card">
+          <CardContent className="py-8">
+            <div className="text-center space-y-2">
+              {getCategoryIcon(activeGroup)}
+              <p className="text-sm text-muted-foreground">No {activeGroup.toLowerCase()} found</p>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {rides.map(ride => (
+          {filteredRides.map(ride => (
             <Card 
-              key={ride.id} 
+              key={ride.id}
               className="shadow-card hover:shadow-elegant transition-all active:scale-[0.98] cursor-pointer flex flex-col"
               onClick={() => navigate(`/rides/${ride.id}`)}
             >

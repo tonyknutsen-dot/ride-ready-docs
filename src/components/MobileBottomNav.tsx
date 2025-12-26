@@ -1,60 +1,41 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Home, FolderOpen, BadgeCheck, PlusCircle, MoreHorizontal,
-  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, AlertTriangle
+  Home, FolderOpen, PlusCircle, MoreHorizontal,
+  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { useAuth } from "@/contexts/AuthContext";
-import { useSubscription } from "@/hooks/useSubscription";
 import { useState } from "react";
-import { useAppMode } from "@/contexts/AppModeContext";
-import { AppModeToggle } from "@/components/AppModeToggle";
 
 export default function MobileBottomNav() {
   const nav = useNavigate();
   const loc = useLocation();
   const { user } = useAuth();
-  const { subscription } = useSubscription();
-  const { isDocumentsMode, isOperationsMode } = useAppMode();
   const [open, setOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   if (!user) return null;
 
-  const go = (path: string, after?: () => void) => {
+  const go = (path: string) => {
     nav(path);
-    setTimeout(() => { after?.(); }, 60);
     setOpen(false);
   };
 
-  const isActive = (match: (loc: ReturnType<typeof useLocation>) => boolean) => match(loc);
-
-  const primaryAction = () => {
-    if (isOperationsMode) {
-      if (loc.pathname === "/checks") {
-        window.dispatchEvent(new CustomEvent("rrd:start-check"));
-        return;
-      }
-      go("/checks", () => window.dispatchEvent(new CustomEvent("rrd:start-check")));
-      return;
-    }
-    setUploadDialogOpen(true);
-  };
+  const isActive = (paths: string[]) => 
+    paths.some(p => loc.pathname === p || loc.pathname.startsWith(p + '/'));
 
   const NavButton = ({ 
     onClick, 
     active, 
     icon: Icon, 
-    label,
-    iconSize = "h-5 w-5"
+    label 
   }: { 
     onClick: () => void; 
     active: boolean; 
     icon: any; 
     label: string;
-    iconSize?: string;
   }) => (
     <button
       onClick={onClick}
@@ -65,7 +46,7 @@ export default function MobileBottomNav() {
       }`}
       aria-label={label}
     >
-      <Icon className={iconSize} />
+      <Icon className="h-5 w-5" />
       <span className="mt-1">{label}</span>
     </button>
   );
@@ -79,67 +60,37 @@ export default function MobileBottomNav() {
             window.scrollTo({ top: 0, behavior: 'smooth' });
             go("/overview");
           }}
-          active={isActive(l => l.pathname === "/overview")}
+          active={isActive(["/overview"])}
           icon={Home}
           label="Overview"
         />
 
-        {/* Second button: Rides/Equipment or Checks */}
-        {isDocumentsMode ? (
-          <NavButton 
-            onClick={() => {
-              setOpen(false);
-              nav("/rides");
-            }}
-            active={isActive(l => l.pathname === "/rides" || l.pathname.startsWith("/rides/"))}
-            icon={FolderOpen}
-            label="Rides"
-          />
-        ) : (
-          <NavButton 
-            onClick={() => {
-              setOpen(false);
-              nav("/checks");
-            }}
-            active={isActive(l => l.pathname === "/checks")}
-            icon={BadgeCheck}
-            label="Checks"
-          />
-        )}
+        {/* Rides/Equipment */}
+        <NavButton 
+          onClick={() => go("/rides")}
+          active={isActive(["/rides"])}
+          icon={FolderOpen}
+          label="Rides"
+        />
 
-        {/* Third button: Calendar or Rides/Equipment */}
-        {isDocumentsMode ? (
-          <NavButton 
-            onClick={() => {
-              setOpen(false);
-              nav("/calendar");
-            }}
-            active={isActive(l => l.pathname === "/calendar")}
-            icon={CalendarIcon}
-            label="Calendar"
-          />
-        ) : (
-          <NavButton 
-            onClick={() => {
-              setOpen(false);
-              nav("/rides");
-            }}
-            active={isActive(l => l.pathname === "/rides" || l.pathname.startsWith("/rides/"))}
-            icon={FolderOpen}
-            label="Rides"
-          />
-        )}
+        {/* Calendar */}
+        <NavButton 
+          onClick={() => go("/calendar")}
+          active={isActive(["/calendar"])}
+          icon={CalendarIcon}
+          label="Calendar"
+        />
 
         {/* Primary Add */}
         <button
-          onClick={primaryAction}
+          onClick={() => setUploadDialogOpen(true)}
           className="flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-[11px] font-medium text-accent hover:bg-accent/5 transition-colors"
-          aria-label={isDocumentsMode ? "Add Document" : "Start Check"}
+          aria-label="Add Document"
         >
           <div className="p-1.5 bg-accent rounded-full">
             <PlusCircle className="h-5 w-5 text-accent-foreground" />
           </div>
-          <span className="mt-1">{isDocumentsMode ? 'Add' : 'Add'}</span>
+          <span className="mt-1">Add</span>
         </button>
 
         {/* More */}
@@ -153,73 +104,36 @@ export default function MobileBottomNav() {
               <span className="mt-1">More</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-2xl">
+          <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto rounded-t-2xl">
             <SheetHeader className="pb-4">
               <SheetTitle className="text-left">More Options</SheetTitle>
             </SheetHeader>
 
             <div className="space-y-6">
-              {/* App Mode Toggle */}
-              <AppModeToggle />
-
-              {/* Mode-specific features */}
-              {isDocumentsMode && (
-                <div className="space-y-3">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Documents
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
-                      onClick={() => go("/global-documents")}
-                    >
-                      <FileText className="h-4 w-4 text-primary" />
-                      Global Docs
-                    </button>
-                    <button
-                      className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors disabled:opacity-50"
-                      onClick={() => go("/calendar")}
-                      disabled={subscription?.subscriptionStatus !== 'advanced'}
-                    >
-                      <CalendarIcon className="h-4 w-4 text-primary" />
-                      Calendar
-                    </button>
-                  </div>
+              {/* Quick actions */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Quick Access
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
+                    onClick={() => go("/global-documents")}
+                  >
+                    <FileText className="h-4 w-4 text-primary" />
+                    Global Docs
+                  </button>
+                  <button
+                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
+                    onClick={() => go("/calendar")}
+                  >
+                    <CalendarIcon className="h-4 w-4 text-primary" />
+                    Calendar
+                  </button>
                 </div>
-              )}
+              </div>
 
-              {isOperationsMode && (
-                <div className="space-y-3">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Operations
-                  </h4>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button
-                      className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
-                      onClick={() => go("/checks")}
-                    >
-                      <BadgeCheck className="h-4 w-4 text-primary" />
-                      Checks
-                    </button>
-                    <button
-                      className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
-                      onClick={() => go("/calendar")}
-                    >
-                      <CalendarIcon className="h-4 w-4 text-primary" />
-                      Calendar
-                    </button>
-                    <button
-                      className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
-                      onClick={() => go("/risk-assessments")}
-                    >
-                      <AlertTriangle className="h-4 w-4 text-warning" />
-                      Risk
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* General options */}
+              {/* Account options */}
               <div className="space-y-3">
                 <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                   Account
@@ -253,10 +167,6 @@ export default function MobileBottomNav() {
                 </div>
               </div>
             </div>
-
-            <p className="text-xs text-muted-foreground text-center pt-6 mt-6 border-t border-border/50">
-              Switch modes to access different features
-            </p>
           </SheetContent>
         </Sheet>
       </div>
