@@ -847,18 +847,21 @@ export type Database = {
       }
       ride_categories: {
         Row: {
+          category_group: string
           created_at: string
           description: string | null
           id: string
           name: string
         }
         Insert: {
+          category_group?: string
           created_at?: string
           description?: string | null
           id?: string
           name: string
         }
         Update: {
+          category_group?: string
           created_at?: string
           description?: string | null
           id?: string

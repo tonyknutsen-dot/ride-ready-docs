@@ -11,6 +11,7 @@ type Ride = Tables<'rides'> & {
   ride_categories: {
     name: string;
     description: string | null;
+    category_group: string;
   };
 };
 
