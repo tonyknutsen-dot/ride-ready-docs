@@ -436,8 +436,8 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
             {/* Check Items */}
             <div className="space-y-4">
               <h4 className="font-semibold">Inspection Items</h4>
-              {activeTemplate.daily_check_template_items
-                .sort((a, b) => a.sort_order - b.sort_order)
+            {activeTemplate.daily_check_template_items
+                .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
                 .map((item) => (
                   <Card key={item.id} className="p-4">
                     <div className="space-y-3">

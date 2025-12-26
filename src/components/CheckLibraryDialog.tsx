@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { CheckSquare, Plus, Search, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
 type Frequency = "daily" | "monthly" | "yearly";
 
 interface CheckLibraryItem {
@@ -134,6 +133,9 @@ export default function CheckLibraryDialog({
             <CheckSquare className="h-5 w-5" />
             Add from library — {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Checks
           </DialogTitle>
+          <DialogDescription>
+            Select pre-built safety check items to add to your template
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
@@ -150,10 +152,10 @@ export default function CheckLibraryDialog({
           </div>
 
           <div className="rounded-md border p-3 bg-muted/20">
-            <p className="text-xs text-muted-foreground">
+            <div className="text-xs text-muted-foreground">
               <b>Tip:</b> These are pre-built safety check items. Select multiple items and add them all at once.
-              Items marked as <Badge variant="default" className="text-[10px] px-1 py-0 h-4">Ride-specific</Badge> are tailored to your ride type.
-            </p>
+              Items marked as <Badge variant="default" className="text-[10px] px-1 py-0 h-4 inline-flex">Ride-specific</Badge> are tailored to your ride type.
+            </div>
           </div>
 
           <div className="space-y-2 max-h-[50vh] overflow-y-auto">
