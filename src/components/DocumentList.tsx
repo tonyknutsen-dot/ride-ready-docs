@@ -476,69 +476,78 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
         <CardContent>
           <div className="space-y-3">
             {documents.map((doc) => (
-              <div key={doc.id} className="flex items-start gap-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors min-w-0">
-                <div className="shrink-0">
+              <div 
+                key={doc.id} 
+                className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 active:scale-[0.99] transition-all min-w-0"
+              >
+                {/* Thumbnail */}
+                <div 
+                  className="shrink-0 h-10 w-10 rounded-lg bg-muted/50 flex items-center justify-center cursor-pointer"
+                  onClick={() => isViewable(doc) && handleView(doc)}
+                >
                   {thumbs[doc.id] ? (
                     <img
                       src={thumbs[doc.id]}
                       alt={doc.document_name}
-                      className="h-8 w-8 rounded-md object-cover border cursor-pointer"
-                      onClick={() => handleView(doc)}
+                      className="h-10 w-10 rounded-lg object-cover"
                     />
                   ) : (
-                    <FileText className="h-8 w-8 text-primary" />
+                    <FileText className="h-5 w-5 text-muted-foreground" />
                   )}
                 </div>
+
+                {/* Content */}
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 flex-wrap">
-                    <h4 className="font-medium truncate" title={doc.document_name}>{doc.document_name}</h4>
-                    <Badge variant="secondary" className="text-xs">
+                  <h4 className="text-sm font-medium truncate" title={doc.document_name}>
+                    {doc.document_name}
+                  </h4>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-[11px] text-muted-foreground">
                       {getDocumentTypeDisplay(doc.document_type)}
-                    </Badge>
+                    </span>
+                    <span className="text-[11px] text-muted-foreground/50">•</span>
+                    <span className="text-[11px] text-muted-foreground">
+                      {formatFileSize(doc.file_size || 0)}
+                    </span>
+                    {doc.expires_at && (
+                      <>
+                        <span className="text-[11px] text-muted-foreground/50">•</span>
+                        <span className={`text-[11px] flex items-center gap-0.5 ${
+                          isExpired(doc.expires_at) ? 'text-destructive' :
+                          isExpiringSoon(doc.expires_at) ? 'text-yellow-600' :
+                          'text-muted-foreground'
+                        }`}>
+                          {isExpired(doc.expires_at) && <AlertTriangle className="h-3 w-3" />}
+                          {new Date(doc.expires_at).toLocaleDateString()}
+                        </span>
+                      </>
+                    )}
                   </div>
-                  <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-1 break-words">
-                    <span>{formatFileSize(doc.file_size || 0)}</span>
-                    <span>Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}</span>
-                  </div>
-                  {doc.expires_at && (
-                    <div className="flex items-center space-x-1 mt-1">
-                      <Calendar className="h-3 w-3" />
-                      <span className={`text-xs ${
-                        isExpired(doc.expires_at) ? 'text-red-600' :
-                        isExpiringSoon(doc.expires_at) ? 'text-yellow-600' :
-                        'text-muted-foreground'
-                      }`}>
-                        {isExpired(doc.expires_at) && <AlertTriangle className="h-3 w-3 inline mr-1" />}
-                        Expires: {new Date(doc.expires_at).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-                  {doc.notes && (
-                    <p className="text-xs text-muted-foreground mt-1 break-words">
-                      {doc.notes}
-                    </p>
-                  )}
                 </div>
-                <div className="flex flex-wrap items-center gap-2 shrink-0">
+
+                {/* Actions - simplified to icon buttons */}
+                <div className="flex items-center gap-1 shrink-0">
                   {isViewable(doc) && (
                     <Button
-                      size="sm"
-                      variant="outline"
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
                       onClick={() => handleView(doc)}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
                   )}
                   <Button
-                    size="sm"
-                    variant="outline"
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
                     onClick={() => handleDownload(doc)}
                   >
                     <Download className="h-4 w-4" />
                   </Button>
                   <AlertDialog>
                     <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="outline">
+                      <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </AlertDialogTrigger>
