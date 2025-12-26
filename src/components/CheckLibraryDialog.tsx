@@ -42,20 +42,28 @@ export default function CheckLibraryDialog({
     (async () => {
       setLoading(true);
       try {
-        // Load generic + category-specific for this frequency
-        const { data, error } = await supabase
+        const cat = (rideCategoryId && rideCategoryId !== "null") ? rideCategoryId : null;
+        
+        // Load generic items (ride_category_id is null) + category-specific for this frequency
+        let query = supabase
           .from("check_library_items")
           .select("id,label,frequency,ride_category_id,hint,risk_level,sort_index,is_active")
           .eq("frequency", frequency)
           .eq("is_active", true)
-          .order("ride_category_id", { ascending: true, nullsFirst: false })
           .order("sort_index", { ascending: true });
 
+        // Filter to get generic items OR items matching this ride's category
+        if (cat) {
+          query = query.or(`ride_category_id.is.null,ride_category_id.eq.${cat}`);
+        } else {
+          query = query.is("ride_category_id", null);
+        }
+
+        const { data, error } = await query;
         if (error) throw error;
 
-        // Prefer category-specific items first, then generic
-        const cat = (rideCategoryId && rideCategoryId !== "null") ? rideCategoryId : null;
-        const specific = (data || []).filter((r: CheckLibraryItem) => r.ride_category_id && r.ride_category_id === cat);
+        // Sort: category-specific items first, then generic
+        const specific = (data || []).filter((r: CheckLibraryItem) => r.ride_category_id === cat);
         const generic = (data || []).filter((r: CheckLibraryItem) => !r.ride_category_id);
         setRows([...specific, ...generic]);
       } catch (error: any) {
