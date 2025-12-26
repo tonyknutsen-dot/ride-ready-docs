@@ -1,8 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home, FolderOpen, BadgeCheck, PlusCircle, MoreHorizontal,
-  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, Mail, FileText,
-  ClipboardList, Wrench, Shield, AlertTriangle
+  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, AlertTriangle
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
@@ -12,13 +11,6 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useState } from "react";
 import { useAppMode } from "@/contexts/AppModeContext";
 import { AppModeToggle } from "@/components/AppModeToggle";
-
-/**
- * Mobile bottom bar:
- * - Uses real routes you have (/dashboard, /checks, /billing, /help)
- * - Calendar/Settings/Docs route to Dashboard tabs via ?tab=...
- * - After navigate, fires events so pages perform the intended action
- */
 
 export default function MobileBottomNav() {
   const nav = useNavigate();
@@ -33,7 +25,6 @@ export default function MobileBottomNav() {
 
   const go = (path: string, after?: () => void) => {
     nav(path);
-    // Give Router a tick to mount the destination, then fire any event
     setTimeout(() => { after?.(); }, 60);
     setOpen(false);
   };
@@ -42,7 +33,6 @@ export default function MobileBottomNav() {
 
   const primaryAction = () => {
     if (isOperationsMode) {
-      // Operations mode: navigate to checks
       if (loc.pathname === "/checks") {
         window.dispatchEvent(new CustomEvent("rrd:start-check"));
         return;
@@ -50,138 +40,148 @@ export default function MobileBottomNav() {
       go("/checks", () => window.dispatchEvent(new CustomEvent("rrd:start-check")));
       return;
     }
-
-    // Documents mode: open quick document upload
     setUploadDialogOpen(true);
   };
 
+  const NavButton = ({ 
+    onClick, 
+    active, 
+    icon: Icon, 
+    label,
+    iconSize = "h-5 w-5"
+  }: { 
+    onClick: () => void; 
+    active: boolean; 
+    icon: any; 
+    label: string;
+    iconSize?: string;
+  }) => (
+    <button
+      onClick={onClick}
+      className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-[11px] font-medium transition-colors ${
+        active 
+          ? "text-primary bg-primary/5" 
+          : "text-muted-foreground hover:text-foreground"
+      }`}
+      aria-label={label}
+    >
+      <Icon className={iconSize} />
+      <span className="mt-1">{label}</span>
+    </button>
+  );
+
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/75 md:hidden pointer-events-auto">
-      <div className="mx-auto max-w-screen-sm grid grid-cols-5 gap-1 p-2">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 md:hidden">
+      <div className="mx-auto max-w-screen-sm grid grid-cols-5 gap-0.5 px-2 py-1.5 safe-area-pb">
         {/* Overview */}
-        <button
+        <NavButton 
           onClick={() => {
-            // Always scroll to top for feedback
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            // Navigate to overview page
             go("/overview");
           }}
-          className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-            isActive(l => l.pathname === "/overview") ? "text-primary" : "text-muted-foreground"
-          }`}
-          aria-label="Overview"
-        >
-          <Home className="h-5 w-5" />
-          <span className="mt-0.5">Overview</span>
-        </button>
+          active={isActive(l => l.pathname === "/overview")}
+          icon={Home}
+          label="Overview"
+        />
 
         {/* Second button: Rides/Equipment or Checks */}
         {isDocumentsMode ? (
-          <button
+          <NavButton 
             onClick={() => {
               setOpen(false);
               nav("/rides");
             }}
-            className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-              isActive(l => l.pathname === "/rides" || l.pathname.startsWith("/rides/")) ? "text-primary" : "text-muted-foreground"
-            }`}
-            aria-label="Rides"
-          >
-            <FolderOpen className="h-5 w-5" />
-            <span className="mt-0.5">Rides</span>
-          </button>
+            active={isActive(l => l.pathname === "/rides" || l.pathname.startsWith("/rides/"))}
+            icon={FolderOpen}
+            label="Rides"
+          />
         ) : (
-          <button
+          <NavButton 
             onClick={() => {
               setOpen(false);
               nav("/checks");
             }}
-            className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-              isActive(l => l.pathname === "/checks") ? "text-primary" : "text-muted-foreground"
-            }`}
-            aria-label="Checks"
-          >
-            <BadgeCheck className="h-5 w-5" />
-            <span className="mt-0.5">Checks</span>
-          </button>
+            active={isActive(l => l.pathname === "/checks")}
+            icon={BadgeCheck}
+            label="Checks"
+          />
         )}
 
         {/* Third button: Calendar or Rides/Equipment */}
         {isDocumentsMode ? (
-          <button
+          <NavButton 
             onClick={() => {
               setOpen(false);
               nav("/calendar");
             }}
-            className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-              isActive(l => l.pathname === "/calendar") ? "text-primary" : "text-muted-foreground"
-            }`}
-            aria-label="Calendar"
-          >
-            <CalendarIcon className="h-5 w-5" />
-            <span className="mt-0.5">Calendar</span>
-          </button>
+            active={isActive(l => l.pathname === "/calendar")}
+            icon={CalendarIcon}
+            label="Calendar"
+          />
         ) : (
-          <button
+          <NavButton 
             onClick={() => {
               setOpen(false);
               nav("/rides");
             }}
-            className={`flex flex-col items-center justify-center py-1 rounded-md text-xs ${
-              isActive(l => l.pathname === "/rides" || l.pathname.startsWith("/rides/")) ? "text-primary" : "text-muted-foreground"
-            }`}
-            aria-label="Rides"
-          >
-            <FolderOpen className="h-5 w-5" />
-            <span className="mt-0.5">Rides</span>
-          </button>
+            active={isActive(l => l.pathname === "/rides" || l.pathname.startsWith("/rides/"))}
+            icon={FolderOpen}
+            label="Rides"
+          />
         )}
 
         {/* Primary Add */}
-          <button
-            onClick={primaryAction}
-            className="flex flex-col items-center justify-center py-1 rounded-md text-xs text-primary"
-            aria-label={isDocumentsMode ? "Add Document" : "Start Check"}
-          >
-            <PlusCircle className="h-6 w-6" />
-            <span className="mt-0.5">{isDocumentsMode ? 'Add Doc' : 'Add'}</span>
-          </button>
+        <button
+          onClick={primaryAction}
+          className="flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-[11px] font-medium text-accent hover:bg-accent/5 transition-colors"
+          aria-label={isDocumentsMode ? "Add Document" : "Start Check"}
+        >
+          <div className="p-1.5 bg-accent rounded-full">
+            <PlusCircle className="h-5 w-5 text-accent-foreground" />
+          </div>
+          <span className="mt-1">{isDocumentsMode ? 'Add' : 'Add'}</span>
+        </button>
 
         {/* More */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <button className="flex flex-col items-center justify-center py-1 rounded-md text-xs text-muted-foreground" aria-label="More">
+            <button 
+              className="flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors" 
+              aria-label="More"
+            >
               <MoreHorizontal className="h-5 w-5" />
-              <span className="mt-0.5">More</span>
+              <span className="mt-1">More</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
-            <SheetHeader><SheetTitle>More</SheetTitle></SheetHeader>
+          <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto rounded-t-2xl">
+            <SheetHeader className="pb-4">
+              <SheetTitle className="text-left">More Options</SheetTitle>
+            </SheetHeader>
 
-            <div className="space-y-4 py-3">
+            <div className="space-y-6">
               {/* App Mode Toggle */}
               <AppModeToggle />
 
               {/* Mode-specific features */}
               {isDocumentsMode && (
-                <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Documents
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
                     <button
-                      className="btn-muted-tile"
+                      className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
                       onClick={() => go("/global-documents")}
                     >
-                      <FileText className="h-4 w-4 mr-2" />
+                      <FileText className="h-4 w-4 text-primary" />
                       Global Docs
                     </button>
                     <button
-                      className="btn-muted-tile"
+                      className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors disabled:opacity-50"
                       onClick={() => go("/calendar")}
                       disabled={subscription?.subscriptionStatus !== 'advanced'}
                     >
-                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      <CalendarIcon className="h-4 w-4 text-primary" />
                       Calendar
                     </button>
                   </div>
@@ -189,30 +189,30 @@ export default function MobileBottomNav() {
               )}
 
               {isOperationsMode && (
-                <div className="space-y-2">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Operations
                   </h4>
                   <div className="grid grid-cols-2 gap-2">
                     <button
-                      className="btn-muted-tile"
+                      className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
                       onClick={() => go("/checks")}
                     >
-                      <BadgeCheck className="h-4 w-4 mr-2" />
+                      <BadgeCheck className="h-4 w-4 text-primary" />
                       Checks
                     </button>
                     <button
-                      className="btn-muted-tile"
+                      className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
                       onClick={() => go("/calendar")}
                     >
-                      <CalendarIcon className="h-4 w-4 mr-2" />
+                      <CalendarIcon className="h-4 w-4 text-primary" />
                       Calendar
                     </button>
                     <button
-                      className="btn-muted-tile"
+                      className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
                       onClick={() => go("/risk-assessments")}
                     >
-                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      <AlertTriangle className="h-4 w-4 text-warning" />
                       Risk
                     </button>
                   </div>
@@ -220,32 +220,32 @@ export default function MobileBottomNav() {
               )}
 
               {/* General options */}
-              <div className="space-y-2">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-                  General
+              <div className="space-y-3">
+                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                  Account
                 </h4>
                 <div className="grid grid-cols-2 gap-2">
                   <button
-                    className="btn-muted-tile"
+                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
                     onClick={() => go("/billing")}
                   >
-                    <CreditCard className="h-4 w-4 mr-2" />
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
                     Billing
                   </button>
 
                   <button
-                    className="btn-muted-tile"
+                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
                     onClick={() => go("/help")}
                   >
-                    <HelpCircle className="h-4 w-4 mr-2" />
+                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
                     Help
                   </button>
 
                   <button
-                    className="btn-muted-tile"
+                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
                     onClick={() => go("/settings")}
                   >
-                    <Settings className="h-4 w-4 mr-2" />
+                    <Settings className="h-4 w-4 text-muted-foreground" />
                     Settings
                   </button>
 
@@ -254,7 +254,7 @@ export default function MobileBottomNav() {
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground text-center pt-2 border-t">
+            <p className="text-xs text-muted-foreground text-center pt-6 mt-6 border-t border-border/50">
               Switch modes to access different features
             </p>
           </SheetContent>

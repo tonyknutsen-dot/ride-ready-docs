@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Home, FolderOpen, Shield, User, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, Lightbulb } from 'lucide-react';
+import { Home, FolderOpen, Shield, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { QuickDocumentUpload } from '@/components/QuickDocumentUpload';
 import { useState } from 'react';
@@ -17,6 +17,7 @@ import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
 import { AppModeToggle } from '@/components/AppModeToggle';
 import { useAppMode } from '@/contexts/AppModeContext';
+import logo from '@/assets/logo.png';
 
 const AppHeader = () => {
   const location = useLocation();
@@ -46,40 +47,46 @@ const AppHeader = () => {
     return location.pathname === path;
   };
 
+  const NavLink = ({ to, icon: Icon, children, active }: { to: string; icon: any; children: React.ReactNode; active: boolean }) => (
+    <Link to={to}>
+      <Button
+        variant="ghost"
+        size="sm"
+        className={`gap-2 font-medium transition-all ${
+          active 
+            ? 'bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground' 
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+        }`}
+      >
+        <Icon className="h-4 w-4" />
+        {children}
+      </Button>
+    </Link>
+  );
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
       <div className="container flex h-14 items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link to="/overview" className="flex items-center space-x-2">
-            <span className="font-bold text-lg">Ride Ready</span>
+          <Link to="/overview" className="flex items-center gap-2 group">
+            <img src={logo} alt="Ride Ready" className="h-8 w-auto" />
+            <span className="font-bold text-lg hidden sm:inline group-hover:text-primary transition-colors">
+              Ride Ready
+            </span>
           </Link>
           
           <nav className="hidden md:flex items-center gap-1">
-            <Link to="/overview">
-              <Button
-                variant={isActive('/overview') ? 'default' : 'ghost'}
-                size="sm"
-                className="gap-2"
-              >
-                <Home className="h-4 w-4" />
-                Overview
-              </Button>
-            </Link>
-            <Link to="/rides">
-              <Button
-                variant={isActive('/rides') ? 'default' : 'ghost'}
-                size="sm"
-                className="gap-2"
-              >
-                <FolderOpen className="h-4 w-4" />
-                {isDocumentsMode ? 'Rides' : 'Equipment'}
-              </Button>
-            </Link>
+            <NavLink to="/overview" icon={Home} active={isActive('/overview')}>
+              Overview
+            </NavLink>
+            <NavLink to="/rides" icon={FolderOpen} active={isActive('/rides')}>
+              {isDocumentsMode ? 'Rides' : 'Equipment'}
+            </NavLink>
             {isDocumentsMode && (
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2"
+                className="gap-2 font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
                 onClick={() => setUploadDialogOpen(true)}
               >
                 <Shield className="h-4 w-4" />
@@ -96,13 +103,16 @@ const AppHeader = () => {
           {/* More Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="gap-2">
+              <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
                 <MoreHorizontal className="h-4 w-4" />
                 <span className="hidden sm:inline">More</span>
+                <ChevronDown className="h-3 w-3 opacity-50" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 z-[100] bg-background">
-              <DropdownMenuLabel>More Options</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-56 z-[100] bg-popover shadow-elegant border-border/50">
+              <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                Navigation
+              </DropdownMenuLabel>
               <DropdownMenuSeparator />
               
               <DropdownMenuItem asChild>
@@ -113,17 +123,18 @@ const AppHeader = () => {
               </DropdownMenuItem>
               
               {isDocumentsMode && (
-                <>
-                  <DropdownMenuItem asChild>
-                    <Link to="/global-documents" className="flex items-center cursor-pointer">
-                      <FileText className="h-4 w-4 mr-2" />
-                      Global Documents
-                    </Link>
-                  </DropdownMenuItem>
-                </>
+                <DropdownMenuItem asChild>
+                  <Link to="/global-documents" className="flex items-center cursor-pointer">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Global Documents
+                  </Link>
+                </DropdownMenuItem>
               )}
               
               <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                Account
+              </DropdownMenuLabel>
               
               <DropdownMenuItem asChild>
                 <Link to="/billing" className="flex items-center cursor-pointer">
@@ -154,17 +165,23 @@ const AppHeader = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          <Link to="/settings">
+          <Link to="/settings" className="hidden sm:block">
             <Button 
               variant={isActive('/settings') ? 'default' : 'ghost'} 
               size="sm" 
-              className="gap-2 hidden sm:flex"
+              className={`gap-2 ${isActive('/settings') ? '' : 'text-muted-foreground hover:text-foreground'}`}
             >
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Settings</span>
+              <Settings className="h-4 w-4" />
+              <span className="hidden md:inline">Settings</span>
             </Button>
           </Link>
-          <Button variant="ghost" size="sm" onClick={handleSignOut} className="gap-2">
+          
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleSignOut} 
+            className="gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+          >
             <LogOut className="h-4 w-4" />
             <span className="hidden sm:inline">Sign Out</span>
           </Button>
