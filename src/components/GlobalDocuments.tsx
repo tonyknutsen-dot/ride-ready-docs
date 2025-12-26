@@ -5,7 +5,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Upload, FileText, ArrowLeft, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { FeatureGate } from '@/components/FeatureGate';
 import DocumentUpload from './DocumentUpload';
 import DocumentList from './DocumentList';
 
@@ -15,11 +14,9 @@ const GlobalDocuments = () => {
   const [selectedRide, setSelectedRide] = useState<{id: string, name: string, category: string} | null>(null);
 
   useEffect(() => {
-    // Check if a ride was selected from the quick upload
     const selectedRideId = sessionStorage.getItem('selectedRideForUpload');
     if (selectedRideId) {
       loadSelectedRide(selectedRideId);
-      // Clear the session storage after using it
       sessionStorage.removeItem('selectedRideForUpload');
     }
   }, []);
@@ -66,19 +63,22 @@ const GlobalDocuments = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
+      {/* Selected Ride Banner */}
       {selectedRide && (
-        <Card className="bg-primary/5 border-primary/20">
-          <CardContent className="p-3 sm:p-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <Settings className="h-4 w-4 sm:h-5 sm:w-5 text-primary flex-shrink-0" />
+        <Card className="bg-primary/5 border-primary/20 shadow-card">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                  <Settings className="h-5 w-5 text-primary" />
+                </div>
                 <div className="min-w-0">
-                  <p className="font-medium text-sm sm:text-base truncate">{selectedRide.name}</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground">{selectedRide.category}</p>
+                  <p className="font-medium text-sm truncate">{selectedRide.name}</p>
+                  <p className="text-xs text-muted-foreground">{selectedRide.category}</p>
                 </div>
               </div>
-              <Button variant="ghost" size="sm" onClick={clearSelectedRide} className="self-start sm:self-center">
+              <Button variant="ghost" size="sm" onClick={clearSelectedRide} className="shrink-0 h-9">
                 <ArrowLeft className="h-4 w-4 mr-1" />
                 Back
               </Button>
@@ -87,55 +87,48 @@ const GlobalDocuments = () => {
         </Card>
       )}
 
+      {/* Header */}
       <div className="space-y-2">
-        <h2 className="text-2xl font-bold tracking-tight">
+        <h2 className="text-xl font-bold tracking-tight">
           {selectedRide ? 'Ride Documents' : 'Global Documents'}
         </h2>
         <p className="text-sm text-muted-foreground">
           {selectedRide 
             ? `Documents for ${selectedRide.name}`
-            : 'Store documents that apply across your entire business, not tied to a specific ride or piece of equipment.'
+            : 'Store documents that apply across your entire business.'
           }
         </p>
-        {!selectedRide && (
-          <div className="bg-muted/50 border rounded-lg p-3 text-sm">
-            <p className="font-medium mb-2">What belongs in Global Documents?</p>
-            <div className="space-y-3">
-              <div>
-                <p className="font-medium text-primary mb-1">📋 Insurance Documents (Highly Recommended)</p>
-                <ul className="list-disc list-inside space-y-0.5 text-muted-foreground ml-2">
-                  <li>Public Liability Insurance - covers all equipment</li>
-                  <li>Employers Liability Insurance - covers all employees</li>
-                  <li>Equipment insurance - if covering multiple rides</li>
-                </ul>
-              </div>
-              <div>
-                <p className="font-medium mb-1">📄 Business & Compliance Documents</p>
-                <ul className="list-disc list-inside space-y-0.5 text-muted-foreground ml-2">
-                  <li>Showmen's Guild membership certificate</li>
-                  <li>Trading licenses and permits</li>
-                  <li>Company Health & Safety policies</li>
-                  <li>Business registration documents</li>
-                </ul>
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-3 pt-3 border-t">
-              💡 <strong>Tip:</strong> If a document covers your entire business operation (not just one specific ride), 
-              it belongs here. Ride-specific documents like DOC certificates and inspection reports should be added to individual rides.
-            </p>
-          </div>
-        )}
       </div>
 
+      {/* Info Box - Only show for global docs */}
+      {!selectedRide && (
+        <Card className="bg-muted/30 border-muted shadow-card">
+          <CardContent className="p-4 text-sm space-y-3">
+            <p className="font-medium">What belongs here?</p>
+            <div className="space-y-2 text-muted-foreground">
+              <div>
+                <p className="font-medium text-foreground text-xs">📋 Insurance Documents</p>
+                <p className="text-xs">Public Liability, Employers Liability, Equipment insurance</p>
+              </div>
+              <div>
+                <p className="font-medium text-foreground text-xs">📄 Business Documents</p>
+                <p className="text-xs">Showmen's Guild membership, Trading licenses, H&S policies</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Tabs */}
       <Tabs defaultValue="documents" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 gap-2 p-1.5 bg-muted/30 h-auto">
-          <TabsTrigger value="documents" className="flex items-center justify-center gap-2 py-2.5">
+        <TabsList className="grid w-full grid-cols-2 gap-1 p-1 bg-muted/50 h-auto">
+          <TabsTrigger value="documents" className="flex items-center justify-center gap-2 py-3 text-sm">
             <FileText className="h-4 w-4" />
-            <span className="text-xs sm:text-sm">View Files</span>
+            <span>View Files</span>
           </TabsTrigger>
-          <TabsTrigger value="upload" className="flex items-center justify-center gap-2 py-2.5">
+          <TabsTrigger value="upload" className="flex items-center justify-center gap-2 py-3 text-sm">
             <Upload className="h-4 w-4" />
-            <span className="text-xs sm:text-sm">Upload New</span>
+            <span>Upload New</span>
           </TabsTrigger>
         </TabsList>
 

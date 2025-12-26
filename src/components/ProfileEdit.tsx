@@ -87,20 +87,20 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="mb-4 p-4 bg-muted/50 rounded-lg">
-        <h4 className="font-medium text-sm mb-2">Role Definitions:</h4>
-        <ul className="text-xs text-muted-foreground space-y-1">
-          <li><strong>Controller:</strong> The person responsible for ride safety and compliance</li>
-          <li><strong>Showmen:</strong> The person who operates the fairground/show (may be same as controller)</li>
-          <li><strong>Owner:</strong> The person who owns individual rides (set separately for each ride)</li>
-        </ul>
+    <form onSubmit={handleSubmit} className="space-y-5">
+      {/* Role Definitions */}
+      <div className="p-3 bg-muted/50 rounded-lg text-xs space-y-1.5">
+        <p className="font-medium text-sm">Role Definitions:</p>
+        <p><strong>Controller:</strong> Responsible for ride safety and compliance</p>
+        <p><strong>Showmen:</strong> Operates the fairground/show (may be same as controller)</p>
+        <p><strong>Owner:</strong> Owns individual rides (set separately for each ride)</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Form Fields */}
+      <div className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="company_name" className="flex items-center gap-2">
-            <Building className="h-4 w-4" />
+          <Label htmlFor="company_name" className="flex items-center gap-2 text-sm">
+            <Building className="h-4 w-4 text-muted-foreground" />
             Company Name *
           </Label>
           <Input
@@ -109,15 +109,16 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
             onChange={(e) => handleInputChange('company_name', e.target.value)}
             placeholder="Enter company name"
             disabled={isLoading}
+            className="h-11"
           />
           {errors.company_name && (
-            <p className="text-sm text-destructive">{errors.company_name}</p>
+            <p className="text-xs text-destructive">{errors.company_name}</p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="controller_name" className="flex items-center gap-2">
-            <User className="h-4 w-4" />
+          <Label htmlFor="controller_name" className="flex items-center gap-2 text-sm">
+            <User className="h-4 w-4 text-muted-foreground" />
             Controller Name *
           </Label>
           <Input
@@ -126,15 +127,16 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
             onChange={(e) => handleInputChange('controller_name', e.target.value)}
             placeholder="Enter controller name"
             disabled={isLoading}
+            className="h-11"
           />
           {errors.controller_name && (
-            <p className="text-sm text-destructive">{errors.controller_name}</p>
+            <p className="text-xs text-destructive">{errors.controller_name}</p>
           )}
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="showmen_name" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
+          <Label htmlFor="showmen_name" className="flex items-center gap-2 text-sm">
+            <Users className="h-4 w-4 text-muted-foreground" />
             Showmen Name
           </Label>
           <Input
@@ -143,12 +145,13 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
             onChange={(e) => handleInputChange('showmen_name', e.target.value)}
             placeholder="Enter showmen name (optional)"
             disabled={isLoading}
+            className="h-11"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="address" className="flex items-center gap-2">
-            <MapPin className="h-4 w-4" />
+          <Label htmlFor="address" className="flex items-center gap-2 text-sm">
+            <MapPin className="h-4 w-4 text-muted-foreground" />
             Address
           </Label>
           <Input
@@ -157,19 +160,18 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
             onChange={(e) => handleInputChange('address', e.target.value)}
             placeholder="Enter address (optional)"
             disabled={isLoading}
+            className="h-11"
           />
         </div>
       </div>
 
-      <div className="flex justify-end gap-2 pt-4">
-        <Button
-          type="submit"
-          disabled={isLoading}
-          className="min-w-[120px]"
-        >
-          {isLoading ? 'Updating...' : 'Update Profile'}
-        </Button>
-      </div>
+      <Button
+        type="submit"
+        disabled={isLoading}
+        className="w-full h-11"
+      >
+        {isLoading ? 'Updating...' : 'Update Profile'}
+      </Button>
     </form>
   );
 };
