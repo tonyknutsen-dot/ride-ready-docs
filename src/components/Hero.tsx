@@ -15,7 +15,7 @@ const Hero = () => {
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   const handleDocsApp = () => {
-    const destination = user ? '/dashboard' : '/auth';
+    const destination = user ? '/overview' : '/auth';
     navigate(destination);
   };
 
