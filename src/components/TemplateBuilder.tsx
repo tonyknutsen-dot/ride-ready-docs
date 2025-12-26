@@ -481,6 +481,15 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                 <CardContent>
                   {libraryLoading ? (
                     <p className="text-muted-foreground">Loading check items...</p>
+                  ) : getCategoryItems('ride_specific').length === 0 ? (
+                    <div className="text-center py-6 space-y-3">
+                      <p className="text-muted-foreground">
+                        No pre-built items for {ride.ride_categories.name} yet.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Use the <strong>Custom</strong> tab to add your own ride-specific check items, or use the <strong>Quick Add</strong> button above to browse all available items.
+                      </p>
+                    </div>
                   ) : (
                     <div className="space-y-2">
                       {getCategoryItems('ride_specific').map((item) => (
