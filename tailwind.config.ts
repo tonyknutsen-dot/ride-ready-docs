@@ -58,6 +58,18 @@ export default {
           border: "hsl(var(--sidebar-border))",
           ring: "hsl(var(--sidebar-ring))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -67,13 +79,19 @@ export default {
       backgroundImage: {
         "hero-gradient": "var(--hero-gradient)",
         "accent-gradient": "var(--accent-gradient)",
+        "card-gradient": "var(--card-gradient)",
       },
       boxShadow: {
         elegant: "var(--shadow-elegant)",
         glow: "var(--shadow-glow)",
+        card: "var(--shadow-card)",
       },
       transitionTimingFunction: {
         smooth: "var(--transition-smooth)",
+      },
+      fontSize: {
+        "display-1": ["4rem", { lineHeight: "1.1", letterSpacing: "-0.02em" }],
+        "display-2": ["3rem", { lineHeight: "1.15", letterSpacing: "-0.01em" }],
       },
       keyframes: {
         "accordion-down": {
