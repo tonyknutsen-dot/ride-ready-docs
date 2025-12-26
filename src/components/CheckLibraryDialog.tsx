@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Badge } from "@/components/ui/badge";
 import { CheckSquare, Plus, Search, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-type Frequency = "daily" | "monthly" | "yearly";
+type Frequency = "daily" | "monthly" | "yearly" | "preuse";
 
 interface CheckLibraryItem {
   id: string;
