@@ -38,7 +38,7 @@ const Pricing = () => {
     <section className="py-12 md:py-16 bg-background">
       <div className="container mx-auto px-4 md:px-6">
         {/* Section Header */}
-        <div className="text-center mb-16 max-w-2xl mx-auto">
+        <div className="text-center mb-10 max-w-2xl mx-auto">
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 tracking-tight">
             Simple, <span className="text-primary">Transparent</span> Pricing
           </h2>
