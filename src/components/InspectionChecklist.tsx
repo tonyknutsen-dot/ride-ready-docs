@@ -387,20 +387,20 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         </AlertDescription>
       </Alert>
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>{activeTemplate.template_name}</span>
-            <div className="flex items-center space-x-2">
-              <Button variant="outline" size="sm" onClick={() => setShowTemplateBuilder(true)}>
-                <Settings className="h-4 w-4 mr-2" />
-                Edit Template
+        <CardHeader className="space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle className="text-base sm:text-lg">{activeTemplate.template_name}</CardTitle>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowTemplateBuilder(true)} className="flex-1 sm:flex-none">
+                <Settings className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Edit Template</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={generatePDF}>
-                <Download className="h-4 w-4 mr-2" />
-                Export PDF
+              <Button variant="outline" size="sm" onClick={generatePDF} className="flex-1 sm:flex-none">
+                <Download className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Export PDF</span>
               </Button>
             </div>
-          </CardTitle>
+          </div>
           <CardDescription>
             {activeTemplate.description}
           </CardDescription>
