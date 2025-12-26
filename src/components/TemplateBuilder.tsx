@@ -6,8 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Plus, Trash2, GripVertical, Save, Library, Edit3, CheckSquare } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft, Plus, Trash2, GripVertical, Save, Library, Info } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,7 +26,6 @@ type Template = Tables<'daily_check_templates'> & {
 };
 
 type LibraryItem = Tables<'check_item_library'>;
-type TemplateItem = Tables<'daily_check_template_items'>;
 
 interface TemplateBuilderProps {
   ride: Ride;
@@ -50,15 +49,11 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const { toast } = useToast();
   const defaultTemplateName = `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Safety Check`;
   const [templateName, setTemplateName] = useState(template?.template_name || defaultTemplateName);
-  const [libraryItems, setLibraryItems] = useState<LibraryItem[]>([]);
   const [selectedItems, setSelectedItems] = useState<BuilderItem[]>([]);
   const [customItemText, setCustomItemText] = useState('');
-  const [customItemRequired, setCustomItemRequired] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [libraryLoading, setLibraryLoading] = useState(true);
 
   useEffect(() => {
-    loadLibraryItems();
     if (template) {
       setSelectedItems(
         template.daily_check_template_items
@@ -74,69 +69,11 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     }
   }, [template]);
 
-  const loadLibraryItems = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('check_item_library')
-        .select('*')
-        .order('category', { ascending: true })
-        .order('sort_order', { ascending: true });
-
-      if (error) {
-        throw error;
-      }
-
-      setLibraryItems(data);
-    } catch (error: any) {
-      console.error('Error loading library items:', error);
-      toast({
-        title: "Error loading check items",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
-      setLibraryLoading(false);
-    }
-  };
-
-  const getCategoryItems = (category: string) => {
-    return libraryItems.filter(item => 
-      item.category === category || 
-      (category === 'ride_specific' && item.category === getRideCategoryKey())
-    );
-  };
-
-  const getRideCategoryKey = () => {
-    return ride.ride_categories.name.toLowerCase().replace(/\s+/g, '_');
-  };
-
-  const handleAddLibraryItem = (libraryItem: LibraryItem) => {
-    // Check if item already added
-    if (selectedItems.some(item => item.check_item_text === libraryItem.check_item_text)) {
-      toast({
-        title: "Item already added",
-        description: "This check item is already in your template",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const newItem: BuilderItem = {
-      check_item_text: libraryItem.check_item_text,
-      is_required: libraryItem.is_required,
-      category: libraryItem.category,
-      sort_order: selectedItems.length,
-      isNew: true,
-    };
-
-    setSelectedItems(prev => [...prev, newItem]);
-  };
-
   const handleAddCustomItem = () => {
     if (!customItemText.trim()) {
       toast({
         title: "Missing information",
-        description: "Please enter check item text",
+        description: "Please enter a check item",
         variant: "destructive",
       });
       return;
@@ -144,7 +81,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
     const newItem: BuilderItem = {
       check_item_text: customItemText.trim(),
-      is_required: customItemRequired,
+      is_required: true,
       category: 'custom',
       sort_order: selectedItems.length,
       isNew: true,
@@ -152,7 +89,10 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
     setSelectedItems(prev => [...prev, newItem]);
     setCustomItemText('');
-    setCustomItemRequired(true);
+    toast({
+      title: "Item added",
+      description: "Check item added to your template"
+    });
   };
 
   const handleRemoveItem = (index: number) => {
@@ -168,12 +108,6 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     [items[index], items[newIndex]] = [items[newIndex], items[index]];
     items.forEach((item, i) => item.sort_order = i);
     setSelectedItems(items);
-  };
-
-  const handleToggleRequired = (index: number) => {
-    setSelectedItems(prev => prev.map((item, i) => 
-      i === index ? { ...item, is_required: !item.is_required } : item
-    ));
   };
 
   const handleSaveTemplate = async () => {
@@ -217,7 +151,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
         if (deleteError) throw deleteError;
       } else {
-        // Create new template
+        // Create new template - set as active by default
         const { data: newTemplate, error: createError } = await supabase
           .from('daily_check_templates')
           .insert({
@@ -226,7 +160,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             template_name: templateName.trim(),
             check_frequency: frequency,
             template_type: frequency,
-            is_active: false,
+            is_active: true,
           })
           .select()
           .single();
@@ -252,7 +186,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
       toast({
         title: template ? "Template updated" : "Template created",
-        description: `Template "${templateName}" has been ${template ? 'updated' : 'created'} successfully`,
+        description: `Your ${frequency} check template is ready to use`,
       });
 
       onSuccess();
@@ -269,284 +203,180 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center space-x-4">
-        <Button variant="ghost" onClick={onCancel} className="flex items-center space-x-2">
-          <ArrowLeft className="h-4 w-4" />
-          <span>Back to check</span>
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={onCancel}>
+          <ArrowLeft className="h-4 w-4 mr-1" />
+          Back
         </Button>
-        <div className="flex-1">
-          <h3 className="text-xl font-semibold">
-            {template ? 'Edit' : 'Create'} {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check Template
+        <div>
+          <h3 className="font-semibold">
+            {template ? 'Edit' : 'Build'} {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check Template
           </h3>
-          <p className="text-muted-foreground">
-            Build a custom {frequency} template for {ride.ride_name} ({ride.ride_categories.name})
-          </p>
+          <p className="text-sm text-muted-foreground">{ride.ride_name}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Template Builder */}
-        <div className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Template Details</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Label htmlFor="name">Template Name</Label>
-                <Input
-                  id="name"
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                  placeholder="e.g., Morning Safety Checks"
-                />
-              </div>
-            </CardContent>
-          </Card>
+      {/* Instructions */}
+      <Alert>
+        <Info className="h-4 w-4" />
+        <AlertDescription>
+          Add check items that you want to verify each {frequency === 'daily' ? 'day' : frequency === 'monthly' ? 'month' : 'year'}. 
+          You can pick from our library or add your own custom checks specific to your equipment.
+        </AlertDescription>
+      </Alert>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <Edit3 className="h-5 w-5" />
-                <span>Selected Check Items ({selectedItems.length})</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {selectedItems.length === 0 ? (
-                <p className="text-muted-foreground text-center py-4">
-                  No check items added yet. Select from library or add custom items.
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {selectedItems.map((item, index) => (
-                    <div key={index} className="flex items-center space-x-2 p-2 border rounded">
-                      <div className="flex flex-col space-y-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleMoveItem(index, 'up')}
-                          disabled={index === 0}
-                          className="h-4 w-4 p-0"
-                        >
-                          ↑
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => handleMoveItem(index, 'down')}
-                          disabled={index === selectedItems.length - 1}
-                          className="h-4 w-4 p-0"
-                        >
-                          ↓
-                        </Button>
-                      </div>
-                      <GripVertical className="h-4 w-4 text-muted-foreground" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">{item.check_item_text}</p>
-                        <div className="flex items-center space-x-2 mt-1">
-                          <Badge variant={item.category === 'custom' ? 'secondary' : 'outline'} className="text-xs">
-                            {item.category === 'custom' ? 'Custom' : item.category}
-                          </Badge>
-                          <Checkbox checked={item.is_required} onCheckedChange={() => handleToggleRequired(index)} />
-                          <Label className="text-xs">Required</Label>
-                        </div>
-                      </div>
-                      <Button size="sm" variant="ghost" onClick={() => handleRemoveItem(index)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <div className="flex space-x-2">
-            <Button onClick={handleSaveTemplate} disabled={loading} className="flex-1">
-              <Save className="h-4 w-4 mr-2" />
-              {loading ? 'Saving...' : template ? 'Save changes' : 'Save template'}
-            </Button>
-            <Button variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
+      {/* Template Name */}
+      <Card>
+        <CardContent className="pt-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Template Name</Label>
+            <Input
+              id="name"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="e.g., Morning Safety Checks"
+            />
           </div>
-        </div>
+        </CardContent>
+      </Card>
 
-        {/* Item Library */}
-        <div className="space-y-4">
-          {/* Bulk Add from Enhanced Library */}
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <CheckSquare className="h-4 w-4" />
-                Quick Add: Bulk Select from Library
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Select multiple pre-built check items at once, including high-risk and ride-specific items
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CheckLibraryDialog
-                trigger={
-                  <Button className="w-full">
-                    <Library className="w-4 h-4 mr-2" />
-                    Browse & Add Multiple Items
-                  </Button>
-                }
-                frequency={frequency as "daily" | "monthly" | "yearly"}
-                rideCategoryId={ride.category_id}
-                onAdd={async (labels: string[]) => {
-                  // Add all selected items to the template
-                  const newItems: BuilderItem[] = labels.map((label, i) => ({
-                    check_item_text: label,
-                    is_required: true,
-                    category: 'library',
-                    sort_order: selectedItems.length + i,
-                    isNew: true,
-                  }));
-                  setSelectedItems(prev => [...prev, ...newItems]);
+      {/* Add Items Section */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">Add Check Items</CardTitle>
+          <CardDescription>
+            Add items from our library or type your own custom checks
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Quick Add from Library */}
+          <CheckLibraryDialog
+            trigger={
+              <Button variant="outline" className="w-full">
+                <Library className="w-4 h-4 mr-2" />
+                Browse Library Items
+              </Button>
+            }
+            frequency={frequency as "daily" | "monthly" | "yearly"}
+            rideCategoryId={ride.category_id}
+            onAdd={async (labels: string[]) => {
+              const newItems: BuilderItem[] = labels.map((label, i) => ({
+                check_item_text: label,
+                is_required: true,
+                category: 'library',
+                sort_order: selectedItems.length + i,
+                isNew: true,
+              }));
+              setSelectedItems(prev => [...prev, ...newItems]);
+              toast({
+                title: `${labels.length} item${labels.length > 1 ? 's' : ''} added`,
+                description: "Items added to your template"
+              });
+            }}
+          />
+
+          {/* Add Your Own */}
+          <div className="space-y-2">
+            <Label htmlFor="custom-item" className="text-sm font-medium">
+              Add Your Own Check Item
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                id="custom-item"
+                value={customItemText}
+                onChange={(e) => setCustomItemText(e.target.value)}
+                placeholder="e.g., Check hydraulic fluid levels"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCustomItem();
+                  }
                 }}
               />
-            </CardContent>
-          </Card>
+              <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()}>
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Press Enter or click + to add. Include any checks specific to your equipment that aren't in the library.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
-          <Tabs defaultValue="general" className="space-y-4">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="general">General</TabsTrigger>
-              <TabsTrigger value="ride_specific">Ride Specific</TabsTrigger>
-              <TabsTrigger value="custom">Custom</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="general">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Library className="h-5 w-5" />
-                    <span>General Safety Checks</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Standard safety checks that apply to all ride types
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {libraryLoading ? (
-                    <p className="text-muted-foreground">Loading check items...</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {getCategoryItems('general').map((item) => (
-                        <div key={item.id} className="flex items-center justify-between p-2 border rounded">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{item.check_item_text}</p>
-                            <p className="text-xs text-muted-foreground">{item.description}</p>
-                            <div className="flex items-center space-x-1 mt-1">
-                              <Badge variant="outline" className="text-xs">
-                                {item.is_required ? 'Required' : 'Optional'}
-                              </Badge>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => handleAddLibraryItem(item)}
-                            disabled={selectedItems.some(selected => selected.check_item_text === item.check_item_text)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="ride_specific">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Library className="h-5 w-5" />
-                    <span>{ride.ride_categories.name} Specific Checks</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Safety checks specific to {ride.ride_categories.name} rides
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {libraryLoading ? (
-                    <p className="text-muted-foreground">Loading check items...</p>
-                  ) : getCategoryItems('ride_specific').length === 0 ? (
-                    <div className="text-center py-6 space-y-3">
-                      <p className="text-muted-foreground">
-                        No pre-built items for {ride.ride_categories.name} yet.
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Use the <strong>Custom</strong> tab to add your own ride-specific check items, or use the <strong>Quick Add</strong> button above to browse all available items.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {getCategoryItems('ride_specific').map((item) => (
-                        <div key={item.id} className="flex items-center justify-between p-2 border rounded">
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">{item.check_item_text}</p>
-                            <p className="text-xs text-muted-foreground">{item.description}</p>
-                            <div className="flex items-center space-x-1 mt-1">
-                              <Badge variant="outline" className="text-xs">
-                                {item.is_required ? 'Required' : 'Optional'}
-                              </Badge>
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => handleAddLibraryItem(item)}
-                            disabled={selectedItems.some(selected => selected.check_item_text === item.check_item_text)}
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="custom">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Add Custom Check Item</CardTitle>
-                  <CardDescription>
-                    Create your own custom check items specific to your needs
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <Label htmlFor="custom-text">Check Item Text</Label>
-                    <Textarea
-                      id="custom-text"
-                      value={customItemText}
-                      onChange={(e) => setCustomItemText(e.target.value)}
-                      placeholder="e.g., Check oil levels in hydraulic system"
-                      rows={2}
-                    />
+      {/* Selected Items */}
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base">
+            Your Check Items ({selectedItems.length})
+          </CardTitle>
+          {selectedItems.length === 0 && (
+            <CardDescription>
+              No items added yet. Use the options above to add check items.
+            </CardDescription>
+          )}
+        </CardHeader>
+        {selectedItems.length > 0 && (
+          <CardContent>
+            <div className="space-y-2">
+              {selectedItems.map((item, index) => (
+                <div key={index} className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30">
+                  <div className="flex flex-col">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleMoveItem(index, 'up')}
+                      disabled={index === 0}
+                      className="h-5 w-5 p-0"
+                    >
+                      ↑
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleMoveItem(index, 'down')}
+                      disabled={index === selectedItems.length - 1}
+                      className="h-5 w-5 p-0"
+                    >
+                      ↓
+                    </Button>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="custom-required"
-                      checked={customItemRequired}
-                      onCheckedChange={(checked) => setCustomItemRequired(checked === true)}
-                    />
-                    <Label htmlFor="custom-required">Required check item</Label>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm truncate">{item.check_item_text}</p>
+                    <Badge variant="outline" className="text-xs mt-1">
+                      {item.category === 'custom' ? 'Custom' : item.category === 'library' ? 'Library' : item.category}
+                    </Badge>
                   </div>
-                  <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Custom Item
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleRemoveItem(index)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Save Button */}
+      <div className="flex gap-2">
+        <Button 
+          onClick={handleSaveTemplate} 
+          disabled={loading || selectedItems.length === 0} 
+          className="flex-1"
+        >
+          <Save className="h-4 w-4 mr-2" />
+          {loading ? 'Saving...' : template ? 'Save Changes' : 'Save & Start Using'}
+        </Button>
+        <Button variant="outline" onClick={onCancel}>
+          Cancel
+        </Button>
       </div>
     </div>
   );
