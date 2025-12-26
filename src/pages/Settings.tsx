@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Info } from 'lucide-react';
+import { Info, Settings as SettingsIcon, User, FileText, Mail } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import AppHeader from '@/components/AppHeader';
 
@@ -72,19 +72,27 @@ const Settings = () => {
   return (
     <>
       <AppHeader />
-      <div className="container mx-auto py-6 space-y-6 max-w-4xl pb-24 md:pb-6">
-        <div>
-          <h1 className="text-3xl font-bold">Settings</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage your profile and account settings
-          </p>
+      <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5 max-w-2xl">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+            <SettingsIcon className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold">Settings</h1>
+            <p className="text-sm text-muted-foreground">Manage your profile and account</p>
+          </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Profile Information</CardTitle>
-            <CardDescription>
-              Update your company and contact details. This information will be included when sending documents to councils.
+        {/* Profile Card */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base">Profile Information</CardTitle>
+            </div>
+            <CardDescription className="text-sm">
+              Update your company and contact details
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -100,15 +108,19 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Document Management</CardTitle>
-            <CardDescription>
-              Configure how documents are handled when uploading
+        {/* Document Management Card */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base">Document Management</CardTitle>
+            </div>
+            <CardDescription className="text-sm">
+              Configure how documents are handled
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between space-x-4">
+          <CardContent>
+            <div className="flex items-start justify-between gap-4">
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="version-control" className="text-sm font-medium">
@@ -117,18 +129,18 @@ const Settings = () => {
                   <TooltipProvider>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground cursor-help" />
+                        <Info className="h-4 w-4 text-muted-foreground" />
                       </TooltipTrigger>
-                      <TooltipContent className="max-w-sm">
-                        <p className="font-semibold mb-2">What is Document Version Control?</p>
-                        <p className="mb-2"><strong>When ON (Recommended):</strong> Uploading a document with the same name creates a new version (v1.0, v2.0, etc.). All previous versions are kept in history and remain accessible.</p>
-                        <p><strong>When OFF:</strong> Uploading a document with the same name completely replaces and deletes the old one. No version history is maintained.</p>
+                      <TooltipContent className="max-w-xs">
+                        <p className="font-semibold mb-2">What is Version Control?</p>
+                        <p className="mb-2"><strong>ON:</strong> Creates new versions (v1.0, v2.0) when uploading same-named documents.</p>
+                        <p><strong>OFF:</strong> Replaces and deletes old documents with the same name.</p>
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  When enabled, uploading a document with the same name creates a new version instead of replacing the original. All versions are kept for your records.
+                  Keep all versions of uploaded documents for your records
                 </p>
               </div>
               <Switch
@@ -141,16 +153,21 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Account</CardTitle>
-            <CardDescription>
+        {/* Account Card */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Mail className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base">Account</CardTitle>
+            </div>
+            <CardDescription className="text-sm">
               Your account email
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium">Email:</span> {user?.email}
+            <p className="text-sm">
+              <span className="text-muted-foreground">Email: </span>
+              <span className="font-medium">{user?.email}</span>
             </p>
           </CardContent>
         </Card>

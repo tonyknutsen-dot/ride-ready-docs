@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, FileText, CheckSquare, Calendar, Upload, Settings, AlertTriangle, Mail, Wrench, Pencil } from 'lucide-react';
+import { ArrowLeft, FileText, CheckSquare, Upload, Settings, Mail, Wrench, Pencil } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -51,14 +51,12 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
     if (!user) return;
 
     try {
-      // Get document count for this ride
       const { count: docCount } = await supabase
         .from('documents')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('ride_id', ride.id);
 
-      // Get today's inspection checks count
       const today = new Date().toISOString().split('T')[0];
       const { count: todayChecks } = await supabase
         .from('checks')
@@ -67,7 +65,6 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
         .eq('ride_id', ride.id)
         .eq('check_date', today);
 
-      // Get maintenance records count for this ride
       const { count: maintenanceCount } = await supabase
         .from('maintenance_records')
         .select('*', { count: 'exact', head: true })
@@ -93,7 +90,7 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
 
   if (isEditing) {
     return (
-      <div className="pb-24 md:pb-6">
+      <div className="space-y-4">
         <RideForm 
           ride={ride} 
           onSuccess={handleEditSuccess} 
@@ -104,209 +101,184 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
   }
 
   return (
-    <div className="space-y-4 md:space-y-6 pb-24 md:pb-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <Button variant="outline" onClick={onBack} className="w-fit flex items-center gap-2">
+    <div className="space-y-5">
+      {/* Header Actions */}
+      <div className="flex flex-col gap-3">
+        <Button variant="outline" onClick={onBack} className="w-fit h-10 flex items-center gap-2">
           <ArrowLeft className="h-4 w-4" />
-          <span>Back to Rides</span>
+          <span>Back</span>
         </Button>
+        
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => setIsEditing(true)} className="w-fit flex items-center gap-2">
+          <Button variant="outline" onClick={() => setIsEditing(true)} className="flex-1 sm:flex-none h-11 flex items-center justify-center gap-2">
             <Pencil className="h-4 w-4" />
             <span>Edit</span>
           </Button>
           <SendDocumentsDialog 
             ride={ride}
             trigger={
-              <Button className="w-fit flex items-center gap-2">
+              <Button className="flex-1 sm:flex-none h-11 flex items-center justify-center gap-2">
                 <Mail className="h-4 w-4" />
-                <span>Send Documents</span>
+                <span>Send Docs</span>
               </Button>
             }
           />
         </div>
       </div>
 
-      {/* Ride Title & Badge */}
+      {/* Ride Title */}
       <div className="space-y-2">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="text-2xl md:text-3xl font-bold break-words">{ride.ride_name}</h2>
+          <h2 className="text-xl md:text-2xl font-bold break-words">{ride.ride_name}</h2>
           <Badge variant="secondary" className="text-xs">{ride.ride_categories.name}</Badge>
         </div>
         <p className="text-sm text-muted-foreground">
-          Manage documentation and safety checks for this equipment
+          Manage documentation and safety checks
         </p>
       </div>
 
       {/* Ride Info Card */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Settings className="h-5 w-5" />
-            <span>Ride Information</span>
+      <Card className="shadow-card">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Settings className="h-4 w-4 text-primary" />
+            <span>Equipment Info</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
+          <div className="grid grid-cols-2 gap-4 text-sm">
             <div className="space-y-1">
-              <span className="font-medium text-xs uppercase text-muted-foreground">Category</span>
-              <p className="text-foreground">{ride.ride_categories.name}</p>
+              <span className="text-xs text-muted-foreground uppercase">Category</span>
+              <p className="font-medium">{ride.ride_categories.name}</p>
             </div>
             <div className="space-y-1">
-              <span className="font-medium text-xs uppercase text-muted-foreground">Manufacturer</span>
-              <p className="text-foreground break-words">{ride.manufacturer || 'Not specified'}</p>
+              <span className="text-xs text-muted-foreground uppercase">Manufacturer</span>
+              <p className="font-medium break-words">{ride.manufacturer || '—'}</p>
             </div>
             <div className="space-y-1">
-              <span className="font-medium text-xs uppercase text-muted-foreground">Year</span>
-              <p className="text-foreground">{ride.year_manufactured || 'Not specified'}</p>
+              <span className="text-xs text-muted-foreground uppercase">Year</span>
+              <p className="font-medium">{ride.year_manufactured || '—'}</p>
             </div>
             <div className="space-y-1">
-              <span className="font-medium text-xs uppercase text-muted-foreground">Serial Number</span>
-              <p className="text-foreground break-all">{ride.serial_number || 'Not specified'}</p>
-            </div>
-            <div className="space-y-1">
-              <span className="font-medium text-xs uppercase text-muted-foreground">Owner</span>
-              <p className="text-foreground break-words">{ride.owner_name || 'Not specified'}</p>
+              <span className="text-xs text-muted-foreground uppercase">Serial</span>
+              <p className="font-medium break-all">{ride.serial_number || '—'}</p>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 md:space-y-6">
-        {/* Mobile & Desktop: Responsive grid */}
-        <TabsList className={`grid w-full gap-1.5 p-1.5 bg-muted/30 h-auto ${isAdvanced ? 'grid-cols-2 sm:grid-cols-5' : 'grid-cols-2'}`}>
-          <TabsTrigger value="overview" className="flex items-center justify-center gap-2 py-2.5">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
+        <TabsList className={`grid w-full gap-1 p-1 bg-muted/50 h-auto ${isAdvanced ? 'grid-cols-4' : 'grid-cols-2'}`}>
+          <TabsTrigger value="overview" className="flex items-center justify-center gap-1.5 py-3 text-xs sm:text-sm">
             <FileText className="h-4 w-4" />
-            <span className="text-xs sm:text-sm">Home</span>
+            <span className="hidden xs:inline">Home</span>
           </TabsTrigger>
-          <TabsTrigger value="documents" className="flex items-center justify-center gap-2 py-2.5">
+          <TabsTrigger value="documents" className="flex items-center justify-center gap-1.5 py-3 text-xs sm:text-sm">
             <Upload className="h-4 w-4" />
-            <span className="text-xs sm:text-sm">Docs</span>
+            <span className="hidden xs:inline">Docs</span>
           </TabsTrigger>
           {isAdvanced && (
             <>
-              <TabsTrigger value="inspections" className="flex items-center justify-center gap-2 py-2.5">
+              <TabsTrigger value="inspections" className="flex items-center justify-center gap-1.5 py-3 text-xs sm:text-sm">
                 <CheckSquare className="h-4 w-4" />
-                <span className="text-xs sm:text-sm">Checks</span>
+                <span className="hidden xs:inline">Checks</span>
               </TabsTrigger>
-              <TabsTrigger value="maintenance" className="flex items-center justify-center gap-2 py-2.5">
+              <TabsTrigger value="maintenance" className="flex items-center justify-center gap-1.5 py-3 text-xs sm:text-sm">
                 <Wrench className="h-4 w-4" />
-                <span className="text-xs sm:text-sm">Maint</span>
+                <span className="hidden xs:inline">Maint</span>
               </TabsTrigger>
             </>
           )}
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4 md:space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  <span>Documents</span>
-                </CardTitle>
-                <CardDescription>
-                  Upload and manage ride documents
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-primary">
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Documents Card */}
+            <Card className="shadow-card">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                    <FileText className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold">Documents</p>
+                    <p className="text-2xl font-bold text-primary">
                       {rideStats.loading ? '...' : rideStats.docCount}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Documents uploaded
                     </p>
                   </div>
-                  <Button onClick={() => setActiveTab("documents")} className="w-full">
-                    Manage Documents
-                  </Button>
                 </div>
+                <Button onClick={() => setActiveTab("documents")} className="w-full mt-4 h-11">
+                  Manage Documents
+                </Button>
               </CardContent>
             </Card>
 
+            {/* Maintenance Card */}
             <FeatureGate 
               requiredPlan="advanced" 
               feature="Maintenance Logging"
               fallback={
                 <RestrictedFeatureCard
                   title="Maintenance"
-                  description="Log maintenance activities with photos and documentation"
+                  description="Log maintenance activities"
                   icon={<Wrench className="h-5 w-5" />}
                   requiredPlan="advanced"
                 />
               }
             >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <Wrench className="h-5 w-5 text-primary" />
-                    <span>Maintenance</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Log maintenance with photos
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-primary">
+              <Card className="shadow-card">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-accent/20 flex items-center justify-center shrink-0">
+                      <Wrench className="h-6 w-6 text-accent-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold">Maintenance</p>
+                      <p className="text-2xl font-bold text-accent-foreground">
                         {rideStats.loading ? '...' : rideStats.maintenanceCount}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Records logged
                       </p>
                     </div>
-                    <Button onClick={() => setActiveTab("maintenance")} className="w-full">
-                      Log Maintenance
-                    </Button>
                   </div>
+                  <Button onClick={() => setActiveTab("maintenance")} className="w-full mt-4 h-11">
+                    Log Maintenance
+                  </Button>
                 </CardContent>
               </Card>
             </FeatureGate>
 
+            {/* Inspections Card */}
             <FeatureGate 
               requiredPlan="advanced" 
-              feature="Daily Inspections & Checks"
+              feature="Inspections"
               fallback={
                 <RestrictedFeatureCard
                   title="Inspections"
-                  description="Manage all inspection types including daily checks, annual inspections, and NDT testing"
+                  description="Manage inspection checks"
                   icon={<CheckSquare className="h-5 w-5" />}
                   requiredPlan="advanced"
                 />
               }
             >
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center space-x-2">
-                    <CheckSquare className="h-5 w-5 text-accent" />
-                    <span>Inspections</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Manage all inspection types
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-accent">
+              <Card className="shadow-card sm:col-span-2">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
+                      <CheckSquare className="h-6 w-6 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold">Today's Checks</p>
+                      <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                         {rideStats.loading ? '...' : rideStats.todayChecks}
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Checks completed today
                       </p>
                     </div>
-                    <Button onClick={() => setActiveTab("inspections")} variant="outline" className="w-full">
-                      Start Inspections
-                    </Button>
                   </div>
+                  <Button onClick={() => setActiveTab("inspections")} variant="outline" className="w-full mt-4 h-11">
+                    Start Inspection
+                  </Button>
                 </CardContent>
               </Card>
             </FeatureGate>
-
           </div>
         </TabsContent>
 
@@ -315,7 +287,7 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
         </TabsContent>
 
         <TabsContent value="inspections">
-          <FeatureGate requiredPlan="advanced" feature="Daily Inspections & Checks">
+          <FeatureGate requiredPlan="advanced" feature="Inspections">
             <InspectionManager ride={ride} />
           </FeatureGate>
         </TabsContent>
