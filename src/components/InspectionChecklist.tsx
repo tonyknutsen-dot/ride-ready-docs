@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus } from 'lucide-react';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -340,25 +340,26 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     );
   }
 
-  if (!activeTemplate) {
-    if (showTemplateBuilder) {
-      return (
-        <TemplateBuilder
-          ride={ride}
-          frequency={frequency}
-          onSuccess={() => {
-            setShowTemplateBuilder(false);
-            loadActiveTemplate();
-            toast({
-              title: "Template created",
-              description: "Your template has been created. Don't forget to activate it!"
-            });
-          }}
-          onCancel={() => setShowTemplateBuilder(false)}
-        />
-      );
-    }
+  if (showTemplateBuilder) {
+    return (
+      <TemplateBuilder
+        ride={ride}
+        template={activeTemplate}
+        frequency={frequency}
+        onSuccess={() => {
+          setShowTemplateBuilder(false);
+          loadActiveTemplate();
+          toast({
+            title: "Template saved",
+            description: "Your checklist template is ready to use.",
+          });
+        }}
+        onCancel={() => setShowTemplateBuilder(false)}
+      />
+    );
+  }
 
+  if (!activeTemplate) {
     return (
       <Card>
         <CardContent className="pt-6">
@@ -390,6 +391,10 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
           <CardTitle className="flex items-center justify-between">
             <span>{activeTemplate.template_name}</span>
             <div className="flex items-center space-x-2">
+              <Button variant="outline" size="sm" onClick={() => setShowTemplateBuilder(true)}>
+                <Settings className="h-4 w-4 mr-2" />
+                Edit Template
+              </Button>
               <Button variant="outline" size="sm" onClick={generatePDF}>
                 <Download className="h-4 w-4 mr-2" />
                 Export PDF
