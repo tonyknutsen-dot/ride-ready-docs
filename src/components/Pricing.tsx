@@ -1,117 +1,164 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check } from "lucide-react";
+import { Check, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+
 const Pricing = () => {
   const navigate = useNavigate();
-  const {
-    user
-  } = useAuth();
-  const basicFeatures = ["Ride & equipment management", "Document storage (up to 100 documents)", "Email alerts 30 & 7 days before document expiry", "Basic document types supported", "Organize documents by ride and equipment", "Web-based dashboard access", "Email support"];
-  const advancedFeatures = ["All Documents & Compliance features", "Unlimited document storage", "All document types supported", "Daily, monthly & yearly checks", "Inspection management & scheduling", "NDT testing schedules", "Maintenance tracking", "Calendar & scheduling system", "Notifications & alerts", "Risk assessment builder (downloadable, printable, emailable)", "Automated compliance reminders", "Council-ready document packages", "Advanced reporting & analytics", "Priority 24/7 support", "Multi-user collaboration"];
-  return <section className="bg-background py-[22px]">
-      <div className="container mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 text-primary">
-            Simple, Transparent Pricing
+  const { user } = useAuth();
+
+  const basicFeatures = [
+    "Ride & equipment management",
+    "Document storage (up to 100 documents)",
+    "Email alerts 30 & 7 days before expiry",
+    "Basic document types supported",
+    "Organize documents by ride",
+    "Web-based dashboard access",
+    "Email support"
+  ];
+
+  const advancedFeatures = [
+    "Everything in Essential, plus:",
+    "Unlimited document storage",
+    "All document types supported",
+    "Daily, monthly & yearly checks",
+    "Inspection management & scheduling",
+    "NDT testing schedules",
+    "Maintenance tracking",
+    "Calendar & scheduling system",
+    "Risk assessment builder",
+    "Council-ready document packages",
+    "Advanced reporting & analytics",
+    "Priority 24/7 support"
+  ];
+
+  return (
+    <section className="py-20 md:py-28 bg-background">
+      <div className="container mx-auto px-4 md:px-6">
+        {/* Section Header */}
+        <div className="text-center mb-16 max-w-2xl mx-auto">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 tracking-tight">
+            Simple, <span className="text-primary">Transparent</span> Pricing
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Choose the perfect plan for your fairground documentation needs.
+          <p className="text-lg text-muted-foreground">
+            Choose the perfect plan for your fairground documentation needs. No hidden fees.
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
-          {/* Basic Plan */}
-          <Card className="relative shadow-elegant hover:shadow-glow transition-smooth border-2 border-muted/20">
-            <CardHeader className="text-center pt-8 pb-6">
-              <CardTitle className="text-2xl font-bold text-primary mb-2">
+        <div className="grid md:grid-cols-2 gap-6 lg:gap-8 max-w-5xl mx-auto">
+          {/* Essential Plan */}
+          <Card className="relative border-2 border-border/50 shadow-card hover:shadow-elegant transition-all duration-300">
+            <CardHeader className="text-center pb-6 pt-8">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-accent/10 rounded-xl mb-4 mx-auto">
+                <Star className="h-6 w-6 text-accent" />
+              </div>
+              <CardTitle className="text-2xl font-bold mb-2">
                 Documents & Compliance
               </CardTitle>
-              <div className="text-sm text-muted-foreground font-medium mb-3">
+              <p className="text-sm text-muted-foreground mb-4">
                 Essential plan for fairground operators
-              </div>
-              <div className="mb-4">
-                <span className="text-4xl font-bold text-primary">£12.99</span>
-                <span className="text-xl text-muted-foreground">/month</span>
-              </div>
-              <p className="text-muted-foreground">
-                Essential document storage for fairground operators
               </p>
+              <div className="flex items-baseline justify-center gap-1">
+                <span className="text-4xl md:text-5xl font-bold">£12.99</span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
             </CardHeader>
 
             <CardContent className="px-6 pb-8">
               <ul className="space-y-3 mb-8">
-                {basicFeatures.map((feature, index) => <li key={index} className="flex items-center">
-                    <div className="bg-primary/10 rounded-full p-1 mr-3 flex-shrink-0">
-                      <Check className="h-4 w-4 text-primary" />
+                {basicFeatures.map((feature, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-5 h-5 bg-accent/10 rounded-full flex items-center justify-center mt-0.5">
+                      <Check className="h-3 w-3 text-accent" />
                     </div>
-                    <span className="text-foreground text-sm">{feature}</span>
-                  </li>)}
+                    <span className="text-sm text-foreground/80">{feature}</span>
+                  </li>
+                ))}
               </ul>
 
-              <Button variant="outline" className="w-full py-3 text-lg font-semibold transition-smooth" size="lg" onClick={() => navigate(user ? '/dashboard' : '/auth')}>
+              <Button 
+                variant="outline" 
+                className="w-full py-5 text-base font-semibold border-2 hover:bg-accent/5 hover:border-accent/50 transition-all" 
+                size="lg" 
+                onClick={() => navigate(user ? '/overview' : '/auth')}
+              >
                 {user ? 'Go to Dashboard' : 'Start Free Trial'}
               </Button>
             </CardContent>
           </Card>
 
           {/* Advanced Plan */}
-          <Card className="relative shadow-elegant hover:shadow-glow transition-smooth border-2 border-primary/20">
+          <Card className="relative border-2 border-primary/30 shadow-elegant bg-gradient-to-b from-primary/[0.02] to-transparent">
             {/* Popular badge */}
-            <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-              <div className="bg-primary px-6 py-2 rounded-full">
-                <span className="text-sm font-semibold text-primary-foreground">Most Popular</span>
+            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+              <div className="bg-primary text-primary-foreground px-4 py-1 rounded-full text-sm font-semibold shadow-lg">
+                Most Popular
               </div>
             </div>
 
-            <CardHeader className="text-center pt-12 pb-6">
-              <CardTitle className="text-2xl font-bold text-primary mb-2">
+            <CardHeader className="text-center pb-6 pt-10">
+              <div className="inline-flex items-center justify-center w-12 h-12 bg-primary/10 rounded-xl mb-4 mx-auto">
+                <Star className="h-6 w-6 text-primary fill-primary" />
+              </div>
+              <CardTitle className="text-2xl font-bold mb-2">
                 Operations & Maintenance
               </CardTitle>
-              <div className="text-sm text-muted-foreground font-medium mb-3">
+              <p className="text-sm text-muted-foreground mb-4">
                 Complete documents + operations solution
-              </div>
-              <div className="mb-4">
-                <span className="text-4xl font-bold text-primary">£27.99</span>
-                <span className="text-xl text-muted-foreground">/month</span>
-              </div>
-              <p className="text-muted-foreground">
-                Complete document storage + operations & maintenance solution
               </p>
+              <div className="flex items-baseline justify-center gap-1">
+                <span className="text-4xl md:text-5xl font-bold text-primary">£27.99</span>
+                <span className="text-muted-foreground">/month</span>
+              </div>
             </CardHeader>
 
             <CardContent className="px-6 pb-8">
               <ul className="space-y-3 mb-8">
-                {advancedFeatures.map((feature, index) => <li key={index} className="flex items-center">
-                    <div className="bg-primary/10 rounded-full p-1 mr-3 flex-shrink-0">
-                      <Check className="h-4 w-4 text-primary" />
+                {advancedFeatures.map((feature, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <div className="flex-shrink-0 w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5">
+                      <Check className="h-3 w-3 text-primary" />
                     </div>
-                    <span className="text-foreground text-sm">{feature}</span>
-                  </li>)}
+                    <span className={`text-sm ${index === 0 ? 'font-medium text-primary' : 'text-foreground/80'}`}>
+                      {feature}
+                    </span>
+                  </li>
+                ))}
               </ul>
 
-              <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-3 text-lg font-semibold shadow-elegant transition-smooth" size="lg" onClick={() => navigate(user ? '/dashboard' : '/auth')}>
+              <Button 
+                className="w-full py-5 text-base font-semibold bg-primary hover:bg-primary/90 shadow-elegant transition-all" 
+                size="lg" 
+                onClick={() => navigate(user ? '/overview' : '/auth')}
+              >
                 {user ? 'Go to Dashboard' : 'Start Free Trial'}
               </Button>
 
-              <div className="text-center mt-4 space-y-1 text-sm text-muted-foreground">
-                <p>✓ No setup fees • ✓ Cancel anytime</p>
-                <p>✓ Full access during trial period</p>
-              </div>
+              <p className="text-center mt-4 text-xs text-muted-foreground">
+                ✓ No setup fees • ✓ Full access during trial
+              </p>
             </CardContent>
           </Card>
         </div>
 
+        {/* Bottom CTA */}
         <div className="text-center mt-12">
           <p className="text-muted-foreground mb-4">
             Need a custom solution for your fairground business?
           </p>
-          <Button variant="outline" size="lg" onClick={() => navigate(user ? '/dashboard' : '/auth')}>
-            {user ? 'Go to Dashboard' : 'Contact Sales'}
+          <Button 
+            variant="ghost" 
+            size="lg" 
+            className="text-primary hover:text-primary hover:bg-primary/5"
+            onClick={() => navigate('/auth')}
+          >
+            Contact Sales →
           </Button>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
+
 export default Pricing;

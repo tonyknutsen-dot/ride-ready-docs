@@ -191,19 +191,19 @@ const Auth = () => {
 
   if (showResetForm) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <div className="w-full max-w-md space-y-6">
-          <div className="text-center space-y-2">
-            <div className="inline-block bg-white/95 p-4 rounded-2xl mx-auto">
-            <img src={logo} alt="Showmen's Ride Ready" className="h-40 w-auto" />
+      <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary/50 flex items-center justify-center p-4">
+        <div className="w-full max-w-md space-y-6 animate-fade-up">
+          <div className="text-center space-y-3">
+            <div className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto">
+              <img src={logo} alt="Showmen's Ride Ready" className="h-28 w-auto" />
             </div>
             <h1 className="text-2xl font-bold">Reset Password</h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Enter your email to receive reset instructions
             </p>
           </div>
 
-          <Card>
+          <Card className="shadow-elegant border-border/50">
             <CardContent className="pt-6">
               <form onSubmit={handlePasswordReset} className="space-y-4">
                 <div className="space-y-2">
@@ -260,26 +260,26 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center space-y-2">
-          <div className="inline-block bg-white/95 p-4 rounded-2xl mx-auto">
-            <img src={logo} alt="Showmen's Ride Ready" className="h-40 w-auto" />
+    <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary/50 flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6 animate-fade-up">
+        <div className="text-center space-y-3">
+          <div className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto">
+            <img src={logo} alt="Showmen's Ride Ready" className="h-28 w-auto" />
           </div>
           <h1 className="text-2xl font-bold">Showmen's Ride Ready</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground text-sm">
             Access your ride operations system
           </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 bg-muted/50">
             <TabsTrigger value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="signin" className="space-y-4">
-            <Card>
+          <TabsContent value="signin" className="space-y-4 mt-4">
+            <Card className="shadow-elegant border-border/50">
               <CardHeader>
                 <CardTitle>Sign In</CardTitle>
                 <CardDescription>
@@ -347,8 +347,8 @@ const Auth = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="signup" className="space-y-4">
-            <Card>
+          <TabsContent value="signup" className="space-y-4 mt-4">
+            <Card className="shadow-elegant border-border/50">
               <CardHeader>
                 <CardTitle>Create Account</CardTitle>
                 <CardDescription>
