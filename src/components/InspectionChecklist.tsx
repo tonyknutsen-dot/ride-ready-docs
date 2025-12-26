@@ -9,7 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings } from 'lucide-react';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -332,6 +333,33 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     }
   };
 
+  const handleDeleteTemplate = async () => {
+    if (!activeTemplate) return;
+
+    try {
+      const { error } = await supabase
+        .from('daily_check_templates')
+        .delete()
+        .eq('id', activeTemplate.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Template deleted",
+        description: "The template has been successfully deleted",
+      });
+
+      setActiveTemplate(null);
+    } catch (error: any) {
+      console.error('Error deleting template:', error);
+      toast({
+        title: "Error deleting template",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center py-8">
@@ -399,6 +427,32 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                 <Download className="h-4 w-4 sm:mr-2" />
                 <span className="hidden sm:inline">Export PDF</span>
               </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
+                    <Trash2 className="h-4 w-4 sm:mr-2" />
+                    <span className="hidden sm:inline">Delete</span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete "{activeTemplate.template_name}"? 
+                      This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDeleteTemplate}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
           <CardDescription>
