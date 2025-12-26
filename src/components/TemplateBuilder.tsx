@@ -276,10 +276,10 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         </Button>
         <div className="flex-1">
           <h3 className="text-xl font-semibold">
-            {template ? 'Edit' : 'Create'} Daily Check Template
+            {template ? 'Edit' : 'Create'} {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check Template
           </h3>
           <p className="text-muted-foreground">
-            Build a custom template for {ride.ride_name} ({ride.ride_categories.name})
+            Build a custom {frequency} template for {ride.ride_name} ({ride.ride_categories.name})
           </p>
         </div>
       </div>
