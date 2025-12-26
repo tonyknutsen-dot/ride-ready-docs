@@ -16,7 +16,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Tables } from '@/integrations/supabase/types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import TemplateBuilder from './TemplateBuilder';
+import DailyCheckTemplateManager from './DailyCheckTemplateManager';
+import MonthlyCheckTemplateManager from './MonthlyCheckTemplateManager';
+import YearlyCheckTemplateManager from './YearlyCheckTemplateManager';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -49,7 +51,6 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const [signatureData, setSignatureData] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -341,24 +342,17 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   }
 
   if (!activeTemplate) {
-    if (showTemplateBuilder) {
-      return (
-        <TemplateBuilder
-          ride={ride}
-          frequency={frequency}
-          onSuccess={() => {
-            setShowTemplateBuilder(false);
-            loadActiveTemplate();
-            toast({
-              title: "Template created",
-              description: "Your template has been created. Don't forget to activate it!"
-            });
-          }}
-          onCancel={() => setShowTemplateBuilder(false)}
-        />
-      );
+    // Use the appropriate template manager based on frequency
+    // This provides a consistent flow across daily/monthly/yearly
+    if (frequency === 'daily') {
+      return <DailyCheckTemplateManager ride={ride} />;
+    } else if (frequency === 'monthly') {
+      return <MonthlyCheckTemplateManager ride={ride} />;
+    } else if (frequency === 'yearly') {
+      return <YearlyCheckTemplateManager ride={ride} />;
     }
-
+    
+    // Fallback for any other frequency
     return (
       <Card>
         <CardContent className="pt-6">
@@ -368,10 +362,6 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
             <p className="text-muted-foreground">
               Create a {frequency} inspection template to start performing checks
             </p>
-            <Button onClick={() => setShowTemplateBuilder(true)} className="mt-4">
-              <Plus className="h-4 w-4 mr-2" />
-              Create Template
-            </Button>
           </div>
         </CardContent>
       </Card>
