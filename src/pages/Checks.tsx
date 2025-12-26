@@ -14,7 +14,7 @@ type Ride = Tables<'rides'> & {
   };
 };
 
-type CheckFrequency = 'preuse' | 'daily' | 'monthly' | 'yearly';
+type CheckFrequency = 'daily' | 'monthly' | 'yearly';
 
 const Checks = () => {
   const [frequency, setFrequency] = useState<CheckFrequency | null>(null);
@@ -47,23 +47,16 @@ const Checks = () => {
 
   const frequencyOptions = [
     {
-      value: 'preuse' as CheckFrequency,
-      label: 'Pre-Use Check',
-      description: 'Function test before public use',
-      icon: CheckSquare,
-      color: 'bg-purple-500',
-    },
-    {
       value: 'daily' as CheckFrequency,
       label: 'Daily Check',
-      description: 'Visual and safety inspection',
+      description: 'Pre-operational safety check',
       icon: Clock,
       color: 'bg-blue-500',
     },
     {
       value: 'monthly' as CheckFrequency,
       label: 'Monthly Check',
-      description: 'Component and parts inspection',
+      description: 'Thorough monthly inspection',
       icon: Calendar,
       color: 'bg-amber-500',
     },
