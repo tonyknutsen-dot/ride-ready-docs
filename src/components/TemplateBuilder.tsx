@@ -61,12 +61,12 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     if (template) {
       setSelectedItems(
         template.daily_check_template_items
-          .sort((a, b) => a.sort_order - b.sort_order)
+          .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
           .map((item, index) => ({
             id: item.id,
             check_item_text: item.check_item_text,
-            is_required: item.is_required,
-            category: item.category,
+            is_required: item.is_required ?? true,
+            category: item.category ?? 'general',
             sort_order: index,
           }))
       );
