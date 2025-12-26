@@ -35,7 +35,7 @@ const Pricing = () => {
   ];
 
   return (
-    <section className="py-20 md:py-28 bg-background">
+    <section className="py-12 md:py-16 bg-background">
       <div className="container mx-auto px-4 md:px-6">
         {/* Section Header */}
         <div className="text-center mb-16 max-w-2xl mx-auto">
