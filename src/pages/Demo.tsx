@@ -249,22 +249,30 @@ const Demo = () => {
                 </h2>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="space-y-3 relative">
+                  {/* Blur overlay for privacy */}
+                  <div className="absolute inset-0 backdrop-blur-sm bg-background/30 z-10 flex items-center justify-center rounded-lg">
+                    <div className="text-center p-4">
+                      <Shield className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
+                      <p className="text-sm font-medium text-muted-foreground">Documents are private</p>
+                      <p className="text-xs text-muted-foreground">Sign in to view your files</p>
+                    </div>
+                  </div>
                   {[
-                    { name: "Safety Certificate - Carousel Mk3.pdf", date: "March 15, 2024", status: "Valid" },
-                    { name: "Insurance Policy - Public Liability.pdf", date: "March 10, 2024", status: "Valid" },
-                    { name: "NDT Report - Ferris Wheel Structure.pdf", date: "March 8, 2024", status: "Valid" },
-                    { name: "Technical Bulletin TB-2024-001.pdf", date: "March 5, 2024", status: "New" }
+                    { name: "Safety Certificate - ████████.pdf", date: "March 15, 2024", status: "Valid" },
+                    { name: "Insurance Policy - ████████.pdf", date: "March 10, 2024", status: "Valid" },
+                    { name: "NDT Report - ████████.pdf", date: "March 8, 2024", status: "Valid" },
+                    { name: "Technical Bulletin ████████.pdf", date: "March 5, 2024", status: "New" }
                   ].map((doc, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center space-x-3">
                         <FileText className="w-5 h-5 text-muted-foreground" />
                         <div>
-                          <div className="font-medium">{doc.name}</div>
-                          <div className="text-sm text-muted-foreground">{doc.date}</div>
+                          <div className="font-medium text-muted-foreground/50">{doc.name}</div>
+                          <div className="text-sm text-muted-foreground/50">{doc.date}</div>
                         </div>
                       </div>
-                      <Badge variant={doc.status === "New" ? "default" : "secondary"}>
+                      <Badge variant="secondary" className="opacity-50">
                         {doc.status}
                       </Badge>
                     </div>
@@ -283,13 +291,20 @@ const Demo = () => {
                   Recent Activity
                 </h2>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-4 relative">
+                {/* Blur overlay for privacy */}
+                <div className="absolute inset-0 backdrop-blur-sm bg-background/30 z-10 flex items-center justify-center rounded-lg">
+                  <div className="text-center p-4">
+                    <Shield className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-xs font-medium text-muted-foreground">Activity is private</p>
+                  </div>
+                </div>
                 {recentActivity.map((activity, index) => (
                   <div key={index} className="flex items-start space-x-3">
                     <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
                     <div>
-                      <div className="font-medium text-sm">{activity.title}</div>
-                      <div className="text-xs text-muted-foreground">{activity.time}</div>
+                      <div className="font-medium text-sm text-muted-foreground/50">████████ - ████████</div>
+                      <div className="text-xs text-muted-foreground/50">{activity.time}</div>
                     </div>
                   </div>
                 ))}
