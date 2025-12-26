@@ -1,9 +1,8 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Home, FolderOpen, Shield, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown } from 'lucide-react';
+import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { QuickDocumentUpload } from '@/components/QuickDocumentUpload';
 import { useState } from 'react';
 import {
   DropdownMenu,
@@ -15,16 +14,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
-import { AppModeToggle } from '@/components/AppModeToggle';
-import { useAppMode } from '@/contexts/AppModeContext';
 import logo from '@/assets/logo.png';
 
 const AppHeader = () => {
   const location = useLocation();
   const { signOut } = useAuth();
   const { toast } = useToast();
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
-  const { isDocumentsMode } = useAppMode();
 
   const handleSignOut = async () => {
     try {
@@ -80,26 +75,15 @@ const AppHeader = () => {
               Overview
             </NavLink>
             <NavLink to="/rides" icon={FolderOpen} active={isActive('/rides')}>
-              {isDocumentsMode ? 'Rides' : 'Equipment'}
+              Rides
             </NavLink>
-            {isDocumentsMode && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-2 font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
-                onClick={() => setUploadDialogOpen(true)}
-              >
-                <Shield className="h-4 w-4" />
-                Add Doc
-              </Button>
-            )}
+            <NavLink to="/global-documents" icon={FileText} active={isActive('/global-documents')}>
+              Documents
+            </NavLink>
           </nav>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* App Mode Toggle */}
-          <AppModeToggle variant="compact" />
-          
           {/* More Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -121,15 +105,6 @@ const AppHeader = () => {
                   Homepage
                 </Link>
               </DropdownMenuItem>
-              
-              {isDocumentsMode && (
-                <DropdownMenuItem asChild>
-                  <Link to="/global-documents" className="flex items-center cursor-pointer">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Global Documents
-                  </Link>
-                </DropdownMenuItem>
-              )}
               
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
@@ -187,12 +162,6 @@ const AppHeader = () => {
           </Button>
         </div>
       </div>
-
-      {/* Quick Document Upload Dialog */}
-      <QuickDocumentUpload 
-        open={uploadDialogOpen} 
-        onOpenChange={setUploadDialogOpen} 
-      />
     </header>
   );
 };
