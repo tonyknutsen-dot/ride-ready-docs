@@ -241,6 +241,45 @@ const Overview = () => {
         </div>
       </div>
 
+      {/* PRIMARY ACTION - Start a Check */}
+      <FeatureGate 
+        requiredPlan="advanced" 
+        feature="Daily Checks" 
+        fallback={
+          <Card className="border-dashed border-2 border-border/50 bg-muted/20">
+            <CardContent className="p-6 text-center">
+              <div className="p-3 bg-muted rounded-full w-fit mx-auto mb-3">
+                <CheckCircle className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <h3 className="font-semibold mb-1">Safety Checks</h3>
+              <p className="text-sm text-muted-foreground mb-4">Perform daily, monthly & yearly safety checks</p>
+              <Button onClick={() => navigate('/billing')}>
+                Upgrade to unlock
+              </Button>
+            </CardContent>
+          </Card>
+        }
+      >
+        <Card 
+          className="group cursor-pointer border-2 border-success/30 bg-gradient-to-r from-success/5 to-success/10 hover:shadow-lg transition-all active:scale-[0.98]"
+          onClick={() => navigate('/checks')}
+        >
+          <CardContent className="p-6 flex items-center gap-5">
+            <div className="p-4 bg-success/20 rounded-2xl group-hover:bg-success/30 transition-colors">
+              <CheckCircle className="h-10 w-10 text-success" />
+            </div>
+            <div className="flex-1">
+              <h2 className="text-xl font-bold text-success mb-1">Start Safety Check</h2>
+              <p className="text-sm text-muted-foreground">Perform daily, monthly or yearly inspections on your equipment</p>
+            </div>
+            <div className="text-right">
+              <p className="text-3xl font-bold text-success">{stats.recentChecks}</p>
+              <p className="text-xs text-muted-foreground">This week</p>
+            </div>
+          </CardContent>
+        </Card>
+      </FeatureGate>
+
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/50" onClick={() => navigate('/rides')}>
@@ -275,18 +314,18 @@ const Overview = () => {
 
         <FeatureGate 
           requiredPlan="advanced" 
-          feature="Daily Checks" 
+          feature="Maintenance" 
           fallback={
             <Card className="border-dashed border-border/50 bg-muted/30">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="p-2 bg-muted rounded-lg">
-                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
+                    <Wrench className="h-4 w-4 text-muted-foreground" />
                   </div>
                   <Lock className="h-3.5 w-3.5 text-muted-foreground" />
                 </div>
-                <div className="text-lg font-semibold text-muted-foreground mb-1">Checks</div>
-                <div className="text-xs text-muted-foreground mb-3">Track safety checks</div>
+                <div className="text-lg font-semibold text-muted-foreground mb-1">Maintenance</div>
+                <div className="text-xs text-muted-foreground mb-3">Track repairs</div>
                 <Button size="sm" variant="outline" className="w-full text-xs h-8" onClick={() => navigate('/billing')}>
                   Upgrade
                 </Button>
@@ -294,18 +333,18 @@ const Overview = () => {
             </Card>
           }
         >
-          <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/50" onClick={() => navigate('/checks')}>
+          <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/50" onClick={() => navigate('/rides')}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-success/10 rounded-lg group-hover:bg-success/15 transition-colors">
-                  <CheckCircle className="h-4 w-4 text-success" />
+                <div className="p-2 bg-amber-500/10 rounded-lg group-hover:bg-amber-500/15 transition-colors">
+                  <Wrench className="h-4 w-4 text-amber-500" />
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
               <div className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-                {stats.recentChecks}
+                {stats.maintenanceRecords}
               </div>
-              <div className="text-xs text-muted-foreground">Checks This Week</div>
+              <div className="text-xs text-muted-foreground">Maintenance</div>
             </CardContent>
           </Card>
         </FeatureGate>

@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Home, FolderOpen, PlusCircle, MoreHorizontal,
-  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText
+  Home, FolderOpen, CheckSquare, MoreHorizontal,
+  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
@@ -30,23 +30,27 @@ export default function MobileBottomNav() {
     onClick, 
     active, 
     icon: Icon, 
-    label 
+    label,
+    highlight = false
   }: { 
     onClick: () => void; 
     active: boolean; 
     icon: any; 
     label: string;
+    highlight?: boolean;
   }) => (
     <button
       onClick={onClick}
       className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-[11px] font-medium transition-colors ${
         active 
           ? "text-primary bg-primary/5" 
+          : highlight
+          ? "text-success"
           : "text-muted-foreground hover:text-foreground"
       }`}
       aria-label={label}
     >
-      <Icon className="h-5 w-5" />
+      <Icon className={`h-5 w-5 ${highlight && !active ? 'text-success' : ''}`} />
       <span className="mt-1">{label}</span>
     </button>
   );
@@ -62,7 +66,7 @@ export default function MobileBottomNav() {
           }}
           active={isActive(["/overview"])}
           icon={Home}
-          label="Overview"
+          label="Home"
         />
 
         {/* Rides/Equipment */}
@@ -73,6 +77,15 @@ export default function MobileBottomNav() {
           label="Rides"
         />
 
+        {/* CHECKS - Now prominent in center */}
+        <NavButton 
+          onClick={() => go("/checks")}
+          active={isActive(["/checks"])}
+          icon={CheckSquare}
+          label="Checks"
+          highlight={true}
+        />
+
         {/* Calendar */}
         <NavButton 
           onClick={() => go("/calendar")}
@@ -80,18 +93,6 @@ export default function MobileBottomNav() {
           icon={CalendarIcon}
           label="Calendar"
         />
-
-        {/* Primary Add */}
-        <button
-          onClick={() => setUploadDialogOpen(true)}
-          className="flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-[11px] font-medium text-accent hover:bg-accent/5 transition-colors"
-          aria-label="Add Document"
-        >
-          <div className="p-1.5 bg-accent rounded-full">
-            <PlusCircle className="h-5 w-5 text-accent-foreground" />
-          </div>
-          <span className="mt-1">Add</span>
-        </button>
 
         {/* More */}
         <Sheet open={open} onOpenChange={setOpen}>
@@ -118,17 +119,17 @@ export default function MobileBottomNav() {
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
+                    onClick={() => setUploadDialogOpen(true)}
+                  >
+                    <PlusCircle className="h-4 w-4 text-accent" />
+                    Add Document
+                  </button>
+                  <button
+                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
                     onClick={() => go("/global-documents")}
                   >
                     <FileText className="h-4 w-4 text-primary" />
                     Global Docs
-                  </button>
-                  <button
-                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
-                    onClick={() => go("/calendar")}
-                  >
-                    <CalendarIcon className="h-4 w-4 text-primary" />
-                    Calendar
                   </button>
                 </div>
               </div>
