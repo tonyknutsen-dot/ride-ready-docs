@@ -25,9 +25,10 @@ type Template = Tables<'daily_check_templates'> & {
 
 interface DailyCheckTemplateManagerProps {
   ride: Ride;
+  frequency?: string;
 }
 
-const DailyCheckTemplateManager = ({ ride }: DailyCheckTemplateManagerProps) => {
+const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemplateManagerProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [templates, setTemplates] = useState<Template[]>([]);
@@ -51,7 +52,7 @@ const DailyCheckTemplateManager = ({ ride }: DailyCheckTemplateManagerProps) => 
         `)
         .eq('user_id', user?.id)
         .eq('ride_id', ride.id)
-        .eq('check_frequency', 'daily')
+        .eq('check_frequency', frequency)
         .order('created_at', { ascending: false });
 
       if (error) {

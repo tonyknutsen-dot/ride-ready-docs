@@ -43,6 +43,7 @@ type CheckWithResults = Check & {
 interface ChecksHistoryProps {
   rideId: string;
   rideName: string;
+  frequency?: string;
 }
 
 interface MonthGroup {
@@ -53,7 +54,7 @@ interface MonthGroup {
   passedChecks: number;
 }
 
-const ChecksHistory = ({ rideId, rideName }: ChecksHistoryProps) => {
+const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [checks, setChecks] = useState<CheckWithResults[]>([]);
@@ -115,6 +116,7 @@ const ChecksHistory = ({ rideId, rideName }: ChecksHistoryProps) => {
         `)
         .eq('user_id', user?.id)
         .eq('ride_id', rideId)
+        .eq('check_frequency', frequency)
         .gte('check_date', startDate)
         .lte('check_date', endDate)
         .order('check_date', { ascending: false });
