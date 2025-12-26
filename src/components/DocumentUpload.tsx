@@ -1,17 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Upload, Info, FileText } from 'lucide-react';
+import { Upload, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import RequestDocumentTypeDialog from './RequestDocumentTypeDialog';
 
 const documentTypes = [
   { id: 'doc', name: '📜 DOC Certificate (Declaration of Compliance)', description: '⭐ REQUIRED - Your single-sheet certificate to operate in the UK', featured: true },
@@ -80,11 +76,9 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   // Early return: require ride unless it's a global document
   if (!rideId && !isGlobal) {
     return (
-      <Card>
-        <CardContent className="py-6">
-          <div className="text-sm">Pick a ride first to add a document, or check the "Global Document" option below.</div>
-        </CardContent>
-      </Card>
+      <div className="p-4 rounded-lg border border-dashed text-center text-sm text-muted-foreground">
+        Pick a ride first to add a document, or check "Global Document" below.
+      </div>
     );
   }
 
@@ -240,223 +234,166 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   };
 
   return (
-    <Card className="shadow-sm">
-      <CardHeader className="space-y-1 pb-4">
-        <CardTitle className="text-xl">Upload Document</CardTitle>
-        <CardDescription className="text-sm">
-          {isGlobal 
-            ? 'Adding a global document (applies to all equipment)'
-            : `Adding to: ${rideName || 'this ride'}`
-          }
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-5">
-        {/* Document Type & File Selection - Side by side on desktop */}
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="type" className="text-sm font-medium">Document Type *</Label>
-            <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
-              <SelectTrigger className="h-10">
-                <SelectValue placeholder="Select document type..." />
-              </SelectTrigger>
-              <SelectContent>
-                {documentTypes.map((type) => (
-                  <SelectItem key={type.id} value={type.id}>
-                    <div className={(type as any).featured ? 'py-1' : ''}>
-                      <div className={`font-medium ${(type as any).featured ? 'text-primary' : ''}`}>{type.name}</div>
-                      <div className={`text-xs ${(type as any).featured ? 'text-primary/70 font-medium' : 'text-muted-foreground'}`}>{type.description}</div>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              type="button"
-              variant="link"
-              size="sm"
-              onClick={() => {}}
-              className="p-0 h-auto text-xs text-muted-foreground hover:text-primary"
-            >
-              Don't see your type? Request one
-            </Button>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="file" className="text-sm font-medium">Select File *</Label>
-            <div className="flex flex-col gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={uploading}
-                className="w-full justify-start gap-2 h-auto py-3"
-              >
-                <Upload className="h-4 w-4" />
-                <span className="flex-1 text-left truncate">
-                  {selectedFile ? selectedFile.name : 'Choose a file...'}
-                </span>
-              </Button>
-              <Input
-                ref={fileInputRef}
-                id="file"
-                type="file"
-                onChange={handleFileSelect}
-                accept={documentType === 'photo'
-                  ? 'image/*'
-                  : '.pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf'}
-                // @ts-ignore - capture attribute opens camera on mobile
-                capture={documentType === 'photo' ? 'environment' : undefined}
-                disabled={uploading}
-                className="hidden"
+    <div className="space-y-4">
+      {/* File Drop Zone */}
+      <div 
+        className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer hover:border-primary/50 hover:bg-muted/30 active:scale-[0.99] ${
+          selectedFile ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
+        }`}
+        onClick={() => fileInputRef.current?.click()}
+      >
+        <Input
+          ref={fileInputRef}
+          id="file"
+          type="file"
+          onChange={handleFileSelect}
+          accept={documentType === 'photo'
+            ? 'image/*'
+            : '.pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf'}
+          // @ts-ignore - capture attribute opens camera on mobile
+          capture={documentType === 'photo' ? 'environment' : undefined}
+          disabled={uploading}
+          className="hidden"
+        />
+        
+        {selectedFile ? (
+          <div className="flex items-center justify-center gap-3">
+            {selectedFile.type.startsWith('image/') ? (
+              <img
+                src={URL.createObjectURL(selectedFile)}
+                alt="Preview"
+                className="h-12 w-12 rounded-lg object-cover"
+                onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
               />
-            </div>
-            {documentType === 'photo' && (
-              <p className="text-xs text-muted-foreground">
-                Tip: Take a clear photo of the whole device and ID plate
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* File Preview */}
-        {selectedFile && (
-          <div className="rounded-lg border bg-muted/30 p-4">
-            <div className="flex items-start gap-3">
-              {selectedFile.type.startsWith('image/') && documentType === 'photo' ? (
-                <img
-                  src={URL.createObjectURL(selectedFile)}
-                  alt="Preview"
-                  className="h-16 w-16 rounded border object-cover"
-                  onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
-                />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded border bg-background">
-                  <FileText className="h-8 w-8 text-muted-foreground" />
-                </div>
-              )}
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{selectedFile.name}</p>
-                <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+            ) : (
+              <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
+                <FileText className="h-6 w-6 text-muted-foreground" />
               </div>
+            )}
+            <div className="text-left">
+              <p className="text-sm font-medium truncate max-w-[200px]">{selectedFile.name}</p>
+              <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
             </div>
           </div>
+        ) : (
+          <>
+            <Upload className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+            <p className="text-sm font-medium">Tap to select file</p>
+            <p className="text-xs text-muted-foreground mt-1">PDF, images, documents</p>
+          </>
         )}
+      </div>
 
-        {/* Document Details */}
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-sm font-medium">Document Name *</Label>
+      {/* Form Fields */}
+      <div className="space-y-3">
+        {/* Document Type */}
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">Type</Label>
+          <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
+            <SelectTrigger className="h-11">
+              <SelectValue placeholder="Select type..." />
+            </SelectTrigger>
+            <SelectContent>
+              {documentTypes.map((type) => (
+                <SelectItem key={type.id} value={type.id}>
+                  <span className={(type as any).featured ? 'text-primary font-medium' : ''}>{type.name}</span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Document Name */}
+        <div className="space-y-1.5">
+          <Label className="text-xs font-medium text-muted-foreground">Name</Label>
+          <Input
+            value={documentName}
+            onChange={(e) => setDocumentName(e.target.value)}
+            placeholder="e.g., Risk Assessment 2024"
+            disabled={uploading}
+            className="h-11"
+          />
+        </div>
+
+        {/* Expiry & Notes Row */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Expires</Label>
             <Input
-              id="name"
-              value={documentName}
-              onChange={(e) => setDocumentName(e.target.value)}
-              placeholder="e.g., Risk Assessment 2024"
+              type="date"
+              value={expiryDate}
+              onChange={(e) => setExpiryDate(e.target.value)}
               disabled={uploading}
-              className="h-10"
+              className="h-11"
             />
           </div>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="expiry" className="text-sm font-medium">Expiry Date (optional)</Label>
-              <Input
-                id="expiry"
-                type="date"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-                disabled={uploading}
-                className="h-10"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="notes" className="text-sm font-medium">Notes (optional)</Label>
-              <Textarea
-                id="notes"
-                value={notes}
-                onChange={(e) => setNotes(e.target.value)}
-                placeholder="Additional notes..."
-                disabled={uploading}
-                rows={1}
-                className="resize-none"
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground">Notes</Label>
+            <Input
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Optional..."
+              disabled={uploading}
+              className="h-11"
+            />
           </div>
         </div>
 
-        {/* Global Document Checkbox */}
-        <div className="space-y-3 pt-3 border-t">
-          <div className="flex items-start gap-3">
-            <Checkbox
-              id="is-global"
-              checked={isGlobal}
-              onCheckedChange={(checked) => setIsGlobal(checked as boolean)}
-              disabled={uploading}
-            />
-            <div className="space-y-1">
-              <Label htmlFor="is-global" className="text-sm font-medium cursor-pointer">
-                This is a Global Document
-              </Label>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Global documents apply to all your equipment (e.g., <strong>Public Liability Insurance</strong> covering all rides, 
-                <strong> Employers Liability Insurance</strong>, Showmen's Guild membership, business licenses). 
-                They'll appear at the top of every ride's document list.
-              </p>
-              {documentType === 'insurance' && !isGlobal && (
-                <p className="text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded px-2 py-1.5 mt-2">
-                  💡 <strong>Tip:</strong> Most insurance documents should be marked as Global Documents since they typically cover your entire business.
-                </p>
-              )}
-            </div>
+        {/* Global Document Toggle */}
+        <div 
+          className={`flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${
+            isGlobal ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/30'
+          }`}
+          onClick={() => setIsGlobal(!isGlobal)}
+        >
+          <Checkbox
+            id="is-global"
+            checked={isGlobal}
+            onCheckedChange={(checked) => setIsGlobal(checked as boolean)}
+            disabled={uploading}
+          />
+          <div className="flex-1 min-w-0">
+            <Label htmlFor="is-global" className="text-sm font-medium cursor-pointer">
+              Global Document
+            </Label>
+            <p className="text-[11px] text-muted-foreground">Applies to all rides</p>
           </div>
         </div>
 
-        {/* Version Control - Only show if user has it enabled in settings */}
+        {/* Version Control - Collapsible */}
         {userVersioningEnabled && (
-          <div className="space-y-3 pt-3 border-t">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="version-toggle" className="text-sm font-medium cursor-pointer flex items-center gap-2">
-                Version Control
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-muted-foreground cursor-help" />
-                    </TooltipTrigger>
-                    <TooltipContent className="max-w-xs">
-                      <p>Track document versions and keep history of previous versions</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </Label>
-              <input
-                id="version-toggle"
-                type="checkbox"
+          <div 
+            className={`rounded-lg border transition-colors ${
+              useVersionControl ? 'border-primary/30 bg-primary/5' : 'border-border'
+            }`}
+          >
+            <div 
+              className="flex items-center gap-3 p-3 cursor-pointer"
+              onClick={() => setUseVersionControl(!useVersionControl)}
+            >
+              <Checkbox
                 checked={useVersionControl}
-                onChange={(e) => setUseVersionControl(e.target.checked)}
+                onCheckedChange={(checked) => setUseVersionControl(checked as boolean)}
                 disabled={uploading}
-                className="w-4 h-4 cursor-pointer accent-primary"
               />
+              <div className="flex-1">
+                <span className="text-sm font-medium">Version Control</span>
+              </div>
             </div>
             
             {useVersionControl && (
-            <div className="space-y-3 pl-3 border-l-2 border-primary/20 mt-3">
-              <p className="text-xs text-muted-foreground">
-                Create a new version and mark previous versions as superseded
-              </p>
-
-              {existingDocuments.length > 0 && (
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Replace Document</Label>
+              <div className="px-3 pb-3 space-y-3 border-t border-border/50 pt-3">
+                {existingDocuments.length > 0 && (
                   <Select
                     value={replacingDocumentId || "new"}
                     onValueChange={(value) => setReplacingDocumentId(value === "new" ? null : value)}
                     disabled={uploading}
                   >
-                    <SelectTrigger className="h-9">
-                      <SelectValue />
+                    <SelectTrigger className="h-10">
+                      <SelectValue placeholder="Replace existing..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="new">Create as new document</SelectItem>
+                      <SelectItem value="new">New document</SelectItem>
                       {existingDocuments.map((doc) => (
                         <SelectItem key={doc.id} value={doc.id}>
                           v{doc.version_number} ({new Date(doc.uploaded_at).toLocaleDateString()})
@@ -464,54 +401,39 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-              )}
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="version" className="text-sm">Version</Label>
+                )}
+                <div className="grid grid-cols-2 gap-2">
                   <Input
-                    id="version"
-                    type="text"
-                    placeholder="e.g., 2.0"
+                    placeholder="Version"
                     value={versionNumber}
                     onChange={(e) => setVersionNumber(e.target.value)}
                     disabled={uploading}
-                    className="h-9"
+                    className="h-10"
                   />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="version-notes" className="text-sm">What Changed</Label>
                   <Input
-                    id="version-notes"
-                    placeholder="Brief description..."
+                    placeholder="What changed"
                     value={versionNotes}
                     onChange={(e) => setVersionNotes(e.target.value)}
                     disabled={uploading}
-                    className="h-9"
+                    className="h-10"
                   />
                 </div>
-              </div>
               </div>
             )}
           </div>
         )}
+      </div>
 
-        {/* Upload Button */}
-        <div className="flex gap-3 pt-2">
-          <Button 
-            onClick={handleUpload} 
-            disabled={uploading || !selectedFile || !documentName || !documentType} 
-            className="flex-1 sm:flex-none h-10"
-          >
-            <Upload className="mr-2 h-4 w-4" />
-            {uploading ? 'Uploading...' : 'Upload Document'}
-          </Button>
-        </div>
-      </CardContent>
-      <RequestDocumentTypeDialog />
-    </Card>
+      {/* Upload Button */}
+      <Button 
+        onClick={handleUpload} 
+        disabled={uploading || !selectedFile || !documentName || !documentType} 
+        className="w-full h-12 text-base"
+      >
+        <Upload className="mr-2 h-5 w-5" />
+        {uploading ? 'Uploading...' : 'Upload'}
+      </Button>
+    </div>
   );
 };
 
