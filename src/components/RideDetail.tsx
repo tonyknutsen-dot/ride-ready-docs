@@ -200,6 +200,41 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
 
         <TabsContent value="overview" className="space-y-4 animate-fade-in">
           <div className="grid grid-cols-1 gap-3">
+            {/* CHECKS - Main Priority Action */}
+            <FeatureGate 
+              requiredPlan="advanced" 
+              feature="Inspections"
+              fallback={
+                <RestrictedFeatureCard
+                  title="Safety Checks"
+                  description="Perform daily, monthly & yearly checks"
+                  icon={<CheckSquare className="h-5 w-5" />}
+                  requiredPlan="advanced"
+                />
+              }
+            >
+              <Card 
+                className="shadow-card active:scale-[0.98] transition-transform cursor-pointer border-2 border-success/30 bg-gradient-to-r from-success/5 to-success/10"
+                onClick={() => setActiveTab("inspections")}
+              >
+                <CardContent className="p-5 flex items-center gap-4">
+                  <div className="w-16 h-16 rounded-2xl bg-success/20 flex items-center justify-center shrink-0">
+                    <CheckSquare className="h-8 w-8 text-success" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-base text-success">Start Safety Check</p>
+                    <p className="text-sm text-muted-foreground">Daily, monthly or yearly inspections</p>
+                  </div>
+                  <div className="text-right shrink-0">
+                    <p className="text-2xl font-bold text-success">
+                      {rideStats.loading ? '...' : rideStats.todayChecks}
+                    </p>
+                    <p className="text-[10px] text-muted-foreground uppercase">Today</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </FeatureGate>
+
             {/* Documents Quick Action */}
             <Card 
               className="shadow-card active:scale-[0.98] transition-transform cursor-pointer"
@@ -252,41 +287,6 @@ const RideDetail = ({ ride, onBack, onUpdate }: RideDetailProps) => {
                       {rideStats.loading ? '...' : rideStats.maintenanceCount}
                     </p>
                     <p className="text-[10px] text-muted-foreground uppercase">Records</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </FeatureGate>
-
-            {/* Inspections Quick Action */}
-            <FeatureGate 
-              requiredPlan="advanced" 
-              feature="Inspections"
-              fallback={
-                <RestrictedFeatureCard
-                  title="Inspections"
-                  description="Manage inspection checks"
-                  icon={<CheckSquare className="h-5 w-5" />}
-                  requiredPlan="advanced"
-                />
-              }
-            >
-              <Card 
-                className="shadow-card active:scale-[0.98] transition-transform cursor-pointer"
-                onClick={() => setActiveTab("inspections")}
-              >
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center shrink-0">
-                    <CheckSquare className="h-7 w-7 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm">Inspections</p>
-                    <p className="text-xs text-muted-foreground">Daily and periodic checks</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                      {rideStats.loading ? '...' : rideStats.todayChecks}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground uppercase">Today</p>
                   </div>
                 </CardContent>
               </Card>
