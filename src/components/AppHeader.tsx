@@ -87,7 +87,7 @@ const AppHeader = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* More Menu */}
+          {/* More Menu - Secondary items only */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-1.5 text-muted-foreground hover:text-foreground">
@@ -98,14 +98,13 @@ const AppHeader = () => {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 z-[100] bg-popover shadow-elegant border-border/50">
               <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
-                Navigation
+                Features
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
               
               <DropdownMenuItem asChild>
-                <Link to="/" className="flex items-center cursor-pointer">
-                  <Home className="h-4 w-4 mr-2" />
-                  Homepage
+                <Link to="/checks" className="flex items-center cursor-pointer">
+                  <ShieldCheck className="h-4 w-4 mr-2" />
+                  Checks
                 </Link>
               </DropdownMenuItem>
               
@@ -129,6 +128,13 @@ const AppHeader = () => {
               </DropdownMenuItem>
               
               <DropdownMenuItem asChild>
+                <Link to="/settings" className="flex items-center cursor-pointer">
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Link>
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem asChild>
                 <Link to="/help" className="flex items-center cursor-pointer">
                   <HelpCircle className="h-4 w-4 mr-2" />
                   Help & Support
@@ -136,40 +142,22 @@ const AppHeader = () => {
               </DropdownMenuItem>
               
               <RequestFeatureDialog />
-
-              <DropdownMenuItem asChild>
-                <Link to="/settings" className="flex items-center cursor-pointer">
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
               
               <DropdownMenuSeparator />
               
               <ContactSupportDialog />
+              
+              <DropdownMenuSeparator />
+              
+              <DropdownMenuItem 
+                onClick={handleSignOut}
+                className="text-destructive focus:text-destructive cursor-pointer"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          <Link to="/settings" className="hidden sm:block">
-            <Button 
-              variant={isActive('/settings') ? 'default' : 'ghost'} 
-              size="sm" 
-              className={`gap-2 ${isActive('/settings') ? '' : 'text-muted-foreground hover:text-foreground'}`}
-            >
-              <Settings className="h-4 w-4" />
-              <span className="hidden md:inline">Settings</span>
-            </Button>
-          </Link>
-          
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleSignOut} 
-            className="gap-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-          >
-            <LogOut className="h-4 w-4" />
-            <span className="hidden sm:inline">Sign Out</span>
-          </Button>
         </div>
       </div>
     </header>
