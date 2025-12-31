@@ -75,7 +75,9 @@ const Pricing = () => {
                     <div className="flex-shrink-0 w-5 h-5 bg-accent/10 rounded-full flex items-center justify-center mt-0.5">
                       <Check className="h-3 w-3 text-accent" />
                     </div>
-                    <span className="text-sm text-foreground/80">{feature}</span>
+                    <span className={`text-sm ${index === 1 ? 'font-medium text-accent' : 'text-foreground/80'}`}>
+                      {feature}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -123,7 +125,7 @@ const Pricing = () => {
                     <div className="flex-shrink-0 w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5">
                       <Check className="h-3 w-3 text-primary" />
                     </div>
-                    <span className={`text-sm ${index === 0 ? 'font-medium text-primary' : 'text-foreground/80'}`}>
+                    <span className={`text-sm ${index === 0 || index === 2 ? 'font-medium text-primary' : 'text-foreground/80'}`}>
                       {feature}
                     </span>
                   </li>
