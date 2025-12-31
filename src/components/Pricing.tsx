@@ -9,7 +9,8 @@ const Pricing = () => {
   const { user } = useAuth();
 
   const basicFeatures = [
-    "Up to 8 rides or equipment",
+    "Up to 10 rides or equipment",
+    "50p/month per additional ride",
     "Document storage (up to 100 documents)",
     "Email alerts 30 & 7 days before expiry",
     "Basic document types supported",
