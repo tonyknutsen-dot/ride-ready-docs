@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown, ShieldCheck } from 'lucide-react';
+import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown, ShieldCheck, Calendar as CalendarIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import {
@@ -76,6 +76,9 @@ const AppHeader = () => {
             </NavLink>
             <NavLink to="/rides" icon={FolderOpen} active={isActive('/rides')}>
               Rides
+            </NavLink>
+            <NavLink to="/calendar" icon={CalendarIcon} active={isActive('/calendar')}>
+              Calendar
             </NavLink>
             <NavLink to="/global-documents" icon={FileText} active={isActive('/global-documents')}>
               Documents
