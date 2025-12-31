@@ -94,7 +94,7 @@ const Features = () => {
             {docsFeatures.map((feature, index) => (
               <Card 
                 key={index} 
-                className="group border-border/50 bg-card shadow-card hover:shadow-elegant transition-all duration-300 hover:-translate-y-1"
+                className="group border-border/50 bg-card shadow-card hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 hover:ring-2 hover:ring-accent/30"
               >
                 <CardHeader className="pb-3">
                   <div className="text-accent mb-3 group-hover:scale-110 transition-transform duration-300">
@@ -132,7 +132,7 @@ const Features = () => {
             {checksFeatures.map((feature, index) => (
               <Card 
                 key={index} 
-                className="group border-border/50 bg-card shadow-card hover:shadow-elegant transition-all duration-300 hover:-translate-y-1"
+                className="group border-border/50 bg-card shadow-card hover:shadow-elegant transition-all duration-300 hover:-translate-y-1 hover:ring-2 hover:ring-primary/30"
               >
                 <CardHeader className="pb-3">
                   <div className="text-primary mb-3 group-hover:scale-110 transition-transform duration-300">
