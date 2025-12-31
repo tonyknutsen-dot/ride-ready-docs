@@ -9,6 +9,9 @@ import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
 
+// Routes where the mobile nav should NOT appear (public pages)
+const PUBLIC_ROUTES = ['/', '/auth', '/demo', '/how-it-works', '/privacy', '/terms', '/help', '/security'];
+
 export default function MobileBottomNav() {
   const nav = useNavigate();
   const loc = useLocation();
@@ -16,7 +19,8 @@ export default function MobileBottomNav() {
   const [open, setOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
-  if (!user) return null;
+  // Don't show on public pages or if not logged in
+  if (!user || PUBLIC_ROUTES.includes(loc.pathname)) return null;
 
   const go = (path: string) => {
     nav(path);
