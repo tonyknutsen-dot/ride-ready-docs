@@ -71,6 +71,15 @@ interface SavedRecipient {
   is_favorite: boolean;
 }
 
+interface EmailTemplate {
+  id: string;
+  name: string;
+  subject_line?: string;
+  message_body: string;
+  recipient_type?: string;
+  is_default: boolean;
+}
+
 const BatchSendDocuments = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -87,6 +96,12 @@ const BatchSendDocuments = () => {
   const [savedRecipients, setSavedRecipients] = useState<SavedRecipient[]>([]);
   const [showSaveRecipientDialog, setShowSaveRecipientDialog] = useState(false);
   const [newRecipientOrg, setNewRecipientOrg] = useState('');
+
+  // Email templates state
+  const [emailTemplates, setEmailTemplates] = useState<EmailTemplate[]>([]);
+  const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
+  const [newTemplateName, setNewTemplateName] = useState('');
+  const [newTemplateType, setNewTemplateType] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -113,6 +128,15 @@ const BatchSendDocuments = () => {
         .order('is_favorite', { ascending: false })
         .order('name');
       setSavedRecipients(recipientsData || []);
+
+      // Load email templates
+      const { data: templatesData } = await supabase
+        .from('email_templates')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('is_default', { ascending: false })
+        .order('name');
+      setEmailTemplates(templatesData || []);
 
       // Load all rides
       const { data: ridesData, error: ridesError } = await supabase
@@ -233,6 +257,99 @@ const BatchSendDocuments = () => {
       );
     } catch (error) {
       console.error('Error updating favorite:', error);
+    }
+  };
+
+  // Email template functions
+  const handleSelectTemplate = (templateId: string) => {
+    const template = emailTemplates.find(t => t.id === templateId);
+    if (template) {
+      setMessage(template.message_body);
+    }
+  };
+
+  const handleSaveTemplate = async () => {
+    if (!message || !newTemplateName) {
+      toast.error('Please enter a template name and message');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('email_templates')
+        .insert({
+          user_id: user?.id,
+          name: newTemplateName,
+          message_body: message,
+          recipient_type: newTemplateType || null
+        });
+
+      if (error) throw error;
+
+      toast.success('Template saved');
+      setShowSaveTemplateDialog(false);
+      setNewTemplateName('');
+      setNewTemplateType('');
+      
+      // Reload templates
+      const { data: templatesData } = await supabase
+        .from('email_templates')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('is_default', { ascending: false })
+        .order('name');
+      setEmailTemplates(templatesData || []);
+    } catch (error: any) {
+      console.error('Error saving template:', error);
+      toast.error('Failed to save template');
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string) => {
+    try {
+      const { error } = await supabase
+        .from('email_templates')
+        .delete()
+        .eq('id', templateId);
+
+      if (error) throw error;
+
+      setEmailTemplates(prev => prev.filter(t => t.id !== templateId));
+      toast.success('Template removed');
+    } catch (error) {
+      console.error('Error deleting template:', error);
+      toast.error('Failed to remove template');
+    }
+  };
+
+  const handleToggleDefaultTemplate = async (templateId: string, currentDefault: boolean) => {
+    try {
+      // If setting as default, first unset all others
+      if (!currentDefault) {
+        await supabase
+          .from('email_templates')
+          .update({ is_default: false })
+          .eq('user_id', user?.id);
+      }
+
+      const { error } = await supabase
+        .from('email_templates')
+        .update({ is_default: !currentDefault })
+        .eq('id', templateId);
+
+      if (error) throw error;
+
+      setEmailTemplates(prev => 
+        prev.map(t => ({
+          ...t,
+          is_default: t.id === templateId ? !currentDefault : false
+        })).sort((a, b) => {
+          if (a.is_default !== b.is_default) return b.is_default ? 1 : -1;
+          return a.name.localeCompare(b.name);
+        })
+      );
+    } catch (error) {
+      console.error('Error updating default template:', error);
     }
   };
 
@@ -675,16 +792,138 @@ const BatchSendDocuments = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="message" className="text-xs sm:text-sm">Message (Optional)</Label>
+                <div className="flex items-center justify-between gap-2 mb-1.5">
+                  <Label htmlFor="message" className="text-xs sm:text-sm">Message (Optional)</Label>
+                  <div className="flex items-center gap-1">
+                    {emailTemplates.length > 0 && (
+                      <Select onValueChange={handleSelectTemplate}>
+                        <SelectTrigger className="h-7 text-xs w-auto min-w-[100px]">
+                          <SelectValue placeholder="Use template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {emailTemplates.map(template => (
+                            <SelectItem key={template.id} value={template.id} className="text-xs">
+                              <div className="flex items-center gap-1">
+                                {template.is_default && <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />}
+                                {template.name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                    <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+                      <DialogTrigger asChild>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-7 text-xs px-2"
+                          disabled={!message}
+                        >
+                          <Plus className="h-3 w-3 mr-1" />
+                          <span className="hidden sm:inline">Save</span>
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-sm">
+                        <DialogHeader>
+                          <DialogTitle>Save Email Template</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4 pt-2">
+                          <div>
+                            <Label className="text-sm">Template Name *</Label>
+                            <Input 
+                              value={newTemplateName} 
+                              onChange={(e) => setNewTemplateName(e.target.value)}
+                              placeholder="e.g., Council Submission"
+                              className="mt-1.5" 
+                            />
+                          </div>
+                          <div>
+                            <Label className="text-sm">Message Preview</Label>
+                            <div className="mt-1.5 p-2 bg-muted rounded text-xs max-h-24 overflow-y-auto">
+                              {message || 'No message entered'}
+                            </div>
+                          </div>
+                          <div>
+                            <Label className="text-sm">Recipient Type (Optional)</Label>
+                            <Select value={newTemplateType} onValueChange={setNewTemplateType}>
+                              <SelectTrigger className="mt-1.5">
+                                <SelectValue placeholder="Select type..." />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="council">Local Council</SelectItem>
+                                <SelectItem value="guild">Showmens Guild</SelectItem>
+                                <SelectItem value="insurer">Insurance Company</SelectItem>
+                                <SelectItem value="inspector">Inspection Body</SelectItem>
+                                <SelectItem value="hse">HSE</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <Button onClick={handleSaveTemplate} className="w-full">
+                            Save Template
+                          </Button>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                </div>
                 <Textarea
                   id="message"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Please find attached the requested documentation for our equipment..."
-                  className="mt-1.5 resize-none"
+                  className="resize-none"
                   rows={3}
                 />
               </div>
+
+              {/* Saved Templates List */}
+              {emailTemplates.length > 0 && (
+                <Collapsible>
+                  <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                    <ChevronRight className="h-3 w-3" />
+                    Manage {emailTemplates.length} saved template{emailTemplates.length !== 1 ? 's' : ''}
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-2">
+                    <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                      {emailTemplates.map(template => (
+                        <div 
+                          key={template.id}
+                          className="flex items-center gap-2 p-2 border rounded text-xs group"
+                        >
+                          <button
+                            onClick={() => handleToggleDefaultTemplate(template.id, template.is_default)}
+                            className="shrink-0"
+                          >
+                            <Star className={`h-3 w-3 ${template.is_default ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">{template.name}</p>
+                            {template.recipient_type && (
+                              <Badge variant="outline" className="text-xs mt-0.5">{template.recipient_type}</Badge>
+                            )}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 px-2 text-xs"
+                            onClick={() => handleSelectTemplate(template.id)}
+                          >
+                            Use
+                          </Button>
+                          <button
+                            onClick={() => handleDeleteTemplate(template.id)}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                          >
+                            <Trash2 className="h-3 w-3 text-destructive" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              )}
 
               <Separator />
 

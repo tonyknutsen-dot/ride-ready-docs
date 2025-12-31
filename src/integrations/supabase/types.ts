@@ -487,6 +487,42 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean | null
+          message_body: string
+          name: string
+          recipient_type: string | null
+          subject_line: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          message_body: string
+          name: string
+          recipient_type?: string | null
+          subject_line?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean | null
+          message_body?: string
+          name?: string
+          recipient_type?: string | null
+          subject_line?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       feature_requests: {
         Row: {
           admin_notes: string | null
