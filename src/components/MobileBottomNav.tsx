@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home, FolderOpen, CheckSquare, MoreHorizontal,
-  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle
+  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
@@ -130,6 +130,13 @@ export default function MobileBottomNav() {
                   >
                     <FileText className="h-4 w-4 text-primary" />
                     Global Docs
+                  </button>
+                  <button
+                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
+                    onClick={() => go("/risk-assessments")}
+                  >
+                    <ShieldCheck className="h-4 w-4 text-success" />
+                    Risk Assessments
                   </button>
                 </div>
               </div>
