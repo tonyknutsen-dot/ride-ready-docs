@@ -63,28 +63,32 @@ const Pricing = () => {
           </p>
           
           {/* Billing Toggle */}
-          <div className="inline-flex items-center gap-3 bg-muted/50 p-1.5 rounded-full">
+          <div className="inline-flex items-center gap-1 bg-muted p-1.5 rounded-xl border-2 border-border shadow-card">
             <button
               onClick={() => setIsAnnual(false)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`px-6 py-3 rounded-lg text-base font-semibold transition-all ${
                 !isAnnual 
-                  ? 'bg-background text-foreground shadow-sm' 
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-lg' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10'
               }`}
             >
               Monthly
             </button>
             <button
               onClick={() => setIsAnnual(true)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+              className={`px-6 py-3 rounded-lg text-base font-semibold transition-all flex items-center gap-2 ${
                 isAnnual 
-                  ? 'bg-background text-foreground shadow-sm' 
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-primary text-primary-foreground shadow-lg' 
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10'
               }`}
             >
               Annual
-              <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-semibold">
-                Save 17%
+              <span className={`text-xs px-2 py-1 rounded-full font-bold ${
+                isAnnual 
+                  ? 'bg-primary-foreground/20 text-primary-foreground' 
+                  : 'bg-accent text-accent-foreground'
+              }`}>
+                2 months free
               </span>
             </button>
           </div>
