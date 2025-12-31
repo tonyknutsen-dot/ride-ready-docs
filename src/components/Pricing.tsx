@@ -3,10 +3,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
 
 const Pricing = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [isAnnual, setIsAnnual] = useState(false);
+
+  // Monthly prices
+  const basicMonthly = 12.99;
+  const advancedMonthly = 22.99;
+  
+  // Annual prices (2 months free)
+  const basicAnnual = basicMonthly * 10;
+  const advancedAnnual = advancedMonthly * 10;
+  
+  // Savings
+  const basicSavings = (basicMonthly * 12 - basicAnnual).toFixed(0);
+  const advancedSavings = (advancedMonthly * 12 - advancedAnnual).toFixed(0);
 
   const basicFeatures = [
     "Up to 10 rides or equipment",
@@ -44,9 +58,36 @@ const Pricing = () => {
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 tracking-tight">
             Simple, <span className="text-primary">Transparent</span> Pricing
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-lg text-muted-foreground mb-6">
             Choose the perfect plan for your fairground documentation needs. No hidden fees.
           </p>
+          
+          {/* Billing Toggle */}
+          <div className="inline-flex items-center gap-3 bg-muted/50 p-1.5 rounded-full">
+            <button
+              onClick={() => setIsAnnual(false)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                !isAnnual 
+                  ? 'bg-background text-foreground shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setIsAnnual(true)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${
+                isAnnual 
+                  ? 'bg-background text-foreground shadow-sm' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              Annual
+              <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-semibold">
+                Save 17%
+              </span>
+            </button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6 lg:gap-8 max-w-5xl mx-auto">
@@ -62,9 +103,18 @@ const Pricing = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Essential plan for fairground operators
               </p>
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl md:text-5xl font-bold">£12.99</span>
-                <span className="text-muted-foreground">/month</span>
+              <div className="flex flex-col items-center">
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-4xl md:text-5xl font-bold">
+                    £{isAnnual ? basicAnnual.toFixed(2) : basicMonthly.toFixed(2)}
+                  </span>
+                  <span className="text-muted-foreground">/{isAnnual ? 'year' : 'month'}</span>
+                </div>
+                {isAnnual && (
+                  <p className="text-sm text-accent font-medium mt-2">
+                    Save £{basicSavings}/year
+                  </p>
+                )}
               </div>
             </CardHeader>
 
@@ -112,9 +162,18 @@ const Pricing = () => {
               <p className="text-sm text-muted-foreground mb-4">
                 Complete documents + operations solution
               </p>
-              <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl md:text-5xl font-bold text-primary">£22.99</span>
-                <span className="text-muted-foreground">/month</span>
+              <div className="flex flex-col items-center">
+                <div className="flex items-baseline justify-center gap-1">
+                  <span className="text-4xl md:text-5xl font-bold text-primary">
+                    £{isAnnual ? advancedAnnual.toFixed(2) : advancedMonthly.toFixed(2)}
+                  </span>
+                  <span className="text-muted-foreground">/{isAnnual ? 'year' : 'month'}</span>
+                </div>
+                {isAnnual && (
+                  <p className="text-sm text-primary font-medium mt-2">
+                    Save £{advancedSavings}/year
+                  </p>
+                )}
               </div>
             </CardHeader>
 
