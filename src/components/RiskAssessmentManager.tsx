@@ -1936,13 +1936,13 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="target_date">Target Date</Label>
+                        <Label htmlFor="target_date">Action Due Date</Label>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
-                            <p>When should the actions be completed by?</p>
+                            <p>The deadline for completing the additional control measure or action. Set this to ensure timely risk mitigation.</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
