@@ -201,7 +201,7 @@ const handler = async (req: Request): Promise<Response> => {
 
         // Send email
         const emailResponse = await resend.emails.send({
-          from: "RideTrack <onboarding@resend.dev>",
+          from: "Ride Ready Docs <info@knutssoftware.co.uk>",
           to: [user.email],
           subject: `Document Expiry Reminder - ${thirtyDayDocs.length + sevenDayDocs.length} Document(s) Expiring Soon`,
           html: emailContent,

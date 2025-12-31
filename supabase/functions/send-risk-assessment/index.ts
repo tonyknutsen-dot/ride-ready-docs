@@ -128,7 +128,7 @@ const handler = async (req: Request): Promise<Response> => {
     `;
 
     const emailResponse = await resend.emails.send({
-      from: "Ride Ready Docs <noreply@resend.dev>",
+      from: "Ride Ready Docs <info@knutssoftware.co.uk>",
       to: [recipientEmail],
       subject: `Risk Assessment: ${rideName}`,
       html: htmlContent,

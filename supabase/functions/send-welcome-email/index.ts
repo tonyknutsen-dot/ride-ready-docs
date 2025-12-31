@@ -42,7 +42,7 @@ const handler = async (req: Request): Promise<Response> => {
     );
 
     const emailResponse = await resend.emails.send({
-      from: "Ride Ready Docs <onboarding@resend.dev>",
+      from: "Ride Ready Docs <info@knutssoftware.co.uk>",
       to: [email],
       subject: "Welcome to Ride Ready Docs!",
       html,
