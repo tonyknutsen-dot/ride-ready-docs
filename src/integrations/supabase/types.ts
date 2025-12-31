@@ -961,6 +961,47 @@ export type Database = {
           },
         ]
       }
+      risk_assessment_audit_log: {
+        Row: {
+          action: string
+          changed_at: string
+          changed_by: string
+          id: string
+          new_values: Json | null
+          notes: string | null
+          old_values: Json | null
+          risk_assessment_id: string
+        }
+        Insert: {
+          action: string
+          changed_at?: string
+          changed_by: string
+          id?: string
+          new_values?: Json | null
+          notes?: string | null
+          old_values?: Json | null
+          risk_assessment_id: string
+        }
+        Update: {
+          action?: string
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          new_values?: Json | null
+          notes?: string | null
+          old_values?: Json | null
+          risk_assessment_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_assessment_audit_log_risk_assessment_id_fkey"
+            columns: ["risk_assessment_id"]
+            isOneToOne: false
+            referencedRelation: "risk_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       risk_assessment_items: {
         Row: {
           action_owner: string | null
@@ -969,6 +1010,8 @@ export type Database = {
           existing_controls: string | null
           hazard_description: string
           id: string
+          last_modified_at: string | null
+          last_modified_by: string | null
           likelihood: string
           risk_assessment_id: string
           risk_level: string
@@ -985,6 +1028,8 @@ export type Database = {
           existing_controls?: string | null
           hazard_description: string
           id?: string
+          last_modified_at?: string | null
+          last_modified_by?: string | null
           likelihood?: string
           risk_assessment_id: string
           risk_level?: string
@@ -1001,6 +1046,8 @@ export type Database = {
           existing_controls?: string | null
           hazard_description?: string
           id?: string
+          last_modified_at?: string | null
+          last_modified_by?: string | null
           likelihood?: string
           risk_assessment_id?: string
           risk_level?: string
@@ -1018,9 +1065,13 @@ export type Database = {
           assessor_name: string
           created_at: string
           id: string
+          last_modified_at: string | null
+          last_modified_by: string | null
           notes: string | null
           overall_status: string
           review_date: string | null
+          revision_notes: string | null
+          revision_number: number
           ride_id: string
           updated_at: string
           user_id: string
@@ -1030,9 +1081,13 @@ export type Database = {
           assessor_name: string
           created_at?: string
           id?: string
+          last_modified_at?: string | null
+          last_modified_by?: string | null
           notes?: string | null
           overall_status?: string
           review_date?: string | null
+          revision_notes?: string | null
+          revision_number?: number
           ride_id: string
           updated_at?: string
           user_id: string
@@ -1042,9 +1097,13 @@ export type Database = {
           assessor_name?: string
           created_at?: string
           id?: string
+          last_modified_at?: string | null
+          last_modified_by?: string | null
           notes?: string | null
           overall_status?: string
           review_date?: string | null
+          revision_notes?: string | null
+          revision_number?: number
           ride_id?: string
           updated_at?: string
           user_id?: string

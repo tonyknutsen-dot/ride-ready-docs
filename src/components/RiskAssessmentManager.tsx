@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Trash2, Download, Mail, CalendarIcon, Info, ChevronDown, Save, FileText, ArrowLeft } from 'lucide-react';
+import { Plus, Trash2, Download, Mail, CalendarIcon, Info, ChevronDown, Save, FileText, ArrowLeft, Pencil, History, Send, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -39,6 +39,9 @@ interface RiskAssessment {
   review_date?: string;
   overall_status: string;
   notes?: string;
+  revision_number?: number;
+  last_modified_by?: string;
+  last_modified_at?: string;
 }
 
 interface RiskAssessmentItem {
@@ -56,19 +59,38 @@ interface RiskAssessmentItem {
   sort_order: number;
 }
 
+interface AuditLogEntry {
+  id: string;
+  action: string;
+  changed_by: string;
+  changed_at: string;
+  notes?: string;
+}
+
 export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ride }) => {
   const { user } = useAuth();
   const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
   const [selectedAssessment, setSelectedAssessment] = useState<RiskAssessment | null>(null);
   const [assessmentItems, setAssessmentItems] = useState<RiskAssessmentItem[]>([]);
   const [showNewAssessment, setShowNewAssessment] = useState(false);
+  const [showEditAssessment, setShowEditAssessment] = useState(false);
   const [showItemDialog, setShowItemDialog] = useState(false);
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [showAuditHistory, setShowAuditHistory] = useState(false);
   const [editingItem, setEditingItem] = useState<RiskAssessmentItem | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sendingEmail, setSendingEmail] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [ridePhotoUrl, setRidePhotoUrl] = useState<string | null>(null);
   const [useCustomHazard, setUseCustomHazard] = useState(false);
   const [useCustomControls, setUseCustomControls] = useState(false);
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
+
+  const [emailFormData, setEmailFormData] = useState({
+    recipientEmail: '',
+    recipientName: '',
+    message: ''
+  });
 
   const [formData, setFormData] = useState({
     assessor_name: '',
@@ -277,17 +299,304 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const handleStatusChange = async (newStatus: string) => {
     if (!selectedAssessment) return;
 
+    const oldStatus = selectedAssessment.overall_status;
+    
     const { error } = await supabase
       .from('risk_assessments')
-      .update({ overall_status: newStatus })
+      .update({ 
+        overall_status: newStatus,
+        last_modified_by: profile?.controller_name || user?.email || 'Unknown',
+        last_modified_at: new Date().toISOString()
+      })
       .eq('id', selectedAssessment.id);
 
     if (error) {
       toast({ title: 'Error updating status', description: error.message, variant: 'destructive' });
     } else {
+      // Log to audit trail
+      await supabase.from('risk_assessment_audit_log').insert({
+        risk_assessment_id: selectedAssessment.id,
+        action: 'status_changed',
+        changed_by: profile?.controller_name || user?.email || 'Unknown',
+        notes: `Status changed from "${oldStatus}" to "${newStatus}"`
+      });
+      
       setSelectedAssessment({ ...selectedAssessment, overall_status: newStatus });
       toast({ title: 'Success', description: 'Assessment status updated' });
-      loadAssessments(); // Refresh the list
+      loadAssessments();
+    }
+  };
+
+  const handleEditAssessment = async () => {
+    if (!selectedAssessment || !user) return;
+
+    const oldData = {
+      assessor_name: selectedAssessment.assessor_name,
+      assessment_date: selectedAssessment.assessment_date,
+      notes: selectedAssessment.notes
+    };
+
+    const { error } = await supabase
+      .from('risk_assessments')
+      .update({
+        assessor_name: formData.assessor_name,
+        assessment_date: formData.assessment_date,
+        review_date: formData.review_date || null,
+        notes: formData.notes || null,
+        revision_number: (selectedAssessment.revision_number || 1) + 1,
+        last_modified_by: profile?.controller_name || user.email || 'Unknown',
+        last_modified_at: new Date().toISOString()
+      })
+      .eq('id', selectedAssessment.id);
+
+    if (error) {
+      toast({ title: 'Error updating assessment', description: error.message, variant: 'destructive' });
+    } else {
+      // Log to audit trail
+      await supabase.from('risk_assessment_audit_log').insert({
+        risk_assessment_id: selectedAssessment.id,
+        action: 'edited',
+        changed_by: profile?.controller_name || user.email || 'Unknown',
+        old_values: oldData,
+        new_values: {
+          assessor_name: formData.assessor_name,
+          assessment_date: formData.assessment_date,
+          notes: formData.notes
+        },
+        notes: `Revision ${(selectedAssessment.revision_number || 1) + 1}`
+      });
+
+      toast({ title: 'Success', description: 'Assessment updated' });
+      setShowEditAssessment(false);
+      loadAssessments();
+      
+      // Refresh selected assessment
+      const { data } = await supabase
+        .from('risk_assessments')
+        .select('*')
+        .eq('id', selectedAssessment.id)
+        .single();
+      if (data) setSelectedAssessment(data);
+    }
+  };
+
+  const loadAuditLog = async () => {
+    if (!selectedAssessment) return;
+    
+    const { data, error } = await supabase
+      .from('risk_assessment_audit_log')
+      .select('*')
+      .eq('risk_assessment_id', selectedAssessment.id)
+      .order('changed_at', { ascending: false });
+
+    if (!error && data) {
+      setAuditLog(data);
+    }
+  };
+
+  const generatePDFBlob = async (): Promise<{ blob: Blob; fileName: string }> => {
+    if (!selectedAssessment) throw new Error('No assessment selected');
+
+    const doc = new jsPDF({ orientation: 'landscape' });
+    
+    // Add logo
+    const logoImg = new Image();
+    logoImg.src = logoImage;
+    await new Promise((resolve) => {
+      logoImg.onload = resolve;
+    });
+    doc.addImage(logoImg, 'PNG', 14, 5, 20, 20);
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Showmans Ride Ready', 38, 13);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    doc.text('Operational & Maintenance Docs', 38, 18);
+    
+    if (ridePhotoUrl) {
+      try {
+        const rideImg = new Image();
+        rideImg.crossOrigin = 'anonymous';
+        rideImg.src = ridePhotoUrl;
+        await new Promise((resolve, reject) => {
+          rideImg.onload = resolve;
+          rideImg.onerror = reject;
+        });
+        doc.addImage(rideImg, 'JPEG', 235, 5, 50, 30);
+      } catch (e) {
+        console.warn('Failed to load ride photo for PDF');
+      }
+    }
+    
+    doc.setFontSize(18);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Risk Assessment', 14, 35);
+    
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const leftCol = 14;
+    const rightCol = 160;
+    let yPos = 45;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Ride/Equipment:', leftCol, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(ride.ride_name, leftCol + 35, yPos);
+    
+    if (ride.manufacturer) {
+      yPos += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Manufacturer:', leftCol, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(ride.manufacturer, leftCol + 35, yPos);
+    }
+    
+    if (ride.year_manufactured) {
+      yPos += 6;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Year Manufactured:', leftCol, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(ride.year_manufactured.toString(), leftCol + 35, yPos);
+    }
+    
+    yPos = 45;
+    if (profile) {
+      if (profile.controller_name) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Controller:', rightCol, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(profile.controller_name, rightCol + 25, yPos);
+        yPos += 6;
+      }
+      if (profile.company_name) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Company:', rightCol, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(profile.company_name, rightCol + 25, yPos);
+        yPos += 6;
+      }
+      if (profile.showmen_name) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Showmen:', rightCol, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(profile.showmen_name, rightCol + 25, yPos);
+      }
+    }
+    
+    yPos = 63;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Assessment Date:', leftCol, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy'), leftCol + 35, yPos);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Assessor:', rightCol, yPos);
+    doc.setFont('helvetica', 'normal');
+    doc.text(selectedAssessment.assessor_name, rightCol + 25, yPos);
+
+    const tableData = assessmentItems.map(item => [
+      item.hazard_description,
+      item.who_at_risk,
+      item.existing_controls || '-',
+      item.risk_level.toUpperCase(),
+      item.likelihood,
+      item.severity,
+      item.additional_actions || '-',
+      item.status
+    ]);
+
+    autoTable(doc, {
+      startY: 72,
+      head: [['Hazard', 'Who at Risk', 'Existing Controls', 'Risk', 'Likelihood', 'Severity', 'Additional Actions', 'Status']],
+      body: tableData,
+      styles: { fontSize: 7, cellPadding: 2 },
+      headStyles: { fillColor: [66, 139, 202], fontSize: 8, fontStyle: 'bold' },
+      columnStyles: {
+        0: { cellWidth: 50 },
+        1: { cellWidth: 30 },
+        2: { cellWidth: 40 },
+        3: { cellWidth: 18 },
+        4: { cellWidth: 22 },
+        5: { cellWidth: 20 },
+        6: { cellWidth: 45 },
+        7: { cellWidth: 20 }
+      },
+      didParseCell: function(data) {
+        if (data.column.index === 3 && data.section === 'body') {
+          const risk = data.cell.raw as string;
+          if (risk === 'HIGH') {
+            data.cell.styles.fillColor = [239, 68, 68];
+            data.cell.styles.textColor = [255, 255, 255];
+          } else if (risk === 'MEDIUM') {
+            data.cell.styles.fillColor = [251, 146, 60];
+            data.cell.styles.textColor = [255, 255, 255];
+          } else if (risk === 'LOW') {
+            data.cell.styles.fillColor = [34, 197, 94];
+            data.cell.styles.textColor = [255, 255, 255];
+          }
+        }
+      }
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    const sigY = finalY;
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Compiled by: ___________________________________', leftCol, sigY);
+    doc.text(`${selectedAssessment.assessor_name}`, leftCol + 25, sigY);
+    doc.text('Date: ___________________________________', rightCol, sigY);
+    doc.text(format(new Date(), 'dd/MM/yyyy'), rightCol + 12, sigY);
+
+    const fileName = `risk-assessment-${ride.ride_name}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    return { blob: doc.output('blob'), fileName };
+  };
+
+  const handleSendEmail = async () => {
+    if (!selectedAssessment || !user || !emailFormData.recipientEmail) return;
+
+    setSendingEmail(true);
+    try {
+      const { blob, fileName } = await generatePDFBlob();
+      
+      // Convert blob to base64
+      const arrayBuffer = await blob.arrayBuffer();
+      const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      const response = await supabase.functions.invoke('send-risk-assessment', {
+        body: {
+          assessmentId: selectedAssessment.id,
+          rideId: ride.id,
+          rideName: ride.ride_name,
+          recipientEmail: emailFormData.recipientEmail,
+          recipientName: emailFormData.recipientName || 'Recipient',
+          message: emailFormData.message,
+          pdfBase64: base64,
+          pdfFileName: fileName
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to send email');
+      }
+
+      toast({ title: 'Success!', description: `Risk assessment sent to ${emailFormData.recipientEmail}` });
+      setShowEmailDialog(false);
+      setEmailFormData({ recipientEmail: '', recipientName: '', message: '' });
+    } catch (error: any) {
+      console.error('Error sending email:', error);
+      toast({ 
+        title: 'Failed to send email', 
+        description: error.message || 'Please try again',
+        variant: 'destructive' 
+      });
+    } finally {
+      setSendingEmail(false);
     }
   };
 
@@ -855,13 +1164,18 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                 <div className="flex items-center gap-2 mb-1">
                   <FileText className="h-5 w-5 text-primary" />
                   <CardTitle className="text-lg">Risk Assessment</CardTitle>
+                  {selectedAssessment.revision_number && selectedAssessment.revision_number > 1 && (
+                    <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
+                      Rev {selectedAssessment.revision_number}
+                    </span>
+                  )}
                 </div>
                 <CardDescription className="text-sm mb-2">
                   <span className="font-medium text-foreground">{ride.ride_name}</span>
                   {' • '}
                   {format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')} • {selectedAssessment.assessor_name}
                 </CardDescription>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
                   <Label className="text-xs text-muted-foreground">Status:</Label>
                   <Select value={selectedAssessment.overall_status} onValueChange={handleStatusChange}>
                     <SelectTrigger className="h-7 w-[140px] text-xs">
@@ -882,9 +1196,62 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                       </SelectItem>
                     </SelectContent>
                   </Select>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      setFormData({
+                        assessor_name: selectedAssessment.assessor_name,
+                        assessment_date: selectedAssessment.assessment_date,
+                        review_date: selectedAssessment.review_date || '',
+                        overall_status: selectedAssessment.overall_status,
+                        notes: selectedAssessment.notes || ''
+                      });
+                      setShowEditAssessment(true);
+                    }}
+                  >
+                    <Pencil className="h-3 w-3 mr-1" /> Edit
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={() => {
+                      loadAuditLog();
+                      setShowAuditHistory(true);
+                    }}
+                  >
+                    <History className="h-3 w-3 mr-1" /> History
+                  </Button>
                 </div>
               </div>
               <div className="flex flex-wrap gap-1.5">
+                <TooltipProvider delayDuration={0}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-block">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => setShowEmailDialog(true)}
+                          disabled={assessmentItems.length === 0}
+                          className="group hover:bg-success hover:text-success-foreground transition-all disabled:opacity-50"
+                        >
+                          <Mail className="h-3.5 w-3.5 mr-1.5 group-hover:scale-110 transition-transform" /> 
+                          Email
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p className="text-xs max-w-[200px]">
+                        {assessmentItems.length === 0 
+                          ? 'Add risk items before emailing' 
+                          : 'Email this assessment as a PDF'}
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <TooltipProvider delayDuration={0}>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -897,7 +1264,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                           className="group hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50"
                         >
                           <Save className="h-3.5 w-3.5 mr-1.5 group-hover:scale-110 transition-transform" /> 
-                          Save to Documents
+                          Save
                         </Button>
                       </span>
                     </TooltipTrigger>
@@ -1661,6 +2028,124 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
               resetItemForm();
             }}>Cancel</Button>
             <Button onClick={handleSaveItem}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Assessment Dialog */}
+      <Dialog open={showEditAssessment} onOpenChange={setShowEditAssessment}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Risk Assessment</DialogTitle>
+            <DialogDescription>Changes will be tracked in the audit history.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="edit_assessor_name">Assessor Name</Label>
+              <Input
+                id="edit_assessor_name"
+                value={formData.assessor_name}
+                onChange={(e) => setFormData({ ...formData, assessor_name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_assessment_date">Assessment Date</Label>
+              <Input
+                id="edit_assessment_date"
+                type="date"
+                value={formData.assessment_date}
+                onChange={(e) => setFormData({ ...formData, assessment_date: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_notes">Notes</Label>
+              <Textarea
+                id="edit_notes"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditAssessment(false)}>Cancel</Button>
+            <Button onClick={handleEditAssessment}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Email Dialog */}
+      <Dialog open={showEmailDialog} onOpenChange={setShowEmailDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Email Risk Assessment</DialogTitle>
+            <DialogDescription>Send this assessment as a PDF attachment.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="recipient_email">Recipient Email *</Label>
+              <Input
+                id="recipient_email"
+                type="email"
+                placeholder="council@example.com"
+                value={emailFormData.recipientEmail}
+                onChange={(e) => setEmailFormData({ ...emailFormData, recipientEmail: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="recipient_name">Recipient Name</Label>
+              <Input
+                id="recipient_name"
+                placeholder="e.g., Safety Officer"
+                value={emailFormData.recipientName}
+                onChange={(e) => setEmailFormData({ ...emailFormData, recipientName: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="email_message">Message (optional)</Label>
+              <Textarea
+                id="email_message"
+                placeholder="Add a personal message..."
+                value={emailFormData.message}
+                onChange={(e) => setEmailFormData({ ...emailFormData, message: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEmailDialog(false)}>Cancel</Button>
+            <Button onClick={handleSendEmail} disabled={sendingEmail || !emailFormData.recipientEmail}>
+              {sendingEmail ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending...</> : <><Send className="h-4 w-4 mr-2" /> Send Email</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Audit History Dialog */}
+      <Dialog open={showAuditHistory} onOpenChange={setShowAuditHistory}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Change History</DialogTitle>
+            <DialogDescription>All changes to this assessment are tracked.</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[400px] overflow-y-auto space-y-3">
+            {auditLog.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No changes recorded yet.</p>
+            ) : (
+              auditLog.map((entry) => (
+                <div key={entry.id} className="border rounded-lg p-3 text-sm">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-medium capitalize">{entry.action.replace('_', ' ')}</span>
+                    <span className="text-xs text-muted-foreground">
+                      {format(new Date(entry.changed_at), 'dd MMM yyyy HH:mm')}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground">By: {entry.changed_by}</p>
+                  {entry.notes && <p className="text-xs mt-1">{entry.notes}</p>}
+                </div>
+              ))
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAuditHistory(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
