@@ -232,7 +232,7 @@ const handler = async (req: Request): Promise<Response> => {
       const cleanAttachments = batch.attachments.map(({ size, documentName, documentType, rideName, expiresAt, ...attachment }) => attachment);
 
       const emailResponse = await resend.emails.send({
-        from: "Ride Ready Docs <noreply@resend.dev>",
+        from: "Ride Ready Docs <info@knutssoftware.co.uk>",
         to: [recipientEmail],
         subject,
         html: htmlContent,
