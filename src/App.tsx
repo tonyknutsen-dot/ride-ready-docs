@@ -40,6 +40,7 @@ import SupportMessages from "./pages/admin/SupportMessages";
 import AppHeader from "./components/AppHeader";
 import RiskAssessments from "./pages/RiskAssessments";
 import GlobalDocumentsPage from "./pages/GlobalDocumentsPage";
+import BatchSendDocuments from "./pages/BatchSendDocuments";
 
 const queryClient = new QueryClient();
 
@@ -171,6 +172,19 @@ const App = () => (
                       <>
                         <AppHeader />
                         <GlobalDocumentsPage />
+                      </>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/send-documents"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <>
+                        <AppHeader />
+                        <BatchSendDocuments />
                       </>
                     </ProfileGuard>
                   </ProtectedRoute>

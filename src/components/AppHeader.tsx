@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown, ShieldCheck, Calendar as CalendarIcon } from 'lucide-react';
+import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown, ShieldCheck, Calendar as CalendarIcon, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import {
@@ -112,6 +112,13 @@ const AppHeader = () => {
                 <Link to="/risk-assessments" className="flex items-center cursor-pointer">
                   <ShieldCheck className="h-4 w-4 mr-2" />
                   Risk Assessments
+                </Link>
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem asChild>
+                <Link to="/send-documents" className="flex items-center cursor-pointer">
+                  <Send className="h-4 w-4 mr-2" />
+                  Send Documents
                 </Link>
               </DropdownMenuItem>
               

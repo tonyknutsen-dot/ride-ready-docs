@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home, FolderOpen, CheckSquare, MoreHorizontal,
-  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut
+  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut, Send
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
@@ -159,6 +159,13 @@ export default function MobileBottomNav() {
 
               {/* Secondary Actions - Compact list */}
               <div className="flex flex-wrap gap-2">
+                <button
+                  className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-xl text-sm hover:bg-muted transition-all active:scale-95"
+                  onClick={() => go("/send-documents")}
+                >
+                  <Send className="h-4 w-4" />
+                  <span>Send Docs</span>
+                </button>
                 <button
                   className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-xl text-sm hover:bg-muted transition-all active:scale-95"
                   onClick={() => go("/billing")}
