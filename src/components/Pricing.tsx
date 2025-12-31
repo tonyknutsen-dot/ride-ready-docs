@@ -25,29 +25,27 @@ const Pricing = () => {
   const basicFeatures = [
     "Up to 10 rides or equipment",
     "50p/month per additional ride",
-    "Document storage (up to 100 documents)",
-    "Email alerts 30 & 7 days before expiry",
-    "Basic document types supported",
-    "Organize documents by ride",
-    "Web-based dashboard access",
+    "100 documents storage",
+    "Expiry alerts (30 & 7 days)",
+    "Insurance & DOC certificates",
+    "ADIPS certificates",
+    "Organize by ride",
     "Email support"
   ];
 
   const advancedFeatures = [
     "Everything in Essential, plus:",
-    "Up to 10 rides or equipment",
-    "£1/month per additional ride",
     "Unlimited document storage",
     "All document types supported",
     "Daily, monthly & yearly checks",
-    "Inspection management & scheduling",
-    "NDT testing schedules",
-    "Maintenance tracking",
-    "Calendar & scheduling system",
+    "Inspection scheduling & reminders",
+    "NDT testing management",
+    "Maintenance log & history",
+    "Calendar dashboard",
     "Risk assessment builder",
-    "Council-ready document packages",
-    "Advanced reporting & analytics",
-    "Priority 24/7 support"
+    "Council-ready document packs",
+    "Reports & analytics",
+    "Priority support"
   ];
 
   return (
@@ -192,7 +190,7 @@ const Pricing = () => {
                     <div className="flex-shrink-0 w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5">
                       <Check className="h-3 w-3 text-primary" />
                     </div>
-                    <span className={`text-sm ${index === 0 || index === 2 ? 'font-medium text-primary' : 'text-foreground/80'}`}>
+                    <span className={`text-sm ${index === 0 ? 'font-medium text-primary' : 'text-foreground/80'}`}>
                       {feature}
                     </span>
                   </li>
