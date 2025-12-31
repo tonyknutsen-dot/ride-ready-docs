@@ -20,7 +20,8 @@ const Pricing = () => {
 
   const advancedFeatures = [
     "Everything in Essential, plus:",
-    "Up to 8 rides or equipment",
+    "Up to 10 rides or equipment",
+    "£1/month per additional ride",
     "Unlimited document storage",
     "All document types supported",
     "Daily, monthly & yearly checks",
@@ -109,7 +110,7 @@ const Pricing = () => {
                 Complete documents + operations solution
               </p>
               <div className="flex items-baseline justify-center gap-1">
-                <span className="text-4xl md:text-5xl font-bold text-primary">£27.99</span>
+                <span className="text-4xl md:text-5xl font-bold text-primary">£22.99</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
             </CardHeader>
