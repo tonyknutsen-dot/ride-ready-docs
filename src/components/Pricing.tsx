@@ -142,8 +142,12 @@ const Pricing = () => {
                 size="lg" 
                 onClick={() => navigate(user ? '/overview' : '/auth')}
               >
-                {user ? 'Go to Dashboard' : 'Start Free Trial'}
+                {user ? 'Go to Dashboard' : 'Start 30-Day Free Trial'}
               </Button>
+              
+              <p className="text-center mt-4 text-xs text-muted-foreground">
+                ✓ No credit card required • ✓ Cancel anytime
+              </p>
             </CardContent>
           </Card>
 
@@ -200,11 +204,11 @@ const Pricing = () => {
                 size="lg" 
                 onClick={() => navigate(user ? '/overview' : '/auth')}
               >
-                {user ? 'Go to Dashboard' : 'Start Free Trial'}
+                {user ? 'Go to Dashboard' : 'Start 30-Day Free Trial'}
               </Button>
 
               <p className="text-center mt-4 text-xs text-muted-foreground">
-                ✓ No setup fees • ✓ Full access during trial
+                ✓ No credit card required • ✓ Full access for 30 days
               </p>
             </CardContent>
           </Card>
