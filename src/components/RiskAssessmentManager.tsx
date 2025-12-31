@@ -67,6 +67,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [ridePhotoUrl, setRidePhotoUrl] = useState<string | null>(null);
+  const [useCustomHazard, setUseCustomHazard] = useState(false);
+  const [useCustomControls, setUseCustomControls] = useState(false);
 
   const [formData, setFormData] = useState({
     assessor_name: '',
@@ -302,6 +304,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       target_date: '',
       status: 'open'
     });
+    setUseCustomHazard(false);
+    setUseCustomControls(false);
   };
 
   const getRiskColor = (level: string) => {
@@ -1078,7 +1082,18 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                       </CollapsibleContent>
                     </Collapsible>
                     
-                    <Select value={itemFormData.hazard_description} onValueChange={(value) => setItemFormData({ ...itemFormData, hazard_description: value })}>
+                    <Select 
+                      value={useCustomHazard ? 'Custom' : itemFormData.hazard_description} 
+                      onValueChange={(value) => {
+                        if (value === 'Custom') {
+                          setUseCustomHazard(true);
+                          setItemFormData({ ...itemFormData, hazard_description: '' });
+                        } else {
+                          setUseCustomHazard(false);
+                          setItemFormData({ ...itemFormData, hazard_description: value });
+                        }
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a hazard or choose Custom" />
                       </SelectTrigger>
@@ -1205,7 +1220,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                         <SelectItem value="Custom">Custom (enter below)</SelectItem>
                       </SelectContent>
                     </Select>
-                    {itemFormData.hazard_description === 'Custom' && (
+                    {useCustomHazard && (
                       <Textarea
                         className="mt-2"
                         placeholder="Enter your custom hazard description"
@@ -1281,7 +1296,18 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                       </CollapsibleContent>
                     </Collapsible>
                     
-                    <Select value={itemFormData.existing_controls} onValueChange={(value) => setItemFormData({ ...itemFormData, existing_controls: value })}>
+                    <Select 
+                      value={useCustomControls ? 'Custom' : (itemFormData.existing_controls || '')} 
+                      onValueChange={(value) => {
+                        if (value === 'Custom') {
+                          setUseCustomControls(true);
+                          setItemFormData({ ...itemFormData, existing_controls: '' });
+                        } else {
+                          setUseCustomControls(false);
+                          setItemFormData({ ...itemFormData, existing_controls: value });
+                        }
+                      }}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select existing controls or choose Custom" />
                       </SelectTrigger>
@@ -1345,11 +1371,11 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                         <SelectItem value="Custom">Custom (enter below)</SelectItem>
                       </SelectContent>
                     </Select>
-                    {itemFormData.existing_controls === 'Custom' && (
+                    {useCustomControls && (
                       <Textarea
                         className="mt-2"
                         placeholder="Enter your custom existing controls"
-                        value={itemFormData.existing_controls}
+                        value={itemFormData.existing_controls || ''}
                         onChange={(e) => setItemFormData({ ...itemFormData, existing_controls: e.target.value })}
                       />
                     )}
