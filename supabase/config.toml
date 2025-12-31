@@ -102,6 +102,12 @@ verify_jwt = true
 [functions.send-risk-assessment]
 verify_jwt = true
 
+[functions.send-batch-documents]
+verify_jwt = true
+
+[functions.send-document-type-request]
+verify_jwt = true
+
 [analytics]
 enabled = false
 port = 54327
