@@ -1,13 +1,14 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home, FolderOpen, CheckSquare, MoreHorizontal,
-  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck
+  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 // Routes where the mobile nav should NOT appear (public pages)
 const PUBLIC_ROUTES = ['/', '/auth', '/demo', '/how-it-works', '/privacy', '/terms', '/help', '/security'];
@@ -15,7 +16,8 @@ const PUBLIC_ROUTES = ['/', '/auth', '/demo', '/how-it-works', '/privacy', '/ter
 export default function MobileBottomNav() {
   const nav = useNavigate();
   const loc = useLocation();
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
+  const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
@@ -25,6 +27,15 @@ export default function MobileBottomNav() {
   const go = (path: string) => {
     nav(path);
     setOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast({ title: "Signed out successfully" });
+    } catch (error) {
+      toast({ title: "Error signing out", variant: "destructive" });
+    }
   };
 
   const isActive = (paths: string[]) => 
@@ -45,23 +56,23 @@ export default function MobileBottomNav() {
   }) => (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-[11px] font-medium transition-colors ${
+      className={`flex flex-col items-center justify-center min-h-[56px] min-w-[56px] rounded-xl text-[11px] font-medium transition-all active:scale-95 ${
         active 
-          ? "text-primary bg-primary/5" 
+          ? "text-primary bg-primary/10" 
           : highlight
           ? "text-success"
           : "text-muted-foreground hover:text-foreground"
       }`}
       aria-label={label}
     >
-      <Icon className={`h-5 w-5 ${highlight && !active ? 'text-success' : ''}`} />
-      <span className="mt-1">{label}</span>
+      <Icon className={`h-6 w-6 ${highlight && !active ? 'text-success' : ''}`} />
+      <span className="mt-0.5">{label}</span>
     </button>
   );
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 md:hidden">
-      <div className="mx-auto max-w-screen-sm grid grid-cols-5 gap-0.5 px-2 py-1.5 safe-area-pb">
+    <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 md:hidden safe-area-pb">
+      <div className="mx-auto max-w-screen-sm grid grid-cols-5 gap-1 px-2 py-1">
         {/* Overview */}
         <NavButton 
           onClick={() => {
@@ -81,7 +92,7 @@ export default function MobileBottomNav() {
           label="Rides"
         />
 
-        {/* CHECKS - Now prominent in center */}
+        {/* CHECKS - Central prominent button */}
         <NavButton 
           onClick={() => go("/checks")}
           active={isActive(["/checks"])}
@@ -98,85 +109,89 @@ export default function MobileBottomNav() {
           label="Calendar"
         />
 
-        {/* More */}
+        {/* More - Simplified sheet */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <button 
-              className="flex flex-col items-center justify-center py-1.5 px-1 rounded-lg text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors" 
+              className="flex flex-col items-center justify-center min-h-[56px] min-w-[56px] rounded-xl text-[11px] font-medium text-muted-foreground hover:text-foreground transition-all active:scale-95" 
               aria-label="More"
             >
-              <MoreHorizontal className="h-5 w-5" />
-              <span className="mt-1">More</span>
+              <MoreHorizontal className="h-6 w-6" />
+              <span className="mt-0.5">More</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="max-h-[70vh] overflow-y-auto rounded-t-2xl">
-            <SheetHeader className="pb-4">
-              <SheetTitle className="text-left">More Options</SheetTitle>
+          <SheetContent side="bottom" className="max-h-[60vh] rounded-t-3xl px-6 pb-8">
+            <SheetHeader className="pb-6">
+              <SheetTitle className="text-left text-lg">Quick Access</SheetTitle>
             </SheetHeader>
 
             <div className="space-y-6">
-              {/* Quick actions */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Quick Access
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
-                    onClick={() => setUploadDialogOpen(true)}
-                  >
-                    <PlusCircle className="h-4 w-4 text-accent" />
-                    Add Document
-                  </button>
-                  <button
-                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
-                    onClick={() => go("/global-documents")}
-                  >
-                    <FileText className="h-4 w-4 text-primary" />
-                    Global Docs
-                  </button>
-                  <button
-                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
-                    onClick={() => go("/risk-assessments")}
-                  >
-                    <ShieldCheck className="h-4 w-4 text-success" />
-                    Risk Assessments
-                  </button>
-                </div>
+              {/* Primary Actions - Large touch targets */}
+              <div className="grid grid-cols-3 gap-3">
+                <button
+                  className="flex flex-col items-center gap-2 p-4 bg-primary/5 border border-primary/20 rounded-2xl text-sm font-medium hover:bg-primary/10 transition-all active:scale-95"
+                  onClick={() => setUploadDialogOpen(true)}
+                >
+                  <div className="p-3 bg-primary/10 rounded-xl">
+                    <PlusCircle className="h-6 w-6 text-primary" />
+                  </div>
+                  <span className="text-xs">Upload</span>
+                </button>
+                <button
+                  className="flex flex-col items-center gap-2 p-4 bg-success/5 border border-success/20 rounded-2xl text-sm font-medium hover:bg-success/10 transition-all active:scale-95"
+                  onClick={() => go("/risk-assessments")}
+                >
+                  <div className="p-3 bg-success/10 rounded-xl">
+                    <ShieldCheck className="h-6 w-6 text-success" />
+                  </div>
+                  <span className="text-xs">Risk</span>
+                </button>
+                <button
+                  className="flex flex-col items-center gap-2 p-4 bg-muted border border-border/50 rounded-2xl text-sm font-medium hover:bg-muted/80 transition-all active:scale-95"
+                  onClick={() => go("/global-documents")}
+                >
+                  <div className="p-3 bg-background rounded-xl">
+                    <FileText className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <span className="text-xs">Docs</span>
+                </button>
               </div>
 
-              {/* Account options */}
-              <div className="space-y-3">
-                <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Account
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
-                    onClick={() => go("/billing")}
-                  >
-                    <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    Billing
-                  </button>
+              {/* Secondary Actions - Compact list */}
+              <div className="flex flex-wrap gap-2">
+                <button
+                  className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-xl text-sm hover:bg-muted transition-all active:scale-95"
+                  onClick={() => go("/billing")}
+                >
+                  <CreditCard className="h-4 w-4" />
+                  <span>Billing</span>
+                </button>
+                <button
+                  className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-xl text-sm hover:bg-muted transition-all active:scale-95"
+                  onClick={() => go("/settings")}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Settings</span>
+                </button>
+                <button
+                  className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-xl text-sm hover:bg-muted transition-all active:scale-95"
+                  onClick={() => go("/help")}
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  <span>Help</span>
+                </button>
+                <button
+                  className="flex items-center gap-2 px-4 py-3 bg-destructive/10 text-destructive rounded-xl text-sm hover:bg-destructive/20 transition-all active:scale-95"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Sign Out</span>
+                </button>
+              </div>
 
-                  <button
-                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
-                    onClick={() => go("/help")}
-                  >
-                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                    Help
-                  </button>
-
-                  <button
-                    className="flex items-center gap-2.5 p-3 border border-border/50 rounded-xl text-sm font-medium hover:bg-muted/50 transition-colors"
-                    onClick={() => go("/settings")}
-                  >
-                    <Settings className="h-4 w-4 text-muted-foreground" />
-                    Settings
-                  </button>
-
-                  <ContactSupportDialog />
-                </div>
+              {/* Support at bottom */}
+              <div className="pt-2 border-t border-border/50">
+                <ContactSupportDialog />
               </div>
             </div>
           </SheetContent>
