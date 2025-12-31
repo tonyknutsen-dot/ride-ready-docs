@@ -626,6 +626,38 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     }
   };
 
+  const getDueDateStatus = (targetDate: string | null, status: string) => {
+    if (!targetDate || status === 'completed') return null;
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dueDate = new Date(targetDate);
+    dueDate.setHours(0, 0, 0, 0);
+    
+    const diffDays = Math.ceil((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) {
+      return { 
+        label: 'Overdue', 
+        className: 'bg-red-100 text-red-800 border border-red-200',
+        icon: 'overdue'
+      };
+    } else if (diffDays === 0) {
+      return { 
+        label: 'Due Today', 
+        className: 'bg-orange-100 text-orange-800 border border-orange-200',
+        icon: 'today'
+      };
+    } else if (diffDays <= 7) {
+      return { 
+        label: `Due in ${diffDays}d`, 
+        className: 'bg-amber-100 text-amber-800 border border-amber-200',
+        icon: 'soon'
+      };
+    }
+    return null;
+  };
+
   const exportToPDF = async () => {
     if (!selectedAssessment) return;
 
@@ -1332,6 +1364,11 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                           {item.status === 'in_progress' && 'In Progress'}
                           {item.status === 'completed' && 'Completed'}
                         </span>
+                        {getDueDateStatus(item.target_date, item.status) && (
+                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getDueDateStatus(item.target_date, item.status)?.className}`}>
+                            {getDueDateStatus(item.target_date, item.status)?.label}
+                          </span>
+                        )}
                         <span className="text-xs text-muted-foreground">
                           L: {item.likelihood} • S: {item.severity}
                         </span>
@@ -1389,7 +1426,14 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     {item.target_date && (
                       <div>
                         <span className="text-muted-foreground">Due:</span>
-                        <p className="font-medium mt-0.5">{format(new Date(item.target_date), 'dd MMM yyyy')}</p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="font-medium">{format(new Date(item.target_date), 'dd MMM yyyy')}</p>
+                          {getDueDateStatus(item.target_date, item.status) && (
+                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getDueDateStatus(item.target_date, item.status)?.className}`}>
+                              {getDueDateStatus(item.target_date, item.status)?.label}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>
