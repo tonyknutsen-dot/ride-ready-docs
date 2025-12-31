@@ -18,10 +18,28 @@ import {
   ChevronRight,
   Send,
   Building2,
-  Users
+  Users,
+  Star,
+  Plus,
+  Trash2,
+  BookUser
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 interface Document {
   id: string;
@@ -44,6 +62,15 @@ interface RideWithDocs extends Ride {
   expanded: boolean;
 }
 
+interface SavedRecipient {
+  id: string;
+  name: string;
+  email: string;
+  organization_type?: string;
+  notes?: string;
+  is_favorite: boolean;
+}
+
 const BatchSendDocuments = () => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -55,6 +82,11 @@ const BatchSendDocuments = () => {
   const [recipientName, setRecipientName] = useState('');
   const [message, setMessage] = useState('');
   const [profile, setProfile] = useState<any>(null);
+  
+  // Saved recipients state
+  const [savedRecipients, setSavedRecipients] = useState<SavedRecipient[]>([]);
+  const [showSaveRecipientDialog, setShowSaveRecipientDialog] = useState(false);
+  const [newRecipientOrg, setNewRecipientOrg] = useState('');
 
   useEffect(() => {
     if (user) {
@@ -72,6 +104,15 @@ const BatchSendDocuments = () => {
         .eq('user_id', user?.id)
         .single();
       setProfile(profileData);
+
+      // Load saved recipients
+      const { data: recipientsData } = await supabase
+        .from('saved_recipients')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('is_favorite', { ascending: false })
+        .order('name');
+      setSavedRecipients(recipientsData || []);
 
       // Load all rides
       const { data: ridesData, error: ridesError } = await supabase
@@ -110,6 +151,88 @@ const BatchSendDocuments = () => {
       toast.error('Failed to load documents');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSelectRecipient = (recipientId: string) => {
+    const recipient = savedRecipients.find(r => r.id === recipientId);
+    if (recipient) {
+      setRecipientEmail(recipient.email);
+      setRecipientName(recipient.name);
+    }
+  };
+
+  const handleSaveRecipient = async () => {
+    if (!recipientEmail || !recipientName) {
+      toast.error('Please enter both name and email to save');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('saved_recipients')
+        .insert({
+          user_id: user?.id,
+          name: recipientName,
+          email: recipientEmail,
+          organization_type: newRecipientOrg || null
+        });
+
+      if (error) throw error;
+
+      toast.success('Recipient saved');
+      setShowSaveRecipientDialog(false);
+      setNewRecipientOrg('');
+      
+      // Reload saved recipients
+      const { data: recipientsData } = await supabase
+        .from('saved_recipients')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('is_favorite', { ascending: false })
+        .order('name');
+      setSavedRecipients(recipientsData || []);
+    } catch (error: any) {
+      console.error('Error saving recipient:', error);
+      toast.error('Failed to save recipient');
+    }
+  };
+
+  const handleDeleteRecipient = async (recipientId: string) => {
+    try {
+      const { error } = await supabase
+        .from('saved_recipients')
+        .delete()
+        .eq('id', recipientId);
+
+      if (error) throw error;
+
+      setSavedRecipients(prev => prev.filter(r => r.id !== recipientId));
+      toast.success('Recipient removed');
+    } catch (error) {
+      console.error('Error deleting recipient:', error);
+      toast.error('Failed to remove recipient');
+    }
+  };
+
+  const handleToggleFavorite = async (recipientId: string, currentFavorite: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('saved_recipients')
+        .update({ is_favorite: !currentFavorite })
+        .eq('id', recipientId);
+
+      if (error) throw error;
+
+      setSavedRecipients(prev => 
+        prev.map(r => r.id === recipientId ? { ...r, is_favorite: !currentFavorite } : r)
+          .sort((a, b) => {
+            if (a.is_favorite !== b.is_favorite) return b.is_favorite ? 1 : -1;
+            return a.name.localeCompare(b.name);
+          })
+      );
+    } catch (error) {
+      console.error('Error updating favorite:', error);
     }
   };
 
@@ -421,13 +544,112 @@ const BatchSendDocuments = () => {
             </CardContent>
           </Card>
 
+          {/* Saved Recipients */}
+          {savedRecipients.length > 0 && (
+            <Card>
+              <CardHeader className="pb-3 px-3 sm:px-6">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <BookUser className="h-4 w-4 text-primary" />
+                  Saved Recipients
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-3 sm:px-6">
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {savedRecipients.map(recipient => (
+                    <div 
+                      key={recipient.id}
+                      className="flex items-center gap-2 p-2 border rounded-lg hover:bg-accent/50 cursor-pointer group"
+                      onClick={() => handleSelectRecipient(recipient.id)}
+                    >
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleToggleFavorite(recipient.id, recipient.is_favorite);
+                        }}
+                        className="shrink-0"
+                      >
+                        <Star className={`h-4 w-4 ${recipient.is_favorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs sm:text-sm font-medium truncate">{recipient.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{recipient.email}</p>
+                      </div>
+                      {recipient.organization_type && (
+                        <Badge variant="outline" className="text-xs hidden sm:inline-flex">{recipient.organization_type}</Badge>
+                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteRecipient(recipient.id);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Recipient Form */}
           <Card>
             <CardHeader className="pb-3 px-3 sm:px-6">
-              <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                <Mail className="h-4 w-4 text-primary" />
-                Recipient Details
-              </CardTitle>
+              <div className="flex items-center justify-between gap-2">
+                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-primary" />
+                  Recipient Details
+                </CardTitle>
+                <Dialog open={showSaveRecipientDialog} onOpenChange={setShowSaveRecipientDialog}>
+                  <DialogTrigger asChild>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="h-7 text-xs"
+                      disabled={!recipientEmail || !recipientName}
+                    >
+                      <Plus className="h-3 w-3 mr-1" />
+                      <span className="hidden sm:inline">Save Recipient</span>
+                      <span className="sm:hidden">Save</span>
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                      <DialogTitle>Save Recipient</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 pt-2">
+                      <div>
+                        <Label className="text-sm">Name</Label>
+                        <Input value={recipientName} disabled className="mt-1.5 bg-muted" />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Email</Label>
+                        <Input value={recipientEmail} disabled className="mt-1.5 bg-muted" />
+                      </div>
+                      <div>
+                        <Label className="text-sm">Organization Type (Optional)</Label>
+                        <Select value={newRecipientOrg} onValueChange={setNewRecipientOrg}>
+                          <SelectTrigger className="mt-1.5">
+                            <SelectValue placeholder="Select type..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="council">Local Council</SelectItem>
+                            <SelectItem value="guild">Showmen's Guild</SelectItem>
+                            <SelectItem value="insurer">Insurance Company</SelectItem>
+                            <SelectItem value="inspector">Inspection Body</SelectItem>
+                            <SelectItem value="hse">HSE</SelectItem>
+                            <SelectItem value="other">Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <Button onClick={handleSaveRecipient} className="w-full">
+                        Save Recipient
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4 px-3 sm:px-6">
               <div>
