@@ -1110,6 +1110,42 @@ export type Database = {
         }
         Relationships: []
       }
+      saved_recipients: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          is_favorite: boolean | null
+          name: string
+          notes: string | null
+          organization_type: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          is_favorite?: boolean | null
+          name: string
+          notes?: string | null
+          organization_type?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          is_favorite?: boolean | null
+          name?: string
+          notes?: string | null
+          organization_type?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
           admin_response: string | null
