@@ -1,13 +1,26 @@
 import { Button } from "@/components/ui/button";
 import { Menu, X, LogOut, User } from "lucide-react";
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import logo from "@/assets/logo.png";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 
 const Header = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleAnchorClick = (anchor: string) => {
+    if (location.pathname === '/') {
+      // Already on home page, just scroll
+      const element = document.getElementById(anchor);
+      element?.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      // Navigate to home page with anchor
+      navigate(`/#${anchor}`);
+    }
+  };
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const { user, signOut } = useAuth();
@@ -46,18 +59,18 @@ const Header = () => {
           <nav className="hidden md:flex items-center gap-1">
             {!user && (
               <>
-                <a 
-                  href="#features" 
+                <button 
+                  onClick={() => handleAnchorClick('features')}
                   className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-foreground rounded-md hover:bg-muted transition-smooth"
                 >
                   Features
-                </a>
-                <a 
-                  href="#pricing" 
+                </button>
+                <button 
+                  onClick={() => handleAnchorClick('pricing')}
                   className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-foreground rounded-md hover:bg-muted transition-smooth"
                 >
                   Pricing
-                </a>
+                </button>
                 <button 
                   onClick={() => setContactDialogOpen(true)}
                   className="px-4 py-2 text-sm font-medium text-foreground/80 hover:text-foreground rounded-md hover:bg-muted transition-smooth"
@@ -139,22 +152,26 @@ const Header = () => {
             <nav className="flex flex-col gap-1">
               {!user ? (
                 <>
-                  <a 
-                    href="#features" 
-                    className="px-4 py-3 text-foreground hover:bg-muted rounded-lg transition-smooth"
-                    onClick={() => setIsMenuOpen(false)}
+                  <button 
+                    className="w-full text-left px-4 py-3 text-foreground hover:bg-muted rounded-lg transition-smooth"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      handleAnchorClick('features');
+                    }}
                   >
                     Features
-                  </a>
-                  <a 
-                    href="#pricing" 
-                    className="px-4 py-3 text-foreground hover:bg-muted rounded-lg transition-smooth"
-                    onClick={() => setIsMenuOpen(false)}
+                  </button>
+                  <button 
+                    className="w-full text-left px-4 py-3 text-foreground hover:bg-muted rounded-lg transition-smooth"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      handleAnchorClick('pricing');
+                    }}
                   >
                     Pricing
-                  </a>
+                  </button>
                   <button 
-                    className="px-4 py-3 text-left text-foreground hover:bg-muted rounded-lg transition-smooth"
+                    className="w-full text-left px-4 py-3 text-foreground hover:bg-muted rounded-lg transition-smooth"
                     onClick={() => {
                       setIsMenuOpen(false);
                       setContactDialogOpen(true);
