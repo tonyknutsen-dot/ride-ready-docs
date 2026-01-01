@@ -72,7 +72,7 @@ const Features = () => {
             <span className="text-primary">One Complete Solution</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Choose the tool you need or use both together. Built specifically for amusement and leisure professionals.
+            Choose the tool you need or use both together. Built specifically for showmen and amusement professionals worldwide.
           </p>
         </div>
 
