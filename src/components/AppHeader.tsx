@@ -1,9 +1,9 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown, ShieldCheck, Calendar as CalendarIcon, Send } from 'lucide-react';
+import { useAdmin } from '@/contexts/AdminContext';
+import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown, ShieldCheck, Calendar as CalendarIcon, Send, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,7 @@ import logo from '@/assets/logo.png';
 const AppHeader = () => {
   const location = useLocation();
   const { signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const { toast } = useToast();
 
   const handleSignOut = async () => {
@@ -149,6 +150,21 @@ const AppHeader = () => {
               </DropdownMenuItem>
               
               <RequestFeatureDialog />
+              
+              {isAdmin && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuLabel className="text-xs font-medium text-muted-foreground">
+                    Admin
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin" className="flex items-center cursor-pointer text-primary">
+                      <Shield className="h-4 w-4 mr-2" />
+                      Admin Dashboard
+                    </Link>
+                  </DropdownMenuItem>
+                </>
+              )}
               
               <DropdownMenuSeparator />
               
