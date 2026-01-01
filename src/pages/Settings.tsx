@@ -7,9 +7,25 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Info, Settings as SettingsIcon, User, FileText, Mail } from 'lucide-react';
+import { Info, Settings as SettingsIcon, User, FileText, Mail, Globe } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppHeader from '@/components/AppHeader';
+
+const COUNTRIES = [
+  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', note: 'Uses ADIPS (rides) & PIPA (inflatables) certificates' },
+  { code: 'IE', name: 'Ireland', flag: '🇮🇪', note: 'Uses Declaration of Compliance certificates' },
+  { code: 'US', name: 'United States', flag: '🇺🇸', note: 'Uses state-specific safety certifications' },
+  { code: 'AU', name: 'Australia', flag: '🇦🇺', note: 'Uses Declaration of Compliance certificates' },
+  { code: 'NZ', name: 'New Zealand', flag: '🇳🇿', note: 'Uses Declaration of Compliance certificates' },
+  { code: 'DE', name: 'Germany', flag: '🇩🇪', note: 'Uses TÜV safety certifications' },
+  { code: 'FR', name: 'France', flag: '🇫🇷', note: 'Uses safety compliance certificates' },
+  { code: 'NL', name: 'Netherlands', flag: '🇳🇱', note: 'Uses safety compliance certificates' },
+  { code: 'ES', name: 'Spain', flag: '🇪🇸', note: 'Uses safety compliance certificates' },
+  { code: 'IT', name: 'Italy', flag: '🇮🇹', note: 'Uses safety compliance certificates' },
+  { code: 'CA', name: 'Canada', flag: '🇨🇦', note: 'Uses provincial safety certifications' },
+  { code: 'OTHER', name: 'Other Country', flag: '🌍', note: 'Uses Declaration of Compliance certificates' },
+];
 
 const Settings = () => {
   const { user } = useAuth();
@@ -18,6 +34,8 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [versioningEnabled, setVersioningEnabled] = useState(true);
   const [updatingVersioning, setUpdatingVersioning] = useState(false);
+  const [country, setCountry] = useState('GB');
+  const [updatingCountry, setUpdatingCountry] = useState(false);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -32,6 +50,7 @@ const Settings = () => {
     if (!error && data) {
       setProfile(data);
       setVersioningEnabled(data.enable_document_versioning ?? true);
+      setCountry(data.country || 'GB');
     }
     setLoading(false);
   };
@@ -61,6 +80,32 @@ const Settings = () => {
     setUpdatingVersioning(false);
   };
 
+  const handleCountryChange = async (newCountry: string) => {
+    if (!user) return;
+    
+    setUpdatingCountry(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ country: newCountry })
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update country setting",
+        variant: "destructive",
+      });
+    } else {
+      setCountry(newCountry);
+      const countryInfo = COUNTRIES.find(c => c.code === newCountry);
+      toast({
+        title: "Country updated",
+        description: countryInfo ? `Terminology will now match ${countryInfo.name} standards` : 'Country updated',
+      });
+    }
+    setUpdatingCountry(false);
+  };
+
   useEffect(() => {
     fetchProfile();
   }, [user]);
@@ -68,6 +113,8 @@ const Settings = () => {
   const handleComplete = () => {
     fetchProfile();
   };
+
+  const selectedCountry = COUNTRIES.find(c => c.code === country);
 
   return (
     <>
@@ -150,6 +197,59 @@ const Settings = () => {
                 disabled={loading || updatingVersioning}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Region Settings Card */}
+        <Card className="shadow-card">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-primary" />
+              <CardTitle className="text-base">Region & Terminology</CardTitle>
+            </div>
+            <CardDescription className="text-sm">
+              Set your country for region-appropriate certificate names
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="country-select" className="text-sm font-medium">
+                Country / Region
+              </Label>
+              <Select 
+                value={country} 
+                onValueChange={handleCountryChange}
+                disabled={loading || updatingCountry}
+              >
+                <SelectTrigger id="country-select" className="h-11">
+                  <SelectValue placeholder="Select your country..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      <div className="flex items-center gap-2">
+                        <span>{c.flag}</span>
+                        <span>{c.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {selectedCountry && (
+              <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+                <p className="text-xs text-muted-foreground">
+                  <span className="font-medium text-foreground">{selectedCountry.flag} {selectedCountry.name}:</span>{' '}
+                  {selectedCountry.note}
+                </p>
+                {selectedCountry.code === 'GB' && (
+                  <p className="text-xs text-primary mt-2">
+                    💡 UK terminology: ADIPS certificates for rides, PIPA certificates for inflatables
+                  </p>
+                )}
+              </div>
+            )}
           </CardContent>
         </Card>
 

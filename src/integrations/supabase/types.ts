@@ -839,6 +839,7 @@ export type Database = {
           app_mode: string
           company_name: string | null
           controller_name: string | null
+          country: string | null
           created_at: string
           enable_document_versioning: boolean
           id: string
@@ -855,6 +856,7 @@ export type Database = {
           app_mode?: string
           company_name?: string | null
           controller_name?: string | null
+          country?: string | null
           created_at?: string
           enable_document_versioning?: boolean
           id?: string
@@ -871,6 +873,7 @@ export type Database = {
           app_mode?: string
           company_name?: string | null
           controller_name?: string | null
+          country?: string | null
           created_at?: string
           enable_document_versioning?: boolean
           id?: string
