@@ -122,7 +122,7 @@ export const RequestFeatureDialog = ({ trigger }: RequestFeatureDialogProps) => 
             Request a Feature
           </DialogTitle>
           <DialogDescription>
-            Have an idea to improve Showmen's Ride Ready? We'd love to hear it!
+            Have an idea to improve Ride Ready Docs? We'd love to hear it!
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">

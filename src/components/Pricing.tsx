@@ -64,7 +64,7 @@ const Pricing = () => {
             Simple, <span className="text-primary">Transparent</span> Pricing
           </h2>
           <p className="text-lg text-muted-foreground mb-6">
-            Choose the perfect plan for your fairground documentation needs. No hidden fees.
+            Choose the perfect plan for your equipment documentation needs. No hidden fees.
           </p>
           
           {/* Billing Toggle */}
@@ -110,7 +110,7 @@ const Pricing = () => {
                 Documents & Compliance
               </CardTitle>
               <p className="text-sm text-muted-foreground mb-4">
-                Essential plan for fairground operators
+                Essential plan for ride and equipment operators
               </p>
               <div className="flex flex-col items-center">
                 <div className="flex items-baseline justify-center gap-1">
@@ -221,7 +221,7 @@ const Pricing = () => {
         {/* Bottom CTA */}
         <div className="text-center mt-12">
           <p className="text-muted-foreground mb-4">
-            Need a custom solution for your fairground business?
+            Need a custom solution for your business?
           </p>
           <Button 
             variant="ghost" 

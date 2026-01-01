@@ -142,14 +142,15 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="showmen_name">Showmen Name</Label>
+              <Label htmlFor="showmen_name">Operator Name</Label>
               <Input
                 id="showmen_name"
                 value={formData.showmen_name}
                 onChange={(e) => setFormData({ ...formData, showmen_name: e.target.value })}
-                placeholder="Enter showmen name (optional)"
+                placeholder="Enter operator name (optional)"
                 className={errors.showmen_name ? "border-destructive" : ""}
               />
+              <p className="text-xs text-muted-foreground">Known as "Showmen Name" in the UK</p>
               {errors.showmen_name && (
                 <p className="text-sm text-destructive">{errors.showmen_name}</p>
               )}

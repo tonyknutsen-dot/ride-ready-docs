@@ -8,12 +8,16 @@ import { Upload, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useTerminology } from '@/hooks/useTerminology';
 
-const documentTypes = [
+// Base document types - will be filtered/modified based on user's country
+const getDocumentTypes = (isUK: boolean) => [
   // Safety Certificates - Featured at top
-  { id: 'declaration_of_compliance', name: '📜 Declaration of Compliance (DOC)', description: '⭐ REQUIRED - Your annual safety certificate to operate', featured: true, category: 'safety' },
-  { id: 'adips_certificate', name: '🇬🇧 ADIPS Certificate (UK)', description: 'UK: Amusement Device Inspection Procedures Scheme certificate for rides', featured: true, category: 'safety', ukNote: true },
-  { id: 'pipa_certificate', name: '🇬🇧 PIPA Certificate (UK)', description: 'UK: Pertexa Inflatable Play Accreditation certificate for inflatables', featured: true, category: 'safety', ukNote: true },
+  { id: 'declaration_of_compliance', name: '📜 Safety Compliance Certificate', description: '⭐ REQUIRED - Your annual safety certificate to operate', featured: true, category: 'safety' },
+  ...(isUK ? [
+    { id: 'adips_certificate', name: '🇬🇧 ADIPS Certificate', description: 'ADIPS Declaration of Compliance for amusement devices', featured: true, category: 'safety', ukOnly: true },
+    { id: 'pipa_certificate', name: '🇬🇧 PIPA Certificate', description: 'PIPA certificate for inflatable play equipment', featured: true, category: 'safety', ukOnly: true },
+  ] : []),
   
   // Other document types
   { id: 'build_up_down', name: 'Build Up and Down Procedure', description: 'Procedures for ride assembly and dismantling' },
@@ -44,6 +48,7 @@ interface DocumentUploadProps {
 const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { terminology } = useTerminology();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState('');
   const [documentName, setDocumentName] = useState('');
@@ -120,13 +125,16 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
     }
   };
 
+  // Get document types based on user's country
+  const documentTypes = getDocumentTypes(terminology.isUK);
+
   // Auto-suggest global for insurance documents
   useEffect(() => {
     const selectedType = documentTypes.find(t => t.id === documentType);
     if (selectedType && (selectedType as any).suggestGlobal && !rideId) {
       setIsGlobal(true);
     }
-  }, [documentType, rideId]);
+  }, [documentType, rideId, documentTypes]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -299,15 +307,17 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
               <SelectValue placeholder="Select type..." />
             </SelectTrigger>
             <SelectContent>
-              {/* UK Terminology Note */}
-              <div className="px-2 py-1.5 text-[11px] text-muted-foreground border-b mb-1">
-                🇬🇧 <strong>UK operators:</strong> ADIPS = rides, PIPA = inflatables. Both are Declaration of Compliance certificates.
-              </div>
+              {/* Terminology Note - only show for UK users */}
+              {terminology.isUK && (
+                <div className="px-2 py-1.5 text-[11px] text-muted-foreground border-b mb-1">
+                  🇬🇧 <strong>UK {terminology.operatorPlural}:</strong> ADIPS = rides, PIPA = inflatables
+                </div>
+              )}
               {documentTypes.map((type) => (
                 <SelectItem key={type.id} value={type.id}>
                   <div className="flex flex-col">
                     <span className={(type as any).featured ? 'text-primary font-medium' : ''}>{type.name}</span>
-                    {(type as any).ukNote && (
+                    {(type as any).ukOnly && (
                       <span className="text-[10px] text-muted-foreground">{type.description}</span>
                     )}
                   </div>

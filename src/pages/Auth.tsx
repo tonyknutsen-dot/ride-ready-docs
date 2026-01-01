@@ -266,7 +266,7 @@ const Auth = () => {
           <div className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto">
             <img src={logo} alt="Showmen's Ride Ready" className="h-28 w-auto" />
           </div>
-          <h1 className="text-2xl font-bold">Showmen's Ride Ready</h1>
+          <h1 className="text-2xl font-bold">Ride Ready Docs</h1>
           <p className="text-muted-foreground text-sm">
             Access your ride operations system
           </p>

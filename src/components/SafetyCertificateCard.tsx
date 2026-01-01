@@ -7,6 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tables } from '@/integrations/supabase/types';
 import { format, differenceInDays, isPast, isFuture } from 'date-fns';
+import { useTerminology } from '@/hooks/useTerminology';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -36,17 +37,18 @@ const SAFETY_CERT_TYPES = [
 
 const SafetyCertificateCard = ({ ride, onUploadClick }: SafetyCertificateCardProps) => {
   const { user } = useAuth();
+  const { terminology } = useTerminology();
   const [certificate, setCertificate] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Determine certificate terminology based on category
+  // Determine certificate terminology based on category and user's country
   const isInflatable = ride.ride_categories.category_group === 'Inflatables';
   const certName = isInflatable 
-    ? 'Safety Certificate (PIPA/DOC)' 
-    : 'Declaration of Compliance (DOC)';
+    ? terminology.inflatableCertificate 
+    : terminology.safetyCertificateShort;
   const certDescription = isInflatable
-    ? 'PIPA or ADIPS certificate for inflatable devices'
-    : 'Annual safety inspection certificate';
+    ? terminology.inflatableCertificateDescription
+    : terminology.safetyCertificateDescription;
 
   useEffect(() => {
     loadSafetyCertificate();
@@ -167,8 +169,13 @@ const SafetyCertificateCard = ({ ride, onUploadClick }: SafetyCertificateCardPro
                 </div>
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                Upload your safety certificate to track expiry and share with councils
+                Upload your safety certificate to track expiry and share with {terminology.localAuthority}s
               </p>
+              {terminology.ukTerminologyNote && (
+                <p className="text-[10px] text-muted-foreground/70 mt-1 italic">
+                  {terminology.ukTerminologyNote}
+                </p>
+              )}
               {onUploadClick && (
                 <Button 
                   size="sm" 
