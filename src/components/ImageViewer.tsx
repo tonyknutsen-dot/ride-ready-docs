@@ -1,4 +1,5 @@
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { X, ZoomIn, ZoomOut, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -29,7 +30,10 @@ const ImageViewer = ({ isOpen, onClose, imageUrl, imageName, onDownload }: Image
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden" aria-describedby={undefined}>
+        <VisuallyHidden>
+          <DialogTitle>{imageName}</DialogTitle>
+        </VisuallyHidden>
         <div className="relative w-full h-[90vh] bg-background/95 backdrop-blur">
           {/* Header */}
           <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-gradient-to-b from-background to-transparent">

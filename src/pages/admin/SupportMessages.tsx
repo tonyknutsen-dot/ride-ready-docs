@@ -86,16 +86,18 @@ export default function SupportMessages() {
 
   const handleUpdateMessage = async (
     messageId: string,
-    updates: { status?: string; admin_response?: string }
+    updates: { status?: string; admin_response?: string },
+    sendEmail: boolean = false
   ) => {
     setUpdating(true);
 
     try {
       const updateData: any = { ...updates, updated_at: new Date().toISOString() };
+      const user = (await supabase.auth.getUser()).data.user;
 
       if (updates.admin_response) {
         updateData.responded_at = new Date().toISOString();
-        updateData.responded_by = (await supabase.auth.getUser()).data.user?.id;
+        updateData.responded_by = user?.id;
       }
 
       const { error } = await supabase
@@ -105,7 +107,33 @@ export default function SupportMessages() {
 
       if (error) throw error;
 
-      toast.success('Message updated successfully');
+      // Send email notification if requested and we have a response
+      if (sendEmail && updates.admin_response && selectedMessage) {
+        try {
+          // Get user email from auth - we need to call an edge function since we can't query auth.users directly
+          const { error: emailError } = await supabase.functions.invoke('send-support-response', {
+            body: {
+              messageId,
+              adminResponse: updates.admin_response,
+              userEmail: user?.email, // This will be replaced by fetching actual user email
+              subject: selectedMessage.subject,
+            },
+          });
+
+          if (emailError) {
+            console.error('Failed to send email notification:', emailError);
+            toast.warning('Message saved but email notification failed');
+          } else {
+            toast.success('Response sent and user notified via email');
+          }
+        } catch (emailErr) {
+          console.error('Email notification error:', emailErr);
+          toast.warning('Message saved but email notification failed');
+        }
+      } else {
+        toast.success('Message updated successfully');
+      }
+
       fetchMessages();
       setSelectedMessage(null);
       setResponse('');
@@ -268,18 +296,33 @@ export default function SupportMessages() {
                   />
                 </div>
 
-                <Button
-                  onClick={() =>
-                    handleUpdateMessage(selectedMessage.id, {
-                      admin_response: response || selectedMessage.admin_response || '',
-                      status: 'in_progress',
-                    })
-                  }
-                  disabled={updating || !response}
-                  className="w-full"
-                >
-                  {updating ? 'Updating...' : 'Send Response'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() =>
+                      handleUpdateMessage(selectedMessage.id, {
+                        admin_response: response || selectedMessage.admin_response || '',
+                        status: 'in_progress',
+                      }, false)
+                    }
+                    disabled={updating || !response}
+                    variant="outline"
+                    className="flex-1"
+                  >
+                    {updating ? 'Saving...' : 'Save Only'}
+                  </Button>
+                  <Button
+                    onClick={() =>
+                      handleUpdateMessage(selectedMessage.id, {
+                        admin_response: response || selectedMessage.admin_response || '',
+                        status: 'in_progress',
+                      }, true)
+                    }
+                    disabled={updating || !response}
+                    className="flex-1"
+                  >
+                    {updating ? 'Sending...' : 'Save & Email User'}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
