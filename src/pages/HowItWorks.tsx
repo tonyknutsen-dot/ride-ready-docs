@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle, Upload, Calendar, Bell, FileText, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useDetectedTerminology } from "@/hooks/useTerminology";
 
 const HowItWorks = () => {
   const navigate = useNavigate();
+  const terminology = useDetectedTerminology();
 
   const steps = [
     {
@@ -151,7 +153,7 @@ const HowItWorks = () => {
             Ready to Get Started?
           </h2>
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join showmen across the UK who are simplifying their document management and staying inspection-ready.
+            Join {terminology.isUK ? 'showmen across the UK' : 'operators worldwide'} who are simplifying their document management and staying inspection-ready.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 

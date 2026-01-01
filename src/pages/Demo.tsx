@@ -21,9 +21,11 @@ import {
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useDetectedTerminology } from "@/hooks/useTerminology";
 
 const Demo = () => {
   const navigate = useNavigate();
+  const terminology = useDetectedTerminology();
 
   const basicFeatures = [
     {
@@ -106,7 +108,7 @@ const Demo = () => {
             Live Demo Dashboard
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Experience how Ride Ready Docs streamlines document management for showmen. 
+            Experience how Ride Ready Docs streamlines document management for {terminology.isUK ? 'showmen' : 'operators'}. 
             This demo shows real functionality with sample data.
           </p>
         </div>

@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { z } from "zod";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
+import { useTerminology } from "@/hooks/useTerminology";
 
 const featureRequestSchema = z.object({
   feature_title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
@@ -31,6 +32,7 @@ interface RequestFeatureDialogProps {
 export const RequestFeatureDialog = ({ trigger }: RequestFeatureDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { terminology } = useTerminology();
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -166,7 +168,7 @@ export const RequestFeatureDialog = ({ trigger }: RequestFeatureDialogProps) => 
             </Label>
             <Textarea
               id="use_case"
-              placeholder="E.g., I need this for quarterly council inspections..."
+              placeholder={`E.g., I need this for quarterly ${terminology.isUK ? 'council' : 'authority'} inspections...`}
               value={formData.use_case}
               onChange={(e) => handleInputChange("use_case", e.target.value)}
               className={`min-h-[80px] ${errors.use_case ? "border-destructive" : ""}`}

@@ -2,10 +2,12 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ArrowRight, Sparkles } from "lucide-react";
+import { useDetectedTerminology } from "@/hooks/useTerminology";
 
 const CallToAction = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const terminology = useDetectedTerminology();
 
   const handleStartTrial = () => {
     if (loading) return;
@@ -44,7 +46,7 @@ const CallToAction = () => {
           
           <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
             Manage documents, complete safety checks, and stay compliant. 
-            Join showmen who trust RideReady for their complete operations management.
+            Join {terminology.isUK ? 'showmen' : 'operators'} who trust RideReady for their complete operations management.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">

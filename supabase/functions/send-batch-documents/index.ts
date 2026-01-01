@@ -61,7 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const {
       recipientEmail,
-      recipientName = "Council/Authority",
+      recipientName = "Recipient",
       message = "",
       documentIds
     }: SendBatchDocumentsRequest = await req.json();

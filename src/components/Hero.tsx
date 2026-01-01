@@ -7,11 +7,13 @@ import { PlanSelection } from "./PlanSelection";
 import { useState } from "react";
 import heroImage from "@/assets/hero-fairground.jpg";
 import { FileText, Settings, ArrowRight, Check } from "lucide-react";
+import { useDetectedTerminology } from "@/hooks/useTerminology";
 
 const Hero = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { subscription } = useSubscription();
+  const terminology = useDetectedTerminology();
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   const handleDocsApp = () => {
@@ -52,7 +54,7 @@ const Hero = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-6 animate-fade-up">
             <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-white/90">Built for showmen & amusement professionals</span>
+            <span className="text-sm font-medium text-white/90">Built for {terminology.isUK ? 'showmen' : 'operators'} & amusement professionals</span>
           </div>
 
           {/* Headline */}

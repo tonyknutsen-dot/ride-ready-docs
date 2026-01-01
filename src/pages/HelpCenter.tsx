@@ -10,9 +10,12 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useTerminology } from "@/hooks/useTerminology";
+
 const HelpCenter = () => {
   const { subscription } = useSubscription();
   const navigate = useNavigate();
+  const { terminology } = useTerminology();
   const [selectedGuide, setSelectedGuide] = useState<number | null>(null);
   const isAdvanced = subscription?.subscriptionStatus === 'advanced';
   
@@ -114,8 +117,8 @@ const HelpCenter = () => {
       planRequired: "basic",
       questions: [
         {
-          q: "How do I start using Showmen's Ride Ready?",
-          a: "After signing up, start by completing your profile with your company and showman details. Then add your first ride with its details (manufacturer, serial number, etc.). Once added, you can upload documents.",
+          q: "How do I start using Ride Ready Docs?",
+          a: `After signing up, start by completing your profile with your company and ${terminology.isUK ? 'showman' : 'operator'} details. Then add your first ride with its details (manufacturer, serial number, etc.). Once added, you can upload documents.`,
           planRequired: "basic"
         },
         {
