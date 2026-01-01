@@ -160,7 +160,15 @@ export default function UserManagement() {
   const toggleSuspension = async (userId: string, currentlySuspended: boolean) => {
     setSuspendingUserId(userId);
 
+    // Find user info for email
+    const targetUser = users.find(u => u.id === userId);
+
     try {
+      // Get user email first
+      const { data: emailData } = await supabase.functions.invoke('get-user-email', {
+        body: { userId }
+      });
+
       if (currentlySuspended) {
         // Reactivate user
         const { error } = await supabase
@@ -173,6 +181,18 @@ export default function UserManagement() {
           .eq('user_id', userId);
 
         if (error) throw error;
+
+        // Send reactivation email
+        if (emailData?.email) {
+          supabase.functions.invoke('send-suspension-email', {
+            body: {
+              email: emailData.email,
+              companyName: targetUser?.profile?.company_name,
+              isSuspended: false,
+            }
+          }).catch(e => console.error('Failed to send reactivation email:', e));
+        }
+
         toast.success('User account reactivated');
       } else {
         // Suspend user
@@ -186,6 +206,19 @@ export default function UserManagement() {
           .eq('user_id', userId);
 
         if (error) throw error;
+
+        // Send suspension email
+        if (emailData?.email) {
+          supabase.functions.invoke('send-suspension-email', {
+            body: {
+              email: emailData.email,
+              companyName: targetUser?.profile?.company_name,
+              isSuspended: true,
+              reason: suspendReason || undefined,
+            }
+          }).catch(e => console.error('Failed to send suspension email:', e));
+        }
+
         toast.success('User account suspended');
       }
 
