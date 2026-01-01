@@ -8,6 +8,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML escape function to prevent XSS attacks
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return '';
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 interface RideTypeRequest {
   name: string;
   type: 'ride' | 'stall' | 'service';
@@ -38,6 +51,14 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error('Missing required fields');
     }
 
+    // Escape all user-controlled content for XSS prevention
+    const safeName = escapeHtml(requestData.name);
+    const safeDescription = escapeHtml(requestData.description);
+    const safeManufacturer = escapeHtml(requestData.manufacturer);
+    const safeAdditionalInfo = escapeHtml(requestData.additionalInfo);
+    const safeUserEmail = escapeHtml(requestData.userEmail);
+    const safeUserName = escapeHtml(requestData.userName);
+
     // Generate email content
     const typeLabel = requestData.type === 'ride' ? 'Fairground Ride' : 
                      requestData.type === 'stall' ? 'Food/Game Stall' : 'Generator/Equipment';
@@ -53,7 +74,7 @@ const handler = async (req: Request): Promise<Response> => {
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #6b7280; width: 150px;">Name:</td>
-              <td style="padding: 8px 0; color: #111827;">${requestData.name}</td>
+              <td style="padding: 8px 0; color: #111827;">${safeName}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Type:</td>
@@ -61,18 +82,18 @@ const handler = async (req: Request): Promise<Response> => {
             </tr>
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Description:</td>
-              <td style="padding: 8px 0; color: #111827;">${requestData.description}</td>
+              <td style="padding: 8px 0; color: #111827;">${safeDescription}</td>
             </tr>
-            ${requestData.manufacturer ? `
+            ${safeManufacturer ? `
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Manufacturer:</td>
-              <td style="padding: 8px 0; color: #111827;">${requestData.manufacturer}</td>
+              <td style="padding: 8px 0; color: #111827;">${safeManufacturer}</td>
             </tr>
             ` : ''}
-            ${requestData.additionalInfo ? `
+            ${safeAdditionalInfo ? `
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Additional Info:</td>
-              <td style="padding: 8px 0; color: #111827;">${requestData.additionalInfo}</td>
+              <td style="padding: 8px 0; color: #111827;">${safeAdditionalInfo}</td>
             </tr>
             ` : ''}
           </table>
@@ -83,11 +104,11 @@ const handler = async (req: Request): Promise<Response> => {
           <table style="width: 100%; border-collapse: collapse;">
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #6b7280; width: 100px;">Name:</td>
-              <td style="padding: 8px 0; color: #111827;">${requestData.userName}</td>
+              <td style="padding: 8px 0; color: #111827;">${safeUserName}</td>
             </tr>
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Email:</td>
-              <td style="padding: 8px 0; color: #111827;">${requestData.userEmail}</td>
+              <td style="padding: 8px 0; color: #111827;">${safeUserEmail}</td>
             </tr>
           </table>
         </div>
@@ -95,7 +116,7 @@ const handler = async (req: Request): Promise<Response> => {
         <div style="margin-top: 30px; padding: 20px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
           <h4 style="margin: 0 0 10px 0; color: #1e40af;">Next Steps</h4>
           <p style="margin: 0; color: #374151;">
-            Review this request and if appropriate, add "${requestData.name}" to the ride_categories table in the database.
+            Review this request and if appropriate, add "${safeName}" to the ride_categories table in the database.
           </p>
         </div>
       </div>
@@ -105,7 +126,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: "Showmen App <noreply@lovable.app>", 
       to: ["admin@lovable.app"], // Replace with your admin email
-      subject: `New ${typeLabel} Request: ${requestData.name}`,
+      subject: `New ${typeLabel} Request: ${safeName}`,
       html: htmlContent,
     });
 
@@ -116,9 +137,9 @@ const handler = async (req: Request): Promise<Response> => {
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #059669;">Request Submitted Successfully!</h2>
         
-        <p>Hi ${requestData.userName},</p>
+        <p>Hi ${safeUserName},</p>
         
-        <p>Thank you for submitting a request to add <strong>"${requestData.name}"</strong> as a new ${typeLabel.toLowerCase()} type to our database.</p>
+        <p>Thank you for submitting a request to add <strong>"${safeName}"</strong> as a new ${typeLabel.toLowerCase()} type to our database.</p>
         
         <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
           <p style="margin: 0;"><strong>What happens next?</strong></p>
@@ -138,7 +159,7 @@ const handler = async (req: Request): Promise<Response> => {
     const userEmailResponse = await resend.emails.send({
       from: "Showmen App <noreply@lovable.app>",
       to: [requestData.userEmail],
-      subject: `Request Confirmed: ${requestData.name}`,
+      subject: `Request Confirmed: ${safeName}`,
       html: userConfirmationHtml,
     });
 
