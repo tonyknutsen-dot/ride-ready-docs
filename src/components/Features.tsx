@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, FileText, CheckSquare, Wrench, Calendar, FolderOpen, Share2, FileCheck, BarChart3, CalendarDays, Building2 } from "lucide-react";
+import { Shield, FileText, CheckSquare, Wrench, Calendar, FolderOpen, Share2, FileCheck, BarChart3, CalendarDays, Building2, AlertTriangle, ClipboardList } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const Features = () => {
@@ -43,19 +43,29 @@ const Features = () => {
       description: "Digital daily, monthly, and yearly checklists with custom templates."
     },
     {
-      icon: <Wrench className="h-8 w-8" />,
-      title: "Maintenance Logging",
-      description: "Track all repairs, servicing, and parts for complete history."
+      icon: <AlertTriangle className="h-8 w-8" />,
+      title: "Risk Assessments",
+      description: "Create, manage, and track risk assessments for each ride with full audit history."
     },
     {
-      icon: <CalendarDays className="h-8 w-8" />,
-      title: "Calendar Overview",
-      description: "Visual dashboard with all deadlines and color-coded priorities."
+      icon: <Wrench className="h-8 w-8" />,
+      title: "Maintenance Logging",
+      description: "Track all repairs, servicing, and parts for complete maintenance history."
     },
     {
       icon: <Calendar className="h-8 w-8" />,
       title: "Inspection Scheduling",
-      description: "Safety compliance, NDT, and third-party inspection reminders automated."
+      description: "Annual inspections, NDT testing, and third-party inspection reminders."
+    },
+    {
+      icon: <ClipboardList className="h-8 w-8" />,
+      title: "Check History & Reports",
+      description: "Complete history of all checks with PDF report generation."
+    },
+    {
+      icon: <CalendarDays className="h-8 w-8" />,
+      title: "Calendar Overview",
+      description: "Visual dashboard showing all deadlines and color-coded priorities."
     }
   ];
 
@@ -128,7 +138,7 @@ const Features = () => {
             </Badge>
           </div>
           
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {checksFeatures.map((feature, index) => (
               <Card 
                 key={index} 
