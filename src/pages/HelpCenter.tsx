@@ -42,7 +42,7 @@ const HelpCenter = () => {
         "Go to your ride's detail page",
         "Select the 'Inspections' tab",
         "Click 'Schedule Inspection'",
-        "Choose inspection type (Annual, ADIPS, NDT, etc.)",
+        "Choose inspection type (Annual, Safety Compliance, NDT, etc.)",
         "Set the due date and add any notes",
         "The system will automatically send reminders before the due date"
       ]
@@ -157,7 +157,7 @@ const HelpCenter = () => {
       questions: [
         {
           q: "What types of documents can I upload?",
-          a: "You can upload any document related to your rides: ADIPS certificates, insurance documents, test certificates, manuals, risk assessments, electrical certificates, NDT reports, and more.",
+          a: "You can upload any document related to your rides: Declaration of Compliance (DOC) certificates (known as ADIPS in the UK), insurance documents, test certificates, manuals, risk assessments, electrical certificates, NDT reports, and more.",
           planRequired: "basic"
         },
         {
@@ -177,7 +177,7 @@ const HelpCenter = () => {
         },
         {
           q: "How do I send documents to councils or inspectors?",
-          a: "Use the 'Send Documents' feature on any ride. Select which documents to include, add recipient email addresses, include a message, and send. Perfect for ADIPS inspections or council submissions.",
+          a: "Use the 'Send Documents' feature on any ride. Select which documents to include, add recipient email addresses, include a message, and send. Perfect for safety compliance inspections or council submissions.",
           planRequired: "basic"
         }
       ]
@@ -188,7 +188,7 @@ const HelpCenter = () => {
       questions: [
         {
           q: "How do I set up annual inspections?",
-          a: "Go to the Inspections tab for your ride, click 'Schedule Inspection', select the inspection type (Annual, ADIPS, etc.), and set the due date. The system will send automatic reminders.",
+          a: "Go to the Inspections tab for your ride, click 'Schedule Inspection', select the inspection type (Annual, Safety Compliance, etc.), and set the due date. The system will send automatic reminders.",
           planRequired: "advanced"
         },
         {

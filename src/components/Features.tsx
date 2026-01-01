@@ -55,7 +55,7 @@ const Features = () => {
     {
       icon: <Calendar className="h-8 w-8" />,
       title: "Inspection Scheduling",
-      description: "ADIPS, NDT, and third-party inspection reminders automated."
+      description: "Safety compliance, NDT, and third-party inspection reminders automated."
     }
   ];
 

@@ -41,7 +41,7 @@ const PrivacyPolicy = () => {
                 <h3 className="text-xl font-semibold mb-2">2.3 Documents and Records</h3>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
                   <li>Safety certificates and inspection reports</li>
-                  <li>Insurance documents and ADIPS certificates</li>
+                  <li>Insurance documents and Declaration of Compliance (DOC) certificates</li>
                   <li>Maintenance records and NDT test reports</li>
                   <li>Technical bulletins and manuals</li>
                   <li>Daily check logs and signatures</li>
