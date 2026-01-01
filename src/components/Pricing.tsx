@@ -35,6 +35,7 @@ const Pricing = () => {
 
   const advancedFeatures = [
     "Everything in Essential, plus:",
+    "Unlimited rides (50p/month per ride over 10)",
     "Unlimited document storage",
     "All document types supported",
     "Daily, monthly & yearly checks",
