@@ -22,6 +22,7 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { cn } from '@/lib/utils';
 import logoImage from '@/assets/logo.png';
+import { useTerminology } from '@/hooks/useTerminology';
 
 interface RiskAssessmentManagerProps {
   ride: {
@@ -69,6 +70,7 @@ interface AuditLogEntry {
 
 export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ride }) => {
   const { user } = useAuth();
+  const { terminology } = useTerminology();
   const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
   const [selectedAssessment, setSelectedAssessment] = useState<RiskAssessment | null>(null);
   const [assessmentItems, setAssessmentItems] = useState<RiskAssessmentItem[]>([]);
@@ -481,7 +483,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       }
       if (profile.showmen_name) {
         doc.setFont('helvetica', 'bold');
-        doc.text('Showmen:', rightCol, yPos);
+        doc.text(terminology.isUK ? 'Showmen:' : 'Operator:', rightCol, yPos);
         doc.setFont('helvetica', 'normal');
         doc.text(profile.showmen_name, rightCol + 25, yPos);
       }
@@ -751,7 +753,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       }
       if (profile.showmen_name) {
         doc.setFont('helvetica', 'bold');
-        doc.text('Showmen:', rightCol, yPos);
+        doc.text(terminology.isUK ? 'Showmen:' : 'Operator:', rightCol, yPos);
         doc.setFont('helvetica', 'normal');
         doc.text(profile.showmen_name, rightCol + 25, yPos);
       }
@@ -951,7 +953,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         }
         if (profile.showmen_name) {
           doc.setFont('helvetica', 'bold');
-          doc.text('Showmen:', rightCol, yPos);
+          doc.text(terminology.isUK ? 'Showmen:' : 'Operator:', rightCol, yPos);
           doc.setFont('helvetica', 'normal');
           doc.text(profile.showmen_name, rightCol + 25, yPos);
         }
