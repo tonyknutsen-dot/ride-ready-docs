@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
+import { useTerminology } from '@/hooks/useTerminology';
 
 type Document = Tables<'documents'>;
 
@@ -20,6 +21,7 @@ interface DOCCertificateCardProps {
 const DOCCertificateCard = ({ rideId, rideName, onUploadClick }: DOCCertificateCardProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { terminology } = useTerminology();
   const [docCertificate, setDocCertificate] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -131,11 +133,11 @@ const DOCCertificateCard = ({ rideId, rideName, onUploadClick }: DOCCertificateC
             <div className="space-y-1">
               <CardTitle className="text-lg flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                DOC Certificate
+                {terminology.safetyCertificateShort}
                 {rideName && <span className="text-sm font-normal text-muted-foreground">- {rideName}</span>}
               </CardTitle>
               <CardDescription>
-                Declaration of Compliance - Required for UK operation
+                {terminology.safetyCertificateDescription}
               </CardDescription>
             </div>
             {docCertificate && (
@@ -151,12 +153,15 @@ const DOCCertificateCard = ({ rideId, rideName, onUploadClick }: DOCCertificateC
             <div className="text-center py-6 space-y-3">
               <AlertTriangle className="mx-auto h-12 w-12 text-amber-600" />
               <div>
-                <p className="font-medium">No DOC Certificate on file</p>
-                <p className="text-sm text-muted-foreground">Upload your Declaration of Compliance to operate legally</p>
+                <p className="font-medium">No {terminology.safetyCertificateShort} on file</p>
+                <p className="text-sm text-muted-foreground">Upload your safety certificate to operate legally</p>
+                {terminology.ukTerminologyNote && (
+                  <p className="text-xs text-muted-foreground/70 mt-1 italic">{terminology.ukTerminologyNote}</p>
+                )}
               </div>
               <Button onClick={onUploadClick} className="w-full">
                 <Upload className="h-4 w-4 mr-2" />
-                Upload DOC Certificate
+                Upload {terminology.safetyCertificateShort}
               </Button>
             </div>
           ) : (

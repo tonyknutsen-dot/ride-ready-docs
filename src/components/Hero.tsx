@@ -52,7 +52,7 @@ const Hero = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-6 animate-fade-up">
             <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-white/90">Built for fairground professionals</span>
+            <span className="text-sm font-medium text-white/90">Built for amusement & leisure professionals</span>
           </div>
 
           {/* Headline */}
@@ -64,7 +64,7 @@ const Hero = () => {
           
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-up animate-delay-200">
-            The all-in-one platform designed for showmen. Manage documents, track compliance, 
+            The all-in-one platform for ride and equipment operators. Manage documents, track compliance, 
             handle safety checks, and stay organized—all in one place.
           </p>
           

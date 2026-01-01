@@ -750,11 +750,11 @@ const BatchSendDocuments = () => {
                           <SelectTrigger className="mt-1.5">
                             <SelectValue placeholder="Select type..." />
                           </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="council">Local Council</SelectItem>
-                            <SelectItem value="guild">Showmen's Guild</SelectItem>
-                            <SelectItem value="insurer">Insurance Company</SelectItem>
-                            <SelectItem value="inspector">Inspection Body</SelectItem>
+                            <SelectContent>
+                              <SelectItem value="council">Local Authority</SelectItem>
+                              <SelectItem value="guild">Trade Association</SelectItem>
+                              <SelectItem value="insurer">Insurance Company</SelectItem>
+                              <SelectItem value="inspector">Inspection Body</SelectItem>
                             <SelectItem value="hse">HSE</SelectItem>
                             <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
@@ -787,7 +787,7 @@ const BatchSendDocuments = () => {
                   id="recipientName"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
-                  placeholder="Local Council, Showmen's Guild, etc."
+                  placeholder="Local Authority, Trade Association, etc."
                   className="mt-1.5"
                 />
               </div>
@@ -851,8 +851,8 @@ const BatchSendDocuments = () => {
                                 <SelectValue placeholder="Select type..." />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="council">Local Council</SelectItem>
-                                <SelectItem value="guild">Showmens Guild</SelectItem>
+                                <SelectItem value="council">Local Authority</SelectItem>
+                                <SelectItem value="guild">Trade Association</SelectItem>
                                 <SelectItem value="insurer">Insurance Company</SelectItem>
                                 <SelectItem value="inspector">Inspection Body</SelectItem>
                                 <SelectItem value="hse">HSE</SelectItem>

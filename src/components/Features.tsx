@@ -16,8 +16,8 @@ const Features = () => {
     },
     {
       icon: <FileCheck className="h-8 w-8" />,
-      title: "DOC Certificates",
-      description: "Declaration of Conformity management with expiry tracking."
+      title: "Safety Certificates",
+      description: "Safety compliance certificate management with expiry tracking."
     },
     {
       icon: <Building2 className="h-8 w-8" />,
@@ -72,7 +72,7 @@ const Features = () => {
             <span className="text-primary">One Complete Solution</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Choose the tool you need or use both together. Built specifically for showmen by industry professionals.
+            Choose the tool you need or use both together. Built specifically for amusement and leisure professionals.
           </p>
         </div>
 
