@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 
 interface RideTypeRequest {
   id: string;
+  user_id: string;
   name: string;
   type: string;
   description: string;
@@ -50,6 +51,9 @@ export default function RideTypeRequests() {
   };
 
   const updateStatus = async (id: string, status: 'approved' | 'rejected') => {
+    const request = requests.find(r => r.id === id);
+    if (!request) return;
+
     const { error } = await supabase
       .from('ride_type_requests')
       .update({ status, admin_notes: adminNotes })
@@ -64,9 +68,33 @@ export default function RideTypeRequests() {
       return;
     }
 
+    // Send email notification to user
+    try {
+      // Get user email via edge function
+      const { data: emailData } = await supabase.functions.invoke('get-user-email', {
+        body: { userId: request.user_id },
+      });
+      const userEmail = emailData?.email;
+
+      if (userEmail) {
+        await supabase.functions.invoke('send-request-status-email', {
+          body: {
+            userEmail,
+            requestType: 'ride_type',
+            requestName: request.name,
+            status,
+            adminNotes: adminNotes || undefined,
+          },
+        });
+      }
+    } catch (emailError) {
+      console.error('Failed to send notification email:', emailError);
+      // Don't fail the whole operation if email fails
+    }
+
     toast({
       title: 'Success',
-      description: `Request ${status}`,
+      description: `Request ${status}${status === 'approved' ? ' - user notified' : ''}`,
     });
 
     setSelectedRequest(null);
