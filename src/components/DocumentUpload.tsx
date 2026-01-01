@@ -10,7 +10,12 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 const documentTypes = [
-  { id: 'doc', name: '📜 DOC Certificate (Declaration of Compliance)', description: '⭐ REQUIRED - Your single-sheet certificate to operate in the UK', featured: true },
+  // Safety Certificates - Featured at top
+  { id: 'declaration_of_compliance', name: '📜 Declaration of Compliance (DOC)', description: '⭐ REQUIRED - Your annual safety certificate to operate', featured: true, category: 'safety' },
+  { id: 'adips_certificate', name: '🇬🇧 ADIPS Certificate (UK)', description: 'UK: Amusement Device Inspection Procedures Scheme certificate for rides', featured: true, category: 'safety', ukNote: true },
+  { id: 'pipa_certificate', name: '🇬🇧 PIPA Certificate (UK)', description: 'UK: Pertexa Inflatable Play Accreditation certificate for inflatables', featured: true, category: 'safety', ukNote: true },
+  
+  // Other document types
   { id: 'build_up_down', name: 'Build Up and Down Procedure', description: 'Procedures for ride assembly and dismantling' },
   { id: 'conformity_design', name: 'Conformity to Design', description: 'Design conformity certificates' },
   { id: 'controller_manual', name: 'Controller Manual', description: 'Control system manuals' },
@@ -294,9 +299,18 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
               <SelectValue placeholder="Select type..." />
             </SelectTrigger>
             <SelectContent>
+              {/* UK Terminology Note */}
+              <div className="px-2 py-1.5 text-[11px] text-muted-foreground border-b mb-1">
+                🇬🇧 <strong>UK operators:</strong> ADIPS = rides, PIPA = inflatables. Both are Declaration of Compliance certificates.
+              </div>
               {documentTypes.map((type) => (
                 <SelectItem key={type.id} value={type.id}>
-                  <span className={(type as any).featured ? 'text-primary font-medium' : ''}>{type.name}</span>
+                  <div className="flex flex-col">
+                    <span className={(type as any).featured ? 'text-primary font-medium' : ''}>{type.name}</span>
+                    {(type as any).ukNote && (
+                      <span className="text-[10px] text-muted-foreground">{type.description}</span>
+                    )}
+                  </div>
                 </SelectItem>
               ))}
             </SelectContent>
