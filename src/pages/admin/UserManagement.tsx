@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Users, Search, Shield, ShieldOff, Mail, Calendar, Building } from 'lucide-react';
+import { Loader2, Users, Search, Shield, ShieldOff, Calendar, Building, Ban, CheckCircle } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
 import {
   Table,
@@ -38,6 +40,9 @@ interface UserWithProfile {
     subscription_plan: string | null;
     trial_ends_at: string | null;
     country: string | null;
+    is_suspended: boolean;
+    suspended_at: string | null;
+    suspended_reason: string | null;
   } | null;
   isAdmin: boolean;
 }
@@ -47,7 +52,9 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
-
+  const [suspendingUserId, setSuspendingUserId] = useState<string | null>(null);
+  const [suspendReason, setSuspendReason] = useState('');
+  const [showSuspendDialog, setShowSuspendDialog] = useState<string | null>(null);
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -83,6 +90,9 @@ export default function UserManagement() {
           subscription_plan: profile.subscription_plan,
           trial_ends_at: profile.trial_ends_at,
           country: profile.country,
+          is_suspended: profile.is_suspended ?? false,
+          suspended_at: profile.suspended_at,
+          suspended_reason: profile.suspended_reason,
         },
         isAdmin: adminUserIds.has(profile.user_id),
       }));
@@ -129,7 +139,10 @@ export default function UserManagement() {
     }
   };
 
-  const getStatusBadge = (status: string | null) => {
+  const getStatusBadge = (status: string | null, isSuspended: boolean) => {
+    if (isSuspended) {
+      return <Badge variant="destructive"><Ban className="h-3 w-3 mr-1" />Suspended</Badge>;
+    }
     switch (status) {
       case 'active':
         return <Badge className="bg-green-500">Active</Badge>;
@@ -141,6 +154,49 @@ export default function UserManagement() {
         return <Badge variant="outline">Cancelled</Badge>;
       default:
         return <Badge variant="outline">{status || 'Unknown'}</Badge>;
+    }
+  };
+
+  const toggleSuspension = async (userId: string, currentlySuspended: boolean) => {
+    setSuspendingUserId(userId);
+
+    try {
+      if (currentlySuspended) {
+        // Reactivate user
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            is_suspended: false,
+            suspended_at: null,
+            suspended_reason: null,
+          })
+          .eq('user_id', userId);
+
+        if (error) throw error;
+        toast.success('User account reactivated');
+      } else {
+        // Suspend user
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            is_suspended: true,
+            suspended_at: new Date().toISOString(),
+            suspended_reason: suspendReason || null,
+          })
+          .eq('user_id', userId);
+
+        if (error) throw error;
+        toast.success('User account suspended');
+      }
+
+      setShowSuspendDialog(null);
+      setSuspendReason('');
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error updating suspension:', error);
+      toast.error('Failed to update account status');
+    } finally {
+      setSuspendingUserId(null);
     }
   };
 
@@ -177,7 +233,7 @@ export default function UserManagement() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -209,6 +265,18 @@ export default function UserManagement() {
             <CardContent>
               <div className="text-2xl font-bold">
                 {users.filter(u => u.isAdmin).length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Suspended Users
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">
+                {users.filter(u => u.profile?.is_suspended).length}
               </div>
             </CardContent>
           </Card>
@@ -258,7 +326,7 @@ export default function UserManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {getStatusBadge(user.profile?.subscription_status)}
+                      {getStatusBadge(user.profile?.subscription_status, user.profile?.is_suspended ?? false)}
                     </TableCell>
                     <TableCell>
                       <span className="capitalize">
@@ -285,49 +353,119 @@ export default function UserManagement() {
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button
-                            variant={user.isAdmin ? 'outline' : 'default'}
-                            size="sm"
-                            disabled={updatingUserId === user.id}
-                          >
-                            {updatingUserId === user.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : user.isAdmin ? (
-                              <>
-                                <ShieldOff className="h-4 w-4 mr-1" />
-                                Remove Admin
-                              </>
-                            ) : (
-                              <>
-                                <Shield className="h-4 w-4 mr-1" />
-                                Make Admin
-                              </>
-                            )}
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              {user.isAdmin ? 'Remove Admin Access?' : 'Grant Admin Access?'}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              {user.isAdmin
-                                ? 'This user will lose access to the admin dashboard and management features.'
-                                : 'This user will gain full admin access including user management and system settings.'}
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => toggleAdminRole(user.id, user.isAdmin)}
+                      <div className="flex items-center justify-end gap-2">
+                        {/* Suspend/Reactivate Button */}
+                        <AlertDialog open={showSuspendDialog === user.id} onOpenChange={(open) => {
+                          if (!open) {
+                            setShowSuspendDialog(null);
+                            setSuspendReason('');
+                          }
+                        }}>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant={user.profile?.is_suspended ? 'default' : 'outline'}
+                              size="sm"
+                              disabled={suspendingUserId === user.id}
+                              onClick={() => setShowSuspendDialog(user.id)}
                             >
-                              {user.isAdmin ? 'Remove Admin' : 'Grant Admin'}
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                              {suspendingUserId === user.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : user.profile?.is_suspended ? (
+                                <>
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Reactivate
+                                </>
+                              ) : (
+                                <>
+                                  <Ban className="h-4 w-4 mr-1" />
+                                  Suspend
+                                </>
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {user.profile?.is_suspended ? 'Reactivate User Account?' : 'Suspend User Account?'}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {user.profile?.is_suspended
+                                  ? 'This will restore the user\'s access to their account.'
+                                  : 'This will prevent the user from accessing their account.'}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            {!user.profile?.is_suspended && (
+                              <div className="space-y-2">
+                                <Label htmlFor="suspend-reason">Reason (optional)</Label>
+                                <Textarea
+                                  id="suspend-reason"
+                                  placeholder="Enter reason for suspension..."
+                                  value={suspendReason}
+                                  onChange={(e) => setSuspendReason(e.target.value)}
+                                />
+                              </div>
+                            )}
+                            {user.profile?.is_suspended && user.profile?.suspended_reason && (
+                              <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md">
+                                <strong>Suspension reason:</strong> {user.profile.suspended_reason}
+                              </div>
+                            )}
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => toggleSuspension(user.id, user.profile?.is_suspended ?? false)}
+                              >
+                                {user.profile?.is_suspended ? 'Reactivate' : 'Suspend'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
+                        {/* Admin Role Button */}
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant={user.isAdmin ? 'outline' : 'secondary'}
+                              size="sm"
+                              disabled={updatingUserId === user.id}
+                            >
+                              {updatingUserId === user.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : user.isAdmin ? (
+                                <>
+                                  <ShieldOff className="h-4 w-4 mr-1" />
+                                  Remove Admin
+                                </>
+                              ) : (
+                                <>
+                                  <Shield className="h-4 w-4 mr-1" />
+                                  Make Admin
+                                </>
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {user.isAdmin ? 'Remove Admin Access?' : 'Grant Admin Access?'}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {user.isAdmin
+                                  ? 'This user will lose access to the admin dashboard and management features.'
+                                  : 'This user will gain full admin access including user management and system settings.'}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={() => toggleAdminRole(user.id, user.isAdmin)}
+                              >
+                                {user.isAdmin ? 'Remove Admin' : 'Grant Admin'}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

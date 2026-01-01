@@ -843,9 +843,12 @@ export type Database = {
           created_at: string
           enable_document_versioning: boolean
           id: string
+          is_suspended: boolean
           showmen_name: string | null
           subscription_plan: string | null
           subscription_status: string | null
+          suspended_at: string | null
+          suspended_reason: string | null
           trial_ends_at: string | null
           trial_started_at: string | null
           updated_at: string
@@ -860,9 +863,12 @@ export type Database = {
           created_at?: string
           enable_document_versioning?: boolean
           id?: string
+          is_suspended?: boolean
           showmen_name?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
+          suspended_at?: string | null
+          suspended_reason?: string | null
           trial_ends_at?: string | null
           trial_started_at?: string | null
           updated_at?: string
@@ -877,9 +883,12 @@ export type Database = {
           created_at?: string
           enable_document_versioning?: boolean
           id?: string
+          is_suspended?: boolean
           showmen_name?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
+          suspended_at?: string | null
+          suspended_reason?: string | null
           trial_ends_at?: string | null
           trial_started_at?: string | null
           updated_at?: string
