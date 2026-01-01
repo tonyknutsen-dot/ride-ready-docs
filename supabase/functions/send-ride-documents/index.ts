@@ -66,7 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
     const {
       rideId,
       recipientEmail,
-      recipientName = "Council/Authority",
+      recipientName = "Recipient",
       message = "",
       includeInsurance,
       documentIds

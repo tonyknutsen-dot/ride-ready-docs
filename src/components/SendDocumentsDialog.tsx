@@ -11,7 +11,7 @@ import { Mail, FileText, AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-
+import { useTerminology } from '@/hooks/useTerminology';
 interface SendDocumentsDialogProps {
   ride: {
     id: string;
@@ -34,6 +34,7 @@ interface Document {
 
 export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, trigger }) => {
   const { user } = useAuth();
+  const { terminology } = useTerminology();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -235,7 +236,7 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
                   type="email"
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
-                  placeholder="council@example.com"
+                  placeholder={`${terminology.localAuthority}@example.com`}
                   className="mt-1.5"
                   required
                 />
@@ -246,7 +247,7 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
                   id="recipientName"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
-                  placeholder="Local Council / Authority"
+                  placeholder={terminology.isUK ? "Local Council / Guild" : "Local Authority / Organization"}
                   className="mt-1.5"
                 />
               </div>

@@ -40,6 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useTerminology } from '@/hooks/useTerminology';
 
 interface Document {
   id: string;
@@ -82,6 +83,7 @@ interface EmailTemplate {
 
 const BatchSendDocuments = () => {
   const { user } = useAuth();
+  const { terminology } = useTerminology();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [rides, setRides] = useState<RideWithDocs[]>([]);
@@ -468,7 +470,7 @@ const BatchSendDocuments = () => {
           Send Documents
         </h1>
         <p className="text-sm text-muted-foreground">
-          Select documents from multiple rides and send them to councils, guilds, or other recipients
+          Select documents from multiple rides and send them to {terminology.isUK ? 'councils, guilds' : 'authorities'}, or other recipients
         </p>
       </div>
 
@@ -751,8 +753,8 @@ const BatchSendDocuments = () => {
                             <SelectValue placeholder="Select type..." />
                           </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="council">Local Authority</SelectItem>
-                              <SelectItem value="guild">Trade Association</SelectItem>
+                              <SelectItem value="council">{terminology.isUK ? 'Local Council' : 'Local Authority'}</SelectItem>
+                              <SelectItem value="guild">{terminology.isUK ? 'Guild / Trade Association' : 'Trade Association'}</SelectItem>
                               <SelectItem value="insurer">Insurance Company</SelectItem>
                               <SelectItem value="inspector">Inspection Body</SelectItem>
                             <SelectItem value="hse">HSE</SelectItem>

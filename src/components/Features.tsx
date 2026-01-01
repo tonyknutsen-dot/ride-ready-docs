@@ -1,8 +1,10 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, FileText, CheckSquare, Wrench, Calendar, FolderOpen, Share2, FileCheck, BarChart3, CalendarDays, Building2, AlertTriangle, ClipboardList } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useDetectedTerminology } from "@/hooks/useTerminology";
 
 const Features = () => {
+  const terminology = useDetectedTerminology();
   const docsFeatures = [
     {
       icon: <FolderOpen className="h-8 w-8" />,
@@ -82,7 +84,7 @@ const Features = () => {
             <span className="text-primary">One Complete Solution</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Choose the tool you need or use both together. Built specifically for showmen and amusement professionals worldwide.
+            Choose the tool you need or use both together. Built specifically for {terminology.isUK ? 'showmen' : 'operators'} and amusement professionals worldwide.
           </p>
         </div>
 
