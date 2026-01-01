@@ -135,8 +135,7 @@ const Pricing = () => {
               </ul>
 
               <Button 
-                variant="outline" 
-                className="w-full py-5 text-base font-semibold border-2 hover:bg-accent/5 hover:border-accent/50 transition-all" 
+                className="w-full py-5 text-base font-semibold bg-primary hover:bg-primary/90 shadow-elegant transition-all" 
                 size="lg" 
                 onClick={() => navigate(user ? '/overview' : '/auth')}
               >
