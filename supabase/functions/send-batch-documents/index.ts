@@ -7,6 +7,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML escape function to prevent XSS attacks
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return '';
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 interface SendBatchDocumentsRequest {
   recipientEmail: string;
   recipientName?: string;
@@ -138,15 +151,15 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Split into ${emailBatches.length} email batch(es)`);
 
-    // Group documents by ride for the email content
-    const docsByRide = attachments.reduce((acc, att) => {
-      const key = att.rideName;
-      if (!acc[key]) acc[key] = [];
-      acc[key].push(att);
-      return acc;
-    }, {} as Record<string, typeof attachments>);
+    // Escape all user-controlled content for XSS prevention
+    const safeCompanyName = escapeHtml(profile?.company_name);
+    const safeControllerName = escapeHtml(profile?.controller_name);
+    const safeShowmenName = escapeHtml(profile?.showmen_name);
+    const safeAddress = escapeHtml(profile?.address);
+    const safeUserEmail = escapeHtml(user.email);
+    const safeMessage = escapeHtml(message);
 
-    const senderName = profile?.company_name || profile?.controller_name || "Ride Operator";
+    const senderName = safeCompanyName || safeControllerName || "Ride Operator";
     
     const emailResponses = [];
     let totalEmailsSent = 0;
@@ -184,19 +197,19 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div style="background-color: #e8f4f8; padding: 20px; border-left: 4px solid #007acc; margin-bottom: 20px;">
               <h2 style="color: #005580; margin: 0 0 15px 0; font-size: 18px;">📧 From</h2>
-              ${profile?.company_name ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Company:</strong> ${profile.company_name}</p>` : ''}
-              ${profile?.controller_name ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Controller:</strong> ${profile.controller_name}</p>` : ''}
-              ${profile?.showmen_name ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Showmen:</strong> ${profile.showmen_name}</p>` : ''}
-              ${profile?.address ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Address:</strong> ${profile.address}</p>` : ''}
-              <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;"><strong>Email:</strong> ${user.email}</p>
+              ${safeCompanyName ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Company:</strong> ${safeCompanyName}</p>` : ''}
+              ${safeControllerName ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Controller:</strong> ${safeControllerName}</p>` : ''}
+              ${safeShowmenName ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Showmen:</strong> ${safeShowmenName}</p>` : ''}
+              ${safeAddress ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Address:</strong> ${safeAddress}</p>` : ''}
+              <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;"><strong>Email:</strong> ${safeUserEmail}</p>
             </div>
             
             ${batchInfo}
 
-            ${message ? `
+            ${safeMessage ? `
               <div style="margin-bottom: 20px;">
                 <h3 style="color: #333;">Message</h3>
-                <p style="line-height: 1.6;">${message}</p>
+                <p style="line-height: 1.6;">${safeMessage}</p>
               </div>
             ` : ''}
 
@@ -204,12 +217,12 @@ const handler = async (req: Request): Promise<Response> => {
               <h3 style="color: #333;">Attached Documents ${totalBatches > 1 ? `(Batch ${batchNumber})` : ''}</h3>
               ${Object.entries(batchDocsByRide).map(([rideName, docs]) => `
                 <div style="margin-bottom: 15px;">
-                  <h4 style="color: #007acc; margin: 10px 0 5px 0; font-size: 14px;">🎪 ${rideName}</h4>
+                  <h4 style="color: #007acc; margin: 10px 0 5px 0; font-size: 14px;">🎪 ${escapeHtml(rideName)}</h4>
                   <ul style="list-style-type: none; padding: 0; margin: 0;">
                     ${(docs as any[]).map(att => `
                       <li style="padding: 8px; margin: 4px 0; background-color: #f1f3f4; border-radius: 4px;">
-                        📄 ${att.documentName} (${att.documentType})
-                        ${att.expiresAt ? `<span style="color: #666; font-size: 0.9em;"> - Expires: ${att.expiresAt}</span>` : ''}
+                        📄 ${escapeHtml(att.documentName)} (${escapeHtml(att.documentType)})
+                        ${att.expiresAt ? `<span style="color: #666; font-size: 0.9em;"> - Expires: ${escapeHtml(att.expiresAt)}</span>` : ''}
                       </li>
                     `).join('')}
                   </ul>
@@ -223,7 +236,7 @@ const handler = async (req: Request): Promise<Response> => {
 
             <div style="border-top: 1px solid #ddd; padding-top: 20px; margin-top: 30px; color: #666; font-size: 0.9em;">
               <p>This documentation package was sent via Ride Ready Docs system.</p>
-              <p>If you have any questions about these documents, please reply to this email or contact ${profile?.controller_name || 'the sender'} directly.</p>
+              <p>If you have any questions about these documents, please reply to this email or contact ${safeControllerName || 'the sender'} directly.</p>
             </div>
           </body>
         </html>

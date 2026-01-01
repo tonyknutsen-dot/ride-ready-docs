@@ -7,6 +7,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML escape function to prevent XSS attacks
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return '';
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 interface SendDocumentsRequest {
   rideId: string;
   recipientEmail: string;
@@ -159,9 +172,20 @@ const handler = async (req: Request): Promise<Response> => {
       emailBatches.push(currentBatch);
     }
 
+    // Escape all user-controlled content for XSS prevention
+    const safeCompanyName = escapeHtml(profile?.company_name);
+    const safeControllerName = escapeHtml(profile?.controller_name);
+    const safeShowmenName = escapeHtml(profile?.showmen_name);
+    const safeAddress = escapeHtml(profile?.address);
+    const safeUserEmail = escapeHtml(user.email);
+    const safeRideName = escapeHtml(ride.ride_name);
+    const safeManufacturer = escapeHtml(ride.manufacturer);
+    const safeSerialNumber = escapeHtml(ride.serial_number);
+    const safeMessage = escapeHtml(message);
+
     // Create and send emails (split if necessary)
-    const senderName = profile?.company_name || profile?.controller_name || "Ride Operator";
-    const rideInfo = `${ride.ride_name}${ride.manufacturer ? ` (${ride.manufacturer})` : ''}${ride.serial_number ? ` - S/N: ${ride.serial_number}` : ''}`;
+    const senderName = safeCompanyName || safeControllerName || "Ride Operator";
+    const rideInfo = `${safeRideName}${safeManufacturer ? ` (${safeManufacturer})` : ''}${safeSerialNumber ? ` - S/N: ${safeSerialNumber}` : ''}`;
     
     const emailResponses = [];
     let totalEmailsSent = 0;
@@ -191,27 +215,27 @@ const handler = async (req: Request): Promise<Response> => {
             
             <div style="background-color: #e8f4f8; padding: 20px; border-left: 4px solid #007acc; margin-bottom: 20px;">
               <h2 style="color: #005580; margin: 0 0 15px 0; font-size: 18px;">📧 From</h2>
-              ${profile?.company_name ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Company:</strong> ${profile.company_name}</p>` : ''}
-              ${profile?.controller_name ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Controller:</strong> ${profile.controller_name}</p>` : ''}
-              ${profile?.showmen_name ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Showmen:</strong> ${profile.showmen_name}</p>` : ''}
-              ${profile?.address ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Address:</strong> ${profile.address}</p>` : ''}
-              <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;"><strong>Email:</strong> ${user.email}</p>
+              ${safeCompanyName ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Company:</strong> ${safeCompanyName}</p>` : ''}
+              ${safeControllerName ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Controller:</strong> ${safeControllerName}</p>` : ''}
+              ${safeShowmenName ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Showmen:</strong> ${safeShowmenName}</p>` : ''}
+              ${safeAddress ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Address:</strong> ${safeAddress}</p>` : ''}
+              <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;"><strong>Email:</strong> ${safeUserEmail}</p>
             </div>
             
             ${batchInfo}
             
             <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
               <h2 style="color: #333; margin-top: 0;">Ride Information</h2>
-              <p><strong>Ride Name:</strong> ${ride.ride_name}</p>
-              ${ride.manufacturer ? `<p><strong>Manufacturer:</strong> ${ride.manufacturer}</p>` : ''}
-              ${ride.serial_number ? `<p><strong>Serial Number:</strong> ${ride.serial_number}</p>` : ''}
+              <p><strong>Ride Name:</strong> ${safeRideName}</p>
+              ${safeManufacturer ? `<p><strong>Manufacturer:</strong> ${safeManufacturer}</p>` : ''}
+              ${safeSerialNumber ? `<p><strong>Serial Number:</strong> ${safeSerialNumber}</p>` : ''}
               ${ride.year_manufactured ? `<p><strong>Year Manufactured:</strong> ${ride.year_manufactured}</p>` : ''}
             </div>
 
-            ${message ? `
+            ${safeMessage ? `
               <div style="margin-bottom: 20px;">
                 <h3 style="color: #333;">Message</h3>
-                <p style="line-height: 1.6;">${message}</p>
+                <p style="line-height: 1.6;">${safeMessage}</p>
               </div>
             ` : ''}
 
@@ -220,8 +244,8 @@ const handler = async (req: Request): Promise<Response> => {
               <ul style="list-style-type: none; padding: 0;">
                 ${batch.attachments.map(attachment => `
                   <li style="padding: 8px; margin: 4px 0; background-color: #f1f3f4; border-radius: 4px;">
-                    📄 ${attachment.documentName} (${attachment.documentType})
-                    ${attachment.expiresAt ? `<span style="color: #666; font-size: 0.9em;"> - Expires: ${attachment.expiresAt}</span>` : ''}
+                    📄 ${escapeHtml(attachment.documentName)} (${escapeHtml(attachment.documentType)})
+                    ${attachment.expiresAt ? `<span style="color: #666; font-size: 0.9em;"> - Expires: ${escapeHtml(attachment.expiresAt)}</span>` : ''}
                   </li>
                 `).join('')}
               </ul>
@@ -233,7 +257,7 @@ const handler = async (req: Request): Promise<Response> => {
 
             <div style="border-top: 1px solid #ddd; padding-top: 20px; margin-top: 30px; color: #666; font-size: 0.9em;">
               <p>This documentation package was sent via Ride Ready Docs system.</p>
-              <p>If you have any questions about these documents, please reply to this email or contact ${profile?.controller_name || 'the sender'} directly.</p>
+              <p>If you have any questions about these documents, please reply to this email or contact ${safeControllerName || 'the sender'} directly.</p>
             </div>
           </body>
         </html>

@@ -6,12 +6,41 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Allowed tables whitelist
+const ALLOWED_TABLES = ["daily_check_template_items", "check_library_items"];
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Authenticate the user
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      console.log("No authorization header provided");
+      return new Response(JSON.stringify({ error: "No authorization header" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser(
+      authHeader.replace("Bearer ", "")
+    );
+
+    if (authError || !user) {
+      console.log("Authentication failed:", authError?.message);
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { item_id, text, table } = await req.json();
     
     if (!item_id || !text) {
@@ -20,6 +49,58 @@ serve(async (req) => {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    const targetTable = table || "daily_check_template_items";
+    
+    // Validate table is in whitelist
+    if (!ALLOWED_TABLES.includes(targetTable)) {
+      console.log("Invalid table specified:", targetTable);
+      return new Response(JSON.stringify({ error: "Invalid table specified" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // Verify ownership based on the target table
+    if (targetTable === "daily_check_template_items") {
+      // Get the item and verify ownership through template
+      const { data: item, error: itemError } = await supabase
+        .from("daily_check_template_items")
+        .select("id, template_id, daily_check_templates!inner(user_id)")
+        .eq("id", item_id)
+        .single();
+
+      if (itemError || !item) {
+        console.log("Item not found:", item_id);
+        return new Response(JSON.stringify({ error: "Item not found" }), {
+          status: 404,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
+      // @ts-ignore - Supabase types don't handle nested selects perfectly
+      if (item.daily_check_templates?.user_id !== user.id) {
+        console.log("User does not own this item:", { user_id: user.id, item_owner: item.daily_check_templates?.user_id });
+        return new Response(JSON.stringify({ error: "Forbidden: Item does not belong to user" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+    } else if (targetTable === "check_library_items") {
+      // check_library_items are global/admin items - only admins can modify
+      const { data: isAdmin } = await supabase.rpc('has_role', { 
+        _user_id: user.id, 
+        _role: 'admin' 
+      });
+
+      if (!isAdmin) {
+        console.log("User is not admin, cannot modify check_library_items");
+        return new Response(JSON.stringify({ error: "Forbidden: Admin access required" }), {
+          status: 403,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
@@ -31,7 +112,7 @@ serve(async (req) => {
       });
     }
 
-    console.log(`Processing spellcheck for item ${item_id}: "${text}"`);
+    console.log(`Processing spellcheck for item ${item_id}: "${text}" (user: ${user.id})`);
 
     // Call AI to spell-check and clean up the text
     const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -95,12 +176,6 @@ Examples:
 
     // Only update if there's a meaningful change
     if (correctedText.toLowerCase() !== text.toLowerCase() && correctedText.length > 0) {
-      // Update the item in the database
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-      const targetTable = table || "daily_check_template_items";
       const column = targetTable === "daily_check_template_items" ? "check_item_text" : "label";
 
       const { error: updateError } = await supabase

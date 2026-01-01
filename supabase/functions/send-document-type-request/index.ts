@@ -9,6 +9,19 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML escape function to prevent XSS attacks
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return '';
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 interface DocumentTypeRequest {
   documentTypeName: string;
   description?: string;
@@ -34,6 +47,11 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Escape all user-controlled content for XSS prevention
+    const safeDocumentTypeName = escapeHtml(documentTypeName);
+    const safeDescription = escapeHtml(description);
+    const safeJustification = escapeHtml(justification);
+
     const emailResponse = await resend.emails.send({
       from: "RideCompliance <noreply@ridecompliance.com>",
       to: ["admin@ridecompliance.com"], // Replace with your admin email
@@ -46,20 +64,20 @@ const handler = async (req: Request): Promise<Response> => {
           
           <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin: 20px 0;">
             <h3 style="color: #2563eb; margin-top: 0;">Requested Document Type:</h3>
-            <p style="font-size: 18px; font-weight: bold; color: #333;">${documentTypeName}</p>
+            <p style="font-size: 18px; font-weight: bold; color: #333;">${safeDocumentTypeName}</p>
           </div>
 
-          ${description ? `
+          ${safeDescription ? `
             <div style="margin: 20px 0;">
               <h3 style="color: #2563eb;">Description:</h3>
-              <p style="color: #666; line-height: 1.6;">${description}</p>
+              <p style="color: #666; line-height: 1.6;">${safeDescription}</p>
             </div>
           ` : ''}
 
-          ${justification ? `
+          ${safeJustification ? `
             <div style="margin: 20px 0;">
               <h3 style="color: #2563eb;">Justification:</h3>
-              <p style="color: #666; line-height: 1.6;">${justification}</p>
+              <p style="color: #666; line-height: 1.6;">${safeJustification}</p>
             </div>
           ` : ''}
 

@@ -7,6 +7,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// HTML escape function to prevent XSS attacks
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return '';
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 interface SendRiskAssessmentRequest {
   assessmentId: string;
   rideId: string;
@@ -78,50 +91,60 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Risk assessment not found");
     }
 
-    const senderName = profile?.company_name || profile?.controller_name || "Ride Operator";
+    const senderName = escapeHtml(profile?.company_name || profile?.controller_name || "Ride Operator");
+    const safeRideName = escapeHtml(rideName);
+    const safeMessage = escapeHtml(message);
+    const safeRecipientName = escapeHtml(recipientName);
+    const safeCompanyName = escapeHtml(profile?.company_name);
+    const safeControllerName = escapeHtml(profile?.controller_name);
+    const safeShowmenName = escapeHtml(profile?.showmen_name);
+    const safeAddress = escapeHtml(profile?.address);
+    const safeAssessorName = escapeHtml(assessment.assessor_name);
+    const safePdfFileName = escapeHtml(pdfFileName);
+    const safeUserEmail = escapeHtml(user.email);
 
     const htmlContent = `
       <html>
         <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <div style="border-bottom: 2px solid #16a34a; padding-bottom: 20px; margin-bottom: 20px;">
             <h1 style="color: #16a34a; margin: 0 0 10px 0;">Risk Assessment</h1>
-            <p style="color: #666; margin: 0;">${rideName}</p>
+            <p style="color: #666; margin: 0;">${safeRideName}</p>
           </div>
           
           <div style="background-color: #f0fdf4; padding: 20px; border-left: 4px solid #16a34a; margin-bottom: 20px;">
             <h2 style="color: #15803d; margin: 0 0 15px 0; font-size: 18px;">📧 From</h2>
-            ${profile?.company_name ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Company:</strong> ${profile.company_name}</p>` : ''}
-            ${profile?.controller_name ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Controller:</strong> ${profile.controller_name}</p>` : ''}
-            ${profile?.showmen_name ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Showmen:</strong> ${profile.showmen_name}</p>` : ''}
-            ${profile?.address ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Address:</strong> ${profile.address}</p>` : ''}
-            <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;"><strong>Email:</strong> ${user.email}</p>
+            ${safeCompanyName ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Company:</strong> ${safeCompanyName}</p>` : ''}
+            ${safeControllerName ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Controller:</strong> ${safeControllerName}</p>` : ''}
+            ${safeShowmenName ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Showmen:</strong> ${safeShowmenName}</p>` : ''}
+            ${safeAddress ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Address:</strong> ${safeAddress}</p>` : ''}
+            <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;"><strong>Email:</strong> ${safeUserEmail}</p>
           </div>
 
           <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
             <h2 style="color: #333; margin-top: 0;">Assessment Details</h2>
-            <p><strong>Ride/Equipment:</strong> ${rideName}</p>
-            <p><strong>Assessor:</strong> ${assessment.assessor_name}</p>
+            <p><strong>Ride/Equipment:</strong> ${safeRideName}</p>
+            <p><strong>Assessor:</strong> ${safeAssessorName}</p>
             <p><strong>Assessment Date:</strong> ${new Date(assessment.assessment_date).toLocaleDateString('en-GB')}</p>
             <p><strong>Status:</strong> ${assessment.overall_status === 'completed' ? '✅ Completed' : '🔄 In Progress'}</p>
           </div>
 
-          ${message ? `
+          ${safeMessage ? `
             <div style="margin-bottom: 20px;">
               <h3 style="color: #333;">Message</h3>
-              <p style="line-height: 1.6;">${message}</p>
+              <p style="line-height: 1.6;">${safeMessage}</p>
             </div>
           ` : ''}
 
           <div style="margin-bottom: 20px;">
             <h3 style="color: #333;">Attached Document</h3>
             <div style="padding: 12px; background-color: #f1f3f4; border-radius: 4px;">
-              📄 ${pdfFileName}
+              📄 ${safePdfFileName}
             </div>
           </div>
 
           <div style="border-top: 1px solid #ddd; padding-top: 20px; margin-top: 30px; color: #666; font-size: 0.9em;">
             <p>This risk assessment was sent via Ride Ready Docs system.</p>
-            <p>If you have any questions, please contact ${profile?.controller_name || 'the sender'} directly.</p>
+            <p>If you have any questions, please contact ${safeControllerName || 'the sender'} directly.</p>
           </div>
         </body>
       </html>
@@ -130,7 +153,7 @@ const handler = async (req: Request): Promise<Response> => {
     const emailResponse = await resend.emails.send({
       from: "Ride Ready Docs <info@knutssoftware.co.uk>",
       to: [recipientEmail],
-      subject: `Risk Assessment: ${rideName}`,
+      subject: `Risk Assessment: ${safeRideName}`,
       html: htmlContent,
       attachments: [{
         filename: pdfFileName,
