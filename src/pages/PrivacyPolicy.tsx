@@ -148,9 +148,7 @@ const PrivacyPolicy = () => {
                   For questions about this Privacy Policy or to exercise your rights:
                 </p>
                 <ul className="list-none pl-0 text-muted-foreground space-y-2 mt-4">
-                  <li><strong>Email:</strong> privacy@ridereadydocs.com</li>
-                  <li><strong>Support:</strong> support@ridereadydocs.com</li>
-                  <li><strong>Phone:</strong> +44 (0) 1234 567890</li>
+                  <li><strong>Email:</strong> info@knutssoftware.co.uk</li>
                 </ul>
               </section>
             </CardContent>

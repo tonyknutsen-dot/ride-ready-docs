@@ -66,7 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
               <p style="margin: 0; white-space: pre-wrap;">${adminResponse}</p>
             </div>
             
-            <p style="margin-top: 25px;">If you have any further questions, please don't hesitate to reach out through the app.</p>
+            <p style="margin-top: 25px;">If you have any further questions, please email us at <a href="mailto:info@knutssoftware.co.uk" style="color: #667eea;">info@knutssoftware.co.uk</a></p>
             
             <p style="margin-bottom: 0;">Best regards,<br><strong>The Ride Ready Team</strong></p>
           </div>
