@@ -1,9 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check, Star } from "lucide-react";
+import { Check, Star, ChevronDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState } from "react";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -225,6 +231,81 @@ const Pricing = () => {
           >
             Contact Sales →
           </Button>
+        </div>
+
+        {/* FAQ Section */}
+        <div className="mt-16 md:mt-24 max-w-3xl mx-auto">
+          <h3 className="text-2xl md:text-3xl font-bold text-center mb-8">
+            Frequently Asked Questions
+          </h3>
+          
+          <Accordion type="single" collapsible className="space-y-3">
+            <AccordionItem value="rides" className="border border-border/50 rounded-lg px-6 bg-card">
+              <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
+                How do ride limits work?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-4">
+                The Documents & Compliance plan includes up to 10 rides. The Operations & Maintenance plan includes up to 12 rides. 
+                If you need to manage more rides, each additional ride costs just 50p per month. This allows you to scale 
+                your account as your business grows without paying for capacity you don't need.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="billing" className="border border-border/50 rounded-lg px-6 bg-card">
+              <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
+                How does billing work?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-4">
+                You can choose to pay monthly or annually. Annual plans include 2 months free (pay for 10 months, get 12). 
+                Your subscription renews automatically, and you can cancel anytime. Any additional ride charges are added 
+                to your monthly or annual bill.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="trial" className="border border-border/50 rounded-lg px-6 bg-card">
+              <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
+                What's included in the 30-day free trial?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-4">
+                Your free trial gives you full access to all features of your chosen plan for 30 days. No credit card 
+                is required to start. You can add rides, upload documents, run checks, and explore every feature. 
+                At the end of your trial, simply choose a plan to continue.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="upgrade" className="border border-border/50 rounded-lg px-6 bg-card">
+              <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
+                Can I upgrade or downgrade my plan?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-4">
+                Yes! You can upgrade to the Operations & Maintenance plan at any time and we'll prorate the difference. 
+                If you need to downgrade, you can do so at the end of your current billing period. Your data is always 
+                retained when changing plans.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="documents" className="border border-border/50 rounded-lg px-6 bg-card">
+              <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
+                What document types can I store?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-4">
+                The Documents & Compliance plan supports essential documents including insurance certificates, DOC certificates, 
+                and ADIPS certificates. The Operations & Maintenance plan supports all document types including maintenance records, 
+                NDT reports, risk assessments, operator manuals, and any other documentation you need to keep organised.
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="support" className="border border-border/50 rounded-lg px-6 bg-card">
+              <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
+                What support is available?
+              </AccordionTrigger>
+              <AccordionContent className="text-muted-foreground pb-4">
+                All plans include email support. The Operations & Maintenance plan includes priority support with faster 
+                response times. We also have a comprehensive Help Centre with guides and tutorials to help you get the 
+                most out of RideDoc.
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
       </div>
     </section>
