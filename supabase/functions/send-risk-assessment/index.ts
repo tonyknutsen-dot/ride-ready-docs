@@ -201,8 +201,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error in send-risk-assessment function:", error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || "Failed to send risk assessment",
-        details: error.toString()
+        error: "Failed to send risk assessment. Please try again later."
       }),
       {
         status: 500,
