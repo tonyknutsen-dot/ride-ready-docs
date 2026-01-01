@@ -119,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await supabase.auth.signOut();
         return { 
           error: { 
-            message: `Your account has been suspended.${reason ? ` Reason: ${reason}` : ''} Please contact support at support@showmensrideready.com to resolve this issue.` 
+            message: `Your account has been suspended.${reason ? ` Reason: ${reason}` : ''} Please use the Contact Support feature or reply to your suspension email to resolve this issue.` 
           } 
         };
       }
