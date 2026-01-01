@@ -56,7 +56,7 @@ export const WelcomeEmail = ({ email }: WelcomeEmailProps) => (
 
         <Text style={text}>
           If you have any questions or need assistance, please don't hesitate to reach out 
-          to our support team at support@showmendocs.com
+          to our support team at info@knutssoftware.co.uk
         </Text>
 
         <Text style={footer}>
