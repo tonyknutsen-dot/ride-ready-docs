@@ -15,6 +15,7 @@ import { SendDocumentsDialog } from './SendDocumentsDialog';
 import { FeatureGate } from './FeatureGate';
 import { RestrictedFeatureCard } from './RestrictedFeatureCard';
 import RideForm from './RideForm';
+import SafetyCertificateCard from './SafetyCertificateCard';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -210,9 +211,15 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 animate-fade-in">
+          {/* Safety Certificate - Prominent Position */}
+          <SafetyCertificateCard 
+            ride={ride} 
+            onUploadClick={() => setActiveTab("documents")} 
+          />
+
           <div className="grid grid-cols-1 gap-3">
             {/* CHECKS - Main Priority Action */}
-            <FeatureGate 
+            <FeatureGate
               requiredPlan="advanced" 
               feature="Inspections"
               fallback={
