@@ -12,7 +12,7 @@ const Pricing = () => {
 
   // Monthly prices
   const basicMonthly = 12.99;
-  const advancedMonthly = 22.99;
+  const advancedMonthly = 20.99;
   
   // Annual prices (2 months free)
   const basicAnnual = basicMonthly * 10;
