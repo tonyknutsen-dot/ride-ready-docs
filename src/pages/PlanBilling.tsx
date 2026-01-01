@@ -5,8 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, CheckCircle2, AlertTriangle, Crown, Receipt } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
+import { DowngradeConfirmationDialog } from "@/components/DowngradeConfirmationDialog";
 
 type Profile = {
   user_id: string;
@@ -23,6 +24,7 @@ export default function PlanBilling() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [showDowngradeDialog, setShowDowngradeDialog] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -64,9 +66,9 @@ export default function PlanBilling() {
     setTimeout(() => nav("/overview"), 400);
   };
 
-  const downgrade = async () => {
+  const performDowngrade = async () => {
     if (!user) return;
-    setSaving(true);
+    
     const { error } = await supabase
       .from("profiles")
       .update({
@@ -76,14 +78,13 @@ export default function PlanBilling() {
         trial_ends_at: null,
       })
       .eq("user_id", user.id);
-    setSaving(false);
 
     if (error) {
       toast({ title: "Couldn't downgrade", description: error.message, variant: "destructive" });
-      return;
+      throw error;
     }
 
-    toast({ title: "You're on Basic now", description: "Advanced features will be hidden.", variant: "default" });
+    toast({ title: "Downgraded to Basic", description: "Your Operations & Maintenance data has been removed.", variant: "default" });
     setTimeout(() => nav("/overview"), 400);
   };
 
@@ -165,18 +166,19 @@ export default function PlanBilling() {
             </div>
           ) : (
             <div className="space-y-3">
-              <div className="flex items-start gap-2 text-sm text-muted-foreground">
-                <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-                <span>Downgrading will hide Operations & Maintenance features like checks, inspections, maintenance tracking, calendar, notifications, reports, technical bulletins, and risk assessments. Your data remains safe and can be accessed again by upgrading.</span>
-              </div>
-              <Button onClick={downgrade} disabled={saving} variant="outline">
-                {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+              <Button onClick={() => setShowDowngradeDialog(true)} disabled={saving} variant="outline">
                 Downgrade to Documents Plan
               </Button>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <DowngradeConfirmationDialog
+        open={showDowngradeDialog}
+        onOpenChange={setShowDowngradeDialog}
+        onConfirmDowngrade={performDowngrade}
+      />
 
       {/* Billing History Card */}
       <Card>
