@@ -6,6 +6,19 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// HTML escape function to prevent XSS attacks
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return '';
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
+}
+
 interface SupportNotificationRequest {
   messageId: string;
 }
@@ -63,13 +76,13 @@ const handler = async (req: Request): Promise<Response> => {
       body: JSON.stringify({
         from: 'RideReady <notifications@rideready.app>',
         to: adminEmails,
-        subject: `New Support Message: ${message.subject}`,
+        subject: `New Support Message: ${escapeHtml(message.subject)}`,
         html: `
           <h2>New Support Message Received</h2>
-          <p><strong>Subject:</strong> ${message.subject}</p>
-          <p><strong>Priority:</strong> ${message.priority}</p>
+          <p><strong>Subject:</strong> ${escapeHtml(message.subject)}</p>
+          <p><strong>Priority:</strong> ${escapeHtml(message.priority)}</p>
           <p><strong>Message:</strong></p>
-          <p>${message.message.replace(/\n/g, '<br>')}</p>
+          <p>${escapeHtml(message.message).replace(/\n/g, '<br>')}</p>
           <p><strong>Submitted:</strong> ${new Date(message.created_at).toLocaleString()}</p>
           <p><a href="https://rideready.app/admin/support">View in Admin Panel</a></p>
         `,
