@@ -88,7 +88,7 @@ const TermsOfService = () => {
 
                 <h3 className="text-xl font-semibold mb-2">5.2 Document Verification</h3>
                 <p className="text-muted-foreground mb-4">
-                  The Service provides document management and tracking tools but does not verify the validity of certificates, inspection reports, or other documents. You are responsible for ensuring all documents are legitimate and compliant with relevant regulations including ADIPS, HSE, and local authority requirements.
+                  The Service provides document management and tracking tools but does not verify the validity of certificates, inspection reports, or other documents. You are responsible for ensuring all documents are legitimate and compliant with relevant regulations including safety compliance standards, health and safety requirements, and local authority requirements.
                 </p>
 
                 <h3 className="text-xl font-semibold mb-2">5.3 Prohibited Uses</h3>
@@ -196,7 +196,7 @@ const TermsOfService = () => {
 
               <section className="border-t pt-6">
                 <p className="text-sm text-muted-foreground italic">
-                  By using Ride Ready Docs, you acknowledge that this is a documentation tool to assist with compliance management. You remain solely responsible for ensuring your rides, equipment, and operations meet all applicable safety standards and regulatory requirements. Always consult with qualified inspectors and comply with ADIPS, HSE, and local authority regulations.
+                  By using Ride Ready Docs, you acknowledge that this is a documentation tool to assist with compliance management. You remain solely responsible for ensuring your rides, equipment, and operations meet all applicable safety standards and regulatory requirements. Always consult with qualified inspectors and comply with relevant safety compliance standards (such as ADIPS in the UK), health and safety regulations, and local authority requirements.
                 </p>
               </section>
             </CardContent>

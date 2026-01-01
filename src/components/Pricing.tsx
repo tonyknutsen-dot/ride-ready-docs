@@ -33,8 +33,8 @@ const Pricing = () => {
     "50p/month per additional ride",
     "100 documents storage",
     "Expiry alerts (30 & 7 days)",
-    "Insurance & DOC certificates",
-    "ADIPS certificates",
+    "Insurance & safety compliance certificates",
+    "Declaration of Compliance (DOC) certificates",
     "Organize by ride",
     "Email support"
   ];
@@ -289,8 +289,8 @@ const Pricing = () => {
                 What document types can I store?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
-                The Documents & Compliance plan supports essential documents including insurance certificates, DOC certificates, 
-                and ADIPS certificates. The Operations & Maintenance plan supports all document types including maintenance records, 
+                The Documents & Compliance plan supports essential documents including insurance certificates and Declaration of Compliance (DOC) certificates 
+                (known as ADIPS certificates in the UK). The Operations & Maintenance plan supports all document types including maintenance records, 
                 NDT reports, risk assessments, operator manuals, and any other documentation you need to keep organised.
               </AccordionContent>
             </AccordionItem>

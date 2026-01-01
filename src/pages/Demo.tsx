@@ -74,7 +74,7 @@ const Demo = () => {
     {
       icon: <Calendar className="w-6 h-6" />,
       title: "Inspection Scheduling",
-      description: "Schedule external inspections and track ADIPS, NDT, and third-party requirements",
+      description: "Schedule external inspections and track safety compliance, NDT, and third-party requirements",
       status: "active",
       count: "Next: Today"
     }

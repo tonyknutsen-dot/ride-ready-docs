@@ -17,7 +17,7 @@ const HowItWorks = () => {
     {
       icon: FileText,
       title: "2. Upload Documents",
-      description: "Upload all your ride documents - safety certificates, insurance, manuals, ADIPS certificates, test certificates, and technical bulletins. Organize them by ride or keep global documents accessible to all."
+      description: "Upload all your ride documents - safety certificates, insurance, manuals, Declaration of Compliance certificates, test certificates, and technical bulletins. Organize them by ride or keep global documents accessible to all."
     },
     {
       icon: Calendar,
@@ -55,7 +55,7 @@ const HowItWorks = () => {
     {
       title: "Inspection Management",
       items: [
-        "Annual inspection tracking with ADIPS integration",
+        "Annual inspection tracking with safety compliance integration",
         "NDT testing schedules (ultrasonic, magnetic particle, etc.)",
         "Custom daily/monthly/yearly check templates",
         "Digital signatures and weather logging",
