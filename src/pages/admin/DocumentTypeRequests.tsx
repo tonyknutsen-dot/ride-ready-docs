@@ -11,6 +11,7 @@ import { format } from 'date-fns';
 
 interface DocumentTypeRequest {
   id: string;
+  user_id: string;
   document_type_name: string;
   description: string | null;
   justification: string | null;
@@ -48,6 +49,9 @@ export default function DocumentTypeRequests() {
   };
 
   const updateStatus = async (id: string, status: 'approved' | 'rejected') => {
+    const request = requests.find(r => r.id === id);
+    if (!request) return;
+
     const { error } = await supabase
       .from('document_type_requests')
       .update({ status, admin_notes: adminNotes })
@@ -62,9 +66,32 @@ export default function DocumentTypeRequests() {
       return;
     }
 
+    // Send email notification to user
+    try {
+      // Get user email via edge function
+      const { data: emailData } = await supabase.functions.invoke('get-user-email', {
+        body: { userId: request.user_id },
+      });
+      const userEmail = emailData?.email;
+
+      if (userEmail) {
+        await supabase.functions.invoke('send-request-status-email', {
+          body: {
+            userEmail,
+            requestType: 'document_type',
+            requestName: request.document_type_name,
+            status,
+            adminNotes: adminNotes || undefined,
+          },
+        });
+      }
+    } catch (emailError) {
+      console.error('Failed to send notification email:', emailError);
+    }
+
     toast({
       title: 'Success',
-      description: `Request ${status}`,
+      description: `Request ${status}${status === 'approved' ? ' - user notified' : ''}`,
     });
 
     setSelectedRequest(null);
