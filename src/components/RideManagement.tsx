@@ -194,7 +194,7 @@ const RideManagement = () => {
           <div className="space-y-2">
             <h2 className="text-2xl sm:text-3xl font-bold">My Rides & Equipment</h2>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Manage your rides, food stalls, stalls, games, inflatables, and equipment
+              Manage your rides, stalls, games, inflatables, attractions, and equipment
             </p>
           </div>
           
