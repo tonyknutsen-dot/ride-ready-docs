@@ -95,18 +95,43 @@ const GERMANY_TERMINOLOGY: Terminology = {
   ukTerminologyNote: '',
 };
 
+const US_TERMINOLOGY: Terminology = {
+  ...GLOBAL_TERMINOLOGY,
+  safetyCertificate: 'Annual Safety Inspection Certificate',
+  safetyCertificateShort: 'Safety Certificate',
+  safetyCertificateDescription: 'ASTM F24 compliant safety certification',
+  country: 'United States',
+  countryCode: 'US',
+  localAuthority: 'state/local authority',
+  inspector: 'certified inspector',
+};
+
 const TERMINOLOGY_MAP: Record<string, Terminology> = {
+  // UK & Ireland
   'GB': UK_TERMINOLOGY,
   'IE': IRELAND_TERMINOLOGY,
-  'AU': AUSTRALIA_TERMINOLOGY,
-  'NZ': { ...AUSTRALIA_TERMINOLOGY, country: 'New Zealand', countryCode: 'NZ' },
+  // Americas
+  'US': US_TERMINOLOGY,
+  'CA': { ...GLOBAL_TERMINOLOGY, country: 'Canada', countryCode: 'CA', localAuthority: 'provincial authority' },
+  'MX': { ...GLOBAL_TERMINOLOGY, country: 'Mexico', countryCode: 'MX', localAuthority: 'authority' },
+  // Europe
   'DE': GERMANY_TERMINOLOGY,
-  'US': { ...GLOBAL_TERMINOLOGY, country: 'United States', countryCode: 'US', localAuthority: 'authority' },
-  'CA': { ...GLOBAL_TERMINOLOGY, country: 'Canada', countryCode: 'CA', localAuthority: 'authority' },
   'FR': { ...GLOBAL_TERMINOLOGY, country: 'France', countryCode: 'FR' },
   'NL': { ...GLOBAL_TERMINOLOGY, country: 'Netherlands', countryCode: 'NL' },
   'ES': { ...GLOBAL_TERMINOLOGY, country: 'Spain', countryCode: 'ES' },
   'IT': { ...GLOBAL_TERMINOLOGY, country: 'Italy', countryCode: 'IT' },
+  'BE': { ...GLOBAL_TERMINOLOGY, country: 'Belgium', countryCode: 'BE' },
+  'AT': { ...GLOBAL_TERMINOLOGY, country: 'Austria', countryCode: 'AT' },
+  'CH': { ...GLOBAL_TERMINOLOGY, country: 'Switzerland', countryCode: 'CH' },
+  'PL': { ...GLOBAL_TERMINOLOGY, country: 'Poland', countryCode: 'PL' },
+  'SE': { ...GLOBAL_TERMINOLOGY, country: 'Sweden', countryCode: 'SE' },
+  // Asia-Pacific
+  'AU': AUSTRALIA_TERMINOLOGY,
+  'NZ': { ...AUSTRALIA_TERMINOLOGY, country: 'New Zealand', countryCode: 'NZ' },
+  'AE': { ...GLOBAL_TERMINOLOGY, country: 'United Arab Emirates', countryCode: 'AE' },
+  'SG': { ...GLOBAL_TERMINOLOGY, country: 'Singapore', countryCode: 'SG' },
+  'JP': { ...GLOBAL_TERMINOLOGY, country: 'Japan', countryCode: 'JP' },
+  // Other
   'OTHER': GLOBAL_TERMINOLOGY,
 };
 

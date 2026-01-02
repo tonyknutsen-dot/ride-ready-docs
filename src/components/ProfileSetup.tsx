@@ -12,17 +12,31 @@ import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 
 const COUNTRIES = [
+  // UK & Ireland
   { code: 'GB', name: 'United Kingdom' },
   { code: 'IE', name: 'Ireland' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'NZ', name: 'New Zealand' },
+  // Americas
   { code: 'US', name: 'United States' },
   { code: 'CA', name: 'Canada' },
+  { code: 'MX', name: 'Mexico' },
+  // Europe
   { code: 'DE', name: 'Germany' },
   { code: 'FR', name: 'France' },
   { code: 'NL', name: 'Netherlands' },
   { code: 'ES', name: 'Spain' },
   { code: 'IT', name: 'Italy' },
+  { code: 'BE', name: 'Belgium' },
+  { code: 'AT', name: 'Austria' },
+  { code: 'CH', name: 'Switzerland' },
+  { code: 'PL', name: 'Poland' },
+  { code: 'SE', name: 'Sweden' },
+  // Asia-Pacific
+  { code: 'AU', name: 'Australia' },
+  { code: 'NZ', name: 'New Zealand' },
+  { code: 'AE', name: 'United Arab Emirates' },
+  { code: 'SG', name: 'Singapore' },
+  { code: 'JP', name: 'Japan' },
+  // Other
   { code: 'OTHER', name: 'Other' },
 ];
 

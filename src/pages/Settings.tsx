@@ -19,17 +19,31 @@ const OPERATOR_TYPES = [
 import AppHeader from '@/components/AppHeader';
 
 const COUNTRIES = [
+  // UK & Ireland
   { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', note: 'Uses ADIPS (rides) & PIPA (inflatables) certificates' },
   { code: 'IE', name: 'Ireland', flag: '🇮🇪', note: 'Uses Declaration of Compliance certificates' },
-  { code: 'US', name: 'United States', flag: '🇺🇸', note: 'Uses state-specific safety certifications' },
-  { code: 'AU', name: 'Australia', flag: '🇦🇺', note: 'Uses Declaration of Compliance certificates' },
-  { code: 'NZ', name: 'New Zealand', flag: '🇳🇿', note: 'Uses Declaration of Compliance certificates' },
+  // Americas
+  { code: 'US', name: 'United States', flag: '🇺🇸', note: 'Uses ASTM F24 compliant safety certifications' },
+  { code: 'CA', name: 'Canada', flag: '🇨🇦', note: 'Uses provincial safety certifications' },
+  { code: 'MX', name: 'Mexico', flag: '🇲🇽', note: 'Uses safety compliance certificates' },
+  // Europe
   { code: 'DE', name: 'Germany', flag: '🇩🇪', note: 'Uses TÜV safety certifications' },
   { code: 'FR', name: 'France', flag: '🇫🇷', note: 'Uses safety compliance certificates' },
   { code: 'NL', name: 'Netherlands', flag: '🇳🇱', note: 'Uses safety compliance certificates' },
   { code: 'ES', name: 'Spain', flag: '🇪🇸', note: 'Uses safety compliance certificates' },
   { code: 'IT', name: 'Italy', flag: '🇮🇹', note: 'Uses safety compliance certificates' },
-  { code: 'CA', name: 'Canada', flag: '🇨🇦', note: 'Uses provincial safety certifications' },
+  { code: 'BE', name: 'Belgium', flag: '🇧🇪', note: 'Uses safety compliance certificates' },
+  { code: 'AT', name: 'Austria', flag: '🇦🇹', note: 'Uses safety compliance certificates' },
+  { code: 'CH', name: 'Switzerland', flag: '🇨🇭', note: 'Uses safety compliance certificates' },
+  { code: 'PL', name: 'Poland', flag: '🇵🇱', note: 'Uses safety compliance certificates' },
+  { code: 'SE', name: 'Sweden', flag: '🇸🇪', note: 'Uses safety compliance certificates' },
+  // Asia-Pacific
+  { code: 'AU', name: 'Australia', flag: '🇦🇺', note: 'Uses Declaration of Compliance certificates' },
+  { code: 'NZ', name: 'New Zealand', flag: '🇳🇿', note: 'Uses Declaration of Compliance certificates' },
+  { code: 'AE', name: 'United Arab Emirates', flag: '🇦🇪', note: 'Uses safety compliance certificates' },
+  { code: 'SG', name: 'Singapore', flag: '🇸🇬', note: 'Uses safety compliance certificates' },
+  { code: 'JP', name: 'Japan', flag: '🇯🇵', note: 'Uses safety compliance certificates' },
+  // Other
   { code: 'OTHER', name: 'Other Country', flag: '🌍', note: 'Uses Declaration of Compliance certificates' },
 ];
 
