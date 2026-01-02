@@ -87,9 +87,12 @@ const handler = async (req: Request): Promise<Response> => {
     // Get user profile for sender information
     const { data: profile } = await supabase
       .from("profiles")
-      .select("company_name, controller_name, showmen_name, address")
+      .select("company_name, controller_name, showmen_name, address, operator_type")
       .eq("user_id", user.id)
       .single();
+
+    // Determine operator label based on operator_type
+    const operatorLabel = profile?.operator_type === 'showman' ? 'Showmen' : 'Operator';
 
     // Get ride-specific documents
     const { data: rideDocuments, error: rideDocsError } = await supabase
@@ -217,7 +220,7 @@ const handler = async (req: Request): Promise<Response> => {
               <h2 style="color: #005580; margin: 0 0 15px 0; font-size: 18px;">📧 From</h2>
               ${safeCompanyName ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Company:</strong> ${safeCompanyName}</p>` : ''}
               ${safeControllerName ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Controller:</strong> ${safeControllerName}</p>` : ''}
-              ${safeShowmenName ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Showmen:</strong> ${safeShowmenName}</p>` : ''}
+              ${safeShowmenName ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>${operatorLabel}:</strong> ${safeShowmenName}</p>` : ''}
               ${safeAddress ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Address:</strong> ${safeAddress}</p>` : ''}
               <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;"><strong>Email:</strong> ${safeUserEmail}</p>
             </div>

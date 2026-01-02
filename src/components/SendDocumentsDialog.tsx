@@ -34,7 +34,8 @@ interface Document {
 
 export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, trigger }) => {
   const { user } = useAuth();
-  const { terminology } = useTerminology();
+  const { terminology, operatorType } = useTerminology();
+  const isShowman = operatorType === 'showman';
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -211,7 +212,7 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
                 <p><span className="font-medium">Controller:</span> {profile.controller_name}</p>
               )}
               {profile?.showmen_name && (
-                <p><span className="font-medium">Showmen:</span> {profile.showmen_name}</p>
+                <p><span className="font-medium">{isShowman ? 'Showmen' : 'Operator'}:</span> {profile.showmen_name}</p>
               )}
               {profile?.address && (
                 <p><span className="font-medium">Address:</span> {profile.address}</p>
