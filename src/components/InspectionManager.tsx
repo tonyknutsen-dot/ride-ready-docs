@@ -29,7 +29,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
             >
               <PlayCircle className="h-5 w-5" />
-              <span>Pre-Use</span>
+              <span>Pre-Opening</span>
             </TabsTrigger>
             <TabsTrigger 
               value="daily" 
@@ -76,14 +76,14 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
           </TabsList>
         </div>
 
-        {/* Pre-Use Check - Function test before opening */}
+        {/* Pre-Opening Check - Function test before opening */}
         <TabsContent value="preuse" className="relative">
           <div className="space-y-6 relative z-0">
             <Card className="border-primary/20 bg-primary/5">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <PlayCircle className="h-5 w-5 text-primary" />
-                  Pre-Use Function Test
+                  Pre-Opening Function Test
                 </CardTitle>
                 <CardDescription>
                   Complete this check before opening to the public each day. Ensures all safety systems are working.
