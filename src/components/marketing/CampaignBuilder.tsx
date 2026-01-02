@@ -1,0 +1,404 @@
+import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { Send, Eye, Users, Tag, Info } from "lucide-react";
+import { CampaignPreview } from "./CampaignPreview";
+
+interface MarketingContact {
+  id: string;
+  email: string;
+  name: string | null;
+  company_name: string | null;
+  tags: string[];
+  is_subscribed: boolean;
+}
+
+interface CampaignBuilderProps {
+  onCampaignSent: () => void;
+}
+
+export const CampaignBuilder = ({ onCampaignSent }: CampaignBuilderProps) => {
+  const { user } = useAuth();
+  const [contacts, setContacts] = useState<MarketingContact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+  
+  // Campaign form
+  const [campaignName, setCampaignName] = useState("");
+  const [subject, setSubject] = useState("");
+  const [content, setContent] = useState("");
+  
+  // Recipient selection
+  const [selectionMode, setSelectionMode] = useState<"all" | "tags" | "custom">("all");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
+
+  const fetchContacts = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from("marketing_contacts")
+        .select("id, email, name, company_name, tags, is_subscribed")
+        .eq("user_id", user.id)
+        .eq("is_subscribed", true)
+        .order("name");
+
+      if (error) throw error;
+      setContacts(data || []);
+    } catch (error: any) {
+      console.error("Error fetching contacts:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchContacts();
+  }, [fetchContacts]);
+
+  // Get all unique tags
+  const allTags = Array.from(new Set(contacts.flatMap(c => c.tags || [])));
+
+  // Calculate selected recipients
+  const getSelectedRecipients = (): MarketingContact[] => {
+    if (selectionMode === "all") {
+      return contacts;
+    } else if (selectionMode === "tags") {
+      return contacts.filter(c => 
+        c.tags?.some(tag => selectedTags.includes(tag))
+      );
+    } else {
+      return contacts.filter(c => selectedContactIds.includes(c.id));
+    }
+  };
+
+  const selectedRecipients = getSelectedRecipients();
+
+  const handleTagToggle = (tag: string) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
+
+  const handleContactToggle = (contactId: string) => {
+    setSelectedContactIds(prev =>
+      prev.includes(contactId)
+        ? prev.filter(id => id !== contactId)
+        : [...prev, contactId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedContactIds.length === contacts.length) {
+      setSelectedContactIds([]);
+    } else {
+      setSelectedContactIds(contacts.map(c => c.id));
+    }
+  };
+
+  const handleSendCampaign = async () => {
+    if (!user) return;
+    if (!campaignName.trim() || !subject.trim() || !content.trim()) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+    if (selectedRecipients.length === 0) {
+      toast.error("Please select at least one recipient");
+      return;
+    }
+
+    setSending(true);
+
+    try {
+      // Create the campaign record
+      const { data: campaign, error: campaignError } = await supabase
+        .from("email_campaigns")
+        .insert({
+          user_id: user.id,
+          name: campaignName.trim(),
+          subject: subject.trim(),
+          html_content: content,
+          status: "sending",
+          recipient_count: selectedRecipients.length,
+        })
+        .select()
+        .single();
+
+      if (campaignError) throw campaignError;
+
+      // Create recipient records
+      const recipientRecords = selectedRecipients.map(contact => ({
+        campaign_id: campaign.id,
+        contact_id: contact.id,
+        status: "pending",
+      }));
+
+      const { error: recipientsError } = await supabase
+        .from("campaign_recipients")
+        .insert(recipientRecords);
+
+      if (recipientsError) throw recipientsError;
+
+      // Call edge function to send emails
+      const { data: session } = await supabase.auth.getSession();
+      const response = await supabase.functions.invoke("send-marketing-campaign", {
+        body: { campaignId: campaign.id },
+        headers: {
+          Authorization: `Bearer ${session.session?.access_token}`,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Failed to send campaign");
+      }
+
+      toast.success(`Campaign sent to ${selectedRecipients.length} recipients!`);
+      
+      // Reset form
+      setCampaignName("");
+      setSubject("");
+      setContent("");
+      setSelectionMode("all");
+      setSelectedTags([]);
+      setSelectedContactIds([]);
+      
+      onCampaignSent();
+    } catch (error: any) {
+      console.error("Error sending campaign:", error);
+      toast.error(error.message || "Failed to send campaign");
+    } finally {
+      setSending(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <p className="text-muted-foreground">Loading...</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (contacts.length === 0) {
+    return (
+      <Card>
+        <CardContent className="py-8 text-center">
+          <Users className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+          <p className="text-muted-foreground">
+            Add contacts first before creating a campaign
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-3">
+      {/* Campaign Form */}
+      <div className="lg:col-span-2 space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Create Campaign</CardTitle>
+            <CardDescription>
+              Compose your marketing email. Use tokens like {`{{name}}`}, {`{{company}}`}, {`{{email}}`} for personalization.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="campaignName">Campaign Name *</Label>
+              <Input
+                id="campaignName"
+                value={campaignName}
+                onChange={(e) => setCampaignName(e.target.value)}
+                placeholder="January Newsletter"
+              />
+              <p className="text-xs text-muted-foreground mt-1">Internal reference only</p>
+            </div>
+            
+            <div>
+              <Label htmlFor="subject">Email Subject *</Label>
+              <Input
+                id="subject"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+                placeholder="Exciting news from {{company}}!"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="content">Email Content *</Label>
+              <Textarea
+                id="content"
+                value={content}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder={`Dear {{name}},\n\nI hope this email finds you well...\n\nBest regards`}
+                rows={12}
+                className="font-mono text-sm"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 p-3 bg-muted rounded-lg">
+              <Info className="h-4 w-4 text-muted-foreground shrink-0" />
+              <p className="text-sm text-muted-foreground">
+                Available tokens: {`{{name}}`}, {`{{company}}`}, {`{{email}}`}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowPreview(true)}
+            disabled={!content}
+          >
+            <Eye className="h-4 w-4 mr-2" />
+            Preview
+          </Button>
+          <Button 
+            onClick={handleSendCampaign}
+            disabled={sending || selectedRecipients.length === 0}
+            className="flex-1"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            {sending ? "Sending..." : `Send to ${selectedRecipients.length} Recipients`}
+          </Button>
+        </div>
+      </div>
+
+      {/* Recipient Selection */}
+      <div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Recipients</CardTitle>
+            <CardDescription>
+              Select who receives this campaign
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Tabs value={selectionMode} onValueChange={(v) => setSelectionMode(v as any)}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="tags">Tags</TabsTrigger>
+                <TabsTrigger value="custom">Custom</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="all" className="pt-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Users className="h-4 w-4" />
+                  All {contacts.length} subscribed contacts will receive this email
+                </div>
+              </TabsContent>
+
+              <TabsContent value="tags" className="pt-4">
+                {allTags.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No tags found. Add tags to contacts first.
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground mb-2">
+                      Select tags to filter recipients:
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {allTags.map(tag => (
+                        <Badge
+                          key={tag}
+                          variant={selectedTags.includes(tag) ? "default" : "outline"}
+                          className="cursor-pointer"
+                          onClick={() => handleTagToggle(tag)}
+                        >
+                          <Tag className="h-3 w-3 mr-1" />
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                    {selectedTags.length > 0 && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        {selectedRecipients.length} contacts match
+                      </p>
+                    )}
+                  </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="custom" className="pt-4">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">
+                      {selectedContactIds.length} selected
+                    </span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={handleSelectAll}
+                    >
+                      {selectedContactIds.length === contacts.length ? "Deselect All" : "Select All"}
+                    </Button>
+                  </div>
+                  <ScrollArea className="h-64 border rounded-lg p-2">
+                    <div className="space-y-1">
+                      {contacts.map(contact => (
+                        <div
+                          key={contact.id}
+                          className="flex items-center gap-2 p-2 rounded hover:bg-muted cursor-pointer"
+                          onClick={() => handleContactToggle(contact.id)}
+                        >
+                          <Checkbox 
+                            checked={selectedContactIds.includes(contact.id)}
+                            onCheckedChange={() => handleContactToggle(contact.id)}
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">
+                              {contact.name || contact.email}
+                            </p>
+                            {contact.name && (
+                              <p className="text-xs text-muted-foreground truncate">
+                                {contact.email}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </TabsContent>
+            </Tabs>
+
+            <div className="pt-4 border-t">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">Total Recipients:</span>
+                <Badge variant="secondary">{selectedRecipients.length}</Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      <CampaignPreview
+        open={showPreview}
+        onOpenChange={setShowPreview}
+        subject={subject}
+        content={content}
+        sampleContact={selectedRecipients[0] || contacts[0]}
+      />
+    </div>
+  );
+};
