@@ -1,24 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { brandColors, emailStyles, logoSvg, escapeHtml } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// HTML escape function to prevent XSS attacks
-function escapeHtml(text: string | null | undefined): string {
-  if (!text) return '';
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return text.replace(/[&<>"']/g, (m) => map[m]);
-}
 
 interface SendDocumentsRequest {
   rideId: string;
@@ -36,7 +24,6 @@ interface EmailBatch {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -54,7 +41,6 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("No authorization header");
     }
 
-    // Get user from JWT
     const { data: { user }, error: authError } = await supabase.auth.getUser(
       authHeader.replace("Bearer ", "")
     );
@@ -91,7 +77,6 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("user_id", user.id)
       .single();
 
-    // Determine operator label based on operator_type
     const operatorLabel = profile?.operator_type === 'showman' ? 'Showmen' : 'Operator';
 
     // Get ride-specific documents
@@ -130,11 +115,9 @@ const handler = async (req: Request): Promise<Response> => {
           .download(doc.file_path);
 
         if (!downloadError && fileData) {
-          // Convert blob to base64
           const arrayBuffer = await fileData.arrayBuffer();
           const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
           
-          // Create proper filename with ride name prefix
           const fileExtension = doc.file_path.split('.').pop();
           const fileName = `${ride.ride_name}_${doc.document_name}.${fileExtension}`;
           
@@ -154,12 +137,11 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Split attachments into batches if total size exceeds 10MB
-    const maxEmailSize = 10 * 1024 * 1024; // 10MB in bytes
+    const maxEmailSize = 10 * 1024 * 1024;
     const emailBatches: EmailBatch[] = [];
     let currentBatch: EmailBatch = { attachments: [], totalSize: 0, documentNames: [] };
 
     for (const attachment of attachments) {
-      // If adding this attachment would exceed limit, start new batch
       if (currentBatch.totalSize + attachment.size > maxEmailSize && currentBatch.attachments.length > 0) {
         emailBatches.push(currentBatch);
         currentBatch = { attachments: [], totalSize: 0, documentNames: [] };
@@ -170,12 +152,10 @@ const handler = async (req: Request): Promise<Response> => {
       currentBatch.documentNames.push(attachment.documentName);
     }
     
-    // Add the last batch if it has attachments
     if (currentBatch.attachments.length > 0) {
       emailBatches.push(currentBatch);
     }
 
-    // Escape all user-controlled content for XSS prevention
     const safeCompanyName = escapeHtml(profile?.company_name);
     const safeControllerName = escapeHtml(profile?.controller_name);
     const safeShowmenName = escapeHtml(profile?.showmen_name);
@@ -185,10 +165,9 @@ const handler = async (req: Request): Promise<Response> => {
     const safeManufacturer = escapeHtml(ride.manufacturer);
     const safeSerialNumber = escapeHtml(ride.serial_number);
     const safeMessage = escapeHtml(message);
-
-    // Create and send emails (split if necessary)
     const senderName = safeCompanyName || safeControllerName || "Ride Operator";
-    const rideInfo = `${safeRideName}${safeManufacturer ? ` (${safeManufacturer})` : ''}${safeSerialNumber ? ` - S/N: ${safeSerialNumber}` : ''}`;
+    const rideInfo = `${safeRideName}${safeManufacturer ? ` (${safeManufacturer})` : ''}`;
+    const currentYear = new Date().getFullYear();
     
     const emailResponses = [];
     let totalEmailsSent = 0;
@@ -202,71 +181,107 @@ const handler = async (req: Request): Promise<Response> => {
         ? `Ride Documentation (${batchNumber}/${totalBatches}): ${rideInfo}`
         : `Ride Documentation: ${rideInfo}`;
 
-      const batchInfo = totalBatches > 1 
-        ? `<div style="background-color: #e3f2fd; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-             <p style="margin: 0; color: #1565c0;"><strong>Email ${batchNumber} of ${totalBatches}</strong></p>
-             <p style="margin: 5px 0 0 0; color: #1976d2; font-size: 0.9em;">This documentation has been split into multiple emails due to size limitations.</p>
-           </div>`
-        : '';
-
       const htmlContent = `
-        <html>
-          <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <div style="border-bottom: 2px solid #007acc; padding-bottom: 20px; margin-bottom: 20px;">
-              <h1 style="color: #007acc; margin: 0 0 10px 0;">Ride Documentation Package</h1>
-            </div>
-            
-            <div style="background-color: #e8f4f8; padding: 20px; border-left: 4px solid #007acc; margin-bottom: 20px;">
-              <h2 style="color: #005580; margin: 0 0 15px 0; font-size: 18px;">📧 From</h2>
-              ${safeCompanyName ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Company:</strong> ${safeCompanyName}</p>` : ''}
-              ${safeControllerName ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Controller:</strong> ${safeControllerName}</p>` : ''}
-              ${safeShowmenName ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>${operatorLabel}:</strong> ${safeShowmenName}</p>` : ''}
-              ${safeAddress ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Address:</strong> ${safeAddress}</p>` : ''}
-              <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;"><strong>Email:</strong> ${safeUserEmail}</p>
-            </div>
-            
-            ${batchInfo}
-            
-            <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-              <h2 style="color: #333; margin-top: 0;">Ride Information</h2>
-              <p><strong>Ride Name:</strong> ${safeRideName}</p>
-              ${safeManufacturer ? `<p><strong>Manufacturer:</strong> ${safeManufacturer}</p>` : ''}
-              ${safeSerialNumber ? `<p><strong>Serial Number:</strong> ${safeSerialNumber}</p>` : ''}
-              ${ride.year_manufactured ? `<p><strong>Year Manufactured:</strong> ${ride.year_manufactured}</p>` : ''}
-            </div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ride Documentation Package</title>
+</head>
+<body style="${emailStyles.body}">
+  <div style="${emailStyles.container}">
+    <div style="${emailStyles.header}">
+      <div style="margin-bottom: 16px;">${logoSvg}</div>
+      <h1 style="${emailStyles.headerTitle}">Ride Documentation</h1>
+      <p style="${emailStyles.headerSubtitle}">${safeRideName}${totalBatches > 1 ? ` (${batchNumber}/${totalBatches})` : ''}</p>
+    </div>
+    
+    <div style="${emailStyles.content}">
+      <div style="${emailStyles.infoBox}">
+        <p style="${emailStyles.label}">FROM</p>
+        ${safeCompanyName ? `<p style="${emailStyles.value}"><strong>Company:</strong> ${safeCompanyName}</p>` : ''}
+        ${safeControllerName ? `<p style="${emailStyles.value}"><strong>Controller:</strong> ${safeControllerName}</p>` : ''}
+        ${safeShowmenName ? `<p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>${operatorLabel}:</strong> ${safeShowmenName}</p>` : ''}
+        ${safeAddress ? `<p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>Address:</strong> ${safeAddress}</p>` : ''}
+        <p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>Email:</strong> ${safeUserEmail}</p>
+      </div>
 
-            ${safeMessage ? `
-              <div style="margin-bottom: 20px;">
-                <h3 style="color: #333;">Message</h3>
-                <p style="line-height: 1.6;">${safeMessage}</p>
-              </div>
-            ` : ''}
+      ${totalBatches > 1 ? `
+        <div style="${emailStyles.warningBox}">
+          <p style="margin: 0; font-weight: 600; color: ${brandColors.text};">📬 Email ${batchNumber} of ${totalBatches}</p>
+          <p style="margin: 8px 0 0 0; color: ${brandColors.textLight}; font-size: 14px;">This documentation has been split into multiple emails due to size limitations.</p>
+        </div>
+      ` : ''}
 
-            <div style="margin-bottom: 20px;">
-              <h3 style="color: #333;">Attached Documents ${totalBatches > 1 ? `(Batch ${batchNumber})` : ''}</h3>
-              <ul style="list-style-type: none; padding: 0;">
-                ${batch.attachments.map(attachment => `
-                  <li style="padding: 8px; margin: 4px 0; background-color: #f1f3f4; border-radius: 4px;">
-                    📄 ${escapeHtml(attachment.documentName)} (${escapeHtml(attachment.documentType)})
-                    ${attachment.expiresAt ? `<span style="color: #666; font-size: 0.9em;"> - Expires: ${escapeHtml(attachment.expiresAt)}</span>` : ''}
-                  </li>
-                `).join('')}
-              </ul>
-              <p style="color: #666; font-size: 0.9em;">
-                ${batch.attachments.length} documents in this email
-                ${totalBatches > 1 ? ` • ${attachments.length} total documents across ${totalBatches} emails` : ''}
-              </p>
-            </div>
+      <div style="${emailStyles.card}">
+        <p style="${emailStyles.label}">RIDE INFORMATION</p>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid ${brandColors.border};"><strong>Ride Name:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid ${brandColors.border};">${safeRideName}</td>
+          </tr>
+          ${safeManufacturer ? `
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid ${brandColors.border};"><strong>Manufacturer:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid ${brandColors.border};">${safeManufacturer}</td>
+          </tr>
+          ` : ''}
+          ${safeSerialNumber ? `
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid ${brandColors.border};"><strong>Serial Number:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid ${brandColors.border};">${safeSerialNumber}</td>
+          </tr>
+          ` : ''}
+          ${ride.year_manufactured ? `
+          <tr>
+            <td style="padding: 8px 0;"><strong>Year Manufactured:</strong></td>
+            <td style="padding: 8px 0;">${ride.year_manufactured}</td>
+          </tr>
+          ` : ''}
+        </table>
+      </div>
 
-            <div style="border-top: 1px solid #ddd; padding-top: 20px; margin-top: 30px; color: #666; font-size: 0.9em;">
-              <p>This documentation package was sent via Ride Ready Docs system.</p>
-              <p>If you have any questions about these documents, please reply to this email or contact ${safeControllerName || 'the sender'} directly.</p>
-            </div>
-          </body>
-        </html>
-      `;
+      ${safeMessage ? `
+        <div style="margin: 24px 0;">
+          <p style="${emailStyles.label}">MESSAGE</p>
+          <p style="${emailStyles.value}; line-height: 1.8;">${safeMessage}</p>
+        </div>
+      ` : ''}
 
-      // Prepare attachments for this batch (remove size info for Resend)
+      <div style="margin: 24px 0;">
+        <p style="${emailStyles.label}">ATTACHED DOCUMENTS${totalBatches > 1 ? ` (BATCH ${batchNumber})` : ''}</p>
+        ${batch.attachments.map(att => `
+          <div style="padding: 12px; margin: 8px 0; background: ${brandColors.background}; border-radius: 6px; border-left: 3px solid ${brandColors.primary};">
+            <span style="font-weight: 500;">📄 ${escapeHtml(att.documentName)}</span>
+            <span style="color: ${brandColors.textLight}; font-size: 13px;"> (${escapeHtml(att.documentType)})</span>
+            ${att.expiresAt ? `<br><span style="color: ${brandColors.textLight}; font-size: 12px;">Expires: ${escapeHtml(att.expiresAt)}</span>` : ''}
+          </div>
+        `).join('')}
+        <p style="color: ${brandColors.textLight}; font-size: 13px; margin-top: 16px;">
+          ${batch.attachments.length} documents in this email
+          ${totalBatches > 1 ? ` • ${attachments.length} total documents across ${totalBatches} emails` : ''}
+        </p>
+      </div>
+
+      <hr style="${emailStyles.divider}">
+      <p style="color: ${brandColors.textLight}; font-size: 14px;">
+        This documentation package was sent via Ride Ready Docs. If you have any questions, please contact ${safeControllerName || 'the sender'} directly.
+      </p>
+    </div>
+    
+    <div style="${emailStyles.footer}">
+      <p style="${emailStyles.footerText}">
+        © ${currentYear} Ride Ready Docs. All rights reserved.<br>
+        Professional compliance management for amusement equipment.<br><br>
+        <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
+        <a href="mailto:info@ridereadydocs.com" style="${emailStyles.footerLink}">info@ridereadydocs.com</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
+
       const cleanAttachments = batch.attachments.map(({ size, documentName, documentType, expiresAt, ...attachment }) => attachment);
 
       const emailResponse = await resend.emails.send({
@@ -307,22 +322,14 @@ const handler = async (req: Request): Promise<Response> => {
       wasSplit: totalEmailsSent > 1
     }), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
 
   } catch (error: any) {
     console.error("Error in send-ride-documents function:", error);
     return new Response(
-      JSON.stringify({ 
-        error: "Failed to send documents. Please try again later."
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      JSON.stringify({ error: "Failed to send documents. Please try again later." }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };

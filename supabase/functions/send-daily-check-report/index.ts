@@ -1,13 +1,13 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.4';
 import { Resend } from "npm:resend@4.0.0";
+import { brandColors, emailStyles, logoSvg, escapeHtml } from "../_shared/email-template.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY") as string);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 interface SendReportRequest {
@@ -31,11 +31,7 @@ const handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+      { global: { headers: { Authorization: authHeader } } }
     );
 
     const { checkId, checkIds, recipientEmail, recipientName }: SendReportRequest = await req.json();
@@ -43,10 +39,7 @@ const handler = async (req: Request): Promise<Response> => {
     if ((!checkId && !checkIds) || !recipientEmail) {
       return new Response(
         JSON.stringify({ error: "Check ID(s) and recipient email are required" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
@@ -106,19 +99,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     return new Response(JSON.stringify({ success: true, emailResponse }), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
     console.error("Error in send-daily-check-report function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
@@ -127,132 +114,134 @@ function generateHTMLReport(check: any): string {
   const checkedItems = check.inspection_check_results.filter((r: any) => r.is_checked);
   const totalItems = check.inspection_check_results.length;
   const passRate = Math.round((checkedItems.length / totalItems) * 100);
+  const currentYear = new Date().getFullYear();
+
+  const safeRideName = escapeHtml(check.rides.ride_name);
+  const safeCategoryName = escapeHtml(check.rides.ride_categories?.name);
+  const safeInspectorName = escapeHtml(check.inspector_name);
+  const safeManufacturer = escapeHtml(check.rides.manufacturer);
+  const safeSerialNumber = escapeHtml(check.rides.serial_number);
+  const safeNotes = escapeHtml(check.notes);
+
+  const statusColor = check.status === 'passed' ? brandColors.success : check.status === 'failed' ? brandColors.danger : brandColors.accent;
 
   return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 800px; margin: 0 auto; padding: 20px; }
-        .header { background: #007bff; color: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-        .header h1 { margin: 0; font-size: 24px; }
-        .section { margin-bottom: 30px; }
-        .section h2 { color: #007bff; border-bottom: 2px solid #007bff; padding-bottom: 10px; }
-        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        .info-item { background: #f8f9fa; padding: 10px; border-radius: 4px; }
-        .info-label { font-weight: bold; color: #666; font-size: 12px; }
-        .info-value { color: #333; font-size: 16px; }
-        .status-badge { display: inline-block; padding: 5px 15px; border-radius: 20px; font-weight: bold; text-transform: uppercase; font-size: 12px; }
-        .status-passed { background: #28a745; color: white; }
-        .status-failed { background: #dc3545; color: white; }
-        .status-partial { background: #ffc107; color: #333; }
-        .check-items { list-style: none; padding: 0; }
-        .check-item { padding: 12px; margin-bottom: 8px; border-left: 4px solid #ddd; background: #f8f9fa; }
-        .check-item.checked { border-left-color: #28a745; background: #d4edda; }
-        .check-item.unchecked { border-left-color: #dc3545; background: #f8d7da; }
-        .check-icon { font-weight: bold; margin-right: 10px; }
-        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ddd; text-align: center; color: #666; font-size: 12px; }
-      </style>
-    </head>
-    <body>
-      <div class="header">
-        <h1>Daily Safety Check Report</h1>
-        <p style="margin: 5px 0 0 0;">${check.rides.ride_name}</p>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Safety Check Report</title>
+</head>
+<body style="${emailStyles.body}">
+  <div style="${emailStyles.container}">
+    <div style="${emailStyles.header}">
+      <div style="margin-bottom: 16px;">${logoSvg}</div>
+      <h1 style="${emailStyles.headerTitle}">Daily Safety Check Report</h1>
+      <p style="${emailStyles.headerSubtitle}">${safeRideName}</p>
+    </div>
+    
+    <div style="${emailStyles.content}">
+      <div style="${emailStyles.card}">
+        <p style="${emailStyles.label}">INSPECTION SUMMARY</p>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid ${brandColors.border}; width: 40%;"><strong>Ride Name</strong></td>
+            <td style="padding: 10px 0; border-bottom: 1px solid ${brandColors.border};">${safeRideName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid ${brandColors.border};"><strong>Category</strong></td>
+            <td style="padding: 10px 0; border-bottom: 1px solid ${brandColors.border};">${safeCategoryName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid ${brandColors.border};"><strong>Inspection Date</strong></td>
+            <td style="padding: 10px 0; border-bottom: 1px solid ${brandColors.border};">${new Date(check.check_date).toLocaleDateString('en-GB')}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid ${brandColors.border};"><strong>Inspector</strong></td>
+            <td style="padding: 10px 0; border-bottom: 1px solid ${brandColors.border};">${safeInspectorName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0; border-bottom: 1px solid ${brandColors.border};"><strong>Status</strong></td>
+            <td style="padding: 10px 0; border-bottom: 1px solid ${brandColors.border};">
+              <span style="display: inline-block; padding: 4px 16px; border-radius: 20px; font-weight: 600; font-size: 12px; text-transform: uppercase; background: ${statusColor}; color: white;">
+                ${check.status}
+              </span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding: 10px 0;"><strong>Completion Rate</strong></td>
+            <td style="padding: 10px 0;">${passRate}% (${checkedItems.length}/${totalItems} items)</td>
+          </tr>
+        </table>
       </div>
 
-      <div class="section">
-        <h2>Inspection Summary</h2>
-        <div class="info-grid">
-          <div class="info-item">
-            <div class="info-label">Ride Name</div>
-            <div class="info-value">${check.rides.ride_name}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Category</div>
-            <div class="info-value">${check.rides.ride_categories.name}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Inspection Date</div>
-            <div class="info-value">${new Date(check.check_date).toLocaleDateString()}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Inspector</div>
-            <div class="info-value">${check.inspector_name}</div>
-          </div>
-          <div class="info-item">
-            <div class="info-label">Status</div>
-            <div class="info-value">
-              <span class="status-badge status-${check.status}">${check.status.toUpperCase()}</span>
+      ${safeManufacturer || safeSerialNumber ? `
+      <div style="${emailStyles.card}">
+        <p style="${emailStyles.label}">RIDE DETAILS</p>
+        <table style="width: 100%; border-collapse: collapse;">
+          ${safeManufacturer ? `
+          <tr>
+            <td style="padding: 8px 0; width: 40%;"><strong>Manufacturer</strong></td>
+            <td style="padding: 8px 0;">${safeManufacturer}</td>
+          </tr>
+          ` : ''}
+          ${safeSerialNumber ? `
+          <tr>
+            <td style="padding: 8px 0;"><strong>Serial Number</strong></td>
+            <td style="padding: 8px 0;">${safeSerialNumber}</td>
+          </tr>
+          ` : ''}
+        </table>
+      </div>
+      ` : ''}
+
+      <div style="margin: 24px 0;">
+        <p style="${emailStyles.label}">INSPECTION ITEMS</p>
+        ${check.inspection_check_results.map((result: any) => `
+          <div style="padding: 12px 16px; margin: 8px 0; border-radius: 6px; border-left: 4px solid ${result.is_checked ? brandColors.success : brandColors.danger}; background: ${result.is_checked ? '#f0fdf4' : '#fef2f2'};">
+            <span style="font-weight: bold; margin-right: 10px; color: ${result.is_checked ? brandColors.success : brandColors.danger};">${result.is_checked ? '✓' : '✗'}</span>
+            <strong>${escapeHtml(result.daily_check_template_items.check_item_text)}</strong>
+            ${result.daily_check_template_items.is_required ? `<span style="color: ${brandColors.danger};"> *</span>` : ''}
+            <div style="font-size: 12px; color: ${brandColors.textLight}; margin-top: 4px;">
+              Category: ${escapeHtml(result.daily_check_template_items.category)}
             </div>
+            ${result.notes ? `<div style="margin-top: 8px; font-style: italic; color: ${brandColors.text};">Note: ${escapeHtml(result.notes)}</div>` : ''}
           </div>
-          <div class="info-item">
-            <div class="info-label">Completion Rate</div>
-            <div class="info-value">${passRate}% (${checkedItems.length}/${totalItems})</div>
-          </div>
-        </div>
+        `).join('')}
       </div>
 
-      ${check.rides.manufacturer || check.rides.serial_number ? `
-      <div class="section">
-        <h2>Ride Details</h2>
-        <div class="info-grid">
-          ${check.rides.manufacturer ? `
-          <div class="info-item">
-            <div class="info-label">Manufacturer</div>
-            <div class="info-value">${check.rides.manufacturer}</div>
-          </div>
-          ` : ''}
-          ${check.rides.serial_number ? `
-          <div class="info-item">
-            <div class="info-label">Serial Number</div>
-            <div class="info-value">${check.rides.serial_number}</div>
-          </div>
-          ` : ''}
-        </div>
+      ${safeNotes ? `
+      <div style="${emailStyles.warningBox}">
+        <p style="${emailStyles.label}">INSPECTOR NOTES</p>
+        <p style="${emailStyles.value}; line-height: 1.8;">${safeNotes}</p>
       </div>
       ` : ''}
 
-      <div class="section">
-        <h2>Inspection Items</h2>
-        <ul class="check-items">
-          ${check.inspection_check_results.map((result: any) => `
-            <li class="check-item ${result.is_checked ? 'checked' : 'unchecked'}">
-              <span class="check-icon">${result.is_checked ? '✓' : '✗'}</span>
-              <strong>${result.daily_check_template_items.check_item_text}</strong>
-              ${result.daily_check_template_items.is_required ? ' <span style="color: #dc3545;">*</span>' : ''}
-              <div style="font-size: 12px; color: #666; margin-top: 5px;">
-                Category: ${result.daily_check_template_items.category}
-              </div>
-              ${result.notes ? `<div style="margin-top: 5px; font-style: italic;">Note: ${result.notes}</div>` : ''}
-            </li>
-          `).join('')}
-        </ul>
-      </div>
-
-      ${check.notes ? `
-      <div class="section">
-        <h2>Inspector Notes</h2>
-        <div style="background: #f8f9fa; padding: 15px; border-radius: 4px;">
-          ${check.notes}
-        </div>
-      </div>
-      ` : ''}
-
-      <div class="footer">
-        <p><strong>Ride Ready Docs</strong></p>
-        <p>This is an automated report generated by Ride Ready Docs document management system.</p>
-        <p>Report Generated: ${new Date().toLocaleString()}</p>
-      </div>
-    </body>
-    </html>
-  `;
+      <hr style="${emailStyles.divider}">
+      <p style="color: ${brandColors.textLight}; font-size: 12px; text-align: center;">
+        Report Generated: ${new Date().toLocaleString('en-GB')}
+      </p>
+    </div>
+    
+    <div style="${emailStyles.footer}">
+      <p style="${emailStyles.footerText}">
+        © ${currentYear} Ride Ready Docs. All rights reserved.<br>
+        Professional compliance management for amusement equipment.<br><br>
+        <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
+        <a href="mailto:info@ridereadydocs.com" style="${emailStyles.footerLink}">info@ridereadydocs.com</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
 }
 
 function generateBulkHTMLReport(checks: any[]): string {
   const totalChecks = checks.length;
   const passedChecks = checks.filter(c => c.status === 'passed').length;
   const failedChecks = checks.filter(c => c.status === 'failed').length;
+  const currentYear = new Date().getFullYear();
 
   let reportsHTML = '';
   
@@ -260,110 +249,117 @@ function generateBulkHTMLReport(checks: any[]): string {
     const checkedItems = check.inspection_check_results.filter((r: any) => r.is_checked);
     const totalItems = check.inspection_check_results.length;
     const passRate = Math.round((checkedItems.length / totalItems) * 100);
+    const statusColor = check.status === 'passed' ? brandColors.success : check.status === 'failed' ? brandColors.danger : brandColors.accent;
 
     reportsHTML += `
-      ${index > 0 ? '<div style="page-break-before: always;"></div>' : ''}
-      
-      <div style="margin-bottom: 40px; border: 2px solid #e9ecef; border-radius: 8px; padding: 20px;">
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 6px; margin-bottom: 20px;">
-          <h2 style="margin: 0; font-size: 20px;">Report ${index + 1} of ${totalChecks}</h2>
-          <h3 style="margin: 5px 0 0 0; font-size: 16px; font-weight: normal;">${check.rides.ride_name}</h3>
+      <div style="margin-bottom: 32px; border: 1px solid ${brandColors.border}; border-radius: 12px; overflow: hidden;">
+        <div style="background: linear-gradient(135deg, ${brandColors.primary} 0%, ${brandColors.primaryLight} 100%); color: white; padding: 20px;">
+          <h2 style="margin: 0; font-size: 18px;">Report ${index + 1} of ${totalChecks}</h2>
+          <p style="margin: 8px 0 0 0; font-size: 16px; opacity: 0.9;">${escapeHtml(check.rides.ride_name)}</p>
         </div>
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-          <div style="background: #f8f9fa; padding: 12px; border-radius: 4px;">
-            <div style="font-weight: bold; color: #666; font-size: 11px; margin-bottom: 5px;">INSPECTION DATE</div>
-            <div style="font-size: 15px;">${new Date(check.check_date).toLocaleDateString()}</div>
-          </div>
-          <div style="background: #f8f9fa; padding: 12px; border-radius: 4px;">
-            <div style="font-weight: bold; color: #666; font-size: 11px; margin-bottom: 5px;">INSPECTOR</div>
-            <div style="font-size: 15px;">${check.inspector_name}</div>
-          </div>
-          <div style="background: #f8f9fa; padding: 12px; border-radius: 4px;">
-            <div style="font-weight: bold; color: #666; font-size: 11px; margin-bottom: 5px;">STATUS</div>
-            <div>
-              <span style="display: inline-block; padding: 4px 12px; border-radius: 12px; font-weight: bold; text-transform: uppercase; font-size: 11px; background: ${check.status === 'passed' ? '#28a745' : check.status === 'failed' ? '#dc3545' : '#ffc107'}; color: ${check.status === 'partial' ? '#333' : 'white'};">
+        <div style="padding: 20px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;">
+            <div style="background: ${brandColors.background}; padding: 12px; border-radius: 6px;">
+              <div style="font-size: 11px; font-weight: 600; color: ${brandColors.textLight}; margin-bottom: 4px;">INSPECTION DATE</div>
+              <div style="font-size: 14px;">${new Date(check.check_date).toLocaleDateString('en-GB')}</div>
+            </div>
+            <div style="background: ${brandColors.background}; padding: 12px; border-radius: 6px;">
+              <div style="font-size: 11px; font-weight: 600; color: ${brandColors.textLight}; margin-bottom: 4px;">INSPECTOR</div>
+              <div style="font-size: 14px;">${escapeHtml(check.inspector_name)}</div>
+            </div>
+            <div style="background: ${brandColors.background}; padding: 12px; border-radius: 6px;">
+              <div style="font-size: 11px; font-weight: 600; color: ${brandColors.textLight}; margin-bottom: 4px;">STATUS</div>
+              <span style="display: inline-block; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; text-transform: uppercase; background: ${statusColor}; color: white;">
                 ${check.status}
               </span>
             </div>
+            <div style="background: ${brandColors.background}; padding: 12px; border-radius: 6px;">
+              <div style="font-size: 11px; font-weight: 600; color: ${brandColors.textLight}; margin-bottom: 4px;">COMPLETION</div>
+              <div style="font-size: 14px;">${passRate}% (${checkedItems.length}/${totalItems})</div>
+            </div>
           </div>
-          <div style="background: #f8f9fa; padding: 12px; border-radius: 4px;">
-            <div style="font-weight: bold; color: #666; font-size: 11px; margin-bottom: 5px;">COMPLETION</div>
-            <div style="font-size: 15px;">${passRate}% (${checkedItems.length}/${totalItems})</div>
-          </div>
-        </div>
 
-        <div style="margin-bottom: 15px;">
-          <div style="font-weight: bold; color: #667eea; margin-bottom: 10px; font-size: 14px;">Key Checks Summary</div>
-          <div style="display: grid; gap: 6px;">
+          <div style="margin-bottom: 16px;">
+            <div style="font-size: 12px; font-weight: 600; color: ${brandColors.primary}; margin-bottom: 10px;">KEY CHECKS SUMMARY</div>
             ${check.inspection_check_results.slice(0, 5).map((result: any) => `
-              <div style="padding: 8px 12px; background: ${result.is_checked ? '#d4edda' : '#f8d7da'}; border-radius: 4px; border-left: 3px solid ${result.is_checked ? '#28a745' : '#dc3545'}; font-size: 13px;">
+              <div style="padding: 8px 12px; margin: 4px 0; background: ${result.is_checked ? '#f0fdf4' : '#fef2f2'}; border-radius: 4px; border-left: 3px solid ${result.is_checked ? brandColors.success : brandColors.danger}; font-size: 13px;">
                 <span style="font-weight: bold; margin-right: 8px;">${result.is_checked ? '✓' : '✗'}</span>
-                ${result.daily_check_template_items.check_item_text}
+                ${escapeHtml(result.daily_check_template_items.check_item_text)}
               </div>
             `).join('')}
             ${check.inspection_check_results.length > 5 ? `
-              <div style="padding: 8px 12px; background: #e9ecef; border-radius: 4px; font-size: 12px; text-align: center; color: #666;">
+              <div style="padding: 8px 12px; background: ${brandColors.background}; border-radius: 4px; font-size: 12px; text-align: center; color: ${brandColors.textLight};">
                 + ${check.inspection_check_results.length - 5} more items
               </div>
             ` : ''}
           </div>
-        </div>
 
-        ${check.notes ? `
-        <div style="background: #fff3cd; padding: 12px; border-radius: 4px; border-left: 4px solid #ffc107;">
-          <div style="font-weight: bold; color: #856404; margin-bottom: 5px; font-size: 12px;">INSPECTOR NOTES</div>
-          <div style="color: #856404; font-size: 13px;">${check.notes}</div>
+          ${check.notes ? `
+          <div style="background: #fffbeb; padding: 12px; border-radius: 4px; border-left: 4px solid ${brandColors.accent};">
+            <div style="font-size: 11px; font-weight: 600; color: #92400e; margin-bottom: 4px;">INSPECTOR NOTES</div>
+            <div style="color: #92400e; font-size: 13px;">${escapeHtml(check.notes)}</div>
+          </div>
+          ` : ''}
         </div>
-        ` : ''}
       </div>
     `;
   });
 
   return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 900px; margin: 0 auto; padding: 20px; }
-        @media print { .page-break { page-break-before: always; } }
-      </style>
-    </head>
-    <body>
-      <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 12px; margin-bottom: 30px; text-align: center;">
-        <h1 style="margin: 0; font-size: 28px;">Daily Safety Check Reports</h1>
-        <p style="margin: 10px 0 0 0; font-size: 16px;">Bulk Report Package</p>
-      </div>
-
-      <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
-        <h2 style="margin: 0 0 15px 0; color: #667eea;">Summary</h2>
-        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px;">
-          <div style="text-align: center; background: white; padding: 15px; border-radius: 6px;">
-            <div style="font-size: 32px; font-weight: bold; color: #667eea;">${totalChecks}</div>
-            <div style="font-size: 12px; color: #666; text-transform: uppercase;">Total Reports</div>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daily Safety Check Reports</title>
+</head>
+<body style="${emailStyles.body}">
+  <div style="${emailStyles.container}">
+    <div style="${emailStyles.header}">
+      <div style="margin-bottom: 16px;">${logoSvg}</div>
+      <h1 style="${emailStyles.headerTitle}">Daily Safety Check Reports</h1>
+      <p style="${emailStyles.headerSubtitle}">Bulk Report Package - ${totalChecks} Reports</p>
+    </div>
+    
+    <div style="${emailStyles.content}">
+      <div style="${emailStyles.card}; text-align: center;">
+        <p style="${emailStyles.label}">SUMMARY</p>
+        <div style="display: flex; justify-content: center; gap: 24px; margin-top: 16px;">
+          <div>
+            <div style="font-size: 36px; font-weight: bold; color: ${brandColors.primary};">${totalChecks}</div>
+            <div style="font-size: 12px; color: ${brandColors.textLight}; text-transform: uppercase;">Total Reports</div>
           </div>
-          <div style="text-align: center; background: white; padding: 15px; border-radius: 6px;">
-            <div style="font-size: 32px; font-weight: bold; color: #28a745;">${passedChecks}</div>
-            <div style="font-size: 12px; color: #666; text-transform: uppercase;">Passed</div>
+          <div>
+            <div style="font-size: 36px; font-weight: bold; color: ${brandColors.success};">${passedChecks}</div>
+            <div style="font-size: 12px; color: ${brandColors.textLight}; text-transform: uppercase;">Passed</div>
           </div>
-          <div style="text-align: center; background: white; padding: 15px; border-radius: 6px;">
-            <div style="font-size: 32px; font-weight: bold; color: #dc3545;">${failedChecks}</div>
-            <div style="font-size: 12px; color: #666; text-transform: uppercase;">Failed</div>
+          <div>
+            <div style="font-size: 36px; font-weight: bold; color: ${brandColors.danger};">${failedChecks}</div>
+            <div style="font-size: 12px; color: ${brandColors.textLight}; text-transform: uppercase;">Failed</div>
           </div>
         </div>
       </div>
 
       ${reportsHTML}
 
-      <div style="margin-top: 40px; padding-top: 20px; border-top: 2px solid #e9ecef; text-align: center; color: #666; font-size: 11px;">
-        <p style="margin: 5px 0;"><strong>Ride Ready Docs</strong></p>
-        <p style="margin: 5px 0;">Professional Document Management System for Amusement Rides</p>
-        <p style="margin: 5px 0;">Report Generated: ${new Date().toLocaleString()}</p>
-      </div>
-    </body>
-    </html>
-  `;
+      <hr style="${emailStyles.divider}">
+      <p style="color: ${brandColors.textLight}; font-size: 12px; text-align: center;">
+        Report Generated: ${new Date().toLocaleString('en-GB')}
+      </p>
+    </div>
+    
+    <div style="${emailStyles.footer}">
+      <p style="${emailStyles.footerText}">
+        © ${currentYear} Ride Ready Docs. All rights reserved.<br>
+        Professional compliance management for amusement equipment.<br><br>
+        <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
+        <a href="mailto:info@ridereadydocs.com" style="${emailStyles.footerLink}">info@ridereadydocs.com</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>`;
 }
 
 serve(handler);

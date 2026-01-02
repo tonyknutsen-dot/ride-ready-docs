@@ -1,22 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { Resend } from "npm:resend@2.0.0";
+import { brandColors, emailStyles, logoSvg, escapeHtml } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// Escape HTML to prevent XSS
-function escapeHtml(text: string | null | undefined): string {
-  if (!text) return "";
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
 
 // Convert plain text to HTML with proper line breaks
 function textToHtml(text: string): string {
@@ -98,10 +88,6 @@ serve(async (req: Request) => {
       .eq("user_id", user.id)
       .single();
 
-    // Get user email
-    const { data: userData } = await supabase.auth.admin.getUserById(user.id);
-    const senderEmail = userData.user?.email || "noreply@example.com";
-
     // Fetch recipients with contact details
     const { data: recipients, error: recipientsError } = await supabase
       .from("campaign_recipients")
@@ -127,6 +113,7 @@ serve(async (req: Request) => {
 
     let sentCount = 0;
     const baseUrl = Deno.env.get("SUPABASE_URL")?.replace("/rest/v1", "") || supabaseUrl;
+    const currentYear = new Date().getFullYear();
 
     // Process recipients
     for (const recipient of recipients || []) {
@@ -148,24 +135,40 @@ serve(async (req: Request) => {
         // Build unsubscribe URL
         const unsubscribeUrl = `${baseUrl}/functions/v1/handle-unsubscribe?token=${contact.unsubscribe_token}`;
 
-        // Build HTML email
+        // Build branded HTML email
         const htmlContent = `
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>${escapeHtml(personalizedSubject)}</title>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background-color: #f8f9fa; padding: 30px; border-radius: 10px;">
-    ${textToHtml(personalizedContent)}
-  </div>
-  
-  <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;">
-    <p style="font-size: 12px; color: #666;">
-      ${profile?.company_name ? `Sent by ${escapeHtml(profile.company_name)}<br>` : ""}
-      <a href="${unsubscribeUrl}" style="color: #666;">Unsubscribe from these emails</a>
-    </p>
+<body style="${emailStyles.body}">
+  <div style="${emailStyles.container}">
+    <!-- Header -->
+    <div style="${emailStyles.header}">
+      <div style="margin-bottom: 16px;">${logoSvg}</div>
+    </div>
+    
+    <!-- Content -->
+    <div style="${emailStyles.content}">
+      <div style="line-height: 1.8; color: ${brandColors.text};">
+        ${textToHtml(personalizedContent)}
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div style="${emailStyles.footer}">
+      <p style="${emailStyles.footerText}">
+        ${profile?.company_name ? `Sent by ${escapeHtml(profile.company_name)}<br><br>` : ""}
+        © ${currentYear} Ride Ready Docs. All rights reserved.<br>
+        Professional compliance management for amusement equipment.<br><br>
+        <a href="https://ridereadydocs.com" style="${emailStyles.footerLink}">ridereadydocs.com</a> · 
+        <a href="${unsubscribeUrl}" style="${emailStyles.footerLink}">Unsubscribe</a>
+      </p>
+    </div>
   </div>
 </body>
 </html>`;
