@@ -77,10 +77,15 @@ const AppHeader = () => {
       <div className="container flex h-14 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link to="/overview" className="flex items-center gap-2 group">
-            <img src={logo} alt="Ride Ready" className="h-8 w-auto" />
-            <span className="font-bold text-lg hidden sm:inline group-hover:text-primary transition-colors">
-              Ride Ready
-            </span>
+            <img src={logo} alt="Ride Ready Docs" className="h-8 w-auto" />
+            <div className="flex items-baseline gap-1">
+              <span className="font-bold text-lg group-hover:text-primary transition-colors">
+                Ride Ready
+              </span>
+              <span className="font-medium text-sm text-accent hidden sm:inline">
+                Docs
+              </span>
+            </div>
           </Link>
           
           <nav className="hidden md:flex items-center gap-1">
