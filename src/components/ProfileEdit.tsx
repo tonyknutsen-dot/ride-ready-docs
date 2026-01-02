@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Building, User, MapPin, Users } from 'lucide-react';
 import { z } from 'zod';
+import { useTerminology } from '@/hooks/useTerminology';
 
 const profileSchema = z.object({
   company_name: z.string().min(1, 'Company name is required'),
@@ -21,6 +22,7 @@ interface ProfileEditProps {
 
 const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
   const { toast } = useToast();
+  const { terminology } = useTerminology();
   const [formData, setFormData] = useState({
     company_name: profile?.company_name || '',
     controller_name: profile?.controller_name || '',
@@ -92,7 +94,7 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
       <div className="p-3 bg-muted/50 rounded-lg text-xs space-y-1.5">
         <p className="font-medium text-sm">Role Definitions:</p>
         <p><strong>Controller:</strong> Responsible for ride safety and compliance</p>
-        <p><strong>Showmen:</strong> Operates the fairground/show (may be same as controller)</p>
+        <p><strong>{terminology.isUK ? 'Showmen' : 'Operator'}:</strong> Operates the fairground/show (may be same as controller)</p>
         <p><strong>Owner:</strong> Owns individual rides (set separately for each ride)</p>
       </div>
       
@@ -137,13 +139,13 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
         <div className="space-y-2">
           <Label htmlFor="showmen_name" className="flex items-center gap-2 text-sm">
             <Users className="h-4 w-4 text-muted-foreground" />
-            Showmen Name
+            {terminology.isUK ? 'Showmen Name' : 'Operator Name'}
           </Label>
           <Input
             id="showmen_name"
             value={formData.showmen_name}
             onChange={(e) => handleInputChange('showmen_name', e.target.value)}
-            placeholder="Enter showmen name (optional)"
+            placeholder={`Enter ${terminology.isUK ? 'showmen' : 'operator'} name (optional)`}
             disabled={isLoading}
             className="h-11"
           />
