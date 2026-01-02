@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Plus, ImagePlus, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Save, Plus, ImagePlus, AlertTriangle, Camera, FolderOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { z } from 'zod';
@@ -498,24 +498,46 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                 </Button>
               </div>
             ) : (
-              <label htmlFor="ride-photo" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                  <ImagePlus className="w-8 h-8 mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    <span className="font-semibold">Click to upload</span> or drag and drop
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">PNG, JPG up to 10MB</p>
-                </div>
+              <>
+                {/* Hidden file inputs */}
                 <Input
                   id="ride-photo"
                   type="file"
                   accept="image/*"
-                  // @ts-ignore
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
+                <Input
+                  id="ride-photo-camera"
+                  type="file"
+                  accept="image/*"
                   capture="environment"
                   onChange={handlePhotoSelect}
                   className="hidden"
                 />
-              </label>
+                
+                {/* Dual Upload Buttons */}
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed hover:border-primary/50 hover:bg-muted/30"
+                    onClick={() => document.getElementById('ride-photo-camera')?.click()}
+                  >
+                    <Camera className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm font-medium">Take Photo</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed hover:border-primary/50 hover:bg-muted/30"
+                    onClick={() => document.getElementById('ride-photo')?.click()}
+                  >
+                    <FolderOpen className="h-8 w-8 text-muted-foreground" />
+                    <span className="text-sm font-medium">Choose File</span>
+                  </Button>
+                </div>
+              </>
             )}
             <p className="text-xs text-muted-foreground">
               Tip: Include the whole device and ID plate if possible
