@@ -110,9 +110,12 @@ const TERMINOLOGY_MAP: Record<string, Terminology> = {
   'OTHER': GLOBAL_TERMINOLOGY,
 };
 
+export type OperatorType = 'showman' | 'private_operator' | 'company';
+
 export function useTerminology() {
   const { user } = useAuth();
   const [terminology, setTerminology] = useState<Terminology>(GLOBAL_TERMINOLOGY);
+  const [operatorType, setOperatorType] = useState<OperatorType>('company');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -130,11 +133,15 @@ export function useTerminology() {
           .maybeSingle();
 
         if (!error && data) {
+          // Store operator type
+          const userOperatorType = (data.operator_type as OperatorType) || 'company';
+          setOperatorType(userOperatorType);
+          
           // Start with country-based terminology
           let baseTerm = TERMINOLOGY_MAP[data.country || 'OTHER'] || GLOBAL_TERMINOLOGY;
           
           // Override operator terminology based on operator_type preference
-          if (data.operator_type === 'showman') {
+          if (userOperatorType === 'showman') {
             // Use showman terminology regardless of country
             baseTerm = {
               ...baseTerm,
@@ -142,7 +149,7 @@ export function useTerminology() {
               operatorPlural: 'showmen',
               isUK: true, // For terminology purposes, treat as UK-style
             };
-          } else if (data.operator_type === 'private_operator' || data.operator_type === 'company') {
+          } else if (userOperatorType === 'private_operator' || userOperatorType === 'company') {
             // Use operator/company terminology
             baseTerm = {
               ...baseTerm,
@@ -164,7 +171,7 @@ export function useTerminology() {
     loadUserPreferences();
   }, [user]);
 
-  return { terminology, loading };
+  return { terminology, operatorType, loading };
 }
 
 // For use when user is not logged in (e.g., landing pages)

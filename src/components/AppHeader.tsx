@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/contexts/AdminContext';
-import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown, ShieldCheck, Calendar as CalendarIcon, Send, Shield } from 'lucide-react';
+import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown, ShieldCheck, Calendar as CalendarIcon, Send, Shield, Tent, Building2, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -14,13 +14,25 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
+import { Badge } from '@/components/ui/badge';
+import { useTerminology } from '@/hooks/useTerminology';
 import logo from '@/assets/logo.png';
+
+const OPERATOR_TYPE_CONFIG = {
+  showman: { label: 'Showman', icon: Tent, className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
+  private_operator: { label: 'Operator', icon: User, className: 'bg-blue-500/10 text-blue-600 border-blue-500/20' },
+  company: { label: 'Company', icon: Building2, className: 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' },
+};
 
 const AppHeader = () => {
   const location = useLocation();
   const { signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { toast } = useToast();
+  const { operatorType, loading: terminologyLoading } = useTerminology();
+
+  const operatorConfig = OPERATOR_TYPE_CONFIG[operatorType] || OPERATOR_TYPE_CONFIG.company;
+  const OperatorIcon = operatorConfig.icon;
 
   const handleSignOut = async () => {
     try {
@@ -87,7 +99,15 @@ const AppHeader = () => {
           </nav>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          {/* Operator Type Badge */}
+          {!terminologyLoading && (
+            <Badge variant="outline" className={`hidden sm:flex items-center gap-1.5 px-2 py-1 text-xs font-medium ${operatorConfig.className}`}>
+              <OperatorIcon className="h-3 w-3" />
+              {operatorConfig.label}
+            </Badge>
+          )}
+          
           {/* More Menu - Secondary items only */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
