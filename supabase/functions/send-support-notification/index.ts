@@ -74,7 +74,7 @@ const handler = async (req: Request): Promise<Response> => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: 'RideReady <notifications@rideready.app>',
+        from: 'Ride Ready Docs <info@ridereadydocs.com>',
         to: adminEmails,
         subject: `New Support Message: ${escapeHtml(message.subject)}`,
         html: `

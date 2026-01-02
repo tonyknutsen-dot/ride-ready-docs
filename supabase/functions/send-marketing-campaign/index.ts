@@ -173,8 +173,8 @@ serve(async (req: Request) => {
         // Send email
         const emailResponse = await resend.emails.send({
           from: profile?.company_name 
-            ? `${profile.company_name} <onboarding@resend.dev>` 
-            : "Marketing <onboarding@resend.dev>",
+            ? `${profile.company_name} <info@ridereadydocs.com>` 
+            : "Ride Ready Docs <info@ridereadydocs.com>",
           to: [contact.email],
           subject: personalizedSubject,
           html: htmlContent,

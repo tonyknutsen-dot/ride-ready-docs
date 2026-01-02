@@ -44,7 +44,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Sending ${status} email for ${requestType} request: ${requestName} to ${userEmail}`);
 
     const emailResponse = await resend.emails.send({
-      from: "Ride Ready <notifications@resend.dev>",
+      from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [userEmail],
       subject: `${statusEmoji} Your ${typeLabel} Request has been ${statusLabel}`,
       html: `
