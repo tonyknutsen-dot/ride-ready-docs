@@ -47,12 +47,20 @@ const Header = () => {
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center group">
+          <Link to="/" className="flex items-center gap-2 group">
             <img 
               src={logo} 
-              alt="Showmen's Ride Ready" 
-              className="h-12 w-auto transition-transform group-hover:scale-105" 
+              alt="Ride Ready Docs" 
+              className="h-10 w-auto transition-transform group-hover:scale-105" 
             />
+            <div className="flex items-baseline gap-1">
+              <span className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
+                Ride Ready
+              </span>
+              <span className="font-medium text-sm text-accent">
+                Docs
+              </span>
+            </div>
           </Link>
 
           {/* Desktop Navigation */}
