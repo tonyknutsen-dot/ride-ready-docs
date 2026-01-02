@@ -195,9 +195,9 @@ const App = () => (
                 path="/marketing"
                 element={
                   <ProtectedRoute>
-                    <ProfileGuard>
+                    <AdminRoute>
                       <Marketing />
-                    </ProfileGuard>
+                    </AdminRoute>
                   </ProtectedRoute>
                 } 
               />
