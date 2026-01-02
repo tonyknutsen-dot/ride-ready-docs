@@ -300,39 +300,6 @@ export type Database = {
           },
         ]
       }
-      compliance_templates: {
-        Row: {
-          category_id: string | null
-          created_at: string
-          id: string
-          is_active: boolean | null
-          jurisdiction: string
-          requirements: Json
-          template_name: string
-          updated_at: string
-        }
-        Insert: {
-          category_id?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          jurisdiction: string
-          requirements: Json
-          template_name: string
-          updated_at?: string
-        }
-        Update: {
-          category_id?: string | null
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          jurisdiction?: string
-          requirements?: Json
-          template_name?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       daily_check_template_items: {
         Row: {
           category: string | null
