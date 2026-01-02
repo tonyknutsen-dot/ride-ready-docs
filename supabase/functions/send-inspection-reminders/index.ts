@@ -11,6 +11,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Brand colors
+const primary = '#1e4a8f';
+const primaryLight = '#2563eb';
+const accent = '#f59e0b';
+const warning = '#f59e0b';
+
 const handler = async (req: Request): Promise<Response> => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -20,20 +26,13 @@ const handler = async (req: Request): Promise<Response> => {
     console.log("Starting inspection reminder check...");
     
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    
-    // Get today's date
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const currentYear = new Date().getFullYear();
     
-    // Fetch all active inspection schedules
     const { data: schedules, error: schedulesError } = await supabase
       .from("inspection_schedules")
-      .select(`
-        *,
-        rides (
-          ride_name
-        )
-      `)
+      .select(`*, rides (ride_name)`)
       .eq("is_active", true);
 
     if (schedulesError) {
@@ -48,24 +47,18 @@ const handler = async (req: Request): Promise<Response> => {
 
     for (const schedule of schedules || []) {
       try {
-        // Calculate days until due
         const dueDate = new Date(schedule.due_date);
         dueDate.setHours(0, 0, 0, 0);
         const daysUntilDue = Math.floor((dueDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
         
-        // Check if we should send a notification
         const shouldNotify = daysUntilDue <= schedule.advance_notice_days && daysUntilDue >= 0;
         
-        // Check if we already sent a notification today
-        const lastSent = schedule.last_notification_sent 
-          ? new Date(schedule.last_notification_sent) 
-          : null;
+        const lastSent = schedule.last_notification_sent ? new Date(schedule.last_notification_sent) : null;
         const alreadySentToday = lastSent && lastSent.toDateString() === today.toDateString();
 
         if (shouldNotify && !alreadySentToday) {
           console.log(`Sending reminder for schedule: ${schedule.inspection_name}`);
           
-          // Get user email from auth.users
           const { data: { user }, error: userError } = await supabase.auth.admin.getUserById(schedule.user_id);
           
           if (userError || !user?.email) {
@@ -74,7 +67,6 @@ const handler = async (req: Request): Promise<Response> => {
             continue;
           }
 
-          // Get profile info for company name
           const { data: profile } = await supabase
             .from("profiles")
             .select("company_name")
@@ -82,33 +74,93 @@ const handler = async (req: Request): Promise<Response> => {
             .single();
 
           const rideName = schedule.rides?.ride_name || "Unknown Ride";
-          const companyName = profile?.company_name || "Your Company";
+          const companyName = profile?.company_name || "there";
+          const urgencyColor = daysUntilDue <= 7 ? '#dc2626' : warning;
+          const urgencyBg = daysUntilDue <= 7 ? '#fef2f2' : '#fffbeb';
           
-          // Send email
+          const html = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inspection Reminder</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, ${primary} 0%, ${primaryLight} 100%); padding: 30px 40px; border-radius: 12px 12px 0 0; text-align: center;">
+      <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;">
+        <span style="font-size: 24px;">🔔</span>
+      </div>
+      <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">Inspection Reminder</h1>
+      <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0 0; font-size: 14px;">${rideName}</p>
+    </div>
+    
+    <!-- Content -->
+    <div style="background: white; padding: 40px; border: 1px solid #e5e7eb; border-top: none;">
+      <p style="margin-top: 0; font-size: 16px;">Hello ${companyName},</p>
+      
+      <p style="font-size: 15px;">This is a reminder that an inspection is due soon:</p>
+      
+      <div style="background: ${urgencyBg}; border-left: 4px solid ${urgencyColor}; padding: 20px; border-radius: 0 8px 8px 0; margin: 24px 0;">
+        <div style="display: inline-block; background: ${urgencyColor}; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-bottom: 12px;">
+          ${daysUntilDue === 0 ? 'DUE TODAY' : daysUntilDue === 1 ? 'DUE TOMORROW' : `${daysUntilDue} DAYS REMAINING`}
+        </div>
+        <p style="margin: 0; font-size: 18px; font-weight: 600; color: #1f2937;">${schedule.inspection_name}</p>
+      </div>
+      
+      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 24px 0;">
+        <div style="margin-bottom: 16px;">
+          <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280;">Ride</p>
+          <p style="margin: 0; font-size: 15px; font-weight: 600; color: ${primary};">${rideName}</p>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280;">Inspection Type</p>
+          <p style="margin: 0; font-size: 14px;">${schedule.inspection_type}</p>
+        </div>
+        <div>
+          <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280;">Due Date</p>
+          <p style="margin: 0; font-size: 14px;">${new Date(schedule.due_date).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
+        </div>
+        ${schedule.notes ? `
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px solid #e5e7eb;">
+          <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280;">Notes</p>
+          <p style="margin: 0; font-size: 14px;">${schedule.notes}</p>
+        </div>
+        ` : ''}
+      </div>
+      
+      <p style="font-size: 15px;">Please ensure this inspection is completed on time to maintain compliance.</p>
+      
+      <div style="text-align: center; margin: 32px 0;">
+        <a href="https://ridereadydocs.com/overview" style="display: inline-block; background: linear-gradient(135deg, ${primary} 0%, ${primaryLight} 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">View in Dashboard</a>
+      </div>
+      
+      <p style="margin-top: 24px; margin-bottom: 0;">Best regards,<br><strong>Ride Ready Docs Team</strong></p>
+    </div>
+    
+    <!-- Footer -->
+    <div style="background: #f9fafb; padding: 30px 40px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; text-align: center;">
+      <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.8;">
+        © ${currentYear} Ride Ready Docs. All rights reserved.<br>
+        <a href="https://ridereadydocs.com" style="color: ${primary}; text-decoration: none;">ridereadydocs.com</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
+          `;
+
           const emailResponse = await resend.emails.send({
             from: "Ride Ready Docs <info@ridereadydocs.com>",
             to: [user.email],
-            subject: `Inspection Reminder: ${schedule.inspection_name} - ${rideName}`,
-            html: `
-              <h1>Inspection Reminder</h1>
-              <p>Hello ${companyName},</p>
-              <p>This is a reminder that the following inspection is due soon:</p>
-              <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-                <p><strong>Ride:</strong> ${rideName}</p>
-                <p><strong>Inspection Type:</strong> ${schedule.inspection_type}</p>
-                <p><strong>Inspection Name:</strong> ${schedule.inspection_name}</p>
-                <p><strong>Due Date:</strong> ${new Date(schedule.due_date).toLocaleDateString()}</p>
-                <p><strong>Days Until Due:</strong> ${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'}</p>
-                ${schedule.notes ? `<p><strong>Notes:</strong> ${schedule.notes}</p>` : ''}
-              </div>
-              <p>Please ensure this inspection is completed on time to maintain compliance.</p>
-              <p>Best regards,<br>Ride Ready Docs Team</p>
-            `,
+            subject: `🔔 Inspection Reminder: ${schedule.inspection_name} - ${rideName}`,
+            html,
           });
 
           console.log("Email sent successfully:", emailResponse);
 
-          // Update last_notification_sent
           await supabase
             .from("inspection_schedules")
             .update({ last_notification_sent: new Date().toISOString() })
@@ -125,24 +177,14 @@ const handler = async (req: Request): Promise<Response> => {
     console.log(`Completed. Emails sent: ${emailsSent}, Errors: ${errors.length}`);
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        emailsSent, 
-        errors: errors.length > 0 ? errors : undefined 
-      }),
-      {
-        status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      JSON.stringify({ success: true, emailsSent, errors: errors.length > 0 ? errors : undefined }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
     console.error("Error in send-inspection-reminders function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      }
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 };

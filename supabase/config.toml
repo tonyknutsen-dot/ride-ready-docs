@@ -114,9 +114,6 @@ verify_jwt = true
 [functions.handle-unsubscribe]
 verify_jwt = false
 
-[functions.test-email]
-verify_jwt = false
-
 [analytics]
 enabled = false
 port = 54327
