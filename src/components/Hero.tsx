@@ -6,7 +6,7 @@ import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { PlanSelection } from "./PlanSelection";
 import { useState } from "react";
 import heroImage from "@/assets/hero-fairground.jpg";
-import { FileText, Settings, ArrowRight, Check } from "lucide-react";
+import { FileText, Settings, ArrowRight, Check, Globe } from "lucide-react";
 import { useDetectedTerminology } from "@/hooks/useTerminology";
 
 const Hero = () => {
@@ -54,7 +54,7 @@ const Hero = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-6 animate-fade-up">
             <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-white/90">Built for showmen, operators & amusement professionals</span>
+            <span className="text-sm font-medium text-white/90">Trusted by operators worldwide</span>
           </div>
 
           {/* Headline */}
@@ -117,6 +117,10 @@ const Hero = () => {
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-accent" />
               <span>Cancel anytime</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Globe className="h-4 w-4 text-accent" />
+              <span>UK, Europe, Americas & Worldwide</span>
             </div>
           </div>
         </div>
