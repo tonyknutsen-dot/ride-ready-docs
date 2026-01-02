@@ -114,6 +114,21 @@ verify_jwt = true
 [functions.handle-unsubscribe]
 verify_jwt = false
 
+[functions.send-public-enquiry]
+verify_jwt = false
+
+[functions.send-support-response]
+verify_jwt = true
+
+[functions.send-request-status-email]
+verify_jwt = true
+
+[functions.send-suspension-email]
+verify_jwt = true
+
+[functions.get-user-email]
+verify_jwt = true
+
 [analytics]
 enabled = false
 port = 54327

@@ -54,20 +54,20 @@ const Hero = () => {
           {/* Badge */}
           <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 mb-6 animate-fade-up">
             <span className="w-2 h-2 bg-accent rounded-full animate-pulse" />
-            <span className="text-sm font-medium text-white/90">Built for {terminology.isUK ? 'showmen' : 'operators'} & amusement professionals</span>
+            <span className="text-sm font-medium text-white/90">Trusted by showmen & ride operators across the UK</span>
           </div>
 
           {/* Headline */}
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight animate-fade-up animate-delay-100">
-            Complete Operations
+            {terminology.isUK ? 'For Showmen,' : 'For Operators,'}
             <br />
-            <span className="text-accent">Management</span>
+            <span className="text-accent">By Showmen</span>
           </h1>
           
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-up animate-delay-200">
-            The all-in-one platform for ride and equipment operators. Manage documents, track compliance, 
-            handle safety checks, and stay organized—all in one place.
+            The all-in-one platform built for the fairground industry. Manage your rides, 
+            documents, safety checks, and compliance—all in one place.
           </p>
           
           {/* CTA Buttons */}
