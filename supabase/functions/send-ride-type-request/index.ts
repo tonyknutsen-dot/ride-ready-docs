@@ -8,16 +8,14 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// HTML escape function to prevent XSS attacks
+// Brand colors
+const primary = '#1e4a8f';
+const primaryLight = '#2563eb';
+const success = '#16a34a';
+
 function escapeHtml(text: string | null | undefined): string {
   if (!text) return '';
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
+  const map: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
   return text.replace(/[&<>"']/g, (m) => map[m]);
 }
 
@@ -32,7 +30,6 @@ interface RideTypeRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -46,121 +43,154 @@ const handler = async (req: Request): Promise<Response> => {
       userEmail: requestData.userEmail
     });
 
-    // Validate required fields
     if (!requestData.name || !requestData.type || !requestData.description || !requestData.userEmail) {
       throw new Error('Missing required fields');
     }
 
-    // Escape all user-controlled content for XSS prevention
     const safeName = escapeHtml(requestData.name);
     const safeDescription = escapeHtml(requestData.description);
     const safeManufacturer = escapeHtml(requestData.manufacturer);
     const safeAdditionalInfo = escapeHtml(requestData.additionalInfo);
     const safeUserEmail = escapeHtml(requestData.userEmail);
     const safeUserName = escapeHtml(requestData.userName);
+    const currentYear = new Date().getFullYear();
 
-    // Generate email content
     const typeLabel = requestData.type === 'ride' ? 'Fairground Ride' : 
                      requestData.type === 'stall' ? 'Food/Game Stall' : 'Generator/Equipment';
+
+    // Admin notification email
+    const adminHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>New ${typeLabel} Type Request</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, ${primary} 0%, ${primaryLight} 100%); padding: 30px 40px; border-radius: 12px 12px 0 0; text-align: center;">
+      <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">🎡 New ${typeLabel} Request</h1>
+      <p style="color: rgba(255, 255, 255, 0.9); margin: 8px 0 0 0; font-size: 14px;">A user has requested a new equipment type</p>
+    </div>
     
-    const htmlContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #2563eb; border-bottom: 2px solid #e5e7eb; padding-bottom: 10px;">
-          New ${typeLabel} Type Request
-        </h2>
-        
-        <div style="background: #f9fafb; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #374151;">Request Details</h3>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold; color: #6b7280; width: 150px;">Name:</td>
-              <td style="padding: 8px 0; color: #111827;">${safeName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Type:</td>
-              <td style="padding: 8px 0; color: #111827;">${typeLabel}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Description:</td>
-              <td style="padding: 8px 0; color: #111827;">${safeDescription}</td>
-            </tr>
-            ${safeManufacturer ? `
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Manufacturer:</td>
-              <td style="padding: 8px 0; color: #111827;">${safeManufacturer}</td>
-            </tr>
-            ` : ''}
-            ${safeAdditionalInfo ? `
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Additional Info:</td>
-              <td style="padding: 8px 0; color: #111827;">${safeAdditionalInfo}</td>
-            </tr>
-            ` : ''}
-          </table>
-        </div>
-        
-        <div style="background: #eff6ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
-          <h3 style="margin-top: 0; color: #1e40af;">Requester Information</h3>
-          <table style="width: 100%; border-collapse: collapse;">
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold; color: #6b7280; width: 100px;">Name:</td>
-              <td style="padding: 8px 0; color: #111827;">${safeUserName}</td>
-            </tr>
-            <tr>
-              <td style="padding: 8px 0; font-weight: bold; color: #6b7280;">Email:</td>
-              <td style="padding: 8px 0; color: #111827;">${safeUserEmail}</td>
-            </tr>
-          </table>
-        </div>
-        
-        <div style="margin-top: 30px; padding: 20px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #3b82f6;">
-          <h4 style="margin: 0 0 10px 0; color: #1e40af;">Next Steps</h4>
-          <p style="margin: 0; color: #374151;">
-            Review this request and if appropriate, add "${safeName}" to the ride_categories table in the database.
-          </p>
-        </div>
+    <!-- Content -->
+    <div style="background: white; padding: 40px; border: 1px solid #e5e7eb; border-top: none;">
+      <div style="background: #eff6ff; border-left: 4px solid ${primary}; padding: 20px; border-radius: 0 8px 8px 0; margin-bottom: 24px;">
+        <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: ${primary};">Requested ${typeLabel}</p>
+        <p style="margin: 0; font-size: 18px; font-weight: 700; color: #1f2937;">${safeName}</p>
       </div>
+      
+      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin-bottom: 24px;">
+        <div style="margin-bottom: 16px;">
+          <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280;">Type</p>
+          <p style="margin: 0; font-size: 14px;">${typeLabel}</p>
+        </div>
+        <div style="margin-bottom: 16px;">
+          <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280;">Description</p>
+          <p style="margin: 0; font-size: 14px;">${safeDescription}</p>
+        </div>
+        ${safeManufacturer ? `
+        <div style="margin-bottom: 16px;">
+          <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280;">Manufacturer</p>
+          <p style="margin: 0; font-size: 14px;">${safeManufacturer}</p>
+        </div>
+        ` : ''}
+        ${safeAdditionalInfo ? `
+        <div>
+          <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #6b7280;">Additional Info</p>
+          <p style="margin: 0; font-size: 14px;">${safeAdditionalInfo}</p>
+        </div>
+        ` : ''}
+      </div>
+      
+      <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 16px 20px; margin-bottom: 24px;">
+        <p style="margin: 0 0 4px 0; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #166534;">Requester</p>
+        <p style="margin: 0; font-size: 14px;"><strong>${safeUserName}</strong> · ${safeUserEmail}</p>
+      </div>
+      
+      <div style="text-align: center; margin-top: 32px;">
+        <a href="https://ridereadydocs.com/admin/ride-requests" style="display: inline-block; background: linear-gradient(135deg, ${primary} 0%, ${primaryLight} 100%); color: white; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 14px;">View in Admin Panel</a>
+      </div>
+    </div>
+    
+    <!-- Footer -->
+    <div style="background: #f9fafb; padding: 30px 40px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; text-align: center;">
+      <p style="color: #6b7280; font-size: 12px; margin: 0;">
+        © ${currentYear} Ride Ready Docs Admin Notification
+      </p>
+    </div>
+  </div>
+</body>
+</html>
     `;
 
-    // Send email notification
     const emailResponse = await resend.emails.send({
       from: "Ride Ready Docs <info@ridereadydocs.com>", 
       to: ["info@ridereadydocs.com"],
-      subject: `New ${typeLabel} Request: ${safeName}`,
-      html: htmlContent,
+      subject: `🎡 New ${typeLabel} Request: ${safeName}`,
+      html: adminHtml,
     });
 
     console.log("Admin notification sent successfully:", emailResponse);
 
-    // Send confirmation email to user
-    const userConfirmationHtml = `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h2 style="color: #059669;">Request Submitted Successfully!</h2>
-        
-        <p>Hi ${safeUserName},</p>
-        
-        <p>Thank you for submitting a request to add <strong>"${safeName}"</strong> as a new ${typeLabel.toLowerCase()} type to our database.</p>
-        
-        <div style="background: #f0f9ff; padding: 15px; border-radius: 8px; margin: 20px 0;">
-          <p style="margin: 0;"><strong>What happens next?</strong></p>
-          <ul style="margin: 10px 0;">
-            <li>Our team will review your request within 2-3 business days</li>
-            <li>If approved, we'll add it to our database</li>
-            <li>You'll be able to select it when adding new rides or stalls</li>
-          </ul>
-        </div>
-        
-        <p>We appreciate your contribution to making our app more comprehensive!</p>
-        
-        <p>Best regards,<br>The Ride Ready Docs Team</p>
+    // User confirmation email
+    const userHtml = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request Submitted</title>
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #1f2937; margin: 0; padding: 0; background-color: #f9fafb;">
+  <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
+    <!-- Header -->
+    <div style="background: linear-gradient(135deg, ${success} 0%, #15803d 100%); padding: 30px 40px; border-radius: 12px 12px 0 0; text-align: center;">
+      <div style="width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 50%; margin: 0 auto 12px; display: flex; align-items: center; justify-content: center;">
+        <span style="font-size: 24px;">✓</span>
       </div>
+      <h1 style="color: white; margin: 0; font-size: 24px; font-weight: 700;">Request Submitted!</h1>
+    </div>
+    
+    <!-- Content -->
+    <div style="background: white; padding: 40px; border: 1px solid #e5e7eb; border-top: none;">
+      <p style="margin-top: 0; font-size: 16px;">Hi ${safeUserName},</p>
+      
+      <p style="font-size: 15px;">Thank you for submitting a request to add <strong>"${safeName}"</strong> as a new ${typeLabel.toLowerCase()} type.</p>
+      
+      <div style="background: #eff6ff; border-left: 4px solid ${primary}; padding: 20px; border-radius: 0 8px 8px 0; margin: 24px 0;">
+        <p style="margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: ${primary};">What happens next?</p>
+        <ul style="margin: 0; padding-left: 20px; font-size: 14px;">
+          <li style="margin-bottom: 6px;">Our team will review your request within 2-3 business days</li>
+          <li style="margin-bottom: 6px;">If approved, we'll add it to our database</li>
+          <li style="margin-bottom: 0;">You'll receive an email when the decision is made</li>
+        </ul>
+      </div>
+      
+      <p style="font-size: 15px;">We appreciate your contribution to making Ride Ready Docs more comprehensive!</p>
+      
+      <p style="margin-top: 24px; margin-bottom: 0;">Best regards,<br><strong>The Ride Ready Docs Team</strong></p>
+    </div>
+    
+    <!-- Footer -->
+    <div style="background: #f9fafb; padding: 30px 40px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px; text-align: center;">
+      <p style="color: #6b7280; font-size: 12px; margin: 0; line-height: 1.8;">
+        © ${currentYear} Ride Ready Docs. All rights reserved.<br>
+        <a href="https://ridereadydocs.com" style="color: ${primary}; text-decoration: none;">ridereadydocs.com</a>
+      </p>
+    </div>
+  </div>
+</body>
+</html>
     `;
 
     const userEmailResponse = await resend.emails.send({
       from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [requestData.userEmail],
-      subject: `Request Confirmed: ${safeName}`,
-      html: userConfirmationHtml,
+      subject: `✓ Request Confirmed: ${safeName}`,
+      html: userHtml,
     });
 
     console.log("User confirmation sent successfully:", userEmailResponse);
@@ -172,20 +202,14 @@ const handler = async (req: Request): Promise<Response> => {
         adminEmail: emailResponse,
         userEmail: userEmailResponse
       }),
-      {
-        status: 200,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 200, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
 
   } catch (error: any) {
     console.error("Error in send-ride-type-request function:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
