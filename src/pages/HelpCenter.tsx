@@ -139,12 +139,12 @@ const HelpCenter = () => {
       questions: [
         {
           q: "How many rides can I add?",
-          a: "Documents & Compliance allows up to 10 rides. Operations & Maintenance supports unlimited rides, generators, and equipment.",
+          a: "Documents & Compliance allows up to 10 items. Operations & Maintenance supports unlimited rides, food stalls, stalls, games, inflatables, and equipment.",
           planRequired: "basic"
         },
         {
-          q: "Can I manage generators and other equipment?",
-          a: "Yes! The system supports all types of fairground equipment - rides, generators, trailers, and any other equipment requiring documentation.",
+          q: "Can I manage different types of equipment?",
+          a: "Yes! The system supports all types of fairground equipment - rides, food stalls, stalls, games, inflatables, generators, and any other equipment requiring documentation.",
           planRequired: "basic"
         },
         {

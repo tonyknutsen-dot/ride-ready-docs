@@ -13,8 +13,8 @@ const HowItWorks = () => {
   const steps = [
     {
       icon: Upload,
-      title: "1. Add Your Rides",
-      description: "Start by adding your fairground rides, generators, and equipment to the system. Include details like manufacturer, serial number, and year manufactured."
+      title: "1. Add Your Equipment",
+      description: "Start by adding your rides, food stalls, stalls, games, inflatables, and equipment to the system. Include details like manufacturer, serial number, and year manufactured."
     },
     {
       icon: FileText,
