@@ -7,9 +7,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Info, Settings as SettingsIcon, User, FileText, Mail, Globe } from 'lucide-react';
+import { Info, Settings as SettingsIcon, User, FileText, Mail, Globe, Users } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const OPERATOR_TYPES = [
+  { value: 'showman', label: 'Showman', description: 'Traditional travelling showman or fairground family' },
+  { value: 'private_operator', label: 'Private Operator', description: 'Independent ride or attraction operator' },
+  { value: 'company', label: 'Company', description: 'Business or corporate operator' },
+];
 import AppHeader from '@/components/AppHeader';
 
 const COUNTRIES = [
@@ -36,6 +42,8 @@ const Settings = () => {
   const [updatingVersioning, setUpdatingVersioning] = useState(false);
   const [country, setCountry] = useState('GB');
   const [updatingCountry, setUpdatingCountry] = useState(false);
+  const [operatorType, setOperatorType] = useState('company');
+  const [updatingOperatorType, setUpdatingOperatorType] = useState(false);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -51,6 +59,7 @@ const Settings = () => {
       setProfile(data);
       setVersioningEnabled(data.enable_document_versioning ?? true);
       setCountry(data.country || 'GB');
+      setOperatorType(data.operator_type || 'company');
     }
     setLoading(false);
   };
@@ -106,6 +115,32 @@ const Settings = () => {
     setUpdatingCountry(false);
   };
 
+  const handleOperatorTypeChange = async (newType: string) => {
+    if (!user) return;
+    
+    setUpdatingOperatorType(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ operator_type: newType })
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update operator type",
+        variant: "destructive",
+      });
+    } else {
+      setOperatorType(newType);
+      const typeInfo = OPERATOR_TYPES.find(t => t.value === newType);
+      toast({
+        title: "Operator type updated",
+        description: typeInfo ? `Terminology will now use ${typeInfo.label.toLowerCase()} terms` : 'Operator type updated',
+      });
+    }
+    setUpdatingOperatorType(false);
+  };
+
   useEffect(() => {
     fetchProfile();
   }, [user]);
@@ -115,6 +150,7 @@ const Settings = () => {
   };
 
   const selectedCountry = COUNTRIES.find(c => c.code === country);
+  const selectedOperatorType = OPERATOR_TYPES.find(t => t.value === operatorType);
 
   return (
     <>
@@ -212,10 +248,45 @@ const Settings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Operator Type */}
             <div className="space-y-2">
-              <Label htmlFor="country-select" className="text-sm font-medium">
-                Country / Region
-              </Label>
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="operator-type-select" className="text-sm font-medium">
+                  Operator Type
+                </Label>
+              </div>
+              <Select 
+                value={operatorType} 
+                onValueChange={handleOperatorTypeChange}
+                disabled={loading || updatingOperatorType}
+              >
+                <SelectTrigger id="operator-type-select" className="h-11">
+                  <SelectValue placeholder="Select your operator type..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {OPERATOR_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      {type.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {selectedOperatorType && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedOperatorType.description}
+                </p>
+              )}
+            </div>
+
+            {/* Country */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Globe className="h-4 w-4 text-muted-foreground" />
+                <Label htmlFor="country-select" className="text-sm font-medium">
+                  Country / Region
+                </Label>
+              </div>
               <Select 
                 value={country} 
                 onValueChange={handleCountryChange}
