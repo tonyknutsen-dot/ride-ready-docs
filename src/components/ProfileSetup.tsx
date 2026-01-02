@@ -30,12 +30,19 @@ interface ProfileSetupProps {
   onComplete: () => void;
 }
 
+const OPERATOR_TYPES = [
+  { value: 'showman', label: 'Showman', description: 'Traditional travelling showman or fairground family' },
+  { value: 'private_operator', label: 'Private Operator', description: 'Independent ride or attraction operator' },
+  { value: 'company', label: 'Company', description: 'Business or corporate operator' },
+];
+
 const profileSchema = z.object({
   company_name: z.string().trim().min(1, "Company name is required").max(100),
   controller_name: z.string().trim().min(1, "Controller name is required").max(100),
   showmen_name: z.string().trim().max(100).optional(),
   address: z.string().trim().max(500).optional(),
   country: z.string().min(1, "Please select your country"),
+  operator_type: z.string().min(1, "Please select your operator type"),
 });
 
 const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
@@ -48,10 +55,11 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     showmen_name: '',
     address: '',
     country: '',
+    operator_type: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const isUK = formData.country === 'GB';
+  const isShowman = formData.operator_type === 'showman';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,6 +86,7 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
           showmen_name: validatedData.showmen_name || null,
           address: validatedData.address || null,
           country: validatedData.country,
+          operator_type: validatedData.operator_type,
         }, {
           onConflict: 'user_id'
         });
@@ -154,6 +163,39 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
               )}
             </div>
 
+            {/* Operator Type Selection */}
+            <div className="space-y-2">
+              <Label htmlFor="operator_type" className="flex items-center space-x-2">
+                <User className="h-4 w-4" />
+                <span>Operator Type *</span>
+              </Label>
+              <Select
+                value={formData.operator_type}
+                onValueChange={(value) => setFormData({ ...formData, operator_type: value })}
+              >
+                <SelectTrigger className={errors.operator_type ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Select your operator type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {OPERATOR_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>
+                      <div className="flex flex-col">
+                        <span>{type.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formData.operator_type && (
+                <p className="text-xs text-muted-foreground">
+                  {OPERATOR_TYPES.find(t => t.value === formData.operator_type)?.description}
+                </p>
+              )}
+              {errors.operator_type && (
+                <p className="text-sm text-destructive">{errors.operator_type}</p>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="company_name" className="flex items-center space-x-2">
                 <Building className="h-4 w-4" />
@@ -189,17 +231,14 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="showmen_name">{isUK ? 'Showmen Name' : 'Operator Name'}</Label>
+              <Label htmlFor="showmen_name">{isShowman ? 'Showmen Name' : 'Operator Name'}</Label>
               <Input
                 id="showmen_name"
                 value={formData.showmen_name}
                 onChange={(e) => setFormData({ ...formData, showmen_name: e.target.value })}
-                placeholder={`Enter ${isUK ? 'showmen' : 'operator'} name (optional)`}
+                placeholder={`Enter ${isShowman ? 'showmen' : 'operator'} name (optional)`}
                 className={errors.showmen_name ? "border-destructive" : ""}
               />
-              {!isUK && formData.country && (
-                <p className="text-xs text-muted-foreground">Known as "Showmen Name" in the UK</p>
-              )}
               {errors.showmen_name && (
                 <p className="text-sm text-destructive">{errors.showmen_name}</p>
               )}
