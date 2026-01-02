@@ -16,7 +16,7 @@ interface InspectionManagerProps {
 }
 
 const InspectionManager = ({ ride }: InspectionManagerProps) => {
-  const [activeTab, setActiveTab] = useState('preuse');
+  const [activeTab, setActiveTab] = useState('preopening');
 
   return (
     <div className="space-y-6">
@@ -25,7 +25,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         <div className="overflow-x-auto -mx-4 px-4 pb-2">
           <TabsList className="inline-flex gap-2 p-1.5 bg-muted/60 h-auto min-w-max">
             <TabsTrigger 
-              value="preuse" 
+              value="preopening" 
               className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
             >
               <PlayCircle className="h-5 w-5" />
@@ -77,7 +77,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         </div>
 
         {/* Pre-Opening Check - Function test before opening */}
-        <TabsContent value="preuse" className="relative">
+        <TabsContent value="preopening" className="relative">
           <div className="space-y-6 relative z-0">
             <Card className="border-primary/20 bg-primary/5">
               <CardHeader className="pb-2">
@@ -103,13 +103,13 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 </TabsTrigger>
               </TabsList>
               <TabsContent value="perform">
-                <InspectionChecklist ride={ride} frequency="preuse" />
+                <InspectionChecklist ride={ride} frequency="preopening" />
               </TabsContent>
               <TabsContent value="history">
-                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} frequency="preuse" />
+                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} frequency="preopening" />
               </TabsContent>
               <TabsContent value="templates">
-                <DailyCheckTemplateManager ride={ride} frequency="preuse" />
+                <DailyCheckTemplateManager ride={ride} frequency="preopening" />
               </TabsContent>
             </Tabs>
           </div>
