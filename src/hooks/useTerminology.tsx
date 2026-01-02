@@ -116,7 +116,7 @@ export function useTerminology() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const loadUserCountry = async () => {
+    const loadUserPreferences = async () => {
       if (!user) {
         setLoading(false);
         return;
@@ -125,21 +125,43 @@ export function useTerminology() {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('country')
+          .select('country, operator_type')
           .eq('user_id', user.id)
           .maybeSingle();
 
-        if (!error && data?.country) {
-          setTerminology(TERMINOLOGY_MAP[data.country] || GLOBAL_TERMINOLOGY);
+        if (!error && data) {
+          // Start with country-based terminology
+          let baseTerm = TERMINOLOGY_MAP[data.country || 'OTHER'] || GLOBAL_TERMINOLOGY;
+          
+          // Override operator terminology based on operator_type preference
+          if (data.operator_type === 'showman') {
+            // Use showman terminology regardless of country
+            baseTerm = {
+              ...baseTerm,
+              operator: 'showman',
+              operatorPlural: 'showmen',
+              isUK: true, // For terminology purposes, treat as UK-style
+            };
+          } else if (data.operator_type === 'private_operator' || data.operator_type === 'company') {
+            // Use operator/company terminology
+            baseTerm = {
+              ...baseTerm,
+              operator: 'operator',
+              operatorPlural: 'operators',
+              isUK: baseTerm.countryCode === 'GB', // Keep actual country for other terms
+            };
+          }
+          
+          setTerminology(baseTerm);
         }
       } catch (error) {
-        console.error('Error loading user country:', error);
+        console.error('Error loading user preferences:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    loadUserCountry();
+    loadUserPreferences();
   }, [user]);
 
   return { terminology, loading };

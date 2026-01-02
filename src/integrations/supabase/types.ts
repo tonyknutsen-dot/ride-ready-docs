@@ -844,6 +844,7 @@ export type Database = {
           enable_document_versioning: boolean
           id: string
           is_suspended: boolean
+          operator_type: string | null
           showmen_name: string | null
           subscription_plan: string | null
           subscription_status: string | null
@@ -864,6 +865,7 @@ export type Database = {
           enable_document_versioning?: boolean
           id?: string
           is_suspended?: boolean
+          operator_type?: string | null
           showmen_name?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
@@ -884,6 +886,7 @@ export type Database = {
           enable_document_versioning?: boolean
           id?: string
           is_suspended?: boolean
+          operator_type?: string | null
           showmen_name?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
