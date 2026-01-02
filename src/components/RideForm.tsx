@@ -14,6 +14,7 @@ import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
 import { useSubscription, RIDE_LIMITS } from '@/hooks/useSubscription';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
+import { compressImage } from '@/utils/imageCompression';
 type RideCategory = Tables<'ride_categories'>;
 
 interface RideFormProps {
@@ -81,11 +82,26 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     }
   };
 
-  const handlePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setPhotoFile(file);
-      const url = URL.createObjectURL(file);
+      // Compress large images
+      let processedFile = file;
+      if (file.size > 500000) {
+        try {
+          processedFile = await compressImage(file);
+          if (processedFile.size < file.size) {
+            toast({
+              title: "Image compressed",
+              description: `Reduced from ${(file.size / 1024 / 1024).toFixed(1)}MB to ${(processedFile.size / 1024 / 1024).toFixed(1)}MB`,
+            });
+          }
+        } catch (error) {
+          console.error('Compression failed:', error);
+        }
+      }
+      setPhotoFile(processedFile);
+      const url = URL.createObjectURL(processedFile);
       setPhotoPreview(url);
     } else {
       setPhotoFile(null);

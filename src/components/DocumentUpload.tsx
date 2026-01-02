@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTerminology } from '@/hooks/useTerminology';
+import { compressImage } from '@/utils/imageCompression';
 
 // Base document types - will be filtered/modified based on user's country
 const getDocumentTypes = (isUK: boolean) => [
@@ -137,10 +138,25 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
     }
   }, [documentType, rideId, documentTypes]);
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setSelectedFile(file);
+      // Compress image if it's from camera (large image file)
+      let processedFile = file;
+      if (file.type.startsWith('image/') && file.size > 500000) {
+        try {
+          processedFile = await compressImage(file);
+          if (processedFile.size < file.size) {
+            toast({
+              title: "Image compressed",
+              description: `Reduced from ${(file.size / 1024 / 1024).toFixed(1)}MB to ${(processedFile.size / 1024 / 1024).toFixed(1)}MB`,
+            });
+          }
+        } catch (error) {
+          console.error('Compression failed, using original:', error);
+        }
+      }
+      setSelectedFile(processedFile);
       if (!documentName) {
         setDocumentName(file.name.split('.')[0]);
       }

@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
+import { compressImage } from '@/utils/imageCompression';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -57,9 +58,11 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
     notes: '',
   });
 
-  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    const validFiles = files.filter(file => {
+    const processedFiles: File[] = [];
+    
+    for (const file of files) {
       const isValidType = file.type.startsWith('image/') || file.type === 'application/pdf' || file.type.startsWith('application/');
       const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB limit
       
@@ -69,7 +72,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           description: `${file.name} is not a supported file type. Please upload images, PDFs, or documents.`,
           variant: "destructive",
         });
-        return false;
+        continue;
       }
       
       if (!isValidSize) {
@@ -78,13 +81,30 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           description: `${file.name} is too large. Please upload files smaller than 10MB.`,
           variant: "destructive",
         });
-        return false;
+        continue;
       }
       
-      return true;
-    });
+      // Compress images larger than 500KB
+      if (file.type.startsWith('image/') && file.size > 500000) {
+        try {
+          const compressed = await compressImage(file);
+          if (compressed.size < file.size) {
+            toast({
+              title: "Image compressed",
+              description: `${file.name}: ${(file.size / 1024 / 1024).toFixed(1)}MB → ${(compressed.size / 1024 / 1024).toFixed(1)}MB`,
+            });
+          }
+          processedFiles.push(compressed);
+        } catch (error) {
+          console.error('Compression failed:', error);
+          processedFiles.push(file);
+        }
+      } else {
+        processedFiles.push(file);
+      }
+    }
 
-    setUploadedFiles(prev => [...prev, ...validFiles]);
+    setUploadedFiles(prev => [...prev, ...processedFiles]);
   };
 
   const removeFile = (index: number) => {
