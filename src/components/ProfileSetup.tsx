@@ -5,10 +5,26 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Building, User, MapPin, Save } from 'lucide-react';
+import { Building, User, MapPin, Save, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
+
+const COUNTRIES = [
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'IE', name: 'Ireland' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'NZ', name: 'New Zealand' },
+  { code: 'US', name: 'United States' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'FR', name: 'France' },
+  { code: 'NL', name: 'Netherlands' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'OTHER', name: 'Other' },
+];
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -19,6 +35,7 @@ const profileSchema = z.object({
   controller_name: z.string().trim().min(1, "Controller name is required").max(100),
   showmen_name: z.string().trim().max(100).optional(),
   address: z.string().trim().max(500).optional(),
+  country: z.string().min(1, "Please select your country"),
 });
 
 const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
@@ -30,8 +47,11 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     controller_name: '',
     showmen_name: '',
     address: '',
+    country: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const isUK = formData.country === 'GB';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,6 +77,7 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
           controller_name: validatedData.controller_name,
           showmen_name: validatedData.showmen_name || null,
           address: validatedData.address || null,
+          country: validatedData.country,
         }, {
           onConflict: 'user_id'
         });
@@ -107,6 +128,32 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Country Selection - First for terminology */}
+            <div className="space-y-2">
+              <Label htmlFor="country" className="flex items-center space-x-2">
+                <Globe className="h-4 w-4" />
+                <span>Country *</span>
+              </Label>
+              <Select
+                value={formData.country}
+                onValueChange={(value) => setFormData({ ...formData, country: value })}
+              >
+                <SelectTrigger className={errors.country ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Select your country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((country) => (
+                    <SelectItem key={country.code} value={country.code}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.country && (
+                <p className="text-sm text-destructive">{errors.country}</p>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="company_name" className="flex items-center space-x-2">
                 <Building className="h-4 w-4" />
@@ -142,15 +189,17 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="showmen_name">Operator Name</Label>
+              <Label htmlFor="showmen_name">{isUK ? 'Showmen Name' : 'Operator Name'}</Label>
               <Input
                 id="showmen_name"
                 value={formData.showmen_name}
                 onChange={(e) => setFormData({ ...formData, showmen_name: e.target.value })}
-                placeholder="Enter operator name (optional)"
+                placeholder={`Enter ${isUK ? 'showmen' : 'operator'} name (optional)`}
                 className={errors.showmen_name ? "border-destructive" : ""}
               />
-              <p className="text-xs text-muted-foreground">Known as "Showmen Name" in the UK</p>
+              {!isUK && formData.country && (
+                <p className="text-xs text-muted-foreground">Known as "Showmen Name" in the UK</p>
+              )}
               {errors.showmen_name && (
                 <p className="text-sm text-destructive">{errors.showmen_name}</p>
               )}
