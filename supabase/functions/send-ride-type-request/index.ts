@@ -124,8 +124,8 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email notification
     const emailResponse = await resend.emails.send({
-      from: "Showmen App <noreply@lovable.app>", 
-      to: ["admin@lovable.app"], // Replace with your admin email
+      from: "Ride Ready Docs <info@ridereadydocs.com>", 
+      to: ["info@ridereadydocs.com"],
       subject: `New ${typeLabel} Request: ${safeName}`,
       html: htmlContent,
     });
@@ -150,14 +150,14 @@ const handler = async (req: Request): Promise<Response> => {
           </ul>
         </div>
         
-        <p>We appreciate your contribution to making our app more comprehensive for all showmen!</p>
+        <p>We appreciate your contribution to making our app more comprehensive!</p>
         
-        <p>Best regards,<br>The Showmen App Team</p>
+        <p>Best regards,<br>The Ride Ready Docs Team</p>
       </div>
     `;
 
     const userEmailResponse = await resend.emails.send({
-      from: "Showmen App <noreply@lovable.app>",
+      from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [requestData.userEmail],
       subject: `Request Confirmed: ${safeName}`,
       html: userConfirmationHtml,

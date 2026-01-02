@@ -86,7 +86,7 @@ const handler = async (req: Request): Promise<Response> => {
           
           // Send email
           const emailResponse = await resend.emails.send({
-            from: "RideTracker <onboarding@resend.dev>",
+            from: "Ride Ready Docs <info@ridereadydocs.com>",
             to: [user.email],
             subject: `Inspection Reminder: ${schedule.inspection_name} - ${rideName}`,
             html: `
@@ -102,7 +102,7 @@ const handler = async (req: Request): Promise<Response> => {
                 ${schedule.notes ? `<p><strong>Notes:</strong> ${schedule.notes}</p>` : ''}
               </div>
               <p>Please ensure this inspection is completed on time to maintain compliance.</p>
-              <p>Best regards,<br>RideTracker Team</p>
+              <p>Best regards,<br>Ride Ready Docs Team</p>
             `,
           });
 

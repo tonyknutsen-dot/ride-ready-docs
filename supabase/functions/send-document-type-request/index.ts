@@ -53,8 +53,8 @@ const handler = async (req: Request): Promise<Response> => {
     const safeJustification = escapeHtml(justification);
 
     const emailResponse = await resend.emails.send({
-      from: "RideCompliance <noreply@ridecompliance.com>",
-      to: ["admin@ridecompliance.com"], // Replace with your admin email
+      from: "Ride Ready Docs <info@ridereadydocs.com>",
+      to: ["info@ridereadydocs.com"],
       subject: "New Document Type Request",
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

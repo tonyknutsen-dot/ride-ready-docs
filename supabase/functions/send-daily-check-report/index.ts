@@ -96,7 +96,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email with the report
     const emailResponse = await resend.emails.send({
-      from: "Ride Ready Docs <info@knutssoftware.co.uk>",
+      from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [recipientEmail],
       subject,
       html: htmlReport,

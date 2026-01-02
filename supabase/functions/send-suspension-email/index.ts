@@ -57,7 +57,7 @@ const handler = async (req: Request): Promise<Response> => {
             <p style="font-size: 16px;">During the suspension period, you will not be able to access your account or any of its features.</p>
             <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 20px; margin: 20px 0;">
               <h3 style="margin-top: 0; color: #374151;">Need to Appeal?</h3>
-              <p style="margin-bottom: 10px;">If you believe this suspension was made in error or would like to discuss your account status, please email us at <a href="mailto:info@knutssoftware.co.uk" style="color: #dc2626;">info@knutssoftware.co.uk</a></p>
+              <p style="margin-bottom: 10px;">If you believe this suspension was made in error or would like to discuss your account status, please email us at <a href="mailto:info@ridereadydocs.com" style="color: #dc2626;">info@ridereadydocs.com</a></p>
             </div>
             <p style="font-size: 14px; color: #6b7280; margin-top: 30px;">
               Thank you for your understanding,<br>
@@ -101,7 +101,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "RideReadyDocs <onboarding@resend.dev>",
+      from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [email],
       subject: subject,
       html: htmlContent,

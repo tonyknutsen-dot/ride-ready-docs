@@ -37,7 +37,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "Ride Ready Support <support@resend.dev>",
+      from: "Ride Ready Docs Support <info@ridereadydocs.com>",
       to: [userEmail],
       subject: `Re: ${subject}`,
       html: `
@@ -66,7 +66,7 @@ const handler = async (req: Request): Promise<Response> => {
               <p style="margin: 0; white-space: pre-wrap;">${adminResponse}</p>
             </div>
             
-            <p style="margin-top: 25px;">If you have any further questions, please email us at <a href="mailto:info@knutssoftware.co.uk" style="color: #667eea;">info@knutssoftware.co.uk</a></p>
+            <p style="margin-top: 25px;">If you have any further questions, please email us at <a href="mailto:info@ridereadydocs.com" style="color: #667eea;">info@ridereadydocs.com</a></p>
             
             <p style="margin-bottom: 0;">Best regards,<br><strong>The Ride Ready Team</strong></p>
           </div>
