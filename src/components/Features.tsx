@@ -84,7 +84,7 @@ const Features = () => {
             <span className="text-primary">One Complete Solution</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Choose the tool you need or use both together. Perfect for rides, food stalls, stalls, games, inflatables, and equipment.
+            Choose the tool you need or use both together. Perfect for rides, stalls, games, inflatables, attractions, and equipment.
           </p>
         </div>
 

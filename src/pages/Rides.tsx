@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store } from 'lucide-react';
+import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store, Sparkles } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -152,7 +152,7 @@ const Rides = () => {
     );
   }
 
-  const categoryGroups = ['All', 'Rides', 'Food Stalls', 'Stalls', 'Games', 'Inflatables', 'Equipment'] as const;
+  const categoryGroups = ['All', 'Rides', 'Food Stalls', 'Stalls', 'Games', 'Inflatables', 'Attractions', 'Equipment'] as const;
 
   const getCategoryIcon = (group: string) => {
     switch (group) {
@@ -161,6 +161,7 @@ const Rides = () => {
       case 'Stalls': return <Store className="h-4 w-4" />;
       case 'Games': return <Gamepad2 className="h-4 w-4" />;
       case 'Inflatables': return <Wind className="h-4 w-4" />;
+      case 'Attractions': return <Sparkles className="h-4 w-4" />;
       case 'Equipment': return <Zap className="h-4 w-4" />;
       default: return null;
     }
@@ -177,6 +178,7 @@ const Rides = () => {
     Stalls: rides.filter(r => r.ride_categories.category_group === 'Stalls').length,
     Games: rides.filter(r => r.ride_categories.category_group === 'Games').length,
     Inflatables: rides.filter(r => r.ride_categories.category_group === 'Inflatables').length,
+    Attractions: rides.filter(r => r.ride_categories.category_group === 'Attractions').length,
     Equipment: rides.filter(r => r.ride_categories.category_group === 'Equipment').length,
   };
 
