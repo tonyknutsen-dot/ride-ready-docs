@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/logo-icon.png";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 
 const Header = () => {
@@ -47,20 +47,15 @@ const Header = () => {
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to="/" className="flex items-center gap-2.5 group">
             <img 
               src={logo} 
-              alt="Ride Ready Docs" 
-              className="h-10 w-auto transition-transform group-hover:scale-105" 
+              alt="Ride Ready" 
+              className="h-9 w-auto transition-transform group-hover:scale-105" 
             />
-            <div className="flex items-baseline gap-1">
-              <span className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">
-                Ride Ready
-              </span>
-              <span className="font-medium text-sm text-accent">
-                Docs
-              </span>
-            </div>
+            <span className="font-bold text-xl text-foreground group-hover:text-primary transition-colors">
+              Ride Ready
+            </span>
           </Link>
 
           {/* Desktop Navigation */}
