@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Upload, X, Camera, FileText, Save, Plus } from 'lucide-react';
+import { CalendarIcon, Upload, X, Camera, FileText, Save, Plus, FolderOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -362,69 +362,83 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         {/* File Upload */}
         <div className="space-y-2">
           <Label>Photos & Documents</Label>
-          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6">
-            <div className="text-center">
-              <div className="flex justify-center space-x-4 mb-2">
-                <Camera className="h-8 w-8 text-muted-foreground" />
-                <FileText className="h-8 w-8 text-muted-foreground" />
-              </div>
-              <p className="text-sm text-muted-foreground mb-2">
-                Upload photos of work performed, receipts, or other documents
-              </p>
-              <input
-                type="file"
-                multiple
-                accept="image/*,.pdf,.doc,.docx,.txt"
-                onChange={handleFileUpload}
-                className="hidden"
-                id="file-upload"
-              />
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => document.getElementById('file-upload')?.click()}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Choose Files
-              </Button>
-              <p className="text-xs text-muted-foreground mt-1">
-                Max 10MB per file. Supports: Images, PDF, Word docs
-              </p>
+          
+          {/* Hidden file inputs */}
+          <input
+            type="file"
+            multiple
+            accept="image/*,.pdf,.doc,.docx,.txt"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="file-upload"
+          />
+          <input
+            type="file"
+            multiple
+            accept="image/*"
+            capture="environment"
+            onChange={handleFileUpload}
+            className="hidden"
+            id="camera-upload"
+          />
+
+          {/* Dual Upload Buttons */}
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center gap-2 border-2 border-dashed hover:border-primary/50 hover:bg-muted/30"
+              onClick={() => document.getElementById('camera-upload')?.click()}
+            >
+              <Camera className="h-6 w-6 text-muted-foreground" />
+              <span className="text-sm font-medium">Take Photo</span>
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-20 flex flex-col items-center justify-center gap-2 border-2 border-dashed hover:border-primary/50 hover:bg-muted/30"
+              onClick={() => document.getElementById('file-upload')?.click()}
+            >
+              <FolderOpen className="h-6 w-6 text-muted-foreground" />
+              <span className="text-sm font-medium">Choose File</span>
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Max 10MB per file. Supports: Images, PDF, Word docs
+          </p>
+        </div>
+
+        {/* Uploaded Files */}
+        {uploadedFiles.length > 0 && (
+          <div className="space-y-2">
+            <Label>Uploaded Files ({uploadedFiles.length})</Label>
+            <div className="space-y-2">
+              {uploadedFiles.map((file, index) => (
+                <div key={index} className="flex items-center justify-between p-2 border rounded">
+                  <div className="flex items-center space-x-2">
+                    {file.type.startsWith('image/') ? (
+                      <Camera className="h-4 w-4 text-blue-500" />
+                    ) : (
+                      <FileText className="h-4 w-4 text-green-500" />
+                    )}
+                    <span className="text-sm">{file.name}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {(file.size / 1024 / 1024).toFixed(1)}MB
+                    </Badge>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => removeFile(index)}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
             </div>
           </div>
-
-          {/* Uploaded Files */}
-          {uploadedFiles.length > 0 && (
-            <div className="space-y-2">
-              <Label>Uploaded Files ({uploadedFiles.length})</Label>
-              <div className="space-y-2">
-                {uploadedFiles.map((file, index) => (
-                  <div key={index} className="flex items-center justify-between p-2 border rounded">
-                    <div className="flex items-center space-x-2">
-                      {file.type.startsWith('image/') ? (
-                        <Camera className="h-4 w-4 text-blue-500" />
-                      ) : (
-                        <FileText className="h-4 w-4 text-green-500" />
-                      )}
-                      <span className="text-sm">{file.name}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {(file.size / 1024 / 1024).toFixed(1)}MB
-                      </Badge>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeFile(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Submit Button */}
         <div className="flex justify-end">
