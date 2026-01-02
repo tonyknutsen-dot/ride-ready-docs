@@ -1374,47 +1374,6 @@ export type Database = {
         }
         Relationships: []
       }
-      technical_bulletins: {
-        Row: {
-          bulletin_number: string | null
-          category_id: string
-          content: string | null
-          created_at: string
-          id: string
-          issue_date: string | null
-          priority: string | null
-          title: string
-        }
-        Insert: {
-          bulletin_number?: string | null
-          category_id: string
-          content?: string | null
-          created_at?: string
-          id?: string
-          issue_date?: string | null
-          priority?: string | null
-          title: string
-        }
-        Update: {
-          bulletin_number?: string | null
-          category_id?: string
-          content?: string | null
-          created_at?: string
-          id?: string
-          issue_date?: string | null
-          priority?: string | null
-          title?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "technical_bulletins_category_id_fkey"
-            columns: ["category_id"]
-            isOneToOne: false
-            referencedRelation: "ride_categories"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       user_roles: {
         Row: {
           created_at: string
