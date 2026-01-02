@@ -1,11 +1,12 @@
-import { FerrisWheel, UtensilsCrossed, Gamepad2, Wind, Zap } from "lucide-react";
+import { FerrisWheel, UtensilsCrossed, Gamepad2, Wind, Zap, Store } from "lucide-react";
 
 const equipmentTypes = [
   { icon: FerrisWheel, label: "Rides" },
   { icon: UtensilsCrossed, label: "Food Stalls" },
+  { icon: Store, label: "Stalls" },
   { icon: Gamepad2, label: "Games" },
   { icon: Wind, label: "Inflatables" },
-  { icon: Zap, label: "Generators" },
+  { icon: Zap, label: "Equipment" },
 ];
 
 const EquipmentShowcase = () => {
