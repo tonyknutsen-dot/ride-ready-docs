@@ -140,7 +140,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const emailResponse = await resend.emails.send({
       from: "Ride Ready <notifications@ridereadydocs.com>",
-      to: ["support@ridereadydocs.com"],
+      to: ["info@ridereadydocs.com"],
       replyTo: email,
       subject: `[${typeLabel}] New enquiry from ${name}`,
       html: htmlContent,
