@@ -10,6 +10,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { PublicContactDialog } from "@/components/PublicContactDialog";
 
 const Pricing = () => {
   const navigate = useNavigate();
@@ -223,14 +224,11 @@ const Pricing = () => {
           <p className="text-muted-foreground mb-4">
             Need a custom solution for your business?
           </p>
-          <Button 
-            variant="ghost" 
-            size="lg" 
-            className="text-primary hover:text-primary hover:bg-primary/5"
-            onClick={() => navigate('/auth')}
-          >
-            Contact Sales →
-          </Button>
+          <PublicContactDialog 
+            triggerLabel="Contact Sales →"
+            triggerVariant="ghost"
+            triggerClassName="text-primary hover:text-primary hover:bg-primary/5"
+          />
         </div>
 
         {/* FAQ Section */}
