@@ -1,10 +1,20 @@
+import { lazy, Suspense } from "react";
 import Hero from "../components/Hero";
 import Header from "../components/Header";
-import EquipmentShowcase from "../components/EquipmentShowcase";
-import Features from "../components/Features";
-import Pricing from "../components/Pricing";
-import CallToAction from "../components/CallToAction";
-import Footer from "../components/Footer";
+
+// Lazy load below-fold components for better performance
+const EquipmentShowcase = lazy(() => import("../components/EquipmentShowcase"));
+const Features = lazy(() => import("../components/Features"));
+const Pricing = lazy(() => import("../components/Pricing"));
+const CallToAction = lazy(() => import("../components/CallToAction"));
+const Footer = lazy(() => import("../components/Footer"));
+
+// Minimal loading fallback
+const SectionLoader = () => (
+  <div className="py-16 flex justify-center">
+    <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+  </div>
+);
 
 const Index = () => {
   return (
@@ -12,17 +22,27 @@ const Index = () => {
       <Header />
       <main>
         <Hero />
-        <EquipmentShowcase />
+        <Suspense fallback={<SectionLoader />}>
+          <EquipmentShowcase />
+        </Suspense>
         <section id="features">
-          <Features />
+          <Suspense fallback={<SectionLoader />}>
+            <Features />
+          </Suspense>
         </section>
         <section id="pricing">
-          <Pricing />
+          <Suspense fallback={<SectionLoader />}>
+            <Pricing />
+          </Suspense>
         </section>
-        <CallToAction />
+        <Suspense fallback={<SectionLoader />}>
+          <CallToAction />
+        </Suspense>
       </main>
       <section id="contact">
-        <Footer />
+        <Suspense fallback={<SectionLoader />}>
+          <Footer />
+        </Suspense>
       </section>
     </div>
   );

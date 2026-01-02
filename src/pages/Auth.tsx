@@ -195,7 +195,7 @@ const Auth = () => {
         <div className="w-full max-w-md space-y-6 animate-fade-up">
           <div className="text-center space-y-3">
             <Link to="/" className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto hover:shadow-elegant transition-smooth">
-              <img src={logo} alt="Ride Ready Docs home" className="h-28 w-auto" />
+              <img src={logo} alt="Ride Ready Docs home" className="h-28 w-auto" width={112} height={112} loading="lazy" />
             </Link>
             <h1 className="text-2xl font-bold">Reset Password</h1>
             <p className="text-muted-foreground text-sm">
@@ -264,7 +264,7 @@ const Auth = () => {
       <div className="w-full max-w-md space-y-6 animate-fade-up">
         <div className="text-center space-y-3">
           <Link to="/" className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto hover:shadow-elegant transition-smooth">
-            <img src={logo} alt="Ride Ready Docs home" className="h-28 w-auto" />
+            <img src={logo} alt="Ride Ready Docs home" className="h-28 w-auto" width={112} height={112} loading="lazy" />
           </Link>
           <h1 className="text-2xl font-bold">Ride Ready Docs</h1>
           <p className="text-muted-foreground text-sm">

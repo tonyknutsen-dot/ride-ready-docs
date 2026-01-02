@@ -44,6 +44,11 @@ const Hero = () => {
           src={heroImage} 
           alt="Professional fairground with modern rides"
           className="w-full h-full object-cover"
+          width={1920}
+          height={1080}
+          loading="eager"
+          fetchPriority="high"
+          decoding="async"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
       </div>
