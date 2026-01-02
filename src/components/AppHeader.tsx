@@ -16,7 +16,7 @@ import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
 import { Badge } from '@/components/ui/badge';
 import { useTerminology } from '@/hooks/useTerminology';
-import logo from '@/assets/logo.png';
+import logo from '@/assets/logo-icon.png';
 
 const OPERATOR_TYPE_CONFIG = {
   showman: { label: 'Showman', icon: Tent, className: 'bg-amber-500/10 text-amber-600 border-amber-500/20' },
@@ -76,16 +76,11 @@ const AppHeader = () => {
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80">
       <div className="container flex h-14 items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link to="/overview" className="flex items-center gap-2 group">
-            <img src={logo} alt="Ride Ready Docs" className="h-8 w-auto" />
-            <div className="flex items-baseline gap-1">
-              <span className="font-bold text-lg group-hover:text-primary transition-colors">
-                Ride Ready
-              </span>
-              <span className="font-medium text-sm text-accent hidden sm:inline">
-                Docs
-              </span>
-            </div>
+          <Link to="/overview" className="flex items-center gap-2.5 group">
+            <img src={logo} alt="Ride Ready" className="h-8 w-auto" />
+            <span className="font-bold text-lg group-hover:text-primary transition-colors">
+              Ride Ready
+            </span>
           </Link>
           
           <nav className="hidden md:flex items-center gap-1">
