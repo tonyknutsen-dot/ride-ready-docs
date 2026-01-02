@@ -1,24 +1,12 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import { brandColors, emailStyles, logoSvg, generateEmailWrapper, escapeHtml } from "../_shared/email-template.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
-
-// HTML escape function to prevent XSS attacks
-function escapeHtml(text: string | null | undefined): string {
-  if (!text) return '';
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return text.replace(/[&<>"']/g, (m) => map[m]);
-}
 
 interface SendRiskAssessmentRequest {
   assessmentId: string;
@@ -32,7 +20,6 @@ interface SendRiskAssessmentRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -50,7 +37,6 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("No authorization header");
     }
 
-    // Get user from JWT
     const { data: { user }, error: authError } = await supabase.auth.getUser(
       authHeader.replace("Bearer ", "")
     );
@@ -91,10 +77,8 @@ const handler = async (req: Request): Promise<Response> => {
       throw new Error("Risk assessment not found");
     }
 
-    const senderName = escapeHtml(profile?.company_name || profile?.controller_name || "Ride Operator");
     const safeRideName = escapeHtml(rideName);
     const safeMessage = escapeHtml(message);
-    const safeRecipientName = escapeHtml(recipientName);
     const safeCompanyName = escapeHtml(profile?.company_name);
     const safeControllerName = escapeHtml(profile?.controller_name);
     const safeShowmenName = escapeHtml(profile?.showmen_name);
@@ -103,52 +87,66 @@ const handler = async (req: Request): Promise<Response> => {
     const safePdfFileName = escapeHtml(pdfFileName);
     const safeUserEmail = escapeHtml(user.email);
 
-    const htmlContent = `
-      <html>
-        <body style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="border-bottom: 2px solid #16a34a; padding-bottom: 20px; margin-bottom: 20px;">
-            <h1 style="color: #16a34a; margin: 0 0 10px 0;">Risk Assessment</h1>
-            <p style="color: #666; margin: 0;">${safeRideName}</p>
-          </div>
-          
-          <div style="background-color: #f0fdf4; padding: 20px; border-left: 4px solid #16a34a; margin-bottom: 20px;">
-            <h2 style="color: #15803d; margin: 0 0 15px 0; font-size: 18px;">📧 From</h2>
-            ${safeCompanyName ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Company:</strong> ${safeCompanyName}</p>` : ''}
-            ${safeControllerName ? `<p style="margin: 5px 0; font-size: 16px;"><strong>Controller:</strong> ${safeControllerName}</p>` : ''}
-            ${safeShowmenName ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Showmen:</strong> ${safeShowmenName}</p>` : ''}
-            ${safeAddress ? `<p style="margin: 5px 0; font-size: 14px; color: #666;"><strong>Address:</strong> ${safeAddress}</p>` : ''}
-            <p style="margin: 10px 0 0 0; font-size: 14px; color: #666;"><strong>Email:</strong> ${safeUserEmail}</p>
-          </div>
+    const content = `
+      <p style="font-size: 16px; margin-bottom: 20px;">
+        Please find attached the risk assessment document for <strong>${safeRideName}</strong>.
+      </p>
 
-          <div style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-            <h2 style="color: #333; margin-top: 0;">Assessment Details</h2>
-            <p><strong>Ride/Equipment:</strong> ${safeRideName}</p>
-            <p><strong>Assessor:</strong> ${safeAssessorName}</p>
-            <p><strong>Assessment Date:</strong> ${new Date(assessment.assessment_date).toLocaleDateString('en-GB')}</p>
-            <p><strong>Status:</strong> ${assessment.overall_status === 'completed' ? '✅ Completed' : '🔄 In Progress'}</p>
-          </div>
+      <div style="${emailStyles.infoBox}">
+        <p style="${emailStyles.label}">FROM</p>
+        ${safeCompanyName ? `<p style="${emailStyles.value}"><strong>Company:</strong> ${safeCompanyName}</p>` : ''}
+        ${safeControllerName ? `<p style="${emailStyles.value}"><strong>Controller:</strong> ${safeControllerName}</p>` : ''}
+        ${safeShowmenName ? `<p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>Showmen:</strong> ${safeShowmenName}</p>` : ''}
+        ${safeAddress ? `<p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>Address:</strong> ${safeAddress}</p>` : ''}
+        <p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>Email:</strong> ${safeUserEmail}</p>
+      </div>
 
-          ${safeMessage ? `
-            <div style="margin-bottom: 20px;">
-              <h3 style="color: #333;">Message</h3>
-              <p style="line-height: 1.6;">${safeMessage}</p>
-            </div>
-          ` : ''}
+      <div style="${emailStyles.card}">
+        <p style="${emailStyles.label}">ASSESSMENT DETAILS</p>
+        <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid ${brandColors.border};"><strong>Ride/Equipment:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid ${brandColors.border};">${safeRideName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid ${brandColors.border};"><strong>Assessor:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid ${brandColors.border};">${safeAssessorName}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid ${brandColors.border};"><strong>Assessment Date:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid ${brandColors.border};">${new Date(assessment.assessment_date).toLocaleDateString('en-GB')}</td>
+          </tr>
+          <tr>
+            <td style="padding: 8px 0;"><strong>Status:</strong></td>
+            <td style="padding: 8px 0;">
+              <span style="display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: ${assessment.overall_status === 'completed' ? brandColors.success : brandColors.accent}; color: white;">
+                ${assessment.overall_status === 'completed' ? '✓ Completed' : '◷ In Progress'}
+              </span>
+            </td>
+          </tr>
+        </table>
+      </div>
 
-          <div style="margin-bottom: 20px;">
-            <h3 style="color: #333;">Attached Document</h3>
-            <div style="padding: 12px; background-color: #f1f3f4; border-radius: 4px;">
-              📄 ${safePdfFileName}
-            </div>
-          </div>
+      ${safeMessage ? `
+        <div style="margin: 24px 0;">
+          <p style="${emailStyles.label}">MESSAGE</p>
+          <p style="${emailStyles.value}; line-height: 1.8;">${safeMessage}</p>
+        </div>
+      ` : ''}
 
-          <div style="border-top: 1px solid #ddd; padding-top: 20px; margin-top: 30px; color: #666; font-size: 0.9em;">
-            <p>This risk assessment was sent via Ride Ready Docs system.</p>
-            <p>If you have any questions, please contact ${safeControllerName || 'the sender'} directly.</p>
-          </div>
-        </body>
-      </html>
+      <div style="${emailStyles.successBox}">
+        <p style="margin: 0; font-weight: 600; color: ${brandColors.success};">📎 Attached Document</p>
+        <p style="margin: 8px 0 0 0; color: ${brandColors.text};">📄 ${safePdfFileName}</p>
+      </div>
+
+      <hr style="${emailStyles.divider}">
+
+      <p style="color: ${brandColors.textLight}; font-size: 14px;">
+        This risk assessment was sent via Ride Ready Docs. If you have any questions, please contact ${safeControllerName || 'the sender'} directly.
+      </p>
     `;
+
+    const htmlContent = generateEmailWrapper('Risk Assessment', safeRideName, content);
 
     const emailResponse = await resend.emails.send({
       from: "Ride Ready Docs <info@ridereadydocs.com>",
@@ -191,22 +189,14 @@ const handler = async (req: Request): Promise<Response> => {
       emailId: emailResponse.data?.id
     }), {
       status: 200,
-      headers: {
-        "Content-Type": "application/json",
-        ...corsHeaders,
-      },
+      headers: { "Content-Type": "application/json", ...corsHeaders },
     });
 
   } catch (error: any) {
     console.error("Error in send-risk-assessment function:", error);
     return new Response(
-      JSON.stringify({ 
-        error: "Failed to send risk assessment. Please try again later."
-      }),
-      {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      }
+      JSON.stringify({ error: "Failed to send risk assessment. Please try again later." }),
+      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
 };
