@@ -192,9 +192,9 @@ const RideManagement = () => {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-bold">My Rides & Stalls</h2>
+            <h2 className="text-2xl sm:text-3xl font-bold">My Rides & Equipment</h2>
             <p className="text-sm sm:text-base text-muted-foreground">
-              Manage your rides, food stalls, games, and equipment
+              Manage your rides, food stalls, stalls, games, inflatables, and equipment
             </p>
           </div>
           

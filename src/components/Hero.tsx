@@ -71,8 +71,8 @@ const Hero = () => {
           
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-up animate-delay-200">
-            The all-in-one platform for ride and equipment operators. Manage documents for rides, stalls, 
-            food kiosks and more—track compliance, handle safety checks, and stay organized.
+            The all-in-one platform for ride and equipment operators. Manage documents for rides, food stalls, 
+            stalls, games, inflatables, and equipment—track compliance, handle safety checks, and stay organized.
           </p>
           
           {/* CTA Buttons */}
