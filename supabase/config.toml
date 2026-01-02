@@ -108,6 +108,12 @@ verify_jwt = true
 [functions.send-document-type-request]
 verify_jwt = true
 
+[functions.send-marketing-campaign]
+verify_jwt = true
+
+[functions.handle-unsubscribe]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 54327
