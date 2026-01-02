@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, FileText } from 'lucide-react';
+import { Upload, FileText, Camera, FolderOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,6 +63,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   const [replacingDocumentId, setReplacingDocumentId] = useState<string | null>(null);
   const [isGlobal, setIsGlobal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // Fetch user's versioning preference
   useEffect(() => {
@@ -227,9 +228,12 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
       setReplacingDocumentId(null);
       setExistingDocuments([]);
       
-      // Clear the file input element
+      // Clear the file input elements
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
+      }
+      if (cameraInputRef.current) {
+        cameraInputRef.current.value = '';
       }
       
       onUploadSuccess();
@@ -248,54 +252,81 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
 
   return (
     <div className="space-y-4">
-      {/* File Drop Zone */}
-      <div 
-        className={`relative border-2 border-dashed rounded-lg p-6 text-center transition-colors cursor-pointer hover:border-primary/50 hover:bg-muted/30 active:scale-[0.99] ${
-          selectedFile ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'
-        }`}
-        onClick={() => fileInputRef.current?.click()}
-      >
-        <Input
-          ref={fileInputRef}
-          id="file"
-          type="file"
-          onChange={handleFileSelect}
-          accept={documentType === 'photo'
-            ? 'image/*'
-            : '.pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf'}
-          // @ts-ignore - capture attribute opens camera on mobile
-          capture={documentType === 'photo' ? 'environment' : undefined}
-          disabled={uploading}
-          className="hidden"
-        />
-        
-        {selectedFile ? (
-          <div className="flex items-center justify-center gap-3">
+      {/* Hidden file inputs */}
+      <Input
+        ref={fileInputRef}
+        id="file"
+        type="file"
+        onChange={handleFileSelect}
+        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.txt,.csv,.zip,.rar,.mp4,.mov,.avi,.tiff,.tif,.bmp,.gif,.ppt,.pptx,.dwg,.dxf"
+        disabled={uploading}
+        className="hidden"
+      />
+      <Input
+        ref={cameraInputRef}
+        id="camera"
+        type="file"
+        onChange={handleFileSelect}
+        accept="image/*"
+        capture="environment"
+        disabled={uploading}
+        className="hidden"
+      />
+
+      {/* Dual Upload Buttons */}
+      {!selectedFile ? (
+        <div className="grid grid-cols-2 gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            className="h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed hover:border-primary/50 hover:bg-muted/30"
+            onClick={() => cameraInputRef.current?.click()}
+            disabled={uploading}
+          >
+            <Camera className="h-8 w-8 text-muted-foreground" />
+            <span className="text-sm font-medium">Take Photo</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className="h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed hover:border-primary/50 hover:bg-muted/30"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+          >
+            <FolderOpen className="h-8 w-8 text-muted-foreground" />
+            <span className="text-sm font-medium">Choose File</span>
+          </Button>
+        </div>
+      ) : (
+        <div 
+          className="relative border-2 border-primary rounded-lg p-4 bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
+          onClick={() => {
+            setSelectedFile(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            if (cameraInputRef.current) cameraInputRef.current.value = '';
+          }}
+        >
+          <div className="flex items-center gap-3">
             {selectedFile.type.startsWith('image/') ? (
               <img
                 src={URL.createObjectURL(selectedFile)}
                 alt="Preview"
-                className="h-12 w-12 rounded-lg object-cover"
+                className="h-14 w-14 rounded-lg object-cover"
                 onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
               />
             ) : (
-              <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center">
-                <FileText className="h-6 w-6 text-muted-foreground" />
+              <div className="h-14 w-14 rounded-lg bg-muted flex items-center justify-center">
+                <FileText className="h-7 w-7 text-muted-foreground" />
               </div>
             )}
-            <div className="text-left">
-              <p className="text-sm font-medium truncate max-w-[200px]">{selectedFile.name}</p>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium truncate">{selectedFile.name}</p>
               <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+              <p className="text-xs text-primary mt-1">Tap to change</p>
             </div>
           </div>
-        ) : (
-          <>
-            <Upload className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-            <p className="text-sm font-medium">Tap to select file</p>
-            <p className="text-xs text-muted-foreground mt-1">PDF, images, documents</p>
-          </>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Form Fields */}
       <div className="space-y-3">
