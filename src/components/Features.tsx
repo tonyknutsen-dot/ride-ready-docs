@@ -84,7 +84,7 @@ const Features = () => {
             <span className="text-primary">One Complete Solution</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Choose the tool you need or use both together. Built specifically for {terminology.isUK ? 'showmen' : 'operators'} and amusement professionals worldwide.
+            Choose the tool you need or use both together. Perfect for rides, stalls, food kiosks, and all amusement equipment.
           </p>
         </div>
 
