@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -194,9 +194,9 @@ const Auth = () => {
       <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary/50 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-6 animate-fade-up">
           <div className="text-center space-y-3">
-            <div className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto">
-              <img src={logo} alt="Showmen's Ride Ready" className="h-28 w-auto" />
-            </div>
+            <Link to="/" className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto hover:shadow-elegant transition-smooth">
+              <img src={logo} alt="Ride Ready Docs home" className="h-28 w-auto" />
+            </Link>
             <h1 className="text-2xl font-bold">Reset Password</h1>
             <p className="text-muted-foreground text-sm">
               Enter your email to receive reset instructions
@@ -263,9 +263,9 @@ const Auth = () => {
     <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary/50 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6 animate-fade-up">
         <div className="text-center space-y-3">
-          <div className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto">
-            <img src={logo} alt="Showmen's Ride Ready" className="h-28 w-auto" />
-          </div>
+          <Link to="/" className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto hover:shadow-elegant transition-smooth">
+            <img src={logo} alt="Ride Ready Docs home" className="h-28 w-auto" />
+          </Link>
           <h1 className="text-2xl font-bold">Ride Ready Docs</h1>
           <p className="text-muted-foreground text-sm">
             Access your ride operations system
