@@ -1,9 +1,9 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AdminProvider } from "@/contexts/AdminContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -13,37 +13,61 @@ import { FeatureGate } from "@/components/FeatureGate";
 import ScrollToTop from "@/components/ScrollToTop";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import GlobalEventBridge from "@/components/GlobalEventBridge";
-import { isDocs, isChecks } from "@/config/appFlavor";
+import { Loader2, FileText } from "lucide-react";
+
+// Eager load critical pages
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
-import Demo from "./pages/Demo";
-import Overview from "./pages/Overview";
-import Rides from "./pages/Rides";
-import RideDetailPage from "./pages/RideDetailPage";
-import Calendar from "./pages/Calendar";
-import ProfileSetupPage from "./pages/ProfileSetupPage";
 import NotFound from "./pages/NotFound";
-import PlanBilling from "./pages/PlanBilling";
-import HowItWorks from "./pages/HowItWorks";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import HelpCenter from "./pages/HelpCenter";
-import Security from "./pages/Security";
-import Checks from "./pages/Checks";
-import SetupAdmin from "./pages/SetupAdmin";
-import Settings from "./pages/Settings";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import RideTypeRequests from "./pages/admin/RideTypeRequests";
-import DocumentTypeRequests from "./pages/admin/DocumentTypeRequests";
-import UserManagement from "./pages/admin/UserManagement";
-import SupportMessages from "./pages/admin/SupportMessages";
-import AppHeader from "./components/AppHeader";
-import RiskAssessments from "./pages/RiskAssessments";
-import GlobalDocumentsPage from "./pages/GlobalDocumentsPage";
-import BatchSendDocuments from "./pages/BatchSendDocuments";
-import Marketing from "./pages/Marketing";
 
-const queryClient = new QueryClient();
+// Lazy load non-critical pages for better initial load
+const Demo = lazy(() => import("./pages/Demo"));
+const Overview = lazy(() => import("./pages/Overview"));
+const Rides = lazy(() => import("./pages/Rides"));
+const RideDetailPage = lazy(() => import("./pages/RideDetailPage"));
+const Calendar = lazy(() => import("./pages/Calendar"));
+const ProfileSetupPage = lazy(() => import("./pages/ProfileSetupPage"));
+const PlanBilling = lazy(() => import("./pages/PlanBilling"));
+const HowItWorks = lazy(() => import("./pages/HowItWorks"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+const Security = lazy(() => import("./pages/Security"));
+const Checks = lazy(() => import("./pages/Checks"));
+const SetupAdmin = lazy(() => import("./pages/SetupAdmin"));
+const Settings = lazy(() => import("./pages/Settings"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const RideTypeRequests = lazy(() => import("./pages/admin/RideTypeRequests"));
+const DocumentTypeRequests = lazy(() => import("./pages/admin/DocumentTypeRequests"));
+const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
+const SupportMessages = lazy(() => import("./pages/admin/SupportMessages"));
+const AppHeader = lazy(() => import("./components/AppHeader"));
+const RiskAssessments = lazy(() => import("./pages/RiskAssessments"));
+const GlobalDocumentsPage = lazy(() => import("./pages/GlobalDocumentsPage"));
+const BatchSendDocuments = lazy(() => import("./pages/BatchSendDocuments"));
+const Marketing = lazy(() => import("./pages/Marketing"));
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen bg-background flex items-center justify-center">
+    <div className="text-center space-y-4">
+      <FileText className="mx-auto h-12 w-12 text-primary" />
+      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+    </div>
+  </div>
+);
+
+// Optimized QueryClient with caching and stale time
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // Data is fresh for 5 minutes
+      gcTime: 1000 * 60 * 30, // Cache for 30 minutes (formerly cacheTime)
+      retry: 1, // Only retry once on failure
+      refetchOnWindowFocus: false, // Don't refetch on window focus
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -55,6 +79,7 @@ const App = () => (
         <AuthProvider>
           <AdminProvider>
             <GlobalEventBridge />
+            <Suspense fallback={<PageLoader />}>
               <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
@@ -266,8 +291,9 @@ const App = () => (
                 } 
               />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-            </Routes>
+              <Route path="*" element={<NotFound />} />
+              </Routes>
+            </Suspense>
             <MobileBottomNav />
           </AdminProvider>
         </AuthProvider>
