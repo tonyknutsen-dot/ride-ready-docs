@@ -10,12 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Building, User, MapPin, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
-
-const OPERATOR_TYPES = [
-  { value: 'showman', label: 'Showman', description: 'Traditional travelling showman or fairground family' },
-  { value: 'private_operator', label: 'Private Operator', description: 'Independent ride or attraction operator' },
-  { value: 'company', label: 'Company', description: 'Business or corporate operator' },
-];
+import { OPERATOR_TYPES } from '@/constants/profile';
 
 interface ProfileSetupProps {
   onComplete: () => void;
