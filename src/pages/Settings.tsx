@@ -10,6 +10,16 @@ import { useToast } from '@/hooks/use-toast';
 import { Info, Settings as SettingsIcon, User, FileText, Mail, Globe, Users } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 const OPERATOR_TYPES = [
   { value: 'showman', label: 'Showman', description: 'Traditional travelling showman or fairground family' },
@@ -58,6 +68,8 @@ const Settings = () => {
   const [updatingCountry, setUpdatingCountry] = useState(false);
   const [operatorType, setOperatorType] = useState('company');
   const [updatingOperatorType, setUpdatingOperatorType] = useState(false);
+  const [pendingCountry, setPendingCountry] = useState<string | null>(null);
+  const [showCountryDialog, setShowCountryDialog] = useState(false);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -103,13 +115,22 @@ const Settings = () => {
     setUpdatingVersioning(false);
   };
 
-  const handleCountryChange = async (newCountry: string) => {
-    if (!user) return;
+  const handleCountrySelectChange = (newCountry: string) => {
+    if (newCountry !== country) {
+      setPendingCountry(newCountry);
+      setShowCountryDialog(true);
+    }
+  };
+
+  const handleCountryConfirm = async () => {
+    if (!user || !pendingCountry) return;
     
+    setShowCountryDialog(false);
     setUpdatingCountry(true);
+    
     const { error } = await supabase
       .from('profiles')
-      .update({ country: newCountry })
+      .update({ country: pendingCountry })
       .eq('user_id', user.id);
 
     if (error) {
@@ -119,14 +140,21 @@ const Settings = () => {
         variant: "destructive",
       });
     } else {
-      setCountry(newCountry);
-      const countryInfo = COUNTRIES.find(c => c.code === newCountry);
+      setCountry(pendingCountry);
+      const countryInfo = COUNTRIES.find(c => c.code === pendingCountry);
       toast({
         title: "Country updated",
         description: countryInfo ? `Terminology will now match ${countryInfo.name} standards` : 'Country updated',
       });
     }
+    
+    setPendingCountry(null);
     setUpdatingCountry(false);
+  };
+
+  const handleCountryCancel = () => {
+    setShowCountryDialog(false);
+    setPendingCountry(null);
   };
 
   const handleOperatorTypeChange = async (newType: string) => {
@@ -165,9 +193,30 @@ const Settings = () => {
 
   const selectedCountry = COUNTRIES.find(c => c.code === country);
   const selectedOperatorType = OPERATOR_TYPES.find(t => t.value === operatorType);
+  const pendingCountryInfo = COUNTRIES.find(c => c.code === pendingCountry);
 
   return (
     <>
+      <AlertDialog open={showCountryDialog} onOpenChange={setShowCountryDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change Country?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                Changing your country from <strong>{selectedCountry?.name}</strong> to{' '}
+                <strong>{pendingCountryInfo?.name}</strong> will update terminology throughout the app.
+              </p>
+              <p className="text-sm">
+                Certificate names, compliance terms, and regulatory references will be adjusted to match {pendingCountryInfo?.name} standards.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCountryCancel}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleCountryConfirm}>Change Country</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AppHeader />
       <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5 max-w-2xl">
         {/* Header */}
@@ -303,7 +352,7 @@ const Settings = () => {
               </div>
               <Select 
                 value={country} 
-                onValueChange={handleCountryChange}
+                onValueChange={handleCountrySelectChange}
                 disabled={loading || updatingCountry}
               >
                 <SelectTrigger id="country-select" className="h-11">
