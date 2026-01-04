@@ -20,6 +20,58 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { ArrowRight } from 'lucide-react';
+
+// Terminology maps for preview - simplified version matching useTerminology
+const getTerminologyForCountry = (countryCode: string) => {
+  const UK_TERMS = {
+    safetyCertificate: "Declaration of Compliance (DOC)",
+    inflatableCertificate: "PIPA Certificate",
+    localAuthority: "council",
+    inspector: "ADIPS inspector",
+  };
+
+  const GLOBAL_TERMS = {
+    safetyCertificate: "Safety Compliance Certificate",
+    inflatableCertificate: "Inflatable Safety Certificate",
+    localAuthority: "local authority",
+    inspector: "safety inspector",
+  };
+
+  const GERMANY_TERMS = {
+    safetyCertificate: "TÜV Safety Certificate",
+    inflatableCertificate: "Inflatable Safety Certificate",
+    localAuthority: "authority",
+    inspector: "TÜV inspector",
+  };
+
+  const US_TERMS = {
+    safetyCertificate: "Annual Safety Inspection Certificate",
+    inflatableCertificate: "Inflatable Safety Certificate",
+    localAuthority: "state/local authority",
+    inspector: "certified inspector",
+  };
+
+  const AUSTRALIA_TERMS = {
+    ...GLOBAL_TERMS,
+    localAuthority: "council",
+  };
+
+  const CANADA_TERMS = {
+    ...GLOBAL_TERMS,
+    localAuthority: "provincial authority",
+  };
+
+  switch (countryCode) {
+    case "GB": return UK_TERMS;
+    case "DE": return GERMANY_TERMS;
+    case "US": return US_TERMS;
+    case "AU":
+    case "NZ": return AUSTRALIA_TERMS;
+    case "CA": return CANADA_TERMS;
+    default: return GLOBAL_TERMS;
+  }
+};
 
 const OPERATOR_TYPES = [
   { value: 'showman', label: 'Showman', description: 'Traditional travelling showman or fairground family' },
@@ -194,21 +246,71 @@ const Settings = () => {
   const selectedCountry = COUNTRIES.find(c => c.code === country);
   const selectedOperatorType = OPERATOR_TYPES.find(t => t.value === operatorType);
   const pendingCountryInfo = COUNTRIES.find(c => c.code === pendingCountry);
+  
+  // Get terminology for comparison
+  const currentTerms = getTerminologyForCountry(country);
+  const newTerms = pendingCountry ? getTerminologyForCountry(pendingCountry) : null;
 
   return (
     <>
       <AlertDialog open={showCountryDialog} onOpenChange={setShowCountryDialog}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Change Country?</AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                Changing your country from <strong>{selectedCountry?.name}</strong> to{' '}
-                <strong>{pendingCountryInfo?.name}</strong> will update terminology throughout the app.
-              </p>
-              <p className="text-sm">
-                Certificate names, compliance terms, and regulatory references will be adjusted to match {pendingCountryInfo?.name} standards.
-              </p>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p>
+                  Changing your country from <strong>{selectedCountry?.name}</strong> to{' '}
+                  <strong>{pendingCountryInfo?.name}</strong> will update terminology throughout the app.
+                </p>
+                
+                {newTerms && (
+                  <div className="bg-muted/50 rounded-lg p-3 space-y-2 text-sm">
+                    <p className="font-medium text-foreground mb-2">Terminology changes:</p>
+                    
+                    {currentTerms.safetyCertificate !== newTerms.safetyCertificate && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="line-through text-xs">{currentTerms.safetyCertificate}</span>
+                        <ArrowRight className="h-3 w-3 shrink-0" />
+                        <span className="text-foreground font-medium text-xs">{newTerms.safetyCertificate}</span>
+                      </div>
+                    )}
+                    
+                    {currentTerms.inflatableCertificate !== newTerms.inflatableCertificate && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="line-through text-xs">{currentTerms.inflatableCertificate}</span>
+                        <ArrowRight className="h-3 w-3 shrink-0" />
+                        <span className="text-foreground font-medium text-xs">{newTerms.inflatableCertificate}</span>
+                      </div>
+                    )}
+                    
+                    {currentTerms.localAuthority !== newTerms.localAuthority && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="line-through text-xs">{currentTerms.localAuthority}</span>
+                        <ArrowRight className="h-3 w-3 shrink-0" />
+                        <span className="text-foreground font-medium text-xs">{newTerms.localAuthority}</span>
+                      </div>
+                    )}
+                    
+                    {currentTerms.inspector !== newTerms.inspector && (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <span className="line-through text-xs">{currentTerms.inspector}</span>
+                        <ArrowRight className="h-3 w-3 shrink-0" />
+                        <span className="text-foreground font-medium text-xs">{newTerms.inspector}</span>
+                      </div>
+                    )}
+                    
+                    {currentTerms.safetyCertificate === newTerms.safetyCertificate &&
+                     currentTerms.inflatableCertificate === newTerms.inflatableCertificate &&
+                     currentTerms.localAuthority === newTerms.localAuthority &&
+                     currentTerms.inspector === newTerms.inspector && (
+                      <p className="text-xs text-muted-foreground italic">
+                        No major terminology differences between these countries.
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
