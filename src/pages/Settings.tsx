@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import AppHeader from '@/components/AppHeader';
 import { COUNTRIES, OPERATOR_TYPES, getTerminologyForCountry } from '@/constants/profile';
+import { CustomTerminologyEditor, CustomTerminology } from '@/components/CustomTerminologyEditor';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -36,6 +37,8 @@ const Settings = () => {
   const [updatingOperatorType, setUpdatingOperatorType] = useState(false);
   const [pendingCountry, setPendingCountry] = useState<string | null>(null);
   const [showCountryDialog, setShowCountryDialog] = useState(false);
+  const [customTerminology, setCustomTerminology] = useState<CustomTerminology | null>(null);
+  const [savingTerminology, setSavingTerminology] = useState(false);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -52,6 +55,7 @@ const Settings = () => {
       setVersioningEnabled(data.enable_document_versioning ?? true);
       setCountry(data.country || 'GB');
       setOperatorType(data.operator_type || 'company');
+      setCustomTerminology(data.custom_terminology as CustomTerminology | null);
     }
     setLoading(false);
   };
@@ -147,6 +151,31 @@ const Settings = () => {
       });
     }
     setUpdatingOperatorType(false);
+  };
+
+  const handleCustomTerminologySave = async (terminology: CustomTerminology | null) => {
+    if (!user) return;
+    
+    setSavingTerminology(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ custom_terminology: terminology ? JSON.parse(JSON.stringify(terminology)) : null })
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save custom terminology",
+        variant: "destructive",
+      });
+    } else {
+      setCustomTerminology(terminology);
+      toast({
+        title: terminology ? "Custom terminology saved" : "Reset to defaults",
+        description: terminology ? "Your custom terms are now active" : "Using default terminology for your region",
+      });
+    }
+    setSavingTerminology(false);
   };
 
   useEffect(() => {
@@ -400,6 +429,16 @@ const Settings = () => {
                 )}
               </div>
             )}
+
+            {/* Custom Terminology Editor */}
+            <div className="pt-2 border-t border-border/50">
+              <CustomTerminologyEditor
+                countryCode={country}
+                customTerminology={customTerminology}
+                onSave={handleCustomTerminologySave}
+                saving={savingTerminology}
+              />
+            </div>
           </CardContent>
         </Card>
 

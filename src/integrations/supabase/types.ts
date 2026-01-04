@@ -943,6 +943,7 @@ export type Database = {
           controller_name: string | null
           country: string | null
           created_at: string
+          custom_terminology: Json | null
           enable_document_versioning: boolean
           id: string
           is_suspended: boolean
@@ -964,6 +965,7 @@ export type Database = {
           controller_name?: string | null
           country?: string | null
           created_at?: string
+          custom_terminology?: Json | null
           enable_document_versioning?: boolean
           id?: string
           is_suspended?: boolean
@@ -985,6 +987,7 @@ export type Database = {
           controller_name?: string | null
           country?: string | null
           created_at?: string
+          custom_terminology?: Json | null
           enable_document_versioning?: boolean
           id?: string
           is_suspended?: boolean
