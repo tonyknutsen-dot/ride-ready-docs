@@ -8,7 +8,7 @@ import { useState } from "react";
 import heroImage from "@/assets/hero-fairground.jpg";
 import { FileText, Settings, ArrowRight, Check, Globe } from "lucide-react";
 import { useDetectedTerminology } from "@/hooks/useTerminology";
-
+import DeviceHintBanner from "./DeviceHintBanner";
 const Hero = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -127,6 +127,11 @@ const Hero = () => {
               <Globe className="h-4 w-4 text-accent" />
               <span>UK, Europe, Americas & Worldwide</span>
             </div>
+          </div>
+
+          {/* Device Hint for Mobile Users */}
+          <div className="mt-8 max-w-lg mx-auto animate-fade-up animate-delay-600">
+            <DeviceHintBanner variant="hero" />
           </div>
         </div>
       </div>
