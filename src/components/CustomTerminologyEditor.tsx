@@ -8,7 +8,6 @@ import { RotateCcw, Pencil } from 'lucide-react';
 
 export interface CustomTerminology {
   safetyCertificate?: string;
-  inflatableCertificate?: string;
   localAuthority?: string;
   inspector?: string;
 }
@@ -30,7 +29,6 @@ export const CustomTerminologyEditor = ({
   const [useCustom, setUseCustom] = useState(!!customTerminology);
   const [terms, setTerms] = useState<CustomTerminology>({
     safetyCertificate: customTerminology?.safetyCertificate || '',
-    inflatableCertificate: customTerminology?.inflatableCertificate || '',
     localAuthority: customTerminology?.localAuthority || '',
     inspector: customTerminology?.inspector || '',
   });
@@ -43,7 +41,6 @@ export const CustomTerminologyEditor = ({
       await onSave(null);
       setTerms({
         safetyCertificate: '',
-        inflatableCertificate: '',
         localAuthority: '',
         inspector: '',
       });
@@ -61,9 +58,6 @@ export const CustomTerminologyEditor = ({
     const customValues: CustomTerminology = {};
     if (terms.safetyCertificate && terms.safetyCertificate !== defaultTerms.safetyCertificate) {
       customValues.safetyCertificate = terms.safetyCertificate;
-    }
-    if (terms.inflatableCertificate && terms.inflatableCertificate !== defaultTerms.inflatableCertificate) {
-      customValues.inflatableCertificate = terms.inflatableCertificate;
     }
     if (terms.localAuthority && terms.localAuthority !== defaultTerms.localAuthority) {
       customValues.localAuthority = terms.localAuthority;
@@ -130,33 +124,6 @@ export const CustomTerminologyEditor = ({
                   variant="ghost"
                   size="sm"
                   onClick={() => handleReset('safetyCertificate')}
-                  className="h-9 px-2 shrink-0"
-                  title="Reset to default"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-
-          {/* Inflatable Certificate */}
-          <div className="space-y-1.5">
-            <Label htmlFor="term-inflatable" className="text-xs text-muted-foreground">
-              Inflatable Certificate
-            </Label>
-            <div className="flex gap-2">
-              <Input
-                id="term-inflatable"
-                placeholder={defaultTerms.inflatableCertificate}
-                value={terms.inflatableCertificate}
-                onChange={(e) => handleChange('inflatableCertificate', e.target.value)}
-                className="h-9 text-sm"
-              />
-              {isCustom('inflatableCertificate') && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleReset('inflatableCertificate')}
                   className="h-9 px-2 shrink-0"
                   title="Reset to default"
                 >

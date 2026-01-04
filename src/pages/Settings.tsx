@@ -219,14 +219,6 @@ const Settings = () => {
                       </div>
                     )}
                     
-                    {currentTerms.inflatableCertificate !== newTerms.inflatableCertificate && (
-                      <div className="flex items-center gap-2 text-muted-foreground">
-                        <span className="line-through text-xs">{currentTerms.inflatableCertificate}</span>
-                        <ArrowRight className="h-3 w-3 shrink-0" />
-                        <span className="text-foreground font-medium text-xs">{newTerms.inflatableCertificate}</span>
-                      </div>
-                    )}
-                    
                     {currentTerms.localAuthority !== newTerms.localAuthority && (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <span className="line-through text-xs">{currentTerms.localAuthority}</span>
@@ -244,7 +236,6 @@ const Settings = () => {
                     )}
                     
                     {currentTerms.safetyCertificate === newTerms.safetyCertificate &&
-                     currentTerms.inflatableCertificate === newTerms.inflatableCertificate &&
                      currentTerms.localAuthority === newTerms.localAuthority &&
                      currentTerms.inspector === newTerms.inspector && (
                       <p className="text-xs text-muted-foreground italic">

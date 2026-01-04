@@ -42,28 +42,24 @@ export type OperatorTypeValue = typeof OPERATOR_TYPES[number]['value'];
 export const getTerminologyForCountry = (countryCode: string) => {
   const UK_TERMS = {
     safetyCertificate: "Declaration of Compliance (DOC)",
-    inflatableCertificate: "PIPA Certificate",
     localAuthority: "council",
-    inspector: "ADIPS inspector",
+    inspector: "ADIPS/PIPA inspector",
   };
 
   const GLOBAL_TERMS = {
     safetyCertificate: "Safety Compliance Certificate",
-    inflatableCertificate: "Inflatable Safety Certificate",
     localAuthority: "local authority",
     inspector: "safety inspector",
   };
 
   const GERMANY_TERMS = {
     safetyCertificate: "TÜV Safety Certificate",
-    inflatableCertificate: "Inflatable Safety Certificate",
     localAuthority: "authority",
     inspector: "TÜV inspector",
   };
 
   const US_TERMS = {
     safetyCertificate: "Annual Safety Inspection Certificate",
-    inflatableCertificate: "Inflatable Safety Certificate",
     localAuthority: "state/local authority",
     inspector: "certified inspector",
   };
