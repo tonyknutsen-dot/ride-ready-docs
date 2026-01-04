@@ -7,42 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Building, User, MapPin, Save, Globe } from 'lucide-react';
+import { Building, User, MapPin, Save } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
-
-const COUNTRIES = [
-  // UK & Ireland
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'IE', name: 'Ireland' },
-  // Americas
-  { code: 'US', name: 'United States' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'MX', name: 'Mexico' },
-  // Europe
-  { code: 'DE', name: 'Germany' },
-  { code: 'FR', name: 'France' },
-  { code: 'NL', name: 'Netherlands' },
-  { code: 'ES', name: 'Spain' },
-  { code: 'IT', name: 'Italy' },
-  { code: 'BE', name: 'Belgium' },
-  { code: 'AT', name: 'Austria' },
-  { code: 'CH', name: 'Switzerland' },
-  { code: 'PL', name: 'Poland' },
-  { code: 'SE', name: 'Sweden' },
-  // Asia-Pacific
-  { code: 'AU', name: 'Australia' },
-  { code: 'NZ', name: 'New Zealand' },
-  { code: 'AE', name: 'United Arab Emirates' },
-  { code: 'SG', name: 'Singapore' },
-  { code: 'JP', name: 'Japan' },
-  // Other
-  { code: 'OTHER', name: 'Other' },
-];
-
-interface ProfileSetupProps {
-  onComplete: () => void;
-}
 
 const OPERATOR_TYPES = [
   { value: 'showman', label: 'Showman', description: 'Traditional travelling showman or fairground family' },
@@ -50,12 +17,15 @@ const OPERATOR_TYPES = [
   { value: 'company', label: 'Company', description: 'Business or corporate operator' },
 ];
 
+interface ProfileSetupProps {
+  onComplete: () => void;
+}
+
 const profileSchema = z.object({
   company_name: z.string().trim().min(1, "Company name is required").max(100),
   controller_name: z.string().trim().min(1, "Controller name is required").max(100),
   showmen_name: z.string().trim().max(100).optional(),
   address: z.string().trim().max(500).optional(),
-  country: z.string().min(1, "Please select your country"),
   operator_type: z.string().min(1, "Please select your operator type"),
 });
 
@@ -68,7 +38,6 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     controller_name: '',
     showmen_name: '',
     address: '',
-    country: '',
     operator_type: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -80,7 +49,6 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     setErrors({});
 
     try {
-      // Validate form data
       const validationData = {
         ...formData,
         showmen_name: formData.showmen_name || undefined,
@@ -90,7 +58,9 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
       const validatedData = profileSchema.parse(validationData);
       setLoading(true);
 
-      // Insert or update profile
+      // Get country from user metadata (set during sign-up)
+      const country = user?.user_metadata?.country || 'GB';
+
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -99,7 +69,7 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
           controller_name: validatedData.controller_name,
           showmen_name: validatedData.showmen_name || null,
           address: validatedData.address || null,
-          country: validatedData.country,
+          country: country,
           operator_type: validatedData.operator_type,
         }, {
           onConflict: 'user_id'
@@ -151,32 +121,6 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Country Selection - First for terminology */}
-            <div className="space-y-2">
-              <Label htmlFor="country" className="flex items-center space-x-2">
-                <Globe className="h-4 w-4" />
-                <span>Country *</span>
-              </Label>
-              <Select
-                value={formData.country}
-                onValueChange={(value) => setFormData({ ...formData, country: value })}
-              >
-                <SelectTrigger className={errors.country ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Select your country" />
-                </SelectTrigger>
-                <SelectContent>
-                  {COUNTRIES.map((country) => (
-                    <SelectItem key={country.code} value={country.code}>
-                      {country.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {errors.country && (
-                <p className="text-sm text-destructive">{errors.country}</p>
-              )}
-            </div>
-
             {/* Operator Type Selection */}
             <div className="space-y-2">
               <Label htmlFor="operator_type" className="flex items-center space-x-2">
