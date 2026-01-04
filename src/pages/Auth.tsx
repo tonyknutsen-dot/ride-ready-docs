@@ -6,14 +6,45 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import logo from '@/assets/logo.png';
 
+const COUNTRIES = [
+  { code: 'GB', name: 'United Kingdom' },
+  { code: 'IE', name: 'Ireland' },
+  { code: 'US', name: 'United States' },
+  { code: 'CA', name: 'Canada' },
+  { code: 'MX', name: 'Mexico' },
+  { code: 'DE', name: 'Germany' },
+  { code: 'FR', name: 'France' },
+  { code: 'NL', name: 'Netherlands' },
+  { code: 'ES', name: 'Spain' },
+  { code: 'IT', name: 'Italy' },
+  { code: 'BE', name: 'Belgium' },
+  { code: 'AT', name: 'Austria' },
+  { code: 'CH', name: 'Switzerland' },
+  { code: 'PL', name: 'Poland' },
+  { code: 'SE', name: 'Sweden' },
+  { code: 'AU', name: 'Australia' },
+  { code: 'NZ', name: 'New Zealand' },
+  { code: 'AE', name: 'United Arab Emirates' },
+  { code: 'SG', name: 'Singapore' },
+  { code: 'JP', name: 'Japan' },
+  { code: 'OTHER', name: 'Other' },
+];
+
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address').max(255, 'Email must be less than 255 characters'),
   password: z.string().min(6, 'Password must be at least 6 characters').max(128, 'Password must be less than 128 characters')
+});
+
+const signupSchema = z.object({
+  email: z.string().email('Please enter a valid email address').max(255, 'Email must be less than 255 characters'),
+  password: z.string().min(6, 'Password must be at least 6 characters').max(128, 'Password must be less than 128 characters'),
+  country: z.string().min(1, 'Please select your country')
 });
 
 const resetSchema = z.object({
@@ -23,7 +54,7 @@ const resetSchema = z.object({
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({ email: '', password: '', country: 'GB' });
   const [resetEmail, setResetEmail] = useState('');
   const [showResetForm, setShowResetForm] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -78,11 +109,32 @@ const Auth = () => {
     }
   };
 
+  const validateSignupForm = (data: typeof formData) => {
+    try {
+      signupSchema.parse(data);
+      setErrors({});
+      return true;
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const fieldErrors: Record<string, string> = {};
+        error.errors.forEach((err) => {
+          if (err.path[0]) {
+            fieldErrors[err.path[0] as string] = err.message;
+          }
+        });
+        setErrors(fieldErrors);
+      }
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm(formData)) {
-      return;
+    if (activeTab === 'signin') {
+      if (!validateForm(formData)) return;
+    } else {
+      if (!validateSignupForm(formData)) return;
     }
 
     setIsLoading(true);
@@ -90,7 +142,7 @@ const Auth = () => {
     try {
       const { error } = activeTab === 'signin' 
         ? await signIn(formData.email, formData.password)
-        : await signUp(formData.email, formData.password);
+        : await signUp(formData.email, formData.password, formData.country);
 
       if (error) {
         if (error.message.includes('Invalid login credentials')) {
@@ -388,6 +440,34 @@ const Auth = () => {
                     />
                     {errors.password && (
                       <p className="text-sm text-destructive">{errors.password}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-country">Country</Label>
+                    <Select
+                      value={formData.country}
+                      onValueChange={(value) => {
+                        setFormData(prev => ({ ...prev, country: value }));
+                        if (errors.country) {
+                          setErrors(prev => ({ ...prev, country: '' }));
+                        }
+                      }}
+                      disabled={isLoading}
+                    >
+                      <SelectTrigger className={errors.country ? 'border-destructive' : ''}>
+                        <SelectValue placeholder="Select your country" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COUNTRIES.map((country) => (
+                          <SelectItem key={country.code} value={country.code}>
+                            {country.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {errors.country && (
+                      <p className="text-sm text-destructive">{errors.country}</p>
                     )}
                   </div>
 
