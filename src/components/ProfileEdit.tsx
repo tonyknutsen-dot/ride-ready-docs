@@ -7,12 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Building, User, MapPin, Users } from 'lucide-react';
 import { z } from 'zod';
-
-const OPERATOR_TYPES = [
-  { value: 'showman', label: 'Showman', description: 'Traditional travelling showman or fairground family' },
-  { value: 'private_operator', label: 'Private Operator', description: 'Independent ride or attraction operator' },
-  { value: 'company', label: 'Company', description: 'Business or corporate operator' },
-];
+import { OPERATOR_TYPES } from '@/constants/profile';
 
 const profileSchema = z.object({
   company_name: z.string().min(1, 'Company name is required'),

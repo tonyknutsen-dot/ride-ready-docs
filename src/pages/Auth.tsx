@@ -11,30 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { z } from 'zod';
 import logo from '@/assets/logo.png';
-
-const COUNTRIES = [
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'IE', name: 'Ireland' },
-  { code: 'US', name: 'United States' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'MX', name: 'Mexico' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'FR', name: 'France' },
-  { code: 'NL', name: 'Netherlands' },
-  { code: 'ES', name: 'Spain' },
-  { code: 'IT', name: 'Italy' },
-  { code: 'BE', name: 'Belgium' },
-  { code: 'AT', name: 'Austria' },
-  { code: 'CH', name: 'Switzerland' },
-  { code: 'PL', name: 'Poland' },
-  { code: 'SE', name: 'Sweden' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'NZ', name: 'New Zealand' },
-  { code: 'AE', name: 'United Arab Emirates' },
-  { code: 'SG', name: 'Singapore' },
-  { code: 'JP', name: 'Japan' },
-  { code: 'OTHER', name: 'Other' },
-];
+import { COUNTRIES } from '@/constants/profile';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address').max(255, 'Email must be less than 255 characters'),
