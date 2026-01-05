@@ -2,6 +2,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Shield, Lock, Database, Eye, CheckCircle, Server } from "lucide-react";
+import TrustBadges from "@/components/TrustBadges";
 
 const Security = () => {
   const securityFeatures = [
@@ -103,9 +104,10 @@ const Security = () => {
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
             Security & Data Protection
           </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto mb-8">
             Your ride documents and compliance records are critical to your business. We take security seriously and implement multiple layers of protection to keep your data safe.
           </p>
+          <TrustBadges variant="default" />
         </section>
 
         {/* Security Features */}
