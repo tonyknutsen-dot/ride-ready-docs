@@ -12,6 +12,7 @@ import { ProfileGuard } from "@/components/ProfileGuard";
 import { FeatureGate } from "@/components/FeatureGate";
 import ScrollToTop from "@/components/ScrollToTop";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import CookieConsentBanner from "@/components/CookieConsentBanner";
 import GlobalEventBridge from "@/components/GlobalEventBridge";
 import { Loader2, FileText } from "lucide-react";
 
@@ -33,6 +34,8 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const Security = lazy(() => import("./pages/Security"));
+const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
+const DataProcessingAgreement = lazy(() => import("./pages/DataProcessingAgreement"));
 const Checks = lazy(() => import("./pages/Checks"));
 const SetupAdmin = lazy(() => import("./pages/SetupAdmin"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -102,6 +105,8 @@ const App = () => (
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/help" element={<HelpCenter />} />
               <Route path="/security" element={<Security />} />
+              <Route path="/cookies" element={<CookiePolicy />} />
+              <Route path="/dpa" element={<DataProcessingAgreement />} />
               <Route 
                 path="/profile-setup" 
                 element={
@@ -295,6 +300,7 @@ const App = () => (
               </Routes>
             </Suspense>
             <MobileBottomNav />
+            <CookieConsentBanner />
           </AdminProvider>
         </AuthProvider>
       </BrowserRouter>

@@ -9,6 +9,7 @@ import heroImage from "@/assets/hero-fairground.jpg";
 import { FileText, Settings, ArrowRight, Check, Globe } from "lucide-react";
 import { useDetectedTerminology } from "@/hooks/useTerminology";
 import DeviceHintBanner from "./DeviceHintBanner";
+import TrustBadges from "./TrustBadges";
 const Hero = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -129,8 +130,13 @@ const Hero = () => {
             </div>
           </div>
 
+          {/* Trust Badges */}
+          <div className="mt-10 animate-fade-up animate-delay-500">
+            <TrustBadges variant="hero" />
+          </div>
+
           {/* Device Hint for Mobile Users */}
-          <div className="mt-8 max-w-lg mx-auto animate-fade-up animate-delay-600">
+          <div className="mt-6 max-w-lg mx-auto animate-fade-up animate-delay-600">
             <DeviceHintBanner variant="hero" />
           </div>
         </div>
