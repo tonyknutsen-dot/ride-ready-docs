@@ -91,11 +91,6 @@ const Footer = () => {
                   Cookie Policy
                 </Link>
               </li>
-              <li>
-                <Link to="/dpa" className="text-background/70 hover:text-accent transition-colors">
-                  Data Processing Agreement
-                </Link>
-              </li>
             </ul>
           </div>
         </div>
