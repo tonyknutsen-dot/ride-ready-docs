@@ -14,10 +14,12 @@ interface PlanSelectionProps {
 
 export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
   const { subscription, createCheckout } = useSubscription();
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [basicBillingCycle, setBasicBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [advancedBillingCycle, setAdvancedBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
   const handleSelectPlan = async (plan: 'basic' | 'advanced') => {
+    const billingCycle = plan === 'basic' ? basicBillingCycle : advancedBillingCycle;
     setLoadingPlan(plan);
     try {
       await createCheckout(plan, billingCycle);
@@ -52,9 +54,9 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
     'Priority support'
   ];
 
-  const getPrice = (plan: 'basic' | 'advanced') => {
+  const getPrice = (plan: 'basic' | 'advanced', cycle: 'monthly' | 'yearly') => {
     const pricing = PRICING[plan];
-    return billingCycle === 'yearly' ? pricing.yearly : pricing.monthly;
+    return cycle === 'yearly' ? pricing.yearly : pricing.monthly;
   };
 
   const getSavings = (plan: 'basic' | 'advanced') => {
@@ -64,8 +66,8 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
     return (monthlyCostYearly - yearlyCost).toFixed(2);
   };
 
-  const isCurrentPlan = (plan: 'basic' | 'advanced') => {
-    return subscription?.subscriptionStatus === plan && subscription?.billingCycle === billingCycle;
+  const isCurrentPlan = (plan: 'basic' | 'advanced', cycle: 'monthly' | 'yearly') => {
+    return subscription?.subscriptionStatus === plan && subscription?.billingCycle === cycle;
   };
 
   return (
@@ -77,28 +79,10 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
         </p>
       </div>
 
-      {/* Billing cycle toggle */}
-      <div className="flex items-center justify-center gap-4">
-        <Label htmlFor="billing-toggle" className={billingCycle === 'monthly' ? 'font-medium' : 'text-muted-foreground'}>
-          Monthly
-        </Label>
-        <Switch
-          id="billing-toggle"
-          checked={billingCycle === 'yearly'}
-          onCheckedChange={(checked) => setBillingCycle(checked ? 'yearly' : 'monthly')}
-        />
-        <Label htmlFor="billing-toggle" className={billingCycle === 'yearly' ? 'font-medium' : 'text-muted-foreground'}>
-          Yearly
-        </Label>
-        {billingCycle === 'yearly' && (
-          <Badge variant="secondary" className="ml-2">Save 2 months</Badge>
-        )}
-      </div>
-
       <div className="grid md:grid-cols-2 gap-6">
         {/* Basic Plan */}
-        <Card className={`relative ${isCurrentPlan('basic') ? 'border-primary border-2' : ''}`}>
-          {isCurrentPlan('basic') && (
+        <Card className={`relative ${isCurrentPlan('basic', basicBillingCycle) ? 'border-primary border-2' : ''}`}>
+          {isCurrentPlan('basic', basicBillingCycle) && (
             <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-primary">
               Current Plan
             </Badge>
@@ -113,14 +97,35 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Billing toggle for Basic */}
+            <div className="flex items-center justify-center gap-3 p-2 bg-muted/50 rounded-lg">
+              <Label 
+                htmlFor="basic-billing-toggle" 
+                className={`text-sm cursor-pointer ${basicBillingCycle === 'monthly' ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
+              >
+                Monthly
+              </Label>
+              <Switch
+                id="basic-billing-toggle"
+                checked={basicBillingCycle === 'yearly'}
+                onCheckedChange={(checked) => setBasicBillingCycle(checked ? 'yearly' : 'monthly')}
+              />
+              <Label 
+                htmlFor="basic-billing-toggle" 
+                className={`text-sm cursor-pointer ${basicBillingCycle === 'yearly' ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
+              >
+                Yearly
+              </Label>
+            </div>
+
             <div>
               <div className="text-2xl font-bold">
-                £{getPrice('basic').toFixed(2)}
+                £{getPrice('basic', basicBillingCycle).toFixed(2)}
                 <span className="text-sm font-normal text-muted-foreground">
-                  /{billingCycle === 'yearly' ? 'year' : 'month'}
+                  /{basicBillingCycle === 'yearly' ? 'year' : 'month'}
                 </span>
               </div>
-              {billingCycle === 'yearly' && (
+              {basicBillingCycle === 'yearly' && (
                 <p className="text-xs text-green-600 mt-1">Save £{getSavings('basic')} per year</p>
               )}
               <p className="text-xs text-muted-foreground mt-1">Up to 5 items • 75p/item after</p>
@@ -139,14 +144,14 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
               className="w-full" 
               variant="outline"
               onClick={() => handleSelectPlan('basic')}
-              disabled={isCurrentPlan('basic') || loadingPlan !== null}
+              disabled={isCurrentPlan('basic', basicBillingCycle) || loadingPlan !== null}
             >
               {loadingPlan === 'basic' ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processing...
                 </>
-              ) : isCurrentPlan('basic') ? (
+              ) : isCurrentPlan('basic', basicBillingCycle) ? (
                 'Current Plan'
               ) : (
                 'Choose This Plan'
@@ -156,8 +161,8 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
         </Card>
 
         {/* Advanced Plan */}
-        <Card className={`relative ${isCurrentPlan('advanced') ? 'border-primary border-2' : 'border-primary'}`}>
-          {isCurrentPlan('advanced') ? (
+        <Card className={`relative ${isCurrentPlan('advanced', advancedBillingCycle) ? 'border-primary border-2' : 'border-primary'}`}>
+          {isCurrentPlan('advanced', advancedBillingCycle) ? (
             <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-primary">
               Current Plan
             </Badge>
@@ -176,14 +181,35 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            {/* Billing toggle for Advanced */}
+            <div className="flex items-center justify-center gap-3 p-2 bg-muted/50 rounded-lg">
+              <Label 
+                htmlFor="advanced-billing-toggle" 
+                className={`text-sm cursor-pointer ${advancedBillingCycle === 'monthly' ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
+              >
+                Monthly
+              </Label>
+              <Switch
+                id="advanced-billing-toggle"
+                checked={advancedBillingCycle === 'yearly'}
+                onCheckedChange={(checked) => setAdvancedBillingCycle(checked ? 'yearly' : 'monthly')}
+              />
+              <Label 
+                htmlFor="advanced-billing-toggle" 
+                className={`text-sm cursor-pointer ${advancedBillingCycle === 'yearly' ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
+              >
+                Yearly
+              </Label>
+            </div>
+
             <div>
               <div className="text-2xl font-bold">
-                £{getPrice('advanced').toFixed(2)}
+                £{getPrice('advanced', advancedBillingCycle).toFixed(2)}
                 <span className="text-sm font-normal text-muted-foreground">
-                  /{billingCycle === 'yearly' ? 'year' : 'month'}
+                  /{advancedBillingCycle === 'yearly' ? 'year' : 'month'}
                 </span>
               </div>
-              {billingCycle === 'yearly' && (
+              {advancedBillingCycle === 'yearly' && (
                 <p className="text-xs text-green-600 mt-1">Save £{getSavings('advanced')} per year</p>
               )}
               <p className="text-xs text-muted-foreground mt-1">Up to 10 items • 75p/item after</p>
@@ -201,14 +227,14 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
             <Button 
               className="w-full"
               onClick={() => handleSelectPlan('advanced')}
-              disabled={isCurrentPlan('advanced') || loadingPlan !== null}
+              disabled={isCurrentPlan('advanced', advancedBillingCycle) || loadingPlan !== null}
             >
               {loadingPlan === 'advanced' ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processing...
                 </>
-              ) : isCurrentPlan('advanced') ? (
+              ) : isCurrentPlan('advanced', advancedBillingCycle) ? (
                 'Current Plan'
               ) : (
                 'Choose This Plan'
