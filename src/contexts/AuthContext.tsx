@@ -24,6 +24,15 @@ export const useAuth = () => {
   return context;
 };
 
+// Sync subscription status with Stripe
+const syncSubscriptionStatus = async () => {
+  try {
+    await supabase.functions.invoke('check-subscription');
+  } catch (error) {
+    console.error('Error syncing subscription:', error);
+  }
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -71,6 +80,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // If suspended, sign them out
             if (suspended) {
               await supabase.auth.signOut();
+            } else {
+              // Sync subscription status with Stripe on login
+              if (event === 'SIGNED_IN') {
+                syncSubscriptionStatus();
+              }
             }
           }, 0);
         } else {
@@ -95,6 +109,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // If suspended, sign them out
         if (suspended) {
           await supabase.auth.signOut();
+        } else {
+          // Sync subscription status with Stripe on page load
+          syncSubscriptionStatus();
         }
       }
       
