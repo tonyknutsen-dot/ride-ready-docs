@@ -25,6 +25,7 @@ export const PRICING = {
     additionalItemCost: 0.75,
   },
   annualDiscount: 2, // months free
+  annualBillingMonths: 10, // 12 months - 2 months free = 10 months charged
 } as const;
 
 export interface SubscriptionData {
