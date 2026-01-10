@@ -34,14 +34,14 @@ export default function PlanBilling() {
       // Sync subscription status
       checkSubscriptionStatus();
       // Clear URL params
-      nav('/plan-billing', { replace: true });
+      nav('/billing', { replace: true });
     } else if (canceled === 'true') {
       toast({ 
         title: "Checkout canceled", 
         description: "No changes were made to your subscription.",
         variant: "destructive"
       });
-      nav('/plan-billing', { replace: true });
+      nav('/billing', { replace: true });
     }
   }, [searchParams, toast, nav, checkSubscriptionStatus]);
 
