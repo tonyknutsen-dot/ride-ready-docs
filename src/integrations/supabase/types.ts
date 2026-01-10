@@ -939,16 +939,21 @@ export type Database = {
         Row: {
           address: string | null
           app_mode: string
+          billing_cycle: string | null
           company_name: string | null
           controller_name: string | null
           country: string | null
           created_at: string
+          current_period_end: string | null
           custom_terminology: Json | null
           enable_document_versioning: boolean
+          extra_items_count: number | null
           id: string
           is_suspended: boolean
           operator_type: string | null
           showmen_name: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
           subscription_plan: string | null
           subscription_status: string | null
           suspended_at: string | null
@@ -961,16 +966,21 @@ export type Database = {
         Insert: {
           address?: string | null
           app_mode?: string
+          billing_cycle?: string | null
           company_name?: string | null
           controller_name?: string | null
           country?: string | null
           created_at?: string
+          current_period_end?: string | null
           custom_terminology?: Json | null
           enable_document_versioning?: boolean
+          extra_items_count?: number | null
           id?: string
           is_suspended?: boolean
           operator_type?: string | null
           showmen_name?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
           suspended_at?: string | null
@@ -983,16 +993,21 @@ export type Database = {
         Update: {
           address?: string | null
           app_mode?: string
+          billing_cycle?: string | null
           company_name?: string | null
           controller_name?: string | null
           country?: string | null
           created_at?: string
+          current_period_end?: string | null
           custom_terminology?: Json | null
           enable_document_versioning?: boolean
+          extra_items_count?: number | null
           id?: string
           is_suspended?: boolean
           operator_type?: string | null
           showmen_name?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
           suspended_at?: string | null
