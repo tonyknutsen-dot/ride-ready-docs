@@ -93,8 +93,8 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: lineItems,
       mode: "subscription",
-      success_url: `${origin}/plan-billing?success=true`,
-      cancel_url: `${origin}/plan-billing?canceled=true`,
+      success_url: `${origin}/billing?success=true`,
+      cancel_url: `${origin}/billing?canceled=true`,
       metadata: {
         user_id: user.id,
         plan,
