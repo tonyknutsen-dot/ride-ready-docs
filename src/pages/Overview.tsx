@@ -12,6 +12,7 @@ import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { FeatureGate } from "@/components/FeatureGate";
 import { Lock } from "lucide-react";
 import { formatPlanWithDescription } from "@/utils/planFormatter";
+import { ItemLimitWarning } from "@/components/ItemLimitWarning";
 
 interface OverviewStats {
   totalDocuments: number;
@@ -240,6 +241,9 @@ const Overview = () => {
           </p>
         </div>
       </div>
+
+      {/* Item Limit Warning */}
+      <ItemLimitWarning />
 
       {/* PRIMARY ACTION - Start a Check */}
       <FeatureGate 
