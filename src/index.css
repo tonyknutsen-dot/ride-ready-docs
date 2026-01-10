@@ -374,11 +374,11 @@
 /* Savings badge animation */
 @keyframes pulse-glow {
   0%, 100% {
-    box-shadow: 0 0 0 0 hsl(142 69% 45% / 0.4);
+    box-shadow: 0 0 0 0 hsla(142, 69%, 45%, 0.4);
     transform: scale(1);
   }
   50% {
-    box-shadow: 0 0 8px 2px hsl(142 69% 45% / 0.3);
+    box-shadow: 0 0 8px 2px hsla(142, 69%, 45%, 0.3);
     transform: scale(1.02);
   }
 }
@@ -393,14 +393,13 @@
 }
 
 .animate-savings-badge {
-  animation: pulse-glow 2s ease-in-out infinite;
   background: linear-gradient(
     90deg,
-    hsl(142 76% 36%) 0%,
-    hsl(142 69% 45%) 25%,
-    hsl(142 76% 55%) 50%,
-    hsl(142 69% 45%) 75%,
-    hsl(142 76% 36%) 100%
+    hsl(142, 76%, 36%) 0%,
+    hsl(142, 69%, 45%) 25%,
+    hsl(142, 76%, 55%) 50%,
+    hsl(142, 69%, 45%) 75%,
+    hsl(142, 76%, 36%) 100%
   );
   background-size: 200% auto;
   animation: pulse-glow 2s ease-in-out infinite, shimmer 3s linear infinite;
