@@ -142,7 +142,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
 
             <Button 
               className="w-full" 
-              variant="outline"
+              variant="secondary"
               onClick={() => handleSelectPlan('basic')}
               disabled={isCurrentPlan('basic', basicBillingCycle) || loadingPlan !== null}
             >
