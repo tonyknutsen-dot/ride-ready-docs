@@ -9,11 +9,14 @@ const corsHeaders = {
 
 // Product ID to plan mapping
 const PRODUCT_TO_PLAN: Record<string, 'basic' | 'advanced'> = {
-  "prod_SXfMmvFhJCpgPz": "basic",   // Documents & Compliance - Monthly
-  "prod_SXfOT7Wm2qkLzI": "basic",   // Documents & Compliance - Yearly
-  "prod_SXfOIqB5fXfmOi": "advanced", // Operations & Maintenance - Monthly
-  "prod_SXfPx1nMO9nxbA": "advanced", // Operations & Maintenance - Yearly
+  "prod_TlWvelEK6GafPH": "basic",   // Documents & Compliance - Monthly
+  "prod_TlWvGM8f7f2mRa": "basic",   // Documents & Compliance - Yearly
+  "prod_TlWvaItiHUq1PZ": "advanced", // Operations & Maintenance - Monthly
+  "prod_TlWv8lD3Q4BCIX": "advanced", // Operations & Maintenance - Yearly
 };
+
+// Extra item price ID for counting
+const EXTRA_ITEM_PRICE_ID = "price_1SnzrRAG8uIRefcZRHXJlDuy";
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -80,7 +83,7 @@ serve(async (req) => {
           let extraItemsCount = 0;
           for (const item of subscription.items.data) {
             const price = item.price;
-            if (price.id === "price_1RXcIzRsp1KGo6dTTFGhIcDr") {
+            if (price.id === EXTRA_ITEM_PRICE_ID) {
               extraItemsCount = item.quantity || 0;
             }
           }
@@ -118,7 +121,7 @@ serve(async (req) => {
         let extraItemsCount = 0;
         for (const item of subscription.items.data) {
           const price = item.price;
-          if (price.id === "price_1RXcIzRsp1KGo6dTTFGhIcDr") {
+          if (price.id === EXTRA_ITEM_PRICE_ID) {
             extraItemsCount = item.quantity || 0;
           }
         }
