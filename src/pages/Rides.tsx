@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import RideForm from '@/components/RideForm';
 import { SendDocumentsDialog } from '@/components/SendDocumentsDialog';
+import { ItemLimitWarning } from '@/components/ItemLimitWarning';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -184,6 +185,9 @@ const Rides = () => {
 
   return (
     <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5">
+      {/* Item Limit Warning */}
+      <ItemLimitWarning />
+
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="space-y-1">
