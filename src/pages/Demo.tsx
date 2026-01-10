@@ -3,91 +3,56 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { 
-  FileText, 
-  Shield, 
-  Calendar, 
-  Upload, 
-  Users, 
-  BarChart3, 
-  CheckCircle, 
-  AlertCircle,
-  Clock,
   ArrowLeft,
-  Wrench,
-  CheckSquare,
-  Bell,
-  FolderOpen,
-  Share2
+  ArrowRight,
+  Monitor,
+  Smartphone,
+  CheckCircle,
+  Play
 } from "lucide-react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useDetectedTerminology } from "@/hooks/useTerminology";
+import { useState } from "react";
+
+// Import demo screenshots
+import demoDashboard from "@/assets/demo-dashboard.jpg";
+import demoRides from "@/assets/demo-rides.jpg";
+import demoChecks from "@/assets/demo-checks.jpg";
 
 const Demo = () => {
   const navigate = useNavigate();
   const terminology = useDetectedTerminology();
+  const [activeScreen, setActiveScreen] = useState(0);
 
-  const basicFeatures = [
+  const screens = [
     {
-      icon: <FolderOpen className="w-6 h-6" />,
-      title: "Organized Document Storage",
-      description: "All your compliance documents organized by ride and equipment",
-      status: "active",
-      count: "127 documents"
+      title: "Dashboard Overview",
+      description: "Get a complete view of your operations at a glance. Track documents, rides, maintenance records, and upcoming inspections all in one place.",
+      image: demoDashboard,
+      features: ["Real-time statistics", "Quick action buttons", "System status at a glance"]
     },
     {
-      icon: <Shield className="w-6 h-6" />,
-      title: "Compliance Tracking",
-      description: "Automated reminders for insurance, certifications, and compliance deadlines",
-      status: "warning",
-      count: "3 due soon"
+      title: "Equipment Management",
+      description: "Organize all your rides and equipment with detailed records, documents, and compliance tracking for each item.",
+      image: demoRides,
+      features: ["Ride catalog with images", "Document management per ride", "Status indicators"]
     },
     {
-      icon: <Share2 className="w-6 h-6" />,
-      title: "Easy Document Sharing",
-      description: "Share documents instantly with councils, landowners, and inspectors",
-      status: "active",
-      count: "5 shared today"
+      title: "Safety Checklists",
+      description: "Complete digital safety checks on any device. Daily, monthly, and yearly inspection templates with full audit history.",
+      image: demoChecks,
+      features: ["Mobile-friendly checklists", "Progress tracking", "Digital signatures"]
     }
   ];
 
-  const advancedFeatures = [
-    {
-      icon: <CheckSquare className="w-6 h-6" />,
-      title: "Daily, Monthly & Yearly Checks",
-      description: "Complete safety checks digitally with custom templates and detailed history",
-      status: "active",
-      count: "8 completed"
-    },
-    {
-      icon: <Wrench className="w-6 h-6" />,
-      title: "Maintenance Logging",
-      description: "Track all maintenance, repairs, and servicing with complete service history",
-      status: "active",
-      count: "12 logs"
-    },
-    {
-      icon: <Bell className="w-6 h-6" />,
-      title: "Technical Bulletins",
-      description: "Receive latest technical bulletins for your specific equipment",
-      status: "active",
-      count: "3 new"
-    },
-    {
-      icon: <Calendar className="w-6 h-6" />,
-      title: "Inspection Scheduling",
-      description: "Schedule external inspections and track safety compliance, NDT, and third-party requirements",
-      status: "active",
-      count: "Next: Today"
-    }
-  ];
+  const nextScreen = () => {
+    setActiveScreen((prev) => (prev + 1) % screens.length);
+  };
 
-  const recentActivity = [
-    { type: "upload", title: "Safety Certificate - Carousel Mk3", time: "2 hours ago" },
-    { type: "inspection", title: "Annual Inspection Completed - Ferris Wheel", time: "1 day ago" },
-    { type: "reminder", title: "NDT Testing Due - Waltzer", time: "2 days ago" },
-    { type: "document", title: "Technical Bulletin TB-2024-001 Added", time: "3 days ago" }
-  ];
+  const prevScreen = () => {
+    setActiveScreen((prev) => (prev - 1 + screens.length) % screens.length);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,267 +70,176 @@ const Demo = () => {
           </Button>
           
           <h1 className="text-4xl md:text-5xl font-bold mb-4 text-foreground">
-            Live Demo Dashboard
+            See the App in Action
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-            Experience how Ride Ready Docs streamlines document management for {terminology.isUK ? 'showmen' : 'operators'}. 
-            This demo shows real functionality with sample data.
+            Take a visual tour of Ride Ready Docs. These screenshots show exactly what you'll get 
+            when you sign up – a powerful, easy-to-use platform for {terminology.isUK ? 'showmen' : 'operators'}.
           </p>
         </div>
 
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-primary mb-2">127</div>
-              <div className="text-sm text-muted-foreground">Total Documents</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-accent mb-2">8</div>
-              <div className="text-sm text-muted-foreground">Active Rides</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-green-600 mb-2">12</div>
-              <div className="text-sm text-muted-foreground">Compliant Rides</div>
-            </CardContent>
-          </Card>
-          <Card className="text-center">
-            <CardContent className="p-6">
-              <div className="text-3xl font-bold text-orange-600 mb-2">3</div>
-              <div className="text-sm text-muted-foreground">Due Soon</div>
-            </CardContent>
-          </Card>
+        {/* Device Toggle */}
+        <div className="flex justify-center gap-2 mb-8">
+          <Badge variant="secondary" className="px-4 py-2 gap-2">
+            <Monitor className="w-4 h-4" />
+            Desktop & Tablet
+          </Badge>
+          <Badge variant="outline" className="px-4 py-2 gap-2">
+            <Smartphone className="w-4 h-4" />
+            Mobile Ready
+          </Badge>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Features */}
-          <div className="lg:col-span-2 space-y-8">
-            {/* Basic Plan Features */}
-            <Card className="border-2 border-accent/30 shadow-lg bg-accent/5 animate-fade-in">
-              <CardHeader className="pb-4 bg-accent/10 rounded-t-lg">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-accent/20 rounded-lg">
-                      <FileText className="w-7 h-7 text-accent" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-foreground">
-                      Documents & Compliance
-                    </h2>
-                  </div>
-                  <Badge className="bg-accent text-accent-foreground text-base px-4 py-1.5 font-semibold self-start sm:self-center">
-                    📄 Documents & Compliance
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground mt-3 ml-14">
-                  Store, organize, and share all your compliance documents
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-6">
-                {basicFeatures.map((feature, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 bg-card border-2 border-accent/20 rounded-lg hover:bg-accent/5 hover:shadow-md transition-all hover:scale-[1.02]">
-                    <div className="text-accent mt-1 p-2 bg-accent/10 rounded-lg">{feature.icon}</div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2 gap-2">
-                        <h3 className="font-semibold text-base">{feature.title}</h3>
-                        <Badge variant={feature.status === "warning" ? "destructive" : "secondary"} className="shrink-0">
-                          {feature.count}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
-                    </div>
-                    <div className="mt-1 shrink-0">
-                      {feature.status === "warning" ? (
-                        <AlertCircle className="w-5 h-5 text-orange-500" />
-                      ) : (
-                        <CheckCircle className="w-5 h-5 text-green-500" />
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            {/* Divider */}
-            <div className="relative py-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t-2 border-dashed border-muted-foreground/20"></div>
+        {/* Screenshot Gallery */}
+        <div className="max-w-6xl mx-auto mb-16">
+          <Card className="overflow-hidden border-2 border-border/50 shadow-2xl">
+            {/* Browser Chrome */}
+            <div className="bg-muted/50 px-4 py-3 border-b flex items-center gap-2">
+              <div className="flex gap-1.5">
+                <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
+                <div className="w-3 h-3 rounded-full bg-green-400"></div>
               </div>
-              <div className="relative flex justify-center">
-                <span className="bg-background px-4 text-sm font-medium text-muted-foreground">
-                  Advanced Features Below
-                </span>
+              <div className="flex-1 mx-4">
+                <div className="bg-background rounded-md px-4 py-1.5 text-sm text-muted-foreground max-w-md mx-auto text-center">
+                  app.ridereadydocs.com/{screens[activeScreen].title.toLowerCase().replace(' ', '-')}
+                </div>
               </div>
             </div>
 
-            {/* Advanced Plan Features */}
-            <Card className="border-2 border-primary/30 shadow-lg bg-primary/5 animate-fade-in">
-              <CardHeader className="pb-4 bg-primary/10 rounded-t-lg">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/20 rounded-lg">
-                      <Wrench className="w-7 h-7 text-primary" />
-                    </div>
-                    <h2 className="text-2xl font-bold text-foreground">
-                      Operations & Maintenance
-                    </h2>
-                  </div>
-                  <Badge className="bg-primary text-primary-foreground text-base px-4 py-1.5 font-semibold self-start sm:self-center">
-                    ⚙️ Operations & Maintenance
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground mt-3 ml-14">
-                  Complete safety checks, track maintenance, and manage inspections
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-3 pt-6">
-                {advancedFeatures.map((feature, index) => (
-                  <div key={index} className="flex items-start space-x-4 p-4 bg-card border-2 border-primary/20 rounded-lg hover:bg-primary/5 hover:shadow-md transition-all hover:scale-[1.02]">
-                    <div className="text-primary mt-1 p-2 bg-primary/10 rounded-lg">{feature.icon}</div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2 gap-2">
-                        <h3 className="font-semibold text-base">{feature.title}</h3>
-                        <Badge variant="secondary" className="shrink-0">
-                          {feature.count}
-                        </Badge>
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
-                    </div>
-                    <div className="mt-1 shrink-0">
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            {/* Screenshot Display */}
+            <div className="relative aspect-video bg-muted">
+              <img 
+                src={screens[activeScreen].image} 
+                alt={screens[activeScreen].title}
+                className="w-full h-full object-cover object-top"
+              />
+              
+              {/* Navigation Arrows */}
+              <button 
+                onClick={prevScreen}
+                className="absolute left-4 top-1/2 -translate-y-1/2 p-3 bg-background/90 hover:bg-background rounded-full shadow-lg transition-all hover:scale-110"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <button 
+                onClick={nextScreen}
+                className="absolute right-4 top-1/2 -translate-y-1/2 p-3 bg-background/90 hover:bg-background rounded-full shadow-lg transition-all hover:scale-110"
+              >
+                <ArrowRight className="w-5 h-5" />
+              </button>
+            </div>
 
-            {/* Sample Document List */}
-            <Card>
-              <CardHeader>
-                <h2 className="text-2xl font-semibold flex items-center">
-                  <FileText className="w-6 h-6 mr-2 text-primary" />
-                  Recent Documents
-                </h2>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 relative">
-                  {/* Blur overlay for privacy */}
-                  <div className="absolute inset-0 backdrop-blur-sm bg-background/30 z-10 flex items-center justify-center rounded-lg">
-                    <div className="text-center p-4">
-                      <Shield className="w-8 h-8 mx-auto mb-2 text-muted-foreground" />
-                      <p className="text-sm font-medium text-muted-foreground">Documents are private</p>
-                      <p className="text-xs text-muted-foreground">Sign in to view your files</p>
-                    </div>
-                  </div>
-                  {[
-                    { name: "Safety Certificate - ████████.pdf", date: "March 15, 2024", status: "Valid" },
-                    { name: "Insurance Policy - ████████.pdf", date: "March 10, 2024", status: "Valid" },
-                    { name: "NDT Report - ████████.pdf", date: "March 8, 2024", status: "Valid" },
-                    { name: "Technical Bulletin ████████.pdf", date: "March 5, 2024", status: "New" }
-                  ].map((doc, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <FileText className="w-5 h-5 text-muted-foreground" />
-                        <div>
-                          <div className="font-medium text-muted-foreground/50">{doc.name}</div>
-                          <div className="text-sm text-muted-foreground/50">{doc.date}</div>
-                        </div>
-                      </div>
-                      <Badge variant="secondary" className="opacity-50">
-                        {doc.status}
-                      </Badge>
-                    </div>
+            {/* Screen Info */}
+            <CardContent className="p-6 bg-gradient-to-b from-muted/30 to-transparent">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold mb-2">{screens[activeScreen].title}</h2>
+                  <p className="text-muted-foreground">{screens[activeScreen].description}</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {screens[activeScreen].features.map((feature, idx) => (
+                    <Badge key={idx} variant="secondary" className="gap-1">
+                      <CheckCircle className="w-3 h-3" />
+                      {feature}
+                    </Badge>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <h2 className="text-xl font-semibold flex items-center">
-                  <Clock className="w-5 h-5 mr-2 text-primary" />
-                  Recent Activity
-                </h2>
-              </CardHeader>
-              <CardContent className="space-y-4 relative">
-                {/* Blur overlay for privacy */}
-                <div className="absolute inset-0 backdrop-blur-sm bg-background/30 z-10 flex items-center justify-center rounded-lg">
-                  <div className="text-center p-4">
-                    <Shield className="w-6 h-6 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-xs font-medium text-muted-foreground">Activity is private</p>
-                  </div>
-                </div>
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start space-x-3">
-                    <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                    <div>
-                      <div className="font-medium text-sm text-muted-foreground/50">████████ - ████████</div>
-                      <div className="text-xs text-muted-foreground/50">{activity.time}</div>
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <h2 className="text-xl font-semibold flex items-center">
-                  <Users className="w-5 h-5 mr-2 text-primary" />
-                  Quick Actions
-                </h2>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button className="w-full" variant="outline">
-                  <Upload className="w-4 h-4 mr-2" />
-                  Upload Document
-                </Button>
-                <Button className="w-full" variant="outline">
-                  <Calendar className="w-4 h-4 mr-2" />
-                  Schedule Inspection
-                </Button>
-                <Button className="w-full" variant="outline">
-                  <BarChart3 className="w-4 h-4 mr-2" />
-                  Generate Report
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* CTA Section */}
-        <div className="text-center mt-16">
-          <Card className="max-w-2xl mx-auto">
-            <CardContent className="p-8">
-              <h2 className="text-2xl font-bold mb-4">Ready to get started?</h2>
-              <p className="text-muted-foreground mb-6">
-                This demo shows just a fraction of what Ride Ready Docs can do for your business. 
-                Start your free trial today and experience the full platform.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  size="lg" 
-                  className="bg-accent hover:bg-accent/90 text-accent-foreground"
-                  onClick={() => navigate('/auth')}
-                >
-                  Start Free Trial
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg"
-                  onClick={() => navigate('/')}
-                >
-                  Learn More
-                </Button>
               </div>
             </CardContent>
           </Card>
+
+          {/* Screen Dots */}
+          <div className="flex justify-center gap-2 mt-6">
+            {screens.map((screen, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveScreen(idx)}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  idx === activeScreen 
+                    ? 'bg-primary w-8' 
+                    : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                }`}
+              />
+            ))}
+          </div>
         </div>
+
+        {/* Thumbnail Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-16">
+          {screens.map((screen, idx) => (
+            <Card 
+              key={idx}
+              className={`cursor-pointer transition-all hover:shadow-lg overflow-hidden ${
+                idx === activeScreen ? 'ring-2 ring-primary' : ''
+              }`}
+              onClick={() => setActiveScreen(idx)}
+            >
+              <div className="aspect-video bg-muted relative">
+                <img 
+                  src={screen.image} 
+                  alt={screen.title}
+                  className="w-full h-full object-cover object-top"
+                />
+                {idx === activeScreen && (
+                  <div className="absolute inset-0 bg-primary/10 flex items-center justify-center">
+                    <Badge className="bg-primary text-primary-foreground">
+                      <Play className="w-3 h-3 mr-1" />
+                      Viewing
+                    </Badge>
+                  </div>
+                )}
+              </div>
+              <CardContent className="p-4">
+                <h3 className="font-semibold">{screen.title}</h3>
+                <p className="text-sm text-muted-foreground line-clamp-2">{screen.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* Feature Highlights */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
+          {[
+            { title: "Cloud-Based", desc: "Access from any device, anywhere" },
+            { title: "Real-Time Sync", desc: "Changes update instantly" },
+            { title: "Secure Storage", desc: "Enterprise-grade encryption" },
+            { title: "Offline Ready", desc: "Works without internet" }
+          ].map((feature, idx) => (
+            <Card key={idx} className="text-center p-6">
+              <CheckCircle className="w-8 h-8 text-primary mx-auto mb-3" />
+              <h3 className="font-semibold mb-1">{feature.title}</h3>
+              <p className="text-sm text-muted-foreground">{feature.desc}</p>
+            </Card>
+          ))}
+        </div>
+
+        {/* CTA Section */}
+        <Card className="max-w-2xl mx-auto text-center">
+          <CardContent className="p-8">
+            <h2 className="text-2xl font-bold mb-4">Ready to get started?</h2>
+            <p className="text-muted-foreground mb-6">
+              Join hundreds of {terminology.isUK ? 'showmen' : 'operators'} who trust Ride Ready Docs 
+              to keep their operations safe and compliant.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                size="lg" 
+                className="bg-primary hover:bg-primary/90"
+                onClick={() => navigate('/auth')}
+              >
+                Start Free Trial
+              </Button>
+              <Button 
+                variant="outline" 
+                size="lg"
+                onClick={() => navigate('/#pricing')}
+              >
+                View Pricing
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </main>
       <Footer />
     </div>
