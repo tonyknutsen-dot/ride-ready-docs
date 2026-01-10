@@ -117,7 +117,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
                 >
                   Yearly
                 </Label>
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200">
+                <Badge className="text-[10px] px-2 py-0.5 animate-savings-badge text-white font-semibold border-0">
                   2 months free
                 </Badge>
               </div>
@@ -206,7 +206,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
                 >
                   Yearly
                 </Label>
-                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200">
+                <Badge className="text-[10px] px-2 py-0.5 animate-savings-badge text-white font-semibold border-0">
                   2 months free
                 </Badge>
               </div>
