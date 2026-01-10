@@ -129,6 +129,18 @@ verify_jwt = true
 [functions.get-user-email]
 verify_jwt = true
 
+[functions.create-checkout]
+verify_jwt = true
+
+[functions.stripe-webhook]
+verify_jwt = false
+
+[functions.check-subscription]
+verify_jwt = true
+
+[functions.customer-portal]
+verify_jwt = true
+
 [analytics]
 enabled = false
 port = 54327

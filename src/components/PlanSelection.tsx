@@ -1,8 +1,11 @@
-import { Check, FileText, Cog } from 'lucide-react';
+import { useState } from 'react';
+import { Check, FileText, Cog, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useSubscription } from '@/hooks/useSubscription';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useSubscription, PRICING } from '@/hooks/useSubscription';
 import { toast } from 'sonner';
 
 interface PlanSelectionProps {
@@ -10,15 +13,21 @@ interface PlanSelectionProps {
 }
 
 export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
-  const { subscription, upgradeSubscription } = useSubscription();
+  const { subscription, createCheckout } = useSubscription();
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
-  const handleUpgrade = async (plan: 'basic' | 'advanced') => {
+  const handleSelectPlan = async (plan: 'basic' | 'advanced') => {
+    setLoadingPlan(plan);
     try {
-      await upgradeSubscription(plan);
-      toast.success(`Successfully upgraded to ${plan} plan!`);
+      await createCheckout(plan, billingCycle);
+      toast.success('Redirecting to checkout...');
       onClose?.();
     } catch (error) {
-      toast.error('Failed to upgrade subscription. Please try again.');
+      console.error('Checkout error:', error);
+      toast.error('Failed to create checkout session. Please try again.');
+    } finally {
+      setLoadingPlan(null);
     }
   };
 
@@ -43,6 +52,22 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
     'Priority support'
   ];
 
+  const getPrice = (plan: 'basic' | 'advanced') => {
+    const pricing = PRICING[plan];
+    return billingCycle === 'yearly' ? pricing.yearly : pricing.monthly;
+  };
+
+  const getSavings = (plan: 'basic' | 'advanced') => {
+    const pricing = PRICING[plan];
+    const yearlyCost = pricing.yearly;
+    const monthlyCostYearly = pricing.monthly * 12;
+    return (monthlyCostYearly - yearlyCost).toFixed(2);
+  };
+
+  const isCurrentPlan = (plan: 'basic' | 'advanced') => {
+    return subscription?.subscriptionStatus === plan && subscription?.billingCycle === billingCycle;
+  };
+
   return (
     <div className="space-y-6">
       <div className="text-center">
@@ -52,9 +77,32 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
         </p>
       </div>
 
+      {/* Billing cycle toggle */}
+      <div className="flex items-center justify-center gap-4">
+        <Label htmlFor="billing-toggle" className={billingCycle === 'monthly' ? 'font-medium' : 'text-muted-foreground'}>
+          Monthly
+        </Label>
+        <Switch
+          id="billing-toggle"
+          checked={billingCycle === 'yearly'}
+          onCheckedChange={(checked) => setBillingCycle(checked ? 'yearly' : 'monthly')}
+        />
+        <Label htmlFor="billing-toggle" className={billingCycle === 'yearly' ? 'font-medium' : 'text-muted-foreground'}>
+          Yearly
+        </Label>
+        {billingCycle === 'yearly' && (
+          <Badge variant="secondary" className="ml-2">Save 2 months</Badge>
+        )}
+      </div>
+
       <div className="grid md:grid-cols-2 gap-6">
         {/* Basic Plan */}
-        <Card className="relative">
+        <Card className={`relative ${isCurrentPlan('basic') ? 'border-primary border-2' : ''}`}>
+          {isCurrentPlan('basic') && (
+            <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-primary">
+              Current Plan
+            </Badge>
+          )}
           <CardHeader>
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-primary" />
@@ -65,8 +113,18 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-2xl font-bold">£6.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
-            <p className="text-xs text-muted-foreground mt-1">Up to 5 items • 75p/item after</p>
+            <div>
+              <div className="text-2xl font-bold">
+                £{getPrice('basic').toFixed(2)}
+                <span className="text-sm font-normal text-muted-foreground">
+                  /{billingCycle === 'yearly' ? 'year' : 'month'}
+                </span>
+              </div>
+              {billingCycle === 'yearly' && (
+                <p className="text-xs text-green-600 mt-1">Save £{getSavings('basic')} per year</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Up to 5 items • 75p/item after</p>
+            </div>
             
             <ul className="space-y-2">
               {basicFeatures.map((feature, index) => (
@@ -80,19 +138,34 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
             <Button 
               className="w-full" 
               variant="outline"
-              onClick={() => handleUpgrade('basic')}
-              disabled={subscription?.subscriptionStatus === 'basic'}
+              onClick={() => handleSelectPlan('basic')}
+              disabled={isCurrentPlan('basic') || loadingPlan !== null}
             >
-              {subscription?.subscriptionStatus === 'basic' ? 'Current Plan' : 'Choose This Plan'}
+              {loadingPlan === 'basic' ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : isCurrentPlan('basic') ? (
+                'Current Plan'
+              ) : (
+                'Choose This Plan'
+              )}
             </Button>
           </CardContent>
         </Card>
 
         {/* Advanced Plan */}
-        <Card className="relative border-primary">
-          <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2">
-            Most Popular
-          </Badge>
+        <Card className={`relative ${isCurrentPlan('advanced') ? 'border-primary border-2' : 'border-primary'}`}>
+          {isCurrentPlan('advanced') ? (
+            <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-primary">
+              Current Plan
+            </Badge>
+          ) : (
+            <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2">
+              Most Popular
+            </Badge>
+          )}
           <CardHeader>
             <div className="flex items-center gap-2">
               <Cog className="h-5 w-5 text-primary" />
@@ -103,8 +176,18 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="text-2xl font-bold">£18.99<span className="text-sm font-normal text-muted-foreground">/month</span></div>
-            <p className="text-xs text-muted-foreground mt-1">Up to 10 items • 75p/item after</p>
+            <div>
+              <div className="text-2xl font-bold">
+                £{getPrice('advanced').toFixed(2)}
+                <span className="text-sm font-normal text-muted-foreground">
+                  /{billingCycle === 'yearly' ? 'year' : 'month'}
+                </span>
+              </div>
+              {billingCycle === 'yearly' && (
+                <p className="text-xs text-green-600 mt-1">Save £{getSavings('advanced')} per year</p>
+              )}
+              <p className="text-xs text-muted-foreground mt-1">Up to 10 items • 75p/item after</p>
+            </div>
             
             <ul className="space-y-2">
               {advancedFeatures.map((feature, index) => (
@@ -117,10 +200,19 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
 
             <Button 
               className="w-full"
-              onClick={() => handleUpgrade('advanced')}
-              disabled={subscription?.subscriptionStatus === 'advanced'}
+              onClick={() => handleSelectPlan('advanced')}
+              disabled={isCurrentPlan('advanced') || loadingPlan !== null}
             >
-              {subscription?.subscriptionStatus === 'advanced' ? 'Current Plan' : 'Choose This Plan'}
+              {loadingPlan === 'advanced' ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : isCurrentPlan('advanced') ? (
+                'Current Plan'
+              ) : (
+                'Choose This Plan'
+              )}
             </Button>
           </CardContent>
         </Card>
