@@ -110,12 +110,17 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
                 checked={basicBillingCycle === 'yearly'}
                 onCheckedChange={(checked) => setBasicBillingCycle(checked ? 'yearly' : 'monthly')}
               />
-              <Label 
-                htmlFor="basic-billing-toggle" 
-                className={`text-sm cursor-pointer ${basicBillingCycle === 'yearly' ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
-              >
-                Yearly
-              </Label>
+              <div className="flex items-center gap-1">
+                <Label 
+                  htmlFor="basic-billing-toggle" 
+                  className={`text-sm cursor-pointer ${basicBillingCycle === 'yearly' ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
+                >
+                  Yearly
+                </Label>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200">
+                  2 months free
+                </Badge>
+              </div>
             </div>
 
             <div>
@@ -141,8 +146,8 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
             </ul>
 
             <Button 
-              className="w-full" 
-              variant="secondary"
+              className="w-full border-2 border-primary/20 hover:border-primary hover:bg-primary hover:text-primary-foreground transition-all"
+              variant="outline"
               onClick={() => handleSelectPlan('basic')}
               disabled={isCurrentPlan('basic', basicBillingCycle) || loadingPlan !== null}
             >
@@ -194,12 +199,17 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
                 checked={advancedBillingCycle === 'yearly'}
                 onCheckedChange={(checked) => setAdvancedBillingCycle(checked ? 'yearly' : 'monthly')}
               />
-              <Label 
-                htmlFor="advanced-billing-toggle" 
-                className={`text-sm cursor-pointer ${advancedBillingCycle === 'yearly' ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
-              >
-                Yearly
-              </Label>
+              <div className="flex items-center gap-1">
+                <Label 
+                  htmlFor="advanced-billing-toggle" 
+                  className={`text-sm cursor-pointer ${advancedBillingCycle === 'yearly' ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}
+                >
+                  Yearly
+                </Label>
+                <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-700 border-green-200">
+                  2 months free
+                </Badge>
+              </div>
             </div>
 
             <div>
