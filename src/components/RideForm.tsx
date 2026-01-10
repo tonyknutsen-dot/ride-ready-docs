@@ -15,6 +15,7 @@ import { useSubscription, RIDE_LIMITS } from '@/hooks/useSubscription';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
 import { compressImage } from '@/utils/imageCompression';
+import { ExtraItemChargeDialog } from '@/components/ExtraItemChargeDialog';
 type RideCategory = Tables<'ride_categories'>;
 
 interface RideFormProps {
@@ -57,9 +58,11 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [showChargeDialog, setShowChargeDialog] = useState(false);
+  const [pendingSubmit, setPendingSubmit] = useState(false);
 
-  // Check if user can add more rides (only for new rides, not edits)
-  const atRideLimit = !isEditMode && subscription && !subscription.canAddRide;
+  // Check if adding this item will incur extra charges (only for new items, not edits)
+  const willIncurExtraCharge = !isEditMode && subscription && subscription.rideCount >= subscription.rideLimit;
 
   useEffect(() => {
     loadCategories();
@@ -111,6 +114,16 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // If this will incur extra charges and user hasn't confirmed, show dialog
+    if (willIncurExtraCharge && !pendingSubmit) {
+      setShowChargeDialog(true);
+      return;
+    }
+    
+    // Reset pending submit flag
+    setPendingSubmit(false);
+    
     setErrors({});
 
     try {
@@ -294,43 +307,16 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     }
   };
 
-  // Show ride limit message if at limit
-  if (atRideLimit && !subscriptionLoading) {
-    return (
-      <div className="max-w-3xl mx-auto p-4 md:p-6">
-        <div className="mb-6">
-          <Button 
-            variant="ghost" 
-            onClick={onCancel} 
-            className="mb-4 -ml-2"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-        </div>
-        
-        <Alert variant="destructive" className="mb-6">
-          <AlertTriangle className="h-5 w-5" />
-          <AlertTitle className="text-lg">Equipment Limit Reached</AlertTitle>
-          <AlertDescription className="mt-2">
-            <p className="mb-4">
-              You've reached the limit of <strong>{subscription?.rideLimit} rides/equipment</strong> on your current plan.
-              You currently have <strong>{subscription?.rideCount} items</strong> registered.
-            </p>
-            <p className="mb-4">
-              To add more equipment, please contact us to discuss an extended plan for larger operations.
-            </p>
-            <Button 
-              onClick={() => navigate('/settings?tab=billing')}
-              className="mt-2"
-            >
-              View Plan & Billing
-            </Button>
-          </AlertDescription>
-        </Alert>
-      </div>
-    );
-  }
+  // Handle confirmation of extra charge
+  const handleConfirmExtraCharge = () => {
+    setShowChargeDialog(false);
+    setPendingSubmit(true);
+    // Trigger form submit programmatically
+    const form = document.getElementById('ride-form-root') as HTMLFormElement;
+    if (form) {
+      form.requestSubmit();
+    }
+  };
 
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-6">
@@ -578,6 +564,18 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
       {/* Request Category dialog */}
       <RequestRideTypeDialog open={openRequest} onOpenChange={setOpenRequest} />
+
+      {/* Extra item charge confirmation dialog */}
+      {subscription && (
+        <ExtraItemChargeDialog
+          open={showChargeDialog}
+          onOpenChange={setShowChargeDialog}
+          onConfirm={handleConfirmExtraCharge}
+          currentCount={subscription.rideCount}
+          limit={subscription.rideLimit}
+          plan={subscription.subscriptionStatus}
+        />
+      )}
     </div>
   );
 };
