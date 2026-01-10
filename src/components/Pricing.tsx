@@ -18,10 +18,10 @@ const Pricing = () => {
   const [isAnnual, setIsAnnual] = useState(false);
 
   // Monthly prices
-  const basicMonthly = 12.99;
-  const advancedMonthly = 20.99;
+  const basicMonthly = 6.99;
+  const advancedMonthly = 18.99;
   
-  // Annual prices (2 months free)
+  // Annual prices (2 months free - pay for 10 months)
   const basicAnnual = basicMonthly * 10;
   const advancedAnnual = advancedMonthly * 10;
   
@@ -30,19 +30,19 @@ const Pricing = () => {
   const advancedSavings = (advancedMonthly * 12 - advancedAnnual).toFixed(0);
 
   const basicFeatures = [
-    "Up to 10 rides or equipment",
-    "50p/month per additional ride",
+    "Up to 5 rides, stalls, games or equipment",
+    "75p/month per additional item",
     "100 documents storage",
     "Expiry alerts (30 & 7 days)",
     "Insurance & safety compliance certificates",
     "Declaration of Compliance (DOC) certificates",
-    "Organize by ride",
+    "Organize by item",
     "Email support"
   ];
 
   const advancedFeatures = [
-    "Everything in Essential, plus:",
-    "Up to 12 rides included (50p/month per additional ride)",
+    "Everything in Documents & Compliance, plus:",
+    "Up to 10 items included (75p/month per additional item)",
     "Unlimited document storage",
     "All document types supported",
     "Daily, monthly & yearly checks",
@@ -240,11 +240,11 @@ const Pricing = () => {
           <Accordion type="single" collapsible className="space-y-3">
             <AccordionItem value="rides" className="border border-border/50 rounded-lg px-6 bg-card">
               <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
-                How do ride limits work?
+                How do item limits work?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
-                The Documents & Compliance plan includes up to 10 rides. The Operations & Maintenance plan includes up to 12 rides. 
-                If you need to manage more rides, each additional ride costs just 50p per month. This allows you to scale 
+                The Documents & Compliance plan includes up to 5 items (rides, stalls, games, equipment). The Operations & Maintenance plan includes up to 10 items. 
+                If you need to manage more items, each additional item costs just 75p per month. This allows you to scale 
                 your account as your business grows without paying for capacity you don't need.
               </AccordionContent>
             </AccordionItem>

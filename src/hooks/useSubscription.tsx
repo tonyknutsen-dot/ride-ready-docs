@@ -2,14 +2,29 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
-// Ride limits per plan
+// Item limits per plan (rides, stalls, games, equipment)
 export const RIDE_LIMITS = {
-  trial: 8,
-  basic: 8,
-  advanced: 8,
-  // Additional rides beyond the limit require higher tier
-  extended_basic: 20,
-  extended_advanced: 20,
+  trial: 5,
+  basic: 5,
+  advanced: 10,
+  // Additional items cost 75p/month each
+  extended_basic: 50,
+  extended_advanced: 50,
+} as const;
+
+// Pricing constants
+export const PRICING = {
+  basic: {
+    monthly: 6.99,
+    includedItems: 5,
+    additionalItemCost: 0.75,
+  },
+  advanced: {
+    monthly: 18.99,
+    includedItems: 10,
+    additionalItemCost: 0.75,
+  },
+  annualDiscount: 2, // months free
 } as const;
 
 export interface SubscriptionData {
