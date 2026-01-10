@@ -18,6 +18,7 @@ interface ExtraItemChargeDialogProps {
   currentCount: number;
   limit: number;
   plan: 'basic' | 'advanced' | 'trial' | 'expired';
+  billingCycle?: 'monthly' | 'yearly';
 }
 
 export const ExtraItemChargeDialog = ({
@@ -27,17 +28,25 @@ export const ExtraItemChargeDialog = ({
   currentCount,
   limit,
   plan,
+  billingCycle = 'monthly',
 }: ExtraItemChargeDialogProps) => {
-  const additionalItemCost = PRICING.basic.additionalItemCost; // 75p
+  const additionalItemCost = PRICING.basic.additionalItemCost; // 75p per month
   const currentExtraItems = Math.max(0, currentCount - limit);
   const newExtraItems = currentExtraItems + 1;
-  const currentExtraCharge = (currentExtraItems * additionalItemCost).toFixed(2);
-  const newExtraCharge = (newExtraItems * additionalItemCost).toFixed(2);
-
+  
+  // For yearly billing, charge 10 months worth (2 months free)
+  const billingMonths = billingCycle === 'yearly' ? PRICING.annualBillingMonths : 1;
+  const newItemCharge = additionalItemCost * billingMonths;
+  
   // Get base price based on plan
   const basePlan = plan === 'advanced' ? PRICING.advanced : PRICING.basic;
   const basePrice = basePlan.monthly;
-  const newTotalMonthly = (basePrice + newExtraItems * additionalItemCost).toFixed(2);
+
+  const isYearly = billingCycle === 'yearly';
+  const chargeLabel = isYearly ? 'one-time' : '/month';
+  const chargeDescription = isYearly 
+    ? `£${newItemCharge.toFixed(2)} will be charged now (10 months at 75p, reflecting your 2-month annual discount).`
+    : 'This will be added to your next monthly bill.';
 
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -64,23 +73,25 @@ export const ExtraItemChargeDialog = ({
                 {currentExtraItems > 0 && (
                   <div className="flex justify-between text-sm text-muted-foreground">
                     <span>Current extra items ({currentExtraItems}):</span>
-                    <span>£{currentExtraCharge}/month</span>
+                    <span>£{(currentExtraItems * additionalItemCost).toFixed(2)}/month</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm font-medium text-amber-700 dark:text-amber-400">
                   <span>+ New item charge:</span>
-                  <span>+£{additionalItemCost.toFixed(2)}/month</span>
+                  <span>+£{newItemCharge.toFixed(2)} {chargeLabel}</span>
                 </div>
-                <div className="border-t pt-2 mt-2">
-                  <div className="flex justify-between font-semibold">
-                    <span>New monthly total:</span>
-                    <span>£{newTotalMonthly}/month</span>
+                {!isYearly && (
+                  <div className="border-t pt-2 mt-2">
+                    <div className="flex justify-between font-semibold">
+                      <span>New monthly total:</span>
+                      <span>£{(basePrice + newExtraItems * additionalItemCost).toFixed(2)}/month</span>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
 
               <p className="text-sm text-muted-foreground">
-                Each additional item beyond your included {limit} costs 75p/month.
+                {chargeDescription}
               </p>
             </div>
           </AlertDialogDescription>
@@ -88,7 +99,7 @@ export const ExtraItemChargeDialog = ({
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
           <AlertDialogAction onClick={onConfirm}>
-            Add Item (+75p/month)
+            Add Item (+£{newItemCharge.toFixed(2)})
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
