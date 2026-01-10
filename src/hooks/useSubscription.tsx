@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -16,11 +16,13 @@ export const RIDE_LIMITS = {
 export const PRICING = {
   basic: {
     monthly: 6.99,
+    yearly: 69.90,
     includedItems: 5,
     additionalItemCost: 0.75,
   },
   advanced: {
     monthly: 18.99,
+    yearly: 189.90,
     includedItems: 10,
     additionalItemCost: 0.75,
   },
@@ -28,17 +30,31 @@ export const PRICING = {
   annualBillingMonths: 10, // 12 months - 2 months free = 10 months charged
 } as const;
 
+// Stripe price IDs
+export const STRIPE_PRICE_IDS = {
+  basic_monthly: "price_1RXcG0Rsp1KGo6dTPDVp9VFR",
+  basic_yearly: "price_1RXcHcRsp1KGo6dTjSv0Xj5w",
+  advanced_monthly: "price_1RXcI4Rsp1KGo6dTDbUJsaYU",
+  advanced_yearly: "price_1RXcIVRsp1KGo6dT67tDh1Fd",
+  extra_item: "price_1RXcIzRsp1KGo6dTTFGhIcDr",
+} as const;
+
 export interface SubscriptionData {
   trialStartedAt: string | null;
   trialEndsAt: string | null;
   subscriptionStatus: 'trial' | 'basic' | 'advanced' | 'expired';
   subscriptionPlan: 'basic' | 'advanced' | null;
+  billingCycle: 'monthly' | 'yearly' | null;
   daysRemaining: number;
   isTrialActive: boolean;
   isExpired: boolean;
   rideCount: number;
   rideLimit: number;
   canAddRide: boolean;
+  extraItemsCount: number;
+  currentPeriodEnd: string | null;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
 }
 
 export const useSubscription = () => {
@@ -46,70 +62,98 @@ export const useSubscription = () => {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
+  const fetchSubscriptionData = useCallback(async () => {
     if (!user) {
       setSubscription(null);
       setLoading(false);
       return;
     }
 
-    const fetchSubscriptionData = async () => {
-      try {
-        // Fetch profile and ride count in parallel
-        const [profileResult, rideCountResult] = await Promise.all([
-          supabase
-            .from('profiles')
-            .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan')
-            .eq('user_id', user.id)
-            .maybeSingle(),
-          supabase
-            .from('rides')
-            .select('id', { count: 'exact', head: true })
-            .eq('user_id', user.id)
-        ]);
+    try {
+      // Fetch profile and ride count in parallel
+      const [profileResult, rideCountResult] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, extra_items_count, current_period_end, stripe_customer_id, stripe_subscription_id')
+          .eq('user_id', user.id)
+          .maybeSingle(),
+        supabase
+          .from('rides')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+      ]);
 
-        if (profileResult.error) {
-          console.error('Error fetching subscription data:', profileResult.error);
-          return;
-        }
-
-        const data = profileResult.data;
-        const rideCount = rideCountResult.count || 0;
-
-        if (data) {
-          const now = new Date();
-          const trialEndsAt = data.trial_ends_at ? new Date(data.trial_ends_at) : null;
-          const daysRemaining = trialEndsAt 
-            ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
-            : 0;
-
-          const status = data.subscription_status as SubscriptionData['subscriptionStatus'];
-          const rideLimit = RIDE_LIMITS[status] || RIDE_LIMITS.basic;
-
-          const subscriptionData: SubscriptionData = {
-            trialStartedAt: data.trial_started_at,
-            trialEndsAt: data.trial_ends_at,
-            subscriptionStatus: status,
-            subscriptionPlan: data.subscription_plan as SubscriptionData['subscriptionPlan'],
-            daysRemaining,
-            isTrialActive: data.subscription_status === 'trial' && daysRemaining > 0,
-            isExpired: data.subscription_status === 'expired' || (data.subscription_status === 'trial' && daysRemaining === 0),
-            rideCount,
-            rideLimit,
-            canAddRide: rideCount < rideLimit,
-          };
-
-          setSubscription(subscriptionData);
-        }
-      } catch (error) {
-        console.error('Error fetching subscription data:', error);
-      } finally {
-        setLoading(false);
+      if (profileResult.error) {
+        console.error('Error fetching subscription data:', profileResult.error);
+        return;
       }
-    };
 
-    fetchSubscriptionData();
+      const data = profileResult.data;
+      const rideCount = rideCountResult.count || 0;
+
+      if (data) {
+        const now = new Date();
+        const trialEndsAt = data.trial_ends_at ? new Date(data.trial_ends_at) : null;
+        const daysRemaining = trialEndsAt 
+          ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
+          : 0;
+
+        const status = data.subscription_status as SubscriptionData['subscriptionStatus'];
+        const extraItemsCount = data.extra_items_count || 0;
+        const baseLimit = RIDE_LIMITS[status] || RIDE_LIMITS.basic;
+        const rideLimit = baseLimit + extraItemsCount;
+
+        const subscriptionData: SubscriptionData = {
+          trialStartedAt: data.trial_started_at,
+          trialEndsAt: data.trial_ends_at,
+          subscriptionStatus: status,
+          subscriptionPlan: data.subscription_plan as SubscriptionData['subscriptionPlan'],
+          billingCycle: data.billing_cycle as SubscriptionData['billingCycle'],
+          daysRemaining,
+          isTrialActive: data.subscription_status === 'trial' && daysRemaining > 0,
+          isExpired: data.subscription_status === 'expired' || (data.subscription_status === 'trial' && daysRemaining === 0),
+          rideCount,
+          rideLimit,
+          canAddRide: rideCount < rideLimit,
+          extraItemsCount,
+          currentPeriodEnd: data.current_period_end,
+          stripeCustomerId: data.stripe_customer_id,
+          stripeSubscriptionId: data.stripe_subscription_id,
+        };
+
+        setSubscription(subscriptionData);
+      }
+    } catch (error) {
+      console.error('Error fetching subscription data:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [user]);
+
+  useEffect(() => {
+    fetchSubscriptionData();
+  }, [fetchSubscriptionData]);
+
+  // Check subscription status with Stripe (syncs database)
+  const checkSubscriptionStatus = useCallback(async () => {
+    if (!user) return null;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      
+      if (error) {
+        console.error('Error checking subscription:', error);
+        return null;
+      }
+      
+      // Refresh local data after sync
+      await fetchSubscriptionData();
+      return data;
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      return null;
+    }
+  }, [user, fetchSubscriptionData]);
 
   const refreshRideCount = async () => {
     if (!user || !subscription) return;
@@ -127,63 +171,42 @@ export const useSubscription = () => {
     } : null);
   };
 
-  const upgradeSubscription = async (plan: 'basic' | 'advanced') => {
-    if (!user) return;
+  // Create Stripe checkout session
+  const createCheckout = async (plan: 'basic' | 'advanced', billingCycle: 'monthly' | 'yearly', extraItems: number = 0) => {
+    if (!user) throw new Error('User not authenticated');
 
-    try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          subscription_status: plan,
-          subscription_plan: plan
-        })
-        .eq('user_id', user.id);
+    const { data, error } = await supabase.functions.invoke('create-checkout', {
+      body: { plan, billingCycle, extraItems },
+    });
 
-      if (error) throw error;
-
-      // Refresh subscription data
-      const [profileResult, rideCountResult] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan')
-          .eq('user_id', user.id)
-          .maybeSingle(),
-        supabase
-          .from('rides')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-      ]);
-
-      const data = profileResult.data;
-      const rideCount = rideCountResult.count || 0;
-
-      if (data) {
-        const now = new Date();
-        const trialEndsAt = data.trial_ends_at ? new Date(data.trial_ends_at) : null;
-        const daysRemaining = trialEndsAt 
-          ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
-          : 0;
-
-        const status = data.subscription_status as SubscriptionData['subscriptionStatus'];
-        const rideLimit = RIDE_LIMITS[status] || RIDE_LIMITS.basic;
-
-        setSubscription({
-          trialStartedAt: data.trial_started_at,
-          trialEndsAt: data.trial_ends_at,
-          subscriptionStatus: status,
-          subscriptionPlan: data.subscription_plan as SubscriptionData['subscriptionPlan'],
-          daysRemaining,
-          isTrialActive: data.subscription_status === 'trial' && daysRemaining > 0,
-          isExpired: data.subscription_status === 'expired' || (data.subscription_status === 'trial' && daysRemaining === 0),
-          rideCount,
-          rideLimit,
-          canAddRide: rideCount < rideLimit,
-        });
-      }
-    } catch (error) {
-      console.error('Error upgrading subscription:', error);
-      throw error;
+    if (error) throw error;
+    
+    if (data?.url) {
+      window.open(data.url, '_blank');
     }
+    
+    return data;
+  };
+
+  // Open customer portal for subscription management
+  const openCustomerPortal = async () => {
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase.functions.invoke('customer-portal');
+
+    if (error) throw error;
+    
+    if (data?.url) {
+      window.open(data.url, '_blank');
+    }
+    
+    return data;
+  };
+
+  // Legacy upgrade function (for backward compatibility during trial)
+  const upgradeSubscription = async (plan: 'basic' | 'advanced') => {
+    // Now redirects to Stripe checkout
+    await createCheckout(plan, 'monthly');
   };
 
   return {
@@ -191,5 +214,9 @@ export const useSubscription = () => {
     loading,
     upgradeSubscription,
     refreshRideCount,
+    createCheckout,
+    openCustomerPortal,
+    checkSubscriptionStatus,
+    refreshSubscription: fetchSubscriptionData,
   };
 };
