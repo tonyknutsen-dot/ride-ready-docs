@@ -269,11 +269,11 @@ const Overview = () => {
         }
       >
         <Card 
-          className="group cursor-pointer border-2 border-success/40 bg-gradient-to-r from-success/10 to-success/15 hover:shadow-elegant transition-all active:scale-[0.98]"
+          className="group cursor-pointer border-2 border-success/50 bg-gradient-to-r from-success/10 via-success/15 to-success/20 hover:shadow-elegant transition-all active:scale-[0.98]"
           onClick={() => navigate('/checks')}
         >
           <CardContent className="p-6 flex items-center gap-5">
-            <div className="p-4 bg-success/20 rounded-2xl group-hover:bg-success/30 transition-colors">
+            <div className="p-4 bg-success/25 rounded-2xl group-hover:bg-success/35 transition-colors shadow-sm">
               <CheckCircle className="h-10 w-10 text-success" />
             </div>
             <div className="flex-1">
@@ -282,7 +282,7 @@ const Overview = () => {
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold text-success">{stats.recentChecks}</p>
-              <p className="text-xs text-muted-foreground">This week</p>
+              <p className="text-xs text-muted-foreground font-semibold">This week</p>
             </div>
           </CardContent>
         </Card>
@@ -290,33 +290,33 @@ const Overview = () => {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/60" onClick={() => navigate('/rides')}>
+        <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-primary/20 bg-gradient-to-br from-primary/5 to-primary/10" onClick={() => navigate('/rides')}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/15 transition-colors">
-                <FileText className="h-4 w-4 text-primary" />
+              <div className="p-2.5 bg-primary/20 rounded-xl group-hover:bg-primary/30 transition-colors shadow-sm">
+                <FileText className="h-5 w-5 text-primary" />
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowRight className="h-4 w-4 text-primary/50 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+            <div className="text-2xl md:text-3xl font-bold text-primary mb-1">
               {stats.totalDocuments}
             </div>
-            <div className="text-xs text-muted-foreground">Total Documents</div>
+            <div className="text-xs text-muted-foreground font-medium">Total Documents</div>
           </CardContent>
         </Card>
 
-        <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/60" onClick={() => navigate('/rides')}>
+        <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-accent/20 bg-gradient-to-br from-accent/5 to-accent/10" onClick={() => navigate('/rides')}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
-              <div className="p-2 bg-accent/10 rounded-lg group-hover:bg-accent/15 transition-colors">
-                <Wrench className="h-4 w-4 text-accent" />
+              <div className="p-2.5 bg-accent/20 rounded-xl group-hover:bg-accent/30 transition-colors shadow-sm">
+                <Wrench className="h-5 w-5 text-accent" />
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <ArrowRight className="h-4 w-4 text-accent/50 opacity-0 group-hover:opacity-100 transition-opacity" />
             </div>
-            <div className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+            <div className="text-2xl md:text-3xl font-bold text-accent mb-1">
               {stats.activeRides}
             </div>
-            <div className="text-xs text-muted-foreground">Active Rides</div>
+            <div className="text-xs text-muted-foreground font-medium">Active Rides</div>
           </CardContent>
         </Card>
 
@@ -324,35 +324,35 @@ const Overview = () => {
           requiredPlan="advanced" 
           feature="Maintenance" 
           fallback={
-            <Card className="border-dashed border-border bg-muted/50">
+            <Card className="border-dashed border-primary/30 bg-secondary">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="p-2 bg-muted rounded-lg">
-                    <Wrench className="h-4 w-4 text-muted-foreground" />
+                  <div className="p-2.5 bg-primary/10 rounded-xl">
+                    <Wrench className="h-5 w-5 text-primary/50" />
                   </div>
-                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Lock className="h-4 w-4 text-primary/40" />
                 </div>
-                <div className="text-lg font-semibold text-muted-foreground mb-1">Maintenance</div>
+                <div className="text-lg font-bold text-primary/60 mb-1">Maintenance</div>
                 <div className="text-xs text-muted-foreground mb-3">Track repairs</div>
-                <Button size="sm" variant="outline" className="w-full text-xs h-8" onClick={() => navigate('/billing')}>
+                <Button size="sm" className="w-full text-xs h-8 bg-primary/10 text-primary hover:bg-primary/20 border-0" onClick={() => navigate('/billing')}>
                   Upgrade
                 </Button>
               </CardContent>
             </Card>
           }
         >
-          <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/60" onClick={() => navigate('/rides')}>
+          <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-amber-500/10" onClick={() => navigate('/rides')}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-amber-500/10 rounded-lg group-hover:bg-amber-500/15 transition-colors">
-                  <Wrench className="h-4 w-4 text-amber-500" />
+                <div className="p-2.5 bg-amber-500/20 rounded-xl group-hover:bg-amber-500/30 transition-colors shadow-sm">
+                  <Wrench className="h-5 w-5 text-amber-600" />
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowRight className="h-4 w-4 text-amber-500/50 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+              <div className="text-2xl md:text-3xl font-bold text-amber-600 mb-1">
                 {stats.maintenanceRecords}
               </div>
-              <div className="text-xs text-muted-foreground">Maintenance</div>
+              <div className="text-xs text-muted-foreground font-medium">Maintenance</div>
             </CardContent>
           </Card>
         </FeatureGate>
@@ -361,35 +361,35 @@ const Overview = () => {
           requiredPlan="advanced" 
           feature="Inspections" 
           fallback={
-            <Card className="border-dashed border-border bg-muted/50">
+            <Card className="border-dashed border-info/30 bg-secondary">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="p-2 bg-muted rounded-lg">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <div className="p-2.5 bg-info/10 rounded-xl">
+                    <Calendar className="h-5 w-5 text-info/50" />
                   </div>
-                  <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+                  <Lock className="h-4 w-4 text-info/40" />
                 </div>
-                <div className="text-lg font-semibold text-muted-foreground mb-1">Schedule</div>
+                <div className="text-lg font-bold text-info/60 mb-1">Schedule</div>
                 <div className="text-xs text-muted-foreground mb-3">Plan inspections</div>
-                <Button size="sm" variant="outline" className="w-full text-xs h-8" onClick={() => navigate('/billing')}>
+                <Button size="sm" className="w-full text-xs h-8 bg-info/10 text-info hover:bg-info/20 border-0" onClick={() => navigate('/billing')}>
                   Upgrade
                 </Button>
               </CardContent>
             </Card>
           }
         >
-          <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/60" onClick={() => navigate('/calendar')}>
+          <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-info/20 bg-gradient-to-br from-info/5 to-info/10" onClick={() => navigate('/calendar')}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 bg-warning/10 rounded-lg group-hover:bg-warning/15 transition-colors">
-                  <Calendar className="h-4 w-4 text-warning" />
+                <div className="p-2.5 bg-info/20 rounded-xl group-hover:bg-info/30 transition-colors shadow-sm">
+                  <Calendar className="h-5 w-5 text-info" />
                 </div>
-                <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+                <ArrowRight className="h-4 w-4 text-info/50 opacity-0 group-hover:opacity-100 transition-opacity" />
               </div>
-              <div className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+              <div className="text-2xl md:text-3xl font-bold text-info mb-1">
                 {stats.upcomingInspections}
               </div>
-              <div className="text-xs text-muted-foreground">Due Soon</div>
+              <div className="text-xs text-muted-foreground font-medium">Due Soon</div>
             </CardContent>
           </Card>
         </FeatureGate>
@@ -399,28 +399,28 @@ const Overview = () => {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* System Status */}
-          <Card className="border-border/60">
+          <Card className="border-primary/20 bg-gradient-to-br from-card to-primary/5">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-primary/10 rounded-lg">
-                  <BarChart3 className="w-4 h-4 text-primary" />
+                <div className="p-2 bg-primary/15 rounded-xl">
+                  <BarChart3 className="w-5 h-5 text-primary" />
                 </div>
-                <h2 className="text-lg font-semibold">System Status</h2>
+                <h2 className="text-lg font-bold">System Status</h2>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {demoFeatures.map((feature, index) => (
                 <div 
                   key={index} 
-                  className="flex items-start gap-4 p-4 border border-border/60 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors group"
+                  className="flex items-start gap-4 p-4 border border-border rounded-xl bg-card hover:shadow-sm transition-all group"
                 >
-                  <div className="text-primary mt-0.5 p-2 bg-primary/5 rounded-lg group-hover:bg-primary/10 transition-colors">
+                  <div className="text-primary mt-0.5 p-2.5 bg-primary/10 rounded-xl group-hover:bg-primary/15 transition-colors">
                     {feature.icon}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <h3 className="font-medium text-sm">{feature.title}</h3>
-                      <Badge variant="secondary" className="shrink-0 text-xs font-normal">
+                      <h3 className="font-semibold text-sm">{feature.title}</h3>
+                      <Badge variant="secondary" className="shrink-0 text-xs font-semibold bg-primary/10 text-primary border-0">
                         {feature.count}
                       </Badge>
                     </div>
@@ -428,11 +428,11 @@ const Overview = () => {
                   </div>
                   <div className="mt-1 shrink-0">
                     {feature.status === "warning" ? (
-                      <AlertCircle className="w-4 h-4 text-warning" />
+                      <AlertCircle className="w-5 h-5 text-warning" />
                     ) : feature.status === "pending" ? (
-                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <Clock className="w-5 h-5 text-muted-foreground" />
                     ) : (
-                      <CheckCircle className="w-4 h-4 text-success" />
+                      <CheckCircle className="w-5 h-5 text-success" />
                     )}
                   </div>
                 </div>
