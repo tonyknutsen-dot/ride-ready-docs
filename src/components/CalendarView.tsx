@@ -481,21 +481,25 @@ const CalendarView = () => {
           <div className="flex flex-wrap items-center gap-4 text-sm">
             <span className="font-medium text-muted-foreground">Legend:</span>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-primary shadow-sm" />
-              <span>Inspections</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-accent shadow-sm" />
-              <span>Maintenance</span>
-            </div>
-            <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 rounded-full bg-destructive shadow-sm" />
               <span>Document Expiry</span>
             </div>
-            <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-info shadow-sm" />
-              <span>NDT Tests</span>
-            </div>
+            {!isBasicPlan && (
+              <>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-primary shadow-sm" />
+                  <span>Inspections</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-accent shadow-sm" />
+                  <span>Maintenance</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-info shadow-sm" />
+                  <span>NDT Tests</span>
+                </div>
+              </>
+            )}
             <div className="flex items-center gap-2 ml-auto">
               <Clock className="h-3.5 w-3.5 text-amber-600" />
               <span>Pending</span>

@@ -46,7 +46,7 @@ export const RestrictedFeatureCard: React.FC<RestrictedFeatureCardProps> = ({
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-            <DialogTitle>Upgrade to {planName} - £{requiredPlan === 'basic' ? '12.99' : '27.99'}/month</DialogTitle>
+            <DialogTitle>Upgrade to {planName} - £{requiredPlan === 'basic' ? '6.99' : '18.99'}/month</DialogTitle>
             <DialogDescription>
               Unlock {title.toLowerCase()} and all premium features
             </DialogDescription>
@@ -92,7 +92,7 @@ export const RestrictedFeatureCard: React.FC<RestrictedFeatureCardProps> = ({
               <div>
                 <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded p-4 text-center border mb-3">
                   <div className="text-2xl font-bold text-primary mb-1">
-                    £27.99<span className="text-sm text-muted-foreground">/month</span>
+                    £18.99<span className="text-sm text-muted-foreground">/month</span>
                   </div>
                   <div className="text-xs text-muted-foreground mb-2">
                     ✓ No setup fees • ✓ Cancel anytime

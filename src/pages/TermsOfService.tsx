@@ -64,8 +64,8 @@ const TermsOfService = () => {
 
                 <h3 className="text-xl font-semibold mb-2">4.2 Subscription Plans</h3>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
-                  <li><strong>Documents & Compliance:</strong> £12.99/month - Up to 10 rides, core document management features</li>
-                  <li><strong>Operations & Maintenance:</strong> £27.99/month - Unlimited rides, all features including technical bulletins, checks, inspections, maintenance tracking, and advanced reporting</li>
+                  <li><strong>Documents & Compliance:</strong> £6.99/month - Up to 5 items, core document management features</li>
+                  <li><strong>Operations & Maintenance:</strong> £18.99/month - Up to 10 items, all features including checks, inspections, maintenance tracking, and advanced reporting</li>
                 </ul>
 
                 <h3 className="text-xl font-semibold mb-2">4.3 Payment Terms</h3>
