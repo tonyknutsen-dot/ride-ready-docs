@@ -308,13 +308,44 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   };
 
   // Handle confirmation of extra charge
-  const handleConfirmExtraCharge = () => {
+  const handleConfirmExtraCharge = async () => {
     setShowChargeDialog(false);
-    setPendingSubmit(true);
-    // Trigger form submit programmatically
-    const form = document.getElementById('ride-form-root') as HTMLFormElement;
-    if (form) {
-      form.requestSubmit();
+    setLoading(true);
+    
+    try {
+      // Call the edge function to add extra item to Stripe subscription
+      const { data, error } = await supabase.functions.invoke('add-extra-item');
+      
+      if (error) {
+        throw new Error(error.message);
+      }
+      
+      if (!data?.success) {
+        throw new Error(data?.error || 'Failed to add extra item');
+      }
+      
+      toast({
+        title: "Extra item added to subscription",
+        description: data.billingCycle === 'yearly' 
+          ? "A prorated charge has been applied for the remaining subscription period."
+          : "£0.75/month has been added to your subscription.",
+      });
+      
+      // Now proceed with adding the ride
+      setPendingSubmit(true);
+      // Trigger form submit programmatically
+      const form = document.getElementById('ride-form-root') as HTMLFormElement;
+      if (form) {
+        form.requestSubmit();
+      }
+    } catch (error) {
+      console.error('Error adding extra item:', error);
+      toast({
+        title: "Failed to process extra item charge",
+        description: error instanceof Error ? error.message : "Please try again or contact support.",
+        variant: "destructive",
+      });
+      setLoading(false);
     }
   };
 
@@ -574,6 +605,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           currentCount={subscription.rideCount}
           limit={subscription.rideLimit}
           plan={subscription.subscriptionStatus}
+          billingCycle={subscription.billingCycle || 'monthly'}
         />
       )}
     </div>
