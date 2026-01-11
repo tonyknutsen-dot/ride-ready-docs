@@ -6,6 +6,7 @@ import { ArrowLeft, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import RideDetail from '@/components/RideDetail';
+import PageBreadcrumb from '@/components/PageBreadcrumb';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -56,6 +57,30 @@ const RideDetailPage = () => {
     }
   };
 
+  // Build breadcrumb based on current tab
+  const getBreadcrumbItems = () => {
+    const items = [
+      { label: 'Equipment', href: '/rides' },
+      { label: ride?.ride_name || 'Loading...' }
+    ];
+    
+    // Add tab context if not on overview
+    if (initialTab && initialTab !== 'overview' && ride) {
+      const tabLabels: Record<string, string> = {
+        documents: 'Documents',
+        inspections: 'Checks',
+        maintenance: 'Maintenance'
+      };
+      
+      if (tabLabels[initialTab]) {
+        items[1] = { label: ride.ride_name, href: `/rides/${id}` };
+        items.push({ label: tabLabels[initialTab] });
+      }
+    }
+    
+    return items;
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-8">
@@ -85,6 +110,7 @@ const RideDetailPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-5 pb-28 md:pb-8">
+      <PageBreadcrumb items={getBreadcrumbItems()} showHome />
       <RideDetail 
         ride={ride}
         onBack={() => navigate('/rides')}
