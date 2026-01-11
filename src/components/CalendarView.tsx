@@ -73,6 +73,7 @@ const CalendarView = () => {
   const [filterType, setFilterType] = useState<string>('all');
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [calendarPickerOpen, setCalendarPickerOpen] = useState(false);
+  const [showHelpTips, setShowHelpTips] = useState(true);
   const [rides, setRides] = useState<Ride[]>([]);
   const [formData, setFormData] = useState({
     ride_id: '',
@@ -81,6 +82,8 @@ const CalendarView = () => {
     due_date: undefined as Date | undefined,
     advance_notice_days: 30,
     notes: '',
+    enable_reminders: true,
+    reminder_days: [7, 1] as number[],
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -335,8 +338,15 @@ const CalendarView = () => {
       due_date: undefined,
       advance_notice_days: 30,
       notes: '',
+      enable_reminders: true,
+      reminder_days: [7, 1],
     });
     setFormErrors({});
+  };
+
+  const openQuickAdd = (date: Date) => {
+    setFormData(prev => ({ ...prev, due_date: date }));
+    setAddDialogOpen(true);
   };
 
   const handleAddInspection = async () => {
@@ -405,6 +415,79 @@ const CalendarView = () => {
 
   return (
     <div className="space-y-6">
+      {/* How to Use Tips - Collapsible */}
+      {showHelpTips && (
+        <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 via-card to-accent/5">
+          <CardContent className="py-4">
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/15 flex items-center justify-center shrink-0">
+                  <CalendarIcon className="h-5 w-5 text-primary" />
+                </div>
+                <div className="space-y-2">
+                  <h3 className="font-semibold text-sm">How to use the Calendar</h3>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary" />
+                      <span><strong>Click any date</strong> to quickly add a new inspection</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+                      <span><strong>Colored dots</strong> show events on each day (see legend below)</span>
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-info" />
+                      <span><strong>Click an event</strong> to go to that ride's details</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="shrink-0 text-xs"
+                onClick={() => setShowHelpTips(false)}
+              >
+                Dismiss
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Color Legend */}
+      <Card className="border border-border/50">
+        <CardContent className="py-3 px-4">
+          <div className="flex flex-wrap items-center gap-4 text-sm">
+            <span className="font-medium text-muted-foreground">Legend:</span>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-primary shadow-sm" />
+              <span>Inspections</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-accent shadow-sm" />
+              <span>Maintenance</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-destructive shadow-sm" />
+              <span>Document Expiry</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 rounded-full bg-info shadow-sm" />
+              <span>NDT Tests</span>
+            </div>
+            <div className="flex items-center gap-2 ml-auto">
+              <Clock className="h-3.5 w-3.5 text-amber-600" />
+              <span>Pending</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
+              <span>Overdue</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Show helpful message when no events exist */}
       {!loading && events.length === 0 && (
         <Card className="border-2 border-info/30 bg-gradient-to-br from-info/10 to-primary/5 shadow-elegant">
@@ -418,7 +501,7 @@ const CalendarView = () => {
                 <p className="text-sm text-muted-foreground">
                   {loadError 
                     ? 'No events yet (and we hit an error fetching some data). The calendar itself works — add checks/expiries to see them here.'
-                    : 'No events yet. Add inspections, maintenance, or document expiry dates to see them here.'}
+                    : 'Click on any date below to add your first inspection, or use the "Add Inspection" button.'}
                 </p>
               </div>
             </div>
@@ -552,6 +635,50 @@ const CalendarView = () => {
                     {formErrors.advance_notice_days && <p className="text-xs text-destructive">{formErrors.advance_notice_days}</p>}
                   </div>
 
+                  {/* Reminder Settings */}
+                  <div className="space-y-3 p-4 rounded-lg bg-secondary/50 border border-border">
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="enable_reminders" className="font-medium">Email Reminders</Label>
+                      <input
+                        type="checkbox"
+                        id="enable_reminders"
+                        checked={formData.enable_reminders}
+                        onChange={(e) => setFormData({ ...formData, enable_reminders: e.target.checked })}
+                        className="h-4 w-4 rounded border-border"
+                      />
+                    </div>
+                    {formData.enable_reminders && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground">
+                          You'll receive reminder emails at the following intervals:
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {[30, 14, 7, 3, 1].map((days) => (
+                            <button
+                              key={days}
+                              type="button"
+                              onClick={() => {
+                                const current = formData.reminder_days;
+                                const updated = current.includes(days)
+                                  ? current.filter(d => d !== days)
+                                  : [...current, days].sort((a, b) => b - a);
+                                setFormData({ ...formData, reminder_days: updated });
+                              }}
+                              className={cn(
+                                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                                formData.reminder_days.includes(days)
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              )}
+                            >
+                              {days === 1 ? '1 day before' : `${days} days before`}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
                   <div className="space-y-2">
                     <Label htmlFor="notes">Notes</Label>
                     <Textarea
@@ -648,10 +775,21 @@ const CalendarView = () => {
             <Calendar
               mode="single"
               selected={selectedDate}
-              onSelect={(date) => date && setSelectedDate(date)}
+              onSelect={(date) => {
+                if (date) {
+                  setSelectedDate(date);
+                }
+              }}
+              onDayClick={(date) => {
+                // Double-click or click on empty date opens quick-add
+                const dayEvents = getEventsForDate(date);
+                if (dayEvents.length === 0) {
+                  openQuickAdd(date);
+                }
+              }}
               month={currentMonth}
               onMonthChange={setCurrentMonth}
-              className="rounded-lg border-2 border-border bg-card"
+              className="rounded-lg border-2 border-border bg-card [&_.rdp-day]:cursor-pointer [&_.rdp-day:hover]:bg-primary/10"
               components={{
                 DayContent: ({ date }) => {
                   const dayEvents = getEventsForDate(date);
@@ -704,12 +842,20 @@ const CalendarView = () => {
           </CardHeader>
           <CardContent>
             {selectedDateEvents.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4">
-                  <CalendarIcon className="h-8 w-8 opacity-50" />
+              <div className="text-center py-6 text-muted-foreground">
+                <div className="w-14 h-14 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4">
+                  <CalendarIcon className="h-7 w-7 opacity-50" />
                 </div>
-                <p className="font-medium">No events scheduled</p>
-                <p className="text-sm">Select a different date or add new events</p>
+                <p className="font-medium mb-1">No events scheduled</p>
+                <p className="text-sm mb-4">Add an inspection for this date</p>
+                <Button 
+                  size="sm" 
+                  onClick={() => openQuickAdd(selectedDate)}
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Event
+                </Button>
               </div>
             ) : (
               <div className="space-y-3">
