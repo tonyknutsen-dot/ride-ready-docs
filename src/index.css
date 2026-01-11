@@ -42,8 +42,8 @@
     --muted: 210 20% 97%;
     --muted-foreground: 215 25% 40%;
 
-    /* Accent Orange: #F97316 - Bold, vibrant CTAs */
-    --accent: 25 95% 53%;
+    /* Accent: Bold Red-Orange #EA580C */
+    --accent: 15 95% 48%;
     --accent-foreground: 0 0% 100%;
 
     /* Destructive: Bold red */
@@ -61,7 +61,7 @@
     --sidebar-foreground: 222 47% 11%;
     --sidebar-primary: 215 52% 25%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 25 95% 53%;
+    --sidebar-accent: 15 95% 48%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 210 20% 90%;
     --sidebar-ring: 209 58% 44%;
@@ -86,7 +86,7 @@
 
     /* Shadows - professional depth */
     --shadow-elegant: 0 10px 40px -10px hsl(215 52% 25% / 0.2), 0 4px 12px -4px hsl(215 30% 30% / 0.1);
-    --shadow-glow: 0 0 35px -5px hsl(25 95% 53% / 0.4);
+    --shadow-glow: 0 0 35px -5px hsl(15 95% 48% / 0.4);
     --shadow-card: 0 2px 12px -3px hsl(215 40% 30% / 0.1), 0 1px 4px -1px hsl(215 30% 20% / 0.06);
     --shadow-card-hover: 0 8px 25px -5px hsl(215 52% 25% / 0.15), 0 4px 10px -3px hsl(215 30% 20% / 0.08);
 
@@ -115,7 +115,7 @@
     --muted: 217 33% 14%;
     --muted-foreground: 215 20% 60%;
 
-    --accent: 25 95% 58%;
+    --accent: 15 95% 52%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 50%;
@@ -129,7 +129,7 @@
     --sidebar-foreground: 210 40% 98%;
     --sidebar-primary: 209 58% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 25 95% 58%;
+    --sidebar-accent: 15 95% 52%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 217 33% 22%;
     --sidebar-ring: 209 58% 50%;
