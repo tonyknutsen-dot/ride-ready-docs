@@ -186,7 +186,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
       </div>
 
       {/* Equipment Photo & Details */}
-      <Card className="overflow-hidden border-border/60">
+      <Card className="overflow-hidden border-border">
         <CardContent className="p-4 space-y-4">
           {/* Photo Section - Centered with border */}
           {photoUrl ? (
@@ -194,7 +194,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
               className="flex justify-center cursor-pointer"
               onClick={() => setPhotoViewerOpen(true)}
             >
-              <div className="relative rounded-lg overflow-hidden border-2 border-border bg-card shadow-sm">
+              <div className="relative rounded-xl overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 shadow-sm">
                 <img 
                   src={photoUrl} 
                   alt={ride.ride_name}
@@ -207,8 +207,8 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             </div>
           ) : (
             <div className="flex justify-center">
-              <div className="w-32 h-32 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30 flex flex-col items-center justify-center gap-2">
-                <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+              <div className="w-32 h-32 rounded-xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5 flex flex-col items-center justify-center gap-2">
+                <ImageIcon className="h-8 w-8 text-primary/40" />
                 <p className="text-xs text-muted-foreground text-center px-2">No photo</p>
               </div>
             </div>
@@ -216,21 +216,21 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           
           {/* Details Grid */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-lg bg-muted border border-border/40 space-y-1">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Category</span>
-              <p className="text-sm font-medium">{ride.ride_categories.name}</p>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10 space-y-1">
+              <span className="text-[10px] text-primary/70 uppercase tracking-wide font-semibold">Category</span>
+              <p className="text-sm font-semibold text-foreground">{ride.ride_categories.name}</p>
             </div>
-            <div className="p-3 rounded-lg bg-muted border border-border/40 space-y-1">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Manufacturer</span>
-              <p className="text-sm font-medium truncate">{ride.manufacturer || '—'}</p>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-accent/5 to-accent/10 border border-accent/10 space-y-1">
+              <span className="text-[10px] text-accent/80 uppercase tracking-wide font-semibold">Manufacturer</span>
+              <p className="text-sm font-semibold text-foreground truncate">{ride.manufacturer || '—'}</p>
             </div>
-            <div className="p-3 rounded-lg bg-muted border border-border/40 space-y-1">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Year</span>
-              <p className="text-sm font-medium">{ride.year_manufactured || '—'}</p>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-info/5 to-info/10 border border-info/10 space-y-1">
+              <span className="text-[10px] text-info/80 uppercase tracking-wide font-semibold">Year</span>
+              <p className="text-sm font-semibold text-foreground">{ride.year_manufactured || '—'}</p>
             </div>
-            <div className="p-3 rounded-lg bg-muted border border-border/40 space-y-1">
-              <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Serial</span>
-              <p className="text-sm font-medium truncate">{ride.serial_number || '—'}</p>
+            <div className="p-3 rounded-xl bg-gradient-to-br from-success/5 to-success/10 border border-success/10 space-y-1">
+              <span className="text-[10px] text-success/80 uppercase tracking-wide font-semibold">Serial</span>
+              <p className="text-sm font-semibold text-foreground truncate">{ride.serial_number || '—'}</p>
             </div>
           </div>
         </CardContent>
@@ -249,17 +249,17 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-        <TabsList className="grid w-full h-auto p-1.5 gap-1.5 bg-muted border border-border/50" style={{ gridTemplateColumns: isAdvanced ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)' }}>
+        <TabsList className="grid w-full h-auto p-1.5 gap-1.5 bg-secondary border border-border" style={{ gridTemplateColumns: isAdvanced ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)' }}>
           <TabsTrigger 
             value="overview" 
-            className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-h-[60px]"
+            className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-lg min-h-[60px] transition-all"
           >
             <FileText className="h-5 w-5" />
             <span>Home</span>
           </TabsTrigger>
           <TabsTrigger 
             value="documents" 
-            className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-h-[60px]"
+            className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-lg min-h-[60px] transition-all"
           >
             <Upload className="h-5 w-5" />
             <span>Documents</span>
@@ -268,14 +268,14 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             <>
               <TabsTrigger 
                 value="inspections" 
-                className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-h-[60px]"
+                className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-semibold data-[state=active]:bg-success data-[state=active]:text-success-foreground data-[state=active]:shadow-md rounded-lg min-h-[60px] transition-all"
               >
                 <CheckSquare className="h-5 w-5" />
                 <span>Checks</span>
               </TabsTrigger>
               <TabsTrigger 
                 value="maintenance" 
-                className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-h-[60px]"
+                className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-semibold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-md rounded-lg min-h-[60px] transition-all"
               >
                 <Wrench className="h-5 w-5" />
                 <span>Maintenance</span>
@@ -306,11 +306,11 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
               }
             >
               <Card 
-                className="active:scale-[0.98] transition-transform cursor-pointer border-2 border-success/40 bg-gradient-to-r from-success/10 to-success/15"
+                className="active:scale-[0.98] transition-all cursor-pointer border-2 border-success/50 bg-gradient-to-r from-success/10 via-success/15 to-success/20 hover:shadow-elegant"
                 onClick={() => setActiveTab("inspections")}
               >
                 <CardContent className="p-5 flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-success/20 flex items-center justify-center shrink-0">
+                  <div className="w-16 h-16 rounded-2xl bg-success/25 flex items-center justify-center shrink-0 shadow-sm">
                     <CheckSquare className="h-8 w-8 text-success" />
                   </div>
                   <div className="flex-1 min-w-0">
@@ -321,7 +321,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                     <p className="text-2xl font-bold text-success">
                       {rideStats.loading ? '...' : rideStats.todayChecks}
                     </p>
-                    <p className="text-[10px] text-muted-foreground uppercase">Today</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-semibold">Today</p>
                   </div>
                 </CardContent>
               </Card>
@@ -329,22 +329,22 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
             {/* Documents Quick Action */}
             <Card 
-              className="active:scale-[0.98] transition-transform cursor-pointer border-border/60"
+              className="active:scale-[0.98] transition-all cursor-pointer border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 hover:shadow-elegant"
               onClick={() => setActiveTab("documents")}
             >
               <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
+                <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0 shadow-sm">
                   <FileText className="h-7 w-7 text-primary" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm">Documents</p>
+                  <p className="font-semibold text-sm text-foreground">Documents</p>
                   <p className="text-xs text-muted-foreground">Upload and manage files</p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-2xl font-bold text-primary">
                     {rideStats.loading ? '...' : rideStats.docCount}
                   </p>
-                  <p className="text-[10px] text-muted-foreground uppercase">Files</p>
+                  <p className="text-[10px] text-muted-foreground uppercase font-semibold">Files</p>
                 </div>
               </CardContent>
             </Card>
@@ -363,22 +363,22 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
               }
             >
               <Card 
-                className="active:scale-[0.98] transition-transform cursor-pointer border-border/60"
+                className="active:scale-[0.98] transition-all cursor-pointer border-accent/30 bg-gradient-to-r from-accent/5 to-accent/10 hover:shadow-elegant"
                 onClick={() => setActiveTab("maintenance")}
               >
                 <CardContent className="p-4 flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-                    <Wrench className="h-7 w-7 text-amber-600 dark:text-amber-400" />
+                  <div className="w-14 h-14 rounded-2xl bg-accent/20 flex items-center justify-center shrink-0 shadow-sm">
+                    <Wrench className="h-7 w-7 text-accent" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm">Maintenance</p>
+                    <p className="font-semibold text-sm text-foreground">Maintenance</p>
                     <p className="text-xs text-muted-foreground">Log repairs and service</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
+                    <p className="text-2xl font-bold text-accent">
                       {rideStats.loading ? '...' : rideStats.maintenanceCount}
                     </p>
-                    <p className="text-[10px] text-muted-foreground uppercase">Records</p>
+                    <p className="text-[10px] text-muted-foreground uppercase font-semibold">Records</p>
                   </div>
                 </CardContent>
               </Card>

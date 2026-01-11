@@ -10,11 +10,11 @@
 
 @layer base {
   :root {
-    /* Core backgrounds - slightly cooler to contrast with warm white cards */
-    --background: 220 25% 95%;
+    /* Core backgrounds - soft warm cream for depth */
+    --background: 40 30% 96%;
     --foreground: 222 47% 11%;
 
-    /* Card surfaces - warm white with clear distinction */
+    /* Card surfaces - bright white that pops */
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
@@ -22,62 +22,62 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Primary: Deep royal blue - trust & professionalism */
-    --primary: 222 83% 35%;
+    /* Primary: Vibrant royal blue */
+    --primary: 222 85% 45%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary: More visible soft neutral for UI blocks */
-    --secondary: 220 20% 92%;
+    /* Secondary: Warm light tan */
+    --secondary: 35 40% 92%;
     --secondary-foreground: 222 47% 11%;
 
-    /* Muted surfaces - more visible */
-    --muted: 220 20% 93%;
-    --muted-foreground: 220 9% 40%;
+    /* Muted surfaces - warm beige, NOT grey */
+    --muted: 35 30% 90%;
+    --muted-foreground: 222 20% 35%;
 
-    /* Accent: Golden amber - warmth & fairground heritage */
-    --accent: 38 92% 50%;
+    /* Accent: Rich golden amber */
+    --accent: 38 95% 50%;
     --accent-foreground: 0 0% 100%;
 
-    /* Destructive: Clear red for errors */
-    --destructive: 0 84% 50%;
+    /* Destructive: Bold red */
+    --destructive: 0 85% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders & inputs - slightly more visible */
-    --border: 220 18% 86%;
-    --input: 220 18% 86%;
-    --ring: 222 83% 35%;
+    /* Borders - warm and visible */
+    --border: 35 25% 82%;
+    --input: 35 25% 85%;
+    --ring: 222 85% 45%;
 
-    /* Sidebar */
+    /* Sidebar - clean white */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 222 83% 35%;
+    --sidebar-primary: 222 85% 45%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 38 92% 50%;
+    --sidebar-accent: 38 95% 50%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 220 18% 88%;
-    --sidebar-ring: 222 83% 35%;
+    --sidebar-border: 35 25% 85%;
+    --sidebar-ring: 222 85% 45%;
 
     /* Interactive states */
-    --card-hover: 220 20% 97%;
+    --card-hover: 35 30% 97%;
 
-    /* Status colors */
-    --success: 152 69% 31%;
+    /* Status colors - vibrant and clear */
+    --success: 152 75% 35%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 38 95% 50%;
     --warning-foreground: 0 0% 10%;
-    --info: 200 98% 39%;
+    --info: 200 100% 45%;
     --info-foreground: 0 0% 100%;
 
     /* Gradients */
-    --accent-gradient: linear-gradient(135deg, hsl(222 83% 35%), hsl(38 92% 50%));
+    --accent-gradient: linear-gradient(135deg, hsl(222 85% 45%), hsl(38 95% 50%));
     --hero-gradient: linear-gradient(to bottom, hsl(0 0% 0% / 0.4), hsl(0 0% 0% / 0.6));
-    --card-gradient: linear-gradient(180deg, hsl(0 0% 100%), hsl(220 20% 98%));
+    --card-gradient: linear-gradient(180deg, hsl(0 0% 100%), hsl(35 30% 98%));
 
-    /* Shadows - enhanced for better card elevation */
-    --shadow-elegant: 0 8px 30px -8px hsl(222 83% 35% / 0.18), 0 4px 10px -4px hsl(0 0% 0% / 0.1);
-    --shadow-glow: 0 0 30px -5px hsl(38 92% 50% / 0.35);
-    --shadow-card: 0 2px 8px -2px hsl(220 30% 20% / 0.08), 0 1px 3px -1px hsl(220 30% 20% / 0.06);
-    --shadow-card-hover: 0 4px 16px -4px hsl(220 30% 20% / 0.12), 0 2px 6px -2px hsl(220 30% 20% / 0.08);
+    /* Shadows - warm-toned for depth */
+    --shadow-elegant: 0 10px 40px -10px hsl(222 50% 20% / 0.2), 0 4px 12px -4px hsl(35 30% 30% / 0.1);
+    --shadow-glow: 0 0 35px -5px hsl(38 95% 50% / 0.4);
+    --shadow-card: 0 2px 12px -3px hsl(35 40% 30% / 0.12), 0 1px 4px -1px hsl(35 30% 20% / 0.08);
+    --shadow-card-hover: 0 8px 25px -5px hsl(222 50% 20% / 0.18), 0 4px 10px -3px hsl(35 30% 20% / 0.1);
 
     /* Transitions */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);

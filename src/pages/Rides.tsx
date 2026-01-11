@@ -364,11 +364,11 @@ const Rides = () => {
           {filteredRides.map(ride => (
             <Card 
               key={ride.id}
-              className="border-border/60 hover:shadow-elegant transition-all active:scale-[0.98] cursor-pointer flex flex-col overflow-hidden"
+              className="group border-border hover:shadow-elegant hover:border-primary/30 transition-all active:scale-[0.98] cursor-pointer flex flex-col overflow-hidden"
               onClick={() => navigate(`/rides/${ride.id}`)}
             >
               {/* Photo Thumbnail */}
-              <div className="h-40 bg-muted flex items-center justify-center overflow-hidden relative">
+              <div className="h-40 bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center overflow-hidden relative">
                 {ridePhotos[ride.id] ? (
                   <img 
                     src={ridePhotos[ride.id]!} 
@@ -376,13 +376,13 @@ const Rides = () => {
                     className="max-w-full max-h-full object-contain"
                   />
                 ) : uploadingPhotoFor === ride.id ? (
-                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <div className="flex flex-col items-center gap-2 text-primary">
                     <Loader2 className="h-6 w-6 animate-spin" />
-                    <span className="text-xs">Uploading...</span>
+                    <span className="text-xs font-medium">Uploading...</span>
                   </div>
                 ) : (
                   <label 
-                    className="flex flex-col items-center gap-2 cursor-pointer hover:bg-muted/80 transition-colors w-full h-full justify-center"
+                    className="flex flex-col items-center gap-2 cursor-pointer hover:bg-primary/5 transition-colors w-full h-full justify-center"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <input
@@ -398,8 +398,10 @@ const Rides = () => {
                         e.target.value = '';
                       }}
                     />
-                    <Camera className="h-8 w-8 text-muted-foreground/60" />
-                    <span className="text-xs text-muted-foreground/80 font-medium">Add Photo</span>
+                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <Camera className="h-7 w-7 text-primary" />
+                    </div>
+                    <span className="text-xs text-primary font-medium">Add Photo</span>
                   </label>
                 )}
               </div>
@@ -409,7 +411,7 @@ const Rides = () => {
                   <CardTitle className="text-base leading-tight flex-1 break-words line-clamp-2">
                     {ride.ride_name}
                   </CardTitle>
-                  <Badge variant="outline" className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/20 shrink-0 whitespace-nowrap">
+                  <Badge variant="outline" className="text-xs px-2 py-1 bg-primary/10 text-primary border-primary/30 shrink-0 whitespace-nowrap font-medium">
                     {ride.ride_categories.name}
                   </Badge>
                 </div>
@@ -424,38 +426,38 @@ const Rides = () => {
               
               <CardContent className="flex-1 flex flex-col gap-3 pt-0">
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-lg bg-muted text-center border border-border/40">
-                    <FileText className="h-4 w-4 mx-auto text-primary mb-1" />
-                    <p className="text-lg font-semibold">{rideStats[ride.id]?.docCount ?? 0}</p>
-                    <p className="text-xs text-muted-foreground">Documents</p>
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 text-center border border-primary/20">
+                    <FileText className="h-5 w-5 mx-auto text-primary mb-1" />
+                    <p className="text-xl font-bold text-primary">{rideStats[ride.id]?.docCount ?? 0}</p>
+                    <p className="text-xs text-muted-foreground font-medium">Documents</p>
                   </div>
                   
                   {subscription?.subscriptionStatus === 'advanced' ? (
-                    <div className="p-3 rounded-lg bg-muted text-center border border-border/40">
-                      <CheckSquare className="h-4 w-4 mx-auto text-accent mb-1" />
-                      <p className="text-lg font-semibold">{rideStats[ride.id]?.checkCount ?? 0}</p>
-                      <p className="text-xs text-muted-foreground">Checks</p>
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-accent/5 to-accent/15 text-center border border-accent/20">
+                      <CheckSquare className="h-5 w-5 mx-auto text-accent mb-1" />
+                      <p className="text-xl font-bold text-accent">{rideStats[ride.id]?.checkCount ?? 0}</p>
+                      <p className="text-xs text-muted-foreground font-medium">Checks</p>
                     </div>
                   ) : (
                     <div 
-                      className="p-3 rounded-lg bg-muted/60 text-center border border-dashed border-border relative"
+                      className="p-3 rounded-xl bg-secondary text-center border border-dashed border-primary/20 relative cursor-pointer hover:border-primary/40 transition-colors"
                       onClick={e => {
                         e.stopPropagation();
                         navigate('/billing');
                       }}
                     >
-                      <Lock className="h-3 w-3 absolute top-2 right-2 text-muted-foreground/50" />
-                      <CheckSquare className="h-4 w-4 mx-auto text-muted-foreground/40 mb-1" />
-                      <p className="text-lg font-semibold text-muted-foreground/60">—</p>
-                      <p className="text-xs text-muted-foreground/70">Checks</p>
+                      <Lock className="h-3 w-3 absolute top-2 right-2 text-primary/40" />
+                      <CheckSquare className="h-5 w-5 mx-auto text-primary/30 mb-1" />
+                      <p className="text-xl font-bold text-primary/40">—</p>
+                      <p className="text-xs text-muted-foreground">Checks</p>
                     </div>
                   )}
                 </div>
 
                 {/* Due Date Alert */}
                 {rideStats[ride.id]?.nextDue && (
-                  <div className="text-center p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
-                    <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
+                  <div className="text-center p-2.5 rounded-xl bg-gradient-to-r from-amber-50 to-amber-100 dark:from-amber-950/30 dark:to-amber-900/20 border border-amber-300 dark:border-amber-700">
+                    <p className="text-xs text-amber-700 dark:text-amber-400 font-semibold">
                       Due: {new Date(rideStats[ride.id].nextDue!).toLocaleDateString('en-GB', {
                         day: '2-digit',
                         month: 'short',
