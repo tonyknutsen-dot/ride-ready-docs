@@ -407,10 +407,12 @@ const CalendarView = () => {
     <div className="space-y-6">
       {/* Show helpful message when no events exist */}
       {!loading && events.length === 0 && (
-        <Card className="border-2 border-primary/20 bg-primary/5">
+        <Card className="border-2 border-info/30 bg-gradient-to-br from-info/10 to-primary/5 shadow-elegant">
           <CardContent className="py-6">
             <div className="flex items-start gap-3">
-              <CalendarIcon className="h-5 w-5 text-primary mt-0.5" />
+              <div className="w-10 h-10 rounded-full bg-info/20 flex items-center justify-center shrink-0">
+                <CalendarIcon className="h-5 w-5 text-info" />
+              </div>
               <div className="space-y-2">
                 <h3 className="font-semibold">Your calendar is empty</h3>
                 <p className="text-sm text-muted-foreground">
@@ -577,12 +579,13 @@ const CalendarView = () => {
         </div>
 
         {/* Month Navigation */}
-        <Card>
+        <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-center gap-4">
               <Button
                 variant="outline"
                 size="icon"
+                className="border-2 hover:border-primary hover:bg-primary/10"
                 onClick={() => {
                   const newMonth = addDays(currentMonth, -30);
                   setCurrentMonth(newMonth);
@@ -592,13 +595,14 @@ const CalendarView = () => {
                 <ChevronLeft className="h-4 w-4" />
               </Button>
               <div className="text-center min-w-[200px]">
-                <p className="text-lg font-semibold">
+                <p className="text-lg font-bold text-primary">
                   {format(currentMonth, 'MMMM yyyy')}
                 </p>
               </div>
               <Button
                 variant="outline"
                 size="icon"
+                className="border-2 hover:border-primary hover:bg-primary/10"
                 onClick={() => {
                   const newMonth = addDays(currentMonth, 30);
                   setCurrentMonth(newMonth);
@@ -614,16 +618,19 @@ const CalendarView = () => {
 
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Calendar */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 border-2 border-primary/20 shadow-elegant">
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <h3 className="font-semibold text-lg">Your Events</h3>
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
+              <h3 className="font-semibold text-lg flex items-center gap-2">
+                <CalendarIcon className="h-5 w-5 text-primary" />
+                Your Events
+              </h3>
+              <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/50 border border-border">
+                <Filter className="h-4 w-4 text-primary" />
                 <select 
                   value={filterType}
                   onChange={(e) => setFilterType(e.target.value)}
-                  className="text-sm border rounded-md px-3 py-1.5 bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="text-sm border-0 bg-transparent focus:outline-none focus:ring-0 font-medium"
                 >
                   <option value="all">All Events</option>
                   {!isBasicPlan && (
@@ -644,7 +651,7 @@ const CalendarView = () => {
               onSelect={(date) => date && setSelectedDate(date)}
               month={currentMonth}
               onMonthChange={setCurrentMonth}
-              className="rounded-md border"
+              className="rounded-lg border-2 border-border bg-card"
               components={{
                 DayContent: ({ date }) => {
                   const dayEvents = getEventsForDate(date);
@@ -658,10 +665,10 @@ const CalendarView = () => {
                       <span>{date.getDate()}</span>
                       {dayEvents.length > 0 && (
                         <div className="flex gap-0.5 mt-0.5">
-                          {hasInspection && <div className="w-1.5 h-1.5 rounded-full bg-primary" />}
-                          {hasMaintenance && <div className="w-1.5 h-1.5 rounded-full bg-accent" />}
-                          {hasDocExpiry && <div className="w-1.5 h-1.5 rounded-full bg-destructive" />}
-                          {hasNDT && <div className="w-1.5 h-1.5 rounded-full bg-secondary" />}
+                          {hasInspection && <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-sm" />}
+                          {hasMaintenance && <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-sm" />}
+                          {hasDocExpiry && <div className="w-1.5 h-1.5 rounded-full bg-destructive shadow-sm" />}
+                          {hasNDT && <div className="w-1.5 h-1.5 rounded-full bg-info shadow-sm" />}
                         </div>
                       )}
                     </div>
@@ -683,9 +690,12 @@ const CalendarView = () => {
         </Card>
 
         {/* Events for Selected Date */}
-        <Card>
+        <Card className="border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-transparent shadow-elegant">
           <CardHeader>
-            <CardTitle className="text-lg">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
+                <CalendarIcon className="h-4 w-4 text-accent-foreground" />
+              </div>
               {format(selectedDate, 'MMMM d, yyyy')}
             </CardTitle>
             <CardDescription>
@@ -695,8 +705,10 @@ const CalendarView = () => {
           <CardContent>
             {selectedDateEvents.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <CalendarIcon className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                <p>No events scheduled</p>
+                <div className="w-16 h-16 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4">
+                  <CalendarIcon className="h-8 w-8 opacity-50" />
+                </div>
+                <p className="font-medium">No events scheduled</p>
                 <p className="text-sm">Select a different date or add new events</p>
               </div>
             ) : (

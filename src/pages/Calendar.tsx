@@ -19,7 +19,7 @@ const Calendar = () => {
   return (
     <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5">
       <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0 shadow-sm">
           <CalendarIcon className="h-5 w-5 text-primary" />
         </div>
         <div>

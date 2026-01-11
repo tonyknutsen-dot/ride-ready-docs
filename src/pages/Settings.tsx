@@ -208,13 +208,13 @@ const Settings = () => {
                 </p>
                 
                 {newTerms && (
-                  <div className="bg-muted/50 rounded-lg p-3 space-y-2 text-sm">
+                  <div className="bg-secondary/50 rounded-lg p-3 space-y-2 text-sm border border-accent/30">
                     <p className="font-medium text-foreground mb-2">Terminology changes:</p>
                     
                     {currentTerms.safetyCertificate !== newTerms.safetyCertificate && (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <span className="line-through text-xs">{currentTerms.safetyCertificate}</span>
-                        <ArrowRight className="h-3 w-3 shrink-0" />
+                        <ArrowRight className="h-3 w-3 shrink-0 text-primary" />
                         <span className="text-foreground font-medium text-xs">{newTerms.safetyCertificate}</span>
                       </div>
                     )}
@@ -222,7 +222,7 @@ const Settings = () => {
                     {currentTerms.localAuthority !== newTerms.localAuthority && (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <span className="line-through text-xs">{currentTerms.localAuthority}</span>
-                        <ArrowRight className="h-3 w-3 shrink-0" />
+                        <ArrowRight className="h-3 w-3 shrink-0 text-primary" />
                         <span className="text-foreground font-medium text-xs">{newTerms.localAuthority}</span>
                       </div>
                     )}
@@ -230,7 +230,7 @@ const Settings = () => {
                     {currentTerms.inspector !== newTerms.inspector && (
                       <div className="flex items-center gap-2 text-muted-foreground">
                         <span className="line-through text-xs">{currentTerms.inspector}</span>
-                        <ArrowRight className="h-3 w-3 shrink-0" />
+                        <ArrowRight className="h-3 w-3 shrink-0 text-primary" />
                         <span className="text-foreground font-medium text-xs">{newTerms.inspector}</span>
                       </div>
                     )}
@@ -257,7 +257,7 @@ const Settings = () => {
       <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5 max-w-2xl">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0 shadow-sm">
             <SettingsIcon className="h-5 w-5 text-primary" />
           </div>
           <div>
@@ -267,10 +267,12 @@ const Settings = () => {
         </div>
 
         {/* Profile Card */}
-        <Card className="border-border/60">
+        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent shadow-elegant">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <User className="h-4 w-4 text-primary" />
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <User className="h-4 w-4 text-primary" />
+              </div>
               <CardTitle className="text-base">Profile Information</CardTitle>
             </div>
             <CardDescription className="text-sm">
@@ -291,10 +293,12 @@ const Settings = () => {
         </Card>
 
         {/* Document Management Card */}
-        <Card className="border-border/60">
+        <Card className="border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-transparent shadow-elegant">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4 text-primary" />
+              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
+                <FileText className="h-4 w-4 text-accent-foreground" />
+              </div>
               <CardTitle className="text-base">Document Management</CardTitle>
             </div>
             <CardDescription className="text-sm">
@@ -302,7 +306,7 @@ const Settings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-secondary/50 border border-accent/20">
               <div className="flex-1 space-y-1">
                 <div className="flex items-center gap-2">
                   <Label htmlFor="version-control" className="text-sm font-medium">
@@ -336,10 +340,12 @@ const Settings = () => {
         </Card>
 
         {/* Region Settings Card */}
-        <Card className="border-border/60">
+        <Card className="border-2 border-info/30 bg-gradient-to-br from-info/5 to-transparent shadow-elegant">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <Globe className="h-4 w-4 text-primary" />
+              <div className="w-8 h-8 rounded-full bg-info/20 flex items-center justify-center">
+                <Globe className="h-4 w-4 text-info" />
+              </div>
               <CardTitle className="text-base">Region & Terminology</CardTitle>
             </div>
             <CardDescription className="text-sm">
@@ -360,7 +366,7 @@ const Settings = () => {
                 onValueChange={handleOperatorTypeChange}
                 disabled={loading || updatingOperatorType}
               >
-                <SelectTrigger id="operator-type-select" className="h-11">
+                <SelectTrigger id="operator-type-select" className="h-11 border-2 hover:border-primary/50 transition-colors">
                   <SelectValue placeholder="Select your operator type..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -391,7 +397,7 @@ const Settings = () => {
                 onValueChange={handleCountrySelectChange}
                 disabled={loading || updatingCountry}
               >
-                <SelectTrigger id="country-select" className="h-11">
+                <SelectTrigger id="country-select" className="h-11 border-2 hover:border-primary/50 transition-colors">
                   <SelectValue placeholder="Select your country..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -408,13 +414,13 @@ const Settings = () => {
             </div>
             
             {selectedCountry && (
-              <div className="p-3 rounded-lg bg-muted border border-border/50">
+              <div className="p-3 rounded-lg bg-secondary border-2 border-info/20">
                 <p className="text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">{selectedCountry.flag} {selectedCountry.name}:</span>{' '}
                   {selectedCountry.note}
                 </p>
                 {selectedCountry.code === 'GB' && (
-                  <p className="text-xs text-primary mt-2">
+                  <p className="text-xs text-primary mt-2 font-medium">
                     💡 UK terminology: ADIPS certificates for rides, PIPA certificates for inflatables
                   </p>
                 )}
@@ -434,21 +440,29 @@ const Settings = () => {
         </Card>
 
         {/* Account Card */}
-        <Card className="border-border/60">
+        <Card className="border-2 border-success/30 bg-gradient-to-br from-success/5 to-transparent shadow-elegant">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-primary" />
+              <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center">
+                <Mail className="h-4 w-4 text-success" />
+              </div>
               <CardTitle className="text-base">Account</CardTitle>
             </div>
             <CardDescription className="text-sm">
-              Your account email
+              Your account details and preferences
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm">
-              <span className="text-muted-foreground">Email: </span>
-              <span className="font-medium">{user?.email}</span>
-            </p>
+            <div className="space-y-3">
+              <div className="p-4 rounded-lg bg-secondary/50 border border-success/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium">Email Address</p>
+                    <p className="text-sm text-muted-foreground">{user?.email || 'Not logged in'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
