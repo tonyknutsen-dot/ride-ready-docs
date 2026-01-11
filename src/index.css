@@ -1,20 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /* 
-  DESIGN SYSTEM - Showmen's Ride Ready
+  DESIGN SYSTEM - Knuts Software Brand
   All colors MUST be HSL.
-  Theme: Professional blue with golden accent - polished and trustworthy
+  Theme: Professional, trustworthy blue with green accent
+  Font: Inter
 */
 
 @layer base {
   :root {
-    /* Core backgrounds - clean cool slate, NOT orange/warm */
-    --background: 220 20% 97%;
+    /* Font family */
+    --font-sans: 'Inter', 'Source Sans 3', 'Roboto', system-ui, sans-serif;
+
+    /* Core backgrounds - clean white */
+    /* Background: #FFFFFF */
+    --background: 0 0% 100%;
+    /* Text: #0F172A */
     --foreground: 222 47% 11%;
 
-    /* Card surfaces - bright white that pops */
+    /* Card surfaces - white */
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
@@ -22,62 +30,65 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Primary: Vibrant royal blue */
-    --primary: 222 85% 50%;
+    /* Primary Blue: #1F3A5F - Headings, navigation, primary structure */
+    --primary: 215 52% 25%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary: Cool light blue-grey */
-    --secondary: 215 25% 94%;
+    /* Section Background: #F4F6F8 */
+    --secondary: 210 20% 97%;
     --secondary-foreground: 222 47% 11%;
 
-    /* Muted surfaces - cool slate, NOT beige */
-    --muted: 215 20% 92%;
-    --muted-foreground: 222 25% 40%;
+    /* Muted surfaces - section background */
+    --muted: 210 20% 97%;
+    --muted-foreground: 215 25% 40%;
 
-    /* Accent: Vibrant teal */
-    --accent: 172 85% 40%;
+    /* Accent Green: #2FB34A - CTAs, links, success states */
+    --accent: 134 58% 44%;
     --accent-foreground: 0 0% 100%;
 
     /* Destructive: Bold red */
     --destructive: 0 85% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders - cool and visible */
-    --border: 215 25% 85%;
-    --input: 215 25% 88%;
-    --ring: 222 85% 50%;
+    /* Borders - subtle */
+    --border: 210 20% 88%;
+    --input: 210 20% 90%;
+    /* Secondary Blue: #2F6FB2 - Icons, highlights, hover states */
+    --ring: 209 58% 44%;
 
     /* Sidebar - clean white */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 222 85% 50%;
+    --sidebar-primary: 215 52% 25%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 172 85% 40%;
+    --sidebar-accent: 134 58% 44%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 215 25% 88%;
-    --sidebar-ring: 222 85% 50%;
+    --sidebar-border: 210 20% 90%;
+    --sidebar-ring: 209 58% 44%;
 
     /* Interactive states */
-    --card-hover: 215 20% 98%;
+    --card-hover: 210 20% 98%;
 
-    /* Status colors - vibrant and clear */
-    --success: 152 75% 35%;
+    /* Status colors */
+    /* Success uses Accent Green */
+    --success: 134 58% 44%;
     --success-foreground: 0 0% 100%;
     --warning: 45 100% 50%;
     --warning-foreground: 0 0% 10%;
-    --info: 200 100% 45%;
+    /* Info uses Secondary Blue: #2F6FB2 */
+    --info: 209 58% 44%;
     --info-foreground: 0 0% 100%;
 
-    /* Gradients - cool blue tones */
-    --accent-gradient: linear-gradient(135deg, hsl(222 85% 50%), hsl(172 85% 40%));
+    /* Gradients - brand colors */
+    --accent-gradient: linear-gradient(135deg, hsl(215 52% 25%), hsl(209 58% 44%));
     --hero-gradient: linear-gradient(to bottom, hsl(0 0% 0% / 0.4), hsl(0 0% 0% / 0.6));
-    --card-gradient: linear-gradient(180deg, hsl(0 0% 100%), hsl(215 20% 98%));
+    --card-gradient: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 20% 98%));
 
-    /* Shadows - cool blue-toned for depth */
-    --shadow-elegant: 0 10px 40px -10px hsl(222 50% 20% / 0.2), 0 4px 12px -4px hsl(215 30% 30% / 0.1);
-    --shadow-glow: 0 0 35px -5px hsl(172 85% 40% / 0.4);
-    --shadow-card: 0 2px 12px -3px hsl(215 40% 30% / 0.12), 0 1px 4px -1px hsl(215 30% 20% / 0.08);
-    --shadow-card-hover: 0 8px 25px -5px hsl(222 50% 20% / 0.18), 0 4px 10px -3px hsl(215 30% 20% / 0.1);
+    /* Shadows - professional depth */
+    --shadow-elegant: 0 10px 40px -10px hsl(215 52% 25% / 0.2), 0 4px 12px -4px hsl(215 30% 30% / 0.1);
+    --shadow-glow: 0 0 35px -5px hsl(134 58% 44% / 0.4);
+    --shadow-card: 0 2px 12px -3px hsl(215 40% 30% / 0.1), 0 1px 4px -1px hsl(215 30% 20% / 0.06);
+    --shadow-card-hover: 0 8px 25px -5px hsl(215 52% 25% / 0.15), 0 4px 10px -3px hsl(215 30% 20% / 0.08);
 
     /* Transitions */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -95,7 +106,7 @@
     --popover: 222 47% 10%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 220 70% 55%;
+    --primary: 209 58% 50%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 217 33% 15%;
@@ -104,7 +115,7 @@
     --muted: 217 33% 14%;
     --muted-foreground: 215 20% 60%;
 
-    --accent: 38 92% 50%;
+    --accent: 134 58% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 70% 50%;
@@ -112,24 +123,24 @@
 
     --border: 217 33% 22%;
     --input: 217 33% 22%;
-    --ring: 220 70% 55%;
+    --ring: 209 58% 50%;
 
     --sidebar-background: 222 47% 8%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 220 70% 55%;
+    --sidebar-primary: 209 58% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 38 92% 50%;
+    --sidebar-accent: 134 58% 50%;
     --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 217 33% 22%;
-    --sidebar-ring: 220 70% 55%;
+    --sidebar-ring: 209 58% 50%;
 
     --card-hover: 217 33% 14%;
 
-    --success: 152 69% 40%;
+    --success: 134 58% 50%;
     --success-foreground: 0 0% 100%;
     --warning: 38 92% 55%;
     --warning-foreground: 0 0% 10%;
-    --info: 200 98% 50%;
+    --info: 209 58% 55%;
     --info-foreground: 0 0% 100%;
 
     --shadow-card: 0 2px 8px -2px hsl(0 0% 0% / 0.3), 0 1px 3px -1px hsl(0 0% 0% / 0.2);
@@ -145,6 +156,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: var(--font-sans);
   }
 }
 
