@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, FileText, CheckSquare, Upload, Settings, Mail, Wrench, Pencil } from 'lucide-react';
+import { ArrowLeft, FileText, CheckSquare, Upload, Settings, Mail, Wrench, Pencil, ImageIcon } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,6 +16,7 @@ import { FeatureGate } from './FeatureGate';
 import { RestrictedFeatureCard } from './RestrictedFeatureCard';
 import RideForm from './RideForm';
 import SafetyCertificateCard from './SafetyCertificateCard';
+import ImageViewer from './ImageViewer';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -43,11 +44,14 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
     maintenanceCount: 0,
     loading: true
   });
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
 
   const isAdvanced = subscription?.subscriptionStatus === 'advanced';
 
   useEffect(() => {
     loadRideStatistics();
+    loadRidePhoto();
   }, [ride.id, user]);
 
   const loadRideStatistics = async () => {
@@ -86,9 +90,38 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
     }
   };
 
+  const loadRidePhoto = async () => {
+    if (!user) return;
+
+    try {
+      // Get the device photo document
+      const { data: photoDoc } = await supabase
+        .from('documents')
+        .select('file_path')
+        .eq('user_id', user.id)
+        .eq('ride_id', ride.id)
+        .eq('document_type', 'photo')
+        .eq('is_latest_version', true)
+        .order('uploaded_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (photoDoc?.file_path) {
+        const { data } = supabase.storage
+          .from('ride-documents')
+          .getPublicUrl(photoDoc.file_path);
+        
+        setPhotoUrl(data.publicUrl);
+      }
+    } catch (error) {
+      console.error('Error loading ride photo:', error);
+    }
+  };
+
   const handleEditSuccess = () => {
     setIsEditing(false);
     onUpdate();
+    loadRidePhoto(); // Refresh photo after edit
   };
 
   if (isEditing) {
@@ -149,9 +182,34 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         </div>
       </div>
 
-      {/* Equipment Details */}
+      {/* Equipment Photo & Details */}
       <Card className="shadow-card overflow-hidden">
         <CardContent className="p-0">
+          {/* Photo Section */}
+          {photoUrl ? (
+            <div 
+              className="relative w-full h-48 bg-muted cursor-pointer"
+              onClick={() => setPhotoViewerOpen(true)}
+            >
+              <img 
+                src={photoUrl} 
+                alt={ride.ride_name}
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+              <div className="absolute bottom-3 left-3 right-3">
+                <p className="text-white font-semibold text-lg drop-shadow-md">{ride.ride_name}</p>
+                <p className="text-white/80 text-sm drop-shadow-md">{ride.ride_categories.name}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full h-32 bg-muted/50 flex flex-col items-center justify-center gap-2">
+              <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
+              <p className="text-xs text-muted-foreground">No photo - tap edit to add one</p>
+            </div>
+          )}
+          
+          {/* Details Grid */}
           <div className="grid grid-cols-2 divide-x divide-y divide-border/50">
             <div className="p-4 space-y-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Category</span>
@@ -172,6 +230,17 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           </div>
         </CardContent>
       </Card>
+
+      {/* Photo Viewer */}
+      {photoUrl && (
+        <ImageViewer
+          isOpen={photoViewerOpen}
+          onClose={() => setPhotoViewerOpen(false)}
+          imageUrl={photoUrl}
+          imageName={ride.ride_name}
+          onDownload={() => window.open(photoUrl, '_blank')}
+        />
+      )}
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
