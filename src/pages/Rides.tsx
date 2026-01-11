@@ -16,6 +16,7 @@ import { SendDocumentsDialog } from '@/components/SendDocumentsDialog';
 import { ItemLimitWarning } from '@/components/ItemLimitWarning';
 import { compressImage } from '@/utils/imageCompression';
 import { EmptyState } from '@/components/EmptyState';
+import { LoadingState } from '@/components/LoadingState';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -250,12 +251,7 @@ const Rides = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-center py-12">
-          <div className="text-center space-y-4">
-            <Settings className="mx-auto h-10 w-10 text-primary animate-spin" />
-            <p className="text-muted-foreground text-sm">Loading your equipment...</p>
-          </div>
-        </div>
+        <LoadingState message="Loading your equipment..." />
       </div>
     );
   }
