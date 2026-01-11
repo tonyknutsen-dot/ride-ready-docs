@@ -364,11 +364,11 @@ const Rides = () => {
           {filteredRides.map(ride => (
             <Card 
               key={ride.id}
-              className="shadow-card hover:shadow-elegant transition-all active:scale-[0.98] cursor-pointer flex flex-col overflow-hidden"
+              className="border-border/60 hover:shadow-elegant transition-all active:scale-[0.98] cursor-pointer flex flex-col overflow-hidden"
               onClick={() => navigate(`/rides/${ride.id}`)}
             >
               {/* Photo Thumbnail */}
-              <div className="h-40 bg-muted/30 flex items-center justify-center overflow-hidden relative">
+              <div className="h-40 bg-muted flex items-center justify-center overflow-hidden relative">
                 {ridePhotos[ride.id] ? (
                   <img 
                     src={ridePhotos[ride.id]!} 
@@ -423,23 +423,22 @@ const Rides = () => {
               </CardHeader>
               
               <CardContent className="flex-1 flex flex-col gap-3 pt-0">
-                {/* Stats */}
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="p-3 rounded-lg bg-muted/50 text-center">
+                  <div className="p-3 rounded-lg bg-muted text-center border border-border/40">
                     <FileText className="h-4 w-4 mx-auto text-primary mb-1" />
                     <p className="text-lg font-semibold">{rideStats[ride.id]?.docCount ?? 0}</p>
                     <p className="text-xs text-muted-foreground">Documents</p>
                   </div>
                   
                   {subscription?.subscriptionStatus === 'advanced' ? (
-                    <div className="p-3 rounded-lg bg-muted/50 text-center">
+                    <div className="p-3 rounded-lg bg-muted text-center border border-border/40">
                       <CheckSquare className="h-4 w-4 mx-auto text-accent mb-1" />
                       <p className="text-lg font-semibold">{rideStats[ride.id]?.checkCount ?? 0}</p>
                       <p className="text-xs text-muted-foreground">Checks</p>
                     </div>
                   ) : (
                     <div 
-                      className="p-3 rounded-lg bg-muted/30 text-center border border-dashed border-muted-foreground/30 relative"
+                      className="p-3 rounded-lg bg-muted/60 text-center border border-dashed border-border relative"
                       onClick={e => {
                         e.stopPropagation();
                         navigate('/billing');

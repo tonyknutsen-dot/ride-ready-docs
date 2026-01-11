@@ -186,7 +186,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
       </div>
 
       {/* Equipment Photo & Details */}
-      <Card className="shadow-card overflow-hidden">
+      <Card className="overflow-hidden border-border/60">
         <CardContent className="p-4 space-y-4">
           {/* Photo Section - Centered with border */}
           {photoUrl ? (
@@ -216,19 +216,19 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           
           {/* Details Grid */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-lg bg-muted/50 space-y-1">
+            <div className="p-3 rounded-lg bg-muted border border-border/40 space-y-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Category</span>
               <p className="text-sm font-medium">{ride.ride_categories.name}</p>
             </div>
-            <div className="p-3 rounded-lg bg-muted/50 space-y-1">
+            <div className="p-3 rounded-lg bg-muted border border-border/40 space-y-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Manufacturer</span>
               <p className="text-sm font-medium truncate">{ride.manufacturer || '—'}</p>
             </div>
-            <div className="p-3 rounded-lg bg-muted/50 space-y-1">
+            <div className="p-3 rounded-lg bg-muted border border-border/40 space-y-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Year</span>
               <p className="text-sm font-medium">{ride.year_manufactured || '—'}</p>
             </div>
-            <div className="p-3 rounded-lg bg-muted/50 space-y-1">
+            <div className="p-3 rounded-lg bg-muted border border-border/40 space-y-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Serial</span>
               <p className="text-sm font-medium truncate">{ride.serial_number || '—'}</p>
             </div>
@@ -249,7 +249,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-        <TabsList className="grid w-full h-auto p-1.5 gap-1.5 bg-muted/60" style={{ gridTemplateColumns: isAdvanced ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)' }}>
+        <TabsList className="grid w-full h-auto p-1.5 gap-1.5 bg-muted border border-border/50" style={{ gridTemplateColumns: isAdvanced ? 'repeat(4, 1fr)' : 'repeat(2, 1fr)' }}>
           <TabsTrigger 
             value="overview" 
             className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-h-[60px]"
@@ -306,7 +306,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
               }
             >
               <Card 
-                className="shadow-card active:scale-[0.98] transition-transform cursor-pointer border-2 border-success/30 bg-gradient-to-r from-success/5 to-success/10"
+                className="active:scale-[0.98] transition-transform cursor-pointer border-2 border-success/40 bg-gradient-to-r from-success/10 to-success/15"
                 onClick={() => setActiveTab("inspections")}
               >
                 <CardContent className="p-5 flex items-center gap-4">
@@ -329,7 +329,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
             {/* Documents Quick Action */}
             <Card 
-              className="shadow-card active:scale-[0.98] transition-transform cursor-pointer"
+              className="active:scale-[0.98] transition-transform cursor-pointer border-border/60"
               onClick={() => setActiveTab("documents")}
             >
               <CardContent className="p-4 flex items-center gap-4">
@@ -363,7 +363,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
               }
             >
               <Card 
-                className="shadow-card active:scale-[0.98] transition-transform cursor-pointer"
+                className="active:scale-[0.98] transition-transform cursor-pointer border-border/60"
                 onClick={() => setActiveTab("maintenance")}
               >
                 <CardContent className="p-4 flex items-center gap-4">

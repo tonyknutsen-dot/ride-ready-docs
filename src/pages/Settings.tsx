@@ -267,7 +267,7 @@ const Settings = () => {
         </div>
 
         {/* Profile Card */}
-        <Card className="shadow-card">
+        <Card className="border-border/60">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-primary" />
@@ -291,7 +291,7 @@ const Settings = () => {
         </Card>
 
         {/* Document Management Card */}
-        <Card className="shadow-card">
+        <Card className="border-border/60">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <FileText className="h-4 w-4 text-primary" />
@@ -336,7 +336,7 @@ const Settings = () => {
         </Card>
 
         {/* Region Settings Card */}
-        <Card className="shadow-card">
+        <Card className="border-border/60">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <Globe className="h-4 w-4 text-primary" />
@@ -408,7 +408,7 @@ const Settings = () => {
             </div>
             
             {selectedCountry && (
-              <div className="p-3 rounded-lg bg-muted/50 border border-border/50">
+              <div className="p-3 rounded-lg bg-muted border border-border/50">
                 <p className="text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">{selectedCountry.flag} {selectedCountry.name}:</span>{' '}
                   {selectedCountry.note}
@@ -434,7 +434,7 @@ const Settings = () => {
         </Card>
 
         {/* Account Card */}
-        <Card className="shadow-card">
+        <Card className="border-border/60">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <Mail className="h-4 w-4 text-primary" />

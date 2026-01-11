@@ -254,7 +254,7 @@ const Overview = () => {
         requiredPlan="advanced" 
         feature="Daily Checks" 
         fallback={
-          <Card className="border-dashed border-2 border-border/50 bg-muted/20">
+          <Card className="border-dashed border-2 border-border bg-muted/40">
             <CardContent className="p-6 text-center">
               <div className="p-3 bg-muted rounded-full w-fit mx-auto mb-3">
                 <CheckCircle className="h-8 w-8 text-muted-foreground" />
@@ -269,7 +269,7 @@ const Overview = () => {
         }
       >
         <Card 
-          className="group cursor-pointer border-2 border-success/30 bg-gradient-to-r from-success/5 to-success/10 hover:shadow-lg transition-all active:scale-[0.98]"
+          className="group cursor-pointer border-2 border-success/40 bg-gradient-to-r from-success/10 to-success/15 hover:shadow-elegant transition-all active:scale-[0.98]"
           onClick={() => navigate('/checks')}
         >
           <CardContent className="p-6 flex items-center gap-5">
@@ -290,7 +290,7 @@ const Overview = () => {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/50" onClick={() => navigate('/rides')}>
+        <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/60" onClick={() => navigate('/rides')}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <div className="p-2 bg-primary/10 rounded-lg group-hover:bg-primary/15 transition-colors">
@@ -305,7 +305,7 @@ const Overview = () => {
           </CardContent>
         </Card>
 
-        <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/50" onClick={() => navigate('/rides')}>
+        <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/60" onClick={() => navigate('/rides')}>
           <CardContent className="p-5">
             <div className="flex items-center justify-between mb-3">
               <div className="p-2 bg-accent/10 rounded-lg group-hover:bg-accent/15 transition-colors">
@@ -324,7 +324,7 @@ const Overview = () => {
           requiredPlan="advanced" 
           feature="Maintenance" 
           fallback={
-            <Card className="border-dashed border-border/50 bg-muted/30">
+            <Card className="border-dashed border-border bg-muted/50">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="p-2 bg-muted rounded-lg">
@@ -341,7 +341,7 @@ const Overview = () => {
             </Card>
           }
         >
-          <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/50" onClick={() => navigate('/rides')}>
+          <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/60" onClick={() => navigate('/rides')}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 bg-amber-500/10 rounded-lg group-hover:bg-amber-500/15 transition-colors">
@@ -361,7 +361,7 @@ const Overview = () => {
           requiredPlan="advanced" 
           feature="Inspections" 
           fallback={
-            <Card className="border-dashed border-border/50 bg-muted/30">
+            <Card className="border-dashed border-border bg-muted/50">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-3">
                   <div className="p-2 bg-muted rounded-lg">
@@ -378,7 +378,7 @@ const Overview = () => {
             </Card>
           }
         >
-          <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/50" onClick={() => navigate('/calendar')}>
+          <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-border/60" onClick={() => navigate('/calendar')}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 bg-warning/10 rounded-lg group-hover:bg-warning/15 transition-colors">
@@ -399,7 +399,7 @@ const Overview = () => {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* System Status */}
-          <Card className="border-border/50 shadow-card">
+          <Card className="border-border/60">
             <CardHeader className="pb-4">
               <div className="flex items-center gap-2">
                 <div className="p-1.5 bg-primary/10 rounded-lg">
@@ -412,7 +412,7 @@ const Overview = () => {
               {demoFeatures.map((feature, index) => (
                 <div 
                   key={index} 
-                  className="flex items-start gap-4 p-4 border border-border/50 rounded-xl hover:bg-muted/30 transition-colors group"
+                  className="flex items-start gap-4 p-4 border border-border/60 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors group"
                 >
                   <div className="text-primary mt-0.5 p-2 bg-primary/5 rounded-lg group-hover:bg-primary/10 transition-colors">
                     {feature.icon}

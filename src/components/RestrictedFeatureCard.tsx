@@ -21,8 +21,8 @@ export const RestrictedFeatureCard: React.FC<RestrictedFeatureCardProps> = ({
   const planName = requiredPlan === 'basic' ? 'Documents & Compliance' : 'Operations & Maintenance';
   
   return (
-    <Card className="relative overflow-hidden border-muted-foreground/20 bg-muted/30">
-      <div className="absolute inset-0 bg-muted/50" />
+    <Card className="relative overflow-hidden border-border bg-muted/60">
+      <div className="absolute inset-0 bg-muted/40" />
       <CardHeader className="relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
