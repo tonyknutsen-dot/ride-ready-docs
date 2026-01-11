@@ -7,13 +7,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store, Sparkles, ImageIcon } from 'lucide-react';
+import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store, Sparkles, ImageIcon, Camera, Loader2 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import RideForm from '@/components/RideForm';
 import { SendDocumentsDialog } from '@/components/SendDocumentsDialog';
 import { ItemLimitWarning } from '@/components/ItemLimitWarning';
+import { compressImage } from '@/utils/imageCompression';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -38,6 +39,7 @@ const Rides = () => {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [activeGroup, setActiveGroup] = useState<string>('All');
+  const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -170,6 +172,72 @@ const Rides = () => {
     });
   };
 
+  const handleQuickPhotoUpload = async (rideId: string, file: File) => {
+    if (!user) return;
+    
+    setUploadingPhotoFor(rideId);
+    
+    try {
+      // Compress the image
+      const compressedFile = await compressImage(file, 1920, 1920, 0.8);
+      
+      const ts = Date.now();
+      const safeName = file.name.replace(/\s+/g, '-');
+      const fileName = `device-photo-${ts}-${safeName}`;
+      const filePath = `${user.id}/${rideId}/${fileName}`;
+
+      // Upload to storage
+      const { error: upErr } = await supabase
+        .storage
+        .from('ride-documents')
+        .upload(filePath, compressedFile, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: compressedFile.type || 'image/jpeg',
+        });
+      if (upErr) throw upErr;
+
+      // Insert document record
+      const { error: docErr } = await supabase
+        .from('documents')
+        .insert({
+          user_id: user.id,
+          ride_id: rideId,
+          document_name: 'Device Photo',
+          document_type: 'photo',
+          file_path: filePath,
+          file_size: compressedFile.size,
+          mime_type: compressedFile.type || 'image/jpeg',
+          notes: 'Primary device photo',
+          is_latest_version: true,
+        });
+      if (docErr) throw docErr;
+
+      // Get the signed URL for the new photo
+      const { data: signedData } = await supabase.storage
+        .from('ride-documents')
+        .createSignedUrl(filePath, 3600);
+      
+      if (signedData?.signedUrl) {
+        setRidePhotos(prev => ({ ...prev, [rideId]: signedData.signedUrl }));
+      }
+
+      toast({
+        title: "Photo added",
+        description: "The equipment photo has been uploaded successfully."
+      });
+    } catch (error: any) {
+      console.error('Quick photo upload failed:', error);
+      toast({
+        title: "Upload failed",
+        description: error?.message || "Failed to upload photo. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingPhotoFor(null);
+    }
+  };
+
   if (showAddForm) {
     return (
       <div className="container mx-auto px-4 py-6">
@@ -300,18 +368,39 @@ const Rides = () => {
               onClick={() => navigate(`/rides/${ride.id}`)}
             >
               {/* Photo Thumbnail */}
-              <div className="h-32 bg-muted/50 flex items-center justify-center overflow-hidden">
+              <div className="h-32 bg-muted/50 flex items-center justify-center overflow-hidden relative">
                 {ridePhotos[ride.id] ? (
                   <img 
                     src={ridePhotos[ride.id]!} 
                     alt={ride.ride_name}
                     className="w-full h-full object-cover"
                   />
-                ) : (
-                  <div className="flex flex-col items-center gap-1 text-muted-foreground/50">
-                    <ImageIcon className="h-8 w-8" />
-                    <span className="text-xs">No photo</span>
+                ) : uploadingPhotoFor === ride.id ? (
+                  <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <span className="text-xs">Uploading...</span>
                   </div>
+                ) : (
+                  <label 
+                    className="flex flex-col items-center gap-2 cursor-pointer hover:bg-muted/80 transition-colors w-full h-full justify-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleQuickPhotoUpload(ride.id, file);
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                    <Camera className="h-8 w-8 text-muted-foreground/60" />
+                    <span className="text-xs text-muted-foreground/80 font-medium">Add Photo</span>
+                  </label>
                 )}
               </div>
 
