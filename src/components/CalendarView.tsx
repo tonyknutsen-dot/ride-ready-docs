@@ -17,7 +17,8 @@ import {
   Plus,
   Filter,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Lock
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,15 +41,23 @@ interface CalendarEvent {
 
 type Ride = Tables<'rides'>;
 
-const INSPECTION_TYPES = [
-  { value: 'in-service', label: 'In-Service Inspection' },
-  { value: 'electrical', label: 'Electrical Inspection' },
-  { value: 'ndt', label: 'NDT Inspection' },
-  { value: 'structural', label: 'Structural Inspection' },
-  { value: 'hydraulic', label: 'Hydraulic Inspection' },
-  { value: 'mechanical', label: 'Mechanical Inspection' },
-  { value: 'safety', label: 'Safety Inspection' },
-  { value: 'other', label: 'Other' },
+// Event types with plan requirements
+const EVENT_TYPES = [
+  // Basic plan - available to all
+  { value: 'document-expiry', label: 'Document Expiry Reminder', plan: 'basic', category: 'Documents' },
+  
+  // Advanced plan - inspections & maintenance
+  { value: 'in-service', label: 'In-Service Inspection', plan: 'advanced', category: 'Inspections' },
+  { value: 'electrical', label: 'Electrical Inspection', plan: 'advanced', category: 'Inspections' },
+  { value: 'ndt', label: 'NDT Inspection', plan: 'advanced', category: 'Inspections' },
+  { value: 'structural', label: 'Structural Inspection', plan: 'advanced', category: 'Inspections' },
+  { value: 'hydraulic', label: 'Hydraulic Inspection', plan: 'advanced', category: 'Inspections' },
+  { value: 'mechanical', label: 'Mechanical Inspection', plan: 'advanced', category: 'Inspections' },
+  { value: 'safety', label: 'Safety Inspection', plan: 'advanced', category: 'Inspections' },
+  { value: 'maintenance', label: 'Scheduled Maintenance', plan: 'advanced', category: 'Maintenance' },
+  { value: 'preventive', label: 'Preventive Maintenance', plan: 'advanced', category: 'Maintenance' },
+  { value: 'repair', label: 'Repair Follow-up', plan: 'advanced', category: 'Maintenance' },
+  { value: 'other', label: 'Other', plan: 'basic', category: 'Other' },
 ];
 
 const inspectionSchema = z.object({
@@ -557,22 +566,63 @@ const CalendarView = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="inspection_type">Inspection Type *</Label>
+                    <Label htmlFor="inspection_type">Event Type *</Label>
                     <Select
                       value={formData.inspection_type}
-                      onValueChange={(value) => setFormData({ ...formData, inspection_type: value })}
+                      onValueChange={(value) => {
+                        const eventType = EVENT_TYPES.find(t => t.value === value);
+                        if (eventType && (eventType.plan === 'basic' || !isBasicPlan)) {
+                          setFormData({ ...formData, inspection_type: value });
+                        }
+                      }}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select inspection type" />
+                        <SelectValue placeholder="Select event type" />
                       </SelectTrigger>
-                      <SelectContent className="bg-popover z-50">
-                        {INSPECTION_TYPES.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
+                      <SelectContent className="bg-popover z-50 max-h-[300px]">
+                        {/* Group by category */}
+                        {['Documents', 'Inspections', 'Maintenance', 'Other'].map(category => {
+                          const categoryTypes = EVENT_TYPES.filter(t => t.category === category);
+                          if (categoryTypes.length === 0) return null;
+                          
+                          return (
+                            <div key={category}>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">
+                                {category}
+                              </div>
+                              {categoryTypes.map((type) => {
+                                const isLocked = type.plan === 'advanced' && isBasicPlan;
+                                return (
+                                  <SelectItem 
+                                    key={type.value} 
+                                    value={type.value}
+                                    disabled={isLocked}
+                                    className={cn(
+                                      isLocked && "opacity-50 cursor-not-allowed"
+                                    )}
+                                  >
+                                    <div className="flex items-center justify-between w-full gap-2">
+                                      <span>{type.label}</span>
+                                      {isLocked && (
+                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
+                                          Upgrade
+                                        </span>
+                                      )}
+                                    </div>
+                                  </SelectItem>
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
+                    {isBasicPlan && (
+                      <p className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Lock className="h-3 w-3" />
+                        Some event types require the Operations & Maintenance plan
+                      </p>
+                    )}
                     {formErrors.inspection_type && <p className="text-xs text-destructive">{formErrors.inspection_type}</p>}
                   </div>
 
