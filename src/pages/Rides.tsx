@@ -368,12 +368,12 @@ const Rides = () => {
               onClick={() => navigate(`/rides/${ride.id}`)}
             >
               {/* Photo Thumbnail */}
-              <div className="h-32 bg-muted/50 flex items-center justify-center overflow-hidden relative">
+              <div className="h-40 bg-muted/30 flex items-center justify-center overflow-hidden relative">
                 {ridePhotos[ride.id] ? (
                   <img 
                     src={ridePhotos[ride.id]!} 
                     alt={ride.ride_name}
-                    className="w-full h-full object-cover"
+                    className="max-w-full max-h-full object-contain"
                   />
                 ) : uploadingPhotoFor === ride.id ? (
                   <div className="flex flex-col items-center gap-2 text-muted-foreground">
