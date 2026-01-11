@@ -50,8 +50,8 @@ serve(async (req) => {
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Parse request body
-    const { plan, billingCycle, extraItems = 0 } = await req.json();
-    logStep("Request params", { plan, billingCycle, extraItems });
+    const { plan, billingCycle, extraItems = 0, returnUrl } = await req.json();
+    logStep("Request params", { plan, billingCycle, extraItems, returnUrl });
 
     if (!plan || !billingCycle) {
       throw new Error("Missing required parameters: plan and billingCycle");
@@ -86,7 +86,9 @@ serve(async (req) => {
       logStep("Extra items added", { extraItems });
     }
 
-    const origin = req.headers.get("origin") || "https://rideready.app";
+    // Use returnUrl from request body, fallback to origin header, then referer
+    const origin = returnUrl || req.headers.get("origin") || req.headers.get("referer")?.split('/').slice(0, 3).join('/') || "https://rideready.app";
+    logStep("Using origin", { origin });
     
     const session = await stripe.checkout.sessions.create({
       customer: customerId,

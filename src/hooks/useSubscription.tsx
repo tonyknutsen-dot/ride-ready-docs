@@ -175,8 +175,9 @@ export const useSubscription = () => {
   const createCheckout = async (plan: 'basic' | 'advanced', billingCycle: 'monthly' | 'yearly', extraItems: number = 0) => {
     if (!user) throw new Error('User not authenticated');
 
+    const returnUrl = window.location.origin;
     const { data, error } = await supabase.functions.invoke('create-checkout', {
-      body: { plan, billingCycle, extraItems },
+      body: { plan, billingCycle, extraItems, returnUrl },
     });
 
     if (error) throw error;
