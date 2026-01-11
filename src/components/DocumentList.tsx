@@ -319,11 +319,13 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
 
   if (loading) {
     return (
-      <Card>
+      <Card className="border-2 border-info/20 bg-gradient-to-br from-info/5 to-transparent">
         <CardContent className="pt-6">
           <div className="text-center py-4">
-            <FileText className="mx-auto h-8 w-8 text-muted-foreground animate-pulse" />
-            <p className="text-muted-foreground mt-2">Loading documents...</p>
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-info to-primary mx-auto flex items-center justify-center mb-3">
+              <FileText className="h-7 w-7 text-white animate-pulse" />
+            </div>
+            <p className="text-muted-foreground mt-2 font-medium">Loading documents...</p>
           </div>
         </CardContent>
       </Card>
@@ -332,10 +334,12 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
 
   if (documents.length === 0) {
     return (
-      <Card>
+      <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-info/5 to-accent/5">
         <CardContent className="pt-6">
           <div className="text-center py-8">
-            <FileText className="mx-auto h-16 w-16 text-muted-foreground" />
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-info/20 mx-auto flex items-center justify-center mb-4">
+              <FileText className="h-10 w-10 text-primary" />
+            </div>
             <h3 className="text-lg font-semibold mt-4">No files yet</h3>
             <p className="text-muted-foreground">
               Press Add a document to upload files{rideName ? ` for ${rideName}` : ''}
@@ -366,29 +370,45 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
           onDownload={() => viewerState.document && handleDownload(viewerState.document)}
         />
         <div className="space-y-6 pb-24 md:pb-0">
-        {groupedDocs.map(g => (
-          <section key={g.type} className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold">{g.type}</h3>
-              <span className="text-xs px-2 py-1 rounded-full bg-secondary">
-                {g.items.length} file{g.items.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-            <div className="grid grid-cols-1 gap-3">
-              {g.items.map(d => (
-                <div key={d.id} className="border rounded-2xl p-3 flex items-start gap-3 hover:bg-muted/50 transition-colors min-w-0">
-                  <div className="shrink-0">
-                    {thumbs[d.id] ? (
-                      <img
-                        src={thumbs[d.id]}
-                        alt={d.document_name}
-                        className="w-10 h-10 rounded-md object-cover border cursor-pointer"
-                        onClick={() => handleView(d)}
-                      />
-                    ) : (
-                      <FileText className="w-5 h-5 mt-0.5 text-primary" />
-                    )}
-                  </div>
+        {groupedDocs.map((g, groupIdx) => {
+          const groupColors = [
+            { header: 'from-primary to-info', badge: 'bg-primary/10 text-primary border-primary/30' },
+            { header: 'from-info to-accent', badge: 'bg-info/10 text-info border-info/30' },
+            { header: 'from-success to-primary', badge: 'bg-success/10 text-success border-success/30' },
+            { header: 'from-accent to-info', badge: 'bg-accent/10 text-accent border-accent/30' },
+          ];
+          const gColor = groupColors[groupIdx % groupColors.length];
+          
+          return (
+            <section key={g.type} className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <span className={`w-6 h-6 rounded-lg bg-gradient-to-br ${gColor.header} flex items-center justify-center`}>
+                    <FileText className="w-3.5 h-3.5 text-white" />
+                  </span>
+                  {g.type}
+                </h3>
+                <span className={`text-xs px-3 py-1 rounded-full border font-medium ${gColor.badge}`}>
+                  {g.items.length} file{g.items.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 gap-3">
+                {g.items.map(d => (
+                  <div key={d.id} className="border-2 border-border/60 rounded-2xl p-3 flex items-start gap-3 hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent transition-all min-w-0 bg-card shadow-sm">
+                    <div className="shrink-0">
+                      {thumbs[d.id] ? (
+                        <img
+                          src={thumbs[d.id]}
+                          alt={d.document_name}
+                          className="w-12 h-12 rounded-xl object-cover border-2 border-primary/20 cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+                          onClick={() => handleView(d)}
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-info/10 flex items-center justify-center border border-primary/20">
+                          <FileText className="w-5 h-5 text-primary" />
+                        </div>
+                      )}
+                    </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-[15px] truncate" title={d.document_name}>{d.document_name}</div>
                     <div className="text-xs text-muted-foreground break-words">
@@ -434,10 +454,11 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
                     </AlertDialog>
                   </div>
                 </div>
-              ))}
-            </div>
-          </section>
-        ))}
+                ))}
+              </div>
+            </section>
+          );
+        })}
         </div>
       </>
     );
@@ -461,38 +482,45 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
         onDownload={() => viewerState.document && handleDownload(viewerState.document)}
       />
       <div className="space-y-4 pb-24 md:pb-0">
-        <Card>
-        <CardHeader>
-          <CardTitle>
-            {isGlobal ? 'Global Documents' : 'Ride Documents'} ({documents.length})
-          </CardTitle>
-          <CardDescription>
-            {isGlobal 
-              ? 'Documents that apply to all your rides'
-              : 'Documents specific to this ride'
-            }
-          </CardDescription>
+        <Card className="border-2 border-primary/20 shadow-card">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-info/5 rounded-t-xl">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-info flex items-center justify-center shadow-lg">
+              <FileText className="h-5 w-5 text-white" />
+            </div>
+            <div>
+              <CardTitle>
+                {isGlobal ? 'Global Documents' : 'Ride Documents'} ({documents.length})
+              </CardTitle>
+              <CardDescription>
+                {isGlobal 
+                  ? 'Documents that apply to all your rides'
+                  : 'Documents specific to this ride'
+                }
+              </CardDescription>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="pt-4">
           <div className="space-y-3">
             {documents.map((doc) => (
               <div 
                 key={doc.id} 
-                className="flex items-center gap-3 p-3 border rounded-lg hover:bg-muted/50 active:scale-[0.99] transition-all min-w-0"
+                className="flex items-center gap-3 p-3 border-2 border-border/60 rounded-xl hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent active:scale-[0.99] transition-all min-w-0 bg-card"
               >
                 {/* Thumbnail */}
                 <div 
-                  className="shrink-0 h-10 w-10 rounded-lg bg-muted/50 flex items-center justify-center cursor-pointer"
+                  className="shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-primary/10 to-info/10 border border-primary/20 flex items-center justify-center cursor-pointer"
                   onClick={() => isViewable(doc) && handleView(doc)}
                 >
                   {thumbs[doc.id] ? (
                     <img
                       src={thumbs[doc.id]}
                       alt={doc.document_name}
-                      className="h-10 w-10 rounded-lg object-cover"
+                      className="h-12 w-12 rounded-xl object-cover"
                     />
                   ) : (
-                    <FileText className="h-5 w-5 text-muted-foreground" />
+                    <FileText className="h-5 w-5 text-primary" />
                   )}
                 </div>
 

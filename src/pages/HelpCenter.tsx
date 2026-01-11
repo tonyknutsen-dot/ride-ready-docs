@@ -391,7 +391,11 @@ const HelpCenter = () => {
       <main className="pt-24 pb-16">
         {/* Hero Section */}
         <section className="container mx-auto px-6 py-16 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-6">
+          <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-gradient-to-r from-info/10 to-primary/10 border border-info/30 mb-6">
+            <FileText className="h-5 w-5 text-info" />
+            <span className="text-sm font-medium text-info">Knowledge Base</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-primary via-info to-accent bg-clip-text text-transparent">
             Help Center
           </h1>
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
@@ -401,39 +405,56 @@ const HelpCenter = () => {
 
         {/* Quick Links */}
         <section className="container mx-auto px-6 py-8">
-          <h2 className="text-2xl font-bold mb-6">Quick Start Guides</h2>
+          <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+            <span className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-info flex items-center justify-center">
+              <CheckCircle className="h-4 w-4 text-white" />
+            </span>
+            Quick Start Guides
+          </h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {quickLinks.map((link, index) => (
-              <Card 
-                key={index} 
-                className={`hover:border-primary transition-smooth cursor-pointer hover:shadow-lg ${
-                  link.planRequired === 'advanced' && !isAdvanced ? 'opacity-60' : ''
-                }`}
-                onClick={() => setSelectedGuide(index)}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
-                      <link.icon className="h-5 w-5 text-primary" />
+            {quickLinks.map((link, index) => {
+              const colorVariants = [
+                { bg: 'from-primary/10 to-info/5', border: 'border-primary/30', iconBg: 'bg-gradient-to-br from-primary to-primary/80', hoverBorder: 'hover:border-primary' },
+                { bg: 'from-info/10 to-accent/5', border: 'border-info/30', iconBg: 'bg-gradient-to-br from-info to-info/80', hoverBorder: 'hover:border-info' },
+                { bg: 'from-success/10 to-primary/5', border: 'border-success/30', iconBg: 'bg-gradient-to-br from-success to-success/80', hoverBorder: 'hover:border-success' },
+                { bg: 'from-accent/10 to-info/5', border: 'border-accent/30', iconBg: 'bg-gradient-to-br from-accent to-accent/80', hoverBorder: 'hover:border-accent' },
+                { bg: 'from-warning/10 to-primary/5', border: 'border-warning/30', iconBg: 'bg-gradient-to-br from-warning to-warning/80', hoverBorder: 'hover:border-warning' },
+                { bg: 'from-destructive/10 to-info/5', border: 'border-destructive/30', iconBg: 'bg-gradient-to-br from-destructive to-destructive/80', hoverBorder: 'hover:border-destructive' },
+              ];
+              const variant = colorVariants[index % colorVariants.length];
+              
+              return (
+                <Card 
+                  key={index} 
+                  className={`border-2 ${variant.border} bg-gradient-to-br ${variant.bg} ${variant.hoverBorder} transition-all cursor-pointer hover:shadow-elegant group ${
+                    link.planRequired === 'advanced' && !isAdvanced ? 'opacity-60' : ''
+                  }`}
+                  onClick={() => setSelectedGuide(index)}
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className={`w-12 h-12 rounded-xl ${variant.iconBg} flex items-center justify-center mb-3 shadow-lg group-hover:scale-105 transition-transform`}>
+                        <link.icon className="h-6 w-6 text-white" />
+                      </div>
+                      {link.planRequired === 'advanced' && (
+                        <Badge className="bg-gradient-to-r from-primary to-info text-white border-0 flex items-center gap-1 shadow-sm">
+                          <Crown className="h-3 w-3" />
+                          Advanced
+                        </Badge>
+                      )}
                     </div>
-                    {link.planRequired === 'advanced' && (
-                      <Badge variant="secondary" className="flex items-center gap-1">
-                        <Crown className="h-3 w-3" />
-                        Advanced
-                      </Badge>
-                    )}
-                  </div>
-                  <CardTitle className="text-lg">{link.title}</CardTitle>
-                  <CardDescription>{link.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center text-sm text-primary font-medium">
-                    View step-by-step guide
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <CardTitle className="text-lg">{link.title}</CardTitle>
+                    <CardDescription>{link.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center text-sm text-primary font-medium group-hover:translate-x-1 transition-transform">
+                      View step-by-step guide
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </section>
 
@@ -495,47 +516,62 @@ const HelpCenter = () => {
 
         {/* FAQs */}
         <section className="container mx-auto px-6 py-0">
-          <h2 className="text-3xl font-bold mb-8 text-center">Frequently Asked Questions</h2>
+          <h2 className="text-3xl font-bold mb-8 text-center flex items-center justify-center gap-3">
+            <span className="w-10 h-10 rounded-xl bg-gradient-to-br from-info to-accent flex items-center justify-center shadow-lg">
+              <FileText className="h-5 w-5 text-white" />
+            </span>
+            Frequently Asked Questions
+          </h2>
           
-          <div className="max-w-4xl mx-auto space-y-6">
-            {faqs.map((category, catIndex) => (
-              <div key={catIndex}>
-                <div className="flex items-center gap-2 mb-4">
-                  <h3 className="text-2xl font-bold">{category.category}</h3>
-                  {category.planRequired === 'advanced' && (
-                    <Badge variant="secondary" className="flex items-center gap-1">
-                      <Crown className="h-3 w-3" />
-                      Advanced
-                    </Badge>
-                  )}
+          <div className="max-w-4xl mx-auto space-y-8">
+            {faqs.map((category, catIndex) => {
+              const categoryColors = [
+                { border: 'border-primary/20', bg: 'bg-gradient-to-r from-primary/5 to-transparent' },
+                { border: 'border-info/20', bg: 'bg-gradient-to-r from-info/5 to-transparent' },
+                { border: 'border-success/20', bg: 'bg-gradient-to-r from-success/5 to-transparent' },
+                { border: 'border-accent/20', bg: 'bg-gradient-to-r from-accent/5 to-transparent' },
+              ];
+              const catColor = categoryColors[catIndex % categoryColors.length];
+              
+              return (
+                <div key={catIndex} className={`p-6 rounded-2xl border-2 ${catColor.border} ${catColor.bg}`}>
+                  <div className="flex items-center gap-2 mb-4">
+                    <h3 className="text-2xl font-bold">{category.category}</h3>
+                    {category.planRequired === 'advanced' && (
+                      <Badge className="bg-gradient-to-r from-primary to-info text-white border-0 flex items-center gap-1">
+                        <Crown className="h-3 w-3" />
+                        Advanced
+                      </Badge>
+                    )}
+                  </div>
+                  <Accordion type="single" collapsible className="w-full space-y-2">
+                    {category.questions.map((item, qIndex) => (
+                      <AccordionItem 
+                        key={`faq-${catIndex}-${qIndex}`} 
+                        value={`faq-${catIndex}-${qIndex}`} 
+                        className="border-2 border-border/50 rounded-xl px-4 bg-card shadow-sm hover:shadow-md transition-shadow"
+                      >
+                        <AccordionTrigger className="text-left hover:no-underline py-4">
+                          <span className="font-medium">{item.q}</span>
+                        </AccordionTrigger>
+                        <AccordionContent className="text-muted-foreground pb-4">
+                          {item.a}
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                  </Accordion>
                 </div>
-                <Accordion type="single" collapsible className="w-full space-y-2">
-                  {category.questions.map((item, qIndex) => (
-                    <AccordionItem 
-                      key={`faq-${catIndex}-${qIndex}`} 
-                      value={`faq-${catIndex}-${qIndex}`} 
-                      className="border rounded-lg px-4 bg-card"
-                    >
-                      <AccordionTrigger className="text-left hover:no-underline py-4">
-                        <span className="font-medium">{item.q}</span>
-                      </AccordionTrigger>
-                      <AccordionContent className="text-muted-foreground pb-4">
-                        {item.a}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-                </Accordion>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </section>
 
         {/* Contact Support */}
-        <section className="container mx-auto px-6 py-[22px]">
-          <Card className="max-w-2xl mx-auto text-center bg-primary/5 border-primary/20">
+        <section className="container mx-auto px-6 py-8">
+          <Card className="max-w-2xl mx-auto text-center border-2 border-info/30 bg-gradient-to-br from-info/10 via-primary/5 to-accent/5 shadow-elegant">
             <CardHeader>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Mail className="h-6 w-6 text-primary" />
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-info to-primary flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <Mail className="h-8 w-8 text-white" />
               </div>
               <CardTitle className="text-2xl">Still Need Help?</CardTitle>
               <CardDescription className="text-base">
@@ -544,8 +580,9 @@ const HelpCenter = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="space-y-2 text-muted-foreground">
-                  <p><strong>Response Time:</strong> Within 24 hours (business days)</p>
+                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-success/10 border border-success/30 text-success text-sm font-medium">
+                  <CheckCircle className="h-4 w-4" />
+                  Response within 24 hours
                 </div>
                 <div className="mt-4">
                   <ContactSupportDialog />
