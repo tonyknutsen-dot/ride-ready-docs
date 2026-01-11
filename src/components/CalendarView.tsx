@@ -618,10 +618,19 @@ const CalendarView = () => {
                       </SelectContent>
                     </Select>
                     {isBasicPlan && (
-                      <p className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Lock className="h-3 w-3" />
-                        Some event types require the Operations & Maintenance plan
-                      </p>
+                      <div className="text-xs text-muted-foreground space-y-1">
+                        <p className="flex items-center gap-1">
+                          <Lock className="h-3 w-3" />
+                          Some event types require the Operations & Maintenance plan
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => navigate('/plan-billing')}
+                          className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+                        >
+                          Upgrade your plan →
+                        </button>
+                      </div>
                     )}
                     {formErrors.inspection_type && <p className="text-xs text-destructive">{formErrors.inspection_type}</p>}
                   </div>
