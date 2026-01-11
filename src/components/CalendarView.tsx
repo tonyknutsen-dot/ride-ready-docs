@@ -42,11 +42,16 @@ interface CalendarEvent {
 type Ride = Tables<'rides'>;
 
 // Event types with plan requirements
+// Basic plan: Document expiry alerts only (as per pricing - "Expiry alerts 30 & 7 days")
+// Advanced plan: Full inspection scheduling, maintenance, NDT, checks
 const EVENT_TYPES = [
-  // Basic plan - available to all
-  { value: 'document-expiry', label: 'Document Expiry Reminder', plan: 'basic', category: 'Documents' },
+  // Basic plan - document expiry reminders
+  { value: 'insurance-expiry', label: 'Insurance Expiry', plan: 'basic', category: 'Document Expiry' },
+  { value: 'doc-expiry', label: 'DOC/ADIPS Expiry', plan: 'basic', category: 'Document Expiry' },
+  { value: 'safety-cert-expiry', label: 'Safety Certificate Expiry', plan: 'basic', category: 'Document Expiry' },
+  { value: 'other-document-expiry', label: 'Other Document Expiry', plan: 'basic', category: 'Document Expiry' },
   
-  // Advanced plan - inspections & maintenance
+  // Advanced plan - inspections
   { value: 'in-service', label: 'In-Service Inspection', plan: 'advanced', category: 'Inspections' },
   { value: 'electrical', label: 'Electrical Inspection', plan: 'advanced', category: 'Inspections' },
   { value: 'ndt', label: 'NDT Inspection', plan: 'advanced', category: 'Inspections' },
@@ -54,10 +59,16 @@ const EVENT_TYPES = [
   { value: 'hydraulic', label: 'Hydraulic Inspection', plan: 'advanced', category: 'Inspections' },
   { value: 'mechanical', label: 'Mechanical Inspection', plan: 'advanced', category: 'Inspections' },
   { value: 'safety', label: 'Safety Inspection', plan: 'advanced', category: 'Inspections' },
+  
+  // Advanced plan - checks
+  { value: 'daily-check', label: 'Daily Check', plan: 'advanced', category: 'Checks' },
+  { value: 'monthly-check', label: 'Monthly Check', plan: 'advanced', category: 'Checks' },
+  { value: 'yearly-check', label: 'Yearly Check', plan: 'advanced', category: 'Checks' },
+  
+  // Advanced plan - maintenance
   { value: 'maintenance', label: 'Scheduled Maintenance', plan: 'advanced', category: 'Maintenance' },
   { value: 'preventive', label: 'Preventive Maintenance', plan: 'advanced', category: 'Maintenance' },
   { value: 'repair', label: 'Repair Follow-up', plan: 'advanced', category: 'Maintenance' },
-  { value: 'other', label: 'Other', plan: 'basic', category: 'Other' },
 ];
 
 const inspectionSchema = z.object({
@@ -581,7 +592,7 @@ const CalendarView = () => {
                       </SelectTrigger>
                       <SelectContent className="bg-popover z-50 max-h-[300px]">
                         {/* Group by category */}
-                        {['Documents', 'Inspections', 'Maintenance', 'Other'].map(category => {
+                        {['Document Expiry', 'Inspections', 'Checks', 'Maintenance'].map(category => {
                           const categoryTypes = EVENT_TYPES.filter(t => t.category === category);
                           if (categoryTypes.length === 0) return null;
                           
