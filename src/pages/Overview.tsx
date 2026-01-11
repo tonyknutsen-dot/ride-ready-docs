@@ -253,15 +253,20 @@ const Overview = () => {
         requiredPlan="advanced" 
         feature="Daily Checks" 
         fallback={
-          <Card className="border-dashed border-2 border-border bg-muted/40">
-            <CardContent className="p-6 text-center">
-              <div className="p-3 bg-muted rounded-full w-fit mx-auto mb-3">
-                <CheckCircle className="h-8 w-8 text-muted-foreground" />
+          <Card className="border-2 border-primary/40 bg-gradient-to-br from-primary/10 via-card to-accent/10 shadow-card">
+            <CardContent className="p-6 flex items-center gap-5">
+              <div className="p-4 bg-primary/20 rounded-2xl shadow-sm">
+                <CheckCircle className="h-10 w-10 text-primary" />
               </div>
-              <h3 className="font-semibold mb-1">Safety Checks</h3>
-              <p className="text-sm text-muted-foreground mb-4">Perform daily, monthly & yearly safety checks</p>
-              <Button onClick={() => navigate('/billing')}>
-                Upgrade to unlock
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <h2 className="text-xl font-bold">Safety Checks</h2>
+                  <Lock className="h-4 w-4 text-primary/60" />
+                </div>
+                <p className="text-sm text-muted-foreground">Perform daily, monthly & yearly safety checks</p>
+              </div>
+              <Button onClick={() => navigate('/billing')} className="shrink-0">
+                Upgrade
               </Button>
             </CardContent>
           </Card>
@@ -323,17 +328,17 @@ const Overview = () => {
           requiredPlan="advanced" 
           feature="Maintenance" 
           fallback={
-            <Card className="border-dashed border-primary/30 bg-secondary">
+            <Card className="group border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/10 to-amber-500/5 shadow-sm hover:shadow-card transition-all">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="p-2.5 bg-primary/10 rounded-xl">
-                    <Wrench className="h-5 w-5 text-primary/50" />
+                  <div className="p-2.5 bg-amber-500/20 rounded-xl shadow-sm">
+                    <Wrench className="h-5 w-5 text-amber-600" />
                   </div>
-                  <Lock className="h-4 w-4 text-primary/40" />
+                  <Lock className="h-4 w-4 text-amber-600/60" />
                 </div>
-                <div className="text-lg font-bold text-primary/60 mb-1">Maintenance</div>
+                <div className="text-lg font-bold text-amber-700 dark:text-amber-500 mb-1">Maintenance</div>
                 <div className="text-xs text-muted-foreground mb-3">Track repairs</div>
-                <Button size="sm" className="w-full text-xs h-8 bg-primary/10 text-primary hover:bg-primary/20 border-0" onClick={() => navigate('/billing')}>
+                <Button size="sm" className="w-full text-xs h-8" onClick={() => navigate('/billing')}>
                   Upgrade
                 </Button>
               </CardContent>
@@ -360,17 +365,17 @@ const Overview = () => {
           requiredPlan="advanced" 
           feature="Inspections" 
           fallback={
-            <Card className="border-dashed border-info/30 bg-secondary">
+            <Card className="group border-2 border-info/40 bg-gradient-to-br from-info/10 to-info/5 shadow-sm hover:shadow-card transition-all">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-3">
-                  <div className="p-2.5 bg-info/10 rounded-xl">
-                    <Calendar className="h-5 w-5 text-info/50" />
+                  <div className="p-2.5 bg-info/20 rounded-xl shadow-sm">
+                    <Calendar className="h-5 w-5 text-info" />
                   </div>
-                  <Lock className="h-4 w-4 text-info/40" />
+                  <Lock className="h-4 w-4 text-info/60" />
                 </div>
-                <div className="text-lg font-bold text-info/60 mb-1">Schedule</div>
+                <div className="text-lg font-bold text-info mb-1">Schedule</div>
                 <div className="text-xs text-muted-foreground mb-3">Plan inspections</div>
-                <Button size="sm" className="w-full text-xs h-8 bg-info/10 text-info hover:bg-info/20 border-0" onClick={() => navigate('/billing')}>
+                <Button size="sm" className="w-full text-xs h-8" onClick={() => navigate('/billing')}>
                   Upgrade
                 </Button>
               </CardContent>
@@ -535,11 +540,14 @@ const Overview = () => {
             requiredPlan="advanced" 
             feature="Activity" 
             fallback={
-              <Card className="border-dashed border-border/50 bg-muted/30">
+              <Card className="border-2 border-info/40 bg-gradient-to-br from-info/10 to-primary/5 shadow-sm">
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-2">
-                    <Lock className="w-4 h-4 text-muted-foreground" />
-                    <h2 className="text-lg font-semibold text-muted-foreground">Recent Activity</h2>
+                    <div className="p-1.5 bg-info/20 rounded-lg">
+                      <Clock className="w-4 h-4 text-info" />
+                    </div>
+                    <h2 className="text-lg font-semibold">Recent Activity</h2>
+                    <Lock className="w-4 h-4 text-info/60" />
                   </div>
                 </CardHeader>
                 <CardContent>
