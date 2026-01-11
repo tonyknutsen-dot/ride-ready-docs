@@ -18,7 +18,7 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
   const { subscription, loading } = useSubscription();
 
   if (loading) {
-    return <div className="animate-pulse bg-muted rounded-lg p-8" />;
+    return <div className="animate-pulse bg-muted border border-border/50 rounded-lg p-8" />;
   }
 
   if (!subscription) {

@@ -181,7 +181,7 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 gap-2 p-1 bg-muted/30 h-auto">
+        <TabsList className="grid w-full grid-cols-2 gap-2 p-1.5 bg-muted border border-border/50 h-auto">
           <TabsTrigger value="list" className="flex items-center justify-center gap-2 py-2.5">
             <FileText className="h-4 w-4" />
             <span>View Files</span>

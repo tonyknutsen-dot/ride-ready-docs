@@ -140,7 +140,7 @@ const SafetyCertificateCard = ({ ride, onUploadClick }: SafetyCertificateCardPro
 
   if (loading) {
     return (
-      <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10 animate-pulse">
+      <Card className="border-2 border-primary/30 bg-gradient-to-r from-primary/10 to-primary/15 animate-pulse">
         <CardContent className="p-5">
           <div className="h-20 bg-muted/50 rounded-lg" />
         </CardContent>
@@ -151,7 +151,7 @@ const SafetyCertificateCard = ({ ride, onUploadClick }: SafetyCertificateCardPro
   // No certificate uploaded
   if (!certificate) {
     return (
-      <Card className="border-2 border-dashed border-amber-500/50 bg-gradient-to-r from-amber-500/5 to-amber-500/10">
+      <Card className="border-2 border-dashed border-amber-500/60 bg-gradient-to-r from-amber-500/10 to-amber-500/15">
         <CardContent className="p-5">
           <div className="flex items-start gap-4">
             <div className="w-14 h-14 rounded-2xl bg-amber-500/20 flex items-center justify-center shrink-0">
@@ -200,9 +200,9 @@ const SafetyCertificateCard = ({ ride, onUploadClick }: SafetyCertificateCardPro
 
   return (
     <Card className={`border-2 ${
-      expiryInfo.status === 'valid' ? 'border-success/30 bg-gradient-to-r from-success/5 to-success/10' :
-      expiryInfo.status === 'expired' ? 'border-destructive/30 bg-gradient-to-r from-destructive/5 to-destructive/10' :
-      'border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-amber-500/10'
+      expiryInfo.status === 'valid' ? 'border-success/40 bg-gradient-to-r from-success/10 to-success/15' :
+      expiryInfo.status === 'expired' ? 'border-destructive/40 bg-gradient-to-r from-destructive/10 to-destructive/15' :
+      'border-amber-500/40 bg-gradient-to-r from-amber-500/10 to-amber-500/15'
     }`}>
       <CardContent className="p-5">
         <div className="flex items-start gap-4">

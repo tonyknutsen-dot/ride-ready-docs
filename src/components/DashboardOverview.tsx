@@ -270,7 +270,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
       {/* Stats Cards */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {isAdvancedUser ? (
-          <Card className="hover:shadow-elegant transition-smooth cursor-pointer" onClick={() => onNavigate('rides')}>
+          <Card className="hover:shadow-elegant transition-smooth cursor-pointer border-border/60" onClick={() => onNavigate('rides')}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Total Rides</CardTitle>
@@ -292,7 +292,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
         )}
 
         {isAdvancedUser ? (
-          <Card className="hover:shadow-elegant transition-smooth cursor-pointer" onClick={() => onNavigate('inspections')}>
+          <Card className="hover:shadow-elegant transition-smooth cursor-pointer border-border/60" onClick={() => onNavigate('inspections')}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Active Inspections</CardTitle>
@@ -314,7 +314,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
         )}
 
         {isAdvancedUser ? (
-          <Card className="hover:shadow-elegant transition-smooth cursor-pointer" onClick={() => onNavigate('calendar')}>
+          <Card className="hover:shadow-elegant transition-smooth cursor-pointer border-border/60" onClick={() => onNavigate('calendar')}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Overdue</CardTitle>
@@ -335,7 +335,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
           />
         )}
 
-        <Card className="hover:shadow-elegant transition-smooth cursor-pointer" onClick={() => onNavigate('documents')}>
+        <Card className="hover:shadow-elegant transition-smooth cursor-pointer border-border/60" onClick={() => onNavigate('documents')}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Documents Expiring</CardTitle>
@@ -350,7 +350,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
       </div>
 
       {/* Quick Actions */}
-      <Card>
+      <Card className="border-border/60">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
