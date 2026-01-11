@@ -484,22 +484,27 @@ const CalendarView = () => {
               <div className="w-3 h-3 rounded-full bg-destructive shadow-sm" />
               <span>Document Expiry</span>
             </div>
-            {!isBasicPlan && (
-              <>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-primary shadow-sm" />
-                  <span>Inspections</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-accent shadow-sm" />
-                  <span>Maintenance</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-info shadow-sm" />
-                  <span>NDT Tests</span>
-                </div>
-              </>
-            )}
+            <div className={cn("flex items-center gap-1.5", isBasicPlan && "opacity-50")}>
+              <div className="w-3 h-3 rounded-full bg-primary shadow-sm" />
+              <span>Inspections</span>
+              {isBasicPlan && (
+                <span className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium">Upgrade</span>
+              )}
+            </div>
+            <div className={cn("flex items-center gap-1.5", isBasicPlan && "opacity-50")}>
+              <div className="w-3 h-3 rounded-full bg-accent shadow-sm" />
+              <span>Maintenance</span>
+              {isBasicPlan && (
+                <span className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium">Upgrade</span>
+              )}
+            </div>
+            <div className={cn("flex items-center gap-1.5", isBasicPlan && "opacity-50")}>
+              <div className="w-3 h-3 rounded-full bg-info shadow-sm" />
+              <span>NDT Tests</span>
+              {isBasicPlan && (
+                <span className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium">Upgrade</span>
+              )}
+            </div>
             <div className="flex items-center gap-2 ml-auto">
               <Clock className="h-3.5 w-3.5 text-amber-600" />
               <span>Pending</span>
