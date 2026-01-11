@@ -560,8 +560,8 @@ const CalendarView = () => {
                 <h3 className="font-semibold">Your calendar is empty</h3>
                 <p className="text-sm text-muted-foreground">
                   {loadError 
-                    ? 'No events yet (and we hit an error fetching some data). The calendar itself works — add checks/expiries to see them here.'
-                    : 'Click on any date below to add your first inspection, or use the "Add Inspection" button.'}
+                    ? 'No events yet (and we hit an error fetching some data). The calendar itself works — add events to see them here.'
+                    : 'Click on any date below to add your first event, or use the "Add Event" button.'}
                 </p>
               </div>
             </div>
@@ -574,7 +574,9 @@ const CalendarView = () => {
           <div className="space-y-1">
             <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
             <p className="text-sm text-muted-foreground">
-              Track inspections, maintenance, and document expiry dates
+              {isBasicPlan 
+                ? 'Track document expiry dates and reminders' 
+                : 'Track inspections, maintenance, and document expiry dates'}
             </p>
           </div>
           
@@ -585,14 +587,14 @@ const CalendarView = () => {
               <DialogTrigger asChild>
                 <Button className="shrink-0">
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Inspection
+                  Add Event
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Add Inspection Schedule</DialogTitle>
+                  <DialogTitle>Add Event</DialogTitle>
                   <DialogDescription>
-                    Schedule an inspection with automatic reminders
+                    Schedule an event with automatic reminders
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
