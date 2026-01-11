@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -24,13 +24,18 @@ export const useAuth = () => {
   return context;
 };
 
-// Sync subscription status with Stripe
+// Sync subscription status with Stripe (debounced)
+let syncTimeout: ReturnType<typeof setTimeout> | null = null;
 const syncSubscriptionStatus = async () => {
-  try {
-    await supabase.functions.invoke('check-subscription');
-  } catch (error) {
-    console.error('Error syncing subscription:', error);
-  }
+  // Debounce syncs to avoid excessive API calls
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(async () => {
+    try {
+      await supabase.functions.invoke('check-subscription');
+    } catch (error) {
+      console.error('Error syncing subscription:', error);
+    }
+  }, 1000);
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -191,7 +196,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
-  const value = {
+  // Memoize the context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
     user,
     session,
     loading,
@@ -201,7 +207,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     resetPassword,
-  };
+  }), [user, session, loading, isSuspended, suspensionReason]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
