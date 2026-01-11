@@ -88,8 +88,12 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   // Early return: require ride unless it's a global document
   if (!rideId && !isGlobal) {
     return (
-      <div className="p-4 rounded-lg border border-dashed text-center text-sm text-muted-foreground">
-        Pick a ride first to add a document, or check "Global Document" below.
+      <div className="p-6 rounded-2xl border-2 border-dashed border-info/40 bg-gradient-to-br from-info/5 to-primary/5 text-center">
+        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-info to-primary mx-auto flex items-center justify-center mb-3">
+          <FolderOpen className="h-6 w-6 text-white" />
+        </div>
+        <p className="text-sm font-medium text-foreground">Pick a ride first to add a document</p>
+        <p className="text-xs text-muted-foreground mt-1">or check "Global Document" below</p>
       </div>
     );
   }
@@ -295,50 +299,56 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
           <Button
             type="button"
             variant="outline"
-            className="h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed hover:border-primary/50 hover:bg-muted/30"
+            className="h-28 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-info/40 hover:border-info hover:bg-gradient-to-br hover:from-info/10 hover:to-primary/5 transition-all group"
             onClick={() => cameraInputRef.current?.click()}
             disabled={uploading}
           >
-            <Camera className="h-8 w-8 text-muted-foreground" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-info/20 to-primary/10 group-hover:from-info group-hover:to-info/80 flex items-center justify-center transition-all">
+              <Camera className="h-6 w-6 text-info group-hover:text-white transition-colors" />
+            </div>
             <span className="text-sm font-medium">Take Photo</span>
           </Button>
           <Button
             type="button"
             variant="outline"
-            className="h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed hover:border-primary/50 hover:bg-muted/30"
+            className="h-28 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-primary/40 hover:border-primary hover:bg-gradient-to-br hover:from-primary/10 hover:to-info/5 transition-all group"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
-            <FolderOpen className="h-8 w-8 text-muted-foreground" />
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-info/10 group-hover:from-primary group-hover:to-primary/80 flex items-center justify-center transition-all">
+              <FolderOpen className="h-6 w-6 text-primary group-hover:text-white transition-colors" />
+            </div>
             <span className="text-sm font-medium">Choose File</span>
           </Button>
         </div>
       ) : (
         <div 
-          className="relative border-2 border-primary rounded-lg p-4 bg-primary/5 cursor-pointer hover:bg-primary/10 transition-colors"
+          className="relative border-2 border-success rounded-xl p-4 bg-gradient-to-r from-success/10 to-primary/5 cursor-pointer hover:from-success/15 hover:to-primary/10 transition-all shadow-sm"
           onClick={() => {
             setSelectedFile(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
             if (cameraInputRef.current) cameraInputRef.current.value = '';
           }}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             {selectedFile.type.startsWith('image/') ? (
               <img
                 src={URL.createObjectURL(selectedFile)}
                 alt="Preview"
-                className="h-14 w-14 rounded-lg object-cover"
+                className="h-16 w-16 rounded-xl object-cover border-2 border-success/30 shadow-md"
                 onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
               />
             ) : (
-              <div className="h-14 w-14 rounded-lg bg-muted flex items-center justify-center">
-                <FileText className="h-7 w-7 text-muted-foreground" />
+              <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-info/20 border border-primary/20 flex items-center justify-center">
+                <FileText className="h-8 w-8 text-primary" />
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{selectedFile.name}</p>
+              <p className="text-sm font-semibold truncate">{selectedFile.name}</p>
               <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-              <p className="text-xs text-primary mt-1">Tap to change</p>
+              <p className="text-xs text-success font-medium mt-1 flex items-center gap-1">
+                ✓ Ready to upload • Tap to change
+              </p>
             </div>
           </div>
         </div>
@@ -412,8 +422,10 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
 
         {/* Global Document Toggle */}
         <div 
-          className={`flex items-center gap-3 p-3 rounded-lg border transition-colors cursor-pointer ${
-            isGlobal ? 'border-primary bg-primary/5' : 'border-border hover:bg-muted/30'
+          className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+            isGlobal 
+              ? 'border-accent bg-gradient-to-r from-accent/10 to-info/5 shadow-sm' 
+              : 'border-border hover:border-accent/40 hover:bg-accent/5'
           }`}
           onClick={() => setIsGlobal(!isGlobal)}
         >
@@ -422,10 +434,11 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
             checked={isGlobal}
             onCheckedChange={(checked) => setIsGlobal(checked as boolean)}
             disabled={uploading}
+            className="border-accent data-[state=checked]:bg-accent data-[state=checked]:border-accent"
           />
           <div className="flex-1 min-w-0">
-            <Label htmlFor="is-global" className="text-sm font-medium cursor-pointer">
-              Global Document
+            <Label htmlFor="is-global" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+              🌐 Global Document
             </Label>
             <p className="text-[11px] text-muted-foreground">Applies to all rides</p>
           </div>

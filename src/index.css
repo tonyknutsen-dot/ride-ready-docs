@@ -10,8 +10,8 @@
 
 @layer base {
   :root {
-    /* Core backgrounds - soft warm cream for depth */
-    --background: 40 30% 96%;
+    /* Core backgrounds - clean cool slate, NOT orange/warm */
+    --background: 220 20% 97%;
     --foreground: 222 47% 11%;
 
     /* Card surfaces - bright white that pops */
@@ -23,61 +23,61 @@
     --popover-foreground: 222 47% 11%;
 
     /* Primary: Vibrant royal blue */
-    --primary: 222 85% 45%;
+    --primary: 222 85% 50%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary: Warm light tan */
-    --secondary: 35 40% 92%;
+    /* Secondary: Cool light blue-grey */
+    --secondary: 215 25% 94%;
     --secondary-foreground: 222 47% 11%;
 
-    /* Muted surfaces - warm beige, NOT grey */
-    --muted: 35 30% 90%;
-    --muted-foreground: 222 20% 35%;
+    /* Muted surfaces - cool slate, NOT beige */
+    --muted: 215 20% 92%;
+    --muted-foreground: 222 25% 40%;
 
-    /* Accent: Rich golden amber */
-    --accent: 38 95% 50%;
+    /* Accent: Vibrant teal */
+    --accent: 172 85% 40%;
     --accent-foreground: 0 0% 100%;
 
     /* Destructive: Bold red */
     --destructive: 0 85% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders - warm and visible */
-    --border: 35 25% 82%;
-    --input: 35 25% 85%;
-    --ring: 222 85% 45%;
+    /* Borders - cool and visible */
+    --border: 215 25% 85%;
+    --input: 215 25% 88%;
+    --ring: 222 85% 50%;
 
     /* Sidebar - clean white */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 222 85% 45%;
+    --sidebar-primary: 222 85% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 38 95% 50%;
+    --sidebar-accent: 172 85% 40%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 35 25% 85%;
-    --sidebar-ring: 222 85% 45%;
+    --sidebar-border: 215 25% 88%;
+    --sidebar-ring: 222 85% 50%;
 
     /* Interactive states */
-    --card-hover: 35 30% 97%;
+    --card-hover: 215 20% 98%;
 
     /* Status colors - vibrant and clear */
     --success: 152 75% 35%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 95% 50%;
+    --warning: 45 100% 50%;
     --warning-foreground: 0 0% 10%;
     --info: 200 100% 45%;
     --info-foreground: 0 0% 100%;
 
-    /* Gradients */
-    --accent-gradient: linear-gradient(135deg, hsl(222 85% 45%), hsl(38 95% 50%));
+    /* Gradients - cool blue tones */
+    --accent-gradient: linear-gradient(135deg, hsl(222 85% 50%), hsl(172 85% 40%));
     --hero-gradient: linear-gradient(to bottom, hsl(0 0% 0% / 0.4), hsl(0 0% 0% / 0.6));
-    --card-gradient: linear-gradient(180deg, hsl(0 0% 100%), hsl(35 30% 98%));
+    --card-gradient: linear-gradient(180deg, hsl(0 0% 100%), hsl(215 20% 98%));
 
-    /* Shadows - warm-toned for depth */
-    --shadow-elegant: 0 10px 40px -10px hsl(222 50% 20% / 0.2), 0 4px 12px -4px hsl(35 30% 30% / 0.1);
-    --shadow-glow: 0 0 35px -5px hsl(38 95% 50% / 0.4);
-    --shadow-card: 0 2px 12px -3px hsl(35 40% 30% / 0.12), 0 1px 4px -1px hsl(35 30% 20% / 0.08);
-    --shadow-card-hover: 0 8px 25px -5px hsl(222 50% 20% / 0.18), 0 4px 10px -3px hsl(35 30% 20% / 0.1);
+    /* Shadows - cool blue-toned for depth */
+    --shadow-elegant: 0 10px 40px -10px hsl(222 50% 20% / 0.2), 0 4px 12px -4px hsl(215 30% 30% / 0.1);
+    --shadow-glow: 0 0 35px -5px hsl(172 85% 40% / 0.4);
+    --shadow-card: 0 2px 12px -3px hsl(215 40% 30% / 0.12), 0 1px 4px -1px hsl(215 30% 20% / 0.08);
+    --shadow-card-hover: 0 8px 25px -5px hsl(222 50% 20% / 0.18), 0 4px 10px -3px hsl(215 30% 20% / 0.1);
 
     /* Transitions */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
