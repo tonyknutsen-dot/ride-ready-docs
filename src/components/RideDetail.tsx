@@ -187,41 +187,48 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
       {/* Equipment Photo & Details */}
       <Card className="shadow-card overflow-hidden">
-        <CardContent className="p-0">
-          {/* Photo Section */}
+        <CardContent className="p-4 space-y-4">
+          {/* Photo Section - Centered with border */}
           {photoUrl ? (
             <div 
-              className="relative w-full bg-muted cursor-pointer"
+              className="flex justify-center cursor-pointer"
               onClick={() => setPhotoViewerOpen(true)}
             >
-              <img 
-                src={photoUrl} 
-                alt={ride.ride_name}
-                className="w-full h-auto max-h-72 object-contain"
-              />
+              <div className="relative rounded-lg overflow-hidden border-2 border-border bg-card shadow-sm">
+                <img 
+                  src={photoUrl} 
+                  alt={ride.ride_name}
+                  className="h-40 w-auto max-w-full object-contain"
+                />
+                <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
+                  <span className="text-xs text-white bg-black/50 px-2 py-1 rounded">Tap to enlarge</span>
+                </div>
+              </div>
             </div>
           ) : (
-            <div className="w-full h-32 bg-muted/50 flex flex-col items-center justify-center gap-2">
-              <ImageIcon className="h-8 w-8 text-muted-foreground/50" />
-              <p className="text-xs text-muted-foreground">No photo - tap edit to add one</p>
+            <div className="flex justify-center">
+              <div className="w-32 h-32 rounded-lg border-2 border-dashed border-muted-foreground/30 bg-muted/30 flex flex-col items-center justify-center gap-2">
+                <ImageIcon className="h-8 w-8 text-muted-foreground/40" />
+                <p className="text-xs text-muted-foreground text-center px-2">No photo</p>
+              </div>
             </div>
           )}
           
           {/* Details Grid */}
-          <div className="grid grid-cols-2 divide-x divide-y divide-border/50">
-            <div className="p-4 space-y-1">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-3 rounded-lg bg-muted/50 space-y-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Category</span>
               <p className="text-sm font-medium">{ride.ride_categories.name}</p>
             </div>
-            <div className="p-4 space-y-1">
+            <div className="p-3 rounded-lg bg-muted/50 space-y-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Manufacturer</span>
               <p className="text-sm font-medium truncate">{ride.manufacturer || '—'}</p>
             </div>
-            <div className="p-4 space-y-1">
+            <div className="p-3 rounded-lg bg-muted/50 space-y-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Year</span>
               <p className="text-sm font-medium">{ride.year_manufactured || '—'}</p>
             </div>
-            <div className="p-4 space-y-1">
+            <div className="p-3 rounded-lg bg-muted/50 space-y-1">
               <span className="text-[10px] text-muted-foreground uppercase tracking-wide">Serial</span>
               <p className="text-sm font-medium truncate">{ride.serial_number || '—'}</p>
             </div>

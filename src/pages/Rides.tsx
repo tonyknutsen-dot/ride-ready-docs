@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store, Sparkles } from 'lucide-react';
+import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store, Sparkles, ImageIcon } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -29,6 +29,7 @@ const Rides = () => {
   const navigate = useNavigate();
   const { subscription } = useSubscription();
   const [rides, setRides] = useState<Ride[]>([]);
+  const [ridePhotos, setRidePhotos] = useState<Record<string, string | null>>({});
   const [rideStats, setRideStats] = useState<Record<string, {
     docCount: number;
     checkCount: number;
@@ -68,7 +69,10 @@ const Rides = () => {
         });
       } else {
         setRides(data as Ride[]);
-        await loadRideStatistics(data as Ride[]);
+        await Promise.all([
+          loadRideStatistics(data as Ride[]),
+          loadRidePhotos(data as Ride[])
+        ]);
       }
     } catch (error) {
       console.error('Error loading rides:', error);
@@ -121,6 +125,40 @@ const Rides = () => {
       }
     }
     setRideStats(stats);
+  };
+
+  const loadRidePhotos = async (ridesData: Ride[]) => {
+    const photos: Record<string, string | null> = {};
+    
+    await Promise.all(ridesData.map(async (ride) => {
+      try {
+        const { data: photoDoc } = await supabase
+          .from('documents')
+          .select('file_path')
+          .eq('user_id', user?.id)
+          .eq('ride_id', ride.id)
+          .eq('document_type', 'photo')
+          .eq('is_latest_version', true)
+          .order('uploaded_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (photoDoc?.file_path) {
+          const { data } = await supabase.storage
+            .from('ride-documents')
+            .createSignedUrl(photoDoc.file_path, 3600);
+          
+          photos[ride.id] = data?.signedUrl || null;
+        } else {
+          photos[ride.id] = null;
+        }
+      } catch (error) {
+        console.error(`Error loading photo for ride ${ride.id}:`, error);
+        photos[ride.id] = null;
+      }
+    }));
+    
+    setRidePhotos(photos);
   };
 
   const handleRideAdded = () => {
@@ -258,10 +296,26 @@ const Rides = () => {
           {filteredRides.map(ride => (
             <Card 
               key={ride.id}
-              className="shadow-card hover:shadow-elegant transition-all active:scale-[0.98] cursor-pointer flex flex-col"
+              className="shadow-card hover:shadow-elegant transition-all active:scale-[0.98] cursor-pointer flex flex-col overflow-hidden"
               onClick={() => navigate(`/rides/${ride.id}`)}
             >
-              <CardHeader className="pb-3 space-y-3">
+              {/* Photo Thumbnail */}
+              <div className="h-32 bg-muted/50 flex items-center justify-center overflow-hidden">
+                {ridePhotos[ride.id] ? (
+                  <img 
+                    src={ridePhotos[ride.id]!} 
+                    alt={ride.ride_name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-1 text-muted-foreground/50">
+                    <ImageIcon className="h-8 w-8" />
+                    <span className="text-xs">No photo</span>
+                  </div>
+                )}
+              </div>
+
+              <CardHeader className="pb-3 space-y-2 pt-3">
                 <div className="flex items-start justify-between gap-3">
                   <CardTitle className="text-base leading-tight flex-1 break-words line-clamp-2">
                     {ride.ride_name}
