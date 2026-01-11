@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, FileText, Cog, Loader2 } from 'lucide-react';
+import { Check, FileText, Cog, Loader2, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,21 +13,37 @@ interface PlanSelectionProps {
 }
 
 export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
-  const { subscription, createCheckout } = useSubscription();
+  const { subscription, createCheckout, openCustomerPortal } = useSubscription();
   const [basicBillingCycle, setBasicBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [advancedBillingCycle, setAdvancedBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
 
+  // Check if user has an active paid subscription
+  const hasActiveSubscription = subscription?.stripeSubscriptionId && 
+    (subscription?.subscriptionStatus === 'basic' || subscription?.subscriptionStatus === 'advanced');
+
   const handleSelectPlan = async (plan: 'basic' | 'advanced') => {
+    if (loadingPlan) return; // Prevent double-clicks
+    
     const billingCycle = plan === 'basic' ? basicBillingCycle : advancedBillingCycle;
     setLoadingPlan(plan);
+    
     try {
+      // If user already has a subscription, redirect to customer portal for plan changes
+      if (hasActiveSubscription) {
+        toast.info('Opening billing portal to manage your plan...');
+        await openCustomerPortal();
+        onClose?.();
+        return;
+      }
+      
+      // Otherwise create a new checkout session
       await createCheckout(plan, billingCycle);
       toast.success('Redirecting to checkout...');
       onClose?.();
     } catch (error) {
       console.error('Checkout error:', error);
-      toast.error('Failed to create checkout session. Please try again.');
+      toast.error('Failed to process request. Please try again.');
     } finally {
       setLoadingPlan(null);
     }
@@ -158,6 +174,11 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
                 </>
               ) : isCurrentPlan('basic', basicBillingCycle) ? (
                 'Current Plan'
+              ) : hasActiveSubscription ? (
+                <>
+                  Manage Plan
+                  <ExternalLink className="ml-2 h-3 w-3" />
+                </>
               ) : (
                 'Choose This Plan'
               )}
@@ -246,6 +267,11 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
                 </>
               ) : isCurrentPlan('advanced', advancedBillingCycle) ? (
                 'Current Plan'
+              ) : hasActiveSubscription ? (
+                <>
+                  Manage Plan
+                  <ExternalLink className="ml-2 h-3 w-3" />
+                </>
               ) : (
                 'Choose This Plan'
               )}
