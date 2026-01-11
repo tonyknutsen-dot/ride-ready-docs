@@ -7,6 +7,7 @@ import { Settings, Plus, Sparkles } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
+import { EmptyState } from '@/components/EmptyState';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -136,33 +137,13 @@ const RideSelector = ({
 
       {/* Content */}
       {rides.length === 0 ? (
-        <Card className="max-w-sm mx-auto border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5 shadow-elegant">
-          <CardContent className="py-8 text-center space-y-4">
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-secondary to-muted flex items-center justify-center mx-auto">
-              <Sparkles className="h-7 w-7 text-primary" />
-            </div>
-            <div className="space-y-2">
-              <h3 className="font-semibold">Nothing here yet</h3>
-              <p className="text-sm text-muted-foreground">
-                Press Add ride or Add generator to get started
-              </p>
-            </div>
-            {showAddRide && onAddRide && (
-              <div className="space-y-2">
-                <Button id="rrd-btn-add-ride" onClick={onAddRide} className="h-11 w-full bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 shadow-md">
-                  <Plus className="h-4 w-4 mr-2" />
-                  <span>Add Your First Item</span>
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  Don't see your category?{' '}
-                  <button onClick={() => setOpenRequest(true)} className="text-primary font-medium underline hover:no-underline">
-                    Request category
-                  </button>
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Sparkles}
+          title="Nothing here yet"
+          description="Press Add ride or Add generator to get started"
+          actionLabel={showAddRide && onAddRide ? "Add Your First Item" : undefined}
+          onAction={showAddRide && onAddRide ? onAddRide : undefined}
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {rides.map((ride) => (

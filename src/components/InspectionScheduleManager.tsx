@@ -16,6 +16,7 @@ import { format, differenceInDays, isBefore, isAfter, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { EmptyState } from '@/components/EmptyState';
 import { Tables } from '@/integrations/supabase/types';
 
 type Ride = Tables<'rides'> & {
@@ -365,11 +366,12 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
       </div>
 
       {schedules.length === 0 ? (
-        <div className="text-center text-muted-foreground p-8">
-          <CalendarIcon className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No inspection schedules found</p>
-          <p className="text-sm">Add your first inspection schedule to start tracking due dates</p>
-        </div>
+        <EmptyState
+          icon={CalendarIcon}
+          title="No inspection schedules found"
+          description="Add your first inspection schedule to start tracking due dates"
+          variant="compact"
+        />
       ) : (
         <div className="grid gap-4">
           {schedules.map((schedule) => (

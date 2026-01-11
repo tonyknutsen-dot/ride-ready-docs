@@ -19,6 +19,7 @@ import { Tables } from '@/integrations/supabase/types';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import TemplateBuilder from './TemplateBuilder';
+import { EmptyState } from '@/components/EmptyState';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -445,21 +446,13 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
   if (!activeTemplate) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <div className="text-center py-8 space-y-4">
-            <FileText className="mx-auto h-16 w-16 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mt-4">No Active Template Found</h3>
-            <p className="text-muted-foreground">
-              First, build your {frequency} safety check template. Then you can start recording checks.
-            </p>
-            <Button onClick={() => setShowTemplateBuilder(true)} className="mt-4">
-              <Plus className="h-4 w-4 mr-2" />
-              Build Template
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={FileText}
+        title="No Active Template Found"
+        description={`First, build your ${frequency} safety check template. Then you can start recording checks.`}
+        actionLabel="Build Template"
+        onAction={() => setShowTemplateBuilder(true)}
+      />
     );
   }
 
