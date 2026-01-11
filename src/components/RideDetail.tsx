@@ -191,19 +191,14 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           {/* Photo Section */}
           {photoUrl ? (
             <div 
-              className="relative w-full h-48 bg-muted cursor-pointer"
+              className="relative w-full bg-muted cursor-pointer"
               onClick={() => setPhotoViewerOpen(true)}
             >
               <img 
                 src={photoUrl} 
                 alt={ride.ride_name}
-                className="w-full h-full object-cover"
+                className="w-full h-auto max-h-72 object-contain"
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-              <div className="absolute bottom-3 left-3 right-3">
-                <p className="text-white font-semibold text-lg drop-shadow-md">{ride.ride_name}</p>
-                <p className="text-white/80 text-sm drop-shadow-md">{ride.ride_categories.name}</p>
-              </div>
             </div>
           ) : (
             <div className="w-full h-32 bg-muted/50 flex flex-col items-center justify-center gap-2">
