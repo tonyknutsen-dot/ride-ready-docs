@@ -96,7 +96,10 @@ const CalendarView = () => {
   const [calendarPickerOpen, setCalendarPickerOpen] = useState(false);
   const [showHelpTips, setShowHelpTips] = useState(true);
   const [rides, setRides] = useState<Ride[]>([]);
+  const [rideDocuments, setRideDocuments] = useState<{ id: string; document_name: string; expires_at: string | null }[]>([]);
+  const [loadingDocuments, setLoadingDocuments] = useState(false);
   const [formData, setFormData] = useState({
+    selected_document_id: '',
     ride_id: '',
     inspection_type: '',
     inspection_name: '',
@@ -136,6 +139,31 @@ const CalendarView = () => {
       setRides(data || []);
     } catch (error) {
       console.error('Error loading rides:', error);
+    }
+  };
+
+  const loadRideDocuments = async (rideId: string) => {
+    if (!user?.id || !rideId) {
+      setRideDocuments([]);
+      return;
+    }
+    
+    setLoadingDocuments(true);
+    try {
+      const { data, error } = await supabase
+        .from('documents')
+        .select('id, document_name, expires_at')
+        .eq('user_id', user.id)
+        .eq('ride_id', rideId)
+        .order('document_name');
+
+      if (error) throw error;
+      setRideDocuments(data || []);
+    } catch (error) {
+      console.error('Error loading ride documents:', error);
+      setRideDocuments([]);
+    } finally {
+      setLoadingDocuments(false);
     }
   };
 
@@ -356,6 +384,7 @@ const CalendarView = () => {
 
   const resetForm = () => {
     setFormData({
+      selected_document_id: '',
       ride_id: '',
       inspection_type: '',
       inspection_name: '',
@@ -369,6 +398,7 @@ const CalendarView = () => {
       recurrence_unit: 'months',
     });
     setFormErrors({});
+    setRideDocuments([]);
   };
 
   const openQuickAdd = (date: Date) => {
@@ -602,7 +632,10 @@ const CalendarView = () => {
                     <Label htmlFor="ride_id">Ride *</Label>
                     <Select
                       value={formData.ride_id}
-                      onValueChange={(value) => setFormData({ ...formData, ride_id: value })}
+                      onValueChange={(value) => {
+                        setFormData({ ...formData, ride_id: value, selected_document_id: '', inspection_name: '' });
+                        loadRideDocuments(value);
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select a ride" />
@@ -690,23 +723,61 @@ const CalendarView = () => {
 
                   <div className="space-y-2">
                     <Label htmlFor="inspection_name">
-                      {formData.inspection_type.includes('expiry') ? 'Document Name *' : 'Event Name *'}
+                      {formData.inspection_type.includes('expiry') ? 'Document *' : 'Event Name *'}
                     </Label>
-                    <Input
-                      id="inspection_name"
-                      value={formData.inspection_name}
-                      onChange={(e) => setFormData({ ...formData, inspection_name: e.target.value })}
-                      placeholder={
-                        formData.inspection_type.includes('expiry') 
-                          ? "e.g., Public Liability Insurance 2025" 
-                          : "e.g., Annual Safety Inspection"
-                      }
-                      maxLength={200}
-                    />
-                    {formData.inspection_type.includes('expiry') && (
-                      <p className="text-xs text-muted-foreground">
-                        Enter the specific document name so you know which document is expiring
-                      </p>
+                    {formData.inspection_type.includes('expiry') ? (
+                      <>
+                        <Select
+                          value={formData.selected_document_id}
+                          onValueChange={(value) => {
+                            const doc = rideDocuments.find(d => d.id === value);
+                            setFormData({ 
+                              ...formData, 
+                              selected_document_id: value,
+                              inspection_name: doc?.document_name || '',
+                              due_date: doc?.expires_at ? new Date(doc.expires_at) : formData.due_date
+                            });
+                          }}
+                          disabled={!formData.ride_id || loadingDocuments}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={
+                              !formData.ride_id 
+                                ? "Select a ride first" 
+                                : loadingDocuments 
+                                  ? "Loading documents..." 
+                                  : rideDocuments.length === 0 
+                                    ? "No documents uploaded for this ride" 
+                                    : "Select a document"
+                            } />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover z-50">
+                            {rideDocuments.map((doc) => (
+                              <SelectItem key={doc.id} value={doc.id}>
+                                {doc.document_name}
+                                {doc.expires_at && (
+                                  <span className="text-muted-foreground ml-2">
+                                    (expires {format(new Date(doc.expires_at), 'dd/MM/yyyy')})
+                                  </span>
+                                )}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {formData.ride_id && rideDocuments.length === 0 && !loadingDocuments && (
+                          <p className="text-xs text-muted-foreground">
+                            No documents uploaded yet. <button type="button" onClick={() => navigate(`/dashboard?ride=${formData.ride_id}&tab=documents`)} className="text-primary hover:underline">Upload documents</button> first.
+                          </p>
+                        )}
+                      </>
+                    ) : (
+                      <Input
+                        id="inspection_name"
+                        value={formData.inspection_name}
+                        onChange={(e) => setFormData({ ...formData, inspection_name: e.target.value })}
+                        placeholder="e.g., Annual Safety Inspection"
+                        maxLength={200}
+                      />
                     )}
                     {formErrors.inspection_name && <p className="text-xs text-destructive">{formErrors.inspection_name}</p>}
                   </div>
