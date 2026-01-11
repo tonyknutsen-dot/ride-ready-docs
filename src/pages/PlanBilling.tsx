@@ -64,8 +64,8 @@ export default function PlanBilling() {
   if (loading) {
     return (
       <div className="p-4">
-        <Button variant="ghost" onClick={() => nav(-1)} className="mb-3">
-          <ArrowLeft className="w-4 h-4 mr-2" />Back
+        <Button variant="ghost" onClick={() => nav('/settings')} className="mb-3">
+          <ArrowLeft className="w-4 h-4 mr-2" />Back to Settings
         </Button>
         <Card>
           <CardContent className="py-10 flex items-center justify-center text-muted-foreground">
@@ -98,8 +98,8 @@ export default function PlanBilling() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto space-y-4 pb-20 md:pb-4">
-      <Button variant="ghost" onClick={() => nav(-1)}>
-        <ArrowLeft className="w-4 h-4 mr-2" />Back
+      <Button variant="ghost" onClick={() => nav('/settings')}>
+        <ArrowLeft className="w-4 h-4 mr-2" />Back to Settings
       </Button>
 
       {/* Current Plan Card */}
