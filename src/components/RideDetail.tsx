@@ -107,11 +107,14 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         .maybeSingle();
 
       if (photoDoc?.file_path) {
-        const { data } = supabase.storage
+        // Bucket is private, so use signed URL
+        const { data, error } = await supabase.storage
           .from('ride-documents')
-          .getPublicUrl(photoDoc.file_path);
+          .createSignedUrl(photoDoc.file_path, 3600); // 1 hour expiry
         
-        setPhotoUrl(data.publicUrl);
+        if (data?.signedUrl && !error) {
+          setPhotoUrl(data.signedUrl);
+        }
       }
     } catch (error) {
       console.error('Error loading ride photo:', error);
