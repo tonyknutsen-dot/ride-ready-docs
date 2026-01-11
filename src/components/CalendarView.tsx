@@ -18,7 +18,8 @@ import {
   Filter,
   Clock,
   AlertTriangle,
-  Lock
+  Lock,
+  Repeat
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -104,6 +105,8 @@ const CalendarView = () => {
     notes: '',
     enable_reminders: true,
     reminder_days: [7, 1] as number[],
+    is_recurring: false,
+    recurrence_interval: 'yearly' as 'weekly' | 'monthly' | 'quarterly' | 'yearly',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -360,6 +363,8 @@ const CalendarView = () => {
       notes: '',
       enable_reminders: true,
       reminder_days: [7, 1],
+      is_recurring: false,
+      recurrence_interval: 'yearly',
     });
     setFormErrors({});
   };
@@ -376,6 +381,18 @@ const CalendarView = () => {
     try {
       const validatedData = inspectionSchema.parse(formData);
 
+      // Determine schedule type based on event type and recurrence
+      let scheduleType = 'inspection';
+      if (formData.inspection_type.includes('expiry')) {
+        scheduleType = formData.is_recurring ? 'recurring_document' : 'document';
+      } else if (formData.inspection_type.includes('maintenance') || formData.inspection_type.includes('preventive') || formData.inspection_type.includes('repair')) {
+        scheduleType = formData.is_recurring ? 'recurring_maintenance' : 'maintenance';
+      } else if (formData.inspection_type.includes('check')) {
+        scheduleType = formData.is_recurring ? 'recurring_check' : 'check';
+      } else {
+        scheduleType = formData.is_recurring ? 'recurring_inspection' : 'inspection';
+      }
+
       const scheduleData = {
         user_id: user!.id,
         ride_id: validatedData.ride_id,
@@ -383,8 +400,10 @@ const CalendarView = () => {
         inspection_name: validatedData.inspection_name,
         due_date: format(validatedData.due_date, 'yyyy-MM-dd'),
         advance_notice_days: validatedData.advance_notice_days,
-        notes: validatedData.notes || null,
-        schedule_type: 'inspection',
+        notes: formData.is_recurring 
+          ? `${validatedData.notes || ''}\n[Recurring: ${formData.recurrence_interval}]`.trim()
+          : validatedData.notes || null,
+        schedule_type: scheduleType,
       };
 
       const { error } = await supabase
@@ -395,7 +414,9 @@ const CalendarView = () => {
 
       toast({
         title: "Success",
-        description: "Inspection schedule created successfully",
+        description: formData.is_recurring 
+          ? `Recurring ${formData.recurrence_interval} schedule created successfully`
+          : "Schedule created successfully",
       });
 
       setAddDialogOpen(false);
@@ -414,7 +435,7 @@ const CalendarView = () => {
         console.error('Error saving inspection schedule:', error);
         toast({
           title: "Error",
-          description: "Failed to create inspection schedule",
+          description: "Failed to create schedule",
           variant: "destructive",
         });
       }
@@ -449,15 +470,19 @@ const CalendarView = () => {
                   <ul className="text-sm text-muted-foreground space-y-1">
                     <li className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary" />
-                      <span><strong>Click any date</strong> to quickly add a new inspection</span>
+                      <span><strong>Click any date</strong> to quickly add a new event</span>
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-accent" />
                       <span><strong>Colored dots</strong> show events on each day (see legend below)</span>
                     </li>
                     <li className="flex items-center gap-2">
+                      <Repeat className="h-3 w-3 text-accent" />
+                      <span><strong>Recurring events</strong> automatically reschedule after completion</span>
+                    </li>
+                    <li className="flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-info" />
-                      <span><strong>Click an event</strong> to go to that ride's details</span>
+                      <span><strong>Click an event</strong> to go to that item's details</span>
                     </li>
                   </ul>
                 </div>
@@ -765,6 +790,53 @@ const CalendarView = () => {
                             </button>
                           ))}
                         </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Recurring Event Settings */}
+                  <div className="space-y-3 p-4 rounded-lg bg-accent/10 border border-accent/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <Label htmlFor="is_recurring" className="font-medium">Recurring Event</Label>
+                        <p className="text-xs text-muted-foreground">Automatically schedule future occurrences</p>
+                      </div>
+                      <input
+                        type="checkbox"
+                        id="is_recurring"
+                        checked={formData.is_recurring}
+                        onChange={(e) => setFormData({ ...formData, is_recurring: e.target.checked })}
+                        className="h-4 w-4 rounded border-border"
+                      />
+                    </div>
+                    {formData.is_recurring && (
+                      <div className="space-y-2 pt-2 border-t border-accent/20">
+                        <Label className="text-sm">Repeat Every</Label>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { value: 'weekly', label: 'Week' },
+                            { value: 'monthly', label: 'Month' },
+                            { value: 'quarterly', label: '3 Months' },
+                            { value: 'yearly', label: 'Year' },
+                          ].map((interval) => (
+                            <button
+                              key={interval.value}
+                              type="button"
+                              onClick={() => setFormData({ ...formData, recurrence_interval: interval.value as typeof formData.recurrence_interval })}
+                              className={cn(
+                                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
+                                formData.recurrence_interval === interval.value
+                                  ? "bg-accent text-accent-foreground"
+                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
+                              )}
+                            >
+                              {interval.label}
+                            </button>
+                          ))}
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          After completing this event, the next occurrence will be automatically scheduled
+                        </p>
                       </div>
                     )}
                   </div>
