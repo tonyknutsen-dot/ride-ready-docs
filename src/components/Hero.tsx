@@ -10,7 +10,6 @@ import { FileText, Settings, ArrowRight, Check, Globe } from "lucide-react";
 import { useDetectedTerminology } from "@/hooks/useTerminology";
 import DeviceHintBanner from "./DeviceHintBanner";
 import TrustBadges from "./TrustBadges";
-import MarqueeSign from "./MarqueeSign";
 const Hero = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -65,13 +64,11 @@ const Hero = () => {
           </div>
 
           {/* Headline */}
-          <MarqueeSign className="mb-6 animate-fade-up animate-delay-100">
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.1] tracking-tight">
-              Complete Operations
-              <br />
-              <span className="text-yellow-400">Management</span>
-            </h1>
-          </MarqueeSign>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight animate-fade-up animate-delay-100">
+            Complete Operations
+            <br />
+            <span className="text-accent">Management</span>
+          </h1>
           
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-up animate-delay-200">
