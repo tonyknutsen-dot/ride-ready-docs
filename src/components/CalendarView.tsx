@@ -106,7 +106,8 @@ const CalendarView = () => {
     enable_reminders: true,
     reminder_days: [7, 1] as number[],
     is_recurring: false,
-    recurrence_interval: 'yearly' as 'weekly' | 'monthly' | 'quarterly' | 'yearly',
+    recurrence_value: 1,
+    recurrence_unit: 'months' as 'days' | 'weeks' | 'months' | 'years',
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
@@ -364,7 +365,8 @@ const CalendarView = () => {
       enable_reminders: true,
       reminder_days: [7, 1],
       is_recurring: false,
-      recurrence_interval: 'yearly',
+      recurrence_value: 1,
+      recurrence_unit: 'months',
     });
     setFormErrors({});
   };
@@ -401,7 +403,7 @@ const CalendarView = () => {
         due_date: format(validatedData.due_date, 'yyyy-MM-dd'),
         advance_notice_days: validatedData.advance_notice_days,
         notes: formData.is_recurring 
-          ? `${validatedData.notes || ''}\n[Recurring: ${formData.recurrence_interval}]`.trim()
+          ? `${validatedData.notes || ''}\n[Recurring: every ${formData.recurrence_value} ${formData.recurrence_unit}]`.trim()
           : validatedData.notes || null,
         schedule_type: scheduleType,
       };
@@ -412,10 +414,14 @@ const CalendarView = () => {
 
       if (error) throw error;
 
+      const recurrenceLabel = formData.recurrence_value === 1 
+        ? formData.recurrence_unit.slice(0, -1) // Remove 's' for singular
+        : `${formData.recurrence_value} ${formData.recurrence_unit}`;
+
       toast({
         title: "Success",
         description: formData.is_recurring 
-          ? `Recurring ${formData.recurrence_interval} schedule created successfully`
+          ? `Recurring schedule created (every ${recurrenceLabel})`
           : "Schedule created successfully",
       });
 
@@ -810,31 +816,33 @@ const CalendarView = () => {
                       />
                     </div>
                     {formData.is_recurring && (
-                      <div className="space-y-2 pt-2 border-t border-accent/20">
+                      <div className="space-y-3 pt-3 border-t border-accent/20">
                         <Label className="text-sm">Repeat Every</Label>
-                        <div className="flex flex-wrap gap-2">
-                          {[
-                            { value: 'weekly', label: 'Week' },
-                            { value: 'monthly', label: 'Month' },
-                            { value: 'quarterly', label: '3 Months' },
-                            { value: 'yearly', label: 'Year' },
-                          ].map((interval) => (
-                            <button
-                              key={interval.value}
-                              type="button"
-                              onClick={() => setFormData({ ...formData, recurrence_interval: interval.value as typeof formData.recurrence_interval })}
-                              className={cn(
-                                "px-3 py-1.5 rounded-full text-xs font-medium transition-colors",
-                                formData.recurrence_interval === interval.value
-                                  ? "bg-accent text-accent-foreground"
-                                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-                              )}
-                            >
-                              {interval.label}
-                            </button>
-                          ))}
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="1"
+                            max="365"
+                            value={formData.recurrence_value}
+                            onChange={(e) => setFormData({ ...formData, recurrence_value: Math.max(1, parseInt(e.target.value) || 1) })}
+                            className="w-20"
+                          />
+                          <Select
+                            value={formData.recurrence_unit}
+                            onValueChange={(value) => setFormData({ ...formData, recurrence_unit: value as typeof formData.recurrence_unit })}
+                          >
+                            <SelectTrigger className="w-32">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="bg-popover z-50">
+                              <SelectItem value="days">Day(s)</SelectItem>
+                              <SelectItem value="weeks">Week(s)</SelectItem>
+                              <SelectItem value="months">Month(s)</SelectItem>
+                              <SelectItem value="years">Year(s)</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">
+                        <p className="text-xs text-muted-foreground">
                           After completing this event, the next occurrence will be automatically scheduled
                         </p>
                       </div>
