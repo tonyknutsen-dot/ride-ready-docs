@@ -7,10 +7,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Building, User, MapPin, Save } from 'lucide-react';
+import { Building, User, MapPin, Save, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
-import { OPERATOR_TYPES } from '@/constants/profile';
+import { OPERATOR_TYPES, COUNTRIES } from '@/constants/profile';
+import DeviceHintBanner from './DeviceHintBanner';
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -22,6 +23,7 @@ const profileSchema = z.object({
   showmen_name: z.string().trim().max(100).optional(),
   address: z.string().trim().max(500).optional(),
   operator_type: z.string().min(1, "Please select your operator type"),
+  country: z.string().min(1, "Please select your country"),
 });
 
 const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
@@ -34,6 +36,7 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     showmen_name: '',
     address: '',
     operator_type: '',
+    country: user?.user_metadata?.country || 'GB',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -53,9 +56,6 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
       const validatedData = profileSchema.parse(validationData);
       setLoading(true);
 
-      // Get country from user metadata (set during sign-up)
-      const country = user?.user_metadata?.country || 'GB';
-
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -64,7 +64,7 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
           controller_name: validatedData.controller_name,
           showmen_name: validatedData.showmen_name || null,
           address: validatedData.address || null,
-          country: country,
+          country: validatedData.country,
           operator_type: validatedData.operator_type,
         }, {
           onConflict: 'user_id'
@@ -108,14 +108,51 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">Complete Your Profile</CardTitle>
-          <CardDescription className="text-lg">
-            Let's set up your company information to get started with Ride Ready Docs
-          </CardDescription>
+        <CardHeader className="text-center space-y-4">
+          <div>
+            <CardTitle className="text-2xl font-bold">Complete Your Profile</CardTitle>
+            <CardDescription className="text-lg">
+              Let's set up your company information to get started with Ride Ready Docs
+            </CardDescription>
+          </div>
+          <DeviceHintBanner />
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Country Selection - First for terminology customization */}
+            <div className="space-y-2">
+              <Label htmlFor="country" className="flex items-center space-x-2">
+                <Globe className="h-4 w-4" />
+                <span>Country *</span>
+              </Label>
+              <Select
+                value={formData.country}
+                onValueChange={(value) => setFormData({ ...formData, country: value })}
+              >
+                <SelectTrigger className={errors.country ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Select your country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c.code} value={c.code}>
+                      <div className="flex items-center gap-2">
+                        <span>{c.flag}</span>
+                        <span>{c.name}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {formData.country && (
+                <p className="text-xs text-muted-foreground">
+                  {COUNTRIES.find(c => c.code === formData.country)?.note}
+                </p>
+              )}
+              {errors.country && (
+                <p className="text-sm text-destructive">{errors.country}</p>
+              )}
+            </div>
+
             {/* Operator Type Selection */}
             <div className="space-y-2">
               <Label htmlFor="operator_type" className="flex items-center space-x-2">
