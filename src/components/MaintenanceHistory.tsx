@@ -10,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { EmptyState } from '@/components/EmptyState';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -216,11 +217,12 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       </div>
 
       {filteredRecords.length === 0 ? (
-        <div className="text-center text-muted-foreground p-8">
-          <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No maintenance records found</p>
-          <p className="text-sm">Start logging maintenance activities to build your record history</p>
-        </div>
+        <EmptyState
+          icon={Calendar}
+          title="No maintenance records found"
+          description="Start logging maintenance activities to build your record history"
+          variant="compact"
+        />
       ) : (
         <div className="grid gap-4">
           {filteredRecords.map((record) => (

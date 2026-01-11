@@ -15,6 +15,7 @@ import RideForm from '@/components/RideForm';
 import { SendDocumentsDialog } from '@/components/SendDocumentsDialog';
 import { ItemLimitWarning } from '@/components/ItemLimitWarning';
 import { compressImage } from '@/utils/imageCompression';
+import { EmptyState } from '@/components/EmptyState';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -351,14 +352,12 @@ const Rides = () => {
           </CardContent>
         </Card>
       ) : filteredRides.length === 0 ? (
-        <Card className="shadow-card">
-          <CardContent className="py-8">
-            <div className="text-center space-y-2">
-              {getCategoryIcon(activeGroup)}
-              <p className="text-sm text-muted-foreground">No {activeGroup.toLowerCase()} found</p>
-            </div>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={FerrisWheel}
+          title={`No ${activeGroup.toLowerCase()} found`}
+          description="Add your first item to get started"
+          variant="compact"
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredRides.map(ride => (

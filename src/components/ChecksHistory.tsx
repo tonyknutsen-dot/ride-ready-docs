@@ -28,6 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
+import { EmptyState } from '@/components/EmptyState';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -496,12 +497,12 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       {/* Monthly Groups */}
       <div className="space-y-4">
         {monthGroups.length === 0 ? (
-          <Card>
-            <CardContent className="py-12 text-center">
-              <FileText className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground">No checks found for the selected filters</p>
-            </CardContent>
-          </Card>
+          <EmptyState
+            icon={FileText}
+            title="No checks found"
+            description="No checks found for the selected filters"
+            variant="compact"
+          />
         ) : (
           monthGroups.map((group) => (
             <Collapsible key={group.month} defaultOpen>
