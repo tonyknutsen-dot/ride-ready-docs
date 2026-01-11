@@ -434,6 +434,18 @@
   }
 }
 
+/* Showmen's marquee light blink animation */
+@keyframes marquee-blink {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 10px 3px rgba(253, 224, 71, 0.9);
+  }
+  50% {
+    opacity: 0.4;
+    box-shadow: 0 0 4px 1px rgba(253, 224, 71, 0.4);
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
