@@ -30,13 +30,13 @@ export const PRICING = {
   annualBillingMonths: 10, // 12 months - 2 months free = 10 months charged
 } as const;
 
-// Stripe price IDs
+// Stripe price IDs - Documents & Compliance = Basic, Operations & Maintenance = Advanced
 export const STRIPE_PRICE_IDS = {
-  basic_monthly: "price_1RXcG0Rsp1KGo6dTPDVp9VFR",
-  basic_yearly: "price_1RXcHcRsp1KGo6dTjSv0Xj5w",
-  advanced_monthly: "price_1RXcI4Rsp1KGo6dTDbUJsaYU",
-  advanced_yearly: "price_1RXcIVRsp1KGo6dT67tDh1Fd",
-  extra_item: "price_1RXcIzRsp1KGo6dTTFGhIcDr",
+  basic_monthly: "price_1SnzrIAG8uIRefcZWHRZs14k",    // Documents & Compliance Monthly - £6.99
+  basic_yearly: "price_1SnzrMAG8uIRefcZ6bfyMMyR",     // Documents & Compliance Yearly - £69.90
+  advanced_monthly: "price_1SnzrOAG8uIRefcZHBSrVObC", // Operations & Maintenance Monthly - £18.99
+  advanced_yearly: "price_1SnzrQAG8uIRefcZq3oC3vso",  // Operations & Maintenance Yearly - £189.90
+  extra_item: "price_1SnzrRAG8uIRefcZRHXJlDuy",       // Extra Item - £0.75/mo
 } as const;
 
 export interface SubscriptionData {
