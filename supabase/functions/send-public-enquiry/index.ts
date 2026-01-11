@@ -10,6 +10,7 @@ interface PublicEnquiryRequest {
   company: string;
   enquiryType: string;
   message: string;
+  honeypot?: string; // Hidden field for bot detection
 }
 
 const enquiryTypeLabels: Record<string, string> = {
@@ -30,6 +31,37 @@ const escapeHtml = (text: string | null | undefined): string => {
     .replace(/'/g, '&#039;');
 };
 
+// Simple in-memory rate limiting (resets on function cold start)
+// Key: IP or email -> { count, resetAt }
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+
+const RATE_LIMIT_MAX_REQUESTS = 5; // Max requests per window
+const RATE_LIMIT_WINDOW_MS = 3600000; // 1 hour window
+
+const checkRateLimit = (key: string): { allowed: boolean; remaining: number; retryAfter?: number } => {
+  const now = Date.now();
+  const limit = rateLimitMap.get(key);
+  
+  // Clean up expired entries periodically
+  if (rateLimitMap.size > 1000) {
+    for (const [k, v] of rateLimitMap.entries()) {
+      if (now > v.resetAt) rateLimitMap.delete(k);
+    }
+  }
+  
+  if (!limit || now > limit.resetAt) {
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1 };
+  }
+  
+  if (limit.count >= RATE_LIMIT_MAX_REQUESTS) {
+    return { allowed: false, remaining: 0, retryAfter: Math.ceil((limit.resetAt - now) / 1000) };
+  }
+  
+  limit.count++;
+  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - limit.count };
+};
+
 const handler = async (req: Request): Promise<Response> => {
   console.log("Received public enquiry request");
 
@@ -41,7 +73,23 @@ const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    const { name, email, company, enquiryType, message }: PublicEnquiryRequest = await req.json();
+    // Get client IP for rate limiting
+    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() 
+      || req.headers.get("x-real-ip") 
+      || "unknown";
+
+    const { name, email, company, enquiryType, message, honeypot }: PublicEnquiryRequest = await req.json();
+    
+    // Honeypot check - bots will fill this hidden field
+    if (honeypot) {
+      console.log("Bot detected via honeypot field, silently rejecting");
+      // Return fake success to not alert the bot
+      return new Response(
+        JSON.stringify({ success: true }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     console.log("Processing enquiry from:", email, "Type:", enquiryType);
 
     if (!name || !email || !message) {
@@ -49,6 +97,28 @@ const handler = async (req: Request): Promise<Response> => {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Rate limit check - use combination of IP and email
+    const rateLimitKey = `${clientIp}:${email.toLowerCase()}`;
+    const rateLimit = checkRateLimit(rateLimitKey);
+    
+    if (!rateLimit.allowed) {
+      console.log(`Rate limit exceeded for ${rateLimitKey}`);
+      return new Response(
+        JSON.stringify({ 
+          error: "Too many requests. Please try again later.",
+          retryAfter: rateLimit.retryAfter 
+        }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            "Content-Type": "application/json",
+            "Retry-After": String(rateLimit.retryAfter)
+          } 
+        }
       );
     }
 
