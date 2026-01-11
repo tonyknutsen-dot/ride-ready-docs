@@ -67,7 +67,7 @@ const Hero = () => {
           <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-[1.1] tracking-tight animate-fade-up animate-delay-100">
             Complete Operations
             <br />
-            <span className="text-white">Management</span>
+            <span className="text-accent">Management</span>
           </h1>
           
           {/* Subheadline */}
