@@ -20,11 +20,6 @@ export default function TrustBadges({ variant = 'default', className = '' }: Tru
       description: 'TLS 1.3 & AES-256'
     },
     {
-      icon: Server,
-      label: 'UK/EU Hosted',
-      description: 'Data stays local'
-    },
-    {
       icon: CheckCircle,
       label: 'ISO 27001 Practices',
       description: 'Enterprise security'
