@@ -319,34 +319,30 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
 
   if (loading) {
     return (
-      <Card className="border-2 border-info/20 bg-gradient-to-br from-info/5 to-transparent">
-        <CardContent className="pt-6">
-          <div className="text-center py-4">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-info to-primary mx-auto flex items-center justify-center mb-3">
-              <FileText className="h-7 w-7 text-white animate-pulse" />
-            </div>
-            <p className="text-muted-foreground mt-2 font-medium">Loading documents...</p>
+      <div className="py-8">
+        <div className="text-center py-4">
+          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-info to-primary mx-auto flex items-center justify-center mb-3">
+            <FileText className="h-7 w-7 text-white animate-pulse" />
           </div>
-        </CardContent>
-      </Card>
+          <p className="text-muted-foreground mt-2 font-medium">Loading documents...</p>
+        </div>
+      </div>
     );
   }
 
   if (documents.length === 0) {
     return (
-      <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 via-info/5 to-accent/5">
-        <CardContent className="pt-6">
-          <div className="text-center py-8">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-info/20 mx-auto flex items-center justify-center mb-4">
-              <FileText className="h-10 w-10 text-primary" />
-            </div>
-            <h3 className="text-lg font-semibold mt-4">No files yet</h3>
-            <p className="text-muted-foreground">
-              Press Add a document to upload files{rideName ? ` for ${rideName}` : ''}
-            </p>
+      <div className="py-12">
+        <div className="text-center">
+          <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-info/20 mx-auto flex items-center justify-center mb-4">
+            <FileText className="h-10 w-10 text-primary" />
           </div>
-        </CardContent>
-      </Card>
+          <h3 className="text-lg font-semibold mt-4">No files yet</h3>
+          <p className="text-muted-foreground">
+            Press Add a document to upload files{rideName ? ` for ${rideName}` : ''}
+          </p>
+        </div>
+      </div>
     );
   }
 
