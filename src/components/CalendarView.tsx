@@ -651,14 +651,25 @@ const CalendarView = () => {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="inspection_name">Inspection Name *</Label>
+                    <Label htmlFor="inspection_name">
+                      {formData.inspection_type.includes('expiry') ? 'Document Name *' : 'Event Name *'}
+                    </Label>
                     <Input
                       id="inspection_name"
                       value={formData.inspection_name}
                       onChange={(e) => setFormData({ ...formData, inspection_name: e.target.value })}
-                      placeholder="e.g., Annual Safety Inspection"
+                      placeholder={
+                        formData.inspection_type.includes('expiry') 
+                          ? "e.g., Public Liability Insurance 2025" 
+                          : "e.g., Annual Safety Inspection"
+                      }
                       maxLength={200}
                     />
+                    {formData.inspection_type.includes('expiry') && (
+                      <p className="text-xs text-muted-foreground">
+                        Enter the specific document name so you know which document is expiring
+                      </p>
+                    )}
                     {formErrors.inspection_name && <p className="text-xs text-destructive">{formErrors.inspection_name}</p>}
                   </div>
 
