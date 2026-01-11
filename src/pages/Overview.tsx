@@ -230,7 +230,7 @@ const Overview = () => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-3">
-            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">
+            <h1 className="text-xl font-bold tracking-tight">
               Overview
             </h1>
             <Badge 
@@ -240,7 +240,7 @@ const Overview = () => {
               {formatPlanWithDescription(userPlan)}
             </Badge>
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-sm text-muted-foreground">
             Your complete operations dashboard at a glance
           </p>
         </div>
