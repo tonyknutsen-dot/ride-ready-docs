@@ -221,10 +221,10 @@ const Auth = () => {
 
   if (showResetForm) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary/50 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-6 animate-fade-up">
           <div className="text-center space-y-3">
-            <Link to="/" className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto hover:shadow-elegant transition-smooth">
+            <Link to="/" className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto hover:shadow-elegant transition-smooth border-2 border-primary/20">
               <img src={logo} alt="Ride Ready Docs home" className="h-28 w-auto" width={112} height={112} loading="lazy" />
             </Link>
             <h1 className="text-2xl font-bold">Reset Password</h1>
@@ -233,7 +233,7 @@ const Auth = () => {
             </p>
           </div>
 
-          <Card className="shadow-elegant border-border/50">
+          <Card className="shadow-elegant border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
             <CardContent className="pt-6">
               <form onSubmit={handlePasswordReset} className="space-y-4">
                 <div className="space-y-2">
@@ -290,10 +290,10 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary/50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6 animate-fade-up">
         <div className="text-center space-y-3">
-          <Link to="/" className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto hover:shadow-elegant transition-smooth">
+          <Link to="/" className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto hover:shadow-elegant transition-smooth border-2 border-primary/20">
             <img src={logo} alt="Ride Ready Docs home" className="h-28 w-auto" width={112} height={112} loading="lazy" />
           </Link>
           <h1 className="text-2xl font-bold">Ride Ready Docs</h1>
@@ -303,13 +303,13 @@ const Auth = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+          <TabsList className="grid w-full grid-cols-2 bg-secondary border-2 border-primary/20">
             <TabsTrigger value="signin">Sign In</TabsTrigger>
             <TabsTrigger value="signup">Sign Up</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin" className="space-y-4 mt-4">
-            <Card className="shadow-elegant border-border/50">
+            <Card className="shadow-elegant border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
               <CardHeader>
                 <CardTitle>Sign In</CardTitle>
                 <CardDescription>
@@ -395,7 +395,7 @@ const Auth = () => {
           </TabsContent>
 
           <TabsContent value="signup" className="space-y-4 mt-4">
-            <Card className="shadow-elegant border-border/50">
+            <Card className="shadow-elegant border-2 border-accent/20 bg-gradient-to-b from-card to-accent/[0.02]">
               <CardHeader>
                 <CardTitle>Create Account</CardTitle>
                 <CardDescription>

@@ -29,16 +29,16 @@ const Marketing = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 max-w-md">
-            <TabsTrigger value="contacts" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-3 max-w-md bg-secondary border-2 border-primary/20">
+            <TabsTrigger value="contacts" className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Contacts</span>
             </TabsTrigger>
-            <TabsTrigger value="campaigns" className="flex items-center gap-2">
+            <TabsTrigger value="campaigns" className="flex items-center gap-2 data-[state=active]:bg-accent data-[state=active]:text-accent-foreground">
               <Mail className="h-4 w-4" />
               <span className="hidden sm:inline">Campaigns</span>
             </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
+            <TabsTrigger value="history" className="flex items-center gap-2 data-[state=active]:bg-info data-[state=active]:text-info-foreground">
               <History className="h-4 w-4" />
               <span className="hidden sm:inline">History</span>
             </TabsTrigger>

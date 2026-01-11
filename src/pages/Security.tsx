@@ -98,7 +98,7 @@ const Security = () => {
       <main className="pt-24 pb-16">
         {/* Hero Section */}
         <section className="container mx-auto px-6 py-16 text-center">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-6 border-2 border-primary/30">
             <Shield className="h-8 w-8 text-primary" />
           </div>
           <h1 className="text-4xl md:text-5xl font-bold mb-6">
@@ -115,9 +115,9 @@ const Security = () => {
           <h2 className="text-3xl font-bold mb-8 text-center">Our Security Measures</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {securityFeatures.map((feature, index) => (
-              <Card key={index} className="border-2">
+              <Card key={index} className="border-2 border-primary/20 hover:border-primary/40 transition-all hover:shadow-elegant bg-gradient-to-b from-card to-primary/[0.02]">
                 <CardHeader>
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4 border border-primary/30">
                     <feature.icon className="h-6 w-6 text-primary" />
                   </div>
                   <CardTitle className="text-xl">{feature.title}</CardTitle>
@@ -131,11 +131,11 @@ const Security = () => {
         </section>
 
         {/* Security Practices */}
-        <section className="container mx-auto px-6 py-16 bg-muted/30 rounded-2xl my-16">
+        <section className="container mx-auto px-6 py-16 bg-gradient-to-br from-secondary via-primary/5 to-accent/5 rounded-2xl my-16 border-2 border-primary/20">
           <h2 className="text-3xl font-bold mb-12 text-center">Security Best Practices</h2>
           <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
             {practices.map((practice, index) => (
-              <Card key={index}>
+              <Card key={index} className="border-2 border-border/50 hover:border-primary/30 hover:shadow-elegant transition-all">
                 <CardHeader>
                   <CardTitle className="text-xl">{practice.title}</CardTitle>
                 </CardHeader>
@@ -157,7 +157,7 @@ const Security = () => {
         {/* Data Handling */}
         <section className="container mx-auto px-6 py-16">
           <div className="max-w-4xl mx-auto">
-            <Card>
+            <Card className="border-2 border-info/20 bg-gradient-to-b from-card to-info/[0.02]">
               <CardHeader>
                 <CardTitle className="text-2xl">How We Handle Your Data</CardTitle>
               </CardHeader>
@@ -203,7 +203,7 @@ const Security = () => {
 
         {/* User Responsibilities */}
         <section className="container mx-auto px-6 py-16">
-          <Card className="max-w-4xl mx-auto bg-primary/5 border-primary/20">
+          <Card className="max-w-4xl mx-auto bg-gradient-to-br from-success/5 to-primary/5 border-2 border-success/30">
             <CardHeader>
               <CardTitle className="text-2xl">Your Role in Security</CardTitle>
             </CardHeader>
@@ -226,7 +226,7 @@ const Security = () => {
         {/* Compliance */}
         <section className="container mx-auto px-6 py-16">
           <div className="max-w-4xl mx-auto">
-            <Card>
+            <Card className="border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
               <CardHeader>
                 <CardTitle className="text-2xl">Regulatory Compliance</CardTitle>
               </CardHeader>
@@ -256,9 +256,9 @@ const Security = () => {
 
         {/* Report Security Issues */}
         <section className="container mx-auto px-6 py-16">
-          <Card className="max-w-2xl mx-auto text-center border-2 border-destructive/20">
+          <Card className="max-w-2xl mx-auto text-center border-2 border-destructive/30 bg-gradient-to-b from-card to-destructive/[0.02]">
             <CardHeader>
-              <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mx-auto mb-4">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-destructive/20 to-destructive/10 flex items-center justify-center mx-auto mb-4 border border-destructive/30">
                 <Shield className="h-6 w-6 text-destructive" />
               </div>
               <CardTitle className="text-2xl">Report a Security Issue</CardTitle>

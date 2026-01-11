@@ -106,9 +106,9 @@ const HowItWorks = () => {
         <section className="container mx-auto px-6 py-16">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {steps.map((step, index) => (
-              <Card key={index} className="border-2 hover:border-primary transition-smooth">
+              <Card key={index} className="border-2 border-primary/20 hover:border-primary hover:shadow-elegant transition-smooth bg-gradient-to-b from-card to-primary/[0.02]">
                 <CardHeader>
-                  <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-4">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mb-4">
                     <step.icon className="h-6 w-6 text-primary" />
                   </div>
                   <CardTitle className="text-xl">{step.title}</CardTitle>
@@ -122,13 +122,13 @@ const HowItWorks = () => {
         </section>
 
         {/* Features Section */}
-        <section className="container mx-auto px-6 py-16 bg-muted/30 rounded-2xl my-16">
+        <section className="container mx-auto px-6 py-16 bg-gradient-to-br from-secondary via-primary/5 to-accent/5 rounded-2xl my-16 border-2 border-primary/20">
           <h2 className="text-3xl font-bold text-center mb-12">
             Everything You Need to Stay Compliant
           </h2>
           <div className="grid md:grid-cols-2 gap-8">
             {features.map((feature, index) => (
-              <Card key={index}>
+              <Card key={index} className="border-2 border-border/50 hover:border-primary/30 hover:shadow-elegant transition-all">
                 <CardHeader>
                   <CardTitle>{feature.title}</CardTitle>
                 </CardHeader>

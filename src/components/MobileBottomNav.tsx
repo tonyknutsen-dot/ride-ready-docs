@@ -120,7 +120,7 @@ export default function MobileBottomNav() {
               <span className="mt-0.5">More</span>
             </button>
           </SheetTrigger>
-          <SheetContent side="bottom" className="max-h-[60vh] rounded-t-3xl px-6 pb-8">
+            <SheetContent side="bottom" className="max-h-[60vh] rounded-t-3xl px-6 pb-8 border-t-2 border-primary/20">
             <SheetHeader className="pb-6">
               <SheetTitle className="text-left text-lg">Quick Access</SheetTitle>
             </SheetHeader>
@@ -129,29 +129,29 @@ export default function MobileBottomNav() {
               {/* Primary Actions - Large touch targets */}
               <div className="grid grid-cols-3 gap-3">
                 <button
-                  className="flex flex-col items-center gap-2 p-4 bg-primary/5 border border-primary/20 rounded-2xl text-sm font-medium hover:bg-primary/10 transition-all active:scale-95"
+                  className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-2xl text-sm font-medium hover:bg-primary/15 transition-all active:scale-95"
                   onClick={() => setUploadDialogOpen(true)}
                 >
-                  <div className="p-3 bg-primary/10 rounded-xl">
+                  <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl border border-primary/30">
                     <PlusCircle className="h-6 w-6 text-primary" />
                   </div>
                   <span className="text-xs">Upload</span>
                 </button>
                 <button
-                  className="flex flex-col items-center gap-2 p-4 bg-success/5 border border-success/20 rounded-2xl text-sm font-medium hover:bg-success/10 transition-all active:scale-95"
+                  className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-success/5 to-success/10 border-2 border-success/20 rounded-2xl text-sm font-medium hover:bg-success/15 transition-all active:scale-95"
                   onClick={() => go("/risk-assessments")}
                 >
-                  <div className="p-3 bg-success/10 rounded-xl">
+                  <div className="p-3 bg-gradient-to-br from-success/20 to-success/10 rounded-xl border border-success/30">
                     <ShieldCheck className="h-6 w-6 text-success" />
                   </div>
                   <span className="text-xs">Risk</span>
                 </button>
                 <button
-                  className="flex flex-col items-center gap-2 p-4 bg-muted border border-border/50 rounded-2xl text-sm font-medium hover:bg-muted/80 transition-all active:scale-95"
+                  className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-info/5 to-info/10 border-2 border-info/20 rounded-2xl text-sm font-medium hover:bg-info/15 transition-all active:scale-95"
                   onClick={() => go("/global-documents")}
                 >
-                  <div className="p-3 bg-background rounded-xl">
-                    <FileText className="h-6 w-6 text-muted-foreground" />
+                  <div className="p-3 bg-gradient-to-br from-info/20 to-info/10 rounded-xl border border-info/30">
+                    <FileText className="h-6 w-6 text-info" />
                   </div>
                   <span className="text-xs">Docs</span>
                 </button>
@@ -160,35 +160,35 @@ export default function MobileBottomNav() {
               {/* Secondary Actions - Compact list */}
               <div className="flex flex-wrap gap-2">
                 <button
-                  className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-xl text-sm hover:bg-muted transition-all active:scale-95"
+                  className="flex items-center gap-2 px-4 py-3 bg-secondary border-2 border-accent/20 rounded-xl text-sm hover:bg-accent/10 transition-all active:scale-95"
                   onClick={() => go("/send-documents")}
                 >
-                  <Send className="h-4 w-4" />
+                  <Send className="h-4 w-4 text-accent" />
                   <span>Send Docs</span>
                 </button>
                 <button
-                  className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-xl text-sm hover:bg-muted transition-all active:scale-95"
+                  className="flex items-center gap-2 px-4 py-3 bg-secondary border-2 border-primary/20 rounded-xl text-sm hover:bg-primary/10 transition-all active:scale-95"
                   onClick={() => go("/billing")}
                 >
-                  <CreditCard className="h-4 w-4" />
+                  <CreditCard className="h-4 w-4 text-primary" />
                   <span>Billing</span>
                 </button>
                 <button
-                  className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-xl text-sm hover:bg-muted transition-all active:scale-95"
+                  className="flex items-center gap-2 px-4 py-3 bg-secondary border-2 border-info/20 rounded-xl text-sm hover:bg-info/10 transition-all active:scale-95"
                   onClick={() => go("/settings")}
                 >
-                  <Settings className="h-4 w-4" />
+                  <Settings className="h-4 w-4 text-info" />
                   <span>Settings</span>
                 </button>
                 <button
-                  className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-xl text-sm hover:bg-muted transition-all active:scale-95"
+                  className="flex items-center gap-2 px-4 py-3 bg-secondary border-2 border-success/20 rounded-xl text-sm hover:bg-success/10 transition-all active:scale-95"
                   onClick={() => go("/help")}
                 >
-                  <HelpCircle className="h-4 w-4" />
+                  <HelpCircle className="h-4 w-4 text-success" />
                   <span>Help</span>
                 </button>
                 <button
-                  className="flex items-center gap-2 px-4 py-3 bg-destructive/10 text-destructive rounded-xl text-sm hover:bg-destructive/20 transition-all active:scale-95"
+                  className="flex items-center gap-2 px-4 py-3 bg-destructive/5 border-2 border-destructive/30 text-destructive rounded-xl text-sm hover:bg-destructive/10 transition-all active:scale-95"
                   onClick={handleSignOut}
                 >
                   <LogOut className="h-4 w-4" />
