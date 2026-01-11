@@ -67,7 +67,7 @@ export default function PlanBilling() {
         <Button variant="ghost" onClick={() => nav('/settings')} className="mb-3">
           <ArrowLeft className="w-4 h-4 mr-2" />Back to Settings
         </Button>
-        <Card>
+        <Card className="border-2 border-border">
           <CardContent className="py-10 flex items-center justify-center text-muted-foreground">
             <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Loading…
           </CardContent>
@@ -98,30 +98,32 @@ export default function PlanBilling() {
 
   return (
     <div className="p-4 max-w-2xl mx-auto space-y-4 pb-20 md:pb-4">
-      <Button variant="ghost" onClick={() => nav('/settings')}>
+      <Button variant="ghost" onClick={() => nav('/settings')} className="hover:bg-primary/10">
         <ArrowLeft className="w-4 h-4 mr-2" />Back to Settings
       </Button>
 
       {/* Current Plan Card */}
-      <Card className="border-2">
+      <Card className="border-2 border-accent/50 bg-gradient-to-br from-accent/10 to-transparent shadow-elegant">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            {plan === "advanced" && <Crown className="w-5 h-5 text-amber-500" />}
+            {plan === "advanced" && <Crown className="w-5 h-5 text-accent" />}
             Plan & Billing
           </CardTitle>
           <CardDescription>Manage your subscription plan and billing.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Current Plan Display */}
-          <div className="rounded-md border p-4 space-y-3">
+          <div className="rounded-lg border-2 border-primary/20 p-4 space-y-3 bg-gradient-to-br from-primary/5 to-transparent">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="text-primary" />
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5 text-primary" />
+                </div>
                 <div>
                   <div className="font-semibold flex items-center gap-2">
                     {getPlanName()}
                     {!isTrialOrExpired && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="outline" className="text-xs bg-accent/20 border-accent/50 text-accent-foreground">
                         {billingCycle === "yearly" ? "Annual" : "Monthly"}
                       </Badge>
                     )}
@@ -137,29 +139,33 @@ export default function PlanBilling() {
                   </div>
                 </div>
               </div>
-              {plan === "advanced" && <Crown className="w-6 h-6 text-amber-500" />}
+              {plan === "advanced" && <Crown className="w-6 h-6 text-accent" />}
             </div>
 
             {/* Subscription Details */}
             {!isTrialOrExpired && (
               <>
-                <Separator />
+                <Separator className="bg-primary/20" />
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <CreditCard className="w-4 h-4 text-muted-foreground" />
+                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-success/20">
+                    <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
+                      <CreditCard className="w-4 h-4 text-success" />
+                    </div>
                     <div>
-                      <div className="text-muted-foreground">Price</div>
-                      <div className="font-medium">
+                      <div className="text-muted-foreground text-xs">Price</div>
+                      <div className="font-semibold">
                         £{getPlanPrice().toFixed(2)}/{billingCycle === "yearly" ? "year" : "month"}
                       </div>
                     </div>
                   </div>
                   {subscription?.currentPeriodEnd && (
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                    <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-info/20">
+                      <div className="w-8 h-8 rounded-full bg-info/10 flex items-center justify-center">
+                        <Calendar className="w-4 h-4 text-info" />
+                      </div>
                       <div>
-                        <div className="text-muted-foreground">Renews</div>
-                        <div className="font-medium">
+                        <div className="text-muted-foreground text-xs">Renews</div>
+                        <div className="font-semibold">
                           {format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}
                         </div>
                       </div>
@@ -167,7 +173,7 @@ export default function PlanBilling() {
                   )}
                 </div>
                 {subscription?.extraItemsCount > 0 && (
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground p-2 rounded bg-accent/10 border border-accent/20">
                     +{subscription.extraItemsCount} extra items (£{(subscription.extraItemsCount * 0.75).toFixed(2)}/month)
                   </div>
                 )}
@@ -182,7 +188,7 @@ export default function PlanBilling() {
             {isTrialOrExpired ? (
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="w-full">
+                  <Button className="w-full bg-gradient-to-r from-accent to-primary hover:opacity-90 text-white shadow-md">
                     <Crown className="w-4 h-4 mr-2" />
                     {plan === "expired" ? "Reactivate Subscription" : "Upgrade Now"}
                   </Button>
@@ -195,8 +201,8 @@ export default function PlanBilling() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline" className="flex-1">
-                      <Crown className="w-4 h-4 mr-2" />
+                    <Button variant="outline" className="flex-1 border-2 border-accent/50 hover:bg-accent/10 hover:border-accent">
+                      <Crown className="w-4 h-4 mr-2 text-accent" />
                       Change Plan
                     </Button>
                   </DialogTrigger>
@@ -207,14 +213,14 @@ export default function PlanBilling() {
                 
                 <Button 
                   variant="outline" 
-                  className="flex-1"
+                  className="flex-1 border-2 hover:bg-primary/10 hover:border-primary"
                   onClick={handleManageSubscription}
                   disabled={portalLoading}
                 >
                   {portalLoading ? (
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
-                    <Settings className="w-4 h-4 mr-2" />
+                    <Settings className="w-4 h-4 mr-2 text-primary" />
                   )}
                   Manage Subscription
                   <ExternalLink className="w-3 h-3 ml-1" />
@@ -226,10 +232,12 @@ export default function PlanBilling() {
       </Card>
 
       {/* Item Usage Card */}
-      <Card>
+      <Card className="border-2 border-info/30 bg-gradient-to-br from-info/5 to-transparent shadow-elegant">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Receipt className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-full bg-info/10 flex items-center justify-center">
+              <Receipt className="w-4 h-4 text-info" />
+            </div>
             Item Usage
           </CardTitle>
           <CardDescription>Track your item usage against your plan limits.</CardDescription>
@@ -238,21 +246,21 @@ export default function PlanBilling() {
           <div className="space-y-3">
             <div className="flex justify-between items-center">
               <span className="text-sm text-muted-foreground">Items used</span>
-              <span className="font-medium">
+              <span className="font-semibold text-lg">
                 {subscription?.rideCount ?? 0} / {subscription?.rideLimit ?? 5}
               </span>
             </div>
-            <div className="w-full bg-muted rounded-full h-2">
+            <div className="w-full bg-secondary rounded-full h-3 border border-info/20 overflow-hidden">
               <div 
-                className="bg-primary h-2 rounded-full transition-all"
+                className="bg-gradient-to-r from-info to-primary h-3 rounded-full transition-all shadow-sm"
                 style={{ 
                   width: `${Math.min(100, ((subscription?.rideCount ?? 0) / (subscription?.rideLimit ?? 5)) * 100)}%` 
                 }}
               />
             </div>
             {subscription && subscription.rideCount >= subscription.rideLimit && (
-              <p className="text-xs text-amber-600">
-                You've reached your item limit. Extra items cost £0.75/month each.
+              <p className="text-xs text-warning font-medium p-2 rounded bg-warning/10 border border-warning/20">
+                ⚠️ You've reached your item limit. Extra items cost £0.75/month each.
               </p>
             )}
           </div>
@@ -260,10 +268,12 @@ export default function PlanBilling() {
       </Card>
 
       {/* Billing History Card */}
-      <Card>
+      <Card className="border-2 border-success/30 bg-gradient-to-br from-success/5 to-transparent shadow-elegant">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Receipt className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
+              <Receipt className="w-4 h-4 text-success" />
+            </div>
             Billing History
           </CardTitle>
           <CardDescription>View your invoices and payment history.</CardDescription>
@@ -279,18 +289,21 @@ export default function PlanBilling() {
                 size="sm"
                 onClick={handleManageSubscription}
                 disabled={portalLoading}
+                className="border-2 border-success/50 hover:bg-success/10 hover:border-success"
               >
                 {portalLoading ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
-                  <ExternalLink className="w-4 h-4 mr-2" />
+                  <ExternalLink className="w-4 h-4 mr-2 text-success" />
                 )}
                 View Invoices
               </Button>
             </div>
           ) : (
-            <div className="rounded-lg border border-dashed p-8 text-center">
-              <Receipt className="w-8 h-8 mx-auto mb-2 text-muted-foreground opacity-50" />
+            <div className="rounded-lg border-2 border-dashed border-muted p-8 text-center bg-secondary/30">
+              <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
+                <Receipt className="w-6 h-6 text-muted-foreground" />
+              </div>
               <p className="text-sm text-muted-foreground">
                 No billing history yet. Subscribe to a plan to see your invoices here.
               </p>
