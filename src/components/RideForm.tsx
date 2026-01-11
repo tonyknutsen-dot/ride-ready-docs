@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Plus, ImagePlus, AlertTriangle, Camera, FolderOpen } from 'lucide-react';
+import { ArrowLeft, Save, Plus, ImagePlus, AlertTriangle, Camera, FolderOpen, Trash2, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { z } from 'zod';
@@ -58,6 +58,9 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
+  const [existingPhotoPath, setExistingPhotoPath] = useState<string | null>(null);
+  const [deletingPhoto, setDeletingPhoto] = useState(false);
   const [showChargeDialog, setShowChargeDialog] = useState(false);
   const [pendingSubmit, setPendingSubmit] = useState(false);
 
@@ -66,7 +69,78 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
   useEffect(() => {
     loadCategories();
+    if (isEditMode && ride) {
+      loadExistingPhoto();
+    }
   }, []);
+
+  const loadExistingPhoto = async () => {
+    if (!user || !ride) return;
+    
+    try {
+      const { data: photoDoc } = await supabase
+        .from('documents')
+        .select('id, file_path')
+        .eq('user_id', user.id)
+        .eq('ride_id', ride.id)
+        .eq('document_type', 'photo')
+        .eq('is_latest_version', true)
+        .order('uploaded_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (photoDoc?.file_path) {
+        setExistingPhotoPath(photoDoc.file_path);
+        const { data } = await supabase.storage
+          .from('ride-documents')
+          .createSignedUrl(photoDoc.file_path, 3600);
+        
+        if (data?.signedUrl) {
+          setExistingPhotoUrl(data.signedUrl);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading existing photo:', error);
+    }
+  };
+
+  const handleDeleteExistingPhoto = async () => {
+    if (!user || !ride || !existingPhotoPath) return;
+    
+    setDeletingPhoto(true);
+    try {
+      // Delete from storage
+      await supabase.storage
+        .from('ride-documents')
+        .remove([existingPhotoPath]);
+      
+      // Delete document record
+      await supabase
+        .from('documents')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('ride_id', ride.id)
+        .eq('document_type', 'photo')
+        .eq('file_path', existingPhotoPath);
+      
+      setExistingPhotoUrl(null);
+      setExistingPhotoPath(null);
+      
+      toast({
+        title: "Photo deleted",
+        description: "The device photo has been removed."
+      });
+    } catch (error: any) {
+      console.error('Error deleting photo:', error);
+      toast({
+        title: "Failed to delete photo",
+        description: error?.message || "Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setDeletingPhoto(false);
+    }
+  };
 
   const loadCategories = async () => {
     try {
@@ -510,12 +584,13 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Photo (Optional)</h3>
           
           <div className="space-y-3">
+            {/* New photo preview (takes priority) */}
             {photoPreview ? (
               <div className="relative inline-block">
                 <img 
                   src={photoPreview} 
-                  alt="Preview" 
-                  className="h-32 w-32 rounded-lg object-cover border-2"
+                  alt="New photo preview" 
+                  className="h-40 max-w-full rounded-lg object-contain border-2 bg-muted/30"
                 />
                 <Button
                   type="button"
@@ -529,6 +604,52 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                 >
                   ×
                 </Button>
+                <p className="text-xs text-muted-foreground mt-2">New photo (will replace existing on save)</p>
+              </div>
+            ) : existingPhotoUrl ? (
+              /* Existing photo in edit mode */
+              <div className="space-y-3">
+                <div className="relative inline-block">
+                  <img 
+                    src={existingPhotoUrl} 
+                    alt="Current device photo" 
+                    className="h-40 max-w-full rounded-lg object-contain border-2 bg-muted/30"
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => document.getElementById('ride-photo')?.click()}
+                  >
+                    <Camera className="h-4 w-4 mr-2" />
+                    Replace Photo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive"
+                    onClick={handleDeleteExistingPhoto}
+                    disabled={deletingPhoto}
+                  >
+                    {deletingPhoto ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4 mr-2" />
+                    )}
+                    Delete Photo
+                  </Button>
+                </div>
+                {/* Hidden file input for replacement */}
+                <Input
+                  id="ride-photo"
+                  type="file"
+                  accept="image/*"
+                  onChange={handlePhotoSelect}
+                  className="hidden"
+                />
               </div>
             ) : (
               <>
