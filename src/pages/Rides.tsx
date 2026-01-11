@@ -297,7 +297,7 @@ const Rides = () => {
       {/* Header */}
       <div className="flex flex-col gap-4">
         <div className="space-y-1">
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">My Equipment</h1>
+          <h1 className="text-xl font-bold tracking-tight">My Equipment</h1>
           <p className="text-sm text-muted-foreground">Manage your rides, stalls, and equipment</p>
         </div>
         

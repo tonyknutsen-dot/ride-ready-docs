@@ -1,6 +1,7 @@
 import CalendarView from '@/components/CalendarView';
 import { useAuth } from '@/contexts/AuthContext';
 import { Calendar as CalendarIcon } from 'lucide-react';
+import PageHeader from '@/components/PageHeader';
 
 const Calendar = () => {
   const { user } = useAuth();
@@ -18,17 +19,12 @@ const Calendar = () => {
 
   return (
     <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0 shadow-sm">
-          <CalendarIcon className="h-5 w-5 text-primary" />
-        </div>
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold tracking-tight">Calendar</h1>
-          <p className="text-sm text-muted-foreground">
-            Upcoming inspections and expiry dates
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        icon={<CalendarIcon className="h-5 w-5 text-primary" />}
+        iconBgClass="from-primary/20 to-accent/20"
+        title="Calendar"
+        subtitle="Upcoming inspections and expiry dates"
+      />
       
       <CalendarView />
     </div>
