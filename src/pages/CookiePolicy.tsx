@@ -51,14 +51,14 @@ const CookiePolicy = () => {
         <div className="container mx-auto px-6 max-w-4xl">
           {/* Hero Section */}
           <div className="text-center mb-12">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-6">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto mb-6 border-2 border-primary/30">
               <Cookie className="h-8 w-8 text-primary" />
             </div>
             <h1 className="text-4xl font-bold mb-4">Cookie Policy</h1>
             <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
           </div>
 
-          <Card className="mb-8">
+          <Card className="mb-8 border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
             <CardContent className="pt-6 space-y-6">
               <section>
                 <h2 className="text-2xl font-semibold mb-4">What Are Cookies?</h2>
@@ -72,8 +72,8 @@ const CookiePolicy = () => {
                 <p className="text-muted-foreground mb-4">
                   Ride Ready Docs uses a minimal set of cookies, focused on essential functionality rather than advertising or tracking. We do not use cookies to serve advertisements or track you across other websites.
                 </p>
-                <div className="bg-muted/30 rounded-lg p-4">
-                  <p className="text-sm font-medium text-primary">
+                <div className="bg-gradient-to-r from-success/10 to-success/5 border border-success/30 rounded-lg p-4">
+                  <p className="text-sm font-medium text-success">
                     We do NOT use advertising cookies or sell your data to third parties.
                   </p>
                 </div>
@@ -85,10 +85,10 @@ const CookiePolicy = () => {
           <h2 className="text-2xl font-bold mb-6">Types of Cookies We Use</h2>
           <div className="space-y-6 mb-8">
             {cookieTypes.map((cookie, index) => (
-              <Card key={index}>
+              <Card key={index} className="border-2 border-primary/20 hover:border-primary/40 transition-all hover:shadow-elegant">
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0 border border-primary/30">
                       <cookie.icon className="h-6 w-6 text-primary" />
                     </div>
                     <div className="flex-1">
@@ -115,7 +115,7 @@ const CookiePolicy = () => {
             ))}
           </div>
 
-          <Card className="mb-8">
+          <Card className="mb-8 border-2 border-accent/20 bg-gradient-to-b from-card to-accent/[0.02]">
             <CardContent className="pt-6 space-y-6">
               <section>
                 <h2 className="text-2xl font-semibold mb-4">Third-Party Cookies</h2>

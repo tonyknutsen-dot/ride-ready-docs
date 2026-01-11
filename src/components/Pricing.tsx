@@ -69,13 +69,13 @@ const Pricing = () => {
           </p>
           
           {/* Billing Toggle */}
-          <div className="inline-flex items-center gap-1 bg-muted p-1.5 rounded-xl border-2 border-border shadow-card">
+          <div className="inline-flex items-center gap-1 bg-secondary p-1.5 rounded-xl border-2 border-primary/20 shadow-card">
             <button
               onClick={() => setIsAnnual(false)}
               className={`px-6 py-3 rounded-lg text-base font-semibold transition-all ${
                 !isAnnual 
                   ? 'bg-primary text-primary-foreground shadow-lg' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-primary/10'
               }`}
             >
               Monthly
@@ -85,7 +85,7 @@ const Pricing = () => {
               className={`px-6 py-3 rounded-lg text-base font-semibold transition-all flex items-center gap-2 ${
                 isAnnual 
                   ? 'bg-primary text-primary-foreground shadow-lg' 
-                  : 'text-muted-foreground hover:text-foreground hover:bg-muted-foreground/10'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-primary/10'
               }`}
             >
               Annual
@@ -238,7 +238,7 @@ const Pricing = () => {
           </h3>
           
           <Accordion type="single" collapsible className="space-y-3">
-            <AccordionItem value="rides" className="border border-border/50 rounded-lg px-6 bg-card">
+            <AccordionItem value="rides" className="border-2 border-primary/20 rounded-lg px-6 bg-gradient-to-r from-card to-primary/[0.02]">
               <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
                 How do item limits work?
               </AccordionTrigger>
@@ -249,7 +249,7 @@ const Pricing = () => {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="billing" className="border border-border/50 rounded-lg px-6 bg-card">
+            <AccordionItem value="billing" className="border-2 border-accent/20 rounded-lg px-6 bg-gradient-to-r from-card to-accent/[0.02]">
               <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
                 How does billing work?
               </AccordionTrigger>
@@ -260,7 +260,7 @@ const Pricing = () => {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="trial" className="border border-border/50 rounded-lg px-6 bg-card">
+            <AccordionItem value="trial" className="border-2 border-success/20 rounded-lg px-6 bg-gradient-to-r from-card to-success/[0.02]">
               <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
                 What's included in the 30-day free trial?
               </AccordionTrigger>
@@ -271,7 +271,7 @@ const Pricing = () => {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="upgrade" className="border border-border/50 rounded-lg px-6 bg-card">
+            <AccordionItem value="upgrade" className="border-2 border-info/20 rounded-lg px-6 bg-gradient-to-r from-card to-info/[0.02]">
               <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
                 Can I upgrade or downgrade my plan?
               </AccordionTrigger>
@@ -282,7 +282,7 @@ const Pricing = () => {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="documents" className="border border-border/50 rounded-lg px-6 bg-card">
+            <AccordionItem value="documents" className="border-2 border-primary/20 rounded-lg px-6 bg-gradient-to-r from-card to-primary/[0.02]">
               <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
                 What document types can I store?
               </AccordionTrigger>
@@ -293,7 +293,7 @@ const Pricing = () => {
               </AccordionContent>
             </AccordionItem>
 
-            <AccordionItem value="support" className="border border-border/50 rounded-lg px-6 bg-card">
+            <AccordionItem value="support" className="border-2 border-accent/20 rounded-lg px-6 bg-gradient-to-r from-card to-accent/[0.02]">
               <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
                 What support is available?
               </AccordionTrigger>

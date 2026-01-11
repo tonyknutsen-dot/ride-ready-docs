@@ -106,8 +106,8 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
+      <Card className="w-full max-w-2xl border-2 border-primary/20 shadow-elegant bg-gradient-to-b from-card to-primary/[0.02]">
         <CardHeader className="text-center space-y-4">
           <div>
             <CardTitle className="text-2xl font-bold">Complete Your Profile</CardTitle>
@@ -255,7 +255,7 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
             <Button 
               type="submit" 
               disabled={loading} 
-              className="w-full flex items-center justify-center space-x-2"
+              className="w-full flex items-center justify-center space-x-2 shadow-elegant"
               size="lg"
             >
               <Save className="h-4 w-4" />

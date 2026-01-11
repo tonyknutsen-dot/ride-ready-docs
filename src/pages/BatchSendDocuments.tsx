@@ -477,7 +477,7 @@ const BatchSendDocuments = () => {
       <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
         {/* Left Column - Document Selection */}
         <div className="space-y-4">
-          <Card>
+          <Card className="border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
             <CardHeader className="pb-3 px-3 sm:px-6">
               <div className="flex items-center justify-between gap-2">
                 <CardTitle className="text-sm sm:text-base">Select Documents</CardTitle>
@@ -487,7 +487,7 @@ const BatchSendDocuments = () => {
             <CardContent className="space-y-3 px-3 sm:px-6">
               {/* File size indicator */}
               {selectedDocuments.length > 0 && (
-                <div className="flex items-center justify-between text-xs bg-muted/50 rounded-lg px-2 sm:px-3 py-2">
+                <div className="flex items-center justify-between text-xs bg-secondary/50 border border-primary/20 rounded-lg px-2 sm:px-3 py-2">
                   <span className="text-muted-foreground">Total size:</span>
                   <Badge variant={exceedsEmailLimit ? "destructive" : "outline"} className="text-xs">
                     {formatFileSize(totalFileSize)}
@@ -510,8 +510,8 @@ const BatchSendDocuments = () => {
               {/* Global Documents */}
               {globalDocuments.length > 0 && (
                 <Collapsible defaultOpen>
-                  <div className="border rounded-lg">
-                    <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
+                  <div className="border-2 border-primary/20 rounded-lg">
+                    <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-primary/5 transition-colors gap-2">
                       <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                         <Building2 className="h-4 w-4 text-primary shrink-0" />
                         <span className="font-medium text-xs sm:text-sm truncate">Global Docs</span>
@@ -572,8 +572,8 @@ const BatchSendDocuments = () => {
                   open={ride.expanded}
                   onOpenChange={() => toggleRideExpanded(ride.id)}
                 >
-                  <div className="border rounded-lg">
-                    <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
+                  <div className="border-2 border-accent/20 rounded-lg">
+                    <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-accent/5 transition-colors gap-2">
                       <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
                         {ride.expanded ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
                         <span className="font-medium text-xs sm:text-sm truncate">{ride.ride_name}</span>
