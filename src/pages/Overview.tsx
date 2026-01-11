@@ -13,6 +13,7 @@ import { FeatureGate } from "@/components/FeatureGate";
 import { Lock } from "lucide-react";
 import { formatPlanWithDescription } from "@/utils/planFormatter";
 import { ItemLimitWarning } from "@/components/ItemLimitWarning";
+import DeviceHintBanner from "@/components/DeviceHintBanner";
 
 interface OverviewStats {
   totalDocuments: number;
@@ -222,6 +223,9 @@ const Overview = () => {
 
   return (
     <div className="container mx-auto py-8 pb-24 md:pb-8 space-y-8">
+      {/* Device Hint for Mobile Users */}
+      <DeviceHintBanner />
+      
       {/* Header Section */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1">
