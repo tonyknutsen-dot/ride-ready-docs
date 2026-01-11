@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useTerminology } from '@/hooks/useTerminology';
 import { compressImage } from '@/utils/imageCompression';
+import { EmptyState } from '@/components/EmptyState';
 
 // Base document types - will be filtered/modified based on user's country
 const getDocumentTypes = (isUK: boolean) => [
@@ -88,13 +89,12 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   // Early return: require ride unless it's a global document
   if (!rideId && !isGlobal) {
     return (
-      <div className="p-6 rounded-2xl border-2 border-dashed border-info/40 bg-gradient-to-br from-info/5 to-primary/5 text-center">
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-info to-primary mx-auto flex items-center justify-center mb-3">
-          <FolderOpen className="h-6 w-6 text-white" />
-        </div>
-        <p className="text-sm font-medium text-foreground">Pick a ride first to add a document</p>
-        <p className="text-xs text-muted-foreground mt-1">or check "Global Document" below</p>
-      </div>
+      <EmptyState
+        icon={FolderOpen}
+        title="Pick a ride first to add a document"
+        description="or check 'Global Document' below"
+        variant="compact"
+      />
     );
   }
 
