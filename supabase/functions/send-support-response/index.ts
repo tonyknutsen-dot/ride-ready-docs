@@ -28,7 +28,6 @@ const handler = async (req: Request): Promise<Response> => {
 
   const origin = req.headers.get("origin");
   const corsHeaders = getCorsHeaders(origin);
-  }
 
   try {
     const { messageId, adminResponse, userEmail, subject }: SupportResponseRequest = await req.json();
