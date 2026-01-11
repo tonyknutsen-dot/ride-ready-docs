@@ -34,18 +34,12 @@ const GlobalDocumentsPage = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="documents" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 h-auto bg-transparent border-b-2 border-border p-0 rounded-none gap-0">
-          <TabsTrigger 
-            value="documents" 
-            className="flex items-center justify-center gap-2 text-sm font-semibold py-3 rounded-none border-b-2 border-transparent -mb-[2px] data-[state=active]:border-info data-[state=active]:text-info data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-info/80 transition-colors"
-          >
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="documents" className="flex items-center justify-center gap-2">
             <FileText className="h-4 w-4" />
             Files
           </TabsTrigger>
-          <TabsTrigger 
-            value="upload" 
-            className="flex items-center justify-center gap-2 text-sm font-semibold py-3 rounded-none border-b-2 border-transparent -mb-[2px] data-[state=active]:border-success data-[state=active]:text-success data-[state=active]:bg-transparent data-[state=active]:shadow-none hover:text-success/80 transition-colors"
-          >
+          <TabsTrigger value="upload" className="flex items-center justify-center gap-2">
             <Upload className="h-4 w-4" />
             Upload
           </TabsTrigger>
