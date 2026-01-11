@@ -89,11 +89,26 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-2xl font-bold">Choose Your Plan</h2>
+        <h2 className="text-2xl font-bold">
+          {hasActiveSubscription ? 'Manage Your Plan' : 'Choose Your Plan'}
+        </h2>
         <p className="text-muted-foreground mt-2">
-          Select the plan that best fits your needs
+          {hasActiveSubscription 
+            ? 'To change your plan or billing cycle, you\'ll be taken to our secure billing portal where any unused time will be credited to your new plan.'
+            : 'Select the plan that best fits your needs'}
         </p>
       </div>
+
+      {/* Info banner for existing subscribers */}
+      {hasActiveSubscription && (
+        <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-sm">
+          <p className="text-blue-800 dark:text-blue-200">
+            <strong>How plan changes work:</strong> When you switch plans or billing cycles, 
+            Stripe automatically calculates any unused time from your current plan and credits 
+            it toward your new plan. You only pay the difference.
+          </p>
+        </div>
+      )}
 
       <div className="grid md:grid-cols-2 gap-6">
         {/* Basic Plan */}
