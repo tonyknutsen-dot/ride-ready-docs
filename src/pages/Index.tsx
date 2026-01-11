@@ -1,4 +1,4 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, memo } from "react";
 import Hero from "../components/Hero";
 import Header from "../components/Header";
 
@@ -9,14 +9,14 @@ const Pricing = lazy(() => import("../components/Pricing"));
 const CallToAction = lazy(() => import("../components/CallToAction"));
 const Footer = lazy(() => import("../components/Footer"));
 
-// Minimal loading fallback
-const SectionLoader = () => (
+// Minimal loading fallback - memoized
+const SectionLoader = memo(() => (
   <div className="py-16 flex justify-center">
     <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
   </div>
-);
+));
 
-const Index = () => {
+const Index = memo(() => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -46,6 +46,8 @@ const Index = () => {
       </section>
     </div>
   );
-};
+});
+
+Index.displayName = 'Index';
 
 export default Index;

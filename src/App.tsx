@@ -60,14 +60,16 @@ const PageLoader = () => (
   </div>
 );
 
-// Optimized QueryClient with caching and stale time
+// Optimized QueryClient with aggressive caching
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       staleTime: 1000 * 60 * 5, // Data is fresh for 5 minutes
-      gcTime: 1000 * 60 * 30, // Cache for 30 minutes (formerly cacheTime)
+      gcTime: 1000 * 60 * 30, // Cache for 30 minutes
       retry: 1, // Only retry once on failure
       refetchOnWindowFocus: false, // Don't refetch on window focus
+      refetchOnMount: false, // Don't refetch on remount if data is fresh
+      refetchOnReconnect: false, // Don't refetch on reconnect
     },
   },
 });

@@ -39,7 +39,7 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-[100dvh] flex items-center overflow-hidden">
-      {/* Background Image with Overlay */}
+      {/* Background Image with Overlay - optimized loading */}
       <div className="absolute inset-0 z-0">
         <img 
           src={heroImage} 
@@ -50,6 +50,7 @@ const Hero = () => {
           loading="eager"
           fetchPriority="high"
           decoding="async"
+          style={{ contentVisibility: 'auto' }}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/40 to-black/70" />
       </div>
