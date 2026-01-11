@@ -34,7 +34,7 @@ const GlobalDocumentsPage = () => {
 
       {/* Tabs */}
       <Tabs defaultValue="documents" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 h-12 bg-secondary border-2 border-border p-1">
+        <TabsList className="grid w-full grid-cols-2 h-12 bg-transparent border-2 border-primary/20 p-1">
           <TabsTrigger 
             value="documents" 
             className="flex items-center gap-2 text-sm data-[state=active]:bg-info data-[state=active]:text-white data-[state=active]:shadow-md"
