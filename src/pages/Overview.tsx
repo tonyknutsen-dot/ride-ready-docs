@@ -7,13 +7,13 @@ import { FileText, Shield, Calendar, Upload, BarChart3, CheckCircle, AlertCircle
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Skeleton } from "@/components/ui/skeleton";
 import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { FeatureGate } from "@/components/FeatureGate";
 import { Lock } from "lucide-react";
 import { formatPlanWithDescription } from "@/utils/planFormatter";
 import { ItemLimitWarning } from "@/components/ItemLimitWarning";
 import DeviceHintBanner from "@/components/DeviceHintBanner";
+import { StatSkeleton, GridSkeleton } from "@/components/Skeletons";
 
 interface OverviewStats {
   totalDocuments: number;
@@ -209,14 +209,13 @@ const Overview = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8 pb-24 md:pb-8 animate-pulse">
-        <div className="mb-8">
-          <Skeleton className="h-9 w-48 mb-2" />
-          <Skeleton className="h-5 w-64" />
+      <div className="container mx-auto py-8 pb-24 md:pb-8 space-y-8">
+        <div className="mb-8 space-y-2">
+          <div className="h-7 w-48 bg-muted rounded animate-pulse" />
+          <div className="h-5 w-64 bg-muted rounded animate-pulse" />
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-28 rounded-xl" />)}
-        </div>
+        <StatSkeleton count={4} />
+        <GridSkeleton count={3} columns={3} />
       </div>
     );
   }
