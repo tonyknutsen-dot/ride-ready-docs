@@ -99,13 +99,15 @@ export const RequestFeatureDialog = ({ trigger }: RequestFeatureDialogProps) => 
     }
   };
 
+  const handleOpenFromDropdown = () => {
+    // Use setTimeout to open dialog after dropdown closes
+    setTimeout(() => setOpen(true), 0);
+  };
+
   const defaultTrigger = (
     <DropdownMenuItem
       className="flex items-center cursor-pointer"
-      onSelect={(e) => {
-        e.preventDefault();
-        setOpen(true);
-      }}
+      onSelect={handleOpenFromDropdown}
     >
       <Lightbulb className="h-4 w-4 mr-2" />
       Request a Feature
