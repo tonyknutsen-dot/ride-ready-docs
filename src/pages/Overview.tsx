@@ -1,186 +1,33 @@
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { FileText, Shield, Calendar, Upload, BarChart3, CheckCircle, AlertCircle, Clock, Wrench, ArrowRight, TrendingUp } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
+import { FileText, Shield, Calendar, Upload, BarChart3, CheckCircle, AlertCircle, Clock, Wrench, ArrowRight, TrendingUp, Lock } from "lucide-react";
 import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { FeatureGate } from "@/components/FeatureGate";
-import { Lock } from "lucide-react";
 import { formatPlanWithDescription } from "@/utils/planFormatter";
 import { ItemLimitWarning } from "@/components/ItemLimitWarning";
 import DeviceHintBanner from "@/components/DeviceHintBanner";
 import { StatSkeleton, GridSkeleton } from "@/components/Skeletons";
-
-interface OverviewStats {
-  totalDocuments: number;
-  activeRides: number;
-  upcomingInspections: number;
-  recentChecks: number;
-  maintenanceRecords: number;
-}
-
-interface RecentDocument {
-  name: string;
-  date: string;
-  type: string;
-}
-
-interface RecentActivity {
-  type: string;
-  title: string;
-  time: string;
-}
+import { useOverviewData } from "@/hooks/useOverviewData";
+import { useState } from "react";
 
 const Overview = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<OverviewStats>({
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
+  
+  const { data, isLoading, error } = useOverviewData();
+  
+  const stats = data?.stats ?? {
     totalDocuments: 0,
     activeRides: 0,
     upcomingInspections: 0,
     recentChecks: 0,
     maintenanceRecords: 0
-  });
-  const [recentDocs, setRecentDocs] = useState<RecentDocument[]>([]);
-  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
-  const [userPlan, setUserPlan] = useState<string>('trial');
-  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      fetchOverviewData();
-    }
-  }, [user]);
-
-  const fetchOverviewData = async () => {
-    if (!user?.id) return;
-    
-    try {
-      setLoading(true);
-
-      // Parallel fetch all data for better performance
-      const [
-        profileResult,
-        docsCountResult,
-        ridesCountResult,
-        inspectionsCountResult,
-        checksCountResult,
-        maintenanceCountResult,
-        recentDocsResult,
-        recentChecksResult,
-        recentMaintenanceResult
-      ] = await Promise.all([
-        supabase
-          .from('profiles')
-          .select('subscription_plan, subscription_status')
-          .eq('user_id', user.id)
-          .single(),
-        supabase
-          .from('documents')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id),
-        supabase
-          .from('rides')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id),
-        supabase
-          .from('inspection_schedules')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .gte('due_date', new Date().toISOString().split('T')[0])
-          .lte('due_date', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
-        supabase
-          .from('checks')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .gte('check_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
-        supabase
-          .from('maintenance_records')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id),
-        supabase
-          .from('documents')
-          .select('document_name, uploaded_at, document_type')
-          .eq('user_id', user.id)
-          .order('uploaded_at', { ascending: false })
-          .limit(4),
-        supabase
-          .from('checks')
-          .select('check_date, ride_id, rides(ride_name)')
-          .eq('user_id', user.id)
-          .order('check_date', { ascending: false })
-          .limit(2),
-        supabase
-          .from('maintenance_records')
-          .select('maintenance_date, maintenance_type, ride_id, rides(ride_name)')
-          .eq('user_id', user.id)
-          .order('maintenance_date', { ascending: false })
-          .limit(2)
-      ]);
-
-      // Process profile
-      if (profileResult.data) {
-        setUserPlan(profileResult.data.subscription_status || 'trial');
-      }
-
-      // Set stats
-      setStats({
-        totalDocuments: docsCountResult.count || 0,
-        activeRides: ridesCountResult.count || 0,
-        upcomingInspections: inspectionsCountResult.count || 0,
-        recentChecks: checksCountResult.count || 0,
-        maintenanceRecords: maintenanceCountResult.count || 0
-      });
-
-      // Process recent docs
-      if (recentDocsResult.data) {
-        setRecentDocs(recentDocsResult.data.map(doc => ({
-          name: doc.document_name,
-          date: new Date(doc.uploaded_at).toLocaleDateString(),
-          type: doc.document_type
-        })));
-      }
-
-      // Build activity list
-      const activity: RecentActivity[] = [];
-      
-      if (recentChecksResult.data) {
-        recentChecksResult.data.forEach(check => {
-          activity.push({
-            type: 'check',
-            title: `Safety check completed - ${(check as any).rides?.ride_name}`,
-            time: new Date(check.check_date).toLocaleDateString()
-          });
-        });
-      }
-      
-      if (recentMaintenanceResult.data) {
-        recentMaintenanceResult.data.forEach(record => {
-          activity.push({
-            type: 'maintenance',
-            title: `${record.maintenance_type} - ${(record as any).rides?.ride_name}`,
-            time: new Date(record.maintenance_date).toLocaleDateString()
-          });
-        });
-      }
-
-      setRecentActivity(activity.slice(0, 4));
-    } catch (error: any) {
-      toast({
-        title: "Error loading overview",
-        description: error.message,
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
-    }
   };
+  const recentDocs = data?.recentDocs ?? [];
+  const recentActivity = data?.recentActivity ?? [];
+  const userPlan = data?.userPlan ?? 'trial';
 
   const basicFeatures = [
     {
@@ -218,7 +65,7 @@ const Overview = () => {
 
   const demoFeatures = userPlan === 'advanced' ? [...basicFeatures, ...advancedFeatures] : basicFeatures;
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="container mx-auto py-8 pb-24 md:pb-8 space-y-8">
         <div className="mb-8 space-y-2">
