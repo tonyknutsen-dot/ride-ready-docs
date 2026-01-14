@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, ReactNode } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -26,16 +26,29 @@ import { MessageCircle } from 'lucide-react';
 interface ContactSupportDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  trigger?: ReactNode;
 }
 
-export const ContactSupportDialog = ({ open: externalOpen, onOpenChange: externalOnOpenChange }: ContactSupportDialogProps = {}) => {
+export const ContactSupportDialog = ({ 
+  open: controlledOpen, 
+  onOpenChange: controlledOnOpenChange,
+  trigger
+}: ContactSupportDialogProps = {}) => {
   const { user } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // Use external state if provided, otherwise use internal state
-  const open = externalOpen !== undefined ? externalOpen : internalOpen;
-  const setOpen = externalOnOpenChange || setInternalOpen;
+  // Use controlled state if provided, otherwise use internal state
+  const isControlled = controlledOpen !== undefined;
+  const open = isControlled ? controlledOpen : internalOpen;
+  const setOpen = (value: boolean) => {
+    if (isControlled) {
+      controlledOnOpenChange?.(value);
+    } else {
+      setInternalOpen(value);
+    }
+  };
+
   const [formData, setFormData] = useState({
     subject: '',
     message: '',
@@ -91,16 +104,103 @@ export const ContactSupportDialog = ({ open: externalOpen, onOpenChange: externa
     }
   };
 
+  // Default trigger button
+  const defaultTrigger = (
+    <Button variant="outline" size="sm">
+      <MessageCircle className="h-4 w-4 mr-2" />
+      Contact Support
+    </Button>
+  );
+
+  // If controlled (open prop provided), don't render a trigger - the parent controls opening
+  if (isControlled) {
+    return (
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Contact Support</DialogTitle>
+            <DialogDescription>
+              Send us a message and we'll get back to you as soon as possible
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <Label htmlFor="subject">Subject</Label>
+              <Input
+                id="subject"
+                value={formData.subject}
+                onChange={(e) =>
+                  setFormData({ ...formData, subject: e.target.value })
+                }
+                placeholder="Brief description of your issue"
+                maxLength={200}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="priority">Priority</Label>
+              <Select
+                value={formData.priority}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, priority: value })
+                }
+              >
+                <SelectTrigger id="priority">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="normal">Normal</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="urgent">Urgent</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="message">Message</Label>
+              <Textarea
+                id="message"
+                value={formData.message}
+                onChange={(e) =>
+                  setFormData({ ...formData, message: e.target.value })
+                }
+                placeholder="Describe your issue in detail..."
+                rows={6}
+                maxLength={2000}
+                required
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {formData.message.length}/2000 characters
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+                disabled={isSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Sending...' : 'Send Message'}
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  // Uncontrolled mode with trigger
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      {externalOpen === undefined && (
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
-            <MessageCircle className="h-4 w-4 mr-2" />
-            Contact Support
-          </Button>
-        </DialogTrigger>
-      )}
+      <DialogTrigger asChild>
+        {trigger || defaultTrigger}
+      </DialogTrigger>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>Contact Support</DialogTitle>
