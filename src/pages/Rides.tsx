@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ import { ItemLimitWarning } from '@/components/ItemLimitWarning';
 import { compressImage } from '@/utils/imageCompression';
 import { EmptyState } from '@/components/EmptyState';
 import { LoadingState } from '@/components/LoadingState';
+import { PullToRefresh } from '@/components/PullToRefresh';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -174,6 +175,11 @@ const Rides = () => {
     });
   };
 
+  const handleRefresh = useCallback(async () => {
+    setLoading(true);
+    await loadRides();
+  }, [user]);
+
   const handleQuickPhotoUpload = async (rideId: string, file: File) => {
     if (!user) return;
     
@@ -287,6 +293,7 @@ const Rides = () => {
   };
 
   return (
+    <PullToRefresh onRefresh={handleRefresh} disabled={loading}>
     <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5">
       {/* Item Limit Warning */}
       <ItemLimitWarning />
@@ -493,6 +500,7 @@ const Rides = () => {
         </div>
       )}
     </div>
+    </PullToRefresh>
   );
 };
 
