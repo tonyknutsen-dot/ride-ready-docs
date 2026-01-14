@@ -10,21 +10,18 @@ const MOBILE_BREAKPOINT = 768;
 
 export default function DeviceHintBanner({ variant = 'default' }: DeviceHintBannerProps) {
   const [showBanner, setShowBanner] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    // Check if already dismissed
-    const dismissed = localStorage.getItem('rrd_hide_device_hint') === '1';
-    if (dismissed) return;
-
-    // Check if mobile
+    // Check if mobile - show every session until dismissed
     const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
-    if (isMobile) {
+    if (isMobile && !dismissed) {
       setShowBanner(true);
     }
-  }, []);
+  }, [dismissed]);
 
   const handleDismiss = () => {
-    localStorage.setItem('rrd_hide_device_hint', '1');
+    setDismissed(true);
     setShowBanner(false);
   };
 
