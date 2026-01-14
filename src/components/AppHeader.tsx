@@ -1,8 +1,9 @@
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/contexts/AdminContext';
-import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown, ShieldCheck, Calendar as CalendarIcon, Send, Shield, Tent, Building2, User } from 'lucide-react';
+import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown, ShieldCheck, Calendar as CalendarIcon, Send, Shield, Tent, Building2, User, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -29,6 +30,8 @@ const AppHeader = () => {
   const { isAdmin } = useAdmin();
   const { toast } = useToast();
   const { operatorType, loading: terminologyLoading } = useTerminology();
+
+  const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
 
   const operatorConfig = OPERATOR_TYPE_CONFIG[operatorType] || OPERATOR_TYPE_CONFIG.company;
   const OperatorIcon = operatorConfig.icon;
@@ -166,8 +169,17 @@ const AppHeader = () => {
                   Help & Support
                 </Link>
               </DropdownMenuItem>
-              
-              <RequestFeatureDialog />
+
+              <DropdownMenuItem
+                className="flex items-center cursor-pointer"
+                onSelect={() => {
+                  // Defer until after the dropdown closes
+                  setTimeout(() => setFeatureDialogOpen(true), 0);
+                }}
+              >
+                <Lightbulb className="h-4 w-4 mr-2" />
+                Request a Feature
+              </DropdownMenuItem>
               
               {isAdmin && (
                 <>
@@ -199,6 +211,13 @@ const AppHeader = () => {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Keep dialog mounted outside the dropdown so it doesn't unmount on close */}
+          <RequestFeatureDialog
+            open={featureDialogOpen}
+            onOpenChange={setFeatureDialogOpen}
+            hideTrigger
+          />
         </div>
       </div>
     </header>
