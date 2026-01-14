@@ -3,7 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/contexts/AdminContext';
-import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown, ShieldCheck, Calendar as CalendarIcon, Send, Shield, Tent, Building2, User, Lightbulb } from 'lucide-react';
+import { Home, FolderOpen, LogOut, MoreHorizontal, CreditCard, HelpCircle, Settings, FileText, ChevronDown, ShieldCheck, Calendar as CalendarIcon, Send, Shield, Tent, Building2, User, Lightbulb, MessageCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
@@ -32,6 +32,7 @@ const AppHeader = () => {
   const { operatorType, loading: terminologyLoading } = useTerminology();
 
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
 
   const operatorConfig = OPERATOR_TYPE_CONFIG[operatorType] || OPERATOR_TYPE_CONFIG.company;
   const OperatorIcon = operatorConfig.icon;
@@ -197,11 +198,22 @@ const AppHeader = () => {
               )}
               
               <DropdownMenuSeparator />
-              
-              <ContactSupportDialog />
-              
+
+              <DropdownMenuItem
+                className="p-0"
+                onSelect={() => {
+                  // Defer until after the dropdown closes
+                  setTimeout(() => setContactDialogOpen(true), 0);
+                }}
+              >
+                <Button variant="outline" size="sm" className="w-full justify-start gap-2">
+                  <MessageCircle className="h-4 w-4" />
+                  Contact Support
+                </Button>
+              </DropdownMenuItem>
+
               <DropdownMenuSeparator />
-              
+
               <DropdownMenuItem 
                 onClick={handleSignOut}
                 className="text-destructive focus:text-destructive cursor-pointer"
@@ -212,11 +224,15 @@ const AppHeader = () => {
             </DropdownMenuContent>
           </DropdownMenu>
 
-          {/* Keep dialog mounted outside the dropdown so it doesn't unmount on close */}
+          {/* Keep dialogs mounted outside the dropdown so they don't unmount on close */}
           <RequestFeatureDialog
             open={featureDialogOpen}
             onOpenChange={setFeatureDialogOpen}
             hideTrigger
+          />
+          <ContactSupportDialog
+            open={contactDialogOpen}
+            onOpenChange={setContactDialogOpen}
           />
         </div>
       </div>
