@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FileText, Calendar, Bell, Upload, CheckCircle, Shield, Mail, Crown, ArrowRight } from "lucide-react";
-import { useSubscription } from "@/hooks/useSubscription";
+import { useSubscription, PRICING, RIDE_LIMITS } from "@/hooks/useSubscription";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -111,6 +111,7 @@ const HelpCenter = () => {
       ]
     }
   ];
+
   const faqs = [
     {
       category: "Getting Started",
@@ -123,7 +124,7 @@ const HelpCenter = () => {
         },
         {
           q: "What's included in the free trial?",
-          a: "The 30-day free trial includes full access to all features: unlimited rides, document storage, inspection scheduling, daily checks, maintenance tracking, and notifications. No credit card required to start.",
+          a: `The 30-day free trial gives you full access to the Operations & Maintenance plan features with up to ${RIDE_LIMITS.trial} items. No credit card required to start. After the trial, choose a plan that fits your needs.`,
           planRequired: "basic"
         },
         {
@@ -139,7 +140,7 @@ const HelpCenter = () => {
       questions: [
         {
           q: "How many rides can I add?",
-          a: "Documents & Compliance allows up to 10 items. Operations & Maintenance supports unlimited rides, food stalls, stalls, games, inflatables, and equipment.",
+          a: `Documents & Compliance includes up to ${RIDE_LIMITS.basic} items. Operations & Maintenance includes up to ${RIDE_LIMITS.advanced} items. Need more? Additional items cost just £${PRICING.basic.additionalItemCost.toFixed(2)}/month each on either plan.`,
           planRequired: "basic"
         },
         {
@@ -160,12 +161,12 @@ const HelpCenter = () => {
       questions: [
         {
           q: "What types of documents can I upload?",
-          a: "You can upload any document related to your rides: Declaration of Compliance (DOC) certificates (known as ADIPS in the UK), insurance documents, test certificates, manuals, risk assessments, electrical certificates, NDT reports, and more.",
+          a: `You can upload any document related to your rides: Declaration of Compliance (DOC) certificates${terminology.isUK ? ' (known as ADIPS in the UK)' : ''}, insurance documents, test certificates, manuals, risk assessments, electrical certificates, NDT reports, and more.`,
           planRequired: "basic"
         },
         {
           q: "How does document expiry tracking work?",
-          a: "When uploading documents, set an expiry date. The system automatically tracks expiry dates and sends notifications (Operations & Maintenance feature).",
+          a: "When uploading documents, set an expiry date. The system automatically tracks expiry dates and sends email notifications 30 days and 7 days before expiry on all plans.",
           planRequired: "basic"
         },
         {
@@ -180,7 +181,7 @@ const HelpCenter = () => {
         },
         {
           q: "How do I send documents to councils or inspectors?",
-          a: "Use the 'Send Documents' feature on any ride. Select which documents to include, add recipient email addresses, include a message, and send. Perfect for safety compliance inspections or council submissions.",
+          a: `Use the 'Send Documents' feature on any ride. Select which documents to include, add recipient email addresses, include a message, and send. Perfect for safety compliance inspections or ${terminology.isUK ? 'council' : 'authority'} submissions.`,
           planRequired: "basic"
         }
       ]
@@ -232,7 +233,7 @@ const HelpCenter = () => {
         },
         {
           q: "Do I need to complete checks every day?",
-          a: "ADIPS and HSE guidelines require pre-operational safety checks each day before public use. Our daily check system helps you document compliance with these requirements.",
+          a: `${terminology.isUK ? 'ADIPS and HSE' : 'Industry'} guidelines require pre-operational safety checks each day before public use. Our daily check system helps you document compliance with these requirements.`,
           planRequired: "advanced"
         },
         {
@@ -279,7 +280,7 @@ const HelpCenter = () => {
         },
         {
           q: "Can I export risk assessments?",
-          a: "Yes! Generate PDF reports that are downloadable, printable, and emailable. Perfect for council submissions, ADIPS inspections, or sharing with your team.",
+          a: `Yes! Generate PDF reports that are downloadable, printable, and emailable. Perfect for ${terminology.isUK ? 'council submissions, ADIPS inspections' : 'regulatory submissions, inspections'}, or sharing with your team.`,
           planRequired: "advanced"
         },
         {
@@ -295,28 +296,12 @@ const HelpCenter = () => {
       ]
     },
     {
-      category: "Technical Bulletins (Operations & Maintenance)",
-      planRequired: "advanced",
-      questions: [
-        {
-          q: "What are technical bulletins?",
-          a: "Technical bulletins are safety notices and updates from ride manufacturers about potential issues, required modifications, or important operational information.",
-          planRequired: "advanced"
-        },
-        {
-          q: "How do I find relevant bulletins for my rides?",
-          a: "The Technical Bulletins feature automatically matches bulletins to your rides based on manufacturer and category. You can also search the bulletin library.",
-          planRequired: "advanced"
-        }
-      ]
-    },
-    {
       category: "Notifications (Operations & Maintenance)",
       planRequired: "advanced",
       questions: [
         {
           q: "What notifications will I receive?",
-          a: "You'll receive reminders for: upcoming inspections (30 days before), expiring documents (30 days, 7 days, and on expiry), overdue maintenance, and NDT testing due dates.",
+          a: "You'll receive reminders for: upcoming inspections, expiring documents (30 days and 7 days before), overdue maintenance, and NDT testing due dates.",
           planRequired: "advanced"
         },
         {
@@ -336,8 +321,8 @@ const HelpCenter = () => {
           planRequired: "advanced"
         },
         {
-          q: "How do I prepare for an ADIPS inspection?",
-          a: "Use the calendar view to ensure all inspections and documents are current. Generate a compliance report showing all active certificates, recent inspection reports, and maintenance history.",
+          q: `How do I prepare for an ${terminology.isUK ? 'ADIPS' : 'annual'} inspection?`,
+          a: `Use the calendar view to ensure all inspections and documents are current. Generate a compliance report showing all active certificates, recent inspection reports, and maintenance history.`,
           planRequired: "advanced"
         }
       ]
@@ -347,7 +332,7 @@ const HelpCenter = () => {
       questions: [
         {
           q: "How do I upgrade from Documents & Compliance to Operations & Maintenance?",
-          a: "Go to Settings > Plan & Billing and select 'Upgrade'. You'll immediately gain access to operations & maintenance features and be billed the difference for the current period."
+          a: "Go to Settings > Plan & Billing and select 'Upgrade'. You'll be taken to our secure billing portal where any unused time from your current plan will be credited to your new plan."
         },
         {
           q: "What happens if I don't upgrade after the trial?",
@@ -358,8 +343,16 @@ const HelpCenter = () => {
           a: "Yes, cancel anytime from Settings > Plan & Billing. You'll retain access until the end of your paid period. Your data remains accessible for 90 days after cancellation."
         },
         {
+          q: "What if I need more than the included items?",
+          a: `Both plans allow you to add extra items beyond the included limit. Each additional item costs just £${PRICING.basic.additionalItemCost.toFixed(2)}/month. This allows you to scale as your business grows.`
+        },
+        {
+          q: "Do you offer discounts for annual billing?",
+          a: `Yes! Pay annually and get 2 months free. Documents & Compliance is £${PRICING.basic.yearly.toFixed(2)}/year (instead of £${(PRICING.basic.monthly * 12).toFixed(2)}). Operations & Maintenance is £${PRICING.advanced.yearly.toFixed(2)}/year (instead of £${(PRICING.advanced.monthly * 12).toFixed(2)}).`
+        },
+        {
           q: "Do you offer discounts for multiple accounts?",
-          a: "Contact us for multi-account or showman guild pricing. We offer discounts for organizations managing multiple showman accounts."
+          a: `Contact us for multi-account or ${terminology.isUK ? 'showman guild' : 'operator association'} pricing. We offer discounts for organizations managing multiple accounts.`
         }
       ]
     },
@@ -368,7 +361,7 @@ const HelpCenter = () => {
       questions: [
         {
           q: "Is my data secure?",
-          a: "Yes! We use bank-level encryption, secure Supabase infrastructure, regular backups, and row-level security policies. Your data is stored in UK/EU data centers."
+          a: `Yes! We use bank-level encryption, secure Supabase infrastructure, regular backups, and row-level security policies. Your data is stored in ${terminology.isUK ? 'UK/EU' : 'secure'} data centers.`
         },
         {
           q: "Can I export my data?",
@@ -385,7 +378,9 @@ const HelpCenter = () => {
       ]
     }
   ];
-  return <div className="min-h-screen bg-background">
+
+  return (
+    <div className="min-h-screen bg-background">
       <Header />
       
       <main className="pt-24 pb-16">
@@ -594,6 +589,8 @@ const HelpCenter = () => {
       </main>
 
       <Footer />
-    </div>;
+    </div>
+  );
 };
+
 export default HelpCenter;
