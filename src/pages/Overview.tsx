@@ -10,13 +10,18 @@ import { ItemLimitWarning } from "@/components/ItemLimitWarning";
 import DeviceHintBanner from "@/components/DeviceHintBanner";
 import { StatSkeleton, GridSkeleton } from "@/components/Skeletons";
 import { useOverviewData } from "@/hooks/useOverviewData";
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { PullToRefresh } from "@/components/PullToRefresh";
 
 const Overview = () => {
   const navigate = useNavigate();
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
   
-  const { data, isLoading, error } = useOverviewData();
+  const { data, isLoading, error, refetch } = useOverviewData();
+  
+  const handleRefresh = useCallback(async () => {
+    await refetch();
+  }, [refetch]);
   
   const stats = data?.stats ?? {
     totalDocuments: 0,
@@ -79,6 +84,7 @@ const Overview = () => {
   }
 
   return (
+    <PullToRefresh onRefresh={handleRefresh} disabled={isLoading}>
     <div className="container mx-auto py-8 pb-24 md:pb-8 space-y-8">
       {/* Device Hint for Mobile Users */}
       <DeviceHintBanner />
@@ -448,6 +454,7 @@ const Overview = () => {
 
       <QuickDocumentUpload open={showDocumentUpload} onOpenChange={setShowDocumentUpload} />
     </div>
+    </PullToRefresh>
   );
 };
 
