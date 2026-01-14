@@ -112,10 +112,99 @@ export const RequestFeatureDialog = ({ trigger }: RequestFeatureDialogProps) => 
     </DropdownMenuItem>
   );
 
+  // When used as a dropdown item, render trigger outside Dialog to avoid unmount issues
+  if (!trigger) {
+    return (
+      <>
+        {defaultTrigger}
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Lightbulb className="h-5 w-5 text-primary" />
+                Request a Feature
+              </DialogTitle>
+              <DialogDescription>
+                Have an idea to improve Ride Ready Docs? We'd love to hear it!
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="feature_title">
+                  Feature Title <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="feature_title"
+                  placeholder="E.g., Export maintenance logs to Excel"
+                  value={formData.feature_title}
+                  onChange={(e) => handleInputChange("feature_title", e.target.value)}
+                  className={errors.feature_title ? "border-destructive" : ""}
+                  disabled={isSubmitting}
+                />
+                {errors.feature_title && (
+                  <p className="text-sm text-destructive">{errors.feature_title}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="feature_description">
+                  Description <span className="text-destructive">*</span>
+                </Label>
+                <Textarea
+                  id="feature_description"
+                  placeholder="Describe the feature you'd like to see..."
+                  value={formData.feature_description}
+                  onChange={(e) => handleInputChange("feature_description", e.target.value)}
+                  className={`min-h-[120px] ${errors.feature_description ? "border-destructive" : ""}`}
+                  disabled={isSubmitting}
+                />
+                {errors.feature_description && (
+                  <p className="text-sm text-destructive">{errors.feature_description}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="use_case">
+                  How would you use this? (optional)
+                </Label>
+                <Textarea
+                  id="use_case"
+                  placeholder={`E.g., I need this for quarterly ${terminology.isUK ? 'council' : 'authority'} inspections...`}
+                  value={formData.use_case}
+                  onChange={(e) => handleInputChange("use_case", e.target.value)}
+                  className={`min-h-[80px] ${errors.use_case ? "border-destructive" : ""}`}
+                  disabled={isSubmitting}
+                />
+                {errors.use_case && (
+                  <p className="text-sm text-destructive">{errors.use_case}</p>
+                )}
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button type="submit" disabled={isSubmitting} className="flex-1">
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Submit Request
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setOpen(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        {trigger || defaultTrigger}
+        {trigger}
       </DialogTrigger>
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
