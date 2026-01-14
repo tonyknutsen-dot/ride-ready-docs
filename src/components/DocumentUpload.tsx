@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useTerminology } from '@/hooks/useTerminology';
 import { compressImage } from '@/utils/imageCompression';
 import { EmptyState } from '@/components/EmptyState';
+import { useOptimisticDocumentUpload } from '@/hooks/useOptimisticMutations';
 
 // Base document types - will be filtered/modified based on user's country
 const getDocumentTypes = (isUK: boolean) => [
@@ -49,8 +50,9 @@ interface DocumentUploadProps {
 
 const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadProps) => {
   const { user } = useAuth();
-  const { toast } = useToast();
   const { terminology } = useTerminology();
+  const { toast } = useToast();
+  const uploadMutation = useOptimisticDocumentUpload();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState('');
   const [documentName, setDocumentName] = useState('');
@@ -179,95 +181,52 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
 
     setUploading(true);
 
-    try {
-      // Create file path: userId/rideId/filename or userId/global/filename for global docs
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${Date.now()}-${selectedFile.name}`;
-      const filePath = isGlobal 
-        ? `${user.id}/global/${fileName}`
-        : `${user.id}/${rideId}/${fileName}`;
-
-      // Upload file to Supabase Storage
-      const { error: uploadError } = await supabase.storage
-        .from('ride-documents')
-        .upload(filePath, selectedFile);
-
-      if (uploadError) {
-        throw uploadError;
+    // Use optimistic mutation
+    uploadMutation.mutate(
+      {
+        file: selectedFile,
+        documentName,
+        documentType,
+        rideId: rideId || null,
+        rideName,
+        isGlobal,
+        expiryDate: expiryDate || undefined,
+        notes: notes || undefined,
+        versionNumber: useVersionControl ? versionNumber : '1.0',
+        versionNotes: useVersionControl ? versionNotes : undefined,
+        replacingDocumentId,
+      },
+      {
+        onSuccess: () => {
+          // Reset form completely
+          setSelectedFile(null);
+          setDocumentType('');
+          setDocumentName('');
+          setExpiryDate('');
+          setNotes('');
+          setIsGlobal(false);
+          setUseVersionControl(false);
+          setVersionNumber('1.0');
+          setVersionNotes('');
+          setReplacingDocumentId(null);
+          setExistingDocuments([]);
+          
+          // Clear the file input elements
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+          if (cameraInputRef.current) {
+            cameraInputRef.current.value = '';
+          }
+          
+          setUploading(false);
+          onUploadSuccess();
+        },
+        onError: () => {
+          setUploading(false);
+        },
       }
-
-      // Save document metadata to database
-      const documentData: any = {
-        user_id: user.id,
-        ride_id: isGlobal ? null : rideId,
-        document_name: documentName,
-        document_type: documentType,
-        file_path: filePath,
-        file_size: selectedFile.size,
-        mime_type: selectedFile.type,
-        is_global: isGlobal,
-        expires_at: expiryDate || null,
-        notes: notes || null,
-        version_number: useVersionControl ? versionNumber : '1.0',
-        is_latest_version: true,
-        version_notes: useVersionControl ? versionNotes : null,
-        replaced_document_id: replacingDocumentId,
-      };
-
-      const { error: dbError } = await supabase
-        .from('documents')
-        .insert(documentData);
-
-      if (dbError) {
-        throw dbError;
-      }
-
-      // If this is a version update, mark the old document as not latest
-      if (replacingDocumentId) {
-        await supabase
-          .from('documents')
-          .update({ is_latest_version: false })
-          .eq('id', replacingDocumentId);
-      }
-
-      toast({
-        title: isGlobal ? "Global document saved" : `Saved to ${rideName || 'this ride'}`,
-        description: "View files →",
-      });
-
-      // Reset form completely
-      setSelectedFile(null);
-      setDocumentType('');
-      setDocumentName('');
-      setExpiryDate('');
-      setNotes('');
-      setIsGlobal(false);
-      setUseVersionControl(false);
-      setVersionNumber('1.0');
-      setVersionNotes('');
-      setReplacingDocumentId(null);
-      setExistingDocuments([]);
-      
-      // Clear the file input elements
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-      if (cameraInputRef.current) {
-        cameraInputRef.current.value = '';
-      }
-      
-      onUploadSuccess();
-
-    } catch (error: any) {
-      console.error('Upload error:', error);
-      toast({
-        title: "Upload failed",
-        description: error.message || "Failed to upload document",
-        variant: "destructive",
-      });
-    } finally {
-      setUploading(false);
-    }
+    );
   };
 
   return (

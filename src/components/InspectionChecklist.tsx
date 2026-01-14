@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tables } from '@/integrations/supabase/types';
+import { useQueryClient } from '@tanstack/react-query';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import TemplateBuilder from './TemplateBuilder';
@@ -55,6 +56,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (user) {
@@ -240,6 +242,28 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
     setSubmitting(true);
 
+    // Optimistically update the overview cache immediately
+    const previousOverview = queryClient.getQueryData(['overview', user?.id]);
+    queryClient.setQueryData(['overview', user?.id], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        stats: {
+          ...old.stats,
+          recentChecks: old.stats.recentChecks + 1
+        },
+        recentActivity: [
+          {
+            type: 'check',
+            title: `Safety check completed - ${ride.ride_name}`,
+            time: new Date().toLocaleDateString(),
+            _optimistic: true
+          },
+          ...old.recentActivity.slice(0, 3)
+        ]
+      };
+    });
+
     try {
       // Create inspection check record
       const { data: check, error: checkError } = await supabase
@@ -276,40 +300,41 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
       if (resultsError) throw resultsError;
 
-      // Generate and save PDF to documents
-      const pdfBlob = await generatePDFBlob();
-      if (pdfBlob) {
-        const fileName = `${frequency}-check-${ride.ride_name}-${new Date().toISOString()}.pdf`;
-        const filePath = `${user?.id}/${ride.id}/check-records/${fileName}`;
-        
-        // Upload to storage
-        const { error: uploadError } = await supabase.storage
-          .from('ride-documents')
-          .upload(filePath, pdfBlob, {
-            contentType: 'application/pdf',
-            upsert: false
-          });
-
-        if (!uploadError) {
-          // Create document record
-          await supabase
-            .from('documents')
-            .insert({
-              user_id: user?.id,
-              ride_id: ride.id,
-              document_name: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check - ${new Date().toLocaleDateString()}`,
-              document_type: 'Check Record',
-              file_path: filePath,
-              mime_type: 'application/pdf',
-              file_size: pdfBlob.size,
-              notes: `Inspector: ${inspectorName}${weatherConditions ? ` | Weather: ${weatherConditions}` : ''}`
+      // Generate and save PDF to documents (non-blocking)
+      generatePDFBlob().then(async (pdfBlob) => {
+        if (pdfBlob) {
+          const fileName = `${frequency}-check-${ride.ride_name}-${new Date().toISOString()}.pdf`;
+          const filePath = `${user?.id}/${ride.id}/check-records/${fileName}`;
+          
+          const { error: uploadError } = await supabase.storage
+            .from('ride-documents')
+            .upload(filePath, pdfBlob, {
+              contentType: 'application/pdf',
+              upsert: false
             });
+
+          if (!uploadError) {
+            await supabase
+              .from('documents')
+              .insert({
+                user_id: user?.id,
+                ride_id: ride.id,
+                document_name: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check - ${new Date().toLocaleDateString()}`,
+                document_type: 'Check Record',
+                file_path: filePath,
+                mime_type: 'application/pdf',
+                file_size: pdfBlob.size,
+                notes: `Inspector: ${inspectorName}${weatherConditions ? ` | Weather: ${weatherConditions}` : ''}`
+              });
+            // Invalidate to pick up the new document
+            queryClient.invalidateQueries({ queryKey: ['overview'] });
+          }
         }
-      }
+      });
 
       toast({
-        title: "Check completed",
-        description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check has been saved successfully`
+        title: "Check completed ✓",
+        description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}`
       });
 
       // Reset form
@@ -324,7 +349,15 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
       // Reload recent checks
       await loadRecentChecks();
+      
+      // Invalidate queries to sync
+      queryClient.invalidateQueries({ queryKey: ['overview'] });
+      queryClient.invalidateQueries({ queryKey: ['checks'] });
     } catch (error) {
+      // Rollback optimistic update
+      if (previousOverview) {
+        queryClient.setQueryData(['overview', user?.id], previousOverview);
+      }
       console.error('Error submitting checks:', error);
       toast({
         title: "Error",
