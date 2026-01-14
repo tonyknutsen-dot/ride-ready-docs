@@ -59,81 +59,99 @@ const Overview = () => {
   }, [user]);
 
   const fetchOverviewData = async () => {
+    if (!user?.id) return;
+    
     try {
       setLoading(true);
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('subscription_plan, subscription_status')
-        .eq('user_id', user?.id)
-        .single();
-      
-      if (profile) {
-        setUserPlan(profile.subscription_status || 'trial');
+      // Parallel fetch all data for better performance
+      const [
+        profileResult,
+        docsCountResult,
+        ridesCountResult,
+        inspectionsCountResult,
+        checksCountResult,
+        maintenanceCountResult,
+        recentDocsResult,
+        recentChecksResult,
+        recentMaintenanceResult
+      ] = await Promise.all([
+        supabase
+          .from('profiles')
+          .select('subscription_plan, subscription_status')
+          .eq('user_id', user.id)
+          .single(),
+        supabase
+          .from('documents')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id),
+        supabase
+          .from('rides')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id),
+        supabase
+          .from('inspection_schedules')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('due_date', new Date().toISOString().split('T')[0])
+          .lte('due_date', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
+        supabase
+          .from('checks')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .gte('check_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]),
+        supabase
+          .from('maintenance_records')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id),
+        supabase
+          .from('documents')
+          .select('document_name, uploaded_at, document_type')
+          .eq('user_id', user.id)
+          .order('uploaded_at', { ascending: false })
+          .limit(4),
+        supabase
+          .from('checks')
+          .select('check_date, ride_id, rides(ride_name)')
+          .eq('user_id', user.id)
+          .order('check_date', { ascending: false })
+          .limit(2),
+        supabase
+          .from('maintenance_records')
+          .select('maintenance_date, maintenance_type, ride_id, rides(ride_name)')
+          .eq('user_id', user.id)
+          .order('maintenance_date', { ascending: false })
+          .limit(2)
+      ]);
+
+      // Process profile
+      if (profileResult.data) {
+        setUserPlan(profileResult.data.subscription_status || 'trial');
       }
 
-      const { count: docsCount } = await supabase
-        .from('documents')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id);
-
-      const { count: ridesCount } = await supabase
-        .from('rides')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id);
-
-      const { count: inspectionsCount } = await supabase
-        .from('inspection_schedules')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id)
-        .gte('due_date', new Date().toISOString().split('T')[0])
-        .lte('due_date', new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
-
-      const { count: checksCount } = await supabase
-        .from('checks')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id)
-        .gte('check_date', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]);
-
-      const { count: maintenanceCount } = await supabase
-        .from('maintenance_records')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id);
-
+      // Set stats
       setStats({
-        totalDocuments: docsCount || 0,
-        activeRides: ridesCount || 0,
-        upcomingInspections: inspectionsCount || 0,
-        recentChecks: checksCount || 0,
-        maintenanceRecords: maintenanceCount || 0
+        totalDocuments: docsCountResult.count || 0,
+        activeRides: ridesCountResult.count || 0,
+        upcomingInspections: inspectionsCountResult.count || 0,
+        recentChecks: checksCountResult.count || 0,
+        maintenanceRecords: maintenanceCountResult.count || 0
       });
 
-      const { data: docs } = await supabase
-        .from('documents')
-        .select('document_name, uploaded_at, document_type')
-        .eq('user_id', user?.id)
-        .order('uploaded_at', { ascending: false })
-        .limit(4);
-      
-      if (docs) {
-        setRecentDocs(docs.map(doc => ({
+      // Process recent docs
+      if (recentDocsResult.data) {
+        setRecentDocs(recentDocsResult.data.map(doc => ({
           name: doc.document_name,
           date: new Date(doc.uploaded_at).toLocaleDateString(),
           type: doc.document_type
         })));
       }
 
+      // Build activity list
       const activity: RecentActivity[] = [];
-
-      const { data: recentChecks } = await supabase
-        .from('checks')
-        .select('check_date, ride_id, rides(ride_name)')
-        .eq('user_id', user?.id)
-        .order('check_date', { ascending: false })
-        .limit(2);
       
-      if (recentChecks) {
-        recentChecks.forEach(check => {
+      if (recentChecksResult.data) {
+        recentChecksResult.data.forEach(check => {
           activity.push({
             type: 'check',
             title: `Safety check completed - ${(check as any).rides?.ride_name}`,
@@ -141,16 +159,9 @@ const Overview = () => {
           });
         });
       }
-
-      const { data: recentMaintenance } = await supabase
-        .from('maintenance_records')
-        .select('maintenance_date, maintenance_type, ride_id, rides(ride_name)')
-        .eq('user_id', user?.id)
-        .order('maintenance_date', { ascending: false })
-        .limit(2);
       
-      if (recentMaintenance) {
-        recentMaintenance.forEach(record => {
+      if (recentMaintenanceResult.data) {
+        recentMaintenanceResult.data.forEach(record => {
           activity.push({
             type: 'maintenance',
             title: `${record.maintenance_type} - ${(record as any).rides?.ride_name}`,
