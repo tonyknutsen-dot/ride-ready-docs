@@ -20,20 +20,48 @@ import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { useTerminology } from "@/hooks/useTerminology";
 
 const featureRequestSchema = z.object({
-  feature_title: z.string().trim().min(1, "Title is required").max(200, "Title must be less than 200 characters"),
-  feature_description: z.string().trim().min(10, "Please provide at least 10 characters").max(2000, "Description must be less than 2000 characters"),
-  use_case: z.string().trim().max(1000, "Use case must be less than 1000 characters").optional(),
+  feature_title: z
+    .string()
+    .trim()
+    .min(1, "Title is required")
+    .max(200, "Title must be less than 200 characters"),
+  feature_description: z
+    .string()
+    .trim()
+    .min(10, "Please provide at least 10 characters")
+    .max(2000, "Description must be less than 2000 characters"),
+  use_case: z
+    .string()
+    .trim()
+    .max(1000, "Use case must be less than 1000 characters")
+    .optional(),
 });
 
 interface RequestFeatureDialogProps {
+  /** Optional trigger element. */
   trigger?: React.ReactNode;
+  /** Hide rendering any trigger (use open/onOpenChange to control externally). */
+  hideTrigger?: boolean;
+  /** Controlled open state (recommended when opened from dropdown menus). */
+  open?: boolean;
+  /** Controlled state setter (recommended when opened from dropdown menus). */
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const RequestFeatureDialog = ({ trigger }: RequestFeatureDialogProps) => {
+export const RequestFeatureDialog = ({
+  trigger,
+  hideTrigger = false,
+  open: controlledOpen,
+  onOpenChange,
+}: RequestFeatureDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { terminology } = useTerminology();
-  const [open, setOpen] = useState(false);
+
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const open = controlledOpen ?? uncontrolledOpen;
+  const setOpen = onOpenChange ?? setUncontrolledOpen;
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
@@ -75,9 +103,7 @@ export const RequestFeatureDialog = ({ trigger }: RequestFeatureDialogProps) => 
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
         error.errors.forEach((err) => {
-          if (err.path[0]) {
-            fieldErrors[err.path[0] as string] = err.message;
-          }
+          if (err.path[0]) fieldErrors[err.path[0] as string] = err.message;
         });
         setErrors(fieldErrors);
       } else {
@@ -94,120 +120,22 @@ export const RequestFeatureDialog = ({ trigger }: RequestFeatureDialogProps) => 
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: "" }));
-    }
-  };
-
-  const handleOpenFromDropdown = () => {
-    // Use setTimeout to open dialog after dropdown closes
-    setTimeout(() => setOpen(true), 0);
+    if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
   };
 
   const defaultTrigger = (
-    <DropdownMenuItem
-      className="flex items-center cursor-pointer"
-      onSelect={handleOpenFromDropdown}
-    >
+    <DropdownMenuItem className="flex items-center cursor-pointer" onSelect={() => setOpen(true)}>
       <Lightbulb className="h-4 w-4 mr-2" />
       Request a Feature
     </DropdownMenuItem>
   );
 
-  // When used as a dropdown item, render trigger outside Dialog to avoid unmount issues
-  if (!trigger) {
-    return (
-      <>
-        {defaultTrigger}
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="sm:max-w-[525px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Lightbulb className="h-5 w-5 text-primary" />
-                Request a Feature
-              </DialogTitle>
-              <DialogDescription>
-                Have an idea to improve Ride Ready Docs? We'd love to hear it!
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="feature_title">
-                  Feature Title <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="feature_title"
-                  placeholder="E.g., Export maintenance logs to Excel"
-                  value={formData.feature_title}
-                  onChange={(e) => handleInputChange("feature_title", e.target.value)}
-                  className={errors.feature_title ? "border-destructive" : ""}
-                  disabled={isSubmitting}
-                />
-                {errors.feature_title && (
-                  <p className="text-sm text-destructive">{errors.feature_title}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="feature_description">
-                  Description <span className="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  id="feature_description"
-                  placeholder="Describe the feature you'd like to see..."
-                  value={formData.feature_description}
-                  onChange={(e) => handleInputChange("feature_description", e.target.value)}
-                  className={`min-h-[120px] ${errors.feature_description ? "border-destructive" : ""}`}
-                  disabled={isSubmitting}
-                />
-                {errors.feature_description && (
-                  <p className="text-sm text-destructive">{errors.feature_description}</p>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="use_case">
-                  How would you use this? (optional)
-                </Label>
-                <Textarea
-                  id="use_case"
-                  placeholder={`E.g., I need this for quarterly ${terminology.isUK ? 'council' : 'authority'} inspections...`}
-                  value={formData.use_case}
-                  onChange={(e) => handleInputChange("use_case", e.target.value)}
-                  className={`min-h-[80px] ${errors.use_case ? "border-destructive" : ""}`}
-                  disabled={isSubmitting}
-                />
-                {errors.use_case && (
-                  <p className="text-sm text-destructive">{errors.use_case}</p>
-                )}
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <Button type="submit" disabled={isSubmitting} className="flex-1">
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Submit Request
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setOpen(false)}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </>
-    );
-  }
-
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>{trigger ?? defaultTrigger}</DialogTrigger>
+      )}
+
       <DialogContent className="sm:max-w-[525px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -218,6 +146,7 @@ export const RequestFeatureDialog = ({ trigger }: RequestFeatureDialogProps) => 
             Have an idea to improve Ride Ready Docs? We'd love to hear it!
           </DialogDescription>
         </DialogHeader>
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="feature_title">
@@ -254,12 +183,10 @@ export const RequestFeatureDialog = ({ trigger }: RequestFeatureDialogProps) => 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="use_case">
-              How would you use this? (optional)
-            </Label>
+            <Label htmlFor="use_case">How would you use this? (optional)</Label>
             <Textarea
               id="use_case"
-              placeholder={`E.g., I need this for quarterly ${terminology.isUK ? 'council' : 'authority'} inspections...`}
+              placeholder={`E.g., I need this for quarterly ${terminology.isUK ? "council" : "authority"} inspections...`}
               value={formData.use_case}
               onChange={(e) => handleInputChange("use_case", e.target.value)}
               className={`min-h-[80px] ${errors.use_case ? "border-destructive" : ""}`}
