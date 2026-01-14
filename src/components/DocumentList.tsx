@@ -3,15 +3,21 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { FileText, Download, Trash2, Calendar, AlertTriangle, Eye } from 'lucide-react';
+import { FileText, Download, Trash2, Calendar, AlertTriangle, Eye, Link2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import ImageViewer from './ImageViewer';
 import PDFViewer from './PDFViewer';
+import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
 
 type Document = Tables<'documents'>;
+
+interface DocumentAssignment {
+  documentId: string;
+  rideNames: string[];
+}
 
 interface DocumentListProps {
   rideId?: string;
@@ -27,6 +33,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const [assignments, setAssignments] = useState<Record<string, string[]>>({});
+  const [assignmentDialogDoc, setAssignmentDialogDoc] = useState<Document | null>(null);
   const [viewerState, setViewerState] = useState<{
     type: 'image' | 'pdf' | null;
     url: string;
@@ -54,8 +62,37 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
   useEffect(() => {
     if (user) {
       loadDocuments();
+      if (isGlobal) {
+        loadAssignments();
+      }
     }
   }, [user, rideId, isGlobal]);
+
+  const loadAssignments = async () => {
+    if (!user) return;
+    try {
+      const { data, error } = await supabase
+        .from('document_ride_assignments')
+        .select('document_id, rides(ride_name)')
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      const assignmentMap: Record<string, string[]> = {};
+      (data || []).forEach((row: any) => {
+        const docId = row.document_id;
+        const rideName = row.rides?.ride_name;
+        if (rideName) {
+          if (!assignmentMap[docId]) assignmentMap[docId] = [];
+          assignmentMap[docId].push(rideName);
+        }
+      });
+
+      setAssignments(assignmentMap);
+    } catch (error) {
+      console.error('Error loading assignments:', error);
+    }
+  };
 
   const loadDocuments = async () => {
     try {
@@ -477,6 +514,12 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
         pdfName={viewerState.name}
         onDownload={() => viewerState.document && handleDownload(viewerState.document)}
       />
+      <DocumentRideAssignmentDialog
+        document={assignmentDialogDoc}
+        isOpen={!!assignmentDialogDoc}
+        onClose={() => setAssignmentDialogDoc(null)}
+        onAssignmentsChanged={loadAssignments}
+      />
       <div className="space-y-4 pb-24 md:pb-0">
         <Card className="border-2 border-primary/20 shadow-card">
         <CardHeader className="bg-gradient-to-r from-primary/5 to-info/5 rounded-t-xl">
@@ -502,98 +545,122 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
             {documents.map((doc) => (
               <div 
                 key={doc.id} 
-                className="flex items-center gap-3 p-3 border-2 border-border/60 rounded-xl hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent active:scale-[0.99] transition-all min-w-0 bg-card"
+                className="flex flex-col gap-2 p-3 border-2 border-border/60 rounded-xl hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent active:scale-[0.99] transition-all min-w-0 bg-card"
               >
-                {/* Thumbnail */}
-                <div 
-                  className="shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-primary/10 to-info/10 border border-primary/20 flex items-center justify-center cursor-pointer"
-                  onClick={() => isViewable(doc) && handleView(doc)}
-                >
-                  {thumbs[doc.id] ? (
-                    <img
-                      src={thumbs[doc.id]}
-                      alt={doc.document_name}
-                      className="h-12 w-12 rounded-xl object-cover"
-                    />
-                  ) : (
-                    <FileText className="h-5 w-5 text-primary" />
-                  )}
-                </div>
-
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <h4 className="text-sm font-medium truncate" title={doc.document_name}>
-                    {doc.document_name}
-                  </h4>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[11px] text-muted-foreground">
-                      {getDocumentTypeDisplay(doc.document_type)}
-                    </span>
-                    <span className="text-[11px] text-muted-foreground/50">•</span>
-                    <span className="text-[11px] text-muted-foreground">
-                      {formatFileSize(doc.file_size || 0)}
-                    </span>
-                    {doc.expires_at && (
-                      <>
-                        <span className="text-[11px] text-muted-foreground/50">•</span>
-                        <span className={`text-[11px] flex items-center gap-0.5 ${
-                          isExpired(doc.expires_at) ? 'text-destructive' :
-                          isExpiringSoon(doc.expires_at) ? 'text-yellow-600' :
-                          'text-muted-foreground'
-                        }`}>
-                          {isExpired(doc.expires_at) && <AlertTriangle className="h-3 w-3" />}
-                          {new Date(doc.expires_at).toLocaleDateString()}
-                        </span>
-                      </>
+                <div className="flex items-center gap-3">
+                  {/* Thumbnail */}
+                  <div 
+                    className="shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-primary/10 to-info/10 border border-primary/20 flex items-center justify-center cursor-pointer"
+                    onClick={() => isViewable(doc) && handleView(doc)}
+                  >
+                    {thumbs[doc.id] ? (
+                      <img
+                        src={thumbs[doc.id]}
+                        alt={doc.document_name}
+                        className="h-12 w-12 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <FileText className="h-5 w-5 text-primary" />
                     )}
                   </div>
-                </div>
 
-                {/* Actions - simplified to icon buttons */}
-                <div className="flex items-center gap-1 shrink-0">
-                  {isViewable(doc) && (
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-medium truncate" title={doc.document_name}>
+                      {doc.document_name}
+                    </h4>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                      <span className="text-[11px] text-muted-foreground">
+                        {getDocumentTypeDisplay(doc.document_type)}
+                      </span>
+                      <span className="text-[11px] text-muted-foreground/50">•</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        {formatFileSize(doc.file_size || 0)}
+                      </span>
+                      {doc.expires_at && (
+                        <>
+                          <span className="text-[11px] text-muted-foreground/50">•</span>
+                          <span className={`text-[11px] flex items-center gap-0.5 ${
+                            isExpired(doc.expires_at) ? 'text-destructive' :
+                            isExpiringSoon(doc.expires_at) ? 'text-yellow-600' :
+                            'text-muted-foreground'
+                          }`}>
+                            {isExpired(doc.expires_at) && <AlertTriangle className="h-3 w-3" />}
+                            {new Date(doc.expires_at).toLocaleDateString()}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Actions - simplified to icon buttons */}
+                  <div className="flex items-center gap-1 shrink-0">
+                    {isGlobal && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => setAssignmentDialogDoc(doc)}
+                        title="Assign to items"
+                      >
+                        <Link2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                    {isViewable(doc) && (
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-8 w-8"
+                        onClick={() => handleView(doc)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       size="icon"
                       variant="ghost"
                       className="h-8 w-8"
-                      onClick={() => handleView(doc)}
+                      onClick={() => handleDownload(doc)}
                     >
-                      <Eye className="h-4 w-4" />
+                      <Download className="h-4 w-4" />
                     </Button>
-                  )}
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-8 w-8"
-                    onClick={() => handleDownload(doc)}
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Document</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete "{doc.document_name}"? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(doc)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{doc.document_name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDelete(doc)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
+                
+                {/* Show assigned items for global documents */}
+                {isGlobal && assignments[doc.id] && assignments[doc.id].length > 0 && (
+                  <div className="flex items-center gap-2 pl-15 ml-12">
+                    <Link2 className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="text-[11px] text-muted-foreground">
+                      Covers: {assignments[doc.id].slice(0, 3).join(', ')}
+                      {assignments[doc.id].length > 3 && ` +${assignments[doc.id].length - 3} more`}
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>

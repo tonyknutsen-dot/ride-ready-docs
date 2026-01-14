@@ -391,6 +391,48 @@ export type Database = {
           },
         ]
       }
+      document_ride_assignments: {
+        Row: {
+          assigned_at: string
+          document_id: string
+          id: string
+          notes: string | null
+          ride_id: string
+          user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          document_id: string
+          id?: string
+          notes?: string | null
+          ride_id: string
+          user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          document_id?: string
+          id?: string
+          notes?: string | null
+          ride_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_ride_assignments_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_ride_assignments_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_type_requests: {
         Row: {
           admin_notes: string | null
