@@ -110,6 +110,15 @@ const RideDetailPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-5 pb-28 md:pb-8">
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => navigate('/rides')}
+        className="w-fit gap-1.5 -ml-2 mb-2 text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="h-4 w-4" />
+        Back to Equipment
+      </Button>
       <PageBreadcrumb items={getBreadcrumbItems()} showHome />
       <RideDetail 
         ride={ride}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { FeatureGate } from '@/components/FeatureGate';
@@ -17,6 +18,7 @@ type Ride = Tables<'rides'> & {
 
 const RiskAssessments = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
 
   const handleRideSelect = (ride: Ride) => {
@@ -40,6 +42,19 @@ const RiskAssessments = () => {
   return (
     <FeatureGate requiredPlan="advanced" feature="Risk Assessments">
       <div className="container mx-auto py-8 px-4 pb-24 md:pb-8">
+        {/* Back Button - show when no ride selected */}
+        {!selectedRide && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/overview')}
+            className="w-fit gap-1.5 -ml-2 mb-4 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        )}
+        
         {selectedRide && (
           <PageBreadcrumb items={getBreadcrumbItems()} showHome />
         )}

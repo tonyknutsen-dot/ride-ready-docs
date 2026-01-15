@@ -24,6 +24,8 @@ const Calendar = () => {
         iconBgClass="from-primary/20 to-accent/20"
         title="Calendar"
         subtitle="Upcoming inspections and expiry dates"
+        showBackButton
+        backTo="/overview"
       />
       
       <CalendarView />

@@ -25,6 +25,8 @@ const GlobalDocumentsPage = () => {
           iconBgClass="from-info/20 to-primary/10"
           title="Global Documents"
           subtitle="Insurance, licenses & business documents"
+          showBackButton
+          backTo="/overview"
         />
       </div>
 
