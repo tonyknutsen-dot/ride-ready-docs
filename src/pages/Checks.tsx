@@ -28,6 +28,8 @@ const Checks = () => {
             iconBgClass="from-success/20 to-success/10"
             title="Safety Checks"
             subtitle="Select equipment to perform checks"
+            showBackButton
+            backTo="/overview"
           />
         </div>
       </header>

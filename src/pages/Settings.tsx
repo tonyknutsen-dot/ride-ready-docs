@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Settings as SettingsIcon, User, FileText, Globe, Users, ArrowRight, Mail } from 'lucide-react';
+import { Settings as SettingsIcon, User, FileText, Globe, Users, ArrowRight, Mail, ArrowLeft } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
@@ -21,10 +21,13 @@ import {
 import AppHeader from '@/components/AppHeader';
 import { COUNTRIES, OPERATOR_TYPES, getTerminologyForCountry } from '@/constants/profile';
 import { CustomTerminologyEditor, CustomTerminology } from '@/components/CustomTerminologyEditor';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
 const Settings = () => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [country, setCountry] = useState('GB');
@@ -225,6 +228,17 @@ const Settings = () => {
       </AlertDialog>
       <AppHeader />
       <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5 max-w-2xl">
+        {/* Back Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate('/overview')}
+          className="w-fit gap-1.5 -ml-2 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        
         {/* Header */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0 shadow-sm">
