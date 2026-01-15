@@ -5,7 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FileText, Calendar, Bell, Upload, CheckCircle, Shield, Mail, Crown, ArrowRight } from "lucide-react";
+import { FileText, Calendar, Bell, Upload, CheckCircle, Shield, Mail, Crown, ArrowRight, ArrowLeft } from "lucide-react";
 import { useSubscription, PRICING, RIDE_LIMITS } from "@/hooks/useSubscription";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 import { useState } from "react";
@@ -384,8 +384,21 @@ const HelpCenter = () => {
       <Header />
       
       <main className="pt-24 pb-16">
+        {/* Back Button */}
+        <div className="container mx-auto px-6 pt-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate(-1)}
+            className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+        </div>
+        
         {/* Hero Section */}
-        <section className="container mx-auto px-6 py-16 text-center">
+        <section className="container mx-auto px-6 py-12 text-center">
           <div className="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-gradient-to-r from-info/10 to-primary/10 border border-info/30 mb-6">
             <FileText className="h-5 w-5 text-info" />
             <span className="text-sm font-medium text-info">Knowledge Base</span>

@@ -1,4 +1,7 @@
 import { ReactNode } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
 interface PageHeaderProps {
@@ -8,6 +11,8 @@ interface PageHeaderProps {
   subtitle?: string;
   actions?: ReactNode;
   className?: string;
+  showBackButton?: boolean;
+  backTo?: string;
 }
 
 const PageHeader = ({ 
@@ -16,10 +21,33 @@ const PageHeader = ({
   title, 
   subtitle, 
   actions,
-  className 
+  className,
+  showBackButton = false,
+  backTo
 }: PageHeaderProps) => {
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    if (backTo) {
+      navigate(backTo);
+    } else {
+      navigate(-1);
+    }
+  };
+
   return (
     <div className={cn("flex flex-col gap-4", className)}>
+      {showBackButton && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleBack}
+          className="w-fit gap-1.5 -ml-2 text-muted-foreground hover:text-foreground"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      )}
       <div className="flex items-start justify-between gap-4">
         <div className="flex items-center gap-3">
           {icon && (
