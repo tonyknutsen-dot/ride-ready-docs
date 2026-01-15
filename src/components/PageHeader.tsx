@@ -30,9 +30,8 @@ const PageHeader = ({
   const handleBack = () => {
     if (backTo) {
       navigate(backTo);
-    } else if (window.history.length > 1) {
-      navigate(-1);
     } else {
+      // Always navigate to overview as fallback instead of relying on history
       navigate('/overview');
     }
   };
