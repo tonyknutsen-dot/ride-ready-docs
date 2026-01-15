@@ -7,22 +7,45 @@ interface DeviceHintBannerProps {
 }
 
 const MOBILE_BREAKPOINT = 768;
+const STORAGE_KEY = 'device-hint-banner';
+const MAX_SHOW_COUNT = 3;
 
 export default function DeviceHintBanner({ variant = 'default' }: DeviceHintBannerProps) {
   const [showBanner, setShowBanner] = useState(false);
-  const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
-    // Check if mobile - show every session until dismissed
     const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
-    if (isMobile && !dismissed) {
+    if (!isMobile) return;
+
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      const data = stored ? JSON.parse(stored) : { dismissed: false, showCount: 0 };
+
+      // Don't show if permanently dismissed or shown enough times
+      if (data.dismissed || data.showCount >= MAX_SHOW_COUNT) {
+        return;
+      }
+
+      // Show banner and increment count
+      setShowBanner(true);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        ...data,
+        showCount: data.showCount + 1
+      }));
+    } catch {
+      // If localStorage fails, just show the banner
       setShowBanner(true);
     }
-  }, [dismissed]);
+  }, []);
 
   const handleDismiss = () => {
-    setDismissed(true);
     setShowBanner(false);
+    try {
+      // Mark as permanently dismissed
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ dismissed: true, showCount: MAX_SHOW_COUNT }));
+    } catch {
+      // Ignore storage errors
+    }
   };
 
   if (!showBanner) return null;
