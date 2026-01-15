@@ -30,8 +30,10 @@ const PageHeader = ({
   const handleBack = () => {
     if (backTo) {
       navigate(backTo);
-    } else {
+    } else if (window.history.length > 1) {
       navigate(-1);
+    } else {
+      navigate('/overview');
     }
   };
 
