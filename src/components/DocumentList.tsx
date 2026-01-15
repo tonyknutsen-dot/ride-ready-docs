@@ -416,7 +416,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
 
   // Grouped render for mobile-first clarity
   // Component to render a single document row
-  const DocumentRow = ({ doc, isOlderVersion = false }: { doc: Document; isOlderVersion?: boolean }) => (
+  const DocumentRow = ({ doc, isOlderVersion = false, hasMultipleVersions = false }: { doc: Document; isOlderVersion?: boolean; hasMultipleVersions?: boolean }) => (
     <div className={`border-2 rounded-2xl p-3 flex items-start gap-3 transition-all min-w-0 bg-card ${
       isOlderVersion 
         ? 'border-border/40 opacity-75 hover:opacity-100' 
@@ -441,13 +441,20 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <div className={`font-medium truncate ${isOlderVersion ? 'text-sm' : 'text-[15px]'}`} title={doc.document_name}>
+        <div className={`font-medium truncate flex items-center gap-2 ${isOlderVersion ? 'text-sm' : 'text-[15px]'}`} title={doc.document_name}>
           {isOlderVersion ? (
             <span className="text-muted-foreground">
               📅 {new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
             </span>
           ) : (
-            doc.document_name
+            <>
+              <span className="truncate">{doc.document_name}</span>
+              {hasMultipleVersions && (
+                <Badge variant="secondary" className="shrink-0 bg-primary/10 text-primary text-[10px] px-1.5 py-0">
+                  Latest
+                </Badge>
+              )}
+            </>
           )}
         </div>
         <div className="text-xs text-muted-foreground break-words">
@@ -543,7 +550,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
                 {g.items.map(docGroup => (
                   <div key={docGroup.latestDoc.id} className="space-y-2">
                     {/* Latest version */}
-                    <DocumentRow doc={docGroup.latestDoc} />
+                    <DocumentRow doc={docGroup.latestDoc} hasMultipleVersions={docGroup.olderVersions.length > 0} />
                     
                     {/* Older versions - collapsible */}
                     {docGroup.olderVersions.length > 0 && (
