@@ -4,11 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 import ProfileEdit from '@/components/ProfileEdit';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Info, Settings as SettingsIcon, User, FileText, Mail, Globe, Users, ArrowRight } from 'lucide-react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Settings as SettingsIcon, User, FileText, Globe, Users, ArrowRight, Mail } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
@@ -29,8 +27,6 @@ const Settings = () => {
   const { toast } = useToast();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [versioningEnabled, setVersioningEnabled] = useState(true);
-  const [updatingVersioning, setUpdatingVersioning] = useState(false);
   const [country, setCountry] = useState('GB');
   const [updatingCountry, setUpdatingCountry] = useState(false);
   const [operatorType, setOperatorType] = useState('company');
@@ -52,37 +48,11 @@ const Settings = () => {
 
     if (!error && data) {
       setProfile(data);
-      setVersioningEnabled(data.enable_document_versioning ?? true);
       setCountry(data.country || 'GB');
       setOperatorType(data.operator_type || 'company');
       setCustomTerminology(data.custom_terminology as CustomTerminology | null);
     }
     setLoading(false);
-  };
-
-  const handleVersioningToggle = async (enabled: boolean) => {
-    if (!user) return;
-    
-    setUpdatingVersioning(true);
-    const { error } = await supabase
-      .from('profiles')
-      .update({ enable_document_versioning: enabled })
-      .eq('user_id', user.id);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update version control setting",
-        variant: "destructive",
-      });
-    } else {
-      setVersioningEnabled(enabled);
-      toast({
-        title: "Settings updated",
-        description: `Document version control ${enabled ? 'enabled' : 'disabled'}`,
-      });
-    }
-    setUpdatingVersioning(false);
   };
 
   const handleCountrySelectChange = (newCountry: string) => {
@@ -302,39 +272,21 @@ const Settings = () => {
               <CardTitle className="text-base">Document Management</CardTitle>
             </div>
             <CardDescription className="text-sm">
-              Configure how documents are handled
+              How your documents are organised
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex items-start justify-between gap-4 p-4 rounded-lg bg-secondary/50 border border-accent/20">
-              <div className="flex-1 space-y-1">
-                <div className="flex items-center gap-2">
-                  <Label htmlFor="version-control" className="text-sm font-medium">
-                    Enable Version Control
-                  </Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-4 w-4 text-muted-foreground" />
-                      </TooltipTrigger>
-                      <TooltipContent className="max-w-xs">
-                        <p className="font-semibold mb-2">What is Version Control?</p>
-                        <p className="mb-2"><strong>ON:</strong> Creates new versions (v1.0, v2.0) when uploading same-named documents.</p>
-                        <p><strong>OFF:</strong> Replaces and deletes old documents with the same name.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Keep all versions of uploaded documents for your records
-                </p>
+            <div className="p-4 rounded-lg bg-secondary/50 border border-accent/20 space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">📋 Automatic Version History</span>
               </div>
-              <Switch
-                id="version-control"
-                checked={versioningEnabled}
-                onCheckedChange={handleVersioningToggle}
-                disabled={loading || updatingVersioning}
-              />
+              <p className="text-xs text-muted-foreground">
+                When you upload a document with the same name as an existing one, we automatically keep all versions. 
+                Each version is labelled with its upload date so you can easily find what you need.
+              </p>
+              <p className="text-xs text-primary mt-2">
+                💡 All previous versions are kept for your records and compliance audits.
+              </p>
             </div>
           </CardContent>
         </Card>
