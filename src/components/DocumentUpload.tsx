@@ -59,34 +59,18 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   const [expiryDate, setExpiryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [uploading, setUploading] = useState(false);
-  const [userVersioningEnabled, setUserVersioningEnabled] = useState(true);
-  const [useVersionControl, setUseVersionControl] = useState(false);
-  const [versionNumber, setVersionNumber] = useState('1.0');
-  const [versionNotes, setVersionNotes] = useState('');
+  // Version tracking is now automatic - we just track existing docs for audit trail
   const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
-  const [replacingDocumentId, setReplacingDocumentId] = useState<string | null>(null);
   const [isGlobal, setIsGlobal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch user's versioning preference
+  // Auto-detect existing documents with same name for automatic versioning
   useEffect(() => {
-    const fetchVersioningPreference = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from('profiles')
-        .select('enable_document_versioning')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (data) {
-        setUserVersioningEnabled(data.enable_document_versioning ?? true);
-      }
-    };
-    
-    fetchVersioningPreference();
-  }, [user]);
+    if (documentName && documentType && user) {
+      loadExistingDocuments();
+    }
+  }, [documentName, documentType, rideId, user]);
 
   // Early return: require ride unless it's a global document
   if (!rideId && !isGlobal) {
@@ -100,33 +84,29 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
     );
   }
 
-  // Load existing documents with same name for version control
-  useEffect(() => {
-    if (documentName && useVersionControl) {
-      loadExistingDocuments();
-    }
-  }, [documentName, useVersionControl, rideId]);
-
   const loadExistingDocuments = async () => {
-    if (!user || !documentName) return;
+    if (!user || !documentName || !documentType) return;
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('documents')
         .select('*')
         .eq('user_id', user.id)
         .eq('document_name', documentName)
-        .eq('ride_id', rideId)
-        .order('created_at', { ascending: false });
+        .eq('document_type', documentType)
+        .order('uploaded_at', { ascending: false });
+
+      // For ride-specific docs, filter by ride
+      if (rideId && !isGlobal) {
+        query = query.eq('ride_id', rideId);
+      } else if (isGlobal) {
+        query = query.eq('is_global', true);
+      }
+
+      const { data, error } = await query;
 
       if (!error && data) {
         setExistingDocuments(data);
-        if (data.length > 0) {
-          // Auto-increment version number
-          const latestVersion = data[0].version_number || '1.0';
-          const [major, minor = 0] = latestVersion.split('.').map(Number);
-          setVersionNumber(`${major}.${minor + 1}`);
-        }
       }
     } catch (error) {
       console.error('Error loading existing documents:', error);
@@ -181,6 +161,11 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
 
     setUploading(true);
 
+    // Auto-generate version number based on existing documents
+    const autoVersionNumber = existingDocuments.length > 0 
+      ? `${existingDocuments.length + 1}.0` 
+      : '1.0';
+
     // Use optimistic mutation
     uploadMutation.mutate(
       {
@@ -192,9 +177,9 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
         isGlobal,
         expiryDate: expiryDate || undefined,
         notes: notes || undefined,
-        versionNumber: useVersionControl ? versionNumber : '1.0',
-        versionNotes: useVersionControl ? versionNotes : undefined,
-        replacingDocumentId,
+        versionNumber: autoVersionNumber,
+        versionNotes: undefined, // Automatic versioning - no manual notes needed
+        replacingDocumentId: null, // We keep all versions now
       },
       {
         onSuccess: () => {
@@ -205,10 +190,6 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
           setExpiryDate('');
           setNotes('');
           setIsGlobal(false);
-          setUseVersionControl(false);
-          setVersionNumber('1.0');
-          setVersionNotes('');
-          setReplacingDocumentId(null);
           setExistingDocuments([]);
           
           // Clear the file input elements
@@ -403,66 +384,15 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
           </div>
         </div>
 
-        {/* Version Control - Collapsible */}
-        {userVersioningEnabled && (
-          <div 
-            className={`rounded-lg border transition-colors ${
-              useVersionControl ? 'border-primary/30 bg-primary/5' : 'border-border'
-            }`}
-          >
-            <div 
-              className="flex items-center gap-3 p-3 cursor-pointer"
-              onClick={() => setUseVersionControl(!useVersionControl)}
-            >
-              <Checkbox
-                checked={useVersionControl}
-                onCheckedChange={(checked) => setUseVersionControl(checked as boolean)}
-                disabled={uploading}
-              />
-              <div className="flex-1">
-                <span className="text-sm font-medium">Version Control</span>
-              </div>
-            </div>
-            
-            {useVersionControl && (
-              <div className="px-3 pb-3 space-y-3 border-t border-border/50 pt-3">
-                {existingDocuments.length > 0 && (
-                  <Select
-                    value={replacingDocumentId || "new"}
-                    onValueChange={(value) => setReplacingDocumentId(value === "new" ? null : value)}
-                    disabled={uploading}
-                  >
-                    <SelectTrigger className="h-10">
-                      <SelectValue placeholder="Replace existing..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="new">New document</SelectItem>
-                      {existingDocuments.map((doc) => (
-                        <SelectItem key={doc.id} value={doc.id}>
-                          v{doc.version_number} ({new Date(doc.uploaded_at).toLocaleDateString()})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-                <div className="grid grid-cols-2 gap-2">
-                  <Input
-                    placeholder="Version"
-                    value={versionNumber}
-                    onChange={(e) => setVersionNumber(e.target.value)}
-                    disabled={uploading}
-                    className="h-10"
-                  />
-                  <Input
-                    placeholder="What changed"
-                    value={versionNotes}
-                    onChange={(e) => setVersionNotes(e.target.value)}
-                    disabled={uploading}
-                    className="h-10"
-                  />
-                </div>
-              </div>
-            )}
+        {/* Existing versions info - shown automatically when uploading same doc name */}
+        {existingDocuments.length > 0 && (
+          <div className="rounded-lg border border-info/30 bg-info/5 p-3">
+            <p className="text-sm font-medium text-info flex items-center gap-2">
+              📋 {existingDocuments.length} previous version{existingDocuments.length !== 1 ? 's' : ''} found
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              This will be saved as version {existingDocuments.length + 1} (uploaded {new Date().toLocaleDateString()})
+            </p>
           </div>
         )}
       </div>
