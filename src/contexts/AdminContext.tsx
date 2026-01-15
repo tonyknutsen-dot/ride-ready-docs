@@ -23,25 +23,27 @@ export const useAdmin = () => {
 export const AdminProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const [isAdmin, setIsAdmin] = useState(false);
-  const [isLoading, setIsLoading] = useState(true); // Always start with true
-  const [hasChecked, setHasChecked] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [checkedUserId, setCheckedUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const checkAdminStatus = async () => {
+      // No user - not admin, done loading
       if (!user) {
-        // If user check is done and there's no user, we're done loading
-        if (hasChecked) {
-          setIsAdmin(false);
-          setIsLoading(false);
-        }
+        setIsAdmin(false);
+        setIsLoading(false);
+        setCheckedUserId(null);
         return;
       }
 
-      setHasChecked(true);
-      setIsLoading(true); // Set loading when starting the check
+      // Already checked for this user - skip
+      if (checkedUserId === user.id) {
+        return;
+      }
+
+      setIsLoading(true);
 
       try {
-        console.log('Checking admin status for user:', user.id);
         const { data, error } = await supabase
           .from('user_roles')
           .select('role')
@@ -50,19 +52,18 @@ export const AdminProvider = ({ children }: { children: ReactNode }) => {
           .single();
 
         console.log('Admin check result:', { data, error });
-        const adminStatus = !!data && !error;
-        console.log('Setting isAdmin to:', adminStatus);
-        setIsAdmin(adminStatus);
+        setIsAdmin(!!data && !error);
       } catch (error) {
         console.error('Error checking admin status:', error);
         setIsAdmin(false);
       } finally {
+        setCheckedUserId(user.id);
         setIsLoading(false);
       }
     };
 
     checkAdminStatus();
-  }, [user, hasChecked]);
+  }, [user?.id, checkedUserId]);
 
   return (
     <AdminContext.Provider value={{ isAdmin, isLoading }}>
