@@ -9,12 +9,13 @@ import { FileText, Calendar, Bell, Upload, CheckCircle, Shield, Mail, Crown, Arr
 import { useSubscription, PRICING, RIDE_LIMITS } from "@/hooks/useSubscription";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useTerminology } from "@/hooks/useTerminology";
 
 const HelpCenter = () => {
   const { subscription } = useSubscription();
   const navigate = useNavigate();
+  const location = useLocation();
   const { terminology } = useTerminology();
   const [selectedGuide, setSelectedGuide] = useState<number | null>(null);
   const isAdvanced = subscription?.subscriptionStatus === 'advanced';
@@ -390,11 +391,12 @@ const HelpCenter = () => {
             variant="ghost"
             size="sm"
             onClick={() => {
-              if (window.history.length > 1) {
-                navigate(-1);
-              } else {
+              // react-router sets location.key to "default" for the initial entry
+              if (location.key === 'default') {
                 navigate('/');
+                return;
               }
+              navigate(-1);
             }}
             className="gap-1.5 -ml-2 text-muted-foreground hover:text-foreground"
           >
