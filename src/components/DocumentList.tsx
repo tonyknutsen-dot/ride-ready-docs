@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { FileText, Download, Trash2, Calendar, AlertTriangle, Eye, Link2 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { FileText, Download, Trash2, Calendar, AlertTriangle, Eye, Link2, History, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -314,9 +315,37 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
     return "Other";
   };
 
+  // Group documents by name to detect versions
+  interface DocumentGroup {
+    latestDoc: Document;
+    olderVersions: Document[];
+  }
+
+  const groupDocumentsByName = (docs: Document[]): DocumentGroup[] => {
+    const nameGroups: Record<string, Document[]> = {};
+    
+    docs.forEach(doc => {
+      // Create a key from document name + type for grouping versions
+      const key = `${doc.document_name}__${doc.document_type}`;
+      if (!nameGroups[key]) nameGroups[key] = [];
+      nameGroups[key].push(doc);
+    });
+
+    // Sort each group by upload date (newest first) and create DocumentGroup objects
+    return Object.values(nameGroups).map(group => {
+      const sorted = group.sort((a, b) => 
+        new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
+      );
+      return {
+        latestDoc: sorted[0],
+        olderVersions: sorted.slice(1)
+      };
+    });
+  };
+
   const groupByType = (docs: Document[]) => {
     const ORDER = ["📜 DOC Certificate", "Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Device Photo", "Other"];
-    const groups: Record<string, Document[]> = {};
+    const groups: Record<string, DocumentGroup[]> = {};
     
     // Separate global and ride-specific documents
     const globalDocs: Document[] = [];
@@ -330,10 +359,11 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
       }
     });
     
-    // Group ride-specific documents by type
-    rideDocs.forEach(d => {
-      const k = prettyType(d.document_type);
-      (groups[k] ||= []).push(d);
+    // Group ride-specific documents by type, then by name for versions
+    const rideDocGroups = groupDocumentsByName(rideDocs);
+    rideDocGroups.forEach(docGroup => {
+      const k = prettyType(docGroup.latestDoc.document_type);
+      (groups[k] ||= []).push(docGroup);
     });
     
     const keys = Object.keys(groups).sort((a, b) => {
@@ -348,7 +378,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
     
     // Add global documents at the top if they exist
     if (globalDocs.length > 0) {
-      result.unshift({ type: "🌐 Global Documents", items: globalDocs });
+      const globalDocGroups = groupDocumentsByName(globalDocs);
+      result.unshift({ type: "🌐 Global Documents", items: globalDocGroups });
     }
     
     return result;
@@ -384,6 +415,86 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
   }
 
   // Grouped render for mobile-first clarity
+  // Component to render a single document row
+  const DocumentRow = ({ doc, isOlderVersion = false }: { doc: Document; isOlderVersion?: boolean }) => (
+    <div className={`border-2 rounded-2xl p-3 flex items-start gap-3 transition-all min-w-0 bg-card ${
+      isOlderVersion 
+        ? 'border-border/40 opacity-75 hover:opacity-100' 
+        : 'border-border/60 hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent shadow-sm'
+    }`}>
+      <div className="shrink-0">
+        {thumbs[doc.id] ? (
+          <img
+            src={thumbs[doc.id]}
+            alt={doc.document_name}
+            className={`rounded-xl object-cover border-2 border-primary/20 cursor-pointer shadow-sm hover:shadow-md transition-shadow ${
+              isOlderVersion ? 'w-10 h-10' : 'w-12 h-12'
+            }`}
+            onClick={() => handleView(doc)}
+          />
+        ) : (
+          <div className={`rounded-xl bg-gradient-to-br from-primary/10 to-info/10 flex items-center justify-center border border-primary/20 ${
+            isOlderVersion ? 'w-10 h-10' : 'w-12 h-12'
+          }`}>
+            <FileText className={isOlderVersion ? 'w-4 h-4 text-primary' : 'w-5 h-5 text-primary'} />
+          </div>
+        )}
+      </div>
+      <div className="flex-1 min-w-0">
+        <div className={`font-medium truncate ${isOlderVersion ? 'text-sm' : 'text-[15px]'}`} title={doc.document_name}>
+          {isOlderVersion ? (
+            <span className="text-muted-foreground">
+              📅 {new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+            </span>
+          ) : (
+            doc.document_name
+          )}
+        </div>
+        <div className="text-xs text-muted-foreground break-words">
+          {doc.expires_at && <span>Expires {new Date(doc.expires_at).toLocaleDateString()}</span>}
+          {!isOlderVersion && <span> • Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}</span>}
+        </div>
+        {doc.notes && !isOlderVersion && (
+          <p className="text-xs text-muted-foreground mt-1 break-words">{doc.notes}</p>
+        )}
+      </div>
+      <div className="flex flex-wrap items-center gap-1 shrink-0">
+        {isViewable(doc) && (
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleView(doc)}>
+            <Eye className="h-4 w-4" />
+          </Button>
+        )}
+        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleDownload(doc)}>
+          <Download className="h-4 w-4" />
+        </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive">
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Document</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete "{doc.document_name}"? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => handleDelete(doc)}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    </div>
+  );
+
   if (grouped) {
     const groupedDocs = groupByType(documents);
     return (
@@ -412,6 +523,9 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
           ];
           const gColor = groupColors[groupIdx % groupColors.length];
           
+          // Count total documents including versions
+          const totalDocs = g.items.reduce((sum, docGroup) => sum + 1 + docGroup.olderVersions.length, 0);
+          
           return (
             <section key={g.type} className="space-y-3">
               <div className="flex items-center justify-between">
@@ -422,71 +536,37 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
                   {g.type}
                 </h3>
                 <span className={`text-xs px-3 py-1 rounded-full border font-medium ${gColor.badge}`}>
-                  {g.items.length} file{g.items.length !== 1 ? "s" : ""}
+                  {totalDocs} file{totalDocs !== 1 ? "s" : ""}
                 </span>
               </div>
               <div className="grid grid-cols-1 gap-3">
-                {g.items.map(d => (
-                  <div key={d.id} className="border-2 border-border/60 rounded-2xl p-3 flex items-start gap-3 hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent transition-all min-w-0 bg-card shadow-sm">
-                    <div className="shrink-0">
-                      {thumbs[d.id] ? (
-                        <img
-                          src={thumbs[d.id]}
-                          alt={d.document_name}
-                          className="w-12 h-12 rounded-xl object-cover border-2 border-primary/20 cursor-pointer shadow-sm hover:shadow-md transition-shadow"
-                          onClick={() => handleView(d)}
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/10 to-info/10 flex items-center justify-center border border-primary/20">
-                          <FileText className="w-5 h-5 text-primary" />
-                        </div>
-                      )}
-                    </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium text-[15px] truncate" title={d.document_name}>{d.document_name}</div>
-                    <div className="text-xs text-muted-foreground break-words">
-                      {d.expires_at && ` • Expires ${new Date(d.expires_at).toLocaleDateString()}`}
-                      {` • Uploaded ${new Date(d.uploaded_at).toLocaleDateString()}`}
-                    </div>
-                    {d.notes && (
-                      <p className="text-xs text-muted-foreground mt-1 break-words">{d.notes}</p>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 shrink-0">
-                    {isViewable(d) && (
-                      <Button variant="outline" size="sm" onClick={() => handleView(d)}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button variant="outline" size="sm" onClick={() => handleDownload(d)}>
-                      <Download className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="sm" variant="outline">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Document</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{d.document_name}"? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(d)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                {g.items.map(docGroup => (
+                  <div key={docGroup.latestDoc.id} className="space-y-2">
+                    {/* Latest version */}
+                    <DocumentRow doc={docGroup.latestDoc} />
+                    
+                    {/* Older versions - collapsible */}
+                    {docGroup.olderVersions.length > 0 && (
+                      <Collapsible>
+                        <CollapsibleTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground ml-2"
                           >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                            <History className="h-3.5 w-3.5" />
+                            <span>{docGroup.olderVersions.length} older version{docGroup.olderVersions.length !== 1 ? 's' : ''}</span>
+                            <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform group-data-[state=open]:rotate-180" />
+                          </Button>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="space-y-2 ml-4 mt-2 pl-2 border-l-2 border-muted">
+                          {docGroup.olderVersions.map(olderDoc => (
+                            <DocumentRow key={olderDoc.id} doc={olderDoc} isOlderVersion />
+                          ))}
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
                   </div>
-                </div>
                 ))}
               </div>
             </section>
