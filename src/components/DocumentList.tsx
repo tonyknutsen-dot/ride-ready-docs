@@ -36,6 +36,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [assignments, setAssignments] = useState<Record<string, string[]>>({});
   const [assignmentDialogDoc, setAssignmentDialogDoc] = useState<Document | null>(null);
+  const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
+  const [cleaningUp, setCleaningUp] = useState(false);
   const [viewerState, setViewerState] = useState<{
     type: 'image' | 'pdf' | null;
     url: string;
@@ -385,6 +387,64 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
     return result;
   };
 
+  // Get all older versions across all document groups
+  const getAllOlderVersions = (): Document[] => {
+    const allDocGroups = groupDocumentsByName(documents);
+    return allDocGroups.flatMap(group => group.olderVersions);
+  };
+
+  // Calculate storage used by older versions
+  const getOlderVersionsStorageSize = (): number => {
+    const olderVersions = getAllOlderVersions();
+    return olderVersions.reduce((sum, doc) => sum + (doc.file_size || 0), 0);
+  };
+
+  // Clean up all older versions
+  const handleCleanupOldVersions = async () => {
+    const olderVersions = getAllOlderVersions();
+    if (olderVersions.length === 0) return;
+
+    setCleaningUp(true);
+    try {
+      // Delete from storage
+      const filePaths = olderVersions.map(doc => doc.file_path);
+      const { error: storageError } = await supabase.storage
+        .from('ride-documents')
+        .remove(filePaths);
+
+      if (storageError) throw storageError;
+
+      // Delete from database
+      const docIds = olderVersions.map(doc => doc.id);
+      const { error: dbError } = await supabase
+        .from('documents')
+        .delete()
+        .in('id', docIds);
+
+      if (dbError) throw dbError;
+
+      const freedSpace = formatFileSize(getOlderVersionsStorageSize());
+      
+      toast({
+        title: "Old versions cleaned up",
+        description: `Removed ${olderVersions.length} older version${olderVersions.length !== 1 ? 's' : ''}, freeing ${freedSpace}`,
+      });
+
+      setCleanupDialogOpen(false);
+      onDocumentDeleted();
+      loadDocuments();
+    } catch (error: any) {
+      console.error('Cleanup error:', error);
+      toast({
+        title: "Cleanup failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setCleaningUp(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="py-8">
@@ -504,6 +564,9 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
 
   if (grouped) {
     const groupedDocs = groupByType(documents);
+    const olderVersionsCount = getAllOlderVersions().length;
+    const olderVersionsSize = getOlderVersionsStorageSize();
+    
     return (
       <>
         <ImageViewer
@@ -520,7 +583,50 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
           pdfName={viewerState.name}
           onDownload={() => viewerState.document && handleDownload(viewerState.document)}
         />
+        
+        {/* Cleanup old versions dialog */}
+        <AlertDialog open={cleanupDialogOpen} onOpenChange={setCleanupDialogOpen}>
+          <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Clean Up Old Versions</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete {olderVersionsCount} older document version{olderVersionsCount !== 1 ? 's' : ''}, 
+                freeing up {formatFileSize(olderVersionsSize)} of storage. Latest versions will be kept.
+                This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={cleaningUp}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleCleanupOldVersions}
+                disabled={cleaningUp}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {cleaningUp ? 'Cleaning up...' : 'Delete Old Versions'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        
         <div className="space-y-6 pb-24 md:pb-0">
+        {/* Cleanup button - only show if there are old versions */}
+        {olderVersionsCount > 0 && (
+          <div className="flex items-center justify-between p-3 bg-muted/50 rounded-xl border border-border/60">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <History className="h-4 w-4" />
+              <span>{olderVersionsCount} older version{olderVersionsCount !== 1 ? 's' : ''} ({formatFileSize(olderVersionsSize)})</span>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCleanupDialogOpen(true)}
+              className="gap-1.5 text-xs h-8"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+              Clean up
+            </Button>
+          </div>
+        )}
         {groupedDocs.map((g, groupIdx) => {
           const groupColors = [
             { header: 'from-primary to-info', badge: 'bg-primary/10 text-primary border-primary/30' },
