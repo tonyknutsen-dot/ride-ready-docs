@@ -8,10 +8,16 @@ interface DeviceHintBannerProps {
 
 const MOBILE_BREAKPOINT = 768;
 const STORAGE_KEY = 'device-hint-banner';
-const MAX_SHOW_COUNT = 3;
+
+const TIPS = [
+  "Works great on mobile! For the full experience with lots of documents and forms, try us on a tablet or laptop.",
+  "Swipe between tabs for quick navigation. Need more screen space? A tablet works brilliantly!",
+  "Last tip: Pin this app to your home screen for instant access. For heavy admin work, try desktop!"
+];
 
 export default function DeviceHintBanner({ variant = 'default' }: DeviceHintBannerProps) {
   const [showBanner, setShowBanner] = useState(false);
+  const [tipIndex, setTipIndex] = useState(0);
 
   useEffect(() => {
     const isMobile = window.innerWidth < MOBILE_BREAKPOINT;
@@ -22,18 +28,21 @@ export default function DeviceHintBanner({ variant = 'default' }: DeviceHintBann
       const data = stored ? JSON.parse(stored) : { dismissed: false, showCount: 0 };
 
       // Don't show if permanently dismissed or shown enough times
-      if (data.dismissed || data.showCount >= MAX_SHOW_COUNT) {
+      if (data.dismissed || data.showCount >= TIPS.length) {
         return;
       }
 
-      // Show banner and increment count
+      // Set the tip based on show count and show banner
+      setTipIndex(data.showCount);
       setShowBanner(true);
+      
+      // Increment count for next time
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
         ...data,
         showCount: data.showCount + 1
       }));
     } catch {
-      // If localStorage fails, just show the banner
+      // If localStorage fails, just show the first tip
       setShowBanner(true);
     }
   }, []);
@@ -42,7 +51,7 @@ export default function DeviceHintBanner({ variant = 'default' }: DeviceHintBann
     setShowBanner(false);
     try {
       // Mark as permanently dismissed
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ dismissed: true, showCount: MAX_SHOW_COUNT }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ dismissed: true, showCount: TIPS.length }));
     } catch {
       // Ignore storage errors
     }
@@ -60,7 +69,7 @@ export default function DeviceHintBanner({ variant = 'default' }: DeviceHintBann
     }`}>
       <MonitorSmartphone className={`h-5 w-5 mt-0.5 flex-shrink-0 ${isHero ? 'text-white' : 'text-primary'}`} />
       <div className="text-sm leading-5">
-        <span className="font-semibold">Tip:</span> Works great on mobile! For the full experience with lots of documents and forms, try us on a tablet or laptop.
+        <span className="font-semibold">Tip {tipIndex + 1}/{TIPS.length}:</span> {TIPS[tipIndex]}
       </div>
       <Button
         variant="ghost"
