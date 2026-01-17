@@ -46,6 +46,55 @@ interface BlockedIpWithToken {
   unblockToken: string;
   expiresAt: string;
   requestCount: number;
+  geoInfo?: GeoInfo;
+}
+
+interface GeoInfo {
+  countryCode: string;
+  countryName: string;
+  city: string;
+  region: string;
+  isp: string;
+}
+
+// Function to fetch geo info for an IP
+async function fetchGeoInfo(ip: string): Promise<GeoInfo | null> {
+  try {
+    // Skip private/local IPs
+    if (ip.startsWith('192.168.') || ip.startsWith('10.') || ip.startsWith('172.') || 
+        ip === '127.0.0.1' || ip === 'localhost' || ip === 'unknown') {
+      return {
+        countryCode: 'LOCAL',
+        countryName: 'Local Network',
+        city: 'N/A',
+        region: 'N/A',
+        isp: 'Private Network',
+      };
+    }
+
+    const response = await fetch(`http://ip-api.com/json/${ip}?fields=status,country,countryCode,regionName,city,isp`);
+    if (!response.ok) {
+      console.log(`[GEO] Failed to fetch geo info for ${ip}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    if (data.status !== 'success') {
+      console.log(`[GEO] IP lookup failed for ${ip}: ${data.message || 'Unknown error'}`);
+      return null;
+    }
+
+    return {
+      countryCode: data.countryCode || 'Unknown',
+      countryName: data.country || 'Unknown',
+      city: data.city || 'Unknown',
+      region: data.regionName || 'Unknown',
+      isp: data.isp || 'Unknown',
+    };
+  } catch (error) {
+    console.error(`[GEO] Error fetching geo info for ${ip}:`, error);
+    return null;
+  }
 }
 
 serve(async (req: Request) => {
@@ -174,6 +223,9 @@ serve(async (req: Request) => {
           // Generate a secure unblock token
           const unblockToken = crypto.randomUUID() + "-" + crypto.randomUUID();
           
+          // Fetch geographic information for the IP
+          const geoInfo = await fetchGeoInfo(ip);
+          
           const { error: blockError } = await supabase
             .from("blocked_ips")
             .insert({
@@ -183,6 +235,11 @@ serve(async (req: Request) => {
               blocked_by: "auto-monitor",
               request_count: count,
               unblock_token: unblockToken,
+              country_code: geoInfo?.countryCode || null,
+              country_name: geoInfo?.countryName || null,
+              city: geoInfo?.city || null,
+              region: geoInfo?.region || null,
+              isp: geoInfo?.isp || null,
             });
           
           if (!blockError) {
@@ -191,8 +248,9 @@ serve(async (req: Request) => {
               unblockToken,
               expiresAt,
               requestCount: count,
+              geoInfo: geoInfo || undefined,
             });
-            console.log(`[MONITOR] Auto-blocked IP ${ip} for ${blockDuration} hours with unblock token`);
+            console.log(`[MONITOR] Auto-blocked IP ${ip} (${geoInfo?.countryCode || 'Unknown'}) for ${blockDuration} hours`);
           } else {
             console.error(`[MONITOR] Failed to block IP ${ip}:`, blockError);
           }

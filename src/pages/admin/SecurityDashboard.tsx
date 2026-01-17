@@ -33,6 +33,11 @@ interface BlockedIp {
   request_count: number | null;
   unblocked_at: string | null;
   unblocked_by: string | null;
+  country_code: string | null;
+  country_name: string | null;
+  city: string | null;
+  region: string | null;
+  isp: string | null;
 }
 
 interface AggregatedStats {
@@ -222,6 +227,19 @@ const SecurityDashboard = () => {
     if (count >= 20) return <Badge variant="destructive">High</Badge>;
     if (count >= 10) return <Badge className="bg-orange-500">Medium</Badge>;
     return <Badge variant="secondary">Low</Badge>;
+  };
+
+  // Convert country code to flag emoji
+  const getCountryFlag = (countryCode: string): string => {
+    if (!countryCode || countryCode === 'LOCAL' || countryCode === 'Unknown') {
+      return '🌐';
+    }
+    // Convert country code to flag emoji using regional indicator symbols
+    const codePoints = countryCode
+      .toUpperCase()
+      .split('')
+      .map(char => 127397 + char.charCodeAt(0));
+    return String.fromCodePoint(...codePoints);
   };
 
   const getBlockStatusBadge = (blockedIp: BlockedIp) => {
@@ -470,10 +488,10 @@ const SecurityDashboard = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>IP Address</TableHead>
+                        <TableHead>Location</TableHead>
                         <TableHead>Reason</TableHead>
                         <TableHead>Blocked By</TableHead>
                         <TableHead>Blocked At</TableHead>
-                        <TableHead>Expires</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -482,9 +500,35 @@ const SecurityDashboard = () => {
                       {stats?.blockedIps?.map((blocked) => (
                         <TableRow key={blocked.id}>
                           <TableCell className="font-mono font-medium">
-                            {blocked.ip_address}
+                            <div className="flex flex-col">
+                              <span>{blocked.ip_address}</span>
+                              {blocked.isp && (
+                                <span className="text-xs text-muted-foreground truncate max-w-[150px]">
+                                  {blocked.isp}
+                                </span>
+                              )}
+                            </div>
                           </TableCell>
-                          <TableCell className="max-w-[200px] truncate">
+                          <TableCell>
+                            {blocked.country_code ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-lg" title={blocked.country_name || ''}>
+                                  {getCountryFlag(blocked.country_code)}
+                                </span>
+                                <div className="flex flex-col">
+                                  <span className="text-sm">{blocked.country_name || blocked.country_code}</span>
+                                  {blocked.city && blocked.city !== 'N/A' && (
+                                    <span className="text-xs text-muted-foreground">
+                                      {blocked.city}{blocked.region && blocked.region !== 'N/A' ? `, ${blocked.region}` : ''}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-muted-foreground text-sm">Unknown</span>
+                            )}
+                          </TableCell>
+                          <TableCell className="max-w-[180px] truncate">
                             {blocked.reason}
                           </TableCell>
                           <TableCell>
@@ -492,9 +536,6 @@ const SecurityDashboard = () => {
                           </TableCell>
                           <TableCell className="text-muted-foreground">
                             {formatDistanceToNow(new Date(blocked.blocked_at), { addSuffix: true })}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {format(new Date(blocked.expires_at), 'MMM d, HH:mm')}
                           </TableCell>
                           <TableCell>{getBlockStatusBadge(blocked)}</TableCell>
                           <TableCell className="text-right">

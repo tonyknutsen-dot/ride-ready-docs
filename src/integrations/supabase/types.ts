@@ -77,12 +77,17 @@ export type Database = {
         Row: {
           blocked_at: string
           blocked_by: string | null
+          city: string | null
+          country_code: string | null
+          country_name: string | null
           created_at: string
           expires_at: string
           id: string
           ip_address: string
           is_active: boolean
+          isp: string | null
           reason: string
+          region: string | null
           request_count: number | null
           unblock_token: string | null
           unblocked_at: string | null
@@ -91,12 +96,17 @@ export type Database = {
         Insert: {
           blocked_at?: string
           blocked_by?: string | null
+          city?: string | null
+          country_code?: string | null
+          country_name?: string | null
           created_at?: string
           expires_at: string
           id?: string
           ip_address: string
           is_active?: boolean
+          isp?: string | null
           reason: string
+          region?: string | null
           request_count?: number | null
           unblock_token?: string | null
           unblocked_at?: string | null
@@ -105,12 +115,17 @@ export type Database = {
         Update: {
           blocked_at?: string
           blocked_by?: string | null
+          city?: string | null
+          country_code?: string | null
+          country_name?: string | null
           created_at?: string
           expires_at?: string
           id?: string
           ip_address?: string
           is_active?: boolean
+          isp?: string | null
           reason?: string
+          region?: string | null
           request_count?: number | null
           unblock_token?: string | null
           unblocked_at?: string | null
