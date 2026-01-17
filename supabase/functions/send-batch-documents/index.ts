@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { brandColors, emailStyles, logoSvg, escapeHtml } from "../_shared/email-template.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
-import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getSecureHeaders } from "../_shared/rate-limit.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getSecureHeaders, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 
 interface SendBatchDocumentsRequest {
   recipientEmail: string;
@@ -27,6 +27,14 @@ const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
+    // Check if IP is blocked
+    const clientIp = getClientIp(req);
+    const blockResult = await checkIpBlocked(clientIp);
+    if (blockResult.isBlocked) {
+      console.log(`Blocked IP ${clientIp} attempted to access send-batch-documents`);
+      return createBlockedIpResponse(blockResult, corsHeaders);
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const resendApiKey = Deno.env.get("RESEND_API_KEY")!;

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 
 // Brand colors
 const primary = '#1e4a8f';
@@ -24,6 +25,14 @@ const handler = async (req: Request): Promise<Response> => {
 
   const origin = req.headers.get("origin");
   const corsHeaders = getCorsHeaders(origin);
+
+  // Check if IP is blocked
+  const clientIp = getClientIp(req);
+  const blockResult = await checkIpBlocked(clientIp);
+  if (blockResult.isBlocked) {
+    console.log(`Blocked IP ${clientIp} attempted to access send-support-notification`);
+    return createBlockedIpResponse(blockResult, corsHeaders);
+  }
 
   try {
     const { messageId }: SupportNotificationRequest = await req.json();

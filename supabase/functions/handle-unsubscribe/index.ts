@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
-import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from "../_shared/rate-limit.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 
 serve(async (req: Request) => {
   // Handle CORS preflight
@@ -10,6 +10,14 @@ serve(async (req: Request) => {
 
   const origin = req.headers.get("origin");
   const corsHeaders = getCorsHeaders(origin);
+
+  // Check if IP is blocked
+  const clientIp = getClientIp(req);
+  const blockResult = await checkIpBlocked(clientIp);
+  if (blockResult.isBlocked) {
+    console.log(`Blocked IP ${clientIp} attempted to access handle-unsubscribe`);
+    return createBlockedIpResponse(blockResult, corsHeaders);
+  }
 
   // Rate limiting for public endpoint
   const rateLimitKey = getClientIdentifier(req, "handle-unsubscribe");

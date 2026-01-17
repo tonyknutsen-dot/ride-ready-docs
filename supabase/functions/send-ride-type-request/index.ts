@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
-import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from "../_shared/rate-limit.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -33,6 +33,14 @@ const handler = async (req: Request): Promise<Response> => {
 
   const origin = req.headers.get("origin");
   const corsHeaders = getCorsHeaders(origin);
+
+  // Check if IP is blocked
+  const clientIp = getClientIp(req);
+  const blockResult = await checkIpBlocked(clientIp);
+  if (blockResult.isBlocked) {
+    console.log(`Blocked IP ${clientIp} attempted to access send-ride-type-request`);
+    return createBlockedIpResponse(blockResult, corsHeaders);
+  }
 
   try {
     const requestData: RideTypeRequest = await req.json();
