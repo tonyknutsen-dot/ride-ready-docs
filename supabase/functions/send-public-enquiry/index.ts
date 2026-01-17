@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
-import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from "../_shared/rate-limit.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -43,10 +43,13 @@ const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    // Get client IP for rate limiting
-    const clientIp = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() 
-      || req.headers.get("x-real-ip") 
-      || "unknown";
+    // Check if IP is blocked
+    const clientIp = getClientIp(req);
+    const blockResult = await checkIpBlocked(clientIp);
+    if (blockResult.isBlocked) {
+      console.log(`Blocked IP ${clientIp} attempted to access send-public-enquiry`);
+      return createBlockedIpResponse(blockResult, corsHeaders);
+    }
 
     const { name, email, company, enquiryType, message, honeypot }: PublicEnquiryRequest = await req.json();
     

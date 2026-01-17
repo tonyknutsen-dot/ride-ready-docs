@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -28,6 +29,14 @@ const handler = async (req: Request): Promise<Response> => {
 
   const origin = req.headers.get("origin");
   const corsHeaders = getCorsHeaders(origin);
+
+  // Check if IP is blocked
+  const clientIp = getClientIp(req);
+  const blockResult = await checkIpBlocked(clientIp);
+  if (blockResult.isBlocked) {
+    console.log(`Blocked IP ${clientIp} attempted to access send-support-response`);
+    return createBlockedIpResponse(blockResult, corsHeaders);
+  }
 
   try {
     const { messageId, adminResponse, userEmail, subject }: SupportResponseRequest = await req.json();

@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
-import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getSecureHeaders } from "../_shared/rate-limit.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getSecureHeaders, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -18,6 +18,14 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
+    // Check if IP is blocked
+    const clientIp = getClientIp(req);
+    const blockResult = await checkIpBlocked(clientIp);
+    if (blockResult.isBlocked) {
+      logStep("Blocked IP attempted access", { ip: clientIp });
+      return createBlockedIpResponse(blockResult, corsHeaders);
+    }
+
     logStep("Function started");
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
