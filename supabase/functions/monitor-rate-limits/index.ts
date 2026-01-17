@@ -31,63 +31,93 @@ serve(async (req: Request) => {
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
   try {
-    console.log("[MONITOR] Starting rate limit abuse detection...");
+    const body = await req.json().catch(() => ({}));
+    const fetchOnly = body?.fetchOnly === true;
+    
+    console.log("[MONITOR] Starting rate limit abuse detection...", { fetchOnly });
     
     const patterns: AbusePattern[] = [];
+    const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
-    // 1. Check for high-volume IPs (potential attackers)
-    const { data: ipStats, error: ipError } = await supabase
+    // Fetch all entries from last 24 hours for stats
+    const { data: allEntries, error: entriesError } = await supabase
       .from("rate_limit_entries")
-      .select("key, count")
-      .gte("window_start", oneHourAgo);
+      .select("id, key, count, window_start, created_at")
+      .gte("window_start", oneDayAgo)
+      .order("window_start", { ascending: false });
 
-    if (ipError) {
-      console.error("[MONITOR] Error fetching IP stats:", ipError);
-    } else if (ipStats) {
-      // Aggregate by IP
-      const ipCounts: Record<string, number> = {};
-      for (const entry of ipStats) {
-        const ip = entry.key.split(":ip:")[1] || entry.key.split(":user:")[1] || "unknown";
-        ipCounts[ip] = (ipCounts[ip] || 0) + entry.count;
-      }
-
-      // Find high-volume IPs
-      for (const [ip, count] of Object.entries(ipCounts)) {
-        if (count >= THRESHOLDS.entriesPerIp) {
-          patterns.push({
-            type: "high_volume_ip",
-            severity: count >= THRESHOLDS.entriesPerIp * 2 ? "critical" : "warning",
-            details: `IP ${ip} made ${count} requests in the last hour`,
-            data: { ip, count, threshold: THRESHOLDS.entriesPerIp },
-          });
-        }
-      }
-
-      // 2. Check total entries threshold
-      const totalEntries = ipStats.reduce((sum, e) => sum + e.count, 0);
-      if (totalEntries >= THRESHOLDS.totalEntries) {
-        patterns.push({
-          type: "total_threshold",
-          severity: totalEntries >= THRESHOLDS.totalEntries * 2 ? "critical" : "warning",
-          details: `Total rate limit entries (${totalEntries}) exceeded threshold (${THRESHOLDS.totalEntries})`,
-          data: { totalEntries, threshold: THRESHOLDS.totalEntries },
-        });
-      }
-
-      console.log(`[MONITOR] Analyzed ${ipStats.length} entries, ${Object.keys(ipCounts).length} unique sources`);
+    if (entriesError) {
+      console.error("[MONITOR] Error fetching entries:", entriesError);
     }
 
-    // 3. Check for repeated rate limit blocks (IPs that keep hitting limits)
-    // This looks for keys that appear multiple times with high counts
-    const { data: blockStats } = await supabase
-      .from("rate_limit_entries")
-      .select("key")
-      .gte("window_start", oneHourAgo)
-      .gte("count", 5); // Entries where count is high (near limit)
+    // Build stats for dashboard
+    const entries = allEntries || [];
+    const sourceMap: Record<string, number> = {};
+    let totalRequests = 0;
 
-    if (blockStats && blockStats.length >= THRESHOLDS.rateLimitHits) {
-      const blockedKeys = [...new Set(blockStats.map(e => e.key))];
+    entries.forEach((entry: any) => {
+      sourceMap[entry.key] = (sourceMap[entry.key] || 0) + entry.count;
+      totalRequests += entry.count;
+    });
+
+    const topSources = Object.entries(sourceMap)
+      .map(([key, count]) => ({ key, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+
+    const stats = {
+      totalEntries: entries.length,
+      totalRequests,
+      uniqueSources: Object.keys(sourceMap).length,
+      topSources,
+      recentActivity: entries.slice(0, 20),
+    };
+
+    // If only fetching stats, return early without pattern detection
+    if (fetchOnly) {
+      return new Response(
+        JSON.stringify({ success: true, stats }),
+        { status: 200, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // 1. Check for high-volume IPs (potential attackers) - use 1 hour window
+    const ipCounts: Record<string, number> = {};
+    for (const entry of recentEntries) {
+      const ip = entry.key.split(":ip:")[1] || entry.key.split(":user:")[1] || "unknown";
+      ipCounts[ip] = (ipCounts[ip] || 0) + entry.count;
+    }
+
+    // Find high-volume IPs
+    for (const [ip, count] of Object.entries(ipCounts)) {
+      if (count >= THRESHOLDS.entriesPerIp) {
+        patterns.push({
+          type: "high_volume_ip",
+          severity: count >= THRESHOLDS.entriesPerIp * 2 ? "critical" : "warning",
+          details: `IP ${ip} made ${count} requests in the last hour`,
+          data: { ip, count, threshold: THRESHOLDS.entriesPerIp },
+        });
+      }
+    }
+
+    // 2. Check total entries threshold (last hour)
+    const hourlyTotal = recentEntries.reduce((sum: number, e: any) => sum + e.count, 0);
+    if (hourlyTotal >= THRESHOLDS.totalEntries) {
+      patterns.push({
+        type: "total_threshold",
+        severity: hourlyTotal >= THRESHOLDS.totalEntries * 2 ? "critical" : "warning",
+        details: `Total rate limit entries (${hourlyTotal}) exceeded threshold (${THRESHOLDS.totalEntries})`,
+        data: { totalEntries: hourlyTotal, threshold: THRESHOLDS.totalEntries },
+      });
+    }
+
+    console.log(`[MONITOR] Analyzed ${recentEntries.length} entries, ${Object.keys(ipCounts).length} unique sources`);
+
+    // 3. Check for repeated rate limit blocks (IPs that keep hitting limits)
+    const highCountEntries = recentEntries.filter((e: any) => e.count >= 5);
+    if (highCountEntries.length >= THRESHOLDS.rateLimitHits) {
+      const blockedKeys = [...new Set(highCountEntries.map((e: any) => e.key))];
       patterns.push({
         type: "repeated_blocks",
         severity: blockedKeys.length >= THRESHOLDS.rateLimitHits * 2 ? "critical" : "warning",
@@ -96,11 +126,11 @@ serve(async (req: Request) => {
       });
     }
 
-    // If no patterns detected, just log and return
+    // If no patterns detected, just log and return with stats
     if (patterns.length === 0) {
       console.log("[MONITOR] No abuse patterns detected");
       return new Response(
-        JSON.stringify({ success: true, patternsDetected: 0, alertSent: false }),
+        JSON.stringify({ success: true, patternsDetected: 0, alertSent: false, stats }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
@@ -130,6 +160,7 @@ serve(async (req: Request) => {
         patternsDetected: patterns.length,
         patterns,
         alertSent: !emailError,
+        stats,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
