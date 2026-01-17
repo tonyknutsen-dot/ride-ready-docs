@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from "../_shared/rate-limit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -36,6 +37,14 @@ const handler = async (req: Request): Promise<Response> => {
         JSON.stringify({ error: "Document type name is required" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
+    }
+
+    // Rate limiting - public requests get stricter limits
+    const rateLimitKey = getClientIdentifier(req, "send-document-type-request");
+    const rateLimitResult = checkRateLimit(rateLimitKey, "email");
+    if (!rateLimitResult.allowed) {
+      console.log(`Rate limit exceeded`);
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     const safeDocumentTypeName = escapeHtml(documentTypeName);

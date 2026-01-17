@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getSecureHeaders } from "../_shared/rate-limit.ts";
 
 // Allowed tables whitelist
 const ALLOWED_TABLES = ["daily_check_template_items", "check_library_items"];
@@ -38,6 +39,14 @@ serve(async (req) => {
         status: 401,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
+    }
+
+    // Rate limiting - AI operations get moderate limits
+    const rateLimitKey = getClientIdentifier(req, "spellcheck-items", user.id);
+    const rateLimitResult = checkRateLimit(rateLimitKey, "expensive");
+    if (!rateLimitResult.allowed) {
+      console.log(`Rate limit exceeded for user ${user.id}`);
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     const { item_id, text, table } = await req.json();
