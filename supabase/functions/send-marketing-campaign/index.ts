@@ -56,7 +56,7 @@ serve(async (req: Request) => {
 
     // Rate limiting - batch email operations get stricter limits
     const rateLimitKey = getClientIdentifier(req, "send-marketing-campaign", user.id);
-    const rateLimitResult = checkRateLimit(rateLimitKey, "batch");
+    const rateLimitResult = await checkRateLimit(rateLimitKey, "batch");
     if (!rateLimitResult.allowed) {
       console.log(`Rate limit exceeded for user ${user.id}`);
       return createRateLimitResponse(rateLimitResult, corsHeaders);

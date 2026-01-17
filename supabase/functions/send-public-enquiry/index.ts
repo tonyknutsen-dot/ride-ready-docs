@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "npm:resend@2.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from "../_shared/rate-limit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -29,37 +30,6 @@ const escapeHtml = (text: string | null | undefined): string => {
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;');
-};
-
-// Simple in-memory rate limiting (resets on function cold start)
-// Key: IP or email -> { count, resetAt }
-const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-
-const RATE_LIMIT_MAX_REQUESTS = 5; // Max requests per window
-const RATE_LIMIT_WINDOW_MS = 3600000; // 1 hour window
-
-const checkRateLimit = (key: string): { allowed: boolean; remaining: number; retryAfter?: number } => {
-  const now = Date.now();
-  const limit = rateLimitMap.get(key);
-  
-  // Clean up expired entries periodically
-  if (rateLimitMap.size > 1000) {
-    for (const [k, v] of rateLimitMap.entries()) {
-      if (now > v.resetAt) rateLimitMap.delete(k);
-    }
-  }
-  
-  if (!limit || now > limit.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
-    return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - 1 };
-  }
-  
-  if (limit.count >= RATE_LIMIT_MAX_REQUESTS) {
-    return { allowed: false, remaining: 0, retryAfter: Math.ceil((limit.resetAt - now) / 1000) };
-  }
-  
-  limit.count++;
-  return { allowed: true, remaining: RATE_LIMIT_MAX_REQUESTS - limit.count };
 };
 
 const handler = async (req: Request): Promise<Response> => {
@@ -100,26 +70,13 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Rate limit check - use combination of IP and email
-    const rateLimitKey = `${clientIp}:${email.toLowerCase()}`;
-    const rateLimit = checkRateLimit(rateLimitKey);
+    // Rate limit check - use shared persistent rate limiter
+    const rateLimitKey = getClientIdentifier(req, "send-public-enquiry");
+    const rateLimitResult = await checkRateLimit(rateLimitKey, "public");
     
-    if (!rateLimit.allowed) {
+    if (!rateLimitResult.allowed) {
       console.log(`Rate limit exceeded for ${rateLimitKey}`);
-      return new Response(
-        JSON.stringify({ 
-          error: "Too many requests. Please try again later.",
-          retryAfter: rateLimit.retryAfter 
-        }),
-        { 
-          status: 429, 
-          headers: { 
-            ...corsHeaders, 
-            "Content-Type": "application/json",
-            "Retry-After": String(rateLimit.retryAfter)
-          } 
-        }
-      );
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     const safeName = escapeHtml(name);

@@ -49,7 +49,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Rate limiting - use email as identifier for public requests
     const rateLimitKey = getClientIdentifier(req, "send-ride-type-request") + `:${requestData.userEmail}`;
-    const rateLimitResult = checkRateLimit(rateLimitKey, "email");
+    const rateLimitResult = await checkRateLimit(rateLimitKey, "email");
     if (!rateLimitResult.allowed) {
       console.log(`Rate limit exceeded for ${requestData.userEmail}`);
       return createRateLimitResponse(rateLimitResult, corsHeaders);

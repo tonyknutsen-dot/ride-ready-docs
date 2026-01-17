@@ -13,7 +13,7 @@ serve(async (req: Request) => {
 
   // Rate limiting for public endpoint
   const rateLimitKey = getClientIdentifier(req, "handle-unsubscribe");
-  const rateLimitResult = checkRateLimit(rateLimitKey, "public");
+  const rateLimitResult = await checkRateLimit(rateLimitKey, "public");
   if (!rateLimitResult.allowed) {
     return createRateLimitResponse(rateLimitResult, corsHeaders);
   }

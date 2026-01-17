@@ -41,7 +41,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Rate limiting - public requests get stricter limits
     const rateLimitKey = getClientIdentifier(req, "send-document-type-request");
-    const rateLimitResult = checkRateLimit(rateLimitKey, "email");
+    const rateLimitResult = await checkRateLimit(rateLimitKey, "email");
     if (!rateLimitResult.allowed) {
       console.log(`Rate limit exceeded`);
       return createRateLimitResponse(rateLimitResult, corsHeaders);
