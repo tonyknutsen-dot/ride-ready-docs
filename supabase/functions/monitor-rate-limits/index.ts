@@ -38,6 +38,14 @@ interface BlockedIp {
   is_active: boolean;
   blocked_by: string;
   request_count: number;
+  unblock_token?: string;
+}
+
+interface BlockedIpWithToken {
+  ip: string;
+  unblockToken: string;
+  expiresAt: string;
+  requestCount: number;
 }
 
 serve(async (req: Request) => {
@@ -70,7 +78,8 @@ serve(async (req: Request) => {
     console.log("[MONITOR] Starting rate limit abuse detection...", { fetchOnly });
     
     const patterns: AbusePattern[] = [];
-    const blockedIps: string[] = [];
+    const blockedIpsWithTokens: BlockedIpWithToken[] = [];
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
@@ -162,6 +171,9 @@ serve(async (req: Request) => {
           const blockDuration = BLOCK_DURATIONS[severity];
           const expiresAt = new Date(Date.now() + blockDuration * 60 * 60 * 1000).toISOString();
           
+          // Generate a secure unblock token
+          const unblockToken = crypto.randomUUID() + "-" + crypto.randomUUID();
+          
           const { error: blockError } = await supabase
             .from("blocked_ips")
             .insert({
@@ -170,11 +182,17 @@ serve(async (req: Request) => {
               expires_at: expiresAt,
               blocked_by: "auto-monitor",
               request_count: count,
+              unblock_token: unblockToken,
             });
           
           if (!blockError) {
-            blockedIps.push(ip);
-            console.log(`[MONITOR] Auto-blocked IP ${ip} for ${blockDuration} hours`);
+            blockedIpsWithTokens.push({
+              ip,
+              unblockToken,
+              expiresAt,
+              requestCount: count,
+            });
+            console.log(`[MONITOR] Auto-blocked IP ${ip} for ${blockDuration} hours with unblock token`);
           } else {
             console.error(`[MONITOR] Failed to block IP ${ip}:`, blockError);
           }
@@ -216,16 +234,16 @@ serve(async (req: Request) => {
       );
     }
 
-    console.log(`[MONITOR] Detected ${patterns.length} abuse patterns, auto-blocked ${blockedIps.length} IPs`);
+    console.log(`[MONITOR] Detected ${patterns.length} abuse patterns, auto-blocked ${blockedIpsWithTokens.length} IPs`);
 
-    // Send alert email
+    // Send alert email with quick-unblock links
     const hasCritical = patterns.some(p => p.severity === "critical");
-    const alertHtml = generateAlertEmail(patterns, blockedIps, hasCritical);
+    const alertHtml = generateAlertEmail(patterns, blockedIpsWithTokens, hasCritical, supabaseUrl);
 
     const { error: emailError } = await resend.emails.send({
       from: "Ride Ready Alerts <notifications@ridereadydocs.com>",
       to: ["info@ridereadydocs.com"],
-      subject: `${hasCritical ? "🚨 CRITICAL" : "⚠️ Warning"}: Rate Limit Abuse Detected${blockedIps.length > 0 ? ` - ${blockedIps.length} IPs Blocked` : ""}`,
+      subject: `${hasCritical ? "🚨 CRITICAL" : "⚠️ Warning"}: Rate Limit Abuse Detected${blockedIpsWithTokens.length > 0 ? ` - ${blockedIpsWithTokens.length} IPs Blocked` : ""}`,
       html: alertHtml,
     });
 
@@ -240,7 +258,7 @@ serve(async (req: Request) => {
         success: true, 
         patternsDetected: patterns.length,
         patterns,
-        blockedIps,
+        blockedIps: blockedIpsWithTokens.map(b => b.ip),
         alertSent: !emailError,
         stats,
       }),
@@ -374,7 +392,12 @@ async function handleManualBlockRequest(
   );
 }
 
-function generateAlertEmail(patterns: AbusePattern[], blockedIps: string[], hasCritical: boolean): string {
+function generateAlertEmail(
+  patterns: AbusePattern[], 
+  blockedIps: BlockedIpWithToken[], 
+  hasCritical: boolean,
+  supabaseUrl: string
+): string {
   const severityColor = hasCritical ? "#dc2626" : "#f59e0b";
   const severityText = hasCritical ? "Critical Security Alert" : "Security Warning";
 
@@ -390,12 +413,57 @@ function generateAlertEmail(patterns: AbusePattern[], blockedIps: string[], hasC
     </tr>
   `).join("");
 
+  // Generate blocked IPs section with quick-unblock links
   const blockedSection = blockedIps.length > 0 ? `
-    <div style="margin-top: 24px; padding: 16px; background-color: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;">
-      <h3 style="margin: 0 0 12px 0; color: #dc2626; font-size: 16px;">🛡️ Auto-Blocked IPs</h3>
-      <p style="margin: 0; font-size: 14px; color: #991b1b;">
-        The following IPs have been automatically blocked:<br>
-        <code style="background: #fee2e2; padding: 2px 6px; border-radius: 4px;">${blockedIps.join("</code>, <code style='background: #fee2e2; padding: 2px 6px; border-radius: 4px;'>")}</code>
+    <div style="margin-top: 24px; padding: 20px; background-color: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;">
+      <h3 style="margin: 0 0 16px 0; color: #dc2626; font-size: 16px;">🛡️ Auto-Blocked IPs</h3>
+      <p style="margin: 0 0 16px 0; font-size: 14px; color: #991b1b;">
+        The following IPs have been automatically blocked. Click the unblock button if this is a false positive:
+      </p>
+      <table role="presentation" style="width: 100%; border-collapse: collapse;">
+        <thead>
+          <tr style="background-color: #fee2e2;">
+            <th style="padding: 10px; text-align: left; font-size: 12px; text-transform: uppercase; color: #991b1b; border-bottom: 1px solid #fecaca;">IP Address</th>
+            <th style="padding: 10px; text-align: left; font-size: 12px; text-transform: uppercase; color: #991b1b; border-bottom: 1px solid #fecaca;">Requests</th>
+            <th style="padding: 10px; text-align: left; font-size: 12px; text-transform: uppercase; color: #991b1b; border-bottom: 1px solid #fecaca;">Expires</th>
+            <th style="padding: 10px; text-align: center; font-size: 12px; text-transform: uppercase; color: #991b1b; border-bottom: 1px solid #fecaca;">Quick Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${blockedIps.map(b => {
+            const unblockUrl = `${supabaseUrl}/functions/v1/quick-unblock?token=${encodeURIComponent(b.unblockToken)}`;
+            const expiresDate = new Date(b.expiresAt);
+            const expiresFormatted = expiresDate.toLocaleString('en-GB', { 
+              day: '2-digit', 
+              month: 'short', 
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: false 
+            });
+            return `
+              <tr>
+                <td style="padding: 10px; border-bottom: 1px solid #fecaca;">
+                  <code style="background: #fee2e2; padding: 2px 6px; border-radius: 4px; font-size: 13px;">${b.ip}</code>
+                </td>
+                <td style="padding: 10px; border-bottom: 1px solid #fecaca; font-size: 14px; color: #991b1b;">
+                  ${b.requestCount} req/hr
+                </td>
+                <td style="padding: 10px; border-bottom: 1px solid #fecaca; font-size: 14px; color: #991b1b;">
+                  ${expiresFormatted}
+                </td>
+                <td style="padding: 10px; border-bottom: 1px solid #fecaca; text-align: center;">
+                  <a href="${unblockUrl}" 
+                     style="display: inline-block; padding: 8px 16px; background-color: #22c55e; color: #ffffff; text-decoration: none; border-radius: 6px; font-weight: 500; font-size: 12px;">
+                    ✓ Unblock
+                  </a>
+                </td>
+              </tr>
+            `;
+          }).join("")}
+        </tbody>
+      </table>
+      <p style="margin: 16px 0 0 0; font-size: 12px; color: #b91c1c;">
+        ⚠️ Quick unblock links are single-use and expire with the block.
       </p>
     </div>
   ` : "";
@@ -411,7 +479,7 @@ function generateAlertEmail(patterns: AbusePattern[], blockedIps: string[], hasC
       <table role="presentation" style="width: 100%; border-collapse: collapse;">
         <tr>
           <td align="center" style="padding: 40px 20px;">
-            <table role="presentation" style="width: 100%; max-width: 600px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <table role="presentation" style="width: 100%; max-width: 640px; border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
               
               <!-- Header -->
               <tr>
@@ -447,8 +515,15 @@ function generateAlertEmail(patterns: AbusePattern[], blockedIps: string[], hasC
                     <strong>Recommended Actions:</strong><br>
                     • Review the Security Dashboard for more details<br>
                     • Verify blocked IPs are legitimate threats<br>
-                    • Unblock any false positives via Admin Panel
+                    • Use quick-unblock links above for false positives
                   </p>
+                  
+                  <div style="margin-top: 24px; text-align: center;">
+                    <a href="https://ride-ready-docs.lovable.app/admin/security" 
+                       style="display: inline-block; padding: 12px 24px; background-color: #3b82f6; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 500; font-size: 14px;">
+                      Open Security Dashboard
+                    </a>
+                  </div>
                 </td>
               </tr>
               
