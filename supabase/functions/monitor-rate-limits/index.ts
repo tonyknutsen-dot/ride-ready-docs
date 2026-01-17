@@ -12,6 +12,14 @@ const THRESHOLDS = {
   totalEntries: 100,
   // Alert if any IP has been rate limited (hit the limit) more than this many times
   rateLimitHits: 5,
+  // Auto-block threshold - block IPs exceeding this many requests in an hour
+  autoBlockThreshold: 50,
+};
+
+// Block duration in hours based on severity
+const BLOCK_DURATIONS = {
+  warning: 1,    // 1 hour
+  critical: 24,  // 24 hours
 };
 
 interface AbusePattern {
@@ -19,6 +27,17 @@ interface AbusePattern {
   details: string;
   severity: "warning" | "critical";
   data: Record<string, unknown>;
+}
+
+interface BlockedIp {
+  id: string;
+  ip_address: string;
+  reason: string;
+  blocked_at: string;
+  expires_at: string;
+  is_active: boolean;
+  blocked_by: string;
+  request_count: number;
 }
 
 serve(async (req: Request) => {
@@ -32,11 +51,26 @@ serve(async (req: Request) => {
 
   try {
     const body = await req.json().catch(() => ({}));
+    const action = body?.action;
     const fetchOnly = body?.fetchOnly === true;
+    
+    // Handle specific actions
+    if (action === "stats") {
+      return await handleStatsRequest(supabase);
+    }
+    
+    if (action === "unblock") {
+      return await handleUnblockRequest(supabase, body.ipAddress, body.adminId);
+    }
+    
+    if (action === "block") {
+      return await handleManualBlockRequest(supabase, body.ipAddress, body.reason, body.durationHours, body.adminId);
+    }
     
     console.log("[MONITOR] Starting rate limit abuse detection...", { fetchOnly });
     
     const patterns: AbusePattern[] = [];
+    const blockedIps: string[] = [];
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
 
@@ -50,6 +84,14 @@ serve(async (req: Request) => {
     if (entriesError) {
       console.error("[MONITOR] Error fetching entries:", entriesError);
     }
+
+    // Fetch blocked IPs
+    const { data: blockedIpsData } = await supabase
+      .from("blocked_ips")
+      .select("*")
+      .eq("is_active", true)
+      .gt("expires_at", new Date().toISOString())
+      .order("blocked_at", { ascending: false });
 
     // Build stats for dashboard
     const entries = allEntries || [];
@@ -72,6 +114,7 @@ serve(async (req: Request) => {
       uniqueSources: Object.keys(sourceMap).length,
       topSources,
       recentActivity: entries.slice(0, 20),
+      blockedIps: blockedIpsData || [],
     };
 
     // If only fetching stats, return early without pattern detection
@@ -82,6 +125,9 @@ serve(async (req: Request) => {
       );
     }
 
+    // Clean up expired blocks
+    await supabase.rpc('cleanup_expired_blocks');
+
     // Filter to last hour for pattern detection
     const recentEntries = entries.filter((e: any) => 
       new Date(e.window_start).getTime() >= new Date(oneHourAgo).getTime()
@@ -91,18 +137,48 @@ serve(async (req: Request) => {
     const ipCounts: Record<string, number> = {};
     for (const entry of recentEntries) {
       const ip = entry.key.split(":ip:")[1] || entry.key.split(":user:")[1] || "unknown";
-      ipCounts[ip] = (ipCounts[ip] || 0) + entry.count;
+      if (ip !== "unknown") {
+        ipCounts[ip] = (ipCounts[ip] || 0) + entry.count;
+      }
     }
 
-    // Find high-volume IPs
+    // Find high-volume IPs and auto-block if threshold exceeded
     for (const [ip, count] of Object.entries(ipCounts)) {
+      const severity = count >= THRESHOLDS.entriesPerIp * 2 ? "critical" : "warning";
+      
       if (count >= THRESHOLDS.entriesPerIp) {
         patterns.push({
           type: "high_volume_ip",
-          severity: count >= THRESHOLDS.entriesPerIp * 2 ? "critical" : "warning",
+          severity,
           details: `IP ${ip} made ${count} requests in the last hour`,
           data: { ip, count, threshold: THRESHOLDS.entriesPerIp },
         });
+      }
+      
+      // Auto-block IPs exceeding the auto-block threshold
+      if (count >= THRESHOLDS.autoBlockThreshold) {
+        const alreadyBlocked = blockedIpsData?.some((b: any) => b.ip_address === ip);
+        if (!alreadyBlocked) {
+          const blockDuration = BLOCK_DURATIONS[severity];
+          const expiresAt = new Date(Date.now() + blockDuration * 60 * 60 * 1000).toISOString();
+          
+          const { error: blockError } = await supabase
+            .from("blocked_ips")
+            .insert({
+              ip_address: ip,
+              reason: `Auto-blocked: ${count} requests in 1 hour (threshold: ${THRESHOLDS.autoBlockThreshold})`,
+              expires_at: expiresAt,
+              blocked_by: "auto-monitor",
+              request_count: count,
+            });
+          
+          if (!blockError) {
+            blockedIps.push(ip);
+            console.log(`[MONITOR] Auto-blocked IP ${ip} for ${blockDuration} hours`);
+          } else {
+            console.error(`[MONITOR] Failed to block IP ${ip}:`, blockError);
+          }
+        }
       }
     }
 
@@ -135,21 +211,21 @@ serve(async (req: Request) => {
     if (patterns.length === 0) {
       console.log("[MONITOR] No abuse patterns detected");
       return new Response(
-        JSON.stringify({ success: true, patternsDetected: 0, alertSent: false, stats }),
+        JSON.stringify({ success: true, patternsDetected: 0, alertSent: false, blockedIps: [], stats }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     }
 
-    console.log(`[MONITOR] Detected ${patterns.length} abuse patterns`);
+    console.log(`[MONITOR] Detected ${patterns.length} abuse patterns, auto-blocked ${blockedIps.length} IPs`);
 
     // Send alert email
     const hasCritical = patterns.some(p => p.severity === "critical");
-    const alertHtml = generateAlertEmail(patterns, hasCritical);
+    const alertHtml = generateAlertEmail(patterns, blockedIps, hasCritical);
 
     const { error: emailError } = await resend.emails.send({
       from: "Ride Ready Alerts <notifications@ridereadydocs.com>",
       to: ["info@ridereadydocs.com"],
-      subject: `${hasCritical ? "🚨 CRITICAL" : "⚠️ Warning"}: Rate Limit Abuse Detected`,
+      subject: `${hasCritical ? "🚨 CRITICAL" : "⚠️ Warning"}: Rate Limit Abuse Detected${blockedIps.length > 0 ? ` - ${blockedIps.length} IPs Blocked` : ""}`,
       html: alertHtml,
     });
 
@@ -164,6 +240,7 @@ serve(async (req: Request) => {
         success: true, 
         patternsDetected: patterns.length,
         patterns,
+        blockedIps,
         alertSent: !emailError,
         stats,
       }),
@@ -179,7 +256,125 @@ serve(async (req: Request) => {
   }
 });
 
-function generateAlertEmail(patterns: AbusePattern[], hasCritical: boolean): string {
+async function handleStatsRequest(supabase: any) {
+  const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  
+  const [entriesResult, blockedResult] = await Promise.all([
+    supabase
+      .from("rate_limit_entries")
+      .select("id, key, count, window_start, created_at")
+      .gte("window_start", oneDayAgo)
+      .order("window_start", { ascending: false }),
+    supabase
+      .from("blocked_ips")
+      .select("*")
+      .order("blocked_at", { ascending: false })
+      .limit(50),
+  ]);
+
+  const entries = entriesResult.data || [];
+  const sourceMap: Record<string, number> = {};
+  let totalRequests = 0;
+
+  entries.forEach((entry: any) => {
+    sourceMap[entry.key] = (sourceMap[entry.key] || 0) + entry.count;
+    totalRequests += entry.count;
+  });
+
+  const topSources = Object.entries(sourceMap)
+    .map(([key, count]) => ({ key, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 10);
+
+  const stats = {
+    totalEntries: entries.length,
+    totalRequests,
+    uniqueSources: Object.keys(sourceMap).length,
+    topSources,
+    recentActivity: entries.slice(0, 20),
+    blockedIps: blockedResult.data || [],
+  };
+
+  return new Response(
+    JSON.stringify({ success: true, stats }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
+}
+
+async function handleUnblockRequest(supabase: any, ipAddress: string, adminId?: string) {
+  if (!ipAddress) {
+    return new Response(
+      JSON.stringify({ success: false, error: "IP address required" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const { error } = await supabase
+    .from("blocked_ips")
+    .update({
+      is_active: false,
+      unblocked_at: new Date().toISOString(),
+      unblocked_by: adminId || "admin",
+    })
+    .eq("ip_address", ipAddress)
+    .eq("is_active", true);
+
+  if (error) {
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  console.log(`[MONITOR] IP ${ipAddress} unblocked by ${adminId || "admin"}`);
+
+  return new Response(
+    JSON.stringify({ success: true, message: `IP ${ipAddress} has been unblocked` }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
+}
+
+async function handleManualBlockRequest(
+  supabase: any, 
+  ipAddress: string, 
+  reason: string, 
+  durationHours: number = 24,
+  adminId?: string
+) {
+  if (!ipAddress) {
+    return new Response(
+      JSON.stringify({ success: false, error: "IP address required" }),
+      { status: 400, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  const expiresAt = new Date(Date.now() + durationHours * 60 * 60 * 1000).toISOString();
+
+  const { error } = await supabase
+    .from("blocked_ips")
+    .insert({
+      ip_address: ipAddress,
+      reason: reason || "Manually blocked by admin",
+      expires_at: expiresAt,
+      blocked_by: adminId || "admin",
+    });
+
+  if (error) {
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }),
+      { status: 500, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
+  console.log(`[MONITOR] IP ${ipAddress} manually blocked for ${durationHours} hours`);
+
+  return new Response(
+    JSON.stringify({ success: true, message: `IP ${ipAddress} blocked for ${durationHours} hours` }),
+    { status: 200, headers: { "Content-Type": "application/json" } }
+  );
+}
+
+function generateAlertEmail(patterns: AbusePattern[], blockedIps: string[], hasCritical: boolean): string {
   const severityColor = hasCritical ? "#dc2626" : "#f59e0b";
   const severityText = hasCritical ? "Critical Security Alert" : "Security Warning";
 
@@ -194,6 +389,16 @@ function generateAlertEmail(patterns: AbusePattern[], hasCritical: boolean): str
       <td style="padding: 12px; border-bottom: 1px solid #e5e7eb;">${p.details}</td>
     </tr>
   `).join("");
+
+  const blockedSection = blockedIps.length > 0 ? `
+    <div style="margin-top: 24px; padding: 16px; background-color: #fef2f2; border-radius: 8px; border: 1px solid #fecaca;">
+      <h3 style="margin: 0 0 12px 0; color: #dc2626; font-size: 16px;">🛡️ Auto-Blocked IPs</h3>
+      <p style="margin: 0; font-size: 14px; color: #991b1b;">
+        The following IPs have been automatically blocked:<br>
+        <code style="background: #fee2e2; padding: 2px 6px; border-radius: 4px;">${blockedIps.join("</code>, <code style='background: #fee2e2; padding: 2px 6px; border-radius: 4px;'>")}</code>
+      </p>
+    </div>
+  ` : "";
 
   return `
     <!DOCTYPE html>
@@ -236,11 +441,13 @@ function generateAlertEmail(patterns: AbusePattern[], hasCritical: boolean): str
                     </tbody>
                   </table>
                   
+                  ${blockedSection}
+                  
                   <p style="margin: 24px 0 0 0; font-size: 14px; color: #6b7280; line-height: 1.6;">
                     <strong>Recommended Actions:</strong><br>
-                    • Review the Supabase logs for more details<br>
-                    • Consider temporarily blocking suspicious IPs<br>
-                    • Check if this correlates with any known attack patterns
+                    • Review the Security Dashboard for more details<br>
+                    • Verify blocked IPs are legitimate threats<br>
+                    • Unblock any false positives via Admin Panel
                   </p>
                 </td>
               </tr>

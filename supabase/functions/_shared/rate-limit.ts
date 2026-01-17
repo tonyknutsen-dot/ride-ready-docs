@@ -49,6 +49,16 @@ export const RATE_LIMITS = {
 export type RateLimitType = keyof typeof RATE_LIMITS;
 
 /**
+ * Extract IP address from request
+ */
+export const getClientIp = (req: Request): string => {
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
+    || req.headers.get("x-real-ip")
+    || req.headers.get("cf-connecting-ip")
+    || "unknown";
+};
+
+/**
  * Extract client identifier from request
  * Uses a combination of IP, user ID, and function name for granular limiting
  */
@@ -57,10 +67,7 @@ export const getClientIdentifier = (
   functionName: string,
   userId?: string
 ): string => {
-  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    || req.headers.get("x-real-ip")
-    || req.headers.get("cf-connecting-ip")
-    || "unknown";
+  const ip = getClientIp(req);
   
   // For authenticated requests, use user ID for more accurate limiting
   if (userId) {
@@ -68,6 +75,66 @@ export const getClientIdentifier = (
   }
   
   return `${functionName}:ip:${ip}`;
+};
+
+interface BlockedIpResult {
+  isBlocked: boolean;
+  reason?: string;
+  expiresAt?: string;
+}
+
+/**
+ * Check if an IP address is blocked
+ */
+export const checkIpBlocked = async (ip: string): Promise<BlockedIpResult> => {
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    const { data, error } = await supabase.rpc('is_ip_blocked', { p_ip: ip });
+    
+    if (error) {
+      console.error("IP block check error:", error);
+      return { isBlocked: false };
+    }
+    
+    if (data && data.length > 0 && data[0].is_blocked) {
+      return {
+        isBlocked: true,
+        reason: data[0].reason,
+        expiresAt: data[0].expires_at,
+      };
+    }
+    
+    return { isBlocked: false };
+  } catch (err) {
+    console.error("IP block check error:", err);
+    return { isBlocked: false };
+  }
+};
+
+/**
+ * Create a blocked IP response
+ */
+export const createBlockedIpResponse = (
+  result: BlockedIpResult,
+  corsHeaders: Record<string, string>
+): Response => {
+  return new Response(
+    JSON.stringify({
+      error: "Your IP has been temporarily blocked due to suspicious activity.",
+      reason: result.reason,
+      expiresAt: result.expiresAt,
+    }),
+    {
+      status: 403,
+      headers: {
+        ...corsHeaders,
+        "Content-Type": "application/json",
+      },
+    }
+  );
 };
 
 /**

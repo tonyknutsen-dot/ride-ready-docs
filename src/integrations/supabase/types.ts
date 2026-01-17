@@ -73,6 +73,48 @@ export type Database = {
           },
         ]
       }
+      blocked_ips: {
+        Row: {
+          blocked_at: string
+          blocked_by: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          ip_address: string
+          is_active: boolean
+          reason: string
+          request_count: number | null
+          unblocked_at: string | null
+          unblocked_by: string | null
+        }
+        Insert: {
+          blocked_at?: string
+          blocked_by?: string | null
+          created_at?: string
+          expires_at: string
+          id?: string
+          ip_address: string
+          is_active?: boolean
+          reason: string
+          request_count?: number | null
+          unblocked_at?: string | null
+          unblocked_by?: string | null
+        }
+        Update: {
+          blocked_at?: string
+          blocked_by?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          ip_address?: string
+          is_active?: boolean
+          reason?: string
+          request_count?: number | null
+          unblocked_at?: string | null
+          unblocked_by?: string | null
+        }
+        Relationships: []
+      }
       campaign_recipients: {
         Row: {
           campaign_id: string
@@ -1514,6 +1556,7 @@ export type Database = {
         Args: { p_key: string; p_max_requests: number; p_window_ms: number }
         Returns: Json
       }
+      cleanup_expired_blocks: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1522,6 +1565,14 @@ export type Database = {
         Returns: boolean
       }
       is_authenticated: { Args: never; Returns: boolean }
+      is_ip_blocked: {
+        Args: { p_ip: string }
+        Returns: {
+          expires_at: string
+          is_blocked: boolean
+          reason: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"
