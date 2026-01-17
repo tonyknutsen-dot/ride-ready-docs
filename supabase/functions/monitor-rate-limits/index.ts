@@ -82,6 +82,11 @@ serve(async (req: Request) => {
       );
     }
 
+    // Filter to last hour for pattern detection
+    const recentEntries = entries.filter((e: any) => 
+      new Date(e.window_start).getTime() >= new Date(oneHourAgo).getTime()
+    );
+
     // 1. Check for high-volume IPs (potential attackers) - use 1 hour window
     const ipCounts: Record<string, number> = {};
     for (const entry of recentEntries) {
