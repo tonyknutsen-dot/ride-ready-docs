@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from "../_shared/rate-limit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -26,9 +27,12 @@ interface RideTypeRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  // Handle CORS preflight
+  const preflightResponse = handleCorsPreflightRequest(req);
+  if (preflightResponse) return preflightResponse;
+
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
 
   try {
     const requestData: RideTypeRequest = await req.json();
@@ -41,6 +45,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (!requestData.name || !requestData.type || !requestData.description || !requestData.userEmail) {
       throw new Error('Missing required fields');
+    }
+
+    // Rate limiting - use email as identifier for public requests
+    const rateLimitKey = getClientIdentifier(req, "send-ride-type-request") + `:${requestData.userEmail}`;
+    const rateLimitResult = checkRateLimit(rateLimitKey, "email");
+    if (!rateLimitResult.allowed) {
+      console.log(`Rate limit exceeded for ${requestData.userEmail}`);
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     const safeName = escapeHtml(requestData.name);

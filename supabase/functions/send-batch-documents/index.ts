@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "https://esm.sh/resend@4.0.0";
 import { brandColors, emailStyles, logoSvg, escapeHtml } from "../_shared/email-template.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getSecureHeaders } from "../_shared/rate-limit.ts";
 
 interface SendBatchDocumentsRequest {
   recipientEmail: string;
@@ -44,6 +45,14 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (authError || !user) {
       throw new Error("Unauthorized");
+    }
+
+    // Rate limiting - batch operations get stricter limits
+    const rateLimitKey = getClientIdentifier(req, "send-batch-documents", user.id);
+    const rateLimitResult = checkRateLimit(rateLimitKey, "batch");
+    if (!rateLimitResult.allowed) {
+      console.log(`Rate limit exceeded for user ${user.id}`);
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     const {

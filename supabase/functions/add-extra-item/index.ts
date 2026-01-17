@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getSecureHeaders } from "../_shared/rate-limit.ts";
 
 // Extra item price ID - £0.75/month
 const EXTRA_ITEM_PRICE_ID = "price_1SnzrRAG8uIRefcZRHXJlDuy";
@@ -47,6 +48,14 @@ serve(async (req) => {
     const user = userData.user;
     if (!user) throw new Error("User not authenticated");
     logStep("User authenticated", { userId: user.id });
+
+    // Rate limiting - payment endpoints get moderate limits
+    const rateLimitKey = getClientIdentifier(req, "add-extra-item", user.id);
+    const rateLimitResult = checkRateLimit(rateLimitKey, "payment");
+    if (!rateLimitResult.allowed) {
+      logStep("Rate limit exceeded", { userId: user.id });
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
+    }
 
     // Get user's profile with subscription info
     const { data: profile, error: profileError } = await supabaseAdmin

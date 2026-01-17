@@ -3,6 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { Resend } from "npm:resend@2.0.0";
 import { brandColors, emailStyles, logoSvg, escapeHtml } from "../_shared/email-template.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
+import { checkRateLimit, getClientIdentifier, createRateLimitResponse } from "../_shared/rate-limit.ts";
 
 // Convert plain text to HTML with proper line breaks
 function textToHtml(text: string): string {
@@ -51,6 +52,14 @@ serve(async (req: Request) => {
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
+    }
+
+    // Rate limiting - batch email operations get stricter limits
+    const rateLimitKey = getClientIdentifier(req, "send-marketing-campaign", user.id);
+    const rateLimitResult = checkRateLimit(rateLimitKey, "batch");
+    if (!rateLimitResult.allowed) {
+      console.log(`Rate limit exceeded for user ${user.id}`);
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     // Get request body
