@@ -1424,7 +1424,66 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profiles_safe: {
+        Row: {
+          address: string | null
+          app_mode: string | null
+          company_name: string | null
+          controller_name: string | null
+          country: string | null
+          created_at: string | null
+          custom_terminology: Json | null
+          enable_document_versioning: boolean | null
+          has_subscription: boolean | null
+          id: string | null
+          is_suspended: boolean | null
+          is_trial: boolean | null
+          operator_type: string | null
+          showmen_name: string | null
+          suspension_info: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          address?: string | null
+          app_mode?: string | null
+          company_name?: string | null
+          controller_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          custom_terminology?: Json | null
+          enable_document_versioning?: boolean | null
+          has_subscription?: never
+          id?: string | null
+          is_suspended?: boolean | null
+          is_trial?: never
+          operator_type?: string | null
+          showmen_name?: string | null
+          suspension_info?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          address?: string | null
+          app_mode?: string | null
+          company_name?: string | null
+          controller_name?: string | null
+          country?: string | null
+          created_at?: string | null
+          custom_terminology?: Json | null
+          enable_document_versioning?: boolean | null
+          has_subscription?: never
+          id?: string | null
+          is_suspended?: boolean | null
+          is_trial?: never
+          operator_type?: string | null
+          showmen_name?: string | null
+          suspension_info?: never
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       has_role: {
