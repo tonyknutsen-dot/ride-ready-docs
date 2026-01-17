@@ -84,6 +84,7 @@ export type Database = {
           is_active: boolean
           reason: string
           request_count: number | null
+          unblock_token: string | null
           unblocked_at: string | null
           unblocked_by: string | null
         }
@@ -97,6 +98,7 @@ export type Database = {
           is_active?: boolean
           reason: string
           request_count?: number | null
+          unblock_token?: string | null
           unblocked_at?: string | null
           unblocked_by?: string | null
         }
@@ -110,6 +112,7 @@ export type Database = {
           is_active?: boolean
           reason?: string
           request_count?: number | null
+          unblock_token?: string | null
           unblocked_at?: string | null
           unblocked_by?: string | null
         }
