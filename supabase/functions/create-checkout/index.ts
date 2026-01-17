@@ -51,7 +51,7 @@ serve(async (req) => {
 
     // Rate limiting - payment endpoints get moderate limits
     const rateLimitKey = getClientIdentifier(req, "create-checkout", user.id);
-    const rateLimitResult = checkRateLimit(rateLimitKey, "payment");
+    const rateLimitResult = await checkRateLimit(rateLimitKey, "payment");
     if (!rateLimitResult.allowed) {
       logStep("Rate limit exceeded", { userId: user.id });
       return createRateLimitResponse(rateLimitResult, corsHeaders);

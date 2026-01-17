@@ -1061,6 +1061,30 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_entries: {
+        Row: {
+          count: number
+          created_at: string
+          id: string
+          key: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          created_at?: string
+          id?: string
+          key: string
+          window_start?: string
+        }
+        Update: {
+          count?: number
+          created_at?: string
+          id?: string
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       ride_categories: {
         Row: {
           category_group: string
@@ -1486,6 +1510,10 @@ export type Database = {
       }
     }
     Functions: {
+      check_rate_limit: {
+        Args: { p_key: string; p_max_requests: number; p_window_ms: number }
+        Returns: Json
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

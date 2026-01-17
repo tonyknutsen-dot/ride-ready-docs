@@ -47,7 +47,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Rate limiting - email sending gets moderate limits
     const rateLimitKey = getClientIdentifier(req, "send-risk-assessment", user.id);
-    const rateLimitResult = checkRateLimit(rateLimitKey, "email");
+    const rateLimitResult = await checkRateLimit(rateLimitKey, "email");
     if (!rateLimitResult.allowed) {
       console.log(`Rate limit exceeded for user ${user.id}`);
       return createRateLimitResponse(rateLimitResult, corsHeaders);

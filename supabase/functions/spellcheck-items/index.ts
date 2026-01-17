@@ -43,7 +43,7 @@ serve(async (req) => {
 
     // Rate limiting - AI operations get moderate limits
     const rateLimitKey = getClientIdentifier(req, "spellcheck-items", user.id);
-    const rateLimitResult = checkRateLimit(rateLimitKey, "expensive");
+    const rateLimitResult = await checkRateLimit(rateLimitKey, "expensive");
     if (!rateLimitResult.allowed) {
       console.log(`Rate limit exceeded for user ${user.id}`);
       return createRateLimitResponse(rateLimitResult, corsHeaders);

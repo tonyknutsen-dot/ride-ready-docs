@@ -1,12 +1,9 @@
 /**
  * Shared Rate Limiting Utility for Edge Functions
- * Uses in-memory storage (resets on cold start, but effective for burst protection)
+ * Uses Supabase for persistent storage across isolates
  */
 
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 interface RateLimitResult {
   allowed: boolean;
@@ -14,9 +11,6 @@ interface RateLimitResult {
   retryAfter?: number;
   limit: number;
 }
-
-// In-memory rate limit storage
-const rateLimitStore = new Map<string, RateLimitEntry>();
 
 // Rate limit configurations for different endpoint types
 export const RATE_LIMITS = {
@@ -55,20 +49,6 @@ export const RATE_LIMITS = {
 export type RateLimitType = keyof typeof RATE_LIMITS;
 
 /**
- * Clean up expired entries to prevent memory bloat
- */
-const cleanupExpiredEntries = () => {
-  const now = Date.now();
-  if (rateLimitStore.size > 10000) {
-    for (const [key, entry] of rateLimitStore.entries()) {
-      if (now > entry.resetAt) {
-        rateLimitStore.delete(key);
-      }
-    }
-  }
-};
-
-/**
  * Extract client identifier from request
  * Uses a combination of IP, user ID, and function name for granular limiting
  */
@@ -91,48 +71,64 @@ export const getClientIdentifier = (
 };
 
 /**
- * Check rate limit for a given key
+ * Check rate limit using Supabase for persistent storage
+ * Uses an upsert pattern with atomic operations
  */
-export const checkRateLimit = (
+export const checkRateLimit = async (
   key: string,
   type: RateLimitType = "authenticated"
-): RateLimitResult => {
+): Promise<RateLimitResult> => {
   const config = RATE_LIMITS[type];
   const now = Date.now();
+  const windowStart = now - config.windowMs;
   
-  // Periodic cleanup
-  cleanupExpiredEntries();
-  
-  const entry = rateLimitStore.get(key);
-  
-  // No existing entry or expired - allow and create new entry
-  if (!entry || now > entry.resetAt) {
-    rateLimitStore.set(key, { count: 1, resetAt: now + config.windowMs });
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    
+    // Call database function for atomic rate limit check
+    const { data, error } = await supabase.rpc('check_rate_limit', {
+      p_key: key,
+      p_max_requests: config.maxRequests,
+      p_window_ms: config.windowMs
+    });
+    
+    if (error) {
+      console.error("Rate limit check error:", error);
+      // Fail open - allow request if rate limiting fails
+      return {
+        allowed: true,
+        remaining: config.maxRequests - 1,
+        limit: config.maxRequests,
+      };
+    }
+    
+    const result = data as { allowed: boolean; current_count: number; retry_after_ms: number };
+    
+    if (!result.allowed) {
+      return {
+        allowed: false,
+        remaining: 0,
+        retryAfter: Math.ceil(result.retry_after_ms / 1000),
+        limit: config.maxRequests,
+      };
+    }
+    
+    return {
+      allowed: true,
+      remaining: Math.max(0, config.maxRequests - result.current_count),
+      limit: config.maxRequests,
+    };
+  } catch (err) {
+    console.error("Rate limit error:", err);
+    // Fail open - allow request if rate limiting fails
     return {
       allowed: true,
       remaining: config.maxRequests - 1,
       limit: config.maxRequests,
     };
   }
-  
-  // Check if limit exceeded
-  if (entry.count >= config.maxRequests) {
-    const retryAfter = Math.ceil((entry.resetAt - now) / 1000);
-    return {
-      allowed: false,
-      remaining: 0,
-      retryAfter,
-      limit: config.maxRequests,
-    };
-  }
-  
-  // Increment count
-  entry.count++;
-  return {
-    allowed: true,
-    remaining: config.maxRequests - entry.count,
-    limit: config.maxRequests,
-  };
 };
 
 /**
