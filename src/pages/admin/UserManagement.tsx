@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Users, Search, Shield, ShieldOff, Calendar, Building, Ban, CheckCircle } from 'lucide-react';
+import { Loader2, Users, Search, Shield, ShieldOff, Calendar, Building, Ban, CheckCircle, FlaskConical } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
@@ -29,6 +29,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { TesterInviteDialog } from '@/components/admin/TesterInviteDialog';
 
 interface UserWithProfile {
   id: string;
@@ -45,6 +46,7 @@ interface UserWithProfile {
     suspended_reason: string | null;
   } | null;
   isAdmin: boolean;
+  isTester: boolean;
 }
 
 export default function UserManagement() {
@@ -72,12 +74,13 @@ export default function UserManagement() {
       // Fetch admin roles
       const { data: adminRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id')
-        .eq('role', 'admin');
+        .select('user_id, role')
+        .in('role', ['admin', 'tester']);
 
       if (rolesError) throw rolesError;
 
-      const adminUserIds = new Set(adminRoles?.map(r => r.user_id) || []);
+      const adminUserIds = new Set(adminRoles?.filter(r => r.role === 'admin').map(r => r.user_id) || []);
+      const testerUserIds = new Set(adminRoles?.filter(r => r.role === 'tester').map(r => r.user_id) || []);
 
       // Map profiles to user format
       const usersData: UserWithProfile[] = (profiles || []).map(profile => ({
@@ -95,6 +98,7 @@ export default function UserManagement() {
           suspended_reason: profile.suspended_reason,
         },
         isAdmin: adminUserIds.has(profile.user_id),
+        isTester: testerUserIds.has(profile.user_id),
       }));
 
       setUsers(usersData);
@@ -259,10 +263,13 @@ export default function UserManagement() {
           <div>
             <h1 className="text-3xl font-bold">User Management</h1>
             <p className="text-muted-foreground mt-1">
-              Manage user accounts and admin roles
+              Manage user accounts and roles
             </p>
           </div>
-          <Users className="h-8 w-8 text-muted-foreground" />
+          <div className="flex items-center gap-3">
+            <TesterInviteDialog onInviteSent={fetchUsers} />
+            <Users className="h-8 w-8 text-muted-foreground" />
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -286,6 +293,18 @@ export default function UserManagement() {
             <CardContent>
               <div className="text-2xl font-bold">
                 {users.filter(u => u.profile?.subscription_status === 'active').length}
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Testers
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-warning-foreground">
+                {users.filter(u => u.isTester).length}
               </div>
             </CardContent>
           </Card>
@@ -376,14 +395,21 @@ export default function UserManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      {user.isAdmin ? (
-                        <Badge className="bg-primary">
-                          <Shield className="h-3 w-3 mr-1" />
-                          Admin
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">User</Badge>
-                      )}
+                      <div className="flex items-center gap-1">
+                        {user.isAdmin ? (
+                          <Badge className="bg-primary">
+                            <Shield className="h-3 w-3 mr-1" />
+                            Admin
+                          </Badge>
+                        ) : user.isTester ? (
+                          <Badge className="bg-warning text-warning-foreground">
+                            <FlaskConical className="h-3 w-3 mr-1" />
+                            Tester
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">User</Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex items-center justify-end gap-2">
