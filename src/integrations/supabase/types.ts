@@ -158,7 +158,6 @@ export type Database = {
           steps_to_reproduce: string | null
           title: string
           updated_at: string
-          user_email: string | null
           user_id: string
           user_role: string | null
         }
@@ -186,7 +185,6 @@ export type Database = {
           steps_to_reproduce?: string | null
           title: string
           updated_at?: string
-          user_email?: string | null
           user_id: string
           user_role?: string | null
         }
@@ -214,7 +212,6 @@ export type Database = {
           steps_to_reproduce?: string | null
           title?: string
           updated_at?: string
-          user_email?: string | null
           user_id?: string
           user_role?: string | null
         }
