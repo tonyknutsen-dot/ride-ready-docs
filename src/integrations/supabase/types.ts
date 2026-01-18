@@ -804,6 +804,27 @@ export type Database = {
         }
         Relationships: []
       }
+      encryption_keys: {
+        Row: {
+          created_at: string | null
+          id: string
+          key_value: string
+          rotated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          key_value: string
+          rotated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          key_value?: string
+          rotated_at?: string | null
+        }
+        Relationships: []
+      }
       feature_requests: {
         Row: {
           admin_notes: string | null
@@ -1180,7 +1201,9 @@ export type Database = {
           operator_type: string | null
           showmen_name: string | null
           stripe_customer_id: string | null
+          stripe_customer_id_encrypted: string | null
           stripe_subscription_id: string | null
+          stripe_subscription_id_encrypted: string | null
           subscription_plan: string | null
           subscription_status: string | null
           suspended_at: string | null
@@ -1207,7 +1230,9 @@ export type Database = {
           operator_type?: string | null
           showmen_name?: string | null
           stripe_customer_id?: string | null
+          stripe_customer_id_encrypted?: string | null
           stripe_subscription_id?: string | null
+          stripe_subscription_id_encrypted?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
           suspended_at?: string | null
@@ -1234,7 +1259,9 @@ export type Database = {
           operator_type?: string | null
           showmen_name?: string | null
           stripe_customer_id?: string | null
+          stripe_customer_id_encrypted?: string | null
           stripe_subscription_id?: string | null
+          stripe_subscription_id_encrypted?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
           suspended_at?: string | null
@@ -1806,6 +1833,8 @@ export type Database = {
       }
       cleanup_expired_blocks: { Args: never; Returns: number }
       cleanup_old_blocked_ips: { Args: never; Returns: number }
+      decrypt_sensitive: { Args: { ciphertext: string }; Returns: string }
+      encrypt_sensitive: { Args: { plaintext: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
