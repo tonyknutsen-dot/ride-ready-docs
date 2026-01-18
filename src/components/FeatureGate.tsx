@@ -25,7 +25,12 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
     return fallback || <UpgradePrompt feature={feature} requiredPlan={requiredPlan} />;
   }
 
-  const { subscriptionStatus, isTrialActive } = subscription;
+  const { subscriptionStatus, isTrialActive, isTesterAccount } = subscription;
+
+  // TESTER BYPASS: Grant full access to all features
+  if (isTesterAccount) {
+    return <>{children}</>;
+  }
 
   // During trial, allow basic features only
   if (isTrialActive && requiredPlan === 'basic') {

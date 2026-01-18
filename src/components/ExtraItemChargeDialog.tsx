@@ -18,7 +18,7 @@ interface ExtraItemChargeDialogProps {
   onConfirm: () => void;
   currentCount: number;
   limit: number;
-  plan: 'basic' | 'advanced' | 'trial' | 'expired';
+  plan: 'basic' | 'advanced' | 'trial' | 'expired' | 'tester';
   billingCycle: 'monthly' | 'yearly';
 }
 

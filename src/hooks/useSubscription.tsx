@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTester } from '@/contexts/TesterContext';
 import { supabase } from '@/integrations/supabase/client';
 
 // Item limits per plan (rides, stalls, games, equipment)
@@ -7,6 +8,7 @@ export const RIDE_LIMITS = {
   trial: 5,
   basic: 5,
   advanced: 10,
+  tester: 999, // Unlimited for testers
   // Additional items cost 75p/month each
   extended_basic: 50,
   extended_advanced: 50,
@@ -42,7 +44,7 @@ export const STRIPE_PRICE_IDS = {
 export interface SubscriptionData {
   trialStartedAt: string | null;
   trialEndsAt: string | null;
-  subscriptionStatus: 'trial' | 'basic' | 'advanced' | 'expired';
+  subscriptionStatus: 'trial' | 'basic' | 'advanced' | 'expired' | 'tester';
   subscriptionPlan: 'basic' | 'advanced' | null;
   billingCycle: 'monthly' | 'yearly' | null;
   daysRemaining: number;
@@ -55,10 +57,12 @@ export interface SubscriptionData {
   currentPeriodEnd: string | null;
   stripeCustomerId: string | null;
   stripeSubscriptionId: string | null;
+  isTesterAccount: boolean;
 }
 
 export const useSubscription = () => {
   const { user } = useAuth();
+  const { isTester, isLoading: testerLoading } = useTester();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -66,6 +70,11 @@ export const useSubscription = () => {
     if (!user) {
       setSubscription(null);
       setLoading(false);
+      return;
+    }
+
+    // Wait for tester status to be determined
+    if (testerLoading) {
       return;
     }
 
@@ -98,6 +107,31 @@ export const useSubscription = () => {
           ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
           : 0;
 
+        // TESTER BYPASS: Override subscription status for testers
+        if (isTester) {
+          const testerSubscription: SubscriptionData = {
+            trialStartedAt: data.trial_started_at,
+            trialEndsAt: data.trial_ends_at,
+            subscriptionStatus: 'tester',
+            subscriptionPlan: 'advanced', // Full access
+            billingCycle: null,
+            daysRemaining: 999,
+            isTrialActive: false,
+            isExpired: false,
+            rideCount,
+            rideLimit: RIDE_LIMITS.tester,
+            canAddRide: true, // Always can add
+            extraItemsCount: 0,
+            currentPeriodEnd: null,
+            stripeCustomerId: null, // No Stripe for testers
+            stripeSubscriptionId: null,
+            isTesterAccount: true,
+          };
+          setSubscription(testerSubscription);
+          setLoading(false);
+          return;
+        }
+
         const status = data.subscription_status as SubscriptionData['subscriptionStatus'];
         const extraItemsCount = data.extra_items_count || 0;
         const baseLimit = RIDE_LIMITS[status] || RIDE_LIMITS.basic;
@@ -119,6 +153,7 @@ export const useSubscription = () => {
           currentPeriodEnd: data.current_period_end,
           stripeCustomerId: data.stripe_customer_id,
           stripeSubscriptionId: data.stripe_subscription_id,
+          isTesterAccount: false,
         };
 
         setSubscription(subscriptionData);
@@ -128,7 +163,7 @@ export const useSubscription = () => {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, isTester, testerLoading]);
 
   useEffect(() => {
     fetchSubscriptionData();
@@ -172,8 +207,15 @@ export const useSubscription = () => {
   };
 
   // Create Stripe checkout session
+  // TESTER BYPASS: Prevent testers from triggering billing
   const createCheckout = async (plan: 'basic' | 'advanced', billingCycle: 'monthly' | 'yearly', extraItems: number = 0) => {
     if (!user) throw new Error('User not authenticated');
+    
+    // Block billing for testers
+    if (isTester) {
+      console.log('[TESTER] Checkout blocked - testers have full access without billing');
+      return { blocked: true, reason: 'tester_account' };
+    }
 
     const returnUrl = window.location.origin;
     const { data, error } = await supabase.functions.invoke('create-checkout', {
@@ -190,8 +232,15 @@ export const useSubscription = () => {
   };
 
   // Open customer portal for subscription management
+  // TESTER BYPASS: Prevent testers from accessing billing portal
   const openCustomerPortal = async () => {
     if (!user) throw new Error('User not authenticated');
+    
+    // Block billing portal for testers
+    if (isTester) {
+      console.log('[TESTER] Customer portal blocked - testers do not have billing');
+      return { blocked: true, reason: 'tester_account' };
+    }
 
     const { data, error } = await supabase.functions.invoke('customer-portal');
 
@@ -205,7 +254,12 @@ export const useSubscription = () => {
   };
 
   // Legacy upgrade function (for backward compatibility during trial)
+  // TESTER BYPASS: Block upgrade for testers
   const upgradeSubscription = async (plan: 'basic' | 'advanced') => {
+    if (isTester) {
+      console.log('[TESTER] Upgrade blocked - testers have full access');
+      return;
+    }
     // Now redirects to Stripe checkout
     await createCheckout(plan, 'monthly');
   };

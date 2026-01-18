@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Check, FileText, Cog, Loader2, ExternalLink } from 'lucide-react';
+import { Check, FileText, Cog, Loader2, ExternalLink, FlaskConical, Unlock } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useSubscription, PRICING } from '@/hooks/useSubscription';
+import { useTester } from '@/contexts/TesterContext';
 import { toast } from 'sonner';
 
 interface PlanSelectionProps {
@@ -14,9 +15,42 @@ interface PlanSelectionProps {
 
 export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
   const { subscription, createCheckout, openCustomerPortal } = useSubscription();
+  const { isTester } = useTester();
   const [basicBillingCycle, setBasicBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [advancedBillingCycle, setAdvancedBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+
+  // TESTER BYPASS: Show tester info instead of plan selection
+  if (isTester) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <div className="w-16 h-16 rounded-full bg-warning/20 flex items-center justify-center mx-auto mb-4">
+            <FlaskConical className="h-8 w-8 text-warning" />
+          </div>
+          <h2 className="text-2xl font-bold">Tester Account</h2>
+          <p className="text-muted-foreground mt-2">
+            You have full access to all features without a subscription.
+          </p>
+        </div>
+        <Card className="border-warning/50 bg-warning/5">
+          <CardContent className="p-6 text-center">
+            <div className="flex items-center justify-center gap-2 text-warning mb-2">
+              <Unlock className="h-5 w-5" />
+              <span className="font-semibold">All Paid Features Unlocked</span>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              As a tester, you can access all features including Operations & Maintenance 
+              without any billing. Your activity is flagged as test data.
+            </p>
+          </CardContent>
+        </Card>
+        <Button variant="outline" className="w-full" onClick={onClose}>
+          Close
+        </Button>
+      </div>
+    );
+  }
 
   // Check if user has an active paid subscription
   const hasActiveSubscription = subscription?.stripeSubscriptionId && 

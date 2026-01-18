@@ -1,4 +1,4 @@
-import { AlertTriangle, Clock } from 'lucide-react';
+import { AlertTriangle, Clock, FlaskConical } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,28 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
 
   if (loading || !subscription) return null;
 
-  const { isTrialActive, isExpired, daysRemaining, subscriptionStatus, subscriptionPlan } = subscription;
+  const { isTrialActive, isExpired, daysRemaining, subscriptionStatus, subscriptionPlan, isTesterAccount } = subscription;
+
+  // TESTER BYPASS: Show tester status instead of subscription info
+  if (isTesterAccount) {
+    return (
+      <Card className="mb-4 md:mb-6 border-warning/50 bg-warning/5">
+        <CardContent className="p-3 md:p-4">
+          <div className="flex items-center gap-3">
+            <FlaskConical className="h-5 w-5 text-warning flex-shrink-0" />
+            <div>
+              <Badge variant="outline" className="border-warning text-warning">
+                Tester Account
+              </Badge>
+              <span className="text-sm text-muted-foreground ml-2">
+                All paid features unlocked
+              </span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (subscriptionStatus === 'basic' || subscriptionStatus === 'advanced') {
     return (
