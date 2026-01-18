@@ -76,10 +76,16 @@ interface BugReport {
   captured_at: string;
   is_after_recent_changes: boolean | null;
   status: string;
-  assigned_to: string | null;
-  internal_notes: string | null;
   created_at: string;
   updated_at: string;
+}
+
+interface BugReportAdminData {
+  id: string;
+  bug_report_id: string;
+  internal_notes: string | null;
+  assigned_to: string | null;
+  priority: string;
 }
 
 const STATUS_OPTIONS = [
@@ -117,6 +123,7 @@ const BugReports = () => {
   const [reports, setReports] = useState<BugReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedReport, setSelectedReport] = useState<BugReport | null>(null);
+  const [selectedAdminData, setSelectedAdminData] = useState<BugReportAdminData | null>(null);
   const [updating, setUpdating] = useState(false);
   
   // Email cache for user_ids (fetched on demand)
@@ -220,6 +227,86 @@ const BugReports = () => {
     }
   };
 
+  // Fetch admin data for a specific bug report
+  const fetchAdminData = async (bugReportId: string) => {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('bug_report_admin_data')
+        .select('*')
+        .eq('bug_report_id', bugReportId)
+        .maybeSingle();
+
+      if (error) throw error;
+      setSelectedAdminData(data || { bug_report_id: bugReportId, internal_notes: null, assigned_to: null, priority: 'normal' });
+    } catch (error: any) {
+      console.error('Error fetching admin data:', error);
+      setSelectedAdminData({ id: '', bug_report_id: bugReportId, internal_notes: null, assigned_to: null, priority: 'normal' });
+    }
+  };
+
+  // Save admin data (upsert)
+  const updateAdminData = async (bugReportId: string, updates: Partial<BugReportAdminData>) => {
+    setUpdating(true);
+    try {
+      // Check if record exists
+      const { data: existing } = await (supabase as any)
+        .from('bug_report_admin_data')
+        .select('id')
+        .eq('bug_report_id', bugReportId)
+        .maybeSingle();
+
+      if (existing) {
+        // Update existing
+        const { error } = await (supabase as any)
+          .from('bug_report_admin_data')
+          .update(updates)
+          .eq('bug_report_id', bugReportId);
+        if (error) throw error;
+      } else {
+        // Insert new
+        const { error } = await (supabase as any)
+          .from('bug_report_admin_data')
+          .insert({ bug_report_id: bugReportId, ...updates });
+        if (error) throw error;
+      }
+
+      // Update local state
+      setSelectedAdminData(prev => prev ? { ...prev, ...updates } : null);
+      toast({ title: 'Admin data saved' });
+    } catch (error: any) {
+      toast({
+        title: 'Failed to save admin data',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // Get admin data for prompt generation (cached lookup)
+  const [adminDataCache, setAdminDataCache] = useState<Record<string, BugReportAdminData>>({});
+  
+  const fetchAllAdminData = async () => {
+    try {
+      const { data } = await (supabase as any)
+        .from('bug_report_admin_data')
+        .select('*');
+      
+      const cache: Record<string, BugReportAdminData> = {};
+      (data || []).forEach((item: BugReportAdminData) => {
+        cache[item.bug_report_id] = item;
+      });
+      setAdminDataCache(cache);
+    } catch (error) {
+      console.error('Error fetching admin data cache:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAllAdminData();
+  }, []);
+
   const updateReport = async (id: string, updates: Partial<BugReport>) => {
     setUpdating(true);
     try {
@@ -282,6 +369,16 @@ const BugReports = () => {
     setSelectedIds(newSet);
   };
 
+  // Handler for selecting a report - also fetches admin data
+  const handleSelectReport = (report: BugReport | null) => {
+    setSelectedReport(report);
+    if (report) {
+      fetchAdminData(report.id);
+    } else {
+      setSelectedAdminData(null);
+    }
+  };
+
   const selectedReports = reports.filter(r => selectedIds.has(r.id));
 
   const generatePrompt = () => {
@@ -334,8 +431,9 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
 - **Actual:** ${bug.actual_result || 'Not specified'}
 `;
 
-      if (bug.internal_notes) {
-        prompt += `- **Notes:** ${bug.internal_notes}
+      const adminData = adminDataCache[bug.id];
+      if (adminData?.internal_notes) {
+        prompt += `- **Notes:** ${adminData.internal_notes}
 `;
       }
 
@@ -586,12 +684,12 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
                             onCheckedChange={() => toggleSelect(report.id)}
                           />
                         </TableCell>
-                        <TableCell onClick={() => setSelectedReport(report)}>
+                        <TableCell onClick={() => handleSelectReport(report)}>
                           <code className="text-xs font-mono bg-secondary px-2 py-1 rounded">
                             {report.reference_id}
                           </code>
                         </TableCell>
-                        <TableCell onClick={() => setSelectedReport(report)}>
+                        <TableCell onClick={() => handleSelectReport(report)}>
                           <div className="flex items-center gap-2">
                             {report.is_after_recent_changes && (
                               <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
@@ -599,21 +697,21 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
                             <span className="truncate max-w-xs">{report.title}</span>
                           </div>
                         </TableCell>
-                        <TableCell onClick={() => setSelectedReport(report)}>
+                        <TableCell onClick={() => handleSelectReport(report)}>
                           {getSeverityBadge(report.severity)}
                         </TableCell>
-                        <TableCell onClick={() => setSelectedReport(report)}>
+                        <TableCell onClick={() => handleSelectReport(report)}>
                           {getStatusBadge(report.status)}
                         </TableCell>
-                        <TableCell onClick={() => setSelectedReport(report)}>
+                        <TableCell onClick={() => handleSelectReport(report)}>
                           <Badge variant="outline" className="text-xs">
                             {report.user_role || 'user'}
                           </Badge>
                         </TableCell>
-                        <TableCell onClick={() => setSelectedReport(report)}>
+                        <TableCell onClick={() => handleSelectReport(report)}>
                           <code className="text-xs font-mono">{report.app_version}</code>
                         </TableCell>
-                        <TableCell onClick={() => setSelectedReport(report)}>
+                        <TableCell onClick={() => handleSelectReport(report)}>
                           <span className="text-sm text-muted-foreground">
                             {format(new Date(report.created_at), 'dd MMM')}
                           </span>
@@ -628,7 +726,7 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
         </Card>
 
         {/* Detail Dialog */}
-        <Dialog open={!!selectedReport} onOpenChange={() => setSelectedReport(null)}>
+        <Dialog open={!!selectedReport} onOpenChange={() => handleSelectReport(null)}>
           <DialogContent className="max-w-2xl max-h-[90vh] p-0">
             {selectedReport && (
               <>
@@ -673,9 +771,9 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
                       <div className="space-y-2">
                         <label className="text-sm font-medium">Assign To</label>
                         <Select
-                          value={selectedReport.assigned_to || 'unassigned'}
+                          value={selectedAdminData?.assigned_to || 'unassigned'}
                           onValueChange={(v) =>
-                            updateReport(selectedReport.id, {
+                            updateAdminData(selectedReport.id, {
                               assigned_to: v === 'unassigned' ? null : v,
                             })
                           }
@@ -801,25 +899,25 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
                       </div>
                     )}
 
-                    {/* Internal Notes */}
+                    {/* Internal Notes (Admin Only) */}
                     <div className="space-y-2">
-                      <h4 className="font-medium">Internal Notes</h4>
+                      <h4 className="font-medium">Internal Notes (Admin Only)</h4>
                       <Textarea
                         placeholder="Add internal notes for the team..."
-                        value={selectedReport.internal_notes || ''}
+                        value={selectedAdminData?.internal_notes || ''}
                         onChange={(e) =>
-                          setSelectedReport({
-                            ...selectedReport,
+                          setSelectedAdminData(prev => prev ? {
+                            ...prev,
                             internal_notes: e.target.value,
-                          })
+                          } : null)
                         }
                         rows={3}
                       />
                       <Button
                         size="sm"
                         onClick={() =>
-                          updateReport(selectedReport.id, {
-                            internal_notes: selectedReport.internal_notes,
+                          updateAdminData(selectedReport.id, {
+                            internal_notes: selectedAdminData?.internal_notes,
                           })
                         }
                         disabled={updating}
