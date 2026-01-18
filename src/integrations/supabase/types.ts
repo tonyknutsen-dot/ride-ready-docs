@@ -1509,6 +1509,36 @@ export type Database = {
         }
         Relationships: []
       }
+      role_change_audit: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          id: string
+          new_role: string
+          previous_role: string
+          reason: string | null
+          user_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          id?: string
+          new_role: string
+          previous_role: string
+          reason?: string | null
+          user_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          id?: string
+          new_role?: string
+          previous_role?: string
+          reason?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       saved_recipients: {
         Row: {
           created_at: string
