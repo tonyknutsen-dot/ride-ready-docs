@@ -1,8 +1,16 @@
 import { Bug } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import BugReportDialog from './BugReportDialog';
+import { useTester } from '@/contexts/TesterContext';
 
 export const FloatingBugButton = () => {
+  const { isTester, isLoading } = useTester();
+
+  // Only show for testers
+  if (isLoading || !isTester) {
+    return null;
+  }
+
   return (
     <div className="fixed bottom-20 md:bottom-6 right-4 z-40">
       <BugReportDialog
