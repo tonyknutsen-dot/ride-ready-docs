@@ -16,6 +16,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import GlobalEventBridge from "@/components/GlobalEventBridge";
 import TestModeBanner from "@/components/TestModeBanner";
+import FloatingBugButton from "@/components/FloatingBugButton";
 import { Loader2, FileText } from "lucide-react";
 
 // Eager load critical pages
@@ -47,6 +48,7 @@ const DocumentTypeRequests = lazy(() => import("./pages/admin/DocumentTypeReques
 const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
 const SupportMessages = lazy(() => import("./pages/admin/SupportMessages"));
 const SecurityDashboard = lazy(() => import("./pages/admin/SecurityDashboard"));
+const BugReports = lazy(() => import("./pages/admin/BugReports"));
 const AppHeader = lazy(() => import("./components/AppHeader"));
 const RiskAssessments = lazy(() => import("./pages/RiskAssessments"));
 const GlobalDocumentsPage = lazy(() => import("./pages/GlobalDocumentsPage"));
@@ -314,11 +316,22 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              <Route 
+                path="/admin/bug-reports" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <BugReports />
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
               </Routes>
               </Suspense>
               <MobileBottomNav />
+              <FloatingBugButton />
               <CookieConsentBanner />
             </TesterProvider>
           </AdminProvider>

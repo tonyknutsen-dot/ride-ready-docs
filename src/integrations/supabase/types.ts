@@ -133,6 +133,93 @@ export type Database = {
         }
         Relationships: []
       }
+      bug_reports: {
+        Row: {
+          actual_result: string | null
+          app_name: string | null
+          app_version: string | null
+          assigned_to: string | null
+          browser_info: string | null
+          build_date: string | null
+          captured_at: string
+          created_at: string
+          current_route: string | null
+          description: string
+          device_type: string | null
+          expected_result: string | null
+          id: string
+          internal_notes: string | null
+          is_after_recent_changes: boolean | null
+          issue_type: string
+          reference_id: string
+          screenshot_url: string | null
+          severity: string
+          status: string
+          steps_to_reproduce: string | null
+          title: string
+          updated_at: string
+          user_email: string | null
+          user_id: string
+          user_role: string | null
+        }
+        Insert: {
+          actual_result?: string | null
+          app_name?: string | null
+          app_version?: string | null
+          assigned_to?: string | null
+          browser_info?: string | null
+          build_date?: string | null
+          captured_at?: string
+          created_at?: string
+          current_route?: string | null
+          description: string
+          device_type?: string | null
+          expected_result?: string | null
+          id?: string
+          internal_notes?: string | null
+          is_after_recent_changes?: boolean | null
+          issue_type?: string
+          reference_id: string
+          screenshot_url?: string | null
+          severity?: string
+          status?: string
+          steps_to_reproduce?: string | null
+          title: string
+          updated_at?: string
+          user_email?: string | null
+          user_id: string
+          user_role?: string | null
+        }
+        Update: {
+          actual_result?: string | null
+          app_name?: string | null
+          app_version?: string | null
+          assigned_to?: string | null
+          browser_info?: string | null
+          build_date?: string | null
+          captured_at?: string
+          created_at?: string
+          current_route?: string | null
+          description?: string
+          device_type?: string | null
+          expected_result?: string | null
+          id?: string
+          internal_notes?: string | null
+          is_after_recent_changes?: boolean | null
+          issue_type?: string
+          reference_id?: string
+          screenshot_url?: string | null
+          severity?: string
+          status?: string
+          steps_to_reproduce?: string | null
+          title?: string
+          updated_at?: string
+          user_email?: string | null
+          user_id?: string
+          user_role?: string | null
+        }
+        Relationships: []
+      }
       campaign_recipients: {
         Row: {
           campaign_id: string
