@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Users, Search, Shield, ShieldOff, Calendar, Building, Ban, CheckCircle, FlaskConical } from 'lucide-react';
+import { Loader2, Users, Search, Shield, ShieldOff, Calendar, Building, Ban, CheckCircle, FlaskConical, Clock, Plus } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
@@ -47,6 +47,7 @@ interface UserWithProfile {
   } | null;
   isAdmin: boolean;
   isTester: boolean;
+  testerExpiresAt: string | null;
 }
 
 export default function UserManagement() {
@@ -58,6 +59,8 @@ export default function UserManagement() {
   const [suspendingUserId, setSuspendingUserId] = useState<string | null>(null);
   const [suspendReason, setSuspendReason] = useState('');
   const [showSuspendDialog, setShowSuspendDialog] = useState<string | null>(null);
+  const [showTesterDialog, setShowTesterDialog] = useState<string | null>(null);
+  const [testerExpiryDays, setTesterExpiryDays] = useState<string>('30');
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -72,35 +75,43 @@ export default function UserManagement() {
 
       if (profilesError) throw profilesError;
 
-      // Fetch admin roles
-      const { data: adminRoles, error: rolesError } = await supabase
+      // Fetch admin and tester roles with expiry
+      const { data: userRoles, error: rolesError } = await supabase
         .from('user_roles')
-        .select('user_id, role')
+        .select('user_id, role, expires_at')
         .in('role', ['admin', 'tester']);
 
       if (rolesError) throw rolesError;
 
-      const adminUserIds = new Set(adminRoles?.filter(r => r.role === 'admin').map(r => r.user_id) || []);
-      const testerUserIds = new Set(adminRoles?.filter(r => r.role === 'tester').map(r => r.user_id) || []);
+      const adminUserIds = new Set(userRoles?.filter(r => r.role === 'admin').map(r => r.user_id) || []);
+      const testerRoles = new Map(
+        userRoles?.filter(r => r.role === 'tester').map(r => [r.user_id, r.expires_at]) || []
+      );
 
       // Map profiles to user format
-      const usersData: UserWithProfile[] = (profiles || []).map(profile => ({
-        id: profile.user_id,
-        email: '', // We'll need to get this from auth.users via edge function if needed
-        created_at: profile.created_at,
-        profile: {
-          company_name: profile.company_name,
-          subscription_status: profile.subscription_status,
-          subscription_plan: profile.subscription_plan,
-          trial_ends_at: profile.trial_ends_at,
-          country: profile.country,
-          is_suspended: profile.is_suspended ?? false,
-          suspended_at: profile.suspended_at,
-          suspended_reason: profile.suspended_reason,
-        },
-        isAdmin: adminUserIds.has(profile.user_id),
-        isTester: testerUserIds.has(profile.user_id),
-      }));
+      const usersData: UserWithProfile[] = (profiles || []).map(profile => {
+        const testerExpiresAt = testerRoles.get(profile.user_id) || null;
+        const isTesterExpired = testerExpiresAt ? new Date(testerExpiresAt) < new Date() : false;
+        
+        return {
+          id: profile.user_id,
+          email: '', // We'll need to get this from auth.users via edge function if needed
+          created_at: profile.created_at,
+          profile: {
+            company_name: profile.company_name,
+            subscription_status: profile.subscription_status,
+            subscription_plan: profile.subscription_plan,
+            trial_ends_at: profile.trial_ends_at,
+            country: profile.country,
+            is_suspended: profile.is_suspended ?? false,
+            suspended_at: profile.suspended_at,
+            suspended_reason: profile.suspended_reason,
+          },
+          isAdmin: adminUserIds.has(profile.user_id),
+          isTester: testerRoles.has(profile.user_id) && !isTesterExpired,
+          testerExpiresAt: testerExpiresAt,
+        };
+      });
 
       setUsers(usersData);
     } catch (error: any) {
@@ -144,7 +155,7 @@ export default function UserManagement() {
     }
   };
 
-  const toggleTesterRole = async (userId: string, currentlyTester: boolean) => {
+  const toggleTesterRole = async (userId: string, currentlyTester: boolean, expiryDays?: number) => {
     setUpdatingTesterUserId(userId);
 
     try {
@@ -159,19 +170,58 @@ export default function UserManagement() {
         if (error) throw error;
         toast.success('Tester role removed');
       } else {
-        // Add tester role
+        // Calculate expiry date if provided
+        const expiresAt = expiryDays && expiryDays > 0 
+          ? new Date(Date.now() + expiryDays * 24 * 60 * 60 * 1000).toISOString()
+          : null;
+
+        // Add tester role with optional expiry
         const { error } = await supabase
           .from('user_roles')
-          .insert({ user_id: userId, role: 'tester' });
+          .insert({ 
+            user_id: userId, 
+            role: 'tester',
+            expires_at: expiresAt
+          });
 
         if (error) throw error;
-        toast.success('Tester role granted');
+        toast.success(expiresAt 
+          ? `Tester role granted (expires in ${expiryDays} days)` 
+          : 'Tester role granted (no expiry)');
       }
 
+      setShowTesterDialog(null);
+      setTesterExpiryDays('30');
       fetchUsers();
     } catch (error: any) {
       console.error('Error updating tester role:', error);
       toast.error('Failed to update role');
+    } finally {
+      setUpdatingTesterUserId(null);
+    }
+  };
+
+  const extendTesterExpiry = async (userId: string, additionalDays: number) => {
+    setUpdatingTesterUserId(userId);
+
+    try {
+      const user = users.find(u => u.id === userId);
+      const currentExpiry = user?.testerExpiresAt ? new Date(user.testerExpiresAt) : new Date();
+      const baseDate = currentExpiry > new Date() ? currentExpiry : new Date();
+      const newExpiry = new Date(baseDate.getTime() + additionalDays * 24 * 60 * 60 * 1000);
+
+      const { error } = await supabase
+        .from('user_roles')
+        .update({ expires_at: newExpiry.toISOString() })
+        .eq('user_id', userId)
+        .eq('role', 'tester');
+
+      if (error) throw error;
+      toast.success(`Tester expiry extended by ${additionalDays} days`);
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error extending tester expiry:', error);
+      toast.error('Failed to extend expiry');
     } finally {
       setUpdatingTesterUserId(null);
     }
@@ -429,19 +479,31 @@ export default function UserManagement() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
+                      <div className="flex flex-col gap-1">
                         {user.isAdmin ? (
-                          <Badge className="bg-primary">
+                          <Badge className="bg-primary w-fit">
                             <Shield className="h-3 w-3 mr-1" />
                             Admin
                           </Badge>
                         ) : user.isTester ? (
-                          <Badge className="bg-warning text-warning-foreground">
-                            <FlaskConical className="h-3 w-3 mr-1" />
-                            Tester
-                          </Badge>
+                          <div className="space-y-1">
+                            <Badge className="bg-warning text-warning-foreground w-fit">
+                              <FlaskConical className="h-3 w-3 mr-1" />
+                              Tester
+                            </Badge>
+                            {user.testerExpiresAt && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Clock className="h-3 w-3" />
+                                {new Date(user.testerExpiresAt) < new Date() ? (
+                                  <span className="text-destructive">Expired</span>
+                                ) : (
+                                  <span>Expires {format(new Date(user.testerExpiresAt), 'MMM d, yyyy')}</span>
+                                )}
+                              </div>
+                            )}
+                          </div>
                         ) : (
-                          <Badge variant="outline">User</Badge>
+                          <Badge variant="outline" className="w-fit">User</Badge>
                         )}
                       </div>
                     </TableCell>
@@ -561,20 +623,26 @@ export default function UserManagement() {
 
                         {/* Tester Role Button - only show if not admin */}
                         {!user.isAdmin && (
-                          <AlertDialog>
+                          <AlertDialog open={showTesterDialog === user.id} onOpenChange={(open) => {
+                            if (!open) {
+                              setShowTesterDialog(null);
+                              setTesterExpiryDays('30');
+                            }
+                          }}>
                             <AlertDialogTrigger asChild>
                               <Button
                                 variant={user.isTester ? 'outline' : 'secondary'}
                                 size="sm"
                                 disabled={updatingTesterUserId === user.id}
                                 className={user.isTester ? 'border-warning text-warning-foreground hover:bg-warning/10' : ''}
+                                onClick={() => setShowTesterDialog(user.id)}
                               >
                                 {updatingTesterUserId === user.id ? (
                                   <Loader2 className="h-4 w-4 animate-spin" />
                                 ) : user.isTester ? (
                                   <>
                                     <FlaskConical className="h-4 w-4 mr-1" />
-                                    Remove Tester
+                                    Manage Tester
                                   </>
                                 ) : (
                                   <>
@@ -586,22 +654,98 @@ export default function UserManagement() {
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  {user.isTester ? 'Remove Tester Role?' : 'Grant Tester Role?'}
+                                <AlertDialogTitle className="flex items-center gap-2">
+                                  <FlaskConical className="h-5 w-5 text-warning" />
+                                  {user.isTester ? 'Manage Tester Role' : 'Grant Tester Role'}
                                 </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  {user.isTester
-                                    ? 'This user will no longer see the test mode banner or have access to tester tools.'
-                                    : 'This user will see a "TEST MODE" banner and have access to tester tools like data reset.'}
+                                <AlertDialogDescription asChild>
+                                  <div className="space-y-4">
+                                    {user.isTester ? (
+                                      <>
+                                        <p>
+                                          This user currently has the tester role.
+                                          {user.testerExpiresAt && (
+                                            <span className="block mt-1 font-medium">
+                                              Expires: {format(new Date(user.testerExpiresAt), 'MMM d, yyyy h:mm a')}
+                                              {new Date(user.testerExpiresAt) < new Date() && (
+                                                <Badge variant="destructive" className="ml-2">Expired</Badge>
+                                              )}
+                                            </span>
+                                          )}
+                                        </p>
+                                        <div className="space-y-2">
+                                          <Label>Extend Access</Label>
+                                          <div className="flex gap-2">
+                                            <Button 
+                                              size="sm" 
+                                              variant="outline"
+                                              onClick={() => extendTesterExpiry(user.id, 7)}
+                                              disabled={updatingTesterUserId === user.id}
+                                            >
+                                              +7 days
+                                            </Button>
+                                            <Button 
+                                              size="sm" 
+                                              variant="outline"
+                                              onClick={() => extendTesterExpiry(user.id, 30)}
+                                              disabled={updatingTesterUserId === user.id}
+                                            >
+                                              +30 days
+                                            </Button>
+                                            <Button 
+                                              size="sm" 
+                                              variant="outline"
+                                              onClick={() => extendTesterExpiry(user.id, 90)}
+                                              disabled={updatingTesterUserId === user.id}
+                                            >
+                                              +90 days
+                                            </Button>
+                                          </div>
+                                        </div>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <p>
+                                          This user will see a "TEST MODE" banner and have access to all paid features without billing.
+                                        </p>
+                                        <div className="space-y-2">
+                                          <Label htmlFor="tester-expiry">Access Duration</Label>
+                                          <div className="flex gap-2">
+                                            <Input
+                                              id="tester-expiry"
+                                              type="number"
+                                              min="0"
+                                              value={testerExpiryDays}
+                                              onChange={(e) => setTesterExpiryDays(e.target.value)}
+                                              className="w-24"
+                                            />
+                                            <span className="self-center text-sm text-muted-foreground">days</span>
+                                          </div>
+                                          <p className="text-xs text-muted-foreground">
+                                            Set to 0 for no expiry (permanent tester).
+                                          </p>
+                                        </div>
+                                      </>
+                                    )}
+                                  </div>
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => toggleTesterRole(user.id, user.isTester)}
-                                >
-                                  {user.isTester ? 'Remove Tester' : 'Grant Tester'}
-                                </AlertDialogAction>
+                                {user.isTester ? (
+                                  <AlertDialogAction
+                                    onClick={() => toggleTesterRole(user.id, true)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Remove Tester Role
+                                  </AlertDialogAction>
+                                ) : (
+                                  <AlertDialogAction
+                                    onClick={() => toggleTesterRole(user.id, false, parseInt(testerExpiryDays) || 0)}
+                                  >
+                                    Grant Tester Role
+                                  </AlertDialogAction>
+                                )}
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
