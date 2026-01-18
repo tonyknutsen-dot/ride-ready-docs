@@ -283,12 +283,11 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
         if (uploaded) uploadedUrl = uploaded;
       }
 
-      // Insert bug report - cast to any for newly created table
+      // Insert bug report - user_id only, no email stored for privacy
       const { data, error } = await supabase
         .from('bug_reports' as any)
         .insert({
           user_id: user.id,
-          user_email: context.userEmail,
           user_role: context.userRole,
           title,
           description,

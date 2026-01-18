@@ -58,7 +58,6 @@ interface BugReport {
   id: string;
   reference_id: string;
   user_id: string;
-  user_email: string | null;
   user_role: string | null;
   title: string;
   description: string;
@@ -120,6 +119,10 @@ const BugReports = () => {
   const [selectedReport, setSelectedReport] = useState<BugReport | null>(null);
   const [updating, setUpdating] = useState(false);
   
+  // Email cache for user_ids (fetched on demand)
+  const [emailCache, setEmailCache] = useState<Record<string, string>>({});
+  const [fetchingEmail, setFetchingEmail] = useState<string | null>(null);
+  
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
@@ -139,6 +142,29 @@ const BugReports = () => {
   const [savedTemplates, setSavedTemplates] = useState<Array<{ id: string; name: string; prompt: string; createdAt: string }>>([]);
   const [templateName, setTemplateName] = useState('');
   const [showTemplates, setShowTemplates] = useState(false);
+
+  // Fetch user email on demand (admin only)
+  const fetchUserEmail = async (userId: string) => {
+    if (emailCache[userId]) return emailCache[userId];
+    
+    setFetchingEmail(userId);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-user-email', {
+        body: { userId }
+      });
+      
+      if (error) throw error;
+      
+      const email = data?.email || 'Unknown';
+      setEmailCache(prev => ({ ...prev, [userId]: email }));
+      return email;
+    } catch (error) {
+      console.error('Failed to fetch email:', error);
+      return 'Unknown';
+    } finally {
+      setFetchingEmail(null);
+    }
+  };
 
   // Load templates from localStorage on mount
   useEffect(() => {
@@ -230,8 +256,8 @@ const BugReports = () => {
     return (
       r.reference_id.toLowerCase().includes(query) ||
       r.title.toLowerCase().includes(query) ||
-      r.user_email?.toLowerCase().includes(query) ||
-      r.description.toLowerCase().includes(query)
+      r.description.toLowerCase().includes(query) ||
+      (emailCache[r.user_id]?.toLowerCase().includes(query))
     );
   });
 
@@ -684,7 +710,20 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
                       <div className="flex items-center gap-2 text-sm">
                         <User className="h-4 w-4 text-muted-foreground" />
                         <span className="text-muted-foreground">Reporter:</span>
-                        <span>{selectedReport.user_email || 'Unknown'}</span>
+                        {fetchingEmail === selectedReport.user_id ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : emailCache[selectedReport.user_id] ? (
+                          <span>{emailCache[selectedReport.user_id]}</span>
+                        ) : (
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-auto p-0 text-primary hover:underline"
+                            onClick={() => fetchUserEmail(selectedReport.user_id)}
+                          >
+                            Show email
+                          </Button>
+                        )}
                         {selectedReport.user_role === 'tester' && (
                           <Badge variant="outline" className="text-xs">Tester</Badge>
                         )}
