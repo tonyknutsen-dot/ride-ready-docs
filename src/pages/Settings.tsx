@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Settings as SettingsIcon, User, FileText, Globe, Users, ArrowRight, Mail, ArrowLeft } from 'lucide-react';
+import { Settings as SettingsIcon, User, FileText, Globe, Users, ArrowRight, Mail, ArrowLeft, Info } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
@@ -23,6 +23,8 @@ import { COUNTRIES, OPERATOR_TYPES, getTerminologyForCountry } from '@/constants
 import { CustomTerminologyEditor, CustomTerminology } from '@/components/CustomTerminologyEditor';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { APP_NAME, APP_VERSION, formatVersionDate, getLastUpdateDate } from '@/config/appVersion';
+import AboutAppDialog from '@/components/AboutAppDialog';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -428,6 +430,49 @@ const Settings = () => {
                   </div>
                 </div>
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* App Info Card */}
+        <Card className="border-2 border-muted/50 bg-gradient-to-br from-muted/10 to-transparent shadow-elegant">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center">
+                <Info className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <CardTitle className="text-base">About This App</CardTitle>
+            </div>
+            <CardDescription className="text-sm">
+              Version information for testing and bug reporting
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="p-4 rounded-lg bg-secondary/50 border border-muted/30">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">App Name</span>
+                    <span className="text-sm font-medium">{APP_NAME}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Version</span>
+                    <span className="text-sm font-mono font-bold text-primary">{APP_VERSION}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Last Update</span>
+                    <span className="text-sm">{formatVersionDate(getLastUpdateDate())}</span>
+                  </div>
+                </div>
+              </div>
+              <AboutAppDialog 
+                trigger={
+                  <Button variant="outline" size="sm" className="w-full gap-2">
+                    <Info className="h-4 w-4" />
+                    View Full Change Log
+                  </Button>
+                }
+              />
             </div>
           </CardContent>
         </Card>
