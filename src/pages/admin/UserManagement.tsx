@@ -89,6 +89,10 @@ export default function UserManagement() {
   const [testerTimeData, setTesterTimeData] = useState<TesterTimeData[]>([]);
   const [timeTrackingLoading, setTimeTrackingLoading] = useState(false);
   const [showTimeTracking, setShowTimeTracking] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState<string>(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
 
   useEffect(() => {
     fetchUsers();
@@ -104,15 +108,43 @@ export default function UserManagement() {
     if (showTimeTracking) {
       fetchTesterTimeData();
     }
-  }, [showTimeTracking]);
+  }, [showTimeTracking, selectedMonth]);
+
+  const getMonthDateRange = (monthStr: string) => {
+    const [year, month] = monthStr.split('-').map(Number);
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+    return { startDate, endDate };
+  };
+
+  const getAvailableMonths = (): string[] => {
+    const months: string[] = [];
+    const now = new Date();
+    // Show last 12 months
+    for (let i = 0; i < 12; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      months.push(`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`);
+    }
+    return months;
+  };
+
+  const formatMonthLabel = (monthStr: string): string => {
+    const [year, month] = monthStr.split('-').map(Number);
+    const date = new Date(year, month - 1, 1);
+    return date.toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+  };
 
   const fetchTesterTimeData = async () => {
     setTimeTrackingLoading(true);
     try {
-      // Get all tester sessions
+      const { startDate, endDate } = getMonthDateRange(selectedMonth);
+
+      // Get tester sessions for selected month
       const { data: sessions, error } = await supabase
         .from('tester_sessions')
         .select('user_id, duration_minutes, session_start')
+        .gte('session_start', startDate.toISOString())
+        .lte('session_start', endDate.toISOString())
         .order('session_start', { ascending: false });
 
       if (error) throw error;
@@ -1047,17 +1079,39 @@ export default function UserManagement() {
           </CardHeader>
           {showTimeTracking && (
             <CardContent>
+              {/* Month Selector */}
+              <div className="flex items-center gap-4 mb-4">
+                <Label htmlFor="month-select" className="text-sm font-medium">Billing Period:</Label>
+                <select
+                  id="month-select"
+                  value={selectedMonth}
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  className="px-3 py-2 border border-input rounded-md bg-background text-sm"
+                >
+                  {getAvailableMonths().map((month) => (
+                    <option key={month} value={month}>
+                      {formatMonthLabel(month)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {timeTrackingLoading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                 </div>
               ) : testerTimeData.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  No tester sessions recorded yet.
+                  No tester sessions recorded for {formatMonthLabel(selectedMonth)}.
                 </div>
               ) : (
                 <>
                   <div className="mb-4 p-4 bg-muted rounded-lg">
+                    <div className="text-center mb-2">
+                      <Badge variant="outline" className="text-base px-3 py-1">
+                        {formatMonthLabel(selectedMonth)}
+                      </Badge>
+                    </div>
                     <div className="grid grid-cols-3 gap-4 text-center">
                       <div>
                         <div className="text-2xl font-bold">
