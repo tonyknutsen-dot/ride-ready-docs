@@ -17,6 +17,7 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 import GlobalEventBridge from "@/components/GlobalEventBridge";
 import TestModeBanner from "@/components/TestModeBanner";
 import FloatingBugButton from "@/components/FloatingBugButton";
+import TesterSessionTracker from "@/components/TesterSessionTracker";
 import { Loader2, FileText } from "lucide-react";
 
 // Eager load critical pages
@@ -91,6 +92,7 @@ const App = () => (
           <AdminProvider>
             <TesterProvider>
               <TestModeBanner />
+              <TesterSessionTracker />
               <GlobalEventBridge />
               <Suspense fallback={<PageLoader />}>
               <Routes>
