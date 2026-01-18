@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Users, Search, Shield, ShieldOff, Calendar, Building, Ban, CheckCircle, FlaskConical, Clock, Plus } from 'lucide-react';
+import { Loader2, Users, Search, Shield, ShieldOff, Calendar, Building, Ban, CheckCircle, FlaskConical, Clock, Plus, UserMinus, UserX } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
@@ -61,6 +61,7 @@ export default function UserManagement() {
   const [showSuspendDialog, setShowSuspendDialog] = useState<string | null>(null);
   const [showTesterDialog, setShowTesterDialog] = useState<string | null>(null);
   const [testerExpiryDays, setTesterExpiryDays] = useState<string>('30');
+  const [offboardReason, setOffboardReason] = useState('');
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -155,20 +156,83 @@ export default function UserManagement() {
     }
   };
 
+  const offboardTester = async (userId: string, newRole: 'user' | 'disabled', reason?: string) => {
+    setUpdatingTesterUserId(userId);
+
+    try {
+      // Get current user for changed_by
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error('Not authenticated');
+
+      // Remove tester role
+      const { error: deleteError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', userId)
+        .eq('role', 'tester');
+
+      if (deleteError) throw deleteError;
+
+      // Log the role change for audit
+      const { error: auditError } = await supabase
+        .from('role_change_audit')
+        .insert({
+          user_id: userId,
+          changed_by: currentUser.id,
+          previous_role: 'tester',
+          new_role: newRole,
+          reason: reason || null,
+        });
+
+      if (auditError) {
+        console.error('Failed to log role change:', auditError);
+        // Don't throw - the role change succeeded
+      }
+
+      // If disabled, also suspend the account
+      if (newRole === 'disabled') {
+        const { error: suspendError } = await supabase
+          .from('profiles')
+          .update({
+            is_suspended: true,
+            suspended_at: new Date().toISOString(),
+            suspended_reason: reason || 'Tester access ended',
+          })
+          .eq('user_id', userId);
+
+        if (suspendError) {
+          console.error('Failed to suspend account:', suspendError);
+        }
+      }
+
+      toast.success(newRole === 'disabled' 
+        ? 'Tester off-boarded and account disabled' 
+        : 'Tester converted to regular user');
+      
+      setShowTesterDialog(null);
+      setTesterExpiryDays('30');
+      setOffboardReason('');
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error off-boarding tester:', error);
+      toast.error('Failed to off-board tester');
+    } finally {
+      setUpdatingTesterUserId(null);
+    }
+  };
+
   const toggleTesterRole = async (userId: string, currentlyTester: boolean, expiryDays?: number) => {
     setUpdatingTesterUserId(userId);
 
     try {
-      if (currentlyTester) {
-        // Remove tester role
-        const { error } = await supabase
-          .from('user_roles')
-          .delete()
-          .eq('user_id', userId)
-          .eq('role', 'tester');
+      // Get current user for changed_by
+      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      if (!currentUser) throw new Error('Not authenticated');
 
-        if (error) throw error;
-        toast.success('Tester role removed');
+      if (currentlyTester) {
+        // Use offboardTester for removal
+        await offboardTester(userId, 'user');
+        return;
       } else {
         // Calculate expiry date if provided
         const expiresAt = expiryDays && expiryDays > 0 
@@ -185,6 +249,18 @@ export default function UserManagement() {
           });
 
         if (error) throw error;
+
+        // Log the role change for audit
+        await supabase
+          .from('role_change_audit')
+          .insert({
+            user_id: userId,
+            changed_by: currentUser.id,
+            previous_role: 'user',
+            new_role: 'tester',
+            reason: expiresAt ? `Granted for ${expiryDays} days` : 'Granted permanently',
+          });
+
         toast.success(expiresAt 
           ? `Tester role granted (expires in ${expiryDays} days)` 
           : 'Tester role granted (no expiry)');
@@ -701,6 +777,47 @@ export default function UserManagement() {
                                               +90 days
                                             </Button>
                                           </div>
+                                        </div>
+                                        
+                                        <hr className="my-4 border-border" />
+                                        
+                                        <div className="space-y-3">
+                                          <Label className="text-destructive">Off-board Tester</Label>
+                                          <div className="space-y-2">
+                                            <Label htmlFor="offboard-reason" className="text-sm text-muted-foreground">Reason (optional)</Label>
+                                            <Input
+                                              id="offboard-reason"
+                                              placeholder="e.g., Testing period complete"
+                                              value={offboardReason}
+                                              onChange={(e) => setOffboardReason(e.target.value)}
+                                            />
+                                          </div>
+                                          <div className="flex gap-2">
+                                            <Button
+                                              size="sm"
+                                              variant="outline"
+                                              onClick={() => offboardTester(user.id, 'user', offboardReason)}
+                                              disabled={updatingTesterUserId === user.id}
+                                              className="flex-1"
+                                            >
+                                              <UserMinus className="h-4 w-4 mr-1" />
+                                              Convert to User
+                                            </Button>
+                                            <Button
+                                              size="sm"
+                                              variant="destructive"
+                                              onClick={() => offboardTester(user.id, 'disabled', offboardReason)}
+                                              disabled={updatingTesterUserId === user.id}
+                                              className="flex-1"
+                                            >
+                                              <UserX className="h-4 w-4 mr-1" />
+                                              Disable Account
+                                            </Button>
+                                          </div>
+                                          <p className="text-xs text-muted-foreground">
+                                            <strong>Convert to User:</strong> Removes tester access, keeps account active.<br/>
+                                            <strong>Disable Account:</strong> Removes tester access and suspends account.
+                                          </p>
                                         </div>
                                       </>
                                     ) : (
