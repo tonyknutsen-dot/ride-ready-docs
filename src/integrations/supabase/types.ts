@@ -1656,6 +1656,33 @@ export type Database = {
         }
         Relationships: []
       }
+      tester_sessions: {
+        Row: {
+          created_at: string
+          duration_minutes: number | null
+          id: string
+          session_end: string | null
+          session_start: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          session_end?: string | null
+          session_start?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          duration_minutes?: number | null
+          id?: string
+          session_end?: string | null
+          session_start?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string

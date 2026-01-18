@@ -63,6 +63,14 @@ interface RoleChangeAudit {
   changed_by_company?: string | null;
 }
 
+interface TesterTimeData {
+  user_id: string;
+  company_name: string | null;
+  total_minutes: number;
+  session_count: number;
+  last_session: string | null;
+}
+
 export default function UserManagement() {
   const [users, setUsers] = useState<UserWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +86,9 @@ export default function UserManagement() {
   const [auditLog, setAuditLog] = useState<RoleChangeAudit[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [showAuditLog, setShowAuditLog] = useState(false);
+  const [testerTimeData, setTesterTimeData] = useState<TesterTimeData[]>([]);
+  const [timeTrackingLoading, setTimeTrackingLoading] = useState(false);
+  const [showTimeTracking, setShowTimeTracking] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -88,6 +99,76 @@ export default function UserManagement() {
       fetchAuditLog();
     }
   }, [showAuditLog]);
+
+  useEffect(() => {
+    if (showTimeTracking) {
+      fetchTesterTimeData();
+    }
+  }, [showTimeTracking]);
+
+  const fetchTesterTimeData = async () => {
+    setTimeTrackingLoading(true);
+    try {
+      // Get all tester sessions
+      const { data: sessions, error } = await supabase
+        .from('tester_sessions')
+        .select('user_id, duration_minutes, session_start')
+        .order('session_start', { ascending: false });
+
+      if (error) throw error;
+
+      // Get unique user IDs
+      const userIds = [...new Set((sessions || []).map(s => s.user_id))];
+
+      // Get profiles for these users
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, company_name')
+        .in('user_id', userIds);
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.company_name]) || []);
+
+      // Aggregate by user
+      const userTimeMap = new Map<string, { total: number; count: number; lastSession: string | null }>();
+      
+      for (const session of sessions || []) {
+        const existing = userTimeMap.get(session.user_id) || { total: 0, count: 0, lastSession: null };
+        userTimeMap.set(session.user_id, {
+          total: existing.total + (session.duration_minutes || 0),
+          count: existing.count + 1,
+          lastSession: existing.lastSession || session.session_start,
+        });
+      }
+
+      const timeData: TesterTimeData[] = Array.from(userTimeMap.entries()).map(([userId, data]) => ({
+        user_id: userId,
+        company_name: profileMap.get(userId) || null,
+        total_minutes: data.total,
+        session_count: data.count,
+        last_session: data.lastSession,
+      }));
+
+      // Sort by total time descending
+      timeData.sort((a, b) => b.total_minutes - a.total_minutes);
+
+      setTesterTimeData(timeData);
+    } catch (error: any) {
+      console.error('Error fetching tester time data:', error);
+      toast.error('Failed to load time tracking data');
+    } finally {
+      setTimeTrackingLoading(false);
+    }
+  };
+
+  const formatDuration = (minutes: number): string => {
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    if (hours < 24) return `${hours}h ${mins}m`;
+    const days = Math.floor(hours / 24);
+    const remainingHours = hours % 24;
+    return `${days}d ${remainingHours}h`;
+  };
 
   const fetchAuditLog = async () => {
     setAuditLoading(true);
@@ -942,6 +1023,99 @@ export default function UserManagement() {
               </div>
             )}
           </CardContent>
+        </Card>
+
+        {/* Tester Time Tracking */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <CardTitle>Tester Time Tracking</CardTitle>
+                  <CardDescription>Track tester usage time for billing purposes</CardDescription>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowTimeTracking(!showTimeTracking)}
+              >
+                {showTimeTracking ? 'Hide' : 'Show'} Time Data
+              </Button>
+            </div>
+          </CardHeader>
+          {showTimeTracking && (
+            <CardContent>
+              {timeTrackingLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : testerTimeData.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No tester sessions recorded yet.
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4 p-4 bg-muted rounded-lg">
+                    <div className="grid grid-cols-3 gap-4 text-center">
+                      <div>
+                        <div className="text-2xl font-bold">
+                          {formatDuration(testerTimeData.reduce((sum, t) => sum + t.total_minutes, 0))}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Total Time</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold">{testerTimeData.length}</div>
+                        <div className="text-sm text-muted-foreground">Testers</div>
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold">
+                          {testerTimeData.reduce((sum, t) => sum + t.session_count, 0)}
+                        </div>
+                        <div className="text-sm text-muted-foreground">Sessions</div>
+                      </div>
+                    </div>
+                  </div>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Tester</TableHead>
+                        <TableHead>Total Time</TableHead>
+                        <TableHead>Sessions</TableHead>
+                        <TableHead>Last Active</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {testerTimeData.map((tester) => (
+                        <TableRow key={tester.user_id}>
+                          <TableCell>
+                            <div className="font-medium">
+                              {tester.company_name || 'Unknown'}
+                            </div>
+                            <div className="text-xs text-muted-foreground truncate max-w-[150px]">
+                              {tester.user_id.slice(0, 8)}...
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="font-mono">
+                              {formatDuration(tester.total_minutes)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{tester.session_count}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">
+                            {tester.last_session 
+                              ? format(new Date(tester.last_session), 'MMM d, yyyy h:mm a')
+                              : '-'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </>
+              )}
+            </CardContent>
+          )}
         </Card>
 
         {/* Role Change Audit Log */}
