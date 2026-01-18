@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AdminProvider } from "@/contexts/AdminContext";
+import { TesterProvider } from "@/contexts/TesterContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { ProfileGuard } from "@/components/ProfileGuard";
@@ -14,6 +15,7 @@ import ScrollToTop from "@/components/ScrollToTop";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import GlobalEventBridge from "@/components/GlobalEventBridge";
+import TestModeBanner from "@/components/TestModeBanner";
 import { Loader2, FileText } from "lucide-react";
 
 // Eager load critical pages
@@ -84,8 +86,10 @@ const App = () => (
         <ScrollToTop />
         <AuthProvider>
           <AdminProvider>
-            <GlobalEventBridge />
-            <Suspense fallback={<PageLoader />}>
+            <TesterProvider>
+              <TestModeBanner />
+              <GlobalEventBridge />
+              <Suspense fallback={<PageLoader />}>
               <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
@@ -311,9 +315,10 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
               </Routes>
-            </Suspense>
-            <MobileBottomNav />
-            <CookieConsentBanner />
+              </Suspense>
+              <MobileBottomNav />
+              <CookieConsentBanner />
+            </TesterProvider>
           </AdminProvider>
         </AuthProvider>
       </BrowserRouter>
