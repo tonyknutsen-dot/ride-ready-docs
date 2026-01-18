@@ -16,6 +16,7 @@ interface PendingCounts {
   rideRequests: number;
   documentRequests: number;
   supportMessages: number;
+  bugReports: number;
 }
 
 export const AdminLayout = ({ children }: AdminLayoutProps) => {
@@ -26,20 +27,23 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     rideRequests: 0,
     documentRequests: 0,
     supportMessages: 0,
+    bugReports: 0,
   });
 
   useEffect(() => {
     const fetchPendingCounts = async () => {
-      const [rideRes, docRes, supportRes] = await Promise.all([
+      const [rideRes, docRes, supportRes, bugRes] = await Promise.all([
         supabase.from('ride_type_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('document_type_requests').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
         supabase.from('support_messages').select('id', { count: 'exact', head: true }).eq('status', 'pending'),
+        (supabase as any).from('bug_reports').select('id', { count: 'exact', head: true }).in('status', ['new', 'in_progress']),
       ]);
 
       setPendingCounts({
         rideRequests: rideRes.count || 0,
         documentRequests: docRes.count || 0,
         supportMessages: supportRes.count || 0,
+        bugReports: bugRes.count || 0,
       });
     };
 
@@ -48,7 +52,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   const navigation = [
     { name: 'Dashboard', href: '/admin', icon: Shield, count: 0 },
-    { name: 'Bug Reports', href: '/admin/bug-reports', icon: Bug, count: 0 },
+    { name: 'Bug Reports', href: '/admin/bug-reports', icon: Bug, count: pendingCounts.bugReports },
     { name: 'Ride Type Requests', href: '/admin/ride-requests', icon: FolderOpen, count: pendingCounts.rideRequests },
     { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText, count: pendingCounts.documentRequests },
     { name: 'Support Messages', href: '/admin/support', icon: MessageCircle, count: pendingCounts.supportMessages },
