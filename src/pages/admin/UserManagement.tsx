@@ -54,6 +54,7 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [updatingTesterUserId, setUpdatingTesterUserId] = useState<string | null>(null);
   const [suspendingUserId, setSuspendingUserId] = useState<string | null>(null);
   const [suspendReason, setSuspendReason] = useState('');
   const [showSuspendDialog, setShowSuspendDialog] = useState<string | null>(null);
@@ -140,6 +141,39 @@ export default function UserManagement() {
       toast.error('Failed to update role');
     } finally {
       setUpdatingUserId(null);
+    }
+  };
+
+  const toggleTesterRole = async (userId: string, currentlyTester: boolean) => {
+    setUpdatingTesterUserId(userId);
+
+    try {
+      if (currentlyTester) {
+        // Remove tester role
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId)
+          .eq('role', 'tester');
+
+        if (error) throw error;
+        toast.success('Tester role removed');
+      } else {
+        // Add tester role
+        const { error } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: 'tester' });
+
+        if (error) throw error;
+        toast.success('Tester role granted');
+      }
+
+      fetchUsers();
+    } catch (error: any) {
+      console.error('Error updating tester role:', error);
+      toast.error('Failed to update role');
+    } finally {
+      setUpdatingTesterUserId(null);
     }
   };
 
@@ -524,6 +558,54 @@ export default function UserManagement() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
+
+                        {/* Tester Role Button - only show if not admin */}
+                        {!user.isAdmin && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant={user.isTester ? 'outline' : 'secondary'}
+                                size="sm"
+                                disabled={updatingTesterUserId === user.id}
+                                className={user.isTester ? 'border-warning text-warning-foreground hover:bg-warning/10' : ''}
+                              >
+                                {updatingTesterUserId === user.id ? (
+                                  <Loader2 className="h-4 w-4 animate-spin" />
+                                ) : user.isTester ? (
+                                  <>
+                                    <FlaskConical className="h-4 w-4 mr-1" />
+                                    Remove Tester
+                                  </>
+                                ) : (
+                                  <>
+                                    <FlaskConical className="h-4 w-4 mr-1" />
+                                    Make Tester
+                                  </>
+                                )}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  {user.isTester ? 'Remove Tester Role?' : 'Grant Tester Role?'}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {user.isTester
+                                    ? 'This user will no longer see the test mode banner or have access to tester tools.'
+                                    : 'This user will see a "TEST MODE" banner and have access to tester tools like data reset.'}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => toggleTesterRole(user.id, user.isTester)}
+                                >
+                                  {user.isTester ? 'Remove Tester' : 'Grant Tester'}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
