@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, Users, Search, Shield, ShieldOff, Calendar, Building, Ban, CheckCircle, FlaskConical, Clock, Plus, UserMinus, UserX } from 'lucide-react';
+import { Loader2, Users, Search, Shield, ShieldOff, Calendar, Building, Ban, CheckCircle, FlaskConical, Clock, Plus, UserMinus, UserX, History, ArrowRight } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { format } from 'date-fns';
@@ -50,6 +50,19 @@ interface UserWithProfile {
   testerExpiresAt: string | null;
 }
 
+interface RoleChangeAudit {
+  id: string;
+  user_id: string;
+  changed_by: string;
+  previous_role: string;
+  new_role: string;
+  reason: string | null;
+  changed_at: string;
+  // Joined data
+  user_company?: string | null;
+  changed_by_company?: string | null;
+}
+
 export default function UserManagement() {
   const [users, setUsers] = useState<UserWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,9 +75,58 @@ export default function UserManagement() {
   const [showTesterDialog, setShowTesterDialog] = useState<string | null>(null);
   const [testerExpiryDays, setTesterExpiryDays] = useState<string>('30');
   const [offboardReason, setOffboardReason] = useState('');
+  const [auditLog, setAuditLog] = useState<RoleChangeAudit[]>([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [showAuditLog, setShowAuditLog] = useState(false);
+
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  useEffect(() => {
+    if (showAuditLog) {
+      fetchAuditLog();
+    }
+  }, [showAuditLog]);
+
+  const fetchAuditLog = async () => {
+    setAuditLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('role_change_audit')
+        .select('*')
+        .order('changed_at', { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+
+      // Get company names for user_ids and changed_by
+      const userIds = new Set([
+        ...(data || []).map(a => a.user_id),
+        ...(data || []).map(a => a.changed_by)
+      ]);
+
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, company_name')
+        .in('user_id', Array.from(userIds));
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.company_name]) || []);
+
+      const enrichedData = (data || []).map(audit => ({
+        ...audit,
+        user_company: profileMap.get(audit.user_id) || null,
+        changed_by_company: profileMap.get(audit.changed_by) || null,
+      }));
+
+      setAuditLog(enrichedData);
+    } catch (error: any) {
+      console.error('Error fetching audit log:', error);
+      toast.error('Failed to load audit log');
+    } finally {
+      setAuditLoading(false);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -880,6 +942,99 @@ export default function UserManagement() {
               </div>
             )}
           </CardContent>
+        </Card>
+
+        {/* Role Change Audit Log */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <CardTitle>Role Change Audit Log</CardTitle>
+                  <CardDescription>History of role changes for debugging and compliance</CardDescription>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAuditLog(!showAuditLog)}
+              >
+                {showAuditLog ? 'Hide' : 'Show'} Log
+              </Button>
+            </div>
+          </CardHeader>
+          {showAuditLog && (
+            <CardContent>
+              {auditLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : auditLog.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  No role changes recorded yet.
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>User</TableHead>
+                      <TableHead>Role Change</TableHead>
+                      <TableHead>Changed By</TableHead>
+                      <TableHead>Reason</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {auditLog.map((audit) => (
+                      <TableRow key={audit.id}>
+                        <TableCell className="text-sm text-muted-foreground">
+                          {format(new Date(audit.changed_at), 'MMM d, yyyy h:mm a')}
+                        </TableCell>
+                        <TableCell>
+                          <div className="font-medium">
+                            {audit.user_company || 'Unknown'}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate max-w-[150px]">
+                            {audit.user_id.slice(0, 8)}...
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="capitalize">
+                              {audit.previous_role}
+                            </Badge>
+                            <ArrowRight className="h-3 w-3 text-muted-foreground" />
+                            <Badge 
+                              className={
+                                audit.new_role === 'tester' 
+                                  ? 'bg-warning text-warning-foreground' 
+                                  : audit.new_role === 'disabled'
+                                  ? 'bg-destructive'
+                                  : 'bg-secondary'
+                              }
+                            >
+                              {audit.new_role}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            {audit.changed_by_company || 'Admin'}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm text-muted-foreground max-w-[200px] truncate">
+                            {audit.reason || '-'}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          )}
         </Card>
       </div>
     </AdminLayout>
