@@ -133,12 +133,49 @@ export type Database = {
         }
         Relationships: []
       }
+      bug_report_admin_data: {
+        Row: {
+          assigned_to: string | null
+          bug_report_id: string
+          created_at: string
+          id: string
+          internal_notes: string | null
+          priority: string | null
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          bug_report_id: string
+          created_at?: string
+          id?: string
+          internal_notes?: string | null
+          priority?: string | null
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          bug_report_id?: string
+          created_at?: string
+          id?: string
+          internal_notes?: string | null
+          priority?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bug_report_admin_data_bug_report_id_fkey"
+            columns: ["bug_report_id"]
+            isOneToOne: true
+            referencedRelation: "bug_reports"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bug_reports: {
         Row: {
           actual_result: string | null
           app_name: string | null
           app_version: string | null
-          assigned_to: string | null
           browser_info: string | null
           build_date: string | null
           captured_at: string
@@ -148,7 +185,6 @@ export type Database = {
           device_type: string | null
           expected_result: string | null
           id: string
-          internal_notes: string | null
           is_after_recent_changes: boolean | null
           issue_type: string
           reference_id: string
@@ -165,7 +201,6 @@ export type Database = {
           actual_result?: string | null
           app_name?: string | null
           app_version?: string | null
-          assigned_to?: string | null
           browser_info?: string | null
           build_date?: string | null
           captured_at?: string
@@ -175,7 +210,6 @@ export type Database = {
           device_type?: string | null
           expected_result?: string | null
           id?: string
-          internal_notes?: string | null
           is_after_recent_changes?: boolean | null
           issue_type?: string
           reference_id: string
@@ -192,7 +226,6 @@ export type Database = {
           actual_result?: string | null
           app_name?: string | null
           app_version?: string | null
-          assigned_to?: string | null
           browser_info?: string | null
           build_date?: string | null
           captured_at?: string
@@ -202,7 +235,6 @@ export type Database = {
           device_type?: string | null
           expected_result?: string | null
           id?: string
-          internal_notes?: string | null
           is_after_recent_changes?: boolean | null
           issue_type?: string
           reference_id?: string
