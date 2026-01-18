@@ -1591,9 +1591,10 @@ export type Database = {
           reason: string
         }[]
       }
+      is_tester: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      app_role: "admin" | "user"
+      app_role: "admin" | "user" | "tester"
       check_frequency: "daily" | "monthly" | "yearly" | "preopening"
     }
     CompositeTypes: {
@@ -1722,7 +1723,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "user"],
+      app_role: ["admin", "user", "tester"],
       check_frequency: ["daily", "monthly", "yearly", "preopening"],
     },
   },

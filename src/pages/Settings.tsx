@@ -25,6 +25,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { APP_NAME, APP_VERSION, formatVersionDate, getLastUpdateDate } from '@/config/appVersion';
 import AboutAppDialog from '@/components/AboutAppDialog';
+import TesterTools from '@/components/TesterTools';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -476,6 +477,9 @@ const Settings = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Tester Tools - only shows for testers */}
+        <TesterTools />
       </div>
     </>
   );
