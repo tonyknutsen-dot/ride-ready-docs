@@ -52,6 +52,7 @@ const RiskAssessments = lazy(() => import("./pages/RiskAssessments"));
 const GlobalDocumentsPage = lazy(() => import("./pages/GlobalDocumentsPage"));
 const BatchSendDocuments = lazy(() => import("./pages/BatchSendDocuments"));
 const Marketing = lazy(() => import("./pages/Marketing"));
+const TesterInvite = lazy(() => import("./pages/TesterInvite"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -94,6 +95,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/demo" element={<Demo />} />
+              <Route path="/tester-invite/:token" element={<TesterInvite />} />
               <Route 
                 path="/overview" 
                 element={
