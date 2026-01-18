@@ -1,5 +1,7 @@
 import { MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
+import { APP_VERSION } from "@/config/appVersion";
+import AboutAppDialog from "./AboutAppDialog";
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
@@ -95,8 +97,19 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-background/10 mt-12 pt-8 text-center text-background/50 text-sm">
+        <div className="border-t border-background/10 mt-12 pt-8 text-center text-background/50 text-sm space-y-2">
           <p>&copy; {currentYear} Showmen's Ride Ready. All rights reserved. Built for the fairground community.</p>
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-xs font-mono opacity-70">{APP_VERSION}</span>
+            <span className="opacity-50">•</span>
+            <AboutAppDialog 
+              trigger={
+                <button className="text-xs hover:text-accent transition-colors underline-offset-2 hover:underline">
+                  App Info
+                </button>
+              } 
+            />
+          </div>
         </div>
       </div>
     </footer>
