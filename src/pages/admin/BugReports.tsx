@@ -44,6 +44,10 @@ import {
   Search,
   Copy,
   CheckCircle2,
+  Download,
+  Save,
+  FolderOpen,
+  Trash2,
   Clipboard,
   Sparkles,
 } from 'lucide-react';
@@ -130,6 +134,23 @@ const BugReports = () => {
   const [generatedPrompt, setGeneratedPrompt] = useState('');
   const [copied, setCopied] = useState(false);
   const [checklistChecked, setChecklistChecked] = useState<Set<string>>(new Set());
+  
+  // Template management
+  const [savedTemplates, setSavedTemplates] = useState<Array<{ id: string; name: string; prompt: string; createdAt: string }>>([]);
+  const [templateName, setTemplateName] = useState('');
+  const [showTemplates, setShowTemplates] = useState(false);
+
+  // Load templates from localStorage on mount
+  useEffect(() => {
+    const stored = localStorage.getItem('bug_fix_templates');
+    if (stored) {
+      try {
+        setSavedTemplates(JSON.parse(stored));
+      } catch (e) {
+        console.error('Failed to load templates:', e);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     fetchReports();
@@ -336,6 +357,52 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
       newSet.add(id);
     }
     setChecklistChecked(newSet);
+  };
+
+  const saveTemplate = () => {
+    if (!templateName.trim()) {
+      toast({ title: 'Please enter a template name', variant: 'destructive' });
+      return;
+    }
+    
+    const newTemplate = {
+      id: crypto.randomUUID(),
+      name: templateName.trim(),
+      prompt: generatedPrompt,
+      createdAt: new Date().toISOString(),
+    };
+    
+    const updated = [...savedTemplates, newTemplate];
+    setSavedTemplates(updated);
+    localStorage.setItem('bug_fix_templates', JSON.stringify(updated));
+    setTemplateName('');
+    toast({ title: 'Template saved!' });
+  };
+
+  const loadTemplate = (template: { id: string; name: string; prompt: string }) => {
+    setGeneratedPrompt(template.prompt);
+    setShowTemplates(false);
+    toast({ title: `Loaded: ${template.name}` });
+  };
+
+  const deleteTemplate = (id: string) => {
+    const updated = savedTemplates.filter(t => t.id !== id);
+    setSavedTemplates(updated);
+    localStorage.setItem('bug_fix_templates', JSON.stringify(updated));
+    toast({ title: 'Template deleted' });
+  };
+
+  const exportToFile = () => {
+    const blob = new Blob([generatedPrompt], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bug-fix-prompt-${format(new Date(), 'yyyy-MM-dd-HHmm')}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast({ title: 'Prompt exported!' });
   };
 
   const getSeverityBadge = (severity: string) => (
@@ -783,31 +850,99 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
 
               {/* Generated Prompt */}
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <h4 className="font-medium text-sm">Generated Prompt</h4>
-                  <Button
-                    size="sm"
-                    variant={copied ? 'default' : 'outline'}
-                    onClick={copyToClipboard}
-                    className="gap-2"
-                  >
-                    {copied ? (
-                      <>
-                        <CheckCircle2 className="h-4 w-4" />
-                        Copied!
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4" />
-                        Copy to Clipboard
-                      </>
-                    )}
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setShowTemplates(!showTemplates)}
+                      className="gap-2"
+                    >
+                      <FolderOpen className="h-4 w-4" />
+                      Templates ({savedTemplates.length})
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={exportToFile}
+                      className="gap-2"
+                    >
+                      <Download className="h-4 w-4" />
+                      Export
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={copied ? 'default' : 'outline'}
+                      onClick={copyToClipboard}
+                      className="gap-2"
+                    >
+                      {copied ? (
+                        <>
+                          <CheckCircle2 className="h-4 w-4" />
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          Copy
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Save as Template */}
+                <div className="flex items-center gap-2">
+                  <Input
+                    placeholder="Template name..."
+                    value={templateName}
+                    onChange={(e) => setTemplateName(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button size="sm" onClick={saveTemplate} className="gap-2">
+                    <Save className="h-4 w-4" />
+                    Save Template
                   </Button>
                 </div>
+
+                {/* Saved Templates List */}
+                {showTemplates && savedTemplates.length > 0 && (
+                  <div className="border rounded-lg p-3 space-y-2 bg-secondary/30">
+                    <h5 className="text-sm font-medium">Saved Templates</h5>
+                    <div className="space-y-1 max-h-32 overflow-y-auto">
+                      {savedTemplates.map((template) => (
+                        <div
+                          key={template.id}
+                          className="flex items-center justify-between p-2 rounded-md hover:bg-secondary"
+                        >
+                          <button
+                            className="text-sm text-left flex-1 hover:text-primary"
+                            onClick={() => loadTemplate(template)}
+                          >
+                            {template.name}
+                            <span className="text-xs text-muted-foreground ml-2">
+                              {format(new Date(template.createdAt), 'dd MMM yyyy')}
+                            </span>
+                          </button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                            onClick={() => deleteTemplate(template.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <Textarea
                   value={generatedPrompt}
                   readOnly
-                  className="font-mono text-xs h-80"
+                  className="font-mono text-xs h-64"
                 />
               </div>
             </div>
