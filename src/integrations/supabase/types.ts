@@ -303,6 +303,7 @@ export type Database = {
           environment_notes: string | null
           id: string
           inspector_name: string
+          is_test_data: boolean
           notes: string | null
           ride_id: string
           signature_data: string | null
@@ -319,6 +320,7 @@ export type Database = {
           environment_notes?: string | null
           id?: string
           inspector_name: string
+          is_test_data?: boolean
           notes?: string | null
           ride_id: string
           signature_data?: string | null
@@ -335,6 +337,7 @@ export type Database = {
           environment_notes?: string | null
           id?: string
           inspector_name?: string
+          is_test_data?: boolean
           notes?: string | null
           ride_id?: string
           signature_data?: string | null
@@ -539,6 +542,7 @@ export type Database = {
           id: string
           is_global: boolean | null
           is_latest_version: boolean | null
+          is_test_data: boolean
           mime_type: string | null
           notes: string | null
           replaced_document_id: string | null
@@ -557,6 +561,7 @@ export type Database = {
           id?: string
           is_global?: boolean | null
           is_latest_version?: boolean | null
+          is_test_data?: boolean
           mime_type?: string | null
           notes?: string | null
           replaced_document_id?: string | null
@@ -575,6 +580,7 @@ export type Database = {
           id?: string
           is_global?: boolean | null
           is_latest_version?: boolean | null
+          is_test_data?: boolean
           mime_type?: string | null
           notes?: string | null
           replaced_document_id?: string | null
@@ -784,6 +790,7 @@ export type Database = {
           description: string
           document_ids: string[] | null
           id: string
+          is_test_data: boolean
           maintenance_date: string
           maintenance_type: string
           next_maintenance_due: string | null
@@ -800,6 +807,7 @@ export type Database = {
           description: string
           document_ids?: string[] | null
           id?: string
+          is_test_data?: boolean
           maintenance_date: string
           maintenance_type: string
           next_maintenance_due?: string | null
@@ -816,6 +824,7 @@ export type Database = {
           description?: string
           document_ids?: string[] | null
           id?: string
+          is_test_data?: boolean
           maintenance_date?: string
           maintenance_type?: string
           next_maintenance_due?: string | null
@@ -1216,6 +1225,7 @@ export type Database = {
           category_id: string
           created_at: string
           id: string
+          is_test_data: boolean
           manufacturer: string | null
           owner_name: string | null
           ride_name: string
@@ -1228,6 +1238,7 @@ export type Database = {
           category_id: string
           created_at?: string
           id?: string
+          is_test_data?: boolean
           manufacturer?: string | null
           owner_name?: string | null
           ride_name: string
@@ -1240,6 +1251,7 @@ export type Database = {
           category_id?: string
           created_at?: string
           id?: string
+          is_test_data?: boolean
           manufacturer?: string | null
           owner_name?: string | null
           ride_name?: string
@@ -1362,6 +1374,7 @@ export type Database = {
           assessor_name: string
           created_at: string
           id: string
+          is_test_data: boolean
           last_modified_at: string | null
           last_modified_by: string | null
           notes: string | null
@@ -1378,6 +1391,7 @@ export type Database = {
           assessor_name: string
           created_at?: string
           id?: string
+          is_test_data?: boolean
           last_modified_at?: string | null
           last_modified_by?: string | null
           notes?: string | null
@@ -1394,6 +1408,7 @@ export type Database = {
           assessor_name?: string
           created_at?: string
           id?: string
+          is_test_data?: boolean
           last_modified_at?: string | null
           last_modified_by?: string | null
           notes?: string | null
