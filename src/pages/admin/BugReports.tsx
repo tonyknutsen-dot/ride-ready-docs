@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -32,19 +33,22 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Bug,
-  Filter,
   RefreshCw,
   ExternalLink,
   User,
   Clock,
   Monitor,
   AlertTriangle,
-  CheckCircle2,
   CircleDot,
   Loader2,
   Search,
+  Copy,
+  CheckCircle2,
+  Clipboard,
+  Sparkles,
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { APP_VERSION } from '@/config/appVersion';
 
 interface BugReport {
   id: string;
@@ -92,6 +96,19 @@ const SEVERITY_COLORS: Record<string, string> = {
 
 const ASSIGNEE_OPTIONS = ['Tony', 'Liam'];
 
+const ISSUE_TYPE_OPTIONS = ['bug', 'ux', 'data', 'performance', 'other'];
+
+// Helper to increment version
+const getNextVersion = (currentVersion: string): string => {
+  const match = currentVersion.match(/v(\d+)\.(\d+)/);
+  if (match) {
+    const major = parseInt(match[1]);
+    const minor = parseInt(match[2]) + 1;
+    return `v${major}.${minor}`;
+  }
+  return currentVersion;
+};
+
 const BugReports = () => {
   const { toast } = useToast();
   const [reports, setReports] = useState<BugReport[]>([]);
@@ -102,11 +119,21 @@ const BugReports = () => {
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [severityFilter, setSeverityFilter] = useState<string>('all');
+  const [versionFilter, setVersionFilter] = useState<string>('all');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
+  const [issueTypeFilter, setIssueTypeFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Multi-select for Fix Checklist
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [showPromptDialog, setShowPromptDialog] = useState(false);
+  const [generatedPrompt, setGeneratedPrompt] = useState('');
+  const [copied, setCopied] = useState(false);
+  const [checklistChecked, setChecklistChecked] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchReports();
-  }, [statusFilter, severityFilter]);
+  }, [statusFilter, severityFilter, versionFilter, roleFilter, issueTypeFilter]);
 
   const fetchReports = async () => {
     setLoading(true);
@@ -121,6 +148,15 @@ const BugReports = () => {
       }
       if (severityFilter !== 'all') {
         query = query.eq('severity', severityFilter);
+      }
+      if (versionFilter !== 'all') {
+        query = query.eq('app_version', versionFilter);
+      }
+      if (roleFilter !== 'all') {
+        query = query.eq('user_role', roleFilter);
+      }
+      if (issueTypeFilter !== 'all') {
+        query = query.eq('issue_type', issueTypeFilter);
       }
 
       const { data, error } = await query;
@@ -178,6 +214,130 @@ const BugReports = () => {
     );
   });
 
+  // Get unique versions for filter
+  const uniqueVersions = [...new Set(reports.map(r => r.app_version).filter(Boolean))];
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredReports.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredReports.map(r => r.id)));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedIds(newSet);
+  };
+
+  const selectedReports = reports.filter(r => selectedIds.has(r.id));
+
+  const generatePrompt = () => {
+    if (selectedReports.length === 0) {
+      toast({ title: 'No bugs selected', variant: 'destructive' });
+      return;
+    }
+
+    const appName = selectedReports[0]?.app_name || 'Showmen\'s Ride Ready';
+    const currentVersion = APP_VERSION;
+    const nextVersion = getNextVersion(currentVersion);
+
+    // Sort by severity (critical first)
+    const severityOrder = { critical: 0, high: 1, medium: 2, low: 3 };
+    const sorted = [...selectedReports].sort((a, b) => 
+      (severityOrder[a.severity as keyof typeof severityOrder] || 4) - 
+      (severityOrder[b.severity as keyof typeof severityOrder] || 4)
+    );
+
+    let prompt = `## Bug Fix Request
+
+**HEADER**
+- App: ${appName}
+- Target Version: ${currentVersion}
+- Scope: Fix ONLY the issues listed below. Do not change unrelated UI, pricing, data models, or authentication unless required by a fix.
+- After fixes: bump version to ${nextVersion} and mark items as "Needs Retest".
+
+---
+
+## ISSUE LIST
+
+`;
+
+    sorted.forEach((bug, index) => {
+      prompt += `### [${bug.reference_id}] ${bug.title}
+
+- **Severity:** ${bug.severity.charAt(0).toUpperCase() + bug.severity.slice(1)}
+- **Issue Type:** ${bug.issue_type.charAt(0).toUpperCase() + bug.issue_type.slice(1)}
+- **Page/Route:** ${bug.current_route || 'Unknown'}
+- **Environment:** ${bug.device_type || 'Unknown'}, ${bug.browser_info || 'Unknown'}
+`;
+
+      if (bug.steps_to_reproduce) {
+        prompt += `- **Steps to reproduce:**
+${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
+`;
+      }
+
+      prompt += `- **Expected:** ${bug.expected_result || 'Not specified'}
+- **Actual:** ${bug.actual_result || 'Not specified'}
+`;
+
+      if (bug.internal_notes) {
+        prompt += `- **Notes:** ${bug.internal_notes}
+`;
+      }
+
+      if (bug.screenshot_url) {
+        prompt += `- **Attachment:** ${bug.screenshot_url}
+`;
+      }
+
+      if (index < sorted.length - 1) {
+        prompt += '\n---\n\n';
+      }
+    });
+
+    prompt += `
+---
+
+## FOOTER
+- When each issue is resolved, update bug status to "Needs Retest".
+- Log a short change note in the Change Log with version ${nextVersion} and summary.
+`;
+
+    setGeneratedPrompt(prompt);
+    setShowPromptDialog(true);
+    setCopied(false);
+    // Reset checklist
+    setChecklistChecked(new Set());
+  };
+
+  const copyToClipboard = async () => {
+    try {
+      await navigator.clipboard.writeText(generatedPrompt);
+      setCopied(true);
+      toast({ title: 'Copied to clipboard!' });
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      toast({ title: 'Failed to copy', variant: 'destructive' });
+    }
+  };
+
+  const toggleChecklistItem = (id: string) => {
+    const newSet = new Set(checklistChecked);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setChecklistChecked(newSet);
+  };
+
   const getSeverityBadge = (severity: string) => (
     <Badge className={`${SEVERITY_COLORS[severity] || 'bg-gray-500'} text-white`}>
       {severity}
@@ -205,44 +365,53 @@ const BugReports = () => {
             <div>
               <h1 className="text-xl font-bold">Bug Reports</h1>
               <p className="text-sm text-muted-foreground">
-                {reports.length} reports total
+                {reports.length} reports total • {selectedIds.size} selected
               </p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchReports} className="gap-2">
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
+          <div className="flex items-center gap-2">
+            {selectedIds.size > 0 && (
+              <Button 
+                onClick={generatePrompt} 
+                className="gap-2 bg-gradient-to-r from-primary to-purple-600"
+              >
+                <Sparkles className="h-4 w-4" />
+                Generate Fix Prompt ({selectedIds.size})
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={fetchReports} className="gap-2">
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
         <Card>
           <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+              <div className="relative col-span-2 sm:col-span-3 lg:col-span-2">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search by reference, title, email..."
+                  placeholder="Search..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
                 />
               </div>
               <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger>
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Status</SelectItem>
                   {STATUS_OPTIONS.map((s) => (
-                    <SelectItem key={s.value} value={s.value}>
-                      {s.label}
-                    </SelectItem>
+                    <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
               <Select value={severityFilter} onValueChange={setSeverityFilter}>
-                <SelectTrigger className="w-full sm:w-40">
+                <SelectTrigger>
                   <SelectValue placeholder="Severity" />
                 </SelectTrigger>
                 <SelectContent>
@@ -251,6 +420,27 @@ const BugReports = () => {
                   <SelectItem value="high">High</SelectItem>
                   <SelectItem value="medium">Medium</SelectItem>
                   <SelectItem value="low">Low</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={versionFilter} onValueChange={setVersionFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Version" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Versions</SelectItem>
+                  {uniqueVersions.map((v) => (
+                    <SelectItem key={v} value={v!}>{v}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={roleFilter} onValueChange={setRoleFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Reporter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Reporters</SelectItem>
+                  <SelectItem value="tester">Testers</SelectItem>
+                  <SelectItem value="user">Users</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -276,28 +466,39 @@ const BugReports = () => {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-32">Reference</TableHead>
+                      <TableHead className="w-12">
+                        <Checkbox
+                          checked={selectedIds.size === filteredReports.length && filteredReports.length > 0}
+                          onCheckedChange={toggleSelectAll}
+                        />
+                      </TableHead>
+                      <TableHead className="w-28">Reference</TableHead>
                       <TableHead>Title</TableHead>
-                      <TableHead className="w-24">Severity</TableHead>
-                      <TableHead className="w-28">Status</TableHead>
-                      <TableHead className="w-24">Assigned</TableHead>
-                      <TableHead className="w-32">Date</TableHead>
-                      <TableHead className="w-20"></TableHead>
+                      <TableHead className="w-20">Severity</TableHead>
+                      <TableHead className="w-24">Status</TableHead>
+                      <TableHead className="w-16">Role</TableHead>
+                      <TableHead className="w-20">Version</TableHead>
+                      <TableHead className="w-28">Date</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {filteredReports.map((report) => (
                       <TableRow
                         key={report.id}
-                        className="cursor-pointer hover:bg-muted/50"
-                        onClick={() => setSelectedReport(report)}
+                        className={`cursor-pointer hover:bg-muted/50 ${selectedIds.has(report.id) ? 'bg-primary/5' : ''}`}
                       >
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
+                          <Checkbox
+                            checked={selectedIds.has(report.id)}
+                            onCheckedChange={() => toggleSelect(report.id)}
+                          />
+                        </TableCell>
+                        <TableCell onClick={() => setSelectedReport(report)}>
                           <code className="text-xs font-mono bg-secondary px-2 py-1 rounded">
                             {report.reference_id}
                           </code>
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={() => setSelectedReport(report)}>
                           <div className="flex items-center gap-2">
                             {report.is_after_recent_changes && (
                               <AlertTriangle className="h-4 w-4 text-warning shrink-0" />
@@ -305,22 +506,24 @@ const BugReports = () => {
                             <span className="truncate max-w-xs">{report.title}</span>
                           </div>
                         </TableCell>
-                        <TableCell>{getSeverityBadge(report.severity)}</TableCell>
-                        <TableCell>{getStatusBadge(report.status)}</TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {report.assigned_to || '—'}
-                          </span>
+                        <TableCell onClick={() => setSelectedReport(report)}>
+                          {getSeverityBadge(report.severity)}
                         </TableCell>
-                        <TableCell>
-                          <span className="text-sm text-muted-foreground">
-                            {format(new Date(report.created_at), 'dd MMM yyyy')}
-                          </span>
+                        <TableCell onClick={() => setSelectedReport(report)}>
+                          {getStatusBadge(report.status)}
                         </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="sm">
-                            View
-                          </Button>
+                        <TableCell onClick={() => setSelectedReport(report)}>
+                          <Badge variant="outline" className="text-xs">
+                            {report.user_role || 'user'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell onClick={() => setSelectedReport(report)}>
+                          <code className="text-xs font-mono">{report.app_version}</code>
+                        </TableCell>
+                        <TableCell onClick={() => setSelectedReport(report)}>
+                          <span className="text-sm text-muted-foreground">
+                            {format(new Date(report.created_at), 'dd MMM')}
+                          </span>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -526,6 +729,88 @@ const BugReports = () => {
                 </ScrollArea>
               </>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Fix Prompt Dialog */}
+        <Dialog open={showPromptDialog} onOpenChange={setShowPromptDialog}>
+          <DialogContent className="max-w-4xl max-h-[90vh] p-0">
+            <DialogHeader className="p-6 pb-0">
+              <DialogTitle className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                Lovable Fix Prompt
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="p-6 pt-4 space-y-4">
+              {/* Checklist Summary */}
+              <div className="border rounded-lg overflow-hidden">
+                <div className="bg-secondary/50 px-4 py-2 border-b">
+                  <h4 className="font-medium text-sm">Fix Checklist ({selectedReports.length} issues)</h4>
+                </div>
+                <div className="max-h-40 overflow-y-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-10"></TableHead>
+                        <TableHead className="w-28">Bug ID</TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead className="w-20">Severity</TableHead>
+                        <TableHead className="w-24">Status</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {selectedReports.map((report) => (
+                        <TableRow key={report.id}>
+                          <TableCell>
+                            <Checkbox
+                              checked={checklistChecked.has(report.id)}
+                              onCheckedChange={() => toggleChecklistItem(report.id)}
+                            />
+                          </TableCell>
+                          <TableCell>
+                            <code className="text-xs font-mono">{report.reference_id}</code>
+                          </TableCell>
+                          <TableCell className="truncate max-w-xs">{report.title}</TableCell>
+                          <TableCell>{getSeverityBadge(report.severity)}</TableCell>
+                          <TableCell>{getStatusBadge(report.status)}</TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+
+              {/* Generated Prompt */}
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm">Generated Prompt</h4>
+                  <Button
+                    size="sm"
+                    variant={copied ? 'default' : 'outline'}
+                    onClick={copyToClipboard}
+                    className="gap-2"
+                  >
+                    {copied ? (
+                      <>
+                        <CheckCircle2 className="h-4 w-4" />
+                        Copied!
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4" />
+                        Copy to Clipboard
+                      </>
+                    )}
+                  </Button>
+                </div>
+                <Textarea
+                  value={generatedPrompt}
+                  readOnly
+                  className="font-mono text-xs h-80"
+                />
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
