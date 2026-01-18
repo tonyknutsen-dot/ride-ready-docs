@@ -13,6 +13,7 @@ const corsHeaders = {
 interface TesterInviteRequest {
   email: string;
   inviterName?: string;
+  expiryDays?: number; // Days until tester role expires (0 = no expiry)
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -60,7 +61,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { email, inviterName }: TesterInviteRequest = await req.json();
+    const { email, inviterName, expiryDays }: TesterInviteRequest = await req.json();
 
     if (!email) {
       return new Response(

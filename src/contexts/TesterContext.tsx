@@ -40,13 +40,31 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data, error } = await supabase
         .from('user_roles')
-        .select('role')
+        .select('role, expires_at')
         .eq('user_id', user.id)
         .eq('role', 'tester')
         .maybeSingle();
 
-      console.log('[TesterContext] Status check:', { userId: user.id, data, error });
-      setIsTester(!!data && !error);
+      if (error) {
+        console.error('[TesterContext] Error checking tester status:', error);
+        setIsTester(false);
+        return;
+      }
+
+      // Check if role exists and hasn't expired
+      if (data) {
+        const isExpired = data.expires_at ? new Date(data.expires_at) < new Date() : false;
+        console.log('[TesterContext] Status check:', { 
+          userId: user.id, 
+          hasRole: true, 
+          expiresAt: data.expires_at, 
+          isExpired 
+        });
+        setIsTester(!isExpired);
+      } else {
+        console.log('[TesterContext] No tester role found for user:', user.id);
+        setIsTester(false);
+      }
     } catch (error) {
       console.error('[TesterContext] Error checking tester status:', error);
       setIsTester(false);

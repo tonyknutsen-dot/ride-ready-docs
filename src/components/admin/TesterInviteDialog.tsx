@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Loader2, FlaskConical, Mail, Send } from 'lucide-react';
+import { Loader2, FlaskConical, Mail, Send, Clock } from 'lucide-react';
 
 interface TesterInviteDialogProps {
   trigger?: React.ReactNode;
@@ -23,6 +23,7 @@ interface TesterInviteDialogProps {
 export function TesterInviteDialog({ trigger, onInviteSent }: TesterInviteDialogProps) {
   const [open, setOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [expiryDays, setExpiryDays] = useState('30');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,14 +38,21 @@ export function TesterInviteDialog({ trigger, onInviteSent }: TesterInviteDialog
 
     try {
       const { data, error } = await supabase.functions.invoke('send-tester-invite', {
-        body: { email },
+        body: { 
+          email,
+          expiryDays: parseInt(expiryDays) || 0
+        },
       });
 
       if (error) throw error;
 
       if (data.success) {
-        toast.success(`Tester invite sent to ${email}`);
+        const expiryMsg = parseInt(expiryDays) > 0 
+          ? ` (access will last ${expiryDays} days)`
+          : ' (permanent access)';
+        toast.success(`Tester invite sent to ${email}${expiryMsg}`);
         setEmail('');
+        setExpiryDays('30');
         setOpen(false);
         onInviteSent?.();
       } else {
@@ -96,13 +104,36 @@ export function TesterInviteDialog({ trigger, onInviteSent }: TesterInviteDialog
                 />
               </div>
             </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="tester-expiry" className="flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Access Duration
+              </Label>
+              <div className="flex gap-2 items-center">
+                <Input
+                  id="tester-expiry"
+                  type="number"
+                  min="0"
+                  value={expiryDays}
+                  onChange={(e) => setExpiryDays(e.target.value)}
+                  className="w-24"
+                  disabled={loading}
+                />
+                <span className="text-sm text-muted-foreground">days</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Set to 0 for permanent access (no expiry).
+              </p>
+            </div>
+            
             <div className="p-3 rounded-lg bg-warning/10 border border-warning/30 text-sm">
               <p className="font-medium mb-1">What happens next:</p>
               <ul className="list-disc list-inside text-muted-foreground space-y-1 text-xs">
                 <li>They'll receive an invite email with a special link</li>
-                <li>The link is valid for 7 days</li>
+                <li>The invite link is valid for 7 days</li>
                 <li>They can create an account or sign in with that email</li>
-                <li>They'll automatically get the tester role</li>
+                <li>They'll automatically get the tester role{parseInt(expiryDays) > 0 ? ` for ${expiryDays} days` : ' permanently'}</li>
               </ul>
             </div>
           </div>
