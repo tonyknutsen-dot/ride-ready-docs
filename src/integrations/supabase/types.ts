@@ -1773,6 +1773,7 @@ export type Database = {
         Returns: Json
       }
       cleanup_expired_blocks: { Args: never; Returns: number }
+      cleanup_old_blocked_ips: { Args: never; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
