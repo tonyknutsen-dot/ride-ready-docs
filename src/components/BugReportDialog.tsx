@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTester } from '@/contexts/TesterContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { APP_NAME, APP_VERSION, getLastUpdateDate } from '@/config/appVersion';
+import html2canvas from 'html2canvas';
 import {
   Dialog,
   DialogContent,
@@ -26,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Bug, Upload, Loader2, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Bug, Upload, Loader2, CheckCircle2, AlertTriangle, Camera } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface BugReportDialogProps {
@@ -86,7 +87,10 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
   const [issueType, setIssueType] = useState('bug');
   const [screenshotUrl, setScreenshotUrl] = useState('');
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+  const [isCapturingScreenshot, setIsCapturingScreenshot] = useState(false);
+  const [screenshotPreview, setScreenshotPreview] = useState<string | null>(null);
   const [isAfterRecentChanges, setIsAfterRecentChanges] = useState(false);
+  const pendingScreenshotRef = useRef(false);
   
   // Auto-captured context
   const [context, setContext] = useState<AutoCapturedContext | null>(null);
@@ -150,8 +154,98 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
         return;
       }
       setScreenshotFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setScreenshotPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
     }
   };
+
+  const captureScreenshot = async () => {
+    // Close dialog, capture, then reopen
+    pendingScreenshotRef.current = true;
+    setOpen(false);
+  };
+
+  // Handle screenshot capture after dialog closes
+  useEffect(() => {
+    if (!open && pendingScreenshotRef.current) {
+      pendingScreenshotRef.current = false;
+      
+      // Wait for dialog to fully close
+      setTimeout(async () => {
+        setIsCapturingScreenshot(true);
+        
+        try {
+          // Hide any floating elements
+          const floatingBugButton = document.querySelector('[class*="fixed"][class*="bottom"]');
+          const testModeBanner = document.querySelector('[class*="TEST MODE"]')?.closest('[class*="fixed"]');
+          
+          // Store original display values
+          const elementsToHide: { el: HTMLElement; display: string }[] = [];
+          
+          if (floatingBugButton instanceof HTMLElement) {
+            elementsToHide.push({ el: floatingBugButton, display: floatingBugButton.style.display });
+            floatingBugButton.style.display = 'none';
+          }
+          if (testModeBanner instanceof HTMLElement) {
+            elementsToHide.push({ el: testModeBanner, display: testModeBanner.style.display });
+            testModeBanner.style.display = 'none';
+          }
+
+          // Small delay to ensure elements are hidden
+          await new Promise(resolve => setTimeout(resolve, 100));
+          
+          // Capture the screenshot
+          const canvas = await html2canvas(document.body, {
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: null,
+            scale: 1, // Use 1 for faster capture, 2 for higher quality
+            logging: false,
+            ignoreElements: (element) => {
+              // Also ignore via attribute
+              return element.hasAttribute('data-hide-from-screenshot');
+            }
+          });
+          
+          // Restore hidden elements
+          elementsToHide.forEach(({ el, display }) => {
+            el.style.display = display;
+          });
+          
+          // Convert canvas to blob
+          canvas.toBlob((blob) => {
+            if (blob) {
+              const file = new File([blob], `screenshot-${Date.now()}.png`, { type: 'image/png' });
+              setScreenshotFile(file);
+              setScreenshotPreview(canvas.toDataURL('image/png'));
+              
+              toast({
+                title: 'Screenshot captured',
+                description: 'The screenshot has been attached to your bug report.',
+              });
+            }
+            
+            setIsCapturingScreenshot(false);
+            setOpen(true);
+          }, 'image/png');
+          
+        } catch (error) {
+          console.error('Screenshot capture failed:', error);
+          toast({
+            title: 'Screenshot failed',
+            description: 'Could not capture screenshot. Please upload manually.',
+            variant: 'destructive',
+          });
+          setIsCapturingScreenshot(false);
+          setOpen(true);
+        }
+      }, 300);
+    }
+  }, [open, toast]);
 
   const uploadScreenshot = async (): Promise<string | null> => {
     if (!screenshotFile || !user) return null;
@@ -264,6 +358,7 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
     setIssueType('bug');
     setScreenshotUrl('');
     setScreenshotFile(null);
+    setScreenshotPreview(null);
     setIsAfterRecentChanges(false);
     setSubmitted(false);
     setReferenceId(null);
@@ -454,27 +549,63 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
                 {/* Screenshot */}
                 <div className="space-y-2">
                   <Label>Screenshot (optional)</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleFileChange}
-                      className="flex-1"
-                    />
-                  </div>
-                  {screenshotFile && (
-                    <p className="text-xs text-muted-foreground">
-                      Selected: {screenshotFile.name}
-                    </p>
+                  
+                  {/* Capture button */}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full gap-2"
+                    onClick={captureScreenshot}
+                    disabled={isCapturingScreenshot}
+                  >
+                    <Camera className="h-4 w-4" />
+                    {isCapturingScreenshot ? 'Capturing...' : 'Capture Screenshot'}
+                  </Button>
+                  
+                  {/* Screenshot preview */}
+                  {screenshotPreview && (
+                    <div className="relative">
+                      <img 
+                        src={screenshotPreview} 
+                        alt="Screenshot preview" 
+                        className="w-full rounded-md border max-h-32 object-cover object-top"
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        className="absolute top-1 right-1 h-6 px-2 text-xs"
+                        onClick={() => {
+                          setScreenshotFile(null);
+                          setScreenshotPreview(null);
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
                   )}
-                  <div className="text-xs text-muted-foreground">
-                    Or paste a link:
-                  </div>
-                  <Input
-                    placeholder="https://..."
-                    value={screenshotUrl}
-                    onChange={(e) => setScreenshotUrl(e.target.value)}
-                  />
+                  
+                  {!screenshotPreview && (
+                    <>
+                      <div className="text-xs text-muted-foreground text-center">— or —</div>
+                      <div className="flex gap-2">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          className="flex-1"
+                        />
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Or paste a link:
+                      </div>
+                      <Input
+                        placeholder="https://..."
+                        value={screenshotUrl}
+                        onChange={(e) => setScreenshotUrl(e.target.value)}
+                      />
+                    </>
+                  )}
                 </div>
 
                 {/* Submit */}
