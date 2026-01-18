@@ -14,7 +14,13 @@ export const ItemLimitWarning = ({ className }: ItemLimitWarningProps) => {
 
   if (!subscription) return null;
 
-  const { rideCount, rideLimit, subscriptionStatus } = subscription;
+  const { rideCount, rideLimit, subscriptionStatus, isTesterAccount } = subscription;
+  
+  // TESTER BYPASS: Don't show limit warnings for testers
+  if (isTesterAccount) {
+    return null;
+  }
+  
   const remaining = rideLimit - rideCount;
   const isAtLimit = rideCount >= rideLimit;
   const isNearLimit = remaining <= 2 && remaining > 0;

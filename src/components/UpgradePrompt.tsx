@@ -4,16 +4,26 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { PlanSelection } from './PlanSelection';
+import { useTester } from '@/contexts/TesterContext';
+
 interface UpgradePromptProps {
   feature: string;
   requiredPlan: 'basic' | 'advanced';
   compact?: boolean;
 }
+
 export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   feature,
   requiredPlan,
   compact = false
 }) => {
+  const { isTester } = useTester();
+  
+  // TESTER BYPASS: Don't show upgrade prompts for testers
+  if (isTester) {
+    return null;
+  }
+  
   const planName = requiredPlan === 'basic' ? 'Documents & Compliance' : 'Operations & Maintenance';
   const price = requiredPlan === 'basic' ? '£6.99' : '£18.99';
   if (compact) {

@@ -3,9 +3,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTester } from "@/contexts/TesterContext";
 import { useSubscription, PRICING } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -14,6 +15,7 @@ import { format } from "date-fns";
 
 export default function PlanBilling() {
   const { user } = useAuth();
+  const { isTester } = useTester();
   const { toast } = useToast();
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
@@ -70,6 +72,59 @@ export default function PlanBilling() {
         <Card className="border-2 border-border">
           <CardContent className="py-10 flex items-center justify-center text-muted-foreground">
             <Loader2 className="w-5 h-5 mr-2 animate-spin" /> Loading…
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // TESTER BYPASS: Show tester billing page
+  if (isTester) {
+    return (
+      <div className="p-4 max-w-2xl mx-auto space-y-4 pb-20 md:pb-4">
+        <Button variant="ghost" onClick={() => nav('/settings')} className="hover:bg-primary/10">
+          <ArrowLeft className="w-4 h-4 mr-2" />Back to Settings
+        </Button>
+
+        <Card className="border-2 border-warning/50 bg-gradient-to-br from-warning/10 to-transparent shadow-elegant">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FlaskConical className="w-5 h-5 text-warning" />
+              Tester Account
+            </CardTitle>
+            <CardDescription>You have full access without billing.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="rounded-lg border-2 border-warning/30 p-4 space-y-3 bg-warning/5">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-warning/20 flex items-center justify-center">
+                  <Unlock className="w-5 h-5 text-warning" />
+                </div>
+                <div>
+                  <div className="font-semibold flex items-center gap-2">
+                    All Features Unlocked
+                    <Badge variant="outline" className="text-xs bg-warning/20 border-warning/50">
+                      Tester
+                    </Badge>
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    Full access to all paid features without any charges
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Separator />
+
+            <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
+              <p className="font-medium">Tester Benefits:</p>
+              <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <li>Full access to Operations & Maintenance features</li>
+                <li>Unlimited items (no billing for extras)</li>
+                <li>No Stripe checkout or invoices</li>
+                <li>Activity flagged as test data</li>
+              </ul>
+            </div>
           </CardContent>
         </Card>
       </div>
