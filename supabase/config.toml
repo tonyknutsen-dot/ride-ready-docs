@@ -153,6 +153,15 @@ verify_jwt = true
 [functions.quick-unblock]
 verify_jwt = false
 
+[functions.send-bug-report-notification]
+verify_jwt = true
+
+[functions.send-tester-invite]
+verify_jwt = true
+
+[functions.accept-tester-invite]
+verify_jwt = true
+
 [analytics]
 enabled = false
 port = 54327

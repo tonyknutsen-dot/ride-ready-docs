@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Settings as SettingsIcon, User, FileText, Globe, Users, ArrowRight, Mail, ArrowLeft, Info } from 'lucide-react';
+import { Settings as SettingsIcon, User, FileText, Globe, Users, ArrowRight, Mail, ArrowLeft, Info, Bug } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
@@ -26,6 +26,7 @@ import { useNavigate } from 'react-router-dom';
 import { APP_NAME, APP_VERSION, formatVersionDate, getLastUpdateDate } from '@/config/appVersion';
 import AboutAppDialog from '@/components/AboutAppDialog';
 import TesterTools from '@/components/TesterTools';
+import BugReportDialog from '@/components/BugReportDialog';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -471,6 +472,14 @@ const Settings = () => {
                   <Button variant="outline" size="sm" className="w-full gap-2">
                     <Info className="h-4 w-4" />
                     View Full Change Log
+                  </Button>
+                }
+              />
+              <BugReportDialog
+                trigger={
+                  <Button variant="outline" size="sm" className="w-full gap-2 border-destructive/50 text-destructive hover:bg-destructive/10">
+                    <Bug className="h-4 w-4" />
+                    Report a Bug
                   </Button>
                 }
               />
