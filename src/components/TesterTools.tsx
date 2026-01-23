@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTester } from '@/contexts/TesterContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -14,7 +15,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { FlaskConical, Trash2, Loader2, AlertTriangle } from 'lucide-react';
+import { FlaskConical, Trash2, Loader2, AlertTriangle, Bug, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { APP_VERSION } from '@/config/appVersion';
 
@@ -22,6 +23,7 @@ const TesterTools = () => {
   const { isTester } = useTester();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [showResetDialog, setShowResetDialog] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
@@ -144,6 +146,20 @@ const TesterTools = () => {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Bug Reports Link */}
+          <Button 
+            variant="outline"
+            className="w-full justify-between gap-2 h-12 border-primary/30 hover:bg-primary/5"
+            onClick={() => navigate('/my-bug-reports')}
+          >
+            <div className="flex items-center gap-2">
+              <Bug className="h-4 w-4 text-primary" />
+              <span>My Bug Reports</span>
+            </div>
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+
+          {/* Reset Section */}
           <div className="p-4 rounded-lg bg-secondary/50 border border-warning/20">
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-warning-foreground shrink-0 mt-0.5" />
