@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -36,7 +37,14 @@ interface RideDetailProps {
 const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDetailProps) => {
   const { user } = useAuth();
   const { subscription } = useSubscription();
-  const [activeTab, setActiveTab] = useState(initialTab);
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Sync tab state with URL for proper back/forward navigation
+  const activeTab = searchParams.get('tab') || initialTab;
+  const setActiveTab = (tab: string) => {
+    setSearchParams({ tab }, { replace: true });
+  };
+  
   const [isEditing, setIsEditing] = useState(false);
   const [rideStats, setRideStats] = useState({
     docCount: 0,
