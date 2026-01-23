@@ -110,12 +110,26 @@ export default function SupportMessages() {
       // Send email notification if requested and we have a response
       if (sendEmail && updates.admin_response && selectedMessage) {
         try {
-          // Get user email from auth - we need to call an edge function since we can't query auth.users directly
+          // First, fetch the user's email using the admin-only edge function
+          const { data: emailData, error: fetchEmailError } = await supabase.functions.invoke('get-user-email', {
+            body: { userId: selectedMessage.user_id },
+          });
+
+          if (fetchEmailError || !emailData?.email) {
+            console.error('Failed to fetch user email:', fetchEmailError);
+            toast.warning('Message saved but could not fetch user email');
+            fetchMessages();
+            setSelectedMessage(null);
+            setResponse('');
+            return;
+          }
+
+          // Now send the email with the correct user email
           const { error: emailError } = await supabase.functions.invoke('send-support-response', {
             body: {
               messageId,
               adminResponse: updates.admin_response,
-              userEmail: user?.email, // This will be replaced by fetching actual user email
+              userEmail: emailData.email,
               subject: selectedMessage.subject,
             },
           });
