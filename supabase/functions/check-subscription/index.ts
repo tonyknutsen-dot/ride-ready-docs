@@ -41,9 +41,35 @@ serve(async (req) => {
     if (!authHeader) throw new Error("No authorization header provided");
     logStep("Authorization header found");
 
-    const token = authHeader.replace("Bearer ", "");
+    const token = authHeader.replace("Bearer ", "").trim();
+    if (!token) throw new Error("Authorization token missing");
+
+    // NOTE: Supabase can sometimes return "Auth session missing!" if the session referenced
+    // by the JWT's session_id claim no longer exists (e.g. after logout, revoked session, etc.).
+    // This should NOT crash the app. Treat it as unauthenticated and return a safe unsubscribed state.
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    if (userError) {
+      const msg = userError.message || "Unknown auth error";
+      if (msg.includes("Auth session missing")) {
+        logStep("Auth session missing - returning safe unsubscribed state", { message: msg });
+        return new Response(
+          JSON.stringify({
+            subscribed: false,
+            plan: null,
+            subscription_end: null,
+            extra_items: 0,
+            billing_cycle: null,
+          }),
+          {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          }
+        );
+      }
+
+      throw new Error(`Authentication error: ${msg}`);
+    }
+
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
