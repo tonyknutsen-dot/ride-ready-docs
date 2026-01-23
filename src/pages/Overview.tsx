@@ -12,6 +12,7 @@ import { StatSkeleton, GridSkeleton } from "@/components/Skeletons";
 import { useOverviewData } from "@/hooks/useOverviewData";
 import { useState, useCallback } from "react";
 import { PullToRefresh } from "@/components/PullToRefresh";
+import { WelcomeModal } from "@/components/WelcomeModal";
 
 const Overview = () => {
   const navigate = useNavigate();
@@ -84,6 +85,8 @@ const Overview = () => {
   }
 
   return (
+    <>
+    <WelcomeModal />
     <PullToRefresh onRefresh={handleRefresh} disabled={isLoading}>
     <div className="container mx-auto py-8 pb-24 md:pb-8 space-y-8">
       {/* Device Hint for Mobile Users */}
@@ -455,6 +458,7 @@ const Overview = () => {
       <QuickDocumentUpload open={showDocumentUpload} onOpenChange={setShowDocumentUpload} />
     </div>
     </PullToRefresh>
+    </>
   );
 };
 
