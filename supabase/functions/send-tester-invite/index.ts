@@ -129,7 +129,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email
     const emailResponse = await resend.emails.send({
-      from: "Showmen's Ride Ready <onboarding@resend.dev>",
+      from: "Showmen's Ride Ready <info@ridereadydocs.com>",
       to: [email],
       subject: "You're invited to be a Tester! 🧪",
       html: `
