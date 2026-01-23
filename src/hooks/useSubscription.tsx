@@ -217,6 +217,7 @@ export const useSubscription = () => {
       return { blocked: true, reason: 'tester_account' };
     }
 
+    // Pass full return URL including path for reliable redirect after checkout
     const returnUrl = window.location.origin;
     const { data, error } = await supabase.functions.invoke('create-checkout', {
       body: { plan, billingCycle, extraItems, returnUrl },
@@ -225,7 +226,8 @@ export const useSubscription = () => {
     if (error) throw error;
     
     if (data?.url) {
-      window.open(data.url, '_blank');
+      // Redirect in same tab for better UX - user returns to billing page after checkout
+      window.location.href = data.url;
     }
     
     return data;
