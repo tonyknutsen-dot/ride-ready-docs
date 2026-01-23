@@ -27,8 +27,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Bug, Upload, Loader2, CheckCircle2, AlertTriangle, Camera } from 'lucide-react';
+import { Bug, Upload, Loader2, CheckCircle2, AlertTriangle, Camera, GripHorizontal } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useCallback } from 'react';
 
 interface BugReportDialogProps {
   trigger?: React.ReactNode;
@@ -77,6 +78,12 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
   const [submitted, setSubmitted] = useState(false);
   const [referenceId, setReferenceId] = useState<string | null>(null);
   
+  // Draggable state
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragStartPos = useRef({ x: 0, y: 0 });
+  const dialogRef = useRef<HTMLDivElement>(null);
+  
   // Form fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -94,6 +101,73 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
   
   // Auto-captured context
   const [context, setContext] = useState<AutoCapturedContext | null>(null);
+
+  // Reset position when dialog opens
+  useEffect(() => {
+    if (open) {
+      setPosition({ x: 0, y: 0 });
+    }
+  }, [open]);
+
+  // Drag handlers
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    setIsDragging(true);
+    dragStartPos.current = { x: e.clientX - position.x, y: e.clientY - position.y };
+  }, [position]);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isDragging) return;
+    setPosition({
+      x: e.clientX - dragStartPos.current.x,
+      y: e.clientY - dragStartPos.current.y,
+    });
+  }, [isDragging]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, handleMouseMove, handleMouseUp]);
+
+  // Touch handlers for mobile
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    const touch = e.touches[0];
+    setIsDragging(true);
+    dragStartPos.current = { x: touch.clientX - position.x, y: touch.clientY - position.y };
+  }, [position]);
+
+  const handleTouchMove = useCallback((e: TouchEvent) => {
+    if (!isDragging) return;
+    const touch = e.touches[0];
+    setPosition({
+      x: touch.clientX - dragStartPos.current.x,
+      y: touch.clientY - dragStartPos.current.y,
+    });
+  }, [isDragging]);
+
+  const handleTouchEnd = useCallback(() => {
+    setIsDragging(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging) {
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
+      window.addEventListener('touchend', handleTouchEnd);
+      return () => {
+        window.removeEventListener('touchmove', handleTouchMove);
+        window.removeEventListener('touchend', handleTouchEnd);
+      };
+    }
+  }, [isDragging, handleTouchMove, handleTouchEnd]);
 
   // Capture context on dialog open
   useEffect(() => {
@@ -378,7 +452,24 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-lg max-h-[90vh] p-0">
+      <DialogContent 
+        ref={dialogRef}
+        className="max-w-lg max-h-[90vh] p-0"
+        style={{
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          cursor: isDragging ? 'grabbing' : 'auto',
+        }}
+      >
+        {/* Drag handle */}
+        <div 
+          className="flex items-center justify-center py-2 cursor-grab active:cursor-grabbing border-b bg-muted/30 rounded-t-lg select-none"
+          onMouseDown={handleMouseDown}
+          onTouchStart={handleTouchStart}
+        >
+          <GripHorizontal className="h-5 w-5 text-muted-foreground" />
+          <span className="sr-only">Drag to move</span>
+        </div>
+        
         {submitted ? (
           <div className="p-6 text-center space-y-4">
             <div className="w-16 h-16 mx-auto rounded-full bg-success/20 flex items-center justify-center">
