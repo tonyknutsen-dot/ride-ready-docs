@@ -287,10 +287,11 @@ export default function TesterInvite() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder="Enter your password"
                   required
                   disabled={authLoading}
                   minLength={6}
+                  autoComplete="new-password"
                 />
               </div>
 
@@ -302,9 +303,10 @@ export default function TesterInvite() {
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder="Confirm your password"
                     required
                     disabled={authLoading}
+                    autoComplete="new-password"
                   />
                 </div>
               )}
