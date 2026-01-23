@@ -49,23 +49,25 @@ interface AutoCapturedContext {
 }
 
 const SEVERITY_OPTIONS = [
-  { value: 'low', label: 'Low', description: 'Minor issue, workaround exists' },
-  { value: 'medium', label: 'Medium', description: 'Feature impaired but usable' },
-  { value: 'high', label: 'High', description: 'Major feature broken' },
-  { value: 'critical', label: 'Critical', description: 'App unusable or data at risk' },
+  { value: 'low', label: 'Low', description: 'Minor annoyance' },
+  { value: 'medium', label: 'Medium', description: 'Something feels off' },
+  { value: 'high', label: 'High', description: 'Couldn\'t complete a task' },
+  { value: 'critical', label: 'Critical', description: 'App crashed or data lost' },
 ];
 
 const ISSUE_TYPE_OPTIONS = [
-  { value: 'bug', label: 'Bug' },
-  { value: 'ux', label: 'UX Issue' },
-  { value: 'data', label: 'Data Problem' },
-  { value: 'performance', label: 'Performance' },
-  { value: 'other', label: 'Other' },
+  { value: 'bug', label: 'Bug', description: 'Something is broken' },
+  { value: 'confusing', label: 'Confusing', description: 'Hard to understand or use' },
+  { value: 'slow', label: 'Slow/Laggy', description: 'Takes too long' },
+  { value: 'missing', label: 'Missing', description: 'Expected something that\'s not there' },
+  { value: 'wrong-place', label: 'Wrong Place', description: 'Ended up somewhere unexpected' },
+  { value: 'idea', label: 'Idea/Suggestion', description: 'Not a bug, just a thought' },
+  { value: 'question', label: 'Question', description: 'Not sure if this is right' },
 ];
 
-const STEPS_PLACEHOLDER = `1) What were you doing when the issue occurred?
-2) What did you click or interact with?
-3) What happened next?`;
+const STEPS_PLACEHOLDER = `1) What were you trying to do?
+2) What did you tap/click?
+3) What happened?`;
 
 export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
   const { user } = useAuth();
@@ -497,10 +499,10 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
             <DialogHeader className="p-6 pb-0">
               <DialogTitle className="flex items-center gap-2">
                 <Bug className="h-5 w-5 text-destructive" />
-                Report a Bug
+                Report an Issue
               </DialogTitle>
               <DialogDescription>
-                Help us fix issues by providing details about what went wrong.
+                You don't need to be technical - just tell us what happened!
               </DialogDescription>
             </DialogHeader>
             
@@ -540,10 +542,10 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
 
                 {/* Title */}
                 <div className="space-y-2">
-                  <Label htmlFor="title">Issue Title *</Label>
+                  <Label htmlFor="title">Short Title *</Label>
                   <Input
                     id="title"
-                    placeholder="Brief summary of the issue"
+                    placeholder="e.g., 'Button didn't work' or 'Page looks wrong'"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     required
@@ -553,7 +555,7 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
                 {/* Severity & Type */}
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label>Severity *</Label>
+                    <Label>How bad is it? *</Label>
                     <Select value={severity} onValueChange={setSeverity}>
                       <SelectTrigger>
                         <SelectValue />
@@ -563,15 +565,18 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
                           <SelectItem key={opt.value} value={opt.value}>
                             <div className="flex items-center gap-2">
                               {opt.value === 'critical' && <AlertTriangle className="h-3 w-3 text-destructive" />}
-                              {opt.label}
+                              <span>{opt.label}</span>
                             </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {SEVERITY_OPTIONS.find(o => o.value === severity)?.description}
+                    </p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Issue Type *</Label>
+                    <Label>What kind of issue? *</Label>
                     <Select value={issueType} onValueChange={setIssueType}>
                       <SelectTrigger>
                         <SelectValue />
@@ -579,20 +584,25 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
                       <SelectContent>
                         {ISSUE_TYPE_OPTIONS.map((opt) => (
                           <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
+                            <div className="flex flex-col">
+                              <span>{opt.label}</span>
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {ISSUE_TYPE_OPTIONS.find(o => o.value === issueType)?.description}
+                    </p>
                   </div>
                 </div>
 
                 {/* Description */}
                 <div className="space-y-2">
-                  <Label htmlFor="description">What went wrong? *</Label>
+                  <Label htmlFor="description">Tell us what happened *</Label>
                   <Textarea
                     id="description"
-                    placeholder="Describe the issue in detail..."
+                    placeholder="Just describe it in your own words - no technical language needed!"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     rows={3}
@@ -612,28 +622,27 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
                   />
                 </div>
 
-                {/* Expected vs Actual */}
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label htmlFor="expected">Expected Result</Label>
-                    <Textarea
-                      id="expected"
-                      placeholder="What should have happened?"
-                      value={expectedResult}
-                      onChange={(e) => setExpectedResult(e.target.value)}
-                      rows={2}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="actual">Actual Result</Label>
-                    <Textarea
-                      id="actual"
-                      placeholder="What actually happened?"
-                      value={actualResult}
-                      onChange={(e) => setActualResult(e.target.value)}
-                      rows={2}
-                    />
-                  </div>
+                {/* Tester-friendly fields - what surprised you */}
+                <div className="space-y-2">
+                  <Label htmlFor="expected">What did you expect to happen? <span className="text-muted-foreground font-normal">(if you have an idea)</span></Label>
+                  <Textarea
+                    id="expected"
+                    placeholder="I thought it would... (leave blank if unsure)"
+                    value={expectedResult}
+                    onChange={(e) => setExpectedResult(e.target.value)}
+                    rows={2}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="actual">What surprised or frustrated you?</Label>
+                  <Textarea
+                    id="actual"
+                    placeholder="It felt wrong because... / I was confused when..."
+                    value={actualResult}
+                    onChange={(e) => setActualResult(e.target.value)}
+                    rows={2}
+                  />
                 </div>
 
                 {/* Screenshot */}
