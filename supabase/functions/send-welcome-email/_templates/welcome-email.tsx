@@ -47,7 +47,7 @@ export const WelcomeEmail = ({ email }: WelcomeEmailProps) => (
 
         <Section style={ctaSection}>
           <Link
-            href="https://310a4bd0-111d-48cb-b45f-f3b22b34bee6.lovableproject.com/dashboard"
+            href="https://ride-ready-docs.lovable.app/overview"
             style={button}
           >
             Go to Dashboard
