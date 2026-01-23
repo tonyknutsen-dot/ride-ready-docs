@@ -7,7 +7,7 @@
  * This is the SINGLE source of truth for the app version.
  */
 
-export const APP_VERSION = "v0.9";
+export const APP_VERSION = "v0.10";
 
 export const APP_NAME = "Showmen's Ride Ready";
 
@@ -24,6 +24,11 @@ export interface ChangeLogEntry {
 }
 
 export const CHANGE_LOG: ChangeLogEntry[] = [
+  {
+    version: "v0.10",
+    date: "2026-01-23",
+    description: "Bug fixes: Added 'Add Ride' button in document upload when no equipment exists, fixed Checks icon for testers, improved image loading performance, updated placeholder names with fairground examples."
+  },
   {
     version: "v0.9",
     date: "2026-01-18",

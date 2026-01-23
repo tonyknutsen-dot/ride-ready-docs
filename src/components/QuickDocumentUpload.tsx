@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import DocumentUpload from './DocumentUpload';
-import { FolderOpen } from 'lucide-react';
+import { FolderOpen, Plus } from 'lucide-react';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -21,6 +23,7 @@ interface QuickDocumentUploadProps {
 
 export function QuickDocumentUpload({ open, onOpenChange }: QuickDocumentUploadProps) {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [rides, setRides] = useState<Ride[]>([]);
   const [selectedRideId, setSelectedRideId] = useState<string>('');
   const [loading, setLoading] = useState(true);
@@ -63,6 +66,11 @@ export function QuickDocumentUpload({ open, onOpenChange }: QuickDocumentUploadP
     setSelectedRideId('');
   };
 
+  const handleAddRide = () => {
+    onOpenChange(false);
+    navigate('/rides?action=add');
+  };
+
   const selectedRide = rides.find(r => r.id === selectedRideId);
 
   return (
@@ -85,9 +93,15 @@ export function QuickDocumentUpload({ open, onOpenChange }: QuickDocumentUploadP
             {loading ? (
               <p className="text-sm text-muted-foreground">Loading equipment...</p>
             ) : rides.length === 0 ? (
-              <p className="text-sm text-muted-foreground">
-                No equipment found. Please add equipment first from the Rides page.
-              </p>
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  No equipment found. Add your first ride or stall to upload documents.
+                </p>
+                <Button onClick={handleAddRide} className="w-full gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Your First Ride or Stall
+                </Button>
+              </div>
             ) : (
               <Select value={selectedRideId} onValueChange={setSelectedRideId}>
                 <SelectTrigger id="ride-select">

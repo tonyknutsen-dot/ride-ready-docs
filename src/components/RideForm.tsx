@@ -460,7 +460,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                 id="ride_name"
                 value={formData.ride_name}
                 onChange={(e) => setFormData({ ...formData, ride_name: e.target.value })}
-                placeholder="e.g., Waltzer, Hook-a-Duck, Generator 45kVA"
+                placeholder="e.g., Mickey's Waltzer, Super Bob Dodgems, Giant Wheel"
                 className={errors.ride_name ? "border-destructive" : ""}
               />
               {errors.ride_name && (
