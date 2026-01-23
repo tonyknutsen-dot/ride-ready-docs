@@ -38,12 +38,21 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Verify the user is an admin
-    const token = authHeader.replace("Bearer ", "");
+    const token = authHeader.replace("Bearer ", "").trim();
+    if (!token) {
+      return new Response(
+        JSON.stringify({ error: "Authorization token missing" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
     if (authError || !user) {
+      const msg = authError?.message || "Invalid token";
+      console.error("Auth error in send-tester-invite:", msg);
       return new Response(
-        JSON.stringify({ error: "Invalid token" }),
+        JSON.stringify({ error: msg.includes("session") ? "Session expired, please sign in again" : "Invalid token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
