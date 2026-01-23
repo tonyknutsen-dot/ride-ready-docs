@@ -321,6 +321,17 @@ export default function Diagnostics() {
     }
 
     setRunning(false);
+    
+    // Log all results to console for debugging
+    setTests(prev => {
+      console.log('[DIAGNOSTICS] === Test Results ===');
+      prev.forEach(t => {
+        const icon = t.status === 'pass' ? '✓' : t.status === 'fail' ? '✗' : t.status === 'warning' ? '⚠' : '○';
+        console.log(`[DIAGNOSTICS] ${icon} ${t.name}: ${t.status.toUpperCase()}${t.message ? ` - ${t.message}` : ''}${t.details ? ` (${t.details})` : ''}`);
+      });
+      console.log('[DIAGNOSTICS] === End Results ===');
+      return prev;
+    });
   };
 
   const handleSignOut = async () => {
