@@ -25,12 +25,26 @@ export const useAuth = () => {
 };
 
 // Sync subscription status with Stripe (debounced)
+// Skip for testers to avoid unnecessary API calls
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
-const syncSubscriptionStatus = async () => {
+const syncSubscriptionStatus = async (userId: string) => {
   // Debounce syncs to avoid excessive API calls
   if (syncTimeout) clearTimeout(syncTimeout);
   syncTimeout = setTimeout(async () => {
     try {
+      // Check if user is a tester first - skip Stripe sync for testers
+      const { data: testerRole } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', 'tester')
+        .maybeSingle();
+      
+      if (testerRole) {
+        console.log('[AUTH] Skipping Stripe sync for tester account');
+        return;
+      }
+      
       await supabase.functions.invoke('check-subscription');
     } catch (error) {
       console.error('Error syncing subscription:', error);
@@ -88,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
               // Sync subscription status with Stripe on login
               if (event === 'SIGNED_IN') {
-                syncSubscriptionStatus();
+                syncSubscriptionStatus(session.user.id);
               }
             }
           }, 0);
@@ -116,7 +130,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await supabase.auth.signOut();
         } else {
           // Sync subscription status with Stripe on page load
-          syncSubscriptionStatus();
+          syncSubscriptionStatus(session.user.id);
         }
       }
       
