@@ -125,12 +125,34 @@ export default function TesterInvite() {
 
     try {
       if (isSignUp) {
-        const { error } = await signUp(email, password);
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/tester-invite/${token}`,
+          },
+        });
+        
         if (error) throw error;
+        
+        // Check if user already exists (identities will be empty)
+        if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
+          toast.error('An account with this email already exists. Please sign in instead.');
+          setIsSignUp(false);
+          return;
+        }
+        
+        // Check if email confirmation is required
+        if (data.user && !data.session) {
+          toast.success('Please check your email to confirm your account, then click the invite link again.');
+          return;
+        }
+        
         toast.success('Account created! Accepting your tester invite...');
       } else {
         const { error } = await signIn(email, password);
         if (error) throw error;
+        toast.success('Signed in! Accepting your tester invite...');
       }
     } catch (error: any) {
       console.error('Auth error:', error);
