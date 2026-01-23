@@ -129,7 +129,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send email
     const emailResponse = await resend.emails.send({
-      from: "Showmen's Ride Ready <info@ridereadydocs.com>",
+      from: "Ride Ready Docs <info@ridereadydocs.com>",
       to: [email],
       subject: "You're invited to be a Tester! 🧪",
       html: `
@@ -154,7 +154,7 @@ const handler = async (req: Request): Promise<Response> => {
             </div>
             <div class="content">
               <p>Hi there!</p>
-              <p>${inviterName ? `<strong>${inviterName}</strong> has` : 'You have been'} invited you to join <strong>Showmen's Ride Ready</strong> as a tester.</p>
+               <p>${inviterName ? `<strong>${inviterName}</strong> has` : 'You have been'} invited you to join <strong>Ride Ready Docs</strong> as a tester.</p>
               <p>As a tester, you'll:</p>
               <ul>
                 <li>Get early access to new features</li>
@@ -170,7 +170,7 @@ const handler = async (req: Request): Promise<Response> => {
               </p>
             </div>
             <div class="footer">
-              <p>Showmen's Ride Ready - Document Management for Fairground Professionals</p>
+               <p>Ride Ready Docs - Document Management for Fairground Professionals</p>
             </div>
           </div>
         </body>
