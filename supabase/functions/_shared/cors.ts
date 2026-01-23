@@ -4,6 +4,7 @@
 const ALLOWED_ORIGINS = [
   'https://ridereadydocs.co.uk',
   'https://www.ridereadydocs.co.uk',
+  'https://ride-ready-docs.lovable.app',
   'http://localhost:5173',  // Vite dev server
   'http://localhost:8910',  // Lovable preview
   'http://localhost:3000',  // Alternative dev port
@@ -25,7 +26,9 @@ export const getCorsHeaders = (requestOrigin: string | null): Record<string, str
 
   // Check if origin is in allowed list
   const isAllowed = requestOrigin && ALLOWED_ORIGINS.some(allowed => 
-    requestOrigin === allowed || requestOrigin.endsWith('.lovableproject.com')
+    requestOrigin === allowed ||
+    requestOrigin.endsWith('.lovableproject.com') ||
+    requestOrigin.endsWith('.lovable.app')
   );
 
   return {
