@@ -27,7 +27,8 @@ const Header = () => {
 
   const handleSignOut = async () => {
     const { error } = await signOut();
-    if (error) {
+    // "Auth session missing" means the session was already invalidated - that's fine, user is signed out
+    if (error && !error.message?.includes("session")) {
       toast({
         title: "Error signing out",
         description: error.message,
@@ -38,6 +39,8 @@ const Header = () => {
         title: "Signed out successfully",
         description: "You have been signed out of your account.",
       });
+      // Force navigation to home
+      window.location.href = "/";
     }
   };
 
