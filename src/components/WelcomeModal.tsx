@@ -20,47 +20,36 @@ export function WelcomeModal() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function checkFirstVisit() {
+    async function checkForRides() {
       if (!user) {
         setLoading(false);
         return;
       }
 
       try {
-        // Check if user has any rides - if not, this is likely their first real visit
+        // Check if user has any rides - show modal if they don't
         const { count: rideCount } = await supabase
           .from('rides')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
 
-        // Check if we've already shown this modal (stored in localStorage)
-        const hasSeenWelcome = localStorage.getItem(`welcome_modal_seen_${user.id}`);
-
-        // Show modal if: no rides AND haven't seen welcome modal before
-        if (rideCount === 0 && !hasSeenWelcome) {
-          setOpen(true);
-        }
+        // Show modal if user has no rides
+        setOpen(rideCount === 0);
       } catch (error) {
-        console.error('Error checking first visit:', error);
+        console.error('Error checking for rides:', error);
       } finally {
         setLoading(false);
       }
     }
 
-    checkFirstVisit();
+    checkForRides();
   }, [user]);
 
   const handleDismiss = () => {
-    if (user) {
-      localStorage.setItem(`welcome_modal_seen_${user.id}`, 'true');
-    }
     setOpen(false);
   };
 
   const handleAddEquipment = () => {
-    if (user) {
-      localStorage.setItem(`welcome_modal_seen_${user.id}`, 'true');
-    }
     setOpen(false);
     navigate('/rides?action=add');
   };
@@ -68,9 +57,7 @@ export function WelcomeModal() {
   if (loading) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) handleDismiss();
-    }}>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-center sm:text-left">
           <div className="flex items-center gap-2 mb-2">
