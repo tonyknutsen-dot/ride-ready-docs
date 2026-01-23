@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { PlanSelection } from "@/components/PlanSelection";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { StripeInstructionModal } from "@/components/StripeInstructionModal";
 import { format } from "date-fns";
 
 export default function PlanBilling() {
@@ -24,6 +25,7 @@ export default function PlanBilling() {
   const [portalLoading, setPortalLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showReturnBanner, setShowReturnBanner] = useState(false);
+  const [showStripeModal, setShowStripeModal] = useState(false);
   // Handle success/cancel from Stripe checkout
   useEffect(() => {
     const success = searchParams.get('success');
@@ -48,9 +50,15 @@ export default function PlanBilling() {
     }
   }, [searchParams, toast, nav, checkSubscriptionStatus]);
 
-  const handleManageSubscription = async () => {
+  // Show the instruction modal instead of directly opening Stripe
+  const handleManageSubscriptionClick = () => {
+    setShowStripeModal(true);
+  };
+
+  const handleContinueToStripe = async () => {
     setPortalLoading(true);
-    setShowReturnBanner(true); // Show the return banner
+    setShowReturnBanner(true);
+    setShowStripeModal(false);
     try {
       await openCustomerPortal();
     } catch (error) {
@@ -299,7 +307,7 @@ export default function PlanBilling() {
                 <Button 
                   variant="outline" 
                   className="flex-1 border-2 hover:bg-primary/10 hover:border-primary"
-                  onClick={handleManageSubscription}
+                  onClick={handleManageSubscriptionClick}
                   disabled={portalLoading}
                 >
                   {portalLoading ? (
@@ -372,7 +380,7 @@ export default function PlanBilling() {
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={handleManageSubscription}
+                onClick={handleManageSubscriptionClick}
                 disabled={portalLoading}
                 className="border-2 border-success/50 hover:bg-success/10 hover:border-success"
               >
@@ -396,6 +404,15 @@ export default function PlanBilling() {
           )}
         </CardContent>
       </Card>
+
+      {/* Stripe Instruction Modal */}
+      <StripeInstructionModal
+        open={showStripeModal}
+        onClose={() => setShowStripeModal(false)}
+        onContinue={handleContinueToStripe}
+        isPortal={true}
+        loading={portalLoading}
+      />
     </div>
   );
 }
