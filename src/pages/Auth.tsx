@@ -8,7 +8,8 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff } from 'lucide-react';
+import { Loader2, Eye, EyeOff, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { z } from 'zod';
 import logo from '@/assets/logo.png';
 import { COUNTRIES } from '@/constants/profile';
@@ -28,6 +29,12 @@ const resetSchema = z.object({
   email: z.string().email('Please enter a valid email address').max(255, 'Email must be less than 255 characters')
 });
 
+interface FormNotice {
+  type: 'success' | 'error' | 'info';
+  title: string;
+  message: string;
+}
+
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
@@ -36,11 +43,18 @@ const Auth = () => {
   const [showResetForm, setShowResetForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [formNotice, setFormNotice] = useState<FormNotice | null>(null);
   
   const { signIn, signUp, resetPassword, user } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+
+  // Clear notice when switching tabs
+  useEffect(() => {
+    setFormNotice(null);
+    setErrors({});
+  }, [activeTab]);
 
   useEffect(() => {
     if (user) {
@@ -109,6 +123,12 @@ const Auth = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Prevent double submission
+    if (isLoading) return;
+    
+    // Clear previous notices
+    setFormNotice(null);
+    
     if (activeTab === 'signin') {
       if (!validateForm(formData)) return;
     } else {
@@ -123,37 +143,48 @@ const Auth = () => {
         : await signUp(formData.email, formData.password, formData.country);
 
       if (error) {
-        if (error.message.includes('Invalid login credentials')) {
-          toast({
-            title: "Login failed",
-            description: "Invalid email or password. Please check your credentials and try again.",
-            variant: "destructive",
+        const errorMsg = error.message?.toLowerCase() || '';
+        
+        if (errorMsg.includes('invalid login credentials')) {
+          setFormNotice({
+            type: 'error',
+            title: 'Login failed',
+            message: 'Invalid email or password. Please check your credentials and try again.'
           });
-        } else if (error.message.includes('User already registered')) {
-          toast({
-            title: "Account exists",
-            description: "An account with this email already exists. Please sign in instead.",
-            variant: "destructive",
+        } else if (errorMsg.includes('already registered') || errorMsg.includes('user already') || errorMsg.includes('already exists')) {
+          // Account already exists - offer to sign in or reset password
+          setFormNotice({
+            type: 'info',
+            title: 'Account already exists',
+            message: 'An account with this email already exists. Please sign in or reset your password below.'
           });
+          // Pre-fill reset email and switch to signin tab
+          setResetEmail(formData.email);
           setActiveTab('signin');
-        } else if (error.message.includes('Email not confirmed')) {
-          toast({
-            title: "Email not confirmed",
-            description: "Please check your email and click the confirmation link before signing in.",
-            variant: "destructive",
+        } else if (errorMsg.includes('email not confirmed')) {
+          setFormNotice({
+            type: 'info',
+            title: 'Email not confirmed',
+            message: 'Please check your email and click the confirmation link before signing in.'
           });
         } else {
-          toast({
-            title: activeTab === 'signin' ? "Sign in failed" : "Sign up failed",
-            description: error.message || "An unexpected error occurred. Please try again.",
-            variant: "destructive",
+          setFormNotice({
+            type: 'error',
+            title: activeTab === 'signin' ? 'Sign in failed' : 'Sign up failed',
+            message: error.message || 'An unexpected error occurred. Please try again.'
           });
         }
       } else {
         if (activeTab === 'signup') {
+          setFormNotice({
+            type: 'success',
+            title: 'Account created!',
+            message: 'Please check your email for a confirmation link to complete your registration.'
+          });
+          // Also show toast for visibility
           toast({
             title: "Account created!",
-            description: "Please check your email for a confirmation link to complete your registration.",
+            description: "Please check your email for a confirmation link.",
           });
         } else {
           toast({
@@ -163,10 +194,10 @@ const Auth = () => {
         }
       }
     } catch (err) {
-      toast({
-        title: "Error",
-        description: "An unexpected error occurred. Please try again.",
-        variant: "destructive",
+      setFormNotice({
+        type: 'error',
+        title: 'Error',
+        message: 'An unexpected error occurred. Please try again.'
       });
     } finally {
       setIsLoading(false);
@@ -309,6 +340,18 @@ const Auth = () => {
           </TabsList>
 
           <TabsContent value="signin" className="space-y-4 mt-4">
+            {formNotice && (
+              <Alert variant={formNotice.type === 'error' ? 'destructive' : 'default'} className={
+                formNotice.type === 'success' ? 'border-green-500 bg-green-50 dark:bg-green-950/20' :
+                formNotice.type === 'info' ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20' : ''
+              }>
+                {formNotice.type === 'success' && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                {formNotice.type === 'error' && <AlertCircle className="h-4 w-4" />}
+                {formNotice.type === 'info' && <Info className="h-4 w-4 text-blue-600" />}
+                <AlertTitle>{formNotice.title}</AlertTitle>
+                <AlertDescription>{formNotice.message}</AlertDescription>
+              </Alert>
+            )}
             <Card className="shadow-elegant border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
               <CardHeader>
                 <CardTitle>Sign In</CardTitle>
@@ -395,6 +438,18 @@ const Auth = () => {
           </TabsContent>
 
           <TabsContent value="signup" className="space-y-4 mt-4">
+            {formNotice && (
+              <Alert variant={formNotice.type === 'error' ? 'destructive' : 'default'} className={
+                formNotice.type === 'success' ? 'border-green-500 bg-green-50 dark:bg-green-950/20' :
+                formNotice.type === 'info' ? 'border-blue-500 bg-blue-50 dark:bg-blue-950/20' : ''
+              }>
+                {formNotice.type === 'success' && <CheckCircle2 className="h-4 w-4 text-green-600" />}
+                {formNotice.type === 'error' && <AlertCircle className="h-4 w-4" />}
+                {formNotice.type === 'info' && <Info className="h-4 w-4 text-blue-600" />}
+                <AlertTitle>{formNotice.title}</AlertTitle>
+                <AlertDescription>{formNotice.message}</AlertDescription>
+              </Alert>
+            )}
             <Card className="shadow-elegant border-2 border-accent/20 bg-gradient-to-b from-card to-accent/[0.02]">
               <CardHeader>
                 <CardTitle>Create Account</CardTitle>
