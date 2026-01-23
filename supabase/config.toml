@@ -160,7 +160,10 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.accept-tester-invite]
-verify_jwt = true
+verify_jwt = false
+
+[functions.register-tester]
+verify_jwt = false
 
 [analytics]
 enabled = false
