@@ -148,7 +148,7 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
 
   return (
     <div className="space-y-4">
-      {/* Clean, modern header */}
+      {/* Clean, modern header with context hint */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Documents</h2>
@@ -178,6 +178,14 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
           </Button>
         </div>
       </div>
+
+      {/* Contextual hint when on upload tab */}
+      {activeTab === 'upload' && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
+          <span>💡</span>
+          <span>Use the main tab bar above to switch back to <strong>Checks</strong> or other sections.</span>
+        </div>
+      )}
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
