@@ -291,34 +291,20 @@ export default function PlanBilling() {
                 </DialogContent>
               </Dialog>
             ) : (
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" className="flex-1 border-2 border-accent/50 hover:bg-accent/10 hover:border-accent">
-                      <Crown className="w-4 h-4 mr-2 text-accent" />
-                      Change Plan
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-                    <PlanSelection onClose={() => setDialogOpen(false)} />
-                  </DialogContent>
-                </Dialog>
-                
-                <Button 
-                  variant="outline" 
-                  className="flex-1 border-2 hover:bg-primary/10 hover:border-primary"
-                  onClick={handleManageSubscriptionClick}
-                  disabled={portalLoading}
-                >
-                  {portalLoading ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <Settings className="w-4 h-4 mr-2 text-primary" />
-                  )}
-                  Manage Subscription
-                  <ExternalLink className="w-3 h-3 ml-1" />
-                </Button>
-              </div>
+              <Button 
+                variant="outline" 
+                className="w-full border-2 hover:bg-primary/10 hover:border-primary"
+                onClick={handleManageSubscriptionClick}
+                disabled={portalLoading}
+              >
+                {portalLoading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Settings className="w-4 h-4 mr-2 text-primary" />
+                )}
+                Manage Subscription
+                <ExternalLink className="w-3 h-3 ml-1" />
+              </Button>
             )}
           </div>
         </CardContent>
