@@ -13,7 +13,8 @@ import {
   AlertTriangle,
   Info,
   CheckCircle,
-  Settings
+  Settings,
+  Bug
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -219,16 +220,18 @@ const NotificationCenter = () => {
       case 'warning': return <AlertTriangle className="h-4 w-4 text-amber-600" />;
       case 'error': return <X className="h-4 w-4 text-destructive" />;
       case 'success': return <CheckCircle className="h-4 w-4 text-emerald-600" />;
+      case 'bug_status': return <Bug className="h-4 w-4 text-purple-600" />;
       default: return <Info className="h-4 w-4 text-blue-600" />;
     }
   };
 
   const getNotificationStyle = (type: string) => {
     switch (type) {
-      case 'warning': return 'border-l-amber-500 bg-amber-50/50';
-      case 'error': return 'border-l-red-500 bg-red-50/50';
-      case 'success': return 'border-l-emerald-500 bg-emerald-50/50';
-      default: return 'border-l-blue-500 bg-blue-50/50';
+      case 'warning': return 'border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20';
+      case 'error': return 'border-l-red-500 bg-red-50/50 dark:bg-red-950/20';
+      case 'success': return 'border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20';
+      case 'bug_status': return 'border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20';
+      default: return 'border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20';
     }
   };
 

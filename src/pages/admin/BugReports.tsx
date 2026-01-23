@@ -310,12 +310,31 @@ const BugReports = () => {
   const updateReport = async (id: string, updates: Partial<BugReport>) => {
     setUpdating(true);
     try {
+      // Get the current report to check for status change
+      const currentReport = reports.find(r => r.id === id);
+      
       const { error } = await (supabase as any)
         .from('bug_reports')
         .update(updates as any)
         .eq('id', id);
 
       if (error) throw error;
+
+      // If status changed to needs_retest, create a notification for the user
+      if (updates.status === 'needs_retest' && currentReport?.status !== 'needs_retest') {
+        try {
+          await supabase.from('notifications').insert({
+            user_id: currentReport?.user_id,
+            type: 'bug_status',
+            title: 'Bug Ready for Retest',
+            message: `Your bug report "${currentReport?.title}" (${currentReport?.reference_id}) has been fixed and needs retesting.`,
+            related_table: 'bug_reports',
+            related_id: id,
+          });
+        } catch (notifyErr) {
+          console.error('Failed to create notification:', notifyErr);
+        }
+      }
 
       setReports((prev) =>
         prev.map((r) => (r.id === id ? { ...r, ...updates } : r))

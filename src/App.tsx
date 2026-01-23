@@ -57,6 +57,7 @@ const BatchSendDocuments = lazy(() => import("./pages/BatchSendDocuments"));
 const Marketing = lazy(() => import("./pages/Marketing"));
 const TesterInvite = lazy(() => import("./pages/TesterInvite"));
 const Diagnostics = lazy(() => import("./pages/Diagnostics"));
+const MyBugReports = lazy(() => import("./pages/MyBugReports"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -193,6 +194,16 @@ const App = () => (
                   <ProtectedRoute>
                     <ProfileGuard>
                       <Settings />
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/my-bug-reports"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <MyBugReports />
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
