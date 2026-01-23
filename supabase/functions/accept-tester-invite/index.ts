@@ -23,6 +23,7 @@ const handler = async (req: Request): Promise<Response> => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { token, userId }: AcceptInviteRequest = await req.json();
+    console.log("[ACCEPT-TESTER-INVITE] Request received", { token: token?.substring(0, 10) + "...", userId });
 
     if (!token) {
       return new Response(

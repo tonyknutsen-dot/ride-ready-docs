@@ -38,16 +38,20 @@ const AppHeader = () => {
   const OperatorIcon = operatorConfig.icon;
 
   const handleSignOut = async () => {
-    try {
-      await signOut();
+    const { error } = await signOut();
+    // "Auth session missing" means the session was already invalidated - that's fine
+    if (error && !error.message?.includes("session")) {
+      toast({
+        title: "Error signing out",
+        description: error.message,
+        variant: "destructive",
+      });
+    } else {
       toast({
         title: "Signed out successfully",
       });
-    } catch (error) {
-      toast({
-        title: "Error signing out",
-        variant: "destructive",
-      });
+      // Force navigation to home
+      window.location.href = "/";
     }
   };
 
