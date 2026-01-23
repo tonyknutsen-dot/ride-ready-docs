@@ -65,7 +65,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
     try {
       // If user already has a subscription, redirect to customer portal for plan changes
       if (hasActiveSubscription) {
-        toast.info('Opening Stripe in a new tab. Return here when done.', { duration: 5000 });
+        toast.info('Stripe is opening in a new tab. Complete your changes there, then close that tab and return here.', { duration: 8000 });
         await openCustomerPortal();
         onClose?.();
         return;
@@ -73,7 +73,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
       
       // Otherwise create a new checkout session
       await createCheckout(plan, billingCycle);
-      toast.success('Stripe checkout opened in a new tab. Complete payment there, then return here.', { duration: 6000 });
+      toast.success('Stripe checkout opened in a new tab. Complete your payment there, then close that tab and return to this page.', { duration: 8000 });
       onClose?.();
     } catch (error) {
       console.error('Checkout error:', error);

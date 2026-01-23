@@ -6,11 +6,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTester } from "@/contexts/TesterContext";
 import { useSubscription, PRICING } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock, RefreshCw, X } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { PlanSelection } from "@/components/PlanSelection";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { format } from "date-fns";
 
 export default function PlanBilling() {
@@ -22,7 +23,7 @@ export default function PlanBilling() {
   const { subscription, loading, openCustomerPortal, refreshSubscription, checkSubscriptionStatus } = useSubscription();
   const [portalLoading, setPortalLoading] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-
+  const [showReturnBanner, setShowReturnBanner] = useState(false);
   // Handle success/cancel from Stripe checkout
   useEffect(() => {
     const success = searchParams.get('success');
@@ -49,10 +50,12 @@ export default function PlanBilling() {
 
   const handleManageSubscription = async () => {
     setPortalLoading(true);
+    setShowReturnBanner(true); // Show the return banner
     try {
       await openCustomerPortal();
     } catch (error) {
       console.error('Portal error:', error);
+      setShowReturnBanner(false);
       toast({ 
         title: "Couldn't open billing portal", 
         description: "Please try again later.", 
@@ -61,6 +64,12 @@ export default function PlanBilling() {
     } finally {
       setPortalLoading(false);
     }
+  };
+
+  const handleRefreshAndDismiss = async () => {
+    await checkSubscriptionStatus();
+    setShowReturnBanner(false);
+    toast({ title: "Subscription status updated", description: "Your billing information is now current." });
   };
 
   if (loading) {
@@ -156,6 +165,27 @@ export default function PlanBilling() {
       <Button variant="ghost" onClick={() => nav('/settings')} className="hover:bg-primary/10">
         <ArrowLeft className="w-4 h-4 mr-2" />Back to Settings
       </Button>
+
+      {/* Return from Stripe Banner */}
+      {showReturnBanner && (
+        <Alert className="border-2 border-info bg-info/10 animate-pulse">
+          <RefreshCw className="h-5 w-5 text-info" />
+          <AlertTitle className="text-info font-semibold">Finished with Stripe?</AlertTitle>
+          <AlertDescription className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between mt-2">
+            <span className="text-sm">
+              If you've completed your changes in the Stripe tab, click below to refresh your subscription status.
+            </span>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={handleRefreshAndDismiss} className="bg-info hover:bg-info/90 text-white">
+                <RefreshCw className="w-4 h-4 mr-1" /> Refresh Status
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setShowReturnBanner(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Current Plan Card */}
       <Card className="border-2 border-accent/50 bg-gradient-to-br from-accent/10 to-transparent shadow-elegant">
