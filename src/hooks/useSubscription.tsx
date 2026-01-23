@@ -226,8 +226,9 @@ export const useSubscription = () => {
     if (error) throw error;
     
     if (data?.url) {
-      // Redirect in same tab for better UX - user returns to billing page after checkout
-      window.location.href = data.url;
+      // Open in new tab - Stripe blocks iframe embedding for security
+      // User will be redirected back to /billing after completing checkout
+      window.open(data.url, '_blank');
     }
     
     return data;
@@ -251,8 +252,11 @@ export const useSubscription = () => {
 
     if (error) throw error;
     
-    if (data?.url) window.location.assign(data.url);
-    
+    if (data?.url) {
+      // Open in new tab - Stripe blocks iframe embedding for security
+      window.open(data.url, '_blank');
+    }
+
     return data;
   };
 
