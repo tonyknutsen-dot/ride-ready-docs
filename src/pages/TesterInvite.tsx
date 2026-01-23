@@ -111,6 +111,9 @@ export default function TesterInvite() {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Force email to match invite email
+    const authEmail = inviteEmail;
+    
     if (isSignUp && password !== confirmPassword) {
       toast.error('Passwords do not match');
       return;
@@ -124,9 +127,11 @@ export default function TesterInvite() {
     setAuthLoading(true);
 
     try {
+      let userId: string | undefined;
+      
       if (isSignUp) {
         const { data, error } = await supabase.auth.signUp({
-          email,
+          email: authEmail,
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/tester-invite/${token}`,
@@ -139,20 +144,57 @@ export default function TesterInvite() {
         if (data.user && (!data.user.identities || data.user.identities.length === 0)) {
           toast.error('An account with this email already exists. Please sign in instead.');
           setIsSignUp(false);
+          setAuthLoading(false);
           return;
         }
         
         // Check if email confirmation is required
         if (data.user && !data.session) {
           toast.success('Please check your email to confirm your account, then click the invite link again.');
+          setAuthLoading(false);
           return;
         }
         
-        toast.success('Account created! Accepting your tester invite...');
+        userId = data.user?.id;
+        toast.success('Account created!');
       } else {
-        const { error } = await signIn(email, password);
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: authEmail,
+          password,
+        });
         if (error) throw error;
-        toast.success('Signed in! Accepting your tester invite...');
+        userId = data.user?.id;
+        toast.success('Signed in!');
+      }
+      
+      // Immediately accept the invite
+      if (userId && token) {
+        setAccepting(true);
+        const { data: acceptData, error: acceptError } = await supabase.functions.invoke('accept-tester-invite', {
+          body: { token, userId },
+        });
+        
+        if (acceptError) {
+          console.error('Error accepting invite:', acceptError);
+          toast.error('Account created but failed to accept invite. Please contact support.');
+        } else if (acceptData?.success) {
+          toast.success('Welcome to the tester team! 🎉');
+          setStatus('accepted');
+          // Redirect to app
+          setTimeout(() => {
+            navigate('/overview');
+          }, 1500);
+          return;
+        } else if (acceptData?.alreadyTester) {
+          toast.success("You're already a tester!");
+          setTimeout(() => {
+            navigate('/overview');
+          }, 1500);
+          return;
+        } else {
+          toast.error(acceptData?.error || 'Failed to accept invite');
+        }
+        setAccepting(false);
       }
     } catch (error: any) {
       console.error('Auth error:', error);
@@ -311,17 +353,14 @@ export default function TesterInvite() {
                   type="email"
                   name="email"
                   autoComplete="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  required
-                  disabled={authLoading}
+                  value={inviteEmail}
+                  readOnly
+                  disabled
+                  className="bg-muted cursor-not-allowed"
                 />
-                {email.toLowerCase() !== inviteEmail.toLowerCase() && email && (
-                  <p className="text-xs text-warning-foreground">
-                    Note: This invite was sent to {inviteEmail}
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  This is the email the invite was sent to
+                </p>
               </div>
 
               <div className="space-y-2">
