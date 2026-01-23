@@ -30,7 +30,7 @@ export default function GlobalEventBridge() {
         return;
       }
       // Go to rides tab to show RideManagement
-      nav("/dashboard?tab=rides");
+      nav("/rides?action=add");
       setTimeout(() => clickById("rrd-btn-add-ride"), 200);
     };
 
@@ -40,7 +40,7 @@ export default function GlobalEventBridge() {
         return;
       }
       // Go to workspace tab for documents
-      nav("/dashboard?tab=workspace");
+      nav("/rides");
       setTimeout(() => clickById("rrd-btn-upload-doc"), 200);
     };
 

@@ -361,7 +361,7 @@ const CalendarView = () => {
     };
     
     const tab = tabMap[event.type] || 'inspections';
-    navigate(`/dashboard?ride=${event.rideId}&tab=${tab}`);
+    navigate(`/rides/${event.rideId}`);
   };
 
   const getEventTypeColor = (type: string) => {
@@ -766,7 +766,7 @@ const CalendarView = () => {
                         </Select>
                         {formData.ride_id && rideDocuments.length === 0 && !loadingDocuments && (
                           <p className="text-xs text-muted-foreground">
-                            No documents uploaded yet. <button type="button" onClick={() => navigate(`/dashboard?ride=${formData.ride_id}&tab=documents`)} className="text-primary hover:underline">Upload documents</button> first.
+                            No documents uploaded yet. <button type="button" onClick={() => navigate(`/rides/${formData.ride_id}`)} className="text-primary hover:underline">Upload documents</button> first.
                           </p>
                         )}
                       </>

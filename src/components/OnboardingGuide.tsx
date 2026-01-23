@@ -65,7 +65,7 @@ export default function OnboardingGuide() {
               <Button 
                 className="w-full" 
                 onClick={() => {
-                  navigate('/dashboard?tab=rides');
+                  navigate('/rides?action=add');
                   setTimeout(() => {
                     const el = document.getElementById('rides-section');
                     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -95,7 +95,7 @@ export default function OnboardingGuide() {
                         variant="default"
                         disabled={(rideCount ?? 0) === 0 || (categorizedCount ?? 0) === 0}
                         onClick={() => {
-                          navigate('/dashboard?tab=workspace');
+                          navigate('/rides');
                           setTimeout(() => {
                             const el = document.getElementById('workspace');
                             if (el) el.scrollIntoView({ behavior: 'smooth' });
