@@ -77,10 +77,27 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    const origin = req.headers.get("origin") || "https://rideready.app";
+    // Prefer an explicit returnUrl (sent by the app) so users always return to the correct environment.
+    // Fallback to request origin / referer, then the published Lovable URL.
+    let returnUrlFromBody: string | undefined;
+    try {
+      const body = await req.clone().json();
+      returnUrlFromBody = typeof body?.returnUrl === 'string' ? body.returnUrl : undefined;
+    } catch {
+      // ignore (body may be empty)
+    }
+
+    const baseUrl =
+      returnUrlFromBody ||
+      req.headers.get("origin") ||
+      req.headers.get("referer")?.split('/').slice(0, 3).join('/') ||
+      "https://ride-ready-docs.lovable.app";
+    logStep("Using base URL for return_url", { baseUrl });
+
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      return_url: `${origin}/plan-billing`,
+      // We use /billing (not /plan-billing) to match the app route.
+      return_url: `${baseUrl}/billing`,
     });
     logStep("Customer portal session created", { sessionId: portalSession.id, url: portalSession.url });
 

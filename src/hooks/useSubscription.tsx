@@ -244,13 +244,14 @@ export const useSubscription = () => {
       return { blocked: true, reason: 'tester_account' };
     }
 
-    const { data, error } = await supabase.functions.invoke('customer-portal');
+    const returnUrl = window.location.origin;
+    const { data, error } = await supabase.functions.invoke('customer-portal', {
+      body: { returnUrl },
+    });
 
     if (error) throw error;
     
-    if (data?.url) {
-      window.open(data.url, '_blank');
-    }
+    if (data?.url) window.location.assign(data.url);
     
     return data;
   };
