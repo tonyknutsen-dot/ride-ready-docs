@@ -261,12 +261,34 @@ export default function TesterInvite() {
             </div>
           ) : (
             // Auth form
-            <form onSubmit={handleAuth} className="space-y-4">
+            <form onSubmit={handleAuth} className="space-y-4" autoComplete="off">
+              {/*
+                Prevent browser password managers from autofilling this signup form.
+                Some browsers ignore autoComplete="new-password" and still inject values.
+                These hidden fields attract the autofill instead of our controlled inputs.
+              */}
+              <input
+                className="hidden"
+                type="text"
+                name="username"
+                autoComplete="username"
+                tabIndex={-1}
+              />
+              <input
+                className="hidden"
+                type="password"
+                name="current-password"
+                autoComplete="current-password"
+                tabIndex={-1}
+              />
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
                   id="email"
                   type="email"
+                  name="email"
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="your@email.com"
@@ -285,6 +307,7 @@ export default function TesterInvite() {
                 <Input
                   id="password"
                   type="password"
+                  name="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter your password"
@@ -301,6 +324,7 @@ export default function TesterInvite() {
                   <Input
                     id="confirmPassword"
                     type="password"
+                    name="confirm-new-password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="Confirm your password"
