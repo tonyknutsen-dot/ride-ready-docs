@@ -42,16 +42,35 @@ serve(async (req) => {
     logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "").trim();
-    if (!token) throw new Error("Authorization token missing");
+    if (!token || token === "undefined" || token === "null") {
+      logStep("No valid token provided - returning safe unsubscribed state");
+      return new Response(
+        JSON.stringify({
+          subscribed: false,
+          plan: null,
+          subscription_end: null,
+          extra_items: 0,
+          billing_cycle: null,
+        }),
+        {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        }
+      );
+    }
 
-    // NOTE: Supabase can sometimes return "Auth session missing!" if the session referenced
+    // NOTE: Supabase can sometimes return errors if the session referenced
     // by the JWT's session_id claim no longer exists (e.g. after logout, revoked session, etc.).
     // This should NOT crash the app. Treat it as unauthenticated and return a safe unsubscribed state.
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) {
       const msg = userError.message || "Unknown auth error";
-      if (msg.includes("Auth session missing")) {
-        logStep("Auth session missing - returning safe unsubscribed state", { message: msg });
+      // Handle various auth errors gracefully
+      if (msg.includes("Auth session missing") || 
+          msg.includes("missing sub claim") || 
+          msg.includes("invalid claim") ||
+          msg.includes("invalid token")) {
+        logStep("Auth error - returning safe unsubscribed state", { message: msg });
         return new Response(
           JSON.stringify({
             subscribed: false,
