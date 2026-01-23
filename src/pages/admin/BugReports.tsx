@@ -863,8 +863,22 @@ ${bug.steps_to_reproduce.split('\n').map(line => `  ${line}`).join('\n')}
                       <div className="col-span-2 flex items-center gap-2 text-sm">
                         <span className="text-muted-foreground">Route:</span>
                         <code className="font-mono text-xs bg-background px-2 py-0.5 rounded">
-                          {selectedReport.current_route}
+                          {selectedReport.current_route || 'Unknown'}
                         </code>
+                        {selectedReport.current_route && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 ml-auto"
+                            onClick={() => {
+                              handleSelectReport(null);
+                              window.location.href = selectedReport.current_route!;
+                            }}
+                          >
+                            <ExternalLink className="h-3 w-3 mr-1" />
+                            Go to Page
+                          </Button>
+                        )}
                       </div>
                     </div>
 
