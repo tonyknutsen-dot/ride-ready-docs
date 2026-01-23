@@ -217,8 +217,12 @@ export const useSubscription = () => {
       return { blocked: true, reason: 'tester_account' };
     }
 
-    // Pass full return URL including path for reliable redirect after checkout
-    const returnUrl = window.location.origin;
+    // Use the published URL for Stripe return, not preview/localhost URLs
+    const currentOrigin = window.location.origin;
+    const returnUrl = currentOrigin.includes('localhost') || currentOrigin.includes('lovableproject.com')
+      ? 'https://ride-ready-docs.lovable.app'
+      : currentOrigin;
+    
     const { data, error } = await supabase.functions.invoke('create-checkout', {
       body: { plan, billingCycle, extraItems, returnUrl },
     });
@@ -245,7 +249,12 @@ export const useSubscription = () => {
       return { blocked: true, reason: 'tester_account' };
     }
 
-    const returnUrl = window.location.origin;
+    // Use the published URL for Stripe return, not preview/localhost URLs
+    const currentOrigin = window.location.origin;
+    const returnUrl = currentOrigin.includes('localhost') || currentOrigin.includes('lovableproject.com')
+      ? 'https://ride-ready-docs.lovable.app'
+      : currentOrigin;
+    
     const { data, error } = await supabase.functions.invoke('customer-portal', {
       body: { returnUrl },
     });
