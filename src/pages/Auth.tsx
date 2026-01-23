@@ -13,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { z } from 'zod';
 import logo from '@/assets/logo.png';
 import { COUNTRIES } from '@/constants/profile';
+import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address').max(255, 'Email must be less than 255 characters'),
@@ -505,8 +506,10 @@ const Auth = () => {
                         <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
                       </Button>
                     </div>
-                    {errors.password && (
+                    {errors.password ? (
                       <p className="text-sm text-destructive">{errors.password}</p>
+                    ) : (
+                      <PasswordStrengthIndicator password={formData.password} />
                     )}
                   </div>
 
