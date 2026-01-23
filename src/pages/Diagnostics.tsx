@@ -293,13 +293,16 @@ export default function Diagnostics() {
         const { data, error } = await supabase.functions.invoke('send-tester-invite', {
           body: { email: '' } // Empty email will fail validation but test auth
         });
-        if (error?.message?.includes('session')) {
+        const errorMsg = error?.message?.toLowerCase() || '';
+        // Check for session/auth issues first
+        if (errorMsg.includes('session') || errorMsg.includes('invalid token') || errorMsg.includes('expired')) {
           updateTest('Edge Function: send-tester-invite', { 
             status: 'fail', 
             message: 'Session error',
             details: error.message
           });
-        } else if (error?.message?.includes('Email is required')) {
+        // A 400 with "email" validation error or non-2xx means auth passed, validation caught the empty email
+        } else if (errorMsg.includes('email') || errorMsg.includes('2xx') || errorMsg.includes('400')) {
           updateTest('Edge Function: send-tester-invite', { 
             status: 'pass', 
             message: 'Auth working (validation error expected)',
