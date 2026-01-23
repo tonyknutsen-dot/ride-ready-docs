@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { ExternalLink, ArrowLeft, CheckCircle, MousePointer } from "lucide-react";
+import { ExternalLink, CheckCircle } from "lucide-react";
 
 interface StripeInstructionModalProps {
   open: boolean;
@@ -72,7 +72,7 @@ export function StripeInstructionModal({
               <p className="font-medium">Return to the app</p>
               {isPortal ? (
                 <p className="text-sm text-muted-foreground">
-                  Click the <strong>"← Return to..."</strong> link on the left side of the page.
+                  Click the <strong>"← Return to Knuts Software"</strong> link on the left side of the Stripe page.
                 </p>
               ) : (
                 <p className="text-sm text-muted-foreground">
@@ -81,32 +81,6 @@ export function StripeInstructionModal({
               )}
             </div>
           </div>
-
-          {/* Visual guide for portal */}
-          {isPortal && (
-            <div className="mt-4 p-4 rounded-lg border-2 border-dashed border-info/50 bg-info/5">
-              <p className="text-sm font-medium text-info mb-3 flex items-center gap-2">
-                <MousePointer className="w-4 h-4" />
-                Where to click to return:
-              </p>
-              <div className="bg-white rounded-lg p-3 shadow-sm border relative">
-                {/* Mock Stripe sidebar */}
-                <div className="flex items-center gap-2 text-sm">
-                  <ArrowLeft className="w-4 h-4 text-blue-600" />
-                  <span className="text-blue-600 font-medium">Return to RideReady Docs</span>
-                </div>
-                {/* Animated pointer */}
-                <div className="absolute -left-2 top-1/2 -translate-y-1/2 animate-bounce">
-                  <div className="bg-warning text-warning-foreground text-xs px-2 py-1 rounded-full font-bold shadow-lg">
-                    Click here! →
-                  </div>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                This link appears on the left side of the Stripe portal page.
-              </p>
-            </div>
-          )}
 
           {/* Checkout auto-redirect info */}
           {!isPortal && (
