@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTester } from '@/contexts/TesterContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -31,7 +32,9 @@ const Rides = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { subscription } = useSubscription();
+  const { isTester } = useTester();
   const [rides, setRides] = useState<Ride[]>([]);
   const [ridePhotos, setRidePhotos] = useState<Record<string, string | null>>({});
   const [rideStats, setRideStats] = useState<Record<string, {
@@ -43,6 +46,19 @@ const Rides = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [activeGroup, setActiveGroup] = useState<string>('All');
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
+  
+  // Check for action parameter to auto-open add form
+  useEffect(() => {
+    if (searchParams.get('action') === 'add') {
+      setShowAddForm(true);
+      // Clear the param so refreshing doesn't re-open
+      searchParams.delete('action');
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+  
+  // Determine if user has advanced access (subscriber or tester)
+  const hasAdvancedAccess = subscription?.subscriptionStatus === 'advanced' || isTester;
 
   useEffect(() => {
     if (user) {
@@ -375,8 +391,17 @@ const Rides = () => {
                   <img 
                     src={ridePhotos[ride.id]!} 
                     alt={ride.ride_name}
-                    className="max-w-full max-h-full object-contain"
+                    loading="lazy"
+                    decoding="async"
+                    className="max-w-full max-h-full object-contain transition-opacity duration-300"
+                    onLoad={(e) => (e.target as HTMLImageElement).style.opacity = '1'}
+                    style={{ opacity: 0.7 }}
                   />
+                ) : ridePhotos[ride.id] === undefined ? (
+                  <div className="flex flex-col items-center gap-2 text-primary/40">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 animate-pulse" />
+                    <span className="text-xs">Loading...</span>
+                  </div>
                 ) : uploadingPhotoFor === ride.id ? (
                   <div className="flex flex-col items-center gap-2 text-primary">
                     <Loader2 className="h-6 w-6 animate-spin" />
@@ -434,8 +459,14 @@ const Rides = () => {
                     <p className="text-xs text-muted-foreground font-medium">Documents</p>
                   </div>
                   
-                  {subscription?.subscriptionStatus === 'advanced' ? (
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-accent/5 to-accent/15 text-center border border-accent/20">
+                  {hasAdvancedAccess ? (
+                    <div 
+                      className="p-3 rounded-xl bg-gradient-to-br from-accent/5 to-accent/15 text-center border border-accent/20 cursor-pointer hover:bg-accent/20 transition-colors"
+                      onClick={e => {
+                        e.stopPropagation();
+                        navigate(`/rides/${ride.id}?tab=inspections`);
+                      }}
+                    >
                       <CheckSquare className="h-5 w-5 mx-auto text-accent mb-1" />
                       <p className="text-xl font-bold text-accent">{rideStats[ride.id]?.checkCount ?? 0}</p>
                       <p className="text-xs text-muted-foreground font-medium">Checks</p>
