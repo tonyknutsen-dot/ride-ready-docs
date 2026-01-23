@@ -116,16 +116,16 @@ serve(async (req) => {
     }
 
     // Use returnUrl from request body, fallback to origin header, then referer
-    const origin = returnUrl || req.headers.get("origin") || req.headers.get("referer")?.split('/').slice(0, 3).join('/') || "https://rideready.app";
-    logStep("Using origin", { origin });
+    const baseUrl = returnUrl || req.headers.get("origin") || req.headers.get("referer")?.split('/').slice(0, 3).join('/') || "https://ride-ready-docs.lovable.app";
+    logStep("Using base URL for redirects", { baseUrl });
     
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: lineItems,
       mode: "subscription",
-      success_url: `${origin}/billing?success=true`,
-      cancel_url: `${origin}/billing?canceled=true`,
+      success_url: `${baseUrl}/billing?success=true`,
+      cancel_url: `${baseUrl}/billing?canceled=true`,
       metadata: {
         user_id: user.id,
         plan,
