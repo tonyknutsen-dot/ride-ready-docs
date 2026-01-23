@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useSubscription, PRICING } from '@/hooks/useSubscription';
 import { useTester } from '@/contexts/TesterContext';
 import { toast } from 'sonner';
+import { StripeInstructionModal } from '@/components/StripeInstructionModal';
 
 interface PlanSelectionProps {
   onClose?: () => void;
@@ -19,6 +20,11 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
   const [basicBillingCycle, setBasicBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [advancedBillingCycle, setAdvancedBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  
+  // Stripe instruction modal state
+  const [showStripeModal, setShowStripeModal] = useState(false);
+  const [pendingPlan, setPendingPlan] = useState<'basic' | 'advanced' | null>(null);
+  const [isPortalAction, setIsPortalAction] = useState(false);
 
   // TESTER BYPASS: Show tester info instead of plan selection
   if (isTester) {
@@ -56,31 +62,43 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
   const hasActiveSubscription = subscription?.stripeSubscriptionId && 
     (subscription?.subscriptionStatus === 'basic' || subscription?.subscriptionStatus === 'advanced');
 
-  const handleSelectPlan = async (plan: 'basic' | 'advanced') => {
+  const handleSelectPlan = (plan: 'basic' | 'advanced') => {
     if (loadingPlan) return; // Prevent double-clicks
     
-    const billingCycle = plan === 'basic' ? basicBillingCycle : advancedBillingCycle;
-    setLoadingPlan(plan);
+    // Show instruction modal before opening Stripe
+    setPendingPlan(plan);
+    setIsPortalAction(!!hasActiveSubscription);
+    setShowStripeModal(true);
+  };
+
+  const handleContinueToStripe = async () => {
+    if (!pendingPlan) return;
+    
+    const billingCycle = pendingPlan === 'basic' ? basicBillingCycle : advancedBillingCycle;
+    setLoadingPlan(pendingPlan);
     
     try {
-      // If user already has a subscription, redirect to customer portal for plan changes
       if (hasActiveSubscription) {
-        toast.info('Stripe is opening in a new tab. Complete your changes there, then close that tab and return here.', { duration: 8000 });
         await openCustomerPortal();
-        onClose?.();
-        return;
+      } else {
+        await createCheckout(pendingPlan, billingCycle);
       }
-      
-      // Otherwise create a new checkout session
-      await createCheckout(plan, billingCycle);
-      toast.success('Stripe checkout opened in a new tab. Complete your payment there, then close that tab and return to this page.', { duration: 8000 });
+      setShowStripeModal(false);
       onClose?.();
     } catch (error) {
       console.error('Checkout error:', error);
       toast.error('Failed to process request. Please try again.');
+      setShowStripeModal(false);
     } finally {
       setLoadingPlan(null);
+      setPendingPlan(null);
     }
+  };
+
+  const handleCloseStripeModal = () => {
+    setShowStripeModal(false);
+    setPendingPlan(null);
+    setIsPortalAction(false);
   };
 
   const basicFeatures = [
@@ -334,6 +352,15 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
           You can continue with your free trial or upgrade now for immediate access to more features.
         </div>
       )}
+
+      {/* Stripe Instruction Modal */}
+      <StripeInstructionModal
+        open={showStripeModal}
+        onClose={handleCloseStripeModal}
+        onContinue={handleContinueToStripe}
+        isPortal={isPortalAction}
+        loading={!!loadingPlan}
+      />
     </div>
   );
 };
