@@ -42,9 +42,21 @@ serve(async (req) => {
     if (!authHeader) throw new Error("No authorization header provided");
     logStep("Authorization header found");
 
-    const token = authHeader.replace("Bearer ", "");
+    const token = authHeader.replace("Bearer ", "").trim();
+    if (!token) throw new Error("Authorization token missing");
+
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    if (userError) {
+      const msg = userError.message || "Unknown auth error";
+      if (msg.includes("session")) {
+        logStep("Session expired or invalid", { message: msg });
+        return new Response(
+          JSON.stringify({ error: "Session expired. Please sign in again." }),
+          { status: 401, headers: { ...corsHeaders, ...getSecureHeaders(), "Content-Type": "application/json" } }
+        );
+      }
+      throw new Error(`Authentication error: ${msg}`);
+    }
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
