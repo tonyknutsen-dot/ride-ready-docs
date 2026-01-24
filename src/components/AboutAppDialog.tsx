@@ -8,8 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { APP_NAME, APP_VERSION, CHANGE_LOG, formatVersionDate, getLastUpdateDate } from "@/config/appVersion";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { APP_NAME, APP_VERSION, formatVersionDate, getLastUpdateDate } from "@/config/appVersion";
 
 interface AboutAppDialogProps {
   trigger?: React.ReactNode;
@@ -52,28 +51,6 @@ const AboutAppDialog = ({ trigger }: AboutAppDialogProps) => {
               <span className="text-sm text-muted-foreground">Last Update</span>
               <span className="text-sm">{formatVersionDate(getLastUpdateDate())}</span>
             </div>
-          </div>
-
-          {/* Change Log */}
-          <div>
-            <h4 className="text-sm font-medium mb-2">Recent Changes</h4>
-            <ScrollArea className="h-40 rounded-lg border border-border">
-              <div className="p-3 space-y-3">
-                {CHANGE_LOG.map((entry, index) => (
-                  <div 
-                    key={entry.version + entry.date} 
-                    className={`pb-3 ${index < CHANGE_LOG.length - 1 ? 'border-b border-border/50' : ''}`}
-                  >
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-mono font-bold text-primary">{entry.version}</span>
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-xs text-muted-foreground">{formatVersionDate(entry.date)}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{entry.description}</p>
-                  </div>
-                ))}
-              </div>
-            </ScrollArea>
           </div>
 
           {/* Tester Note */}
