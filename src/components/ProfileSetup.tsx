@@ -49,19 +49,23 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset the input so the same file can be selected again
+    e.target.value = '';
+
     if (!file.type.startsWith('image/')) {
       toast({
-        title: "Invalid file type",
-        description: "Please upload an image file (JPG, PNG, etc.)",
+        title: "Invalid File Format",
+        description: "Please upload an image file (JPG, PNG, or WebP). Other file types are not supported.",
         variant: "destructive",
       });
       return;
     }
 
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
     if (file.size > 5 * 1024 * 1024) {
       toast({
-        title: "File too large",
-        description: "Logo must be less than 5MB",
+        title: "File Too Large",
+        description: `Your file is ${fileSizeMB}MB. Please upload an image smaller than 5MB.`,
         variant: "destructive",
       });
       return;
@@ -71,9 +75,17 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
       const compressed = await compressImage(file, 800, 0.85);
       setLogoFile(compressed);
       setLogoPreview(URL.createObjectURL(compressed));
+      toast({
+        title: "Logo Ready",
+        description: "Your logo has been added. Complete the form to save.",
+      });
     } catch (error) {
       setLogoFile(file);
       setLogoPreview(URL.createObjectURL(file));
+      toast({
+        title: "Logo Ready",
+        description: "Your logo has been added. Complete the form to save.",
+      });
     }
   };
 
