@@ -6,6 +6,7 @@ import { Wrench, History, FileText, Plus } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import MaintenanceLogger from './MaintenanceLogger';
 import MaintenanceHistory from './MaintenanceHistory';
+import MaintenanceReports from './MaintenanceReports';
 
 interface MaintenanceManagerProps {
   ride: Ride;
@@ -17,7 +18,7 @@ const MaintenanceManager = ({ ride }: MaintenanceManagerProps) => {
 
   const handleMaintenanceLogged = () => {
     setRefreshTrigger(prev => prev + 1);
-    setActiveTab('history'); // Switch to history tab to show the new record
+    setActiveTab('history');
   };
 
   return (
@@ -76,7 +77,7 @@ const MaintenanceManager = ({ ride }: MaintenanceManagerProps) => {
                   <span>Maintenance History</span>
                 </CardTitle>
                 <CardDescription>
-                  View, manage, and export maintenance records with supporting documentation
+                  View and manage maintenance records with supporting documentation
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -85,24 +86,7 @@ const MaintenanceManager = ({ ride }: MaintenanceManagerProps) => {
         </TabsContent>
 
         <TabsContent value="reports">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <FileText className="h-5 w-5" />
-                  <span>Maintenance Reports</span>
-                </CardTitle>
-                <CardDescription>
-                  Generate comprehensive maintenance reports for regulatory compliance and record keeping
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            <div className="text-center text-muted-foreground p-8">
-              <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Maintenance report generation coming soon</p>
-              <p className="text-sm">Generate comprehensive PDF reports with maintenance history and photos</p>
-            </div>
-          </div>
+          <MaintenanceReports ride={ride} />
         </TabsContent>
       </Tabs>
     </div>
