@@ -51,7 +51,7 @@ const Header = () => {
           {/* Logo */}
           <Link to="/" className="flex items-center group">
             <span className="font-bold text-xl text-foreground group-hover:text-primary transition-colors">
-              Ride Ready
+              Ride Ready Docs
             </span>
           </Link>
 
