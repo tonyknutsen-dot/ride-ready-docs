@@ -55,7 +55,8 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
 
-  const isAdvanced = subscription?.subscriptionStatus === 'advanced';
+  // Grant advanced access to both 'advanced' plan users AND testers
+  const isAdvanced = subscription?.subscriptionStatus === 'advanced' || subscription?.isTesterAccount;
 
   useEffect(() => {
     loadRideStatistics();

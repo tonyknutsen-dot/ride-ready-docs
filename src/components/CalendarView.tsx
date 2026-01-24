@@ -1067,6 +1067,29 @@ const CalendarView = () => {
                 overdue: "bg-destructive/10 text-destructive",
               }}
             />
+            
+            {/* Legend - inside calendar card */}
+            <div className="mt-4 pt-4 border-t border-border">
+              <p className="text-xs font-medium text-muted-foreground mb-2">Event Types</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-2">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-primary shadow-sm" />
+                  <span className="text-xs text-muted-foreground">Inspections</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-accent shadow-sm" />
+                  <span className="text-xs text-muted-foreground">Maintenance</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-destructive shadow-sm" />
+                  <span className="text-xs text-muted-foreground">Doc Expiry</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-info shadow-sm" />
+                  <span className="text-xs text-muted-foreground">NDT</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
