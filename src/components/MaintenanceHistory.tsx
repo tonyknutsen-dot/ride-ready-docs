@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Calendar, Edit, Trash2, FileText, Camera, Download, Eye, Filter, Save, Clock, Upload, X, FolderOpen, FileDown } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isWithinInterval, startOfMonth, subMonths } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
@@ -71,6 +71,11 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [reportDialogOpen, setReportDialogOpen] = useState(false);
+  const [reportDateFrom, setReportDateFrom] = useState<Date | undefined>(subMonths(new Date(), 12));
+  const [reportDateTo, setReportDateTo] = useState<Date | undefined>(new Date());
+  const [reportFromCalendarOpen, setReportFromCalendarOpen] = useState(false);
+  const [reportToCalendarOpen, setReportToCalendarOpen] = useState(false);
   const { toast } = useToast();
 
   // Allowed MIME types for maintenance documents
@@ -347,112 +352,348 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   const generateMaintenanceReport = async () => {
     setGeneratingPdf(true);
     try {
+      // Fetch user profile for company details
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+
+      // Filter records by date range
+      const filteredRecords = records.filter(record => {
+        const recordDate = parseISO(record.maintenance_date);
+        if (reportDateFrom && reportDateTo) {
+          return isWithinInterval(recordDate, { start: reportDateFrom, end: reportDateTo });
+        }
+        return true;
+      });
+
+      if (filteredRecords.length === 0) {
+        toast({
+          title: "No Records",
+          description: "No maintenance records found for the selected date range",
+          variant: "destructive",
+        });
+        setGeneratingPdf(false);
+        return;
+      }
+
+      // Fetch ride image if available
+      const { data: rideImage } = await supabase
+        .from('documents')
+        .select('file_path')
+        .eq('ride_id', ride.id)
+        .like('mime_type', 'image/%')
+        .limit(1)
+        .maybeSingle();
+
+      let imageDataUrl: string | null = null;
+      if (rideImage) {
+        try {
+          const { data: imageBlob } = await supabase.storage
+            .from('ride-documents')
+            .download(rideImage.file_path);
+          if (imageBlob) {
+            imageDataUrl = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(imageBlob);
+            });
+          }
+        } catch (e) {
+          console.log('Could not load ride image');
+        }
+      }
+
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
       
-      // Title
-      doc.setFontSize(20);
+      // Helper function to add footer to each page
+      const addFooter = () => {
+        const totalPages = doc.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+          doc.setPage(i);
+          doc.setFontSize(8);
+          doc.setTextColor(128);
+          doc.text('ridereadydocs.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
+          doc.text(`Page ${i} of ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
+          doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, pageHeight - 10, { align: 'left' });
+          doc.setTextColor(0);
+        }
+      };
+
+      // === HEADER SECTION ===
+      let yPos = 15;
+      
+      // Company name (large, bold)
+      doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
-      doc.text('Maintenance Report', pageWidth / 2, 20, { align: 'center' });
+      doc.setTextColor(30, 64, 175); // Blue color
+      const companyName = profile?.company_name || profile?.showmen_name || 'Maintenance Record';
+      doc.text(companyName, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 8;
+
+      // Company address
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100);
+      if (profile?.address) {
+        doc.text(profile.address, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 5;
+      }
+      if (profile?.controller_name) {
+        doc.text(`Controller: ${profile.controller_name}`, pageWidth / 2, yPos, { align: 'center' });
+        yPos += 5;
+      }
       
-      // Ride info
+      yPos += 3;
+
+      // Report title
       doc.setFontSize(14);
-      doc.text(ride.ride_name, pageWidth / 2, 30, { align: 'center' });
-      
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0);
+      doc.text('MAINTENANCE REPORT', pageWidth / 2, yPos, { align: 'center' });
+      yPos += 8;
+
+      // Date range
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
-      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, pageWidth / 2, 38, { align: 'center' });
-      doc.text(`Total Records: ${records.length}`, pageWidth / 2, 44, { align: 'center' });
+      const dateRangeText = `Period: ${reportDateFrom ? format(reportDateFrom, 'dd/MM/yyyy') : 'All'} to ${reportDateTo ? format(reportDateTo, 'dd/MM/yyyy') : 'Present'}`;
+      doc.text(dateRangeText, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 10;
+
+      // Divider line
+      doc.setDrawColor(200);
+      doc.line(20, yPos, pageWidth - 20, yPos);
+      yPos += 8;
+
+      // === EQUIPMENT DETAILS SECTION ===
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 64, 175);
+      doc.text('Equipment Details', 20, yPos);
+      yPos += 8;
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0);
+
+      // Equipment info in two columns
+      const leftCol = 20;
+      const rightCol = pageWidth / 2 + 10;
       
-      // Summary stats
-      const totalCost = records.reduce((sum, r) => sum + (Number(r.cost) || 0), 0);
-      doc.text(`Total Cost: £${totalCost.toFixed(2)}`, pageWidth / 2, 50, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.text('Name:', leftCol, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(ride.ride_name, leftCol + 25, yPos);
       
-      // Table data
-      const tableData = records.map(record => [
+      doc.setFont('helvetica', 'bold');
+      doc.text('Category:', rightCol, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(ride.ride_categories?.name || '-', rightCol + 25, yPos);
+      yPos += 6;
+
+      if (ride.manufacturer) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Manufacturer:', leftCol, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(ride.manufacturer, leftCol + 32, yPos);
+      }
+      if (ride.serial_number) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Serial No:', rightCol, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(ride.serial_number, rightCol + 25, yPos);
+      }
+      yPos += 6;
+
+      if (ride.year_manufactured) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Year:', leftCol, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(ride.year_manufactured.toString(), leftCol + 25, yPos);
+      }
+      if (ride.owner_name) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Owner:', rightCol, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(ride.owner_name, rightCol + 25, yPos);
+      }
+      yPos += 10;
+
+      // Add ride image if available
+      if (imageDataUrl) {
+        try {
+          doc.addImage(imageDataUrl, 'JPEG', pageWidth - 60, 55, 45, 35);
+        } catch (e) {
+          console.log('Could not add image to PDF');
+        }
+      }
+
+      // === SUMMARY SECTION ===
+      doc.setDrawColor(200);
+      doc.line(20, yPos, pageWidth - 20, yPos);
+      yPos += 8;
+
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 64, 175);
+      doc.text('Summary', 20, yPos);
+      yPos += 8;
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(0);
+
+      const totalCost = filteredRecords.reduce((sum, r) => sum + (Number(r.cost) || 0), 0);
+      const maintenanceTypeCounts = filteredRecords.reduce((acc, r) => {
+        acc[r.maintenance_type] = (acc[r.maintenance_type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      doc.text(`Total Records: ${filteredRecords.length}`, leftCol, yPos);
+      doc.text(`Total Cost: £${totalCost.toFixed(2)}`, rightCol, yPos);
+      yPos += 10;
+
+      // === MAINTENANCE RECORDS TABLE ===
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(30, 64, 175);
+      doc.text('Maintenance Records', 20, yPos);
+      yPos += 5;
+
+      const tableData = filteredRecords.map((record, index) => [
+        (index + 1).toString(),
         format(parseISO(record.maintenance_date), 'dd/MM/yyyy'),
         getMaintenanceTypeLabel(record.maintenance_type),
-        record.description.substring(0, 50) + (record.description.length > 50 ? '...' : ''),
         record.performed_by || '-',
-        record.cost ? `£${record.cost}` : '-',
-        record.parts_replaced ? record.parts_replaced.substring(0, 30) + (record.parts_replaced.length > 30 ? '...' : '') : '-',
+        record.cost ? `£${Number(record.cost).toFixed(2)}` : '-',
       ]);
       
       autoTable(doc, {
-        startY: 58,
-        head: [['Date', 'Type', 'Description', 'Performed By', 'Cost', 'Parts']],
+        startY: yPos,
+        head: [['#', 'Date', 'Type', 'Performed By', 'Cost']],
         body: tableData,
-        headStyles: { fillColor: [59, 130, 246], textColor: 255 },
-        styles: { fontSize: 8, cellPadding: 2 },
-        columnStyles: {
-          0: { cellWidth: 22 },
-          1: { cellWidth: 30 },
-          2: { cellWidth: 50 },
-          3: { cellWidth: 28 },
-          4: { cellWidth: 18 },
-          5: { cellWidth: 35 },
+        headStyles: { 
+          fillColor: [30, 64, 175], 
+          textColor: 255,
+          fontStyle: 'bold',
+          fontSize: 9,
         },
+        styles: { 
+          fontSize: 8, 
+          cellPadding: 3,
+        },
+        columnStyles: {
+          0: { cellWidth: 10, halign: 'center' },
+          1: { cellWidth: 25 },
+          2: { cellWidth: 45 },
+          3: { cellWidth: 40 },
+          4: { cellWidth: 25, halign: 'right' },
+        },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
       });
       
-      // Add detailed entries on subsequent pages
-      let yPos = (doc as any).lastAutoTable.finalY + 15;
-      
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+
+      // === DETAILED RECORDS ===
+      doc.addPage();
+      yPos = 20;
+
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text('Detailed Records', 14, yPos);
+      doc.setTextColor(30, 64, 175);
+      doc.text('Detailed Maintenance Records', 20, yPos);
       yPos += 10;
       
-      for (const record of records) {
+      for (let i = 0; i < filteredRecords.length; i++) {
+        const record = filteredRecords[i];
+        
         // Check if we need a new page
-        if (yPos > 250) {
+        if (yPos > 240) {
           doc.addPage();
           yPos = 20;
         }
+
+        // Record header with number
+        doc.setFillColor(245, 247, 250);
+        doc.rect(15, yPos - 5, pageWidth - 30, 8, 'F');
         
         doc.setFontSize(11);
         doc.setFont('helvetica', 'bold');
-        doc.text(`${format(parseISO(record.maintenance_date), 'dd/MM/yyyy')} - ${getMaintenanceTypeLabel(record.maintenance_type)}`, 14, yPos);
-        yPos += 6;
+        doc.setTextColor(30, 64, 175);
+        doc.text(`${i + 1}. ${format(parseISO(record.maintenance_date), 'dd MMMM yyyy')} - ${getMaintenanceTypeLabel(record.maintenance_type)}`, 20, yPos);
+        yPos += 10;
         
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
+        doc.setTextColor(0);
         
         // Description
-        const descLines = doc.splitTextToSize(`Description: ${record.description}`, pageWidth - 28);
-        doc.text(descLines, 14, yPos);
-        yPos += descLines.length * 4 + 2;
+        doc.setFont('helvetica', 'bold');
+        doc.text('Description:', 25, yPos);
+        doc.setFont('helvetica', 'normal');
+        const descLines = doc.splitTextToSize(record.description, pageWidth - 55);
+        doc.text(descLines, 55, yPos);
+        yPos += Math.max(descLines.length * 4, 5) + 2;
         
-        doc.text(`Performed by: ${record.performed_by || '-'}`, 14, yPos);
+        // Performed by
+        doc.setFont('helvetica', 'bold');
+        doc.text('Performed by:', 25, yPos);
+        doc.setFont('helvetica', 'normal');
+        doc.text(record.performed_by || '-', 55, yPos);
         yPos += 5;
         
+        // Cost
         if (record.cost) {
-          doc.text(`Cost: £${record.cost}`, 14, yPos);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Cost:', 25, yPos);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`£${Number(record.cost).toFixed(2)}`, 55, yPos);
           yPos += 5;
         }
         
+        // Parts replaced
         if (record.parts_replaced) {
-          const partsLines = doc.splitTextToSize(`Parts replaced: ${record.parts_replaced}`, pageWidth - 28);
-          doc.text(partsLines, 14, yPos);
-          yPos += partsLines.length * 4 + 2;
+          doc.setFont('helvetica', 'bold');
+          doc.text('Parts replaced:', 25, yPos);
+          doc.setFont('helvetica', 'normal');
+          const partsLines = doc.splitTextToSize(record.parts_replaced, pageWidth - 55);
+          doc.text(partsLines, 55, yPos);
+          yPos += Math.max(partsLines.length * 4, 5) + 2;
         }
         
+        // Notes
         if (record.notes) {
-          const notesLines = doc.splitTextToSize(`Notes: ${record.notes}`, pageWidth - 28);
-          doc.text(notesLines, 14, yPos);
-          yPos += notesLines.length * 4 + 2;
+          doc.setFont('helvetica', 'bold');
+          doc.text('Notes:', 25, yPos);
+          doc.setFont('helvetica', 'normal');
+          const notesLines = doc.splitTextToSize(record.notes, pageWidth - 55);
+          doc.text(notesLines, 55, yPos);
+          yPos += Math.max(notesLines.length * 4, 5) + 2;
         }
         
-        // Timestamps
+        // Record timestamp
         doc.setFontSize(7);
         doc.setTextColor(128);
-        doc.text(`Created: ${format(parseISO(record.created_at), 'dd/MM/yyyy HH:mm')}${record.updated_at !== record.created_at ? ` | Edited: ${format(parseISO(record.updated_at), 'dd/MM/yyyy HH:mm')}` : ''}`, 14, yPos);
+        const timestampText = `Record created: ${format(parseISO(record.created_at), 'dd/MM/yyyy HH:mm')}${record.updated_at !== record.created_at ? ` | Last edited: ${format(parseISO(record.updated_at), 'dd/MM/yyyy HH:mm')}` : ''}`;
+        doc.text(timestampText, 25, yPos);
         doc.setTextColor(0);
-        yPos += 10;
+        yPos += 12;
       }
+
+      // Add footers to all pages
+      addFooter();
       
       // Save
-      doc.save(`maintenance-report-${ride.ride_name.replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      const fileName = `maintenance-report-${ride.ride_name.replace(/[^a-zA-Z0-9]/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      doc.save(fileName);
       
+      setReportDialogOpen(false);
       toast({
         title: "Success",
         description: "Maintenance report downloaded",
@@ -544,15 +785,11 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         <div className="flex items-center space-x-2">
           <Button
             variant="outline"
-            onClick={generateMaintenanceReport}
-            disabled={generatingPdf || records.length === 0}
+            onClick={() => setReportDialogOpen(true)}
+            disabled={records.length === 0}
           >
-            {generatingPdf ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-            ) : (
-              <FileDown className="h-4 w-4 mr-2" />
-            )}
-            {generatingPdf ? 'Generating...' : 'Download Report'}
+            <FileDown className="h-4 w-4 mr-2" />
+            Download Report
           </Button>
           <Filter className="h-4 w-4" />
           <Select value={filterType} onValueChange={setFilterType}>
@@ -1032,6 +1269,156 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                 <Save className="h-4 w-4 mr-2" />
               )}
               {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Report Options Dialog */}
+      <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Generate Maintenance Report</DialogTitle>
+            <DialogDescription>
+              Select a date range for your maintenance report. The report will include your company details, equipment information, and all maintenance records within the selected period.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {/* Date Range */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>From Date</Label>
+                <Popover open={reportFromCalendarOpen} onOpenChange={setReportFromCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !reportDateFrom && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {reportDateFrom ? format(reportDateFrom, "dd/MM/yyyy") : "Select"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={reportDateFrom}
+                      onSelect={(date) => {
+                        setReportDateFrom(date);
+                        setReportFromCalendarOpen(false);
+                      }}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+
+              <div className="space-y-2">
+                <Label>To Date</Label>
+                <Popover open={reportToCalendarOpen} onOpenChange={setReportToCalendarOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !reportDateTo && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {reportDateTo ? format(reportDateTo, "dd/MM/yyyy") : "Select"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={reportDateTo}
+                      onSelect={(date) => {
+                        setReportDateTo(date);
+                        setReportToCalendarOpen(false);
+                      }}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Quick date range options */}
+            <div className="space-y-2">
+              <Label>Quick Select</Label>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setReportDateFrom(subMonths(new Date(), 3));
+                    setReportDateTo(new Date());
+                  }}
+                >
+                  Last 3 months
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setReportDateFrom(subMonths(new Date(), 6));
+                    setReportDateTo(new Date());
+                  }}
+                >
+                  Last 6 months
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setReportDateFrom(subMonths(new Date(), 12));
+                    setReportDateTo(new Date());
+                  }}
+                >
+                  Last 12 months
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setReportDateFrom(undefined);
+                    setReportDateTo(undefined);
+                  }}
+                >
+                  All time
+                </Button>
+              </div>
+            </div>
+
+            {/* Preview info */}
+            <div className="p-3 bg-muted rounded-md text-sm">
+              <p className="font-medium mb-1">Report will include:</p>
+              <ul className="text-muted-foreground space-y-1 text-xs">
+                <li>• Your company/showman details</li>
+                <li>• Equipment details and photo (if available)</li>
+                <li>• Summary table of all maintenance records</li>
+                <li>• Detailed breakdown of each record</li>
+                <li>• Creation and edit timestamps</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReportDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={generateMaintenanceReport} disabled={generatingPdf}>
+              {generatingPdf ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              ) : (
+                <FileDown className="h-4 w-4 mr-2" />
+              )}
+              {generatingPdf ? 'Generating...' : 'Generate PDF'}
             </Button>
           </DialogFooter>
         </DialogContent>
