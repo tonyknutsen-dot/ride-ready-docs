@@ -28,14 +28,14 @@ export interface Terminology {
 }
 
 const UK_TERMINOLOGY: Terminology = {
-  safetyCertificate: 'Declaration of Compliance (DOC)',
-  safetyCertificateShort: 'DOC Certificate',
-  safetyCertificateDescription: 'ADIPS Declaration of Compliance - Required for UK operation',
-  inflatableCertificate: 'PIPA Certificate',
-  inflatableCertificateDescription: 'PIPA or ADIPS certificate for inflatable devices',
+  safetyCertificate: 'Annual Inspection Certificate',
+  safetyCertificateShort: 'Inspection Certificate',
+  safetyCertificateDescription: 'Annual safety inspection certificate for your equipment',
+  inflatableCertificate: 'Inflatable Inspection Certificate',
+  inflatableCertificateDescription: 'Annual safety inspection certificate for inflatable devices',
   
   localAuthority: 'council',
-  inspector: 'ADIPS inspector',
+  inspector: 'safety inspector',
   
   operator: 'showman',
   operatorPlural: 'showmen',
@@ -48,11 +48,11 @@ const UK_TERMINOLOGY: Terminology = {
 };
 
 const GLOBAL_TERMINOLOGY: Terminology = {
-  safetyCertificate: 'Safety Compliance Certificate',
-  safetyCertificateShort: 'Safety Certificate',
+  safetyCertificate: 'Annual Inspection Certificate',
+  safetyCertificateShort: 'Inspection Certificate',
   safetyCertificateDescription: 'Annual safety inspection certificate for your equipment',
-  inflatableCertificate: 'Inflatable Safety Certificate',
-  inflatableCertificateDescription: 'Safety compliance certificate for inflatable devices',
+  inflatableCertificate: 'Inflatable Inspection Certificate',
+  inflatableCertificateDescription: 'Safety inspection certificate for inflatable devices',
   
   localAuthority: 'local authority',
   inspector: 'safety inspector',
@@ -64,7 +64,7 @@ const GLOBAL_TERMINOLOGY: Terminology = {
   countryCode: 'OTHER',
   isUK: false,
   
-  ukTerminologyNote: 'Known as DOC/ADIPS certificates in the UK',
+  ukTerminologyNote: '',
 };
 
 const IRELAND_TERMINOLOGY: Terminology = {
@@ -72,7 +72,7 @@ const IRELAND_TERMINOLOGY: Terminology = {
   country: 'Ireland',
   countryCode: 'IE',
   localAuthority: 'local authority',
-  ukTerminologyNote: 'Similar to UK DOC certificates',
+  ukTerminologyNote: '',
 };
 
 const AUSTRALIA_TERMINOLOGY: Terminology = {

@@ -328,11 +328,6 @@ const Settings = () => {
                   <span className="font-medium text-foreground">{selectedCountry.flag} {selectedCountry.name}:</span>{' '}
                   {selectedCountry.note}
                 </p>
-                {selectedCountry.code === 'GB' && (
-                  <p className="text-xs text-primary mt-2 font-medium">
-                    💡 UK terminology: ADIPS certificates for rides, PIPA certificates for inflatables
-                  </p>
-                )}
               </div>
             )}
 

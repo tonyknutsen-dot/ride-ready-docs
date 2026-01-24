@@ -48,7 +48,7 @@ type Ride = Tables<'rides'>;
 const EVENT_TYPES = [
   // Basic plan - document expiry reminders
   { value: 'insurance-expiry', label: 'Insurance Expiry', plan: 'basic', category: 'Document Expiry' },
-  { value: 'doc-expiry', label: 'DOC/ADIPS Expiry', plan: 'basic', category: 'Document Expiry' },
+  { value: 'doc-expiry', label: 'Inspection Certificate Expiry', plan: 'basic', category: 'Document Expiry' },
   { value: 'safety-cert-expiry', label: 'Safety Certificate Expiry', plan: 'basic', category: 'Document Expiry' },
   { value: 'other-document-expiry', label: 'Other Document Expiry', plan: 'basic', category: 'Document Expiry' },
   

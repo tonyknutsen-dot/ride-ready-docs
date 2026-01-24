@@ -194,7 +194,7 @@ const TermsOfService = () => {
 
               <section className="border-t pt-6">
                 <p className="text-sm text-muted-foreground italic">
-                  By using Ride Ready Docs, you acknowledge that this is a documentation tool to assist with compliance management. You remain solely responsible for ensuring your rides, equipment, and operations meet all applicable safety standards and regulatory requirements. Always consult with qualified inspectors and comply with relevant safety compliance standards (such as ADIPS in the UK), health and safety regulations, and local authority requirements.
+                  By using Ride Ready Docs, you acknowledge that this is a documentation tool to assist with compliance management. You remain solely responsible for ensuring your rides, equipment, and operations meet all applicable safety standards and regulatory requirements. Always consult with qualified inspectors and comply with relevant safety compliance standards, health and safety regulations, and local authority requirements.
                 </p>
               </section>
             </CardContent>
