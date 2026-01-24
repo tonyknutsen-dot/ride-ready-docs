@@ -234,9 +234,12 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
             <Image className="h-4 w-4 text-muted-foreground" />
             Company Logo
           </Label>
-          <p className="text-xs text-muted-foreground">
-            Your logo will appear on PDF reports and documents
-          </p>
+          <div className="text-xs text-muted-foreground space-y-1">
+            <p>Your logo will appear on PDF reports and documents</p>
+            <p className="text-muted-foreground/70">
+              <strong>Recommended:</strong> Square image, min 200×200px • <strong>Max size:</strong> 5MB • <strong>Formats:</strong> JPG, PNG, WebP
+            </p>
+          </div>
           
           <div className="flex items-center gap-4">
             {/* Preview */}
