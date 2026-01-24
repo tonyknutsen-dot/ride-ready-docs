@@ -17,7 +17,7 @@ const DataProcessingAgreement = () => {
               <section>
                 <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
                 <p className="text-muted-foreground">
-                  This Data Processing Agreement ("DPA") forms part of the agreement between Ride Ready Docs ("Processor", "we", "us") and the Customer ("Controller", "you") for the provision of document management services. This DPA sets out the terms under which we process personal data on your behalf in compliance with GDPR, the UK Data Protection Act 2018, and other applicable data protection laws.
+                  This Data Processing Agreement ("DPA") forms part of the agreement between Ride Ready Docs ("Processor", "we", "us") and the Customer ("Controller", "you") for the provision of document management services. This DPA sets out the terms under which we process personal data on your behalf in compliance with applicable data protection laws including GDPR, CCPA, and other regional regulations.
                 </p>
               </section>
 
@@ -28,7 +28,7 @@ const DataProcessingAgreement = () => {
                   <li><strong>"Data Subject"</strong> means the individual to whom Personal Data relates.</li>
                   <li><strong>"Processing"</strong> means any operation performed on Personal Data, including collection, storage, alteration, retrieval, use, disclosure, or erasure.</li>
                   <li><strong>"Sub-processor"</strong> means any third party engaged by us to process Personal Data on your behalf.</li>
-                  <li><strong>"Supervisory Authority"</strong> means the Information Commissioner's Office (ICO) or other relevant data protection authority.</li>
+                  <li><strong>"Supervisory Authority"</strong> means the relevant data protection authority in your jurisdiction.</li>
                 </ul>
               </section>
 
@@ -87,7 +87,7 @@ const DataProcessingAgreement = () => {
                   You authorize us to engage the following Sub-processors:
                 </p>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
-                  <li><strong>Supabase Inc.</strong> - Database hosting, authentication, and file storage (EU/UK data centers)</li>
+                  <li><strong>Supabase Inc.</strong> - Database hosting, authentication, and file storage (secure global data centers)</li>
                   <li><strong>Resend</strong> - Email delivery services</li>
                   <li><strong>Payment processor</strong> - Subscription billing (if applicable)</li>
                 </ul>
@@ -121,7 +121,7 @@ const DataProcessingAgreement = () => {
               <section>
                 <h2 className="text-2xl font-semibold mb-4">8. International Transfers</h2>
                 <p className="text-muted-foreground">
-                  Personal Data is primarily stored in UK/EU data centers. Where data is transferred outside the EEA/UK, we ensure appropriate safeguards are in place, such as Standard Contractual Clauses (SCCs) or adequacy decisions, in compliance with Chapter V of GDPR.
+                  Personal Data is stored in secure data centers. Where data is transferred internationally, we ensure appropriate safeguards are in place, such as Standard Contractual Clauses (SCCs) or adequacy decisions, in compliance with applicable data protection laws.
                 </p>
               </section>
 
@@ -159,8 +159,8 @@ const DataProcessingAgreement = () => {
                   For questions regarding this DPA or to exercise any rights:
                 </p>
                 <ul className="list-none pl-0 text-muted-foreground space-y-2 mt-4">
-                  <li><strong>Data Protection Contact:</strong> dpo@ridereadydocs.com</li>
-                  <li><strong>General Email:</strong> info@knutssoftware.co.uk</li>
+                  <li><strong>Data Protection Contact:</strong> privacy@ridereadydocs.com</li>
+                  <li><strong>General Email:</strong> support@ridereadydocs.com</li>
                 </ul>
               </section>
             </CardContent>

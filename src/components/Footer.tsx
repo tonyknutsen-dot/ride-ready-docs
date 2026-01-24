@@ -98,7 +98,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-background/10 mt-12 pt-8 text-center text-background/50 text-sm space-y-2">
-          <p>&copy; {currentYear} Showmen's Ride Ready. All rights reserved. Built for the fairground community.</p>
+          <p>&copy; {currentYear} Ride Ready Docs. All rights reserved. Built for amusement professionals worldwide.</p>
           <div className="flex items-center justify-center gap-2">
             <span className="text-xs font-mono opacity-70">{APP_VERSION}</span>
             <span className="opacity-50">•</span>

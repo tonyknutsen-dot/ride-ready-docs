@@ -131,7 +131,7 @@ const PrivacyPolicy = () => {
               <section>
                 <h2 className="text-2xl font-semibold mb-4">10. International Data Transfers</h2>
                 <p className="text-muted-foreground">
-                  Your data is primarily stored in UK/EU data centers. If data is transferred internationally, we ensure appropriate safeguards are in place to protect your information in compliance with GDPR.
+                  Your data is stored in secure data centers. If data is transferred internationally, we ensure appropriate safeguards are in place to protect your information in compliance with applicable data protection laws.
                 </p>
               </section>
 
@@ -148,7 +148,7 @@ const PrivacyPolicy = () => {
                   For questions about this Privacy Policy or to exercise your rights:
                 </p>
                 <ul className="list-none pl-0 text-muted-foreground space-y-2 mt-4">
-                  <li><strong>Email:</strong> info@knutssoftware.co.uk</li>
+                  <li><strong>Email:</strong> support@ridereadydocs.com</li>
                 </ul>
               </section>
             </CardContent>
