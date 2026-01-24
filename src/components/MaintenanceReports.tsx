@@ -376,6 +376,14 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
       // === DETAILED RECORDS ===
       doc.addPage();
       yPos = 20;
+      
+      // Track attachments for appendix
+      const attachmentsForAppendix: Array<{
+        recordIndex: number;
+        recordDate: string;
+        recordType: string;
+        docs: Array<{ id: string; document_name: string; mime_type: string | null; file_path: string }>;
+      }> = [];
 
       doc.setFontSize(13);
       doc.setFont('helvetica', 'bold');
@@ -450,13 +458,42 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
           yPos += Math.max(notesLines.length * 4, 5) + 2;
         }
         
-        // Attachments
+        // Attachments - fetch and list document names
         if (record.document_ids && record.document_ids.length > 0) {
-          doc.setFont('helvetica', 'bold');
-          doc.text('Attachments:', 25, yPos);
-          doc.setFont('helvetica', 'normal');
-          doc.text(`${record.document_ids.length} file${record.document_ids.length !== 1 ? 's' : ''} attached (see Documents section)`, 55, yPos);
-          yPos += 5;
+          // Fetch document names for this record
+          const { data: attachedDocs } = await supabase
+            .from('documents')
+            .select('id, document_name, mime_type, file_path')
+            .in('id', record.document_ids);
+          
+          if (attachedDocs && attachedDocs.length > 0) {
+            doc.setFont('helvetica', 'bold');
+            doc.text('Attachments:', 25, yPos);
+            yPos += 5;
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            for (const attachment of attachedDocs) {
+              doc.text(`• ${attachment.document_name}`, 30, yPos);
+              yPos += 4;
+              
+              // Check for page overflow
+              if (yPos > 270) {
+                doc.addPage();
+                yPos = 20;
+              }
+            }
+            doc.setFontSize(9);
+            yPos += 2;
+            
+            // Store attachments for appendix
+            attachmentsForAppendix.push({
+              recordIndex: i + 1,
+              recordDate: format(parseISO(record.maintenance_date), 'dd MMM yyyy'),
+              recordType: getMaintenanceTypeLabel(record.maintenance_type),
+              docs: attachedDocs
+            });
+          }
         }
         
         // Record timestamp
@@ -467,21 +504,153 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
         doc.setTextColor(0);
         yPos += 12;
       }
+      
+      // === ATTACHMENTS APPENDIX ===
+      if (attachmentsForAppendix.length > 0) {
+        doc.addPage();
+        yPos = 20;
+        
+        doc.setFontSize(13);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(50, 50, 50);
+        doc.text('Appendix: Maintenance Attachments', 20, yPos);
+        yPos += 10;
+        
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(80);
+        doc.text('Supporting documents, receipts, and photographs for maintenance records.', 20, yPos);
+        yPos += 10;
+        
+        for (const attachment of attachmentsForAppendix) {
+          // Section header for each record's attachments
+          if (yPos > 250) {
+            doc.addPage();
+            yPos = 20;
+          }
+          
+          doc.setFillColor(245, 245, 245);
+          doc.rect(15, yPos - 4, pageWidth - 30, 7, 'F');
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(50, 50, 50);
+          doc.text(`Record ${attachment.recordIndex}: ${attachment.recordDate} - ${attachment.recordType}`, 20, yPos);
+          yPos += 10;
+          
+          // Display images inline
+          for (const docItem of attachment.docs) {
+            const isImage = docItem.mime_type?.startsWith('image/');
+            
+            if (isImage) {
+              try {
+                const { data: imageBlob } = await supabase.storage
+                  .from('ride-documents')
+                  .download(docItem.file_path);
+                
+                if (imageBlob) {
+                  const imageDataUrl = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.readAsDataURL(imageBlob);
+                  });
+                  
+                  // Check for page overflow before adding image
+                  if (yPos > 200) {
+                    doc.addPage();
+                    yPos = 20;
+                  }
+                  
+                  // Add image with label
+                  doc.setFontSize(8);
+                  doc.setFont('helvetica', 'normal');
+                  doc.setTextColor(80);
+                  doc.text(docItem.document_name, 25, yPos);
+                  yPos += 4;
+                  
+                  try {
+                    doc.addImage(imageDataUrl, 'AUTO', 25, yPos, 60, 45);
+                    yPos += 50;
+                  } catch (e) {
+                    doc.text('[Image could not be embedded]', 25, yPos);
+                    yPos += 6;
+                  }
+                }
+              } catch (e) {
+                doc.setFontSize(8);
+                doc.text(`• ${docItem.document_name} (file not available)`, 25, yPos);
+                yPos += 5;
+              }
+            } else {
+              // Non-image file - just list it
+              doc.setFontSize(8);
+              doc.setFont('helvetica', 'normal');
+              doc.setTextColor(0);
+              doc.text(`📎 ${docItem.document_name}`, 25, yPos);
+              yPos += 5;
+            }
+          }
+          
+          yPos += 5;
+        }
+      }
 
       // Add footers to all pages
       addFooter();
       
-      // Save with descriptive filename including date range
+      // Generate filename with date range
       const fromStr = reportDateFrom ? format(reportDateFrom, 'ddMMMyyyy') : 'all';
       const toStr = reportDateTo ? format(reportDateTo, 'ddMMMyyyy') : 'present';
-      const fileName = `${ride.ride_name.replace(/[^a-zA-Z0-9]/g, '-')}-Maintenance-Report-${fromStr}-to-${toStr}.pdf`;
-      doc.save(fileName);
+      const documentName = `Maintenance Report - ${ride.ride_name} - ${fromStr} to ${toStr}`;
+      const fileName = `${documentName.replace(/[^a-zA-Z0-9\s-]/g, '')}.pdf`;
+      
+      // Convert PDF to blob for upload
+      const pdfBlob = doc.output('blob');
+      
+      // Upload to Supabase storage
+      const storagePath = `${user.id}/maintenance-reports/${ride.id}/${Date.now()}-${fileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from('ride-documents')
+        .upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
+      
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        // Still save locally even if upload fails
+        doc.save(fileName);
+        toast({
+          title: "Report Downloaded",
+          description: "Report saved locally (could not upload to documents)",
+          variant: "default",
+        });
+      } else {
+        // Create document record in database
+        const { error: docError } = await supabase
+          .from('documents')
+          .insert({
+            user_id: user.id,
+            ride_id: ride.id,
+            document_name: documentName,
+            document_type: 'maintenance_report',
+            file_path: storagePath,
+            mime_type: 'application/pdf',
+            file_size: pdfBlob.size,
+            notes: `Maintenance report covering ${filteredRecords.length} records from ${fromStr} to ${toStr}`,
+            is_global: false,
+          });
+        
+        if (docError) {
+          console.error('Document record error:', docError);
+        }
+        
+        // Also download locally
+        doc.save(fileName);
+        
+        toast({
+          title: "Report Generated",
+          description: "Report saved to Documents and downloaded",
+        });
+      }
       
       setReportDialogOpen(false);
-      toast({
-        title: "Success",
-        description: "Maintenance report downloaded",
-      });
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast({

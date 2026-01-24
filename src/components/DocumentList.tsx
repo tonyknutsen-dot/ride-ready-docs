@@ -272,6 +272,39 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
     }
   };
 
+  const handleToggleGlobal = async (document: Document) => {
+    try {
+      const newGlobalStatus = !document.is_global;
+      
+      const { error } = await supabase
+        .from('documents')
+        .update({ 
+          is_global: newGlobalStatus,
+          // If making global, clear ride_id; if making ride-specific, keep current ride_id
+          ride_id: newGlobalStatus ? null : (document.ride_id || rideId)
+        })
+        .eq('id', document.id);
+
+      if (error) throw error;
+
+      toast({
+        title: newGlobalStatus ? "Document is now Global" : "Document is now Ride-Specific",
+        description: newGlobalStatus 
+          ? "This document will appear on all your devices" 
+          : "This document is now specific to this device only",
+      });
+
+      loadDocuments();
+    } catch (error: any) {
+      console.error('Toggle global error:', error);
+      toast({
+        title: "Update failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
   const isExpiringSoon = (expiryDate: string) => {
     const expiry = new Date(expiryDate);
     const today = new Date();
@@ -312,6 +345,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
     if (t === 'doc') return "📜 DOC Certificate";
     if (t === 'risk_assessment' || t.includes('risk')) return "Risk Assessment (RA)";
     if (t === 'method_statement' || t.includes('method')) return "Method Statement";
+    if (t === 'maintenance_report') return "Maintenance Report";
     if (t.includes('insur')) return "Insurance";
     if (t.includes('cert')) return "Certificate";
     if (t === 'photo' || t.includes('photo')) return "Device Photo";
@@ -530,6 +564,18 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
         )}
       </div>
       <div className="flex flex-wrap items-center gap-1 shrink-0">
+        {/* Toggle global/ride-specific */}
+        {!isOlderVersion && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className={`h-8 w-8 p-0 ${doc.is_global ? 'text-info' : 'text-muted-foreground'}`}
+            onClick={() => handleToggleGlobal(doc)}
+            title={doc.is_global ? "Click to make ride-specific" : "Click to make global (all devices)"}
+          >
+            <Globe className="h-4 w-4" />
+          </Button>
+        )}
         {isViewable(doc) && (
           <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleView(doc)}>
             <Eye className="h-4 w-4" />
