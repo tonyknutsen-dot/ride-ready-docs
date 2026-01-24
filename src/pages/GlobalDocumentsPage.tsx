@@ -7,6 +7,7 @@ import PageHeader from '@/components/PageHeader';
 
 const GlobalDocumentsPage = () => {
   const [refreshKey, setRefreshKey] = useState(0);
+  
 
   const handleUploadSuccess = () => {
     setRefreshKey(prev => prev + 1);
