@@ -2,15 +2,21 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Edit, Trash2, FileText, Camera, Download, Eye, Filter } from 'lucide-react';
+import { Calendar, Edit, Trash2, FileText, Camera, Download, Eye, Filter, Save, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { EmptyState } from '@/components/EmptyState';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -47,6 +53,19 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState<MaintenanceRecord | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingRecord, setEditingRecord] = useState<MaintenanceRecord | null>(null);
+  const [editFormData, setEditFormData] = useState({
+    maintenance_date: new Date(),
+    maintenance_type: '',
+    description: '',
+    performed_by: '',
+    parts_replaced: '',
+    cost: '',
+    notes: '',
+  });
+  const [saving, setSaving] = useState(false);
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -123,6 +142,70 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         description: "Failed to delete maintenance record",
         variant: "destructive",
       });
+    }
+  };
+
+  const openEditDialog = (record: MaintenanceRecord) => {
+    setEditingRecord(record);
+    setEditFormData({
+      maintenance_date: parseISO(record.maintenance_date),
+      maintenance_type: record.maintenance_type,
+      description: record.description,
+      performed_by: record.performed_by || '',
+      parts_replaced: record.parts_replaced || '',
+      cost: record.cost?.toString() || '',
+      notes: record.notes || '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingRecord) return;
+    
+    if (!editFormData.maintenance_type || !editFormData.description || !editFormData.performed_by) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('maintenance_records')
+        .update({
+          maintenance_date: editFormData.maintenance_date.toISOString().split('T')[0],
+          maintenance_type: editFormData.maintenance_type,
+          description: editFormData.description,
+          performed_by: editFormData.performed_by,
+          parts_replaced: editFormData.parts_replaced || null,
+          cost: editFormData.cost ? parseFloat(editFormData.cost) : null,
+          notes: editFormData.notes || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', editingRecord.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Maintenance record updated successfully",
+      });
+
+      setEditDialogOpen(false);
+      setEditingRecord(null);
+      loadMaintenanceRecords();
+    } catch (error) {
+      console.error('Error updating maintenance record:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update maintenance record",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -246,6 +329,20 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                       )}
                     </div>
 
+                    {/* Timestamps */}
+                    <div className="flex flex-wrap gap-4 text-xs text-muted-foreground pt-2 border-t">
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        <span>Created: {format(parseISO(record.created_at), 'dd/MM/yyyy HH:mm')}</span>
+                      </div>
+                      {record.updated_at !== record.created_at && (
+                        <div className="flex items-center gap-1">
+                          <Edit className="h-3 w-3" />
+                          <span>Edited: {format(parseISO(record.updated_at), 'dd/MM/yyyy HH:mm')}</span>
+                        </div>
+                      )}
+                    </div>
+
                     {record.notes && (
                       <div className="text-sm">
                         <span className="font-medium">Notes:</span> {record.notes}
@@ -281,6 +378,15 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                   </div>
 
                   <div className="flex space-x-2">
+                    {/* Edit Button */}
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => openEditDialog(record)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+
                     <Dialog>
                       <DialogTrigger asChild>
                         <Button variant="outline" size="sm" onClick={() => setSelectedRecord(record)}>
@@ -392,6 +498,164 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
           ))}
         </div>
       )}
+
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Maintenance Record</DialogTitle>
+            <DialogDescription>
+              Update the maintenance record details. Changes will be timestamped.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingRecord && (
+            <div className="space-y-4">
+              {/* Original timestamp info */}
+              <div className="flex flex-wrap gap-4 text-xs text-muted-foreground p-3 bg-muted rounded-md">
+                <div className="flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  <span>Originally created: {format(parseISO(editingRecord.created_at), 'dd/MM/yyyy HH:mm')}</span>
+                </div>
+                {editingRecord.updated_at !== editingRecord.created_at && (
+                  <div className="flex items-center gap-1">
+                    <Edit className="h-3 w-3" />
+                    <span>Last edited: {format(parseISO(editingRecord.updated_at), 'dd/MM/yyyy HH:mm')}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Maintenance Date */}
+                <div className="space-y-2">
+                  <Label>Maintenance Date *</Label>
+                  <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !editFormData.maintenance_date && "text-muted-foreground"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {editFormData.maintenance_date ? format(editFormData.maintenance_date, "PPP") : "Select date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={editFormData.maintenance_date}
+                        onSelect={(date) => {
+                          setEditFormData({ ...editFormData, maintenance_date: date || new Date() });
+                          setCalendarOpen(false);
+                        }}
+                        initialFocus
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                {/* Maintenance Type */}
+                <div className="space-y-2">
+                  <Label>Maintenance Type *</Label>
+                  <Select
+                    value={editFormData.maintenance_type}
+                    onValueChange={(value) => setEditFormData({ ...editFormData, maintenance_type: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select maintenance type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {MAINTENANCE_TYPES.map((type) => (
+                        <SelectItem key={type.value} value={type.value}>
+                          {type.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Performed By */}
+                <div className="space-y-2">
+                  <Label htmlFor="edit_performed_by">Performed By *</Label>
+                  <Input
+                    id="edit_performed_by"
+                    value={editFormData.performed_by}
+                    onChange={(e) => setEditFormData({ ...editFormData, performed_by: e.target.value })}
+                    placeholder="Name of person who performed maintenance"
+                  />
+                </div>
+
+                {/* Cost */}
+                <div className="space-y-2">
+                  <Label htmlFor="edit_cost">Cost (£)</Label>
+                  <Input
+                    id="edit_cost"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={editFormData.cost}
+                    onChange={(e) => setEditFormData({ ...editFormData, cost: e.target.value })}
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="edit_description">Work Description *</Label>
+                <Textarea
+                  id="edit_description"
+                  value={editFormData.description}
+                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                  placeholder="Describe the maintenance work performed..."
+                  rows={3}
+                />
+              </div>
+
+              {/* Parts Replaced */}
+              <div className="space-y-2">
+                <Label htmlFor="edit_parts_replaced">Parts Replaced</Label>
+                <Textarea
+                  id="edit_parts_replaced"
+                  value={editFormData.parts_replaced}
+                  onChange={(e) => setEditFormData({ ...editFormData, parts_replaced: e.target.value })}
+                  placeholder="List any parts that were replaced..."
+                  rows={2}
+                />
+              </div>
+
+              {/* Additional Notes */}
+              <div className="space-y-2">
+                <Label htmlFor="edit_notes">Additional Notes</Label>
+                <Textarea
+                  id="edit_notes"
+                  value={editFormData.notes}
+                  onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
+                  placeholder="Any additional notes or observations..."
+                  rows={2}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveEdit} disabled={saving}>
+              {saving ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+              ) : (
+                <Save className="h-4 w-4 mr-2" />
+              )}
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
