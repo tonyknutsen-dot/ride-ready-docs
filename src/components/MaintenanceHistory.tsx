@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Edit, Trash2, FileText, Camera, Download, Eye, Filter, Save, Clock } from 'lucide-react';
+import { Calendar, Edit, Trash2, FileText, Camera, Download, Eye, Filter, Save, Clock, Upload, X, FolderOpen, FileDown } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -17,6 +17,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { compressImage } from '@/utils/imageCompression';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -66,7 +69,25 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   });
   const [saving, setSaving] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [generatingPdf, setGeneratingPdf] = useState(false);
   const { toast } = useToast();
+
+  // Allowed MIME types for maintenance documents
+  const ALLOWED_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/heic',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain',
+    'text/csv',
+  ];
 
   useEffect(() => {
     loadMaintenanceRecords();
@@ -156,7 +177,108 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       cost: record.cost?.toString() || '',
       notes: record.notes || '',
     });
+    setNewFiles([]);
     setEditDialogOpen(true);
+  };
+
+  const handleEditFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    const processedFiles: File[] = [];
+    
+    for (const file of files) {
+      const isValidType = ALLOWED_TYPES.includes(file.type) || file.type.startsWith('image/');
+      const isValidSize = file.size <= 10 * 1024 * 1024;
+      
+      if (!isValidType) {
+        toast({
+          title: "Invalid File Type",
+          description: `${file.name} is not supported.`,
+          variant: "destructive",
+        });
+        continue;
+      }
+      
+      if (!isValidSize) {
+        toast({
+          title: "File Too Large",
+          description: `${file.name} is too large. Max 10MB.`,
+          variant: "destructive",
+        });
+        continue;
+      }
+      
+      if (file.type.startsWith('image/') && file.size > 500000) {
+        try {
+          const compressed = await compressImage(file);
+          processedFiles.push(compressed);
+        } catch (error) {
+          processedFiles.push(file);
+        }
+      } else {
+        processedFiles.push(file);
+      }
+    }
+
+    setNewFiles(prev => [...prev, ...processedFiles]);
+  };
+
+  const removeNewFile = (index: number) => {
+    setNewFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadFilesToStorage = async (files: File[]): Promise<string[]> => {
+    const uploadedPaths: string[] = [];
+
+    for (const file of files) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `maintenance/${ride.id}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('ride-documents')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        console.error('Error uploading file:', uploadError);
+        throw new Error(`Failed to upload ${file.name}`);
+      }
+
+      uploadedPaths.push(filePath);
+    }
+
+    return uploadedPaths;
+  };
+
+  const saveDocuments = async (filePaths: string[], recordDescription: string): Promise<string[]> => {
+    const documentIds: string[] = [];
+
+    for (let i = 0; i < filePaths.length; i++) {
+      const filePath = filePaths[i];
+      const originalFile = newFiles[i];
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('documents')
+        .insert([{
+          user_id: user.id,
+          ride_id: ride.id,
+          document_name: originalFile.name,
+          document_type: 'maintenance',
+          file_path: filePath,
+          mime_type: originalFile.type,
+          file_size: originalFile.size,
+          notes: `Maintenance record: ${recordDescription}`,
+        }])
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      if (data) documentIds.push(data.id);
+    }
+
+    return documentIds;
   };
 
   const handleSaveEdit = async () => {
@@ -173,6 +295,17 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
 
     setSaving(true);
     try {
+      // Upload new files if any
+      let newDocumentIds: string[] = [];
+      if (newFiles.length > 0) {
+        const filePaths = await uploadFilesToStorage(newFiles);
+        newDocumentIds = await saveDocuments(filePaths, editFormData.description);
+      }
+
+      // Merge with existing document IDs
+      const existingDocIds = editingRecord.document_ids || [];
+      const allDocumentIds = [...existingDocIds, ...newDocumentIds];
+
       const { error } = await supabase
         .from('maintenance_records')
         .update({
@@ -183,6 +316,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
           parts_replaced: editFormData.parts_replaced || null,
           cost: editFormData.cost ? parseFloat(editFormData.cost) : null,
           notes: editFormData.notes || null,
+          document_ids: allDocumentIds.length > 0 ? allDocumentIds : null,
           updated_at: new Date().toISOString(),
         })
         .eq('id', editingRecord.id);
@@ -196,6 +330,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
 
       setEditDialogOpen(false);
       setEditingRecord(null);
+      setNewFiles([]);
       loadMaintenanceRecords();
     } catch (error) {
       console.error('Error updating maintenance record:', error);
@@ -206,6 +341,131 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const generateMaintenanceReport = async () => {
+    setGeneratingPdf(true);
+    try {
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      
+      // Title
+      doc.setFontSize(20);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Maintenance Report', pageWidth / 2, 20, { align: 'center' });
+      
+      // Ride info
+      doc.setFontSize(14);
+      doc.text(ride.ride_name, pageWidth / 2, 30, { align: 'center' });
+      
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, pageWidth / 2, 38, { align: 'center' });
+      doc.text(`Total Records: ${records.length}`, pageWidth / 2, 44, { align: 'center' });
+      
+      // Summary stats
+      const totalCost = records.reduce((sum, r) => sum + (Number(r.cost) || 0), 0);
+      doc.text(`Total Cost: £${totalCost.toFixed(2)}`, pageWidth / 2, 50, { align: 'center' });
+      
+      // Table data
+      const tableData = records.map(record => [
+        format(parseISO(record.maintenance_date), 'dd/MM/yyyy'),
+        getMaintenanceTypeLabel(record.maintenance_type),
+        record.description.substring(0, 50) + (record.description.length > 50 ? '...' : ''),
+        record.performed_by || '-',
+        record.cost ? `£${record.cost}` : '-',
+        record.parts_replaced ? record.parts_replaced.substring(0, 30) + (record.parts_replaced.length > 30 ? '...' : '') : '-',
+      ]);
+      
+      autoTable(doc, {
+        startY: 58,
+        head: [['Date', 'Type', 'Description', 'Performed By', 'Cost', 'Parts']],
+        body: tableData,
+        headStyles: { fillColor: [59, 130, 246], textColor: 255 },
+        styles: { fontSize: 8, cellPadding: 2 },
+        columnStyles: {
+          0: { cellWidth: 22 },
+          1: { cellWidth: 30 },
+          2: { cellWidth: 50 },
+          3: { cellWidth: 28 },
+          4: { cellWidth: 18 },
+          5: { cellWidth: 35 },
+        },
+      });
+      
+      // Add detailed entries on subsequent pages
+      let yPos = (doc as any).lastAutoTable.finalY + 15;
+      
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Detailed Records', 14, yPos);
+      yPos += 10;
+      
+      for (const record of records) {
+        // Check if we need a new page
+        if (yPos > 250) {
+          doc.addPage();
+          yPos = 20;
+        }
+        
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${format(parseISO(record.maintenance_date), 'dd/MM/yyyy')} - ${getMaintenanceTypeLabel(record.maintenance_type)}`, 14, yPos);
+        yPos += 6;
+        
+        doc.setFontSize(9);
+        doc.setFont('helvetica', 'normal');
+        
+        // Description
+        const descLines = doc.splitTextToSize(`Description: ${record.description}`, pageWidth - 28);
+        doc.text(descLines, 14, yPos);
+        yPos += descLines.length * 4 + 2;
+        
+        doc.text(`Performed by: ${record.performed_by || '-'}`, 14, yPos);
+        yPos += 5;
+        
+        if (record.cost) {
+          doc.text(`Cost: £${record.cost}`, 14, yPos);
+          yPos += 5;
+        }
+        
+        if (record.parts_replaced) {
+          const partsLines = doc.splitTextToSize(`Parts replaced: ${record.parts_replaced}`, pageWidth - 28);
+          doc.text(partsLines, 14, yPos);
+          yPos += partsLines.length * 4 + 2;
+        }
+        
+        if (record.notes) {
+          const notesLines = doc.splitTextToSize(`Notes: ${record.notes}`, pageWidth - 28);
+          doc.text(notesLines, 14, yPos);
+          yPos += notesLines.length * 4 + 2;
+        }
+        
+        // Timestamps
+        doc.setFontSize(7);
+        doc.setTextColor(128);
+        doc.text(`Created: ${format(parseISO(record.created_at), 'dd/MM/yyyy HH:mm')}${record.updated_at !== record.created_at ? ` | Edited: ${format(parseISO(record.updated_at), 'dd/MM/yyyy HH:mm')}` : ''}`, 14, yPos);
+        doc.setTextColor(0);
+        yPos += 10;
+      }
+      
+      // Save
+      doc.save(`maintenance-report-${ride.ride_name.replace(/\s+/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      
+      toast({
+        title: "Success",
+        description: "Maintenance report downloaded",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate report",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingPdf(false);
     }
   };
 
@@ -282,6 +542,18 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
           </p>
         </div>
         <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            onClick={generateMaintenanceReport}
+            disabled={generatingPdf || records.length === 0}
+          >
+            {generatingPdf ? (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+            ) : (
+              <FileDown className="h-4 w-4 mr-2" />
+            )}
+            {generatingPdf ? 'Generating...' : 'Download Report'}
+          </Button>
           <Filter className="h-4 w-4" />
           <Select value={filterType} onValueChange={setFilterType}>
             <SelectTrigger className="w-48">
@@ -638,6 +910,114 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                   rows={2}
                 />
               </div>
+
+              {/* Existing Documents */}
+              {editingRecord && documents[editingRecord.id] && documents[editingRecord.id].length > 0 && (
+                <div className="space-y-2">
+                  <Label>Existing Attachments ({documents[editingRecord.id].length})</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {documents[editingRecord.id].map((doc) => (
+                      <div key={doc.id} className="flex items-center space-x-2 p-2 border rounded-md bg-background">
+                        {doc.mime_type?.startsWith('image/') ? (
+                          <Camera className="h-4 w-4 text-blue-500" />
+                        ) : (
+                          <FileText className="h-4 w-4 text-green-500" />
+                        )}
+                        <span className="text-xs truncate max-w-32">{doc.document_name}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => downloadFile(doc)}
+                          className="h-6 w-6 p-0"
+                        >
+                          <Download className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Add New Files */}
+              <div className="space-y-2">
+                <Label>Add New Files</Label>
+                
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
+                  onChange={handleEditFileUpload}
+                  className="hidden"
+                  id="edit-file-upload"
+                />
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*"
+                  capture="environment"
+                  onChange={handleEditFileUpload}
+                  className="hidden"
+                  id="edit-camera-upload"
+                />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-16 flex flex-col items-center justify-center gap-1 border-2 border-dashed hover:border-primary/50"
+                    onClick={() => document.getElementById('edit-camera-upload')?.click()}
+                  >
+                    <Camera className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-xs font-medium">Take Photo</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-16 flex flex-col items-center justify-center gap-1 border-2 border-dashed hover:border-primary/50"
+                    onClick={() => document.getElementById('edit-file-upload')?.click()}
+                  >
+                    <FolderOpen className="h-5 w-5 text-muted-foreground" />
+                    <span className="text-xs font-medium">Choose File</span>
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Max 10MB per file. Supports: Images, PDF, Word, Excel, Text files
+                </p>
+              </div>
+
+              {/* New Files Preview */}
+              {newFiles.length > 0 && (
+                <div className="space-y-2">
+                  <Label>New Files to Upload ({newFiles.length})</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {newFiles.map((file, index) => (
+                      <div key={index} className="relative group border rounded-md overflow-hidden bg-muted/30 w-16 h-16">
+                        {file.type.startsWith('image/') ? (
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center p-1">
+                            <FileText className="h-5 w-5 text-muted-foreground" />
+                            <span className="text-[8px] text-center text-muted-foreground line-clamp-1 mt-0.5">{file.name.split('.').pop()}</span>
+                          </div>
+                        )}
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute top-0.5 right-0.5 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => removeNewFile(index)}
+                        >
+                          <X className="h-2.5 w-2.5" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
