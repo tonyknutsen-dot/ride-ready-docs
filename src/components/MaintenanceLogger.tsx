@@ -58,18 +58,30 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
     notes: '',
   });
 
+  // Allowed MIME types for maintenance documents
+  const ALLOWED_TYPES = [
+    'image/jpeg',
+    'image/png',
+    'image/gif',
+    'image/webp',
+    'image/heic',
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ];
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     const processedFiles: File[] = [];
     
     for (const file of files) {
-      const isValidType = file.type.startsWith('image/') || file.type === 'application/pdf' || file.type.startsWith('application/');
+      const isValidType = ALLOWED_TYPES.includes(file.type) || file.type.startsWith('image/');
       const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB limit
       
       if (!isValidType) {
         toast({
           title: "Invalid File Type",
-          description: `${file.name} is not a supported file type. Please upload images, PDFs, or documents.`,
+          description: `${file.name} is not supported. Please upload images, PDFs, or Word documents only.`,
           variant: "destructive",
         });
         continue;
@@ -387,7 +399,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           <input
             type="file"
             multiple
-            accept="image/*,.pdf,.doc,.docx,.txt"
+            accept="image/*,.pdf,.doc,.docx"
             onChange={handleFileUpload}
             className="hidden"
             id="file-upload"
@@ -432,27 +444,35 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         {uploadedFiles.length > 0 && (
           <div className="space-y-2">
             <Label>Uploaded Files ({uploadedFiles.length})</Label>
-            <div className="space-y-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {uploadedFiles.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-2 border rounded">
-                  <div className="flex items-center space-x-2">
-                    {file.type.startsWith('image/') ? (
-                      <Camera className="h-4 w-4 text-blue-500" />
-                    ) : (
-                      <FileText className="h-4 w-4 text-green-500" />
-                    )}
-                    <span className="text-sm">{file.name}</span>
-                    <Badge variant="outline" className="text-xs">
-                      {(file.size / 1024 / 1024).toFixed(1)}MB
-                    </Badge>
+                <div key={index} className="relative group border rounded-lg overflow-hidden bg-muted/30">
+                  {file.type.startsWith('image/') ? (
+                    <div className="aspect-square">
+                      <img
+                        src={URL.createObjectURL(file)}
+                        alt={file.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  ) : (
+                    <div className="aspect-square flex flex-col items-center justify-center p-3">
+                      <FileText className="h-10 w-10 text-muted-foreground mb-2" />
+                      <span className="text-xs text-center text-muted-foreground line-clamp-2">{file.name}</span>
+                    </div>
+                  )}
+                  <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-1.5">
+                    <p className="text-xs truncate font-medium">{file.name}</p>
+                    <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(1)}MB</p>
                   </div>
                   <Button
                     type="button"
-                    variant="ghost"
-                    size="sm"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => removeFile(index)}
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3 w-3" />
                   </Button>
                 </div>
               ))}
