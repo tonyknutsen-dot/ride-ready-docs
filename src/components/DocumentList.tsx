@@ -25,10 +25,11 @@ interface DocumentListProps {
   rideName?: string;
   isGlobal?: boolean;
   grouped?: boolean;
+  showAllDocuments?: boolean; // Show all documents (both ride-specific and global)
   onDocumentDeleted: () => void;
 }
 
-const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onDocumentDeleted }: DocumentListProps) => {
+const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, showAllDocuments = false, onDocumentDeleted }: DocumentListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -106,7 +107,9 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
         .neq('document_type', 'maintenance') // Exclude maintenance attachments - they belong to maintenance section only
         .order('uploaded_at', { ascending: false });
 
-      if (rideId) {
+      if (showAllDocuments) {
+        // Show all documents - no filter needed
+      } else if (rideId) {
         // When showing documents for a specific ride, get both ride-specific AND global documents
         query = query.or(`ride_id.eq.${rideId},is_global.eq.true`);
       } else if (isGlobal) {

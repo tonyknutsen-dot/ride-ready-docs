@@ -212,7 +212,10 @@ const Overview = () => {
             </Card>
           }
         >
-          <Card className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-amber-500/10" onClick={() => navigate('/rides')}>
+          <Card 
+            className="group hover:shadow-elegant transition-all duration-300 cursor-pointer border-amber-500/20 bg-gradient-to-br from-amber-500/5 to-amber-500/10" 
+            onClick={() => navigate('/maintenance')}
+          >
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2.5 bg-amber-500/20 rounded-xl group-hover:bg-amber-500/30 transition-colors shadow-sm">

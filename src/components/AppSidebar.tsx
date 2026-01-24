@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  Wrench,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -46,11 +47,12 @@ const mainNavItems = [
   { title: 'Overview', url: '/overview', icon: Home },
   { title: 'Rides', url: '/rides', icon: FolderOpen },
   { title: 'Calendar', url: '/calendar', icon: CalendarIcon },
-  { title: 'Documents', url: '/global-documents', icon: FileText },
+  { title: 'Documents', url: '/documents', icon: FileText },
 ];
 
 const featureNavItems = [
   { title: 'Checks', url: '/checks', icon: CheckSquare },
+  { title: 'Maintenance', url: '/maintenance', icon: Wrench },
   { title: 'Risk Assessments', url: '/risk-assessments', icon: ShieldCheck },
   { title: 'Send Documents', url: '/send-documents', icon: Send },
 ];

@@ -42,6 +42,7 @@ const Security = lazy(() => import("./pages/Security"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const DataProcessingAgreement = lazy(() => import("./pages/DataProcessingAgreement"));
 const Checks = lazy(() => import("./pages/Checks"));
+const Maintenance = lazy(() => import("./pages/Maintenance"));
 const SetupAdmin = lazy(() => import("./pages/SetupAdmin"));
 const Settings = lazy(() => import("./pages/Settings"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -53,6 +54,7 @@ const SecurityDashboard = lazy(() => import("./pages/admin/SecurityDashboard"));
 const BugReports = lazy(() => import("./pages/admin/BugReports"));
 const RiskAssessments = lazy(() => import("./pages/RiskAssessments"));
 const GlobalDocumentsPage = lazy(() => import("./pages/GlobalDocumentsPage"));
+const Documents = lazy(() => import("./pages/Documents"));
 const BatchSendDocuments = lazy(() => import("./pages/BatchSendDocuments"));
 const Marketing = lazy(() => import("./pages/Marketing"));
 const TesterInvite = lazy(() => import("./pages/TesterInvite"));
@@ -269,6 +271,34 @@ const App = () => (
                           <Checks />
                         </AppLayout>
                       </FeatureGate>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              {/* Maintenance route - requires advanced plan */}
+              <Route 
+                path="/maintenance" 
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <FeatureGate requiredPlan="advanced" feature="Maintenance">
+                        <AppLayout>
+                          <Maintenance />
+                        </AppLayout>
+                      </FeatureGate>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              {/* All Documents page */}
+              <Route 
+                path="/documents"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <AppLayout>
+                        <Documents />
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
