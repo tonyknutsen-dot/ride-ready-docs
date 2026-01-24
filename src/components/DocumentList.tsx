@@ -25,11 +25,12 @@ interface DocumentListProps {
   rideName?: string;
   isGlobal?: boolean;
   grouped?: boolean;
-  showAllDocuments?: boolean; // Show all documents (both ride-specific and global)
+  showAllDocuments?: boolean;
+  excludeGlobal?: boolean; // When true, don't include global docs in ride document lists
   onDocumentDeleted: () => void;
 }
 
-const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, showAllDocuments = false, onDocumentDeleted }: DocumentListProps) => {
+const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, showAllDocuments = false, excludeGlobal = false, onDocumentDeleted }: DocumentListProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
@@ -110,8 +111,13 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
       if (showAllDocuments) {
         // Show all documents - no filter needed
       } else if (rideId) {
-        // When showing documents for a specific ride, get both ride-specific AND global documents
-        query = query.or(`ride_id.eq.${rideId},is_global.eq.true`);
+        if (excludeGlobal) {
+          // Only show documents for this specific ride, exclude global
+          query = query.eq('ride_id', rideId);
+        } else {
+          // Show ride-specific AND global documents
+          query = query.or(`ride_id.eq.${rideId},is_global.eq.true`);
+        }
       } else if (isGlobal) {
         query = query.eq('is_global', true);
       }

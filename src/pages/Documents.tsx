@@ -201,6 +201,7 @@ const Documents = () => {
                     rideId={ride.id}
                     rideName={ride.ride_name}
                     onDocumentDeleted={handleDocumentDeleted}
+                    excludeGlobal
                     grouped
                   />
                 </CollapsibleContent>
