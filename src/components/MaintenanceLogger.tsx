@@ -346,7 +346,10 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
 
           {/* Cost */}
           <div className="space-y-2">
-            <Label htmlFor="cost">Cost (£)</Label>
+            <Label htmlFor="cost" className="flex items-center gap-1.5">
+              Cost (£)
+              <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+            </Label>
             <Input
               id="cost"
               type="number"
