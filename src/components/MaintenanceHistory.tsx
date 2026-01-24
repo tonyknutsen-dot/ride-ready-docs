@@ -632,17 +632,24 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       doc.text('Maintenance Records', 20, yPos);
       yPos += 5;
 
+      // Truncate description for table view
+      const truncateText = (text: string, maxLength: number) => {
+        if (text.length <= maxLength) return text;
+        return text.substring(0, maxLength - 3) + '...';
+      };
+
       const tableData = filteredRecords.map((record, index) => [
         (index + 1).toString(),
         format(parseISO(record.maintenance_date), 'dd/MM/yyyy'),
         getMaintenanceTypeLabel(record.maintenance_type),
+        truncateText(record.description, 50),
         record.performed_by || '-',
         record.cost ? `£${Number(record.cost).toFixed(2)}` : '-',
       ]);
       
       autoTable(doc, {
         startY: yPos,
-        head: [['#', 'Date', 'Type', 'Performed By', 'Cost']],
+        head: [['#', 'Date', 'Type', 'Work Done', 'By', 'Cost']],
         body: tableData,
         headStyles: { 
           fillColor: [30, 64, 175], 
@@ -656,10 +663,11 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         },
         columnStyles: {
           0: { cellWidth: 10, halign: 'center' },
-          1: { cellWidth: 25 },
-          2: { cellWidth: 45 },
-          3: { cellWidth: 40 },
-          4: { cellWidth: 25, halign: 'right' },
+          1: { cellWidth: 22 },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 55 },
+          4: { cellWidth: 28 },
+          5: { cellWidth: 20, halign: 'right' },
         },
         alternateRowStyles: { fillColor: [245, 247, 250] },
       });
