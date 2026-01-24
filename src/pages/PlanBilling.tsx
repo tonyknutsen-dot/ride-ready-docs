@@ -149,7 +149,7 @@ export default function PlanBilling() {
   }
 
   const plan = subscription?.subscriptionPlan ?? subscription?.subscriptionStatus ?? "trial";
-  const isTrialOrExpired = plan === "trial" || plan === "expired" || !subscription?.stripeSubscriptionId;
+  const isTrialOrExpired = plan === "trial" || plan === "expired" || !subscription?.hasStripeSubscription;
   const billingCycle = subscription?.billingCycle ?? "monthly";
 
   const getPlanPrice = () => {

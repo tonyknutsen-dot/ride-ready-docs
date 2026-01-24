@@ -55,8 +55,10 @@ export interface SubscriptionData {
   canAddRide: boolean;
   extraItemsCount: number;
   currentPeriodEnd: string | null;
-  stripeCustomerId: string | null;
-  stripeSubscriptionId: string | null;
+  // NOTE: Stripe IDs are intentionally NOT exposed to client code for security
+  // All payment operations use edge functions with service role access
+  hasStripeCustomer: boolean;
+  hasStripeSubscription: boolean;
   isTesterAccount: boolean;
 }
 
@@ -83,7 +85,10 @@ export const useSubscription = () => {
       const [profileResult, rideCountResult] = await Promise.all([
         supabase
           .from('profiles')
-          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, extra_items_count, current_period_end, stripe_customer_id, stripe_subscription_id')
+          // NOTE: Intentionally NOT querying stripe_customer_id or stripe_subscription_id
+          // These sensitive payment IDs should never be exposed to client-side code
+          // All Stripe operations are handled by edge functions with service role
+          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, extra_items_count, current_period_end')
           .eq('user_id', user.id)
           .maybeSingle(),
         supabase
@@ -123,8 +128,8 @@ export const useSubscription = () => {
             canAddRide: true, // Always can add
             extraItemsCount: 0,
             currentPeriodEnd: null,
-            stripeCustomerId: null, // No Stripe for testers
-            stripeSubscriptionId: null,
+            hasStripeCustomer: false, // No Stripe for testers
+            hasStripeSubscription: false,
             isTesterAccount: true,
           };
           setSubscription(testerSubscription);
@@ -151,8 +156,9 @@ export const useSubscription = () => {
           canAddRide: rideCount < rideLimit,
           extraItemsCount,
           currentPeriodEnd: data.current_period_end,
-          stripeCustomerId: data.stripe_customer_id,
-          stripeSubscriptionId: data.stripe_subscription_id,
+          // Stripe presence is determined by subscription status, not by exposing IDs
+          hasStripeCustomer: status !== 'trial' && status !== 'expired',
+          hasStripeSubscription: status === 'basic' || status === 'advanced',
           isTesterAccount: false,
         };
 
