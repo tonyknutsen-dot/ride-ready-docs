@@ -18,7 +18,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import AppHeader from '@/components/AppHeader';
+
 import { COUNTRIES, getTerminologyForCountry } from '@/constants/profile';
 import { CustomTerminologyEditor, CustomTerminology } from '@/components/CustomTerminologyEditor';
 import { Button } from '@/components/ui/button';
@@ -200,7 +200,7 @@ const Settings = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AppHeader />
+      
       <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5 max-w-2xl">
         {/* Back Button */}
         <Button

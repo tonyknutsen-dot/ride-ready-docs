@@ -1,7 +1,5 @@
 import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import AppHeader from "@/components/AppHeader";
-import MobileBottomNav from "@/components/MobileBottomNav";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ContactManager } from "@/components/marketing/ContactManager";
 import { CampaignBuilder } from "@/components/marketing/CampaignBuilder";
@@ -18,7 +16,6 @@ const Marketing = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20 md:pb-0">
-      <AppHeader />
       
       <main className="container mx-auto px-4 py-6 max-w-6xl">
         <div className="mb-6">
@@ -58,7 +55,6 @@ const Marketing = () => {
         </Tabs>
       </main>
 
-      <MobileBottomNav />
     </div>
   );
 };
