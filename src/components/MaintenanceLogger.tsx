@@ -68,6 +68,10 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.ms-excel',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain',
+    'text/csv',
   ];
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -399,7 +403,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           <input
             type="file"
             multiple
-            accept="image/*,.pdf,.doc,.docx"
+            accept="image/*,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
             onChange={handleFileUpload}
             className="hidden"
             id="file-upload"
@@ -436,7 +440,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Max 10MB per file. Supports: Images, PDF, Word docs
+            Max 10MB per file. Supports: Images, PDF, Word, Excel, Text files
           </p>
         </div>
 
