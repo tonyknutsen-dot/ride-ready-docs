@@ -7,11 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Building, User, MapPin, Save, Globe } from 'lucide-react';
+import { Building, User, MapPin, Save, Globe, Upload, X, Image } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { OPERATOR_TYPES, COUNTRIES } from '@/constants/profile';
 import DeviceHintBanner from './DeviceHintBanner';
+import { compressImage } from '@/utils/imageCompression';
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -39,8 +40,65 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     country: user?.user_metadata?.country || 'GB',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const isShowman = formData.operator_type === 'showman';
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file (JPG, PNG, etc.)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Logo must be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const compressed = await compressImage(file, 800, 0.85);
+      setLogoFile(compressed);
+      setLogoPreview(URL.createObjectURL(compressed));
+    } catch (error) {
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+  };
+
+  const uploadLogo = async (): Promise<string | null> => {
+    if (!logoFile || !user) return null;
+    
+    const fileExt = logoFile.name.split('.').pop();
+    const fileName = `company-logos/${user.id}/${Date.now()}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('ride-documents')
+      .upload(fileName, logoFile);
+    
+    if (uploadError) {
+      console.error('Logo upload error:', uploadError);
+      return null;
+    }
+    
+    return fileName;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +114,9 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
       const validatedData = profileSchema.parse(validationData);
       setLoading(true);
 
+      // Upload logo if provided
+      const logoPath = await uploadLogo();
+
       const { error } = await supabase
         .from('profiles')
         .upsert({
@@ -66,6 +127,7 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
           address: validatedData.address || null,
           country: validatedData.country,
           operator_type: validatedData.operator_type,
+          company_logo_path: logoPath,
         }, {
           onConflict: 'user_id'
         });
@@ -184,6 +246,70 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
               {errors.operator_type && (
                 <p className="text-sm text-destructive">{errors.operator_type}</p>
               )}
+            </div>
+
+            {/* Company Logo Upload */}
+            <div className="space-y-2">
+              <Label className="flex items-center space-x-2">
+                <Image className="h-4 w-4" />
+                <span>Company Logo (Optional)</span>
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Your logo will appear on PDF reports and documents
+              </p>
+              
+              <div className="flex items-center gap-4">
+                {logoPreview ? (
+                  <div className="relative group">
+                    <img
+                      src={logoPreview}
+                      alt="Company logo preview"
+                      className="w-20 h-20 object-contain border rounded-lg bg-muted/30"
+                    />
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={handleRemoveLogo}
+                    >
+                      <X className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      className="hidden"
+                      disabled={loading}
+                    />
+                    <div className="w-20 h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors">
+                      <Upload className="h-5 w-5" />
+                      <span className="text-xs">Upload</span>
+                    </div>
+                  </label>
+                )}
+                
+                {logoPreview && (
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      className="hidden"
+                      disabled={loading}
+                    />
+                    <Button type="button" variant="outline" size="sm" asChild>
+                      <span>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Change
+                      </span>
+                    </Button>
+                  </label>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
