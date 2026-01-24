@@ -162,6 +162,17 @@ const Documents = () => {
               </Collapsible>
             )}
 
+            {/* Ride Documents Header */}
+            {ridesWithDocs.length > 0 && (
+              <div className="flex items-center gap-2 pt-4 pb-1">
+                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                  Ride Documents
+                </h2>
+                <div className="flex-1 h-px bg-border/50" />
+              </div>
+            )}
+
             {/* Rides with Documents */}
             {ridesWithDocs.map(ride => (
               <Collapsible 
