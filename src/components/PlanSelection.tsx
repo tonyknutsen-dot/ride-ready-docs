@@ -59,7 +59,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
   }
 
   // Check if user has an active paid subscription
-  const hasActiveSubscription = subscription?.stripeSubscriptionId && 
+  const hasActiveSubscription = subscription?.hasStripeSubscription && 
     (subscription?.subscriptionStatus === 'basic' || subscription?.subscriptionStatus === 'advanced');
 
   const handleSelectPlan = (plan: 'basic' | 'advanced') => {

@@ -1,6 +1,10 @@
 /**
  * Shared Rate Limiting Utility for Edge Functions
  * Uses Supabase for persistent storage across isolates
+ * 
+ * SECURITY: Critical endpoints (email, payment) fail CLOSED on errors
+ * to prevent abuse during database outages. Non-critical endpoints
+ * fail open to maintain availability.
  */
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
@@ -10,6 +14,7 @@ interface RateLimitResult {
   remaining: number;
   retryAfter?: number;
   limit: number;
+  failedClosed?: boolean; // Indicates if request was denied due to error
 }
 
 // Rate limit configurations for different endpoint types
@@ -18,31 +23,37 @@ export const RATE_LIMITS = {
   public: {
     maxRequests: 5,
     windowMs: 3600000, // 1 hour
+    failClosed: false, // Less critical, maintain availability
   },
   // Authenticated endpoints - moderate limits
   authenticated: {
     maxRequests: 60,
     windowMs: 60000, // 1 minute (60 req/min)
+    failClosed: false, // Less critical, maintain availability
   },
-  // Email sending endpoints - prevent spam
+  // Email sending endpoints - prevent spam (CRITICAL)
   email: {
     maxRequests: 10,
     windowMs: 60000, // 1 minute
+    failClosed: true, // CRITICAL: Fail closed to prevent email spam
   },
   // Batch operations - stricter due to resource intensity
   batch: {
     maxRequests: 5,
     windowMs: 60000, // 1 minute
+    failClosed: true, // CRITICAL: Fail closed to prevent resource abuse
   },
-  // Payment endpoints - moderate but monitored
+  // Payment endpoints - moderate but monitored (CRITICAL)
   payment: {
     maxRequests: 10,
     windowMs: 60000, // 1 minute
+    failClosed: true, // CRITICAL: Fail closed to prevent payment abuse
   },
   // AI/Expensive operations
   expensive: {
     maxRequests: 20,
     windowMs: 60000, // 1 minute
+    failClosed: true, // CRITICAL: Fail closed to prevent expensive operation abuse
   },
 } as const;
 
@@ -140,6 +151,10 @@ export const createBlockedIpResponse = (
 /**
  * Check rate limit using Supabase for persistent storage
  * Uses an upsert pattern with atomic operations
+ * 
+ * SECURITY BEHAVIOR:
+ * - Critical endpoints (email, payment, batch, expensive) FAIL CLOSED on errors
+ * - Non-critical endpoints (public, authenticated) FAIL OPEN on errors
  */
 export const checkRateLimit = async (
   key: string,
@@ -163,7 +178,21 @@ export const checkRateLimit = async (
     
     if (error) {
       console.error("Rate limit check error:", error);
-      // Fail open - allow request if rate limiting fails
+      
+      // SECURITY: Critical endpoints fail CLOSED on database errors
+      if (config.failClosed) {
+        console.warn(`SECURITY: Rate limit failed CLOSED for ${type} endpoint due to database error`);
+        return {
+          allowed: false,
+          remaining: 0,
+          retryAfter: 60, // Ask client to retry in 60 seconds
+          limit: config.maxRequests,
+          failedClosed: true,
+        };
+      }
+      
+      // Non-critical endpoints fail OPEN to maintain availability
+      console.warn(`Rate limit failed OPEN for ${type} endpoint due to database error`);
       return {
         allowed: true,
         remaining: config.maxRequests - 1,
@@ -189,7 +218,21 @@ export const checkRateLimit = async (
     };
   } catch (err) {
     console.error("Rate limit error:", err);
-    // Fail open - allow request if rate limiting fails
+    
+    // SECURITY: Critical endpoints fail CLOSED on any errors
+    if (config.failClosed) {
+      console.warn(`SECURITY: Rate limit failed CLOSED for ${type} endpoint due to exception`);
+      return {
+        allowed: false,
+        remaining: 0,
+        retryAfter: 60, // Ask client to retry in 60 seconds
+        limit: config.maxRequests,
+        failedClosed: true,
+      };
+    }
+    
+    // Non-critical endpoints fail OPEN to maintain availability
+    console.warn(`Rate limit failed OPEN for ${type} endpoint due to exception`);
     return {
       allowed: true,
       remaining: config.maxRequests - 1,
@@ -205,9 +248,14 @@ export const createRateLimitResponse = (
   result: RateLimitResult,
   corsHeaders: Record<string, string>
 ): Response => {
+  // Provide more helpful error message if rate limiting failed closed
+  const errorMessage = result.failedClosed
+    ? "Service temporarily unavailable. Please try again in a moment."
+    : "Too many requests. Please try again later.";
+  
   return new Response(
     JSON.stringify({
-      error: "Too many requests. Please try again later.",
+      error: errorMessage,
       retryAfter: result.retryAfter,
     }),
     {
