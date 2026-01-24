@@ -10,7 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Building, User, MapPin, Save, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
-import { OPERATOR_TYPES, COUNTRIES } from '@/constants/profile';
+import { COUNTRIES } from '@/constants/profile';
 import DeviceHintBanner from './DeviceHintBanner';
 import { CompanyLogoField, type CompanyLogoValue } from '@/components/profile/CompanyLogoField';
 
@@ -19,11 +19,9 @@ interface ProfileSetupProps {
 }
 
 const profileSchema = z.object({
-  company_name: z.string().trim().min(1, "Company name is required").max(100),
+  company_name: z.string().trim().max(100).optional(),
   controller_name: z.string().trim().min(1, "Controller name is required").max(100),
-  showmen_name: z.string().trim().max(100).optional(),
   address: z.string().trim().max(500).optional(),
-  operator_type: z.string().min(1, "Please select your operator type"),
   country: z.string().min(1, "Please select your country"),
 });
 
@@ -34,15 +32,11 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
   const [formData, setFormData] = useState({
     company_name: '',
     controller_name: '',
-    showmen_name: '',
     address: '',
-    operator_type: '',
     country: user?.user_metadata?.country || 'GB',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [logo, setLogo] = useState<CompanyLogoValue>({ file: null, previewUrl: null, remove: false });
-
-  const isShowman = formData.operator_type === 'showman';
 
   const uploadLogo = async (): Promise<string | null> => {
     if (!logo.file || !user) return null;
@@ -69,7 +63,7 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     try {
       const validationData = {
         ...formData,
-        showmen_name: formData.showmen_name || undefined,
+        company_name: formData.company_name || undefined,
         address: formData.address || undefined,
       };
       
@@ -83,12 +77,10 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
         .from('profiles')
         .upsert({
           user_id: user!.id,
-          company_name: validatedData.company_name,
+          company_name: validatedData.company_name || null,
           controller_name: validatedData.controller_name,
-          showmen_name: validatedData.showmen_name || null,
           address: validatedData.address || null,
           country: validatedData.country,
-          operator_type: validatedData.operator_type,
           company_logo_path: logoPath,
         }, {
           onConflict: 'user_id'
@@ -177,39 +169,6 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
               )}
             </div>
 
-            {/* Operator Type Selection */}
-            <div className="space-y-2">
-              <Label htmlFor="operator_type" className="flex items-center space-x-2">
-                <User className="h-4 w-4" />
-                <span>Operator Type *</span>
-              </Label>
-              <Select
-                value={formData.operator_type}
-                onValueChange={(value) => setFormData({ ...formData, operator_type: value })}
-              >
-                <SelectTrigger className={errors.operator_type ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Select your operator type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {OPERATOR_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      <div className="flex flex-col">
-                        <span>{type.label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {formData.operator_type && (
-                <p className="text-xs text-muted-foreground">
-                  {OPERATOR_TYPES.find(t => t.value === formData.operator_type)?.description}
-                </p>
-              )}
-              {errors.operator_type && (
-                <p className="text-sm text-destructive">{errors.operator_type}</p>
-              )}
-            </div>
-
             <CompanyLogoField
               label="Company Logo (Optional)"
               disabled={loading}
@@ -223,13 +182,13 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
             <div className="space-y-2">
               <Label htmlFor="company_name" className="flex items-center space-x-2">
                 <Building className="h-4 w-4" />
-                <span>Company Name *</span>
+                <span>Company Name</span>
               </Label>
               <Input
                 id="company_name"
                 value={formData.company_name}
                 onChange={(e) => setFormData({ ...formData, company_name: e.target.value })}
-                placeholder="Enter your company name"
+                placeholder="Enter your company name (optional)"
                 className={errors.company_name ? "border-destructive" : ""}
               />
               {errors.company_name && (
@@ -251,20 +210,6 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
               />
               {errors.controller_name && (
                 <p className="text-sm text-destructive">{errors.controller_name}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="showmen_name">{isShowman ? 'Showmen Name' : 'Operator Name'}</Label>
-              <Input
-                id="showmen_name"
-                value={formData.showmen_name}
-                onChange={(e) => setFormData({ ...formData, showmen_name: e.target.value })}
-                placeholder={`Enter ${isShowman ? 'showmen' : 'operator'} name (optional)`}
-                className={errors.showmen_name ? "border-destructive" : ""}
-              />
-              {errors.showmen_name && (
-                <p className="text-sm text-destructive">{errors.showmen_name}</p>
               )}
             </div>
 

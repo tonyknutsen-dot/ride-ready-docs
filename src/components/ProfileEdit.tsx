@@ -2,20 +2,16 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building, User, MapPin, Users } from 'lucide-react';
+import { Building, User, MapPin } from 'lucide-react';
 import { z } from 'zod';
-import { OPERATOR_TYPES } from '@/constants/profile';
 import { CompanyLogoField, type CompanyLogoValue } from '@/components/profile/CompanyLogoField';
 
 const profileSchema = z.object({
-  company_name: z.string().min(1, 'Company name is required'),
+  company_name: z.string().max(100).optional(),
   controller_name: z.string().min(1, 'Controller name is required'),
-  showmen_name: z.string().optional(),
   address: z.string().optional(),
-  operator_type: z.string().optional(),
 });
 
 interface ProfileEditProps {
@@ -28,17 +24,12 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
   const [formData, setFormData] = useState({
     company_name: profile?.company_name || '',
     controller_name: profile?.controller_name || '',
-    showmen_name: profile?.showmen_name || '',
     address: profile?.address || '',
-    operator_type: profile?.operator_type || 'company',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [logo, setLogo] = useState<CompanyLogoValue>({ file: null, previewUrl: null, remove: false });
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
-  
-  
-  const isShowman = formData.operator_type === 'showman';
 
   // Load existing logo on mount
   useEffect(() => {
@@ -148,42 +139,6 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      {/* Operator Type Selection */}
-      <div className="space-y-2">
-        <Label className="flex items-center gap-2 text-sm">
-          <Users className="h-4 w-4 text-muted-foreground" />
-          Operator Type
-        </Label>
-        <Select
-          value={formData.operator_type}
-          onValueChange={(value) => handleInputChange('operator_type', value)}
-          disabled={isLoading}
-        >
-          <SelectTrigger className="h-11">
-            <SelectValue placeholder="Select operator type" />
-          </SelectTrigger>
-          <SelectContent>
-            {OPERATOR_TYPES.map((type) => (
-              <SelectItem key={type.value} value={type.value}>
-                {type.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {formData.operator_type && (
-          <p className="text-xs text-muted-foreground">
-            {OPERATOR_TYPES.find(t => t.value === formData.operator_type)?.description}
-          </p>
-        )}
-      </div>
-      
-      {/* Role Definitions */}
-      <div className="p-3 bg-muted/50 rounded-lg text-xs space-y-1.5">
-        <p className="font-medium text-sm">Role Definitions:</p>
-        <p><strong>Controller:</strong> Responsible for ride safety and compliance</p>
-        <p><strong>{isShowman ? 'Showmen' : 'Operator'}:</strong> Operates the fairground/show (may be same as controller)</p>
-        <p><strong>Owner:</strong> Owns individual rides (set separately for each ride)</p>
-      </div>
       
       {/* Form Fields */}
       <div className="space-y-4">
@@ -201,13 +156,13 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
         <div className="space-y-2">
           <Label htmlFor="company_name" className="flex items-center gap-2 text-sm">
             <Building className="h-4 w-4 text-muted-foreground" />
-            Company Name *
+            Company Name
           </Label>
           <Input
             id="company_name"
             value={formData.company_name}
             onChange={(e) => handleInputChange('company_name', e.target.value)}
-            placeholder="Enter company name"
+            placeholder="Enter company name (optional)"
             disabled={isLoading}
             className="h-11"
           />
@@ -232,21 +187,6 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
           {errors.controller_name && (
             <p className="text-xs text-destructive">{errors.controller_name}</p>
           )}
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="showmen_name" className="flex items-center gap-2 text-sm">
-            <Users className="h-4 w-4 text-muted-foreground" />
-            {isShowman ? 'Showmen Name' : 'Operator Name'}
-          </Label>
-          <Input
-            id="showmen_name"
-            value={formData.showmen_name}
-            onChange={(e) => handleInputChange('showmen_name', e.target.value)}
-            placeholder={`Enter ${isShowman ? 'showmen' : 'operator'} name (optional)`}
-            disabled={isLoading}
-            className="h-11"
-          />
         </div>
 
         <div className="space-y-2">

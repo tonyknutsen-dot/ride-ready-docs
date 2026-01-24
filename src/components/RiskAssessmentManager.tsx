@@ -481,12 +481,6 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         doc.text(profile.company_name, rightCol + 25, yPos);
         yPos += 6;
       }
-      if (profile.showmen_name) {
-        doc.setFont('helvetica', 'bold');
-        doc.text(terminology.isUK ? 'Showmen:' : 'Operator:', rightCol, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(profile.showmen_name, rightCol + 25, yPos);
-      }
     }
     
     yPos = 63;
@@ -751,12 +745,6 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         doc.text(profile.company_name, rightCol + 25, yPos);
         yPos += 6;
       }
-      if (profile.showmen_name) {
-        doc.setFont('helvetica', 'bold');
-        doc.text(terminology.isUK ? 'Showmen:' : 'Operator:', rightCol, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(profile.showmen_name, rightCol + 25, yPos);
-      }
     }
     
     // Assessment info
@@ -950,12 +938,6 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           doc.setFont('helvetica', 'normal');
           doc.text(profile.company_name, rightCol + 25, yPos);
           yPos += 6;
-        }
-        if (profile.showmen_name) {
-          doc.setFont('helvetica', 'bold');
-          doc.text(terminology.isUK ? 'Showmen:' : 'Operator:', rightCol, yPos);
-          doc.setFont('helvetica', 'normal');
-          doc.text(profile.showmen_name, rightCol + 25, yPos);
         }
       }
       
