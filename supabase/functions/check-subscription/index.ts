@@ -5,10 +5,16 @@ import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 // Product ID to plan mapping
 const PRODUCT_TO_PLAN: Record<string, 'basic' | 'advanced'> = {
-  "prod_SXfMmvFhJCpgPz": "basic",   // Documents & Compliance - Monthly
-  "prod_SXfOT7Wm2qkLzI": "basic",   // Documents & Compliance - Yearly  
-  "prod_SXfOIqB5fXfmOi": "advanced", // Operations & Maintenance - Monthly
-  "prod_SXfPx1nMO9nxbA": "advanced", // Operations & Maintenance - Yearly
+  // Current active products
+  "prod_TlWvelEK6GafPH": "basic",   // Documents & Compliance - Monthly
+  "prod_TlWvGM8f7f2mRa": "basic",   // Documents & Compliance - Yearly  
+  "prod_TlWvaItiHUq1PZ": "advanced", // Operations & Maintenance - Monthly
+  "prod_TlWv8lD3Q4BCIX": "advanced", // Operations & Maintenance - Yearly
+  // Legacy product IDs (keep for any existing subscriptions)
+  "prod_SXfMmvFhJCpgPz": "basic",   // Legacy: Documents & Compliance - Monthly
+  "prod_SXfOT7Wm2qkLzI": "basic",   // Legacy: Documents & Compliance - Yearly  
+  "prod_SXfOIqB5fXfmOi": "advanced", // Legacy: Operations & Maintenance - Monthly
+  "prod_SXfPx1nMO9nxbA": "advanced", // Legacy: Operations & Maintenance - Yearly
 };
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
