@@ -1772,57 +1772,87 @@ export type Database = {
         Row: {
           address: string | null
           app_mode: string | null
+          billing_cycle: string | null
+          company_logo_path: string | null
           company_name: string | null
           controller_name: string | null
           country: string | null
           created_at: string | null
+          current_period_end: string | null
           custom_terminology: Json | null
           enable_document_versioning: boolean | null
+          extra_items_count: number | null
+          has_stripe_customer: boolean | null
+          has_stripe_subscription: boolean | null
           has_subscription: boolean | null
           id: string | null
           is_suspended: boolean | null
           is_trial: boolean | null
           operator_type: string | null
           showmen_name: string | null
+          subscription_plan: string | null
+          subscription_status: string | null
           suspension_info: string | null
+          trial_ends_at: string | null
+          trial_started_at: string | null
           updated_at: string | null
           user_id: string | null
         }
         Insert: {
           address?: string | null
           app_mode?: string | null
+          billing_cycle?: string | null
+          company_logo_path?: string | null
           company_name?: string | null
           controller_name?: string | null
           country?: string | null
           created_at?: string | null
+          current_period_end?: string | null
           custom_terminology?: Json | null
           enable_document_versioning?: boolean | null
+          extra_items_count?: number | null
+          has_stripe_customer?: never
+          has_stripe_subscription?: never
           has_subscription?: never
           id?: string | null
           is_suspended?: boolean | null
           is_trial?: never
           operator_type?: string | null
           showmen_name?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
           suspension_info?: never
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
         Update: {
           address?: string | null
           app_mode?: string | null
+          billing_cycle?: string | null
+          company_logo_path?: string | null
           company_name?: string | null
           controller_name?: string | null
           country?: string | null
           created_at?: string | null
+          current_period_end?: string | null
           custom_terminology?: Json | null
           enable_document_versioning?: boolean | null
+          extra_items_count?: number | null
+          has_stripe_customer?: never
+          has_stripe_subscription?: never
           has_subscription?: never
           id?: string | null
           is_suspended?: boolean | null
           is_trial?: never
           operator_type?: string | null
           showmen_name?: string | null
+          subscription_plan?: string | null
+          subscription_status?: string | null
           suspension_info?: never
+          trial_ends_at?: string | null
+          trial_started_at?: string | null
           updated_at?: string | null
           user_id?: string | null
         }
