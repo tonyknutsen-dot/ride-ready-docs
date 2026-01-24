@@ -2,8 +2,8 @@
 
 export const COUNTRIES = [
   // UK & Ireland
-  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', note: 'Uses ADIPS (rides) & PIPA (inflatables) certificates' },
-  { code: 'IE', name: 'Ireland', flag: '🇮🇪', note: 'Uses Declaration of Compliance certificates' },
+  { code: 'GB', name: 'United Kingdom', flag: '🇬🇧', note: 'Annual inspection certificates' },
+  { code: 'IE', name: 'Ireland', flag: '🇮🇪', note: 'Annual inspection certificates' },
   // Americas
   { code: 'US', name: 'United States', flag: '🇺🇸', note: 'Uses ASTM F24 compliant safety certifications' },
   { code: 'CA', name: 'Canada', flag: '🇨🇦', note: 'Uses provincial safety certifications' },
@@ -41,9 +41,9 @@ export type OperatorTypeValue = typeof OPERATOR_TYPES[number]['value'];
 // Terminology maps for country-based terminology preview
 export const getTerminologyForCountry = (countryCode: string) => {
   const UK_TERMS = {
-    safetyCertificate: "Declaration of Compliance (DOC)",
+    safetyCertificate: "Annual Inspection Certificate",
     localAuthority: "council",
-    inspector: "ADIPS/PIPA inspector",
+    inspector: "safety inspector",
   };
 
   const GLOBAL_TERMS = {

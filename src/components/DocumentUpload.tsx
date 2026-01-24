@@ -16,11 +16,7 @@ import { useOptimisticDocumentUpload } from '@/hooks/useOptimisticMutations';
 // Base document types - will be filtered/modified based on user's country
 const getDocumentTypes = (isUK: boolean) => [
   // Safety Certificates - Featured at top
-  { id: 'declaration_of_compliance', name: '📜 Safety Compliance Certificate', description: '⭐ REQUIRED - Your annual safety certificate to operate', featured: true, category: 'safety' },
-  ...(isUK ? [
-    { id: 'adips_certificate', name: '🇬🇧 ADIPS Certificate', description: 'ADIPS Declaration of Compliance for amusement devices', featured: true, category: 'safety', ukOnly: true },
-    { id: 'pipa_certificate', name: '🇬🇧 PIPA Certificate', description: 'PIPA certificate for inflatable play equipment', featured: true, category: 'safety', ukOnly: true },
-  ] : []),
+  { id: 'declaration_of_compliance', name: '📜 Annual Inspection Certificate', description: '⭐ REQUIRED - Your annual safety certificate to operate', featured: true, category: 'safety' },
   
   // Other document types
   { id: 'build_up_down', name: 'Build Up and Down Procedure', description: 'Procedures for ride assembly and dismantling' },
@@ -304,12 +300,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
               <SelectValue placeholder="Select type..." />
             </SelectTrigger>
             <SelectContent>
-              {/* Terminology Note - only show for UK users */}
-              {terminology.isUK && (
-                <div className="px-2 py-1.5 text-[11px] text-muted-foreground border-b mb-1">
-                  🇬🇧 <strong>UK {terminology.operatorPlural}:</strong> ADIPS = rides, PIPA = inflatables
-                </div>
-              )}
+              {/* No terminology note needed - fully generic */}
               {documentTypes.map((type) => (
                 <SelectItem key={type.id} value={type.id}>
                   <div className="flex flex-col">

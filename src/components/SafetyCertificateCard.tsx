@@ -29,10 +29,9 @@ const SAFETY_CERT_TYPES = [
   'declaration_of_compliance',
   'doc_certificate',
   'doc',
-  'adips_certificate',
-  'pipa_certificate',
   'safety_certificate',
-  'inspection_certificate'
+  'inspection_certificate',
+  'annual_inspection'
 ];
 
 const SafetyCertificateCard = ({ ride, onUploadClick }: SafetyCertificateCardProps) => {

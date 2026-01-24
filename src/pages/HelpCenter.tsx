@@ -162,7 +162,7 @@ const HelpCenter = () => {
       questions: [
         {
           q: "What types of documents can I upload?",
-          a: `You can upload any document related to your rides: Declaration of Compliance (DOC) certificates${terminology.isUK ? ' (known as ADIPS in the UK)' : ''}, insurance documents, test certificates, manuals, risk assessments, electrical certificates, NDT reports, and more.`,
+          a: `You can upload any document related to your equipment: annual inspection certificates, insurance documents, test certificates, manuals, risk assessments, electrical certificates, NDT reports, and more.`,
           planRequired: "basic"
         },
         {
@@ -234,7 +234,7 @@ const HelpCenter = () => {
         },
         {
           q: "Do I need to complete checks every day?",
-          a: `${terminology.isUK ? 'ADIPS and HSE' : 'Industry'} guidelines require pre-operational safety checks each day before public use. Our daily check system helps you document compliance with these requirements.`,
+          a: `Industry guidelines require pre-operational safety checks each day before public use. Our daily check system helps you document compliance with these requirements.`,
           planRequired: "advanced"
         },
         {
@@ -281,7 +281,7 @@ const HelpCenter = () => {
         },
         {
           q: "Can I export risk assessments?",
-          a: `Yes! Generate PDF reports that are downloadable, printable, and emailable. Perfect for ${terminology.isUK ? 'council submissions, ADIPS inspections' : 'regulatory submissions, inspections'}, or sharing with your team.`,
+          a: `Yes! Generate PDF reports that are downloadable, printable, and emailable. Perfect for regulatory submissions, inspections, or sharing with your team.`,
           planRequired: "advanced"
         },
         {
@@ -322,7 +322,7 @@ const HelpCenter = () => {
           planRequired: "advanced"
         },
         {
-          q: `How do I prepare for an ${terminology.isUK ? 'ADIPS' : 'annual'} inspection?`,
+          q: `How do I prepare for an annual inspection?`,
           a: `Use the calendar view to ensure all inspections and documents are current. Generate a compliance report showing all active certificates, recent inspection reports, and maintenance history.`,
           planRequired: "advanced"
         }
