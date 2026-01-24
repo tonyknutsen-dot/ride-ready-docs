@@ -7,12 +7,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Building, User, MapPin, Save, Globe, Upload, X, Image } from 'lucide-react';
+import { Building, User, MapPin, Save, Globe } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { z } from 'zod';
 import { OPERATOR_TYPES, COUNTRIES } from '@/constants/profile';
 import DeviceHintBanner from './DeviceHintBanner';
-import { compressImage } from '@/utils/imageCompression';
+import { CompanyLogoField, type CompanyLogoValue } from '@/components/profile/CompanyLogoField';
 
 interface ProfileSetupProps {
   onComplete: () => void;
@@ -40,119 +40,19 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
     country: user?.user_metadata?.country || 'GB',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
-  const [logoLoading, setLogoLoading] = useState(false);
+  const [logo, setLogo] = useState<CompanyLogoValue>({ file: null, previewUrl: null, remove: false });
 
   const isShowman = formData.operator_type === 'showman';
 
-  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Reset the input so the same file can be selected again
-    e.target.value = '';
-
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid File Format",
-        description: "Please upload an image file (JPG, PNG, or WebP). Other file types are not supported.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File Too Large",
-        description: `Your file is ${fileSizeMB}MB. Please upload an image smaller than 5MB.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLogoLoading(true);
-    
-    // Revoke old preview URL to prevent memory leak
-    if (logoPreview) {
-      URL.revokeObjectURL(logoPreview);
-    }
-
-    try {
-      const compressed = await compressImage(file, 800, 0.85);
-      const previewUrl = URL.createObjectURL(compressed);
-      
-      // Verify the image can actually load
-      const testImg = document.createElement('img');
-      testImg.onload = () => {
-        setLogoFile(compressed);
-        setLogoPreview(previewUrl);
-        setLogoLoading(false);
-        toast({
-          title: "Logo Ready",
-          description: "Your logo has been added. Complete the form to save.",
-        });
-      };
-      testImg.onerror = () => {
-        URL.revokeObjectURL(previewUrl);
-        setLogoLoading(false);
-        toast({
-          title: "Image Error",
-          description: "Could not process this image. Please try a different file.",
-          variant: "destructive",
-        });
-      };
-      testImg.src = previewUrl;
-    } catch (error) {
-      console.error('Logo compression error:', error);
-      try {
-        const previewUrl = URL.createObjectURL(file);
-        const testImg = document.createElement('img');
-        testImg.onload = () => {
-          setLogoFile(file);
-          setLogoPreview(previewUrl);
-          setLogoLoading(false);
-          toast({
-            title: "Logo Ready",
-            description: "Your logo has been added. Complete the form to save.",
-          });
-        };
-        testImg.onerror = () => {
-          URL.revokeObjectURL(previewUrl);
-          setLogoLoading(false);
-          toast({
-            title: "Image Error",
-            description: "Could not load this image. Please try a different file.",
-            variant: "destructive",
-          });
-        };
-        testImg.src = previewUrl;
-      } catch (fallbackError) {
-        setLogoLoading(false);
-        toast({
-          title: "Upload Failed",
-          description: "Could not process this file. Please try a different image.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const handleRemoveLogo = () => {
-    setLogoFile(null);
-    setLogoPreview(null);
-  };
-
   const uploadLogo = async (): Promise<string | null> => {
-    if (!logoFile || !user) return null;
+    if (!logo.file || !user) return null;
     
-    const fileExt = logoFile.name.split('.').pop();
+    const fileExt = logo.file.name.split('.').pop();
     const fileName = `company-logos/${user.id}/${Date.now()}.${fileExt}`;
     
     const { error: uploadError } = await supabase.storage
       .from('ride-documents')
-      .upload(fileName, logoFile);
+      .upload(fileName, logo.file);
     
     if (uploadError) {
       console.error('Logo upload error:', uploadError);
@@ -310,79 +210,15 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
               )}
             </div>
 
-            {/* Company Logo Upload */}
-            <div className="space-y-2">
-              <Label className="flex items-center space-x-2">
-                <Image className="h-4 w-4" />
-                <span>Company Logo (Optional)</span>
-              </Label>
-              <div className="text-xs text-muted-foreground space-y-1">
-                <p>Your logo will appear on PDF reports and documents</p>
-                <p className="text-muted-foreground/70">
-                  <strong>Recommended:</strong> Square image, min 200×200px • <strong>Max size:</strong> 5MB • <strong>Formats:</strong> JPG, PNG, WebP
-                </p>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                {/* Loading State */}
-                {logoLoading && (
-                  <div className="w-20 h-20 border rounded-lg bg-muted/30 flex items-center justify-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                  </div>
-                )}
-                
-                {!logoLoading && logoPreview ? (
-                  <div className="relative group">
-                    <img
-                      src={logoPreview}
-                      alt="Company logo preview"
-                      className="w-20 h-20 object-contain border rounded-lg bg-muted/30"
-                    />
-                    <Button
-                      type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={handleRemoveLogo}
-                    >
-                      <X className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ) : !logoLoading ? (
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      onChange={handleLogoChange}
-                      className="hidden"
-                      disabled={loading}
-                    />
-                    <div className="w-20 h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors">
-                      <Upload className="h-5 w-5" />
-                      <span className="text-xs">Upload</span>
-                    </div>
-                  </label>
-                ) : null}
-                
-                {!logoLoading && logoPreview && (
-                  <label className="cursor-pointer">
-                    <input
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      onChange={handleLogoChange}
-                      className="hidden"
-                      disabled={loading}
-                    />
-                    <Button type="button" variant="outline" size="sm" asChild>
-                      <span>
-                        <Upload className="h-4 w-4 mr-2" />
-                        Change
-                      </span>
-                    </Button>
-                  </label>
-                )}
-              </div>
-            </div>
+            <CompanyLogoField
+              label="Company Logo (Optional)"
+              disabled={loading}
+              value={logo}
+              onChange={setLogo}
+              helperText={
+                "Used on PDF reports • Minimum 200×200px • Max 5MB • Formats: JPG, PNG, WebP"
+              }
+            />
 
             <div className="space-y-2">
               <Label htmlFor="company_name" className="flex items-center space-x-2">

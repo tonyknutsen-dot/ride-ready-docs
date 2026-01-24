@@ -5,10 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building, User, MapPin, Users, Upload, X, Image } from 'lucide-react';
+import { Building, User, MapPin, Users } from 'lucide-react';
 import { z } from 'zod';
 import { OPERATOR_TYPES } from '@/constants/profile';
-import { compressImage } from '@/utils/imageCompression';
+import { CompanyLogoField, type CompanyLogoValue } from '@/components/profile/CompanyLogoField';
 
 const profileSchema = z.object({
   company_name: z.string().min(1, 'Company name is required'),
@@ -34,11 +34,9 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logo, setLogo] = useState<CompanyLogoValue>({ file: null, previewUrl: null, remove: false });
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
-  const [removeLogo, setRemoveLogo] = useState(false);
-  const [logoLoading, setLogoLoading] = useState(false);
+  
   
   const isShowman = formData.operator_type === 'showman';
 
@@ -61,117 +59,15 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
     loadExistingLogo();
   }, [profile?.company_logo_path]);
 
-  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Reset the input so the same file can be selected again
-    e.target.value = '';
-
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid File Format",
-        description: "Please upload an image file (JPG, PNG, or WebP). Other file types are not supported.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(1);
-    if (file.size > 5 * 1024 * 1024) {
-      toast({
-        title: "File Too Large",
-        description: `Your file is ${fileSizeMB}MB. Please upload an image smaller than 5MB.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setLogoLoading(true);
+  const uploadLogo = async (file: File): Promise<string | null> => {
     
-    // Revoke old preview URL to prevent memory leak
-    if (logoPreview) {
-      URL.revokeObjectURL(logoPreview);
-    }
-
-    try {
-      const compressed = await compressImage(file, 800, 0.85);
-      const previewUrl = URL.createObjectURL(compressed);
-      
-      // Verify the image can actually load
-      const testImg = document.createElement('img');
-      testImg.onload = () => {
-        setLogoFile(compressed);
-        setLogoPreview(previewUrl);
-        setRemoveLogo(false);
-        setLogoLoading(false);
-        toast({
-          title: "Logo Ready",
-          description: "Your logo has been added. Click 'Update Profile' to save.",
-        });
-      };
-      testImg.onerror = () => {
-        URL.revokeObjectURL(previewUrl);
-        setLogoLoading(false);
-        toast({
-          title: "Image Error",
-          description: "Could not process this image. Please try a different file.",
-          variant: "destructive",
-        });
-      };
-      testImg.src = previewUrl;
-    } catch (error) {
-      console.error('Logo compression error:', error);
-      // Try using the original file
-      try {
-        const previewUrl = URL.createObjectURL(file);
-        const testImg = document.createElement('img');
-        testImg.onload = () => {
-          setLogoFile(file);
-          setLogoPreview(previewUrl);
-          setRemoveLogo(false);
-          setLogoLoading(false);
-          toast({
-            title: "Logo Ready",
-            description: "Your logo has been added. Click 'Update Profile' to save.",
-          });
-        };
-        testImg.onerror = () => {
-          URL.revokeObjectURL(previewUrl);
-          setLogoLoading(false);
-          toast({
-            title: "Image Error",
-            description: "Could not load this image. Please try a different file.",
-            variant: "destructive",
-          });
-        };
-        testImg.src = previewUrl;
-      } catch (fallbackError) {
-        setLogoLoading(false);
-        toast({
-          title: "Upload Failed",
-          description: "Could not process this file. Please try a different image.",
-          variant: "destructive",
-        });
-      }
-    }
-  };
-
-  const handleRemoveLogo = () => {
-    setLogoFile(null);
-    setLogoPreview(null);
-    setRemoveLogo(true);
-  };
-
-  const uploadLogo = async (): Promise<string | null> => {
-    if (!logoFile) return null;
     
-    const fileExt = logoFile.name.split('.').pop();
+    const fileExt = file.name.split('.').pop();
     const fileName = `company-logos/${profile.user_id}/${Date.now()}.${fileExt}`;
     
     const { error: uploadError } = await supabase.storage
       .from('ride-documents')
-      .upload(fileName, logoFile, { upsert: true });
+      .upload(fileName, file, { upsert: true });
     
     if (uploadError) {
       throw new Error('Failed to upload logo');
@@ -191,9 +87,9 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
       // Handle logo upload/removal
       let logoPath: string | null | undefined = undefined;
       
-      if (logoFile) {
-        logoPath = await uploadLogo();
-      } else if (removeLogo) {
+      if (logo.file) {
+        logoPath = await uploadLogo(logo.file);
+      } else if (logo.remove) {
         logoPath = null;
       }
 
@@ -291,88 +187,16 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
       
       {/* Form Fields */}
       <div className="space-y-4">
-        {/* Company Logo Upload */}
-        <div className="space-y-2">
-          <Label className="flex items-center gap-2 text-sm">
-            <Image className="h-4 w-4 text-muted-foreground" />
-            Company Logo
-          </Label>
-          <div className="text-xs text-muted-foreground space-y-1">
-            <p>Your logo will appear on PDF reports and documents</p>
-            <p className="text-muted-foreground/70">
-              <strong>Recommended:</strong> Square image, min 200×200px • <strong>Max size:</strong> 5MB • <strong>Formats:</strong> JPG, PNG, WebP
-            </p>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            {/* Loading State */}
-            {logoLoading && (
-              <div className="w-20 h-20 border rounded-lg bg-muted/30 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-              </div>
-            )}
-            
-            {/* Preview */}
-            {!logoLoading && (logoPreview || (existingLogoUrl && !removeLogo)) && (
-              <div className="relative group">
-                <img
-                  src={logoPreview || existingLogoUrl || ''}
-                  alt="Company logo"
-                  className="w-20 h-20 object-contain border rounded-lg bg-muted/30"
-                  onError={(e) => {
-                    // If image fails to load, show placeholder
-                    e.currentTarget.style.display = 'none';
-                  }}
-                />
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="icon"
-                  className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                  onClick={handleRemoveLogo}
-                >
-                  <X className="h-3 w-3" />
-                </Button>
-              </div>
-            )}
-            
-            {/* Upload button */}
-            {!logoLoading && !logoPreview && (!existingLogoUrl || removeLogo) && (
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleLogoChange}
-                  className="hidden"
-                  disabled={isLoading}
-                />
-                <div className="w-20 h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors">
-                  <Upload className="h-5 w-5" />
-                  <span className="text-xs">Upload</span>
-                </div>
-              </label>
-            )}
-            
-            {/* Change button when logo exists */}
-            {!logoLoading && (logoPreview || (existingLogoUrl && !removeLogo)) && (
-              <label className="cursor-pointer">
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  onChange={handleLogoChange}
-                  className="hidden"
-                  disabled={isLoading}
-                />
-                <Button type="button" variant="outline" size="sm" asChild>
-                  <span>
-                    <Upload className="h-4 w-4 mr-2" />
-                    Change
-                  </span>
-                </Button>
-              </label>
-            )}
-          </div>
-        </div>
+        <CompanyLogoField
+          label="Company Logo"
+          disabled={isLoading}
+          existingPreviewUrl={existingLogoUrl}
+          value={logo}
+          onChange={setLogo}
+          helperText={
+            "Used on PDF reports • Minimum 200×200px • Max 5MB • Formats: JPG, PNG, WebP"
+          }
+        />
 
         <div className="space-y-2">
           <Label htmlFor="company_name" className="flex items-center gap-2 text-sm">
