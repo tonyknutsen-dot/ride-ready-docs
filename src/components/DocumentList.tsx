@@ -579,8 +579,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         )}
       </div>
       <div className="flex flex-wrap items-center gap-1 shrink-0">
-        {/* Toggle global/ride-specific */}
-        {!isOlderVersion && (
+        {/* Toggle global/ride-specific - hide for document types that are always ride-specific */}
+        {!isOlderVersion && !['device_photo', 'maintenance'].includes(doc.document_type) && (
           <Button 
             variant="ghost" 
             size="sm" 
