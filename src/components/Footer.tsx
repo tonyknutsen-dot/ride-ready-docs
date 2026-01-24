@@ -12,15 +12,15 @@ const Footer = () => {
         <div className="grid md:grid-cols-5 gap-10 md:gap-8">
           {/* Brand */}
           <div className="md:col-span-2">
-            <h3 className="text-xl font-bold mb-4">Showmen's Ride Ready</h3>
+            <h3 className="text-xl font-bold mb-4">Ride Ready Docs</h3>
             <p className="text-background/70 mb-6 max-w-md text-sm leading-relaxed">
-              The complete document management solution designed specifically for fairground 
-              professionals. Keep all your ride documents, safety certificates, and compliance 
-              records organized in one secure place.
+              The complete operations management solution designed for amusement 
+              professionals worldwide. Keep all your ride documents, safety certificates, 
+              and compliance records organized in one secure place.
             </p>
             <div className="flex items-center gap-2 text-background/60 text-sm">
               <MapPin className="h-4 w-4" />
-              <span>London, United Kingdom</span>
+              <span>Serving operators worldwide</span>
             </div>
           </div>
 

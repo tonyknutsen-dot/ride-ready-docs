@@ -18,7 +18,7 @@ interface WelcomeEmailProps {
 export const WelcomeEmail = ({ email }: WelcomeEmailProps) => (
   <Html>
     <Head />
-    <Preview>Welcome to Ride Ready Docs - Your Document Management Solution</Preview>
+    <Preview>Welcome to Ride Ready Docs - Your Operations Management Solution</Preview>
     <Body style={main}>
       <Container style={container}>
         <Heading style={h1}>Welcome to Ride Ready Docs!</Heading>
@@ -26,8 +26,8 @@ export const WelcomeEmail = ({ email }: WelcomeEmailProps) => (
           Thank you for signing up, {email}! We're excited to have you on board.
         </Text>
         <Text style={text}>
-          Ride Ready Docs is your complete document management solution designed specifically 
-          for fairground professionals. Keep all your ride documents, safety certificates, 
+          Ride Ready Docs is your complete operations management solution designed for 
+          amusement professionals worldwide. Keep all your ride documents, safety certificates, 
           and technical bulletins organized in one secure place.
         </Text>
         
@@ -47,7 +47,7 @@ export const WelcomeEmail = ({ email }: WelcomeEmailProps) => (
 
         <Section style={ctaSection}>
           <Link
-            href="https://ride-ready-docs.lovable.app/overview"
+            href="https://ridereadydocs.com/overview"
             style={button}
           >
             Go to Dashboard
@@ -56,19 +56,19 @@ export const WelcomeEmail = ({ email }: WelcomeEmailProps) => (
 
         <Text style={text}>
           If you have any questions or need assistance, please don't hesitate to reach out 
-          to our support team at info@knutssoftware.co.uk
+          to our support team at support@ridereadydocs.com
         </Text>
 
         <Text style={footer}>
           <Link
-            href="https://310a4bd0-111d-48cb-b45f-f3b22b34bee6.lovableproject.com"
+            href="https://ridereadydocs.com"
             target="_blank"
             style={link}
           >
             Ride Ready Docs
           </Link>
           <br />
-          The complete document management solution for fairground professionals
+          The complete operations management solution for amusement professionals
         </Text>
       </Container>
     </Body>

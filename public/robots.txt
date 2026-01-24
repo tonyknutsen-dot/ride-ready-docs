@@ -1,5 +1,5 @@
 # Ride Ready Docs - Sitemap and Crawl Rules
-# https://ridereadydocs.co.uk
+# https://ridereadydocs.com
 
 User-agent: Googlebot
 Allow: /
@@ -19,7 +19,7 @@ User-agent: *
 Allow: /
 
 # Sitemap location
-Sitemap: https://ridereadydocs.co.uk/sitemap.xml
+Sitemap: https://ridereadydocs.com/sitemap.xml
 
 # Disallow admin and authenticated routes from indexing
 Disallow: /admin
