@@ -444,35 +444,29 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         {uploadedFiles.length > 0 && (
           <div className="space-y-2">
             <Label>Uploaded Files ({uploadedFiles.length})</Label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div className="flex flex-wrap gap-2">
               {uploadedFiles.map((file, index) => (
-                <div key={index} className="relative group border rounded-lg overflow-hidden bg-muted/30">
+                <div key={index} className="relative group border rounded-md overflow-hidden bg-muted/30 w-16 h-16">
                   {file.type.startsWith('image/') ? (
-                    <div className="aspect-square">
-                      <img
-                        src={URL.createObjectURL(file)}
-                        alt={file.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
+                    <img
+                      src={URL.createObjectURL(file)}
+                      alt={file.name}
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
-                    <div className="aspect-square flex flex-col items-center justify-center p-3">
-                      <FileText className="h-10 w-10 text-muted-foreground mb-2" />
-                      <span className="text-xs text-center text-muted-foreground line-clamp-2">{file.name}</span>
+                    <div className="w-full h-full flex flex-col items-center justify-center p-1">
+                      <FileText className="h-5 w-5 text-muted-foreground" />
+                      <span className="text-[8px] text-center text-muted-foreground line-clamp-1 mt-0.5">{file.name.split('.').pop()}</span>
                     </div>
                   )}
-                  <div className="absolute bottom-0 left-0 right-0 bg-background/80 backdrop-blur-sm p-1.5">
-                    <p className="text-xs truncate font-medium">{file.name}</p>
-                    <p className="text-xs text-muted-foreground">{(file.size / 1024 / 1024).toFixed(1)}MB</p>
-                  </div>
                   <Button
                     type="button"
                     variant="destructive"
                     size="icon"
-                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                    className="absolute top-0.5 right-0.5 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity"
                     onClick={() => removeFile(index)}
                   >
-                    <X className="h-3 w-3" />
+                    <X className="h-2.5 w-2.5" />
                   </Button>
                 </div>
               ))}
