@@ -38,6 +38,7 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
   const [removeLogo, setRemoveLogo] = useState(false);
+  const [logoLoading, setLogoLoading] = useState(false);
   
   const isShowman = formData.operator_type === 'showman';
 
@@ -86,23 +87,73 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
       return;
     }
 
+    setLogoLoading(true);
+    
+    // Revoke old preview URL to prevent memory leak
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+    }
+
     try {
       const compressed = await compressImage(file, 800, 0.85);
-      setLogoFile(compressed);
-      setLogoPreview(URL.createObjectURL(compressed));
-      setRemoveLogo(false);
-      toast({
-        title: "Logo Ready",
-        description: "Your logo has been added. Click 'Update Profile' to save.",
-      });
+      const previewUrl = URL.createObjectURL(compressed);
+      
+      // Verify the image can actually load
+      const testImg = document.createElement('img');
+      testImg.onload = () => {
+        setLogoFile(compressed);
+        setLogoPreview(previewUrl);
+        setRemoveLogo(false);
+        setLogoLoading(false);
+        toast({
+          title: "Logo Ready",
+          description: "Your logo has been added. Click 'Update Profile' to save.",
+        });
+      };
+      testImg.onerror = () => {
+        URL.revokeObjectURL(previewUrl);
+        setLogoLoading(false);
+        toast({
+          title: "Image Error",
+          description: "Could not process this image. Please try a different file.",
+          variant: "destructive",
+        });
+      };
+      testImg.src = previewUrl;
     } catch (error) {
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
-      setRemoveLogo(false);
-      toast({
-        title: "Logo Ready",
-        description: "Your logo has been added. Click 'Update Profile' to save.",
-      });
+      console.error('Logo compression error:', error);
+      // Try using the original file
+      try {
+        const previewUrl = URL.createObjectURL(file);
+        const testImg = document.createElement('img');
+        testImg.onload = () => {
+          setLogoFile(file);
+          setLogoPreview(previewUrl);
+          setRemoveLogo(false);
+          setLogoLoading(false);
+          toast({
+            title: "Logo Ready",
+            description: "Your logo has been added. Click 'Update Profile' to save.",
+          });
+        };
+        testImg.onerror = () => {
+          URL.revokeObjectURL(previewUrl);
+          setLogoLoading(false);
+          toast({
+            title: "Image Error",
+            description: "Could not load this image. Please try a different file.",
+            variant: "destructive",
+          });
+        };
+        testImg.src = previewUrl;
+      } catch (fallbackError) {
+        setLogoLoading(false);
+        toast({
+          title: "Upload Failed",
+          description: "Could not process this file. Please try a different image.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -254,13 +305,24 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
           </div>
           
           <div className="flex items-center gap-4">
+            {/* Loading State */}
+            {logoLoading && (
+              <div className="w-20 h-20 border rounded-lg bg-muted/30 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+              </div>
+            )}
+            
             {/* Preview */}
-            {(logoPreview || (existingLogoUrl && !removeLogo)) && (
+            {!logoLoading && (logoPreview || (existingLogoUrl && !removeLogo)) && (
               <div className="relative group">
                 <img
                   src={logoPreview || existingLogoUrl || ''}
                   alt="Company logo"
                   className="w-20 h-20 object-contain border rounded-lg bg-muted/30"
+                  onError={(e) => {
+                    // If image fails to load, show placeholder
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
                 <Button
                   type="button"
@@ -275,11 +337,11 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
             )}
             
             {/* Upload button */}
-            {!logoPreview && (!existingLogoUrl || removeLogo) && (
+            {!logoLoading && !logoPreview && (!existingLogoUrl || removeLogo) && (
               <label className="cursor-pointer">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
                   onChange={handleLogoChange}
                   className="hidden"
                   disabled={isLoading}
@@ -292,11 +354,11 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
             )}
             
             {/* Change button when logo exists */}
-            {(logoPreview || (existingLogoUrl && !removeLogo)) && (
+            {!logoLoading && (logoPreview || (existingLogoUrl && !removeLogo)) && (
               <label className="cursor-pointer">
                 <input
                   type="file"
-                  accept="image/*"
+                  accept="image/jpeg,image/png,image/webp,image/gif"
                   onChange={handleLogoChange}
                   className="hidden"
                   disabled={isLoading}

@@ -42,6 +42,7 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [logoLoading, setLogoLoading] = useState(false);
 
   const isShowman = formData.operator_type === 'showman';
 
@@ -71,21 +72,70 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
       return;
     }
 
+    setLogoLoading(true);
+    
+    // Revoke old preview URL to prevent memory leak
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+    }
+
     try {
       const compressed = await compressImage(file, 800, 0.85);
-      setLogoFile(compressed);
-      setLogoPreview(URL.createObjectURL(compressed));
-      toast({
-        title: "Logo Ready",
-        description: "Your logo has been added. Complete the form to save.",
-      });
+      const previewUrl = URL.createObjectURL(compressed);
+      
+      // Verify the image can actually load
+      const testImg = document.createElement('img');
+      testImg.onload = () => {
+        setLogoFile(compressed);
+        setLogoPreview(previewUrl);
+        setLogoLoading(false);
+        toast({
+          title: "Logo Ready",
+          description: "Your logo has been added. Complete the form to save.",
+        });
+      };
+      testImg.onerror = () => {
+        URL.revokeObjectURL(previewUrl);
+        setLogoLoading(false);
+        toast({
+          title: "Image Error",
+          description: "Could not process this image. Please try a different file.",
+          variant: "destructive",
+        });
+      };
+      testImg.src = previewUrl;
     } catch (error) {
-      setLogoFile(file);
-      setLogoPreview(URL.createObjectURL(file));
-      toast({
-        title: "Logo Ready",
-        description: "Your logo has been added. Complete the form to save.",
-      });
+      console.error('Logo compression error:', error);
+      try {
+        const previewUrl = URL.createObjectURL(file);
+        const testImg = document.createElement('img');
+        testImg.onload = () => {
+          setLogoFile(file);
+          setLogoPreview(previewUrl);
+          setLogoLoading(false);
+          toast({
+            title: "Logo Ready",
+            description: "Your logo has been added. Complete the form to save.",
+          });
+        };
+        testImg.onerror = () => {
+          URL.revokeObjectURL(previewUrl);
+          setLogoLoading(false);
+          toast({
+            title: "Image Error",
+            description: "Could not load this image. Please try a different file.",
+            variant: "destructive",
+          });
+        };
+        testImg.src = previewUrl;
+      } catch (fallbackError) {
+        setLogoLoading(false);
+        toast({
+          title: "Upload Failed",
+          description: "Could not process this file. Please try a different image.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
@@ -274,7 +324,14 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
               </div>
               
               <div className="flex items-center gap-4">
-                {logoPreview ? (
+                {/* Loading State */}
+                {logoLoading && (
+                  <div className="w-20 h-20 border rounded-lg bg-muted/30 flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
+                  </div>
+                )}
+                
+                {!logoLoading && logoPreview ? (
                   <div className="relative group">
                     <img
                       src={logoPreview}
@@ -291,11 +348,11 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
                       <X className="h-3 w-3" />
                     </Button>
                   </div>
-                ) : (
+                ) : !logoLoading ? (
                   <label className="cursor-pointer">
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
                       onChange={handleLogoChange}
                       className="hidden"
                       disabled={loading}
@@ -305,13 +362,13 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
                       <span className="text-xs">Upload</span>
                     </div>
                   </label>
-                )}
+                ) : null}
                 
-                {logoPreview && (
+                {!logoLoading && logoPreview && (
                   <label className="cursor-pointer">
                     <input
                       type="file"
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
                       onChange={handleLogoChange}
                       className="hidden"
                       disabled={loading}
