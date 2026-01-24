@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Building, User, MapPin, Users } from 'lucide-react';
+import { Building, User, MapPin, Users, Upload, X, Image } from 'lucide-react';
 import { z } from 'zod';
 import { OPERATOR_TYPES } from '@/constants/profile';
+import { compressImage } from '@/utils/imageCompression';
 
 const profileSchema = z.object({
   company_name: z.string().min(1, 'Company name is required'),
@@ -33,8 +34,88 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [existingLogoUrl, setExistingLogoUrl] = useState<string | null>(null);
+  const [removeLogo, setRemoveLogo] = useState(false);
   
   const isShowman = formData.operator_type === 'showman';
+
+  // Load existing logo on mount
+  useEffect(() => {
+    const loadExistingLogo = async () => {
+      if (profile?.company_logo_path) {
+        try {
+          const { data } = await supabase.storage
+            .from('ride-documents')
+            .createSignedUrl(profile.company_logo_path, 3600);
+          if (data?.signedUrl) {
+            setExistingLogoUrl(data.signedUrl);
+          }
+        } catch (e) {
+          console.log('Could not load existing logo');
+        }
+      }
+    };
+    loadExistingLogo();
+  }, [profile?.company_logo_path]);
+
+  const handleLogoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Invalid file type",
+        description: "Please upload an image file (JPG, PNG, etc.)",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "File too large",
+        description: "Logo must be less than 5MB",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const compressed = await compressImage(file, 800, 0.85);
+      setLogoFile(compressed);
+      setLogoPreview(URL.createObjectURL(compressed));
+      setRemoveLogo(false);
+    } catch (error) {
+      setLogoFile(file);
+      setLogoPreview(URL.createObjectURL(file));
+      setRemoveLogo(false);
+    }
+  };
+
+  const handleRemoveLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(null);
+    setRemoveLogo(true);
+  };
+
+  const uploadLogo = async (): Promise<string | null> => {
+    if (!logoFile) return null;
+    
+    const fileExt = logoFile.name.split('.').pop();
+    const fileName = `company-logos/${profile.user_id}/${Date.now()}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('ride-documents')
+      .upload(fileName, logoFile, { upsert: true });
+    
+    if (uploadError) {
+      throw new Error('Failed to upload logo');
+    }
+    
+    return fileName;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,9 +125,23 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
       setIsLoading(true);
       setErrors({});
 
+      // Handle logo upload/removal
+      let logoPath: string | null | undefined = undefined;
+      
+      if (logoFile) {
+        logoPath = await uploadLogo();
+      } else if (removeLogo) {
+        logoPath = null;
+      }
+
+      const updateData: any = { ...validatedData };
+      if (logoPath !== undefined) {
+        updateData.company_logo_path = logoPath;
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update(validatedData)
+        .update(updateData)
         .eq('user_id', profile.user_id);
 
       if (error) {
@@ -133,6 +228,75 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
       
       {/* Form Fields */}
       <div className="space-y-4">
+        {/* Company Logo Upload */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2 text-sm">
+            <Image className="h-4 w-4 text-muted-foreground" />
+            Company Logo
+          </Label>
+          <p className="text-xs text-muted-foreground">
+            Your logo will appear on PDF reports and documents
+          </p>
+          
+          <div className="flex items-center gap-4">
+            {/* Preview */}
+            {(logoPreview || (existingLogoUrl && !removeLogo)) && (
+              <div className="relative group">
+                <img
+                  src={logoPreview || existingLogoUrl || ''}
+                  alt="Company logo"
+                  className="w-20 h-20 object-contain border rounded-lg bg-muted/30"
+                />
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                  onClick={handleRemoveLogo}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
+            
+            {/* Upload button */}
+            {!logoPreview && (!existingLogoUrl || removeLogo) && (
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="hidden"
+                  disabled={isLoading}
+                />
+                <div className="w-20 h-20 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-primary/50 hover:text-primary transition-colors">
+                  <Upload className="h-5 w-5" />
+                  <span className="text-xs">Upload</span>
+                </div>
+              </label>
+            )}
+            
+            {/* Change button when logo exists */}
+            {(logoPreview || (existingLogoUrl && !removeLogo)) && (
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoChange}
+                  className="hidden"
+                  disabled={isLoading}
+                />
+                <Button type="button" variant="outline" size="sm" asChild>
+                  <span>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Change
+                  </span>
+                </Button>
+              </label>
+            )}
+          </div>
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="company_name" className="flex items-center gap-2 text-sm">
             <Building className="h-4 w-4 text-muted-foreground" />

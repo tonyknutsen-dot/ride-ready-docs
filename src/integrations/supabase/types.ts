@@ -1188,6 +1188,7 @@ export type Database = {
           address: string | null
           app_mode: string
           billing_cycle: string | null
+          company_logo_path: string | null
           company_name: string | null
           controller_name: string | null
           country: string | null
@@ -1217,6 +1218,7 @@ export type Database = {
           address?: string | null
           app_mode?: string
           billing_cycle?: string | null
+          company_logo_path?: string | null
           company_name?: string | null
           controller_name?: string | null
           country?: string | null
@@ -1246,6 +1248,7 @@ export type Database = {
           address?: string | null
           app_mode?: string
           billing_cycle?: string | null
+          company_logo_path?: string | null
           company_name?: string | null
           controller_name?: string | null
           country?: string | null

@@ -399,6 +399,25 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         return;
       }
 
+      // Fetch company logo if available
+      let logoDataUrl: string | null = null;
+      if (profile?.company_logo_path) {
+        try {
+          const { data: logoBlob } = await supabase.storage
+            .from('ride-documents')
+            .download(profile.company_logo_path);
+          if (logoBlob) {
+            logoDataUrl = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(logoBlob);
+            });
+          }
+        } catch (e) {
+          console.log('Could not load company logo');
+        }
+      }
+
       // Fetch ride image if available
       const { data: rideImage } = await supabase
         .from('documents')
@@ -447,28 +466,43 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       // === HEADER SECTION ===
       let yPos = 15;
       
-      // Company name (large, bold)
+      // Add company logo if available (left side)
+      const headerStartY = yPos;
+      if (logoDataUrl) {
+        try {
+          doc.addImage(logoDataUrl, 'AUTO', 20, yPos, 30, 25);
+        } catch (e) {
+          console.log('Could not add logo to PDF');
+        }
+      }
+      
+      // Company name (large, bold) - adjust position if logo present
+      const textStartX = logoDataUrl ? 55 : 20;
+      const textWidth = logoDataUrl ? pageWidth - 75 : pageWidth - 40;
+      
       doc.setFontSize(18);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(30, 64, 175); // Blue color
       const companyName = profile?.company_name || profile?.showmen_name || 'Maintenance Record';
-      doc.text(companyName, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 8;
+      doc.text(companyName, textStartX + textWidth / 2, yPos + 5, { align: 'center' });
+      yPos += 12;
 
       // Company address
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(100);
       if (profile?.address) {
-        doc.text(profile.address, pageWidth / 2, yPos, { align: 'center' });
-        yPos += 5;
+        const addressLines = doc.splitTextToSize(profile.address, textWidth);
+        doc.text(addressLines, textStartX + textWidth / 2, yPos, { align: 'center' });
+        yPos += addressLines.length * 4;
       }
       if (profile?.controller_name) {
-        doc.text(`Controller: ${profile.controller_name}`, pageWidth / 2, yPos, { align: 'center' });
+        doc.text(`Controller: ${profile.controller_name}`, textStartX + textWidth / 2, yPos, { align: 'center' });
         yPos += 5;
       }
       
-      yPos += 3;
+      // Ensure yPos is below logo if present
+      yPos = Math.max(yPos, headerStartY + (logoDataUrl ? 30 : 0)) + 5;
 
       // Report title
       doc.setFontSize(14);
@@ -489,68 +523,82 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       doc.line(20, yPos, pageWidth - 20, yPos);
       yPos += 8;
 
-      // === EQUIPMENT DETAILS SECTION ===
+      // === EQUIPMENT DETAILS SECTION WITH IMAGE ===
       doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(30, 64, 175);
       doc.text('Equipment Details', 20, yPos);
       yPos += 8;
 
+      // Calculate layout - if image exists, put it on the right
+      const hasImage = !!imageDataUrl;
+      const detailsWidth = hasImage ? 120 : pageWidth - 40;
+      const imageX = pageWidth - 55;
+      const imageY = yPos;
+      const imageW = 40;
+      const imageH = 30;
+
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0);
 
-      // Equipment info in two columns
+      // Equipment info - left aligned, respecting image space
       const leftCol = 20;
-      const rightCol = pageWidth / 2 + 10;
+      const labelWidth = 32;
       
       doc.setFont('helvetica', 'bold');
       doc.text('Name:', leftCol, yPos);
       doc.setFont('helvetica', 'normal');
-      doc.text(ride.ride_name, leftCol + 25, yPos);
+      doc.text(ride.ride_name, leftCol + labelWidth, yPos);
+      yPos += 6;
       
       doc.setFont('helvetica', 'bold');
-      doc.text('Category:', rightCol, yPos);
+      doc.text('Category:', leftCol, yPos);
       doc.setFont('helvetica', 'normal');
-      doc.text(ride.ride_categories?.name || '-', rightCol + 25, yPos);
+      doc.text(ride.ride_categories?.name || '-', leftCol + labelWidth, yPos);
       yPos += 6;
 
       if (ride.manufacturer) {
         doc.setFont('helvetica', 'bold');
         doc.text('Manufacturer:', leftCol, yPos);
         doc.setFont('helvetica', 'normal');
-        doc.text(ride.manufacturer, leftCol + 32, yPos);
+        doc.text(ride.manufacturer, leftCol + labelWidth, yPos);
+        yPos += 6;
       }
       if (ride.serial_number) {
         doc.setFont('helvetica', 'bold');
-        doc.text('Serial No:', rightCol, yPos);
+        doc.text('Serial No:', leftCol, yPos);
         doc.setFont('helvetica', 'normal');
-        doc.text(ride.serial_number, rightCol + 25, yPos);
+        doc.text(ride.serial_number, leftCol + labelWidth, yPos);
+        yPos += 6;
       }
-      yPos += 6;
-
       if (ride.year_manufactured) {
         doc.setFont('helvetica', 'bold');
         doc.text('Year:', leftCol, yPos);
         doc.setFont('helvetica', 'normal');
-        doc.text(ride.year_manufactured.toString(), leftCol + 25, yPos);
+        doc.text(ride.year_manufactured.toString(), leftCol + labelWidth, yPos);
+        yPos += 6;
       }
       if (ride.owner_name) {
         doc.setFont('helvetica', 'bold');
-        doc.text('Owner:', rightCol, yPos);
+        doc.text('Owner:', leftCol, yPos);
         doc.setFont('helvetica', 'normal');
-        doc.text(ride.owner_name, rightCol + 25, yPos);
+        doc.text(ride.owner_name, leftCol + labelWidth, yPos);
+        yPos += 6;
       }
-      yPos += 10;
 
-      // Add ride image if available
+      // Add ride image on the right side if available
       if (imageDataUrl) {
         try {
-          doc.addImage(imageDataUrl, 'JPEG', pageWidth - 60, 55, 45, 35);
+          doc.addImage(imageDataUrl, 'JPEG', imageX, imageY, imageW, imageH);
+          // Ensure yPos is below the image
+          yPos = Math.max(yPos, imageY + imageH + 5);
         } catch (e) {
           console.log('Could not add image to PDF');
         }
       }
+      
+      yPos += 5;
 
       // === SUMMARY SECTION ===
       doc.setDrawColor(200);
@@ -574,7 +622,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       }, {} as Record<string, number>);
 
       doc.text(`Total Records: ${filteredRecords.length}`, leftCol, yPos);
-      doc.text(`Total Cost: £${totalCost.toFixed(2)}`, rightCol, yPos);
+      doc.text(`Total Cost: £${totalCost.toFixed(2)}`, pageWidth / 2, yPos);
       yPos += 10;
 
       // === MAINTENANCE RECORDS TABLE ===
