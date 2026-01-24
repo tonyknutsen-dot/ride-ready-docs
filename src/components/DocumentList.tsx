@@ -103,6 +103,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
         .from('documents')
         .select('*')
         .eq('user_id', user?.id)
+        .neq('document_type', 'maintenance') // Exclude maintenance attachments - they belong to maintenance section only
         .order('uploaded_at', { ascending: false });
 
       if (rideId) {
