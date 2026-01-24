@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { FileText, Download, Trash2, Calendar, AlertTriangle, Eye, Link2, History, ChevronDown } from 'lucide-react';
+import { FileText, Download, Trash2, Calendar, AlertTriangle, Eye, Link2, History, ChevronDown, Globe } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -508,6 +508,9 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
             </span>
           ) : (
             <>
+              {doc.is_global && (
+                <Globe className="h-4 w-4 text-info shrink-0" />
+              )}
               <span className="truncate">{doc.document_name}</span>
               {hasMultipleVersions && (
                 <Badge variant="secondary" className="shrink-0 bg-primary/10 text-primary text-[10px] px-1.5 py-0">
@@ -628,13 +631,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
           </div>
         )}
         {groupedDocs.map((g, groupIdx) => {
-          const groupColors = [
-            { header: 'from-primary to-info', badge: 'bg-primary/10 text-primary border-primary/30' },
-            { header: 'from-info to-accent', badge: 'bg-info/10 text-info border-info/30' },
-            { header: 'from-success to-primary', badge: 'bg-success/10 text-success border-success/30' },
-            { header: 'from-accent to-info', badge: 'bg-accent/10 text-accent border-accent/30' },
-          ];
-          const gColor = groupColors[groupIdx % groupColors.length];
+          // Use consistent color for all document type groups
+          const isGlobalSection = g.type === "🌐 Global Documents";
           
           // Count total documents including versions
           const totalDocs = g.items.reduce((sum, docGroup) => sum + 1 + docGroup.olderVersions.length, 0);
@@ -643,12 +641,12 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, onD
             <section key={g.type} className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <span className={`w-6 h-6 rounded-lg bg-gradient-to-br ${gColor.header} flex items-center justify-center`}>
+                  <span className={`w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center`}>
                     <FileText className="w-3.5 h-3.5 text-white" />
                   </span>
                   {g.type}
                 </h3>
-                <span className={`text-xs px-3 py-1 rounded-full border font-medium ${gColor.badge}`}>
+                <span className="text-xs px-3 py-1 rounded-full border font-medium bg-primary/10 text-primary border-primary/30">
                   {totalDocs} file{totalDocs !== 1 ? "s" : ""}
                 </span>
               </div>
