@@ -18,6 +18,7 @@ import GlobalEventBridge from "@/components/GlobalEventBridge";
 import TestModeBanner from "@/components/TestModeBanner";
 import FloatingBugButton from "@/components/FloatingBugButton";
 import TesterSessionTracker from "@/components/TesterSessionTracker";
+import { AppLayout } from "@/components/AppLayout";
 import { Loader2, FileText } from "lucide-react";
 
 // Eager load critical pages
@@ -50,7 +51,6 @@ const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
 const SupportMessages = lazy(() => import("./pages/admin/SupportMessages"));
 const SecurityDashboard = lazy(() => import("./pages/admin/SecurityDashboard"));
 const BugReports = lazy(() => import("./pages/admin/BugReports"));
-const AppHeader = lazy(() => import("./components/AppHeader"));
 const RiskAssessments = lazy(() => import("./pages/RiskAssessments"));
 const GlobalDocumentsPage = lazy(() => import("./pages/GlobalDocumentsPage"));
 const BatchSendDocuments = lazy(() => import("./pages/BatchSendDocuments"));
@@ -108,10 +108,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <>
-                        <AppHeader />
+                      <AppLayout>
                         <Overview />
-                      </>
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -144,10 +143,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <>
-                        <AppHeader />
+                      <AppLayout>
                         <Rides />
-                      </>
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -157,10 +155,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <>
-                        <AppHeader />
+                      <AppLayout>
                         <RideDetailPage />
-                      </>
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -170,10 +167,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <>
-                        <AppHeader />
+                      <AppLayout>
                         <Calendar />
-                      </>
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -183,7 +179,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <PlanBilling />
+                      <AppLayout>
+                        <PlanBilling />
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -193,7 +191,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <Settings />
+                      <AppLayout>
+                        <Settings />
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -203,7 +203,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <MyBugReports />
+                      <AppLayout>
+                        <MyBugReports />
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -213,10 +215,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <>
-                        <AppHeader />
+                      <AppLayout>
                         <RiskAssessments />
-                      </>
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -226,10 +227,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <>
-                        <AppHeader />
+                      <AppLayout>
                         <GlobalDocumentsPage />
-                      </>
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -239,10 +239,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <>
-                        <AppHeader />
+                      <AppLayout>
                         <BatchSendDocuments />
-                      </>
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -252,7 +251,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <Marketing />
+                      <AppLayout>
+                        <Marketing />
+                      </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
@@ -264,7 +265,9 @@ const App = () => (
                   <ProtectedRoute>
                     <ProfileGuard>
                       <FeatureGate requiredPlan="advanced" feature="Operations & Maintenance">
-                        <Checks />
+                        <AppLayout>
+                          <Checks />
+                        </AppLayout>
                       </FeatureGate>
                     </ProfileGuard>
                   </ProtectedRoute>
@@ -276,7 +279,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <AdminDashboard />
+                      <AppLayout>
+                        <AdminDashboard />
+                      </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
@@ -286,7 +291,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <RideTypeRequests />
+                      <AppLayout>
+                        <RideTypeRequests />
+                      </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
@@ -296,7 +303,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <DocumentTypeRequests />
+                      <AppLayout>
+                        <DocumentTypeRequests />
+                      </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
@@ -306,7 +315,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <UserManagement />
+                      <AppLayout>
+                        <UserManagement />
+                      </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
@@ -316,7 +327,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <SupportMessages />
+                      <AppLayout>
+                        <SupportMessages />
+                      </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
@@ -326,7 +339,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <SecurityDashboard />
+                      <AppLayout>
+                        <SecurityDashboard />
+                      </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
@@ -336,7 +351,9 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AdminRoute>
-                      <BugReports />
+                      <AppLayout>
+                        <BugReports />
+                      </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>
                 } 
