@@ -132,36 +132,41 @@ export function CompanyLogoField({
             )}
           </div>
 
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col gap-2">
+          <label className="cursor-pointer">
+            <input
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              onChange={handleLogoChange}
+              className="hidden"
+              disabled={disabled || isProcessing}
+            />
+            <Button type="button" variant="outline" size="sm" asChild>
+              <span>
+                <Upload className="h-4 w-4 mr-2" />
+                {effectivePreviewUrl ? "Change" : "Choose"}
+              </span>
+            </Button>
+          </label>
+
           {!isProcessing && effectivePreviewUrl ? (
             <Button
               type="button"
-              variant="destructive"
-              size="icon"
-              className="absolute -top-2 -right-2 h-6 w-6"
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:text-destructive hover:bg-destructive/10"
               onClick={handleRemove}
               disabled={disabled}
             >
-              <X className="h-3 w-3" />
+              <X className="h-4 w-4 mr-1" />
+              Remove
             </Button>
           ) : null}
         </div>
 
-        {/* Actions */}
-        <label className="cursor-pointer">
-          <input
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={handleLogoChange}
-            className="hidden"
-            disabled={disabled || isProcessing}
-          />
-          <Button type="button" variant="outline" size="sm" asChild>
-            <span>
-              <Upload className="h-4 w-4 mr-2" />
-              {effectivePreviewUrl ? "Change" : "Choose"}
-            </span>
-          </Button>
-        </label>
       </div>
 
       {status.text ? (
