@@ -450,6 +450,15 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
           yPos += Math.max(notesLines.length * 4, 5) + 2;
         }
         
+        // Attachments
+        if (record.document_ids && record.document_ids.length > 0) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Attachments:', 25, yPos);
+          doc.setFont('helvetica', 'normal');
+          doc.text(`${record.document_ids.length} file${record.document_ids.length !== 1 ? 's' : ''} attached (see Documents section)`, 55, yPos);
+          yPos += 5;
+        }
+        
         // Record timestamp
         doc.setFontSize(7);
         doc.setTextColor(128);
@@ -462,8 +471,10 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
       // Add footers to all pages
       addFooter();
       
-      // Save
-      const fileName = `maintenance-report-${ride.ride_name.replace(/[^a-zA-Z0-9]/g, '-')}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      // Save with descriptive filename including date range
+      const fromStr = reportDateFrom ? format(reportDateFrom, 'ddMMMyyyy') : 'all';
+      const toStr = reportDateTo ? format(reportDateTo, 'ddMMMyyyy') : 'present';
+      const fileName = `${ride.ride_name.replace(/[^a-zA-Z0-9]/g, '-')}-Maintenance-Report-${fromStr}-to-${toStr}.pdf`;
       doc.save(fileName);
       
       setReportDialogOpen(false);
