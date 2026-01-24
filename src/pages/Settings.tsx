@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Settings as SettingsIcon, User, FileText, Globe, Users, ArrowRight, Mail, ArrowLeft, Info, Bug } from 'lucide-react';
+import { Settings as SettingsIcon, User, FileText, Globe, ArrowRight, Mail, ArrowLeft, Info, Bug } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   AlertDialog,
@@ -19,7 +19,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import AppHeader from '@/components/AppHeader';
-import { COUNTRIES, OPERATOR_TYPES, getTerminologyForCountry } from '@/constants/profile';
+import { COUNTRIES, getTerminologyForCountry } from '@/constants/profile';
 import { CustomTerminologyEditor, CustomTerminology } from '@/components/CustomTerminologyEditor';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -36,8 +36,6 @@ const Settings = () => {
   const [loading, setLoading] = useState(true);
   const [country, setCountry] = useState('GB');
   const [updatingCountry, setUpdatingCountry] = useState(false);
-  const [operatorType, setOperatorType] = useState('company');
-  const [updatingOperatorType, setUpdatingOperatorType] = useState(false);
   const [pendingCountry, setPendingCountry] = useState<string | null>(null);
   const [showCountryDialog, setShowCountryDialog] = useState(false);
   const [customTerminology, setCustomTerminology] = useState<CustomTerminology | null>(null);
@@ -56,7 +54,6 @@ const Settings = () => {
     if (!error && data) {
       setProfile(data);
       setCountry(data.country || 'GB');
-      setOperatorType(data.operator_type || 'company');
       setCustomTerminology(data.custom_terminology as CustomTerminology | null);
     }
     setLoading(false);
@@ -104,32 +101,6 @@ const Settings = () => {
     setPendingCountry(null);
   };
 
-  const handleOperatorTypeChange = async (newType: string) => {
-    if (!user) return;
-    
-    setUpdatingOperatorType(true);
-    const { error } = await supabase
-      .from('profiles')
-      .update({ operator_type: newType })
-      .eq('user_id', user.id);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to update operator type",
-        variant: "destructive",
-      });
-    } else {
-      setOperatorType(newType);
-      const typeInfo = OPERATOR_TYPES.find(t => t.value === newType);
-      toast({
-        title: "Operator type updated",
-        description: typeInfo ? `Terminology will now use ${typeInfo.label.toLowerCase()} terms` : 'Operator type updated',
-      });
-    }
-    setUpdatingOperatorType(false);
-  };
-
   const handleCustomTerminologySave = async (terminology: CustomTerminology | null) => {
     if (!user) return;
     
@@ -164,7 +135,6 @@ const Settings = () => {
   };
 
   const selectedCountry = COUNTRIES.find(c => c.code === country);
-  const selectedOperatorType = OPERATOR_TYPES.find(t => t.value === operatorType);
   const pendingCountryInfo = COUNTRIES.find(c => c.code === pendingCountry);
   
   // Get terminology for comparison
@@ -323,37 +293,6 @@ const Settings = () => {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Operator Type */}
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <Label htmlFor="operator-type-select" className="text-sm font-medium">
-                  Operator Type
-                </Label>
-              </div>
-              <Select 
-                value={operatorType} 
-                onValueChange={handleOperatorTypeChange}
-                disabled={loading || updatingOperatorType}
-              >
-                <SelectTrigger id="operator-type-select" className="h-11 border-2 hover:border-primary/50 transition-colors">
-                  <SelectValue placeholder="Select your operator type..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {OPERATOR_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {selectedOperatorType && (
-                <p className="text-xs text-muted-foreground">
-                  {selectedOperatorType.description}
-                </p>
-              )}
-            </div>
-
             {/* Country */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
