@@ -53,6 +53,7 @@ const MAINTENANCE_TYPES = [
 const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) => {
   const [records, setRecords] = useState<MaintenanceRecord[]>([]);
   const [documents, setDocuments] = useState<Record<string, Document[]>>({});
+  const [documentUrls, setDocumentUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState<MaintenanceRecord | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
@@ -132,6 +133,23 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         });
 
         setDocuments(docsByRecord);
+
+        // Load signed URLs for image documents
+        const imageDocuments = (documentsData || []).filter(doc => doc.mime_type?.startsWith('image/'));
+        const urls: Record<string, string> = {};
+        for (const doc of imageDocuments) {
+          try {
+            const { data } = await supabase.storage
+              .from('ride-documents')
+              .createSignedUrl(doc.file_path, 3600); // 1 hour expiry
+            if (data?.signedUrl) {
+              urls[doc.id] = data.signedUrl;
+            }
+          } catch (e) {
+            console.log('Could not get signed URL for', doc.id);
+          }
+        }
+        setDocumentUrls(urls);
       }
 
     } catch (error) {
@@ -677,6 +695,27 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
           yPos += Math.max(notesLines.length * 4, 5) + 2;
         }
         
+        // Attachments info
+        const recordDocs = documents[record.id] || [];
+        if (recordDocs.length > 0) {
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'bold');
+          doc.text('Attachments:', 25, yPos);
+          doc.setFont('helvetica', 'normal');
+          const imageCount = recordDocs.filter(d => d.mime_type?.startsWith('image/')).length;
+          const docCount = recordDocs.length - imageCount;
+          let attachmentText = '';
+          if (imageCount > 0 && docCount > 0) {
+            attachmentText = `${imageCount} photo${imageCount > 1 ? 's' : ''}, ${docCount} document${docCount > 1 ? 's' : ''}`;
+          } else if (imageCount > 0) {
+            attachmentText = `${imageCount} photo${imageCount > 1 ? 's' : ''}`;
+          } else {
+            attachmentText = `${docCount} document${docCount > 1 ? 's' : ''}`;
+          }
+          doc.text(attachmentText, 55, yPos);
+          yPos += 5;
+        }
+        
         // Record timestamp
         doc.setFontSize(7);
         doc.setTextColor(128);
@@ -864,21 +903,28 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                         <div className="text-sm font-medium">Attachments ({documents[record.id].length})</div>
                         <div className="flex flex-wrap gap-2">
                           {documents[record.id].map((doc) => (
-                            <div key={doc.id} className="flex items-center space-x-2 p-2 border rounded-md bg-background">
-                              {doc.mime_type?.startsWith('image/') ? (
-                                <Camera className="h-4 w-4 text-blue-500" />
+                            <div 
+                              key={doc.id} 
+                              className="relative group border rounded-md overflow-hidden bg-background cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all"
+                              onClick={() => downloadFile(doc)}
+                            >
+                              {doc.mime_type?.startsWith('image/') && documentUrls[doc.id] ? (
+                                <div className="w-20 h-20 relative">
+                                  <img
+                                    src={documentUrls[doc.id]}
+                                    alt={doc.document_name}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                                    <Download className="h-5 w-5 text-white opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-lg" />
+                                  </div>
+                                </div>
                               ) : (
-                                <FileText className="h-4 w-4 text-green-500" />
+                                <div className="w-20 h-20 flex flex-col items-center justify-center p-2 gap-1">
+                                  <FileText className="h-6 w-6 text-muted-foreground" />
+                                  <span className="text-[9px] text-center text-muted-foreground line-clamp-2 leading-tight">{doc.document_name}</span>
+                                </div>
                               )}
-                              <span className="text-xs truncate max-w-32">{doc.document_name}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => downloadFile(doc)}
-                                className="h-6 w-6 p-0"
-                              >
-                                <Download className="h-3 w-3" />
-                              </Button>
                             </div>
                           ))}
                         </div>
