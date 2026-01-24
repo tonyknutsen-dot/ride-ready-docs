@@ -387,19 +387,25 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     const ORDER = ["📜 DOC Certificate", "Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Device Photo", "Other"];
     const groups: Record<string, DocumentGroup[]> = {};
     
-    // Separate global and ride-specific documents
+    // When isGlobal is true, we're showing ONLY global docs - don't separate them
+    // When showing ride docs, separate global from ride-specific
     const globalDocs: Document[] = [];
     const rideDocs: Document[] = [];
     
-    docs.forEach(d => {
-      if (d.is_global) {
-        globalDocs.push(d);
-      } else {
-        rideDocs.push(d);
-      }
-    });
+    if (isGlobal) {
+      // All docs are global, group by document type instead
+      docs.forEach(d => rideDocs.push(d)); // Treat as regular docs for grouping by type
+    } else {
+      docs.forEach(d => {
+        if (d.is_global) {
+          globalDocs.push(d);
+        } else {
+          rideDocs.push(d);
+        }
+      });
+    }
     
-    // Group ride-specific documents by type, then by name for versions
+    // Group documents by type, then by name for versions
     const rideDocGroups = groupDocumentsByName(rideDocs);
     rideDocGroups.forEach(docGroup => {
       const k = prettyType(docGroup.latestDoc.document_type);
@@ -416,8 +422,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     
     const result = keys.map(k => ({ type: k, items: groups[k] }));
     
-    // Add global documents at the top if they exist
-    if (globalDocs.length > 0) {
+    // Add global documents at the top if they exist (only when showing ride docs, not when isGlobal)
+    if (!isGlobal && globalDocs.length > 0) {
       const globalDocGroups = groupDocumentsByName(globalDocs);
       result.unshift({ type: "🌐 Global Documents", items: globalDocGroups });
     }
