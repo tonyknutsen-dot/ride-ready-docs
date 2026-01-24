@@ -72,7 +72,7 @@ export function StripeInstructionModal({
               <p className="font-medium">Return to the app</p>
               {isPortal ? (
                 <p className="text-sm text-muted-foreground">
-                  Click the <strong>"← Return to Knuts Software"</strong> link on the left side of the Stripe page.
+                  Click the <strong>"← Return to Ride Ready Docs"</strong> link on the left side of the Stripe page.
                 </p>
               ) : (
                 <p className="text-sm text-muted-foreground">
