@@ -188,7 +188,7 @@ const TermsOfService = () => {
                   For questions about these Terms of Service:
                 </p>
                 <ul className="list-none pl-0 text-muted-foreground space-y-2">
-                  <li><strong>Email:</strong> info@knutssoftware.co.uk</li>
+                  <li><strong>Email:</strong> support@ridereadydocs.com</li>
                 </ul>
               </section>
 

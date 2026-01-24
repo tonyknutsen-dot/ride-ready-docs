@@ -28,8 +28,8 @@ const Security = () => {
     },
     {
       icon: Server,
-      title: "UK/EU Data Centers",
-      description: "Your data is stored in secure data centers located in the UK and EU, ensuring compliance with GDPR and UK data protection regulations."
+      title: "Secure Data Centers",
+      description: "Your data is stored in secure data centers with regional compliance, ensuring protection under GDPR and local data protection regulations."
     },
     {
       icon: CheckCircle,
@@ -238,9 +238,9 @@ const Security = () => {
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold mb-2">UK Data Protection</h3>
+                  <h3 className="text-lg font-semibold mb-2">Data Protection Compliance</h3>
                   <p className="text-muted-foreground">
-                    Our data handling practices comply with the UK Data Protection Act 2018. We are registered with the UK Information Commissioner's Office (ICO).
+                    Our data handling practices comply with international data protection standards including GDPR and regional privacy regulations.
                   </p>
                 </div>
                 <div>

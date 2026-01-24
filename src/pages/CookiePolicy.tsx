@@ -176,7 +176,7 @@ const CookiePolicy = () => {
                   If you have questions about our use of cookies, please contact us:
                 </p>
                 <ul className="list-none pl-0 text-muted-foreground space-y-2 mt-4">
-                  <li><strong>Email:</strong> info@knutssoftware.co.uk</li>
+                  <li><strong>Email:</strong> support@ridereadydocs.com</li>
                 </ul>
               </section>
             </CardContent>
