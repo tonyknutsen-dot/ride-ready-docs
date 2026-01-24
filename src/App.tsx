@@ -22,7 +22,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { Loader2, FileText } from "lucide-react";
 
 // Eager load critical pages
-import Index from "./pages/Index";
+import ComingSoon from "./pages/ComingSoon";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -100,7 +100,7 @@ const App = () => (
               <GlobalEventBridge />
               <Suspense fallback={<PageLoader />}>
               <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<ComingSoon />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/demo" element={<Demo />} />
               <Route path="/diagnostics" element={<Diagnostics />} />
