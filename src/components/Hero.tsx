@@ -99,17 +99,6 @@ const Hero = () => {
             </Button>
           </div>
 
-          {/* Secondary CTA */}
-          <div className="animate-fade-up animate-delay-400">
-            <Button 
-              variant="outline" 
-              size="lg"
-              className="border-2 border-white/30 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm px-6 py-5 text-base transition-smooth"
-              onClick={() => navigate('/demo')}
-            >
-              View Demo
-            </Button>
-          </div>
           
           {/* Trust indicators */}
           <div className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/70 animate-fade-up animate-delay-500">

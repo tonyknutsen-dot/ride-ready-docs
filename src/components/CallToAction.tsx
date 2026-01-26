@@ -58,14 +58,6 @@ const CallToAction = () => {
               Start Free 30-Day Trial
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
-            <Button 
-              variant="outline" 
-              size="lg" 
-              className="w-full sm:w-auto border-2 border-white/30 text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm px-8 py-6 text-base transition-smooth"
-              onClick={() => navigate('/demo')}
-            >
-              View Demo
-            </Button>
           </div>
           
           <div className="mt-10 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/70">

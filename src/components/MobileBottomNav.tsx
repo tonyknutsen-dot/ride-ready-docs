@@ -11,7 +11,7 @@ import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 // Routes where the mobile nav should NOT appear (public pages - landing/marketing only)
-const PUBLIC_ROUTES = ['/', '/auth', '/demo', '/how-it-works', '/privacy', '/terms', '/security'];
+const PUBLIC_ROUTES = ['/', '/auth', '/how-it-works', '/privacy', '/terms', '/security'];
 
 export default function MobileBottomNav() {
   const nav = useNavigate();

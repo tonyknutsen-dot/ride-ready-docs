@@ -155,22 +155,13 @@ const HowItWorks = () => {
           <p className="text-xl text-muted-foreground mb-8 max-w-2xl mx-auto">
             Join operators worldwide who are simplifying their document management and staying inspection-ready.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button 
-              size="lg"
-              onClick={() => navigate('/auth')}
-              className="bg-primary hover:bg-primary/90"
-            >
-              Start Your Free 30-Day Trial
-            </Button>
-            <Button 
-              size="lg"
-              variant="outline"
-              onClick={() => navigate('/demo')}
-            >
-              Try the Demo
-            </Button>
-          </div>
+          <Button 
+            size="lg"
+            onClick={() => navigate('/auth')}
+            className="bg-primary hover:bg-primary/90"
+          >
+            Start Your Free 30-Day Trial
+          </Button>
         </section>
       </main>
 
