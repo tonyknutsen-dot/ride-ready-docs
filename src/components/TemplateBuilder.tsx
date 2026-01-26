@@ -296,7 +296,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                 Browse Library Items
               </Button>
             }
-            frequency={frequency as "daily" | "monthly" | "yearly"}
+            frequency={frequency as "daily" | "monthly" | "yearly" | "preopening"}
             rideCategoryId={ride.category_id}
             onAdd={async (labels: string[]) => {
               const newItems: BuilderItem[] = labels.map((label, i) => ({
