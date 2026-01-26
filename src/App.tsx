@@ -27,7 +27,6 @@ import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
 // Lazy load non-critical pages for better initial load
-const Demo = lazy(() => import("./pages/Demo"));
 const Overview = lazy(() => import("./pages/Overview"));
 const Rides = lazy(() => import("./pages/Rides"));
 const RideDetailPage = lazy(() => import("./pages/RideDetailPage"));
@@ -102,7 +101,6 @@ const App = () => (
               <Routes>
               <Route path="/" element={<ComingSoon />} />
               <Route path="/auth" element={<Auth />} />
-              <Route path="/demo" element={<Demo />} />
               <Route path="/diagnostics" element={<Diagnostics />} />
               <Route path="/tester-invite/:token" element={<TesterInvite />} />
               <Route 
