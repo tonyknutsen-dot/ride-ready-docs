@@ -1,12 +1,15 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home, FolderOpen, CheckSquare, MoreHorizontal,
-  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut, Send
+  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut, Send, Wrench, Shield, Lightbulb
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Separator } from "@/components/ui/separator";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
+import { RequestFeatureDialog } from "@/components/RequestFeatureDialog";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAdmin } from "@/contexts/AdminContext";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -17,9 +20,11 @@ export default function MobileBottomNav() {
   const nav = useNavigate();
   const loc = useLocation();
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
 
   // Don't show on public pages or if not logged in
   if (!user || PUBLIC_ROUTES.includes(loc.pathname)) return null;
@@ -70,6 +75,44 @@ export default function MobileBottomNav() {
     </button>
   );
 
+  // Menu item component for the sheet
+  const MenuItem = ({ 
+    icon: Icon, 
+    label, 
+    onClick, 
+    active = false,
+    variant = "default" 
+  }: { 
+    icon: any; 
+    label: string; 
+    onClick: () => void; 
+    active?: boolean;
+    variant?: "default" | "primary" | "accent" | "success" | "info" | "destructive";
+  }) => {
+    const variantStyles = {
+      default: "text-muted-foreground hover:text-foreground hover:bg-muted",
+      primary: "text-primary hover:bg-primary/10",
+      accent: "text-accent hover:bg-accent/10",
+      success: "text-success hover:bg-success/10",
+      info: "text-info hover:bg-info/10",
+      destructive: "text-destructive hover:bg-destructive/10",
+    };
+
+    return (
+      <button
+        onClick={onClick}
+        className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all active:scale-[0.98] ${
+          active 
+            ? "bg-primary text-primary-foreground" 
+            : variantStyles[variant]
+        }`}
+      >
+        <Icon className="h-5 w-5 flex-shrink-0" />
+        <span>{label}</span>
+      </button>
+    );
+  };
+
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 md:hidden safe-area-pb">
       <div className="mx-auto max-w-screen-sm grid grid-cols-5 gap-1 px-2 py-1">
@@ -109,7 +152,7 @@ export default function MobileBottomNav() {
           label="Calendar"
         />
 
-        {/* More - Simplified sheet */}
+        {/* More - Full menu sheet */}
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <button 
@@ -120,85 +163,130 @@ export default function MobileBottomNav() {
               <span className="mt-0.5">More</span>
             </button>
           </SheetTrigger>
-            <SheetContent side="bottom" className="max-h-[60vh] rounded-t-3xl px-6 pb-8 border-t-2 border-primary/20">
-            <SheetHeader className="pb-6">
-              <SheetTitle className="text-left text-lg">Quick Access</SheetTitle>
+          <SheetContent side="bottom" className="max-h-[80vh] rounded-t-3xl px-4 pb-8 border-t-2 border-primary/20 overflow-y-auto">
+            <SheetHeader className="pb-4 sticky top-0 bg-background z-10">
+              <SheetTitle className="text-left text-lg">Menu</SheetTitle>
             </SheetHeader>
 
-            <div className="space-y-6">
-              {/* Primary Actions - Large touch targets */}
-              <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-4">
+              {/* Quick Actions */}
+              <div className="grid grid-cols-3 gap-2">
                 <button
-                  className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-primary/5 to-primary/10 border-2 border-primary/20 rounded-2xl text-sm font-medium hover:bg-primary/15 transition-all active:scale-95"
+                  className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-xl text-sm font-medium hover:bg-primary/15 transition-all active:scale-95"
                   onClick={() => setUploadDialogOpen(true)}
                 >
-                  <div className="p-3 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl border border-primary/30">
-                    <PlusCircle className="h-6 w-6 text-primary" />
+                  <div className="p-2.5 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
+                    <PlusCircle className="h-5 w-5 text-primary" />
                   </div>
                   <span className="text-xs">Upload</span>
                 </button>
                 <button
-                  className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-success/5 to-success/10 border-2 border-success/20 rounded-2xl text-sm font-medium hover:bg-success/15 transition-all active:scale-95"
+                  className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-accent/5 to-accent/10 border border-accent/20 rounded-xl text-sm font-medium hover:bg-accent/15 transition-all active:scale-95"
+                  onClick={() => go("/send-documents")}
+                >
+                  <div className="p-2.5 bg-gradient-to-br from-accent/20 to-accent/10 rounded-lg">
+                    <Send className="h-5 w-5 text-accent" />
+                  </div>
+                  <span className="text-xs">Send</span>
+                </button>
+                <button
+                  className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-success/5 to-success/10 border border-success/20 rounded-xl text-sm font-medium hover:bg-success/15 transition-all active:scale-95"
                   onClick={() => go("/risk-assessments")}
                 >
-                  <div className="p-3 bg-gradient-to-br from-success/20 to-success/10 rounded-xl border border-success/30">
-                    <ShieldCheck className="h-6 w-6 text-success" />
+                  <div className="p-2.5 bg-gradient-to-br from-success/20 to-success/10 rounded-lg">
+                    <ShieldCheck className="h-5 w-5 text-success" />
                   </div>
                   <span className="text-xs">Risk</span>
                 </button>
-                <button
-                  className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-info/5 to-info/10 border-2 border-info/20 rounded-2xl text-sm font-medium hover:bg-info/15 transition-all active:scale-95"
-                  onClick={() => go("/global-documents")}
-                >
-                  <div className="p-3 bg-gradient-to-br from-info/20 to-info/10 rounded-xl border border-info/30">
-                    <FileText className="h-6 w-6 text-info" />
-                  </div>
-                  <span className="text-xs">Docs</span>
-                </button>
               </div>
 
-              {/* Secondary Actions - Compact list */}
-              <div className="flex flex-wrap gap-2">
+              <Separator />
+
+              {/* Features Section */}
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Features</p>
+                <MenuItem 
+                  icon={FileText} 
+                  label="Documents" 
+                  onClick={() => go("/documents")} 
+                  active={isActive(["/documents"])}
+                />
+                <MenuItem 
+                  icon={Wrench} 
+                  label="Maintenance" 
+                  onClick={() => go("/maintenance")} 
+                  active={isActive(["/maintenance"])}
+                />
+                <MenuItem 
+                  icon={FileText} 
+                  label="Global Documents" 
+                  onClick={() => go("/global-documents")} 
+                  active={isActive(["/global-documents"])}
+                />
+              </div>
+
+              <Separator />
+
+              {/* Account Section */}
+              <div className="space-y-1">
+                <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Account</p>
+                <MenuItem 
+                  icon={CreditCard} 
+                  label="Plan & Billing" 
+                  onClick={() => go("/billing")} 
+                  active={isActive(["/billing"])}
+                />
+                <MenuItem 
+                  icon={Settings} 
+                  label="Settings" 
+                  onClick={() => go("/settings")} 
+                  active={isActive(["/settings"])}
+                />
+                <MenuItem 
+                  icon={HelpCircle} 
+                  label="Help & Support" 
+                  onClick={() => go("/help")} 
+                  active={isActive(["/help"])}
+                />
+                <MenuItem 
+                  icon={Lightbulb} 
+                  label="Request Feature" 
+                  onClick={() => {
+                    setOpen(false);
+                    setFeatureDialogOpen(true);
+                  }}
+                />
+              </div>
+
+              {/* Admin Section */}
+              {isAdmin && (
+                <>
+                  <Separator />
+                  <div className="space-y-1">
+                    <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Admin</p>
+                    <MenuItem 
+                      icon={Shield} 
+                      label="Admin Dashboard" 
+                      onClick={() => go("/admin")} 
+                      active={isActive(["/admin"])}
+                      variant="primary"
+                    />
+                  </div>
+                </>
+              )}
+
+              <Separator />
+
+              {/* Support & Sign Out */}
+              <div className="space-y-2 pt-2">
+                <ContactSupportDialog />
                 <button
-                  className="flex items-center gap-2 px-4 py-3 bg-secondary border-2 border-accent/20 rounded-xl text-sm hover:bg-accent/10 transition-all active:scale-95"
-                  onClick={() => go("/send-documents")}
-                >
-                  <Send className="h-4 w-4 text-accent" />
-                  <span>Send Docs</span>
-                </button>
-                <button
-                  className="flex items-center gap-2 px-4 py-3 bg-secondary border-2 border-primary/20 rounded-xl text-sm hover:bg-primary/10 transition-all active:scale-95"
-                  onClick={() => go("/billing")}
-                >
-                  <CreditCard className="h-4 w-4 text-primary" />
-                  <span>Billing</span>
-                </button>
-                <button
-                  className="flex items-center gap-2 px-4 py-3 bg-secondary border-2 border-info/20 rounded-xl text-sm hover:bg-info/10 transition-all active:scale-95"
-                  onClick={() => go("/settings")}
-                >
-                  <Settings className="h-4 w-4 text-info" />
-                  <span>Settings</span>
-                </button>
-                <button
-                  className="flex items-center gap-2 px-4 py-3 bg-secondary border-2 border-success/20 rounded-xl text-sm hover:bg-success/10 transition-all active:scale-95"
-                  onClick={() => go("/help")}
-                >
-                  <HelpCircle className="h-4 w-4 text-success" />
-                  <span>Help</span>
-                </button>
-                <button
-                  className="flex items-center gap-2 px-4 py-3 bg-destructive/5 border-2 border-destructive/30 text-destructive rounded-xl text-sm hover:bg-destructive/10 transition-all active:scale-95"
+                  className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-destructive/5 border border-destructive/30 text-destructive rounded-xl text-sm font-medium hover:bg-destructive/10 transition-all active:scale-[0.98]"
                   onClick={handleSignOut}
                 >
                   <LogOut className="h-4 w-4" />
                   <span>Sign Out</span>
                 </button>
-              </div>
-
-              {/* Support at bottom */}
-              <div className="pt-2 border-t border-border/50">
-                <ContactSupportDialog />
               </div>
             </div>
           </SheetContent>
@@ -209,6 +297,13 @@ export default function MobileBottomNav() {
       <QuickDocumentUpload 
         open={uploadDialogOpen} 
         onOpenChange={setUploadDialogOpen} 
+      />
+
+      {/* Request Feature Dialog */}
+      <RequestFeatureDialog
+        open={featureDialogOpen}
+        onOpenChange={setFeatureDialogOpen}
+        hideTrigger
       />
     </div>
   );
