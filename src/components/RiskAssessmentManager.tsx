@@ -249,6 +249,26 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const handleSaveItem = async () => {
     if (!selectedAssessment || savingItem) return;
 
+    // Validate: if additional actions are specified, require action owner and target date
+    if (itemFormData.additional_actions && itemFormData.additional_actions.trim()) {
+      if (!itemFormData.action_owner || !itemFormData.action_owner.trim()) {
+        toast({ 
+          title: 'Action Owner Required', 
+          description: 'Please specify who is responsible for completing the additional actions.',
+          variant: 'destructive' 
+        });
+        return;
+      }
+      if (!itemFormData.target_date) {
+        toast({ 
+          title: 'Target Date Required', 
+          description: 'Please set a due date for completing the additional actions.',
+          variant: 'destructive' 
+        });
+        return;
+      }
+    }
+
     setSavingItem(true);
 
     // Calculate risk level if not using manual override
@@ -1906,7 +1926,12 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="action_owner">Action Owner</Label>
+                        <Label htmlFor="action_owner">
+                          Action Owner
+                          {itemFormData.additional_actions?.trim() && (
+                            <span className="text-destructive ml-1">*</span>
+                          )}
+                        </Label>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
@@ -1921,16 +1946,27 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                         placeholder="Name of person responsible for this action"
                         value={itemFormData.action_owner}
                         onChange={(e) => setItemFormData({ ...itemFormData, action_owner: e.target.value })}
-                        className="placeholder:text-muted-foreground/60"
+                        className={cn(
+                          "placeholder:text-muted-foreground/60",
+                          itemFormData.additional_actions?.trim() && !itemFormData.action_owner?.trim() && "border-destructive"
+                        )}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        Enter the name/role of who will implement and verify this control
+                        {itemFormData.additional_actions?.trim() 
+                          ? "Required: Enter who will implement and verify this control"
+                          : "Enter the name/role of who will implement and verify this control"
+                        }
                       </p>
                     </div>
                     
                     <div>
                       <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="target_date">Action Due Date</Label>
+                        <Label htmlFor="target_date">
+                          Action Due Date
+                          {itemFormData.additional_actions?.trim() && (
+                            <span className="text-destructive ml-1">*</span>
+                          )}
+                        </Label>
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
@@ -1946,7 +1982,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                             variant="outline"
                             className={cn(
                               "w-full justify-start text-left font-normal h-10",
-                              !itemFormData.target_date && "text-muted-foreground"
+                              !itemFormData.target_date && "text-muted-foreground",
+                              itemFormData.additional_actions?.trim() && !itemFormData.target_date && "border-destructive"
                             )}
                           >
                             <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
@@ -1965,6 +2002,11 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                           />
                         </PopoverContent>
                       </Popover>
+                      {itemFormData.additional_actions?.trim() && !itemFormData.target_date && (
+                        <p className="text-xs text-destructive mt-1">
+                          Required when additional actions are specified
+                        </p>
+                      )}
                     </div>
                     
                     <div className="col-span-2">
