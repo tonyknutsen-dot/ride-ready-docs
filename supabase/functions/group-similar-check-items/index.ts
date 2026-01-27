@@ -64,12 +64,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch all pending submissions without a similarity group
+    // Fetch pending submissions without a similarity group (capped at 50)
     const { data: submissions, error: fetchError } = await supabase
       .from("user_submitted_check_items")
       .select("id, label, frequency, ride_category_id, category")
       .eq("status", "pending")
-      .is("similarity_group", null);
+      .is("similarity_group", null)
+      .order("created_at", { ascending: true })
+      .limit(50);
 
     if (fetchError) throw fetchError;
 
@@ -80,7 +82,8 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing ${submissions.length} submissions for similarity grouping and categorization`);
+    const totalPending = submissions.length;
+    console.log(`Processing ${totalPending} submissions (max 50 per batch)`);
 
     // Fetch existing library items to learn from
     const { data: existingItems } = await supabase
@@ -241,7 +244,9 @@ Rules:
     return new Response(JSON.stringify({ 
       message: `AI grouped ${groupCount} sets, categorized ${categorizedCount} items`,
       groups: groupCount,
-      categorized: categorizedCount
+      categorized: categorizedCount,
+      processed: totalPending,
+      note: totalPending === 50 ? "More items pending - run again to process next batch" : undefined
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
