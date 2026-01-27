@@ -227,10 +227,14 @@ export function AppSidebar() {
                 {/* Staff Management - owners only */}
                 {canManageStaff && (
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={location.pathname === '/settings' && location.hash === '#staff'}>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/staff'}>
                       <Link
-                        to="/settings#staff"
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-muted-foreground hover:text-foreground hover:bg-muted`}
+                        to="/staff"
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                          location.pathname === '/staff'
+                            ? 'bg-primary text-primary-foreground font-medium'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        }`}
                       >
                         <Users className="h-5 w-5 flex-shrink-0" />
                         {!collapsed && <span>Staff</span>}
