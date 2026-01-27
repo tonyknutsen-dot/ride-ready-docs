@@ -887,19 +887,109 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     return { blob: doc.output('blob'), fileName };
   };
 
+  // Helper to check if assessment can be exported
+  const canExportAssessment = (): { allowed: boolean; message?: string } => {
+    if (!selectedAssessment) return { allowed: false, message: 'No assessment selected' };
+    
+    if (selectedAssessment.overall_status !== 'completed') {
+      return { 
+        allowed: false, 
+        message: 'Please mark the assessment as "Completed" before exporting or emailing.' 
+      };
+    }
+    
+    if (assessmentItems.length === 0) {
+      return { 
+        allowed: false, 
+        message: 'Please add at least one risk item before exporting or emailing.' 
+      };
+    }
+    
+    return { allowed: true };
+  };
+
+  // Helper to save PDF to documents (used by export and email)
+  const savePDFToDocuments = async (pdfBlob: Blob, fileName: string): Promise<boolean> => {
+    if (!user || !selectedAssessment) return false;
+    
+    try {
+      const filePath = `${user.id}/${ride.id}/${fileName}`;
+      
+      // Check if file already exists - use upsert to update if it does
+      const { error: uploadError } = await supabase.storage
+        .from('ride-documents')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: true
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Check if document record already exists for this assessment
+      const { data: existingDoc } = await supabase
+        .from('documents')
+        .select('id')
+        .eq('ride_id', ride.id)
+        .eq('user_id', user.id)
+        .eq('document_type', 'Risk Assessment')
+        .ilike('document_name', `%${format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')}%`)
+        .maybeSingle();
+
+      if (existingDoc) {
+        // Update existing record
+        await supabase
+          .from('documents')
+          .update({
+            file_path: filePath,
+            file_size: pdfBlob.size,
+            uploaded_at: new Date().toISOString(),
+            notes: `Generated from risk assessment by ${selectedAssessment.assessor_name}`
+          })
+          .eq('id', existingDoc.id);
+      } else {
+        // Create new record
+        await supabase
+          .from('documents')
+          .insert({
+            user_id: user.id,
+            ride_id: ride.id,
+            document_name: `Risk Assessment - ${format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')}`,
+            document_type: 'Risk Assessment',
+            file_path: filePath,
+            mime_type: 'application/pdf',
+            file_size: pdfBlob.size,
+            notes: `Generated from risk assessment by ${selectedAssessment.assessor_name}`
+          });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error saving PDF to documents:', error);
+      return false;
+    }
+  };
+
   const handleSendEmail = async () => {
     if (!selectedAssessment || !user || !emailFormData.recipientEmail) return;
+
+    // Check if can export
+    const exportCheck = canExportAssessment();
+    if (!exportCheck.allowed) {
+      toast({ title: 'Cannot send email', description: exportCheck.message, variant: 'destructive' });
+      return;
+    }
 
     setSendingEmail(true);
     try {
       const { blob, fileName } = await generatePDFBlob();
       
+      // Auto-save to documents
+      await savePDFToDocuments(blob, fileName);
+      
       // Convert blob to base64
       const arrayBuffer = await blob.arrayBuffer();
       const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
 
-      const { data: sessionData } = await supabase.auth.getSession();
-      
       const response = await supabase.functions.invoke('send-risk-assessment', {
         body: {
           assessmentId: selectedAssessment.id,
@@ -917,7 +1007,10 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         throw new Error(response.error.message || 'Failed to send email');
       }
 
-      toast({ title: 'Success!', description: `Risk assessment sent to ${emailFormData.recipientEmail}` });
+      toast({ 
+        title: 'Success!', 
+        description: `Risk assessment sent to ${emailFormData.recipientEmail} and saved to documents.` 
+      });
       setShowEmailDialog(false);
       setEmailFormData({ recipientEmail: '', recipientName: '', message: '' });
     } catch (error: any) {
@@ -993,8 +1086,18 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const exportToPDF = async () => {
     if (!selectedAssessment) return;
 
+    // Check if can export
+    const exportCheck = canExportAssessment();
+    if (!exportCheck.allowed) {
+      toast({ title: 'Cannot download PDF', description: exportCheck.message, variant: 'destructive' });
+      return;
+    }
+
     try {
       const { blob, fileName } = await generatePDFBlob();
+      
+      // Auto-save to documents
+      const saved = await savePDFToDocuments(blob, fileName);
       
       // Create download link
       const url = URL.createObjectURL(blob);
@@ -1006,73 +1109,37 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
       
-      toast({ title: 'Success', description: 'PDF downloaded' });
+      toast({ 
+        title: 'Success', 
+        description: saved ? 'PDF downloaded and saved to documents' : 'PDF downloaded' 
+      });
     } catch (error) {
       console.error('Error generating PDF:', error);
       toast({ title: 'Error', description: 'Failed to generate PDF', variant: 'destructive' });
     }
   };
 
+  // Legacy function - now uses the shared helper
   const saveToDocuments = async () => {
-    if (!selectedAssessment || !user) return;
-
-    // Check if assessment is completed
-    if (selectedAssessment.overall_status !== 'completed') {
-      toast({ 
-        title: 'Cannot save incomplete assessment', 
-        description: 'Please mark the assessment as "Completed" before saving to documents.',
-        variant: 'destructive'
-      });
-      return;
-    }
-
-    // Check if there are any risk items
-    if (assessmentItems.length === 0) {
-      toast({ 
-        title: 'Cannot save empty assessment', 
-        description: 'Please add at least one risk item before saving to documents.',
-        variant: 'destructive'
-      });
+    const exportCheck = canExportAssessment();
+    if (!exportCheck.allowed) {
+      toast({ title: 'Cannot save to documents', description: exportCheck.message, variant: 'destructive' });
       return;
     }
 
     try {
-      // Reuse the centralized PDF generation function
       const { blob: pdfBlob, fileName } = await generatePDFBlob();
+      const saved = await savePDFToDocuments(pdfBlob, fileName);
       
-      // Upload to storage
-      const filePath = `${user.id}/${ride.id}/${fileName}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('ride-documents')
-        .upload(filePath, pdfBlob, {
-          contentType: 'application/pdf',
-          upsert: false
+      if (saved) {
+        toast({ 
+          title: 'Success!', 
+          description: 'Risk assessment saved to documents.',
+          duration: 5000
         });
-
-      if (uploadError) throw uploadError;
-
-      // Add to documents table
-      const { error: dbError } = await supabase
-        .from('documents')
-        .insert({
-          user_id: user.id,
-          ride_id: ride.id,
-          document_name: `Risk Assessment - ${format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')}`,
-          document_type: 'Risk Assessment',
-          file_path: filePath,
-          mime_type: 'application/pdf',
-          file_size: pdfBlob.size,
-          notes: `Generated from risk assessment by ${selectedAssessment.assessor_name}`
-        });
-
-      if (dbError) throw dbError;
-
-      toast({ 
-        title: 'Success!', 
-        description: 'Risk assessment saved to documents. You can now email it from the Documents section.',
-        duration: 5000
-      });
+      } else {
+        throw new Error('Failed to save');
+      }
     } catch (error: any) {
       console.error('Error saving to documents:', error);
       toast({ 
