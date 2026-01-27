@@ -85,6 +85,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const [editingItem, setEditingItem] = useState<RiskAssessmentItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [savingItem, setSavingItem] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [ridePhotoUrl, setRidePhotoUrl] = useState<string | null>(null);
   const [useCustomHazard, setUseCustomHazard] = useState(false);
@@ -246,7 +247,9 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   };
 
   const handleSaveItem = async () => {
-    if (!selectedAssessment) return;
+    if (!selectedAssessment || savingItem) return;
+
+    setSavingItem(true);
 
     // Calculate risk level if not using manual override
     let finalRiskLevel = itemFormData.risk_level;
@@ -267,40 +270,44 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       target_date: itemFormData.target_date || null
     };
 
-    if (editingItem) {
-      const { error } = await supabase
-        .from('risk_assessment_items')
-        .update(itemData)
-        .eq('id', editingItem.id);
+    try {
+      if (editingItem) {
+        const { error } = await supabase
+          .from('risk_assessment_items')
+          .update(itemData)
+          .eq('id', editingItem.id);
 
-      if (error) {
-        toast({ title: 'Error updating item', description: error.message, variant: 'destructive' });
+        if (error) {
+          toast({ title: 'Error updating item', description: error.message, variant: 'destructive' });
+        } else {
+          toast({ title: 'Success', description: 'Risk item updated' });
+          setShowItemDialog(false);
+          setEditingItem(null);
+          resetItemForm();
+          setUseManualRiskOverride(false);
+          loadAssessmentItems();
+        }
       } else {
-        toast({ title: 'Success', description: 'Risk item updated' });
-        setShowItemDialog(false);
-        setEditingItem(null);
-        resetItemForm();
-        setUseManualRiskOverride(false);
-        loadAssessmentItems();
-      }
-    } else {
-      const { error } = await supabase
-        .from('risk_assessment_items')
-        .insert({
-          risk_assessment_id: selectedAssessment.id,
-          sort_order: assessmentItems.length,
-          ...itemData
-        });
+        const { error } = await supabase
+          .from('risk_assessment_items')
+          .insert({
+            risk_assessment_id: selectedAssessment.id,
+            sort_order: assessmentItems.length,
+            ...itemData
+          });
 
-      if (error) {
-        toast({ title: 'Error adding item', description: error.message, variant: 'destructive' });
-      } else {
-        toast({ title: 'Success', description: 'Risk item added' });
-        setShowItemDialog(false);
-        resetItemForm();
-        setUseManualRiskOverride(false);
-        loadAssessmentItems();
+        if (error) {
+          toast({ title: 'Error adding item', description: error.message, variant: 'destructive' });
+        } else {
+          toast({ title: 'Success', description: 'Risk item added' });
+          setShowItemDialog(false);
+          resetItemForm();
+          setUseManualRiskOverride(false);
+          loadAssessmentItems();
+        }
       }
+    } finally {
+      setSavingItem(false);
     }
   };
 
@@ -2013,8 +2020,17 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
               setShowItemDialog(false);
               setEditingItem(null);
               resetItemForm();
-            }}>Cancel</Button>
-            <Button onClick={handleSaveItem}>Save</Button>
+            }} disabled={savingItem}>Cancel</Button>
+            <Button onClick={handleSaveItem} disabled={savingItem}>
+              {savingItem ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                'Save'
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
