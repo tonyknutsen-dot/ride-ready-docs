@@ -241,7 +241,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     }
   };
 
-  const generatePDFBlob = async (): Promise<Blob | null> => {
+  const generatePDFBlob = async (checkId?: string): Promise<Blob | null> => {
     if (!activeTemplate) return null;
 
     try {
@@ -298,11 +298,68 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         }
       }
 
+      // Fetch defects for this ride (open ones or ones linked to this check)
+      const { data: defectsData } = await supabase
+        .from('defects')
+        .select('*')
+        .eq('ride_id', ride.id)
+        .eq('user_id', user?.id)
+        .neq('status', 'resolved')
+        .order('severity', { ascending: false });
+
+      // Type the defects
+      type DefectRecord = {
+        id: string;
+        description: string;
+        severity: 'non_urgent' | 'urgent' | 'stop_operation';
+        status: string;
+        location_on_ride: string | null;
+        photo_paths: string[];
+        reported_at: string;
+      };
+      const defects = (defectsData || []) as unknown as DefectRecord[];
+
+      // Load defect photos
+      const defectPhotos: { [defectId: string]: string[] } = {};
+      for (const defect of defects) {
+        if (defect.photo_paths && defect.photo_paths.length > 0) {
+          const photoDataUrls: string[] = [];
+          for (const path of defect.photo_paths.slice(0, 3)) { // Limit to 3 photos per defect in PDF
+            try {
+              const { data: photoBlob } = await supabase.storage
+                .from('defect-photos')
+                .download(path);
+              if (photoBlob) {
+                const dataUrl = await new Promise<string>((resolve) => {
+                  const reader = new FileReader();
+                  reader.onloadend = () => resolve(reader.result as string);
+                  reader.readAsDataURL(photoBlob);
+                });
+                photoDataUrls.push(dataUrl);
+              }
+            } catch (e) {
+              console.log('Could not load defect photo');
+            }
+          }
+          if (photoDataUrls.length > 0) {
+            defectPhotos[defect.id] = photoDataUrls;
+          }
+        }
+      }
+
       const pdf = new jsPDF();
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 20;
       let currentY = margin;
+
+      // Helper function to check for page overflow and add new page if needed
+      const checkPageOverflow = (neededSpace: number = 30) => {
+        if (currentY > pageHeight - neededSpace) {
+          pdf.addPage();
+          currentY = margin;
+        }
+      };
 
       // Helper function to add footer to each page
       const addFooter = () => {
@@ -351,7 +408,8 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       pdf.setFontSize(13);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(50, 50, 50);
-      const reportTitle = `${frequency.toUpperCase()} SAFETY CHECK REPORT`;
+      const frequencyLabel = frequency === 'preopening' ? 'PRE-OPENING' : frequency.toUpperCase();
+      const reportTitle = `${frequencyLabel} SAFETY CHECK REPORT`;
       pdf.text(reportTitle, pageWidth / 2, currentY, { align: 'center' });
       currentY += 6;
 
@@ -460,6 +518,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       pdf.text('Checked By:', leftCol, currentY);
       pdf.setFont('helvetica', 'normal');
       pdf.text(inspectorName || '-', leftCol + labelWidth, currentY);
+      currentY += 6;
 
       if (weatherConditions) {
         pdf.setFont('helvetica', 'bold');
@@ -498,9 +557,12 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       pdf.setFont('helvetica', 'bold');
       pdf.text('Result:', leftCol, currentY);
       pdf.setFont('helvetica', 'normal');
-      if (allPassed) {
+      if (allPassed && defects.length === 0) {
         pdf.setTextColor(34, 139, 34); // Green
         pdf.text('ALL CHECKS PASSED', leftCol + labelWidth, currentY);
+      } else if (allPassed && defects.length > 0) {
+        pdf.setTextColor(255, 140, 0); // Orange
+        pdf.text(`PASSED WITH ${defects.length} DEFECT(S) NOTED`, leftCol + labelWidth, currentY);
       } else {
         pdf.setTextColor(220, 53, 69); // Red
         pdf.text(`${failedItems} ITEM(S) FAILED`, leftCol + labelWidth, currentY);
@@ -530,10 +592,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
           const itemNote = notes[item.id] || '';
 
           // Check for page overflow
-          if (currentY > 250) {
-            pdf.addPage();
-            currentY = margin;
-          }
+          checkPageOverflow(30);
 
           // Status indicator with color
           pdf.setFont('helvetica', 'bold');
@@ -566,14 +625,106 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
           currentY += 2;
         });
 
+      // === DEFECTS SECTION ===
+      if (defects.length > 0) {
+        checkPageOverflow(50);
+        
+        currentY += 5;
+        pdf.setDrawColor(200);
+        pdf.line(margin, currentY, pageWidth - margin, currentY);
+        currentY += 8;
+
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(220, 53, 69);
+        pdf.text(`Defects Reported (${defects.length})`, margin, currentY);
+        currentY += 10;
+
+        for (const defect of defects) {
+          checkPageOverflow(60);
+
+          // Severity badge
+          pdf.setFontSize(9);
+          pdf.setFont('helvetica', 'bold');
+          let severityLabel = '';
+          let severityColor: [number, number, number] = [0, 0, 0];
+          
+          switch (defect.severity) {
+            case 'stop_operation':
+              severityLabel = '⛔ STOP OPERATION';
+              severityColor = [220, 53, 69];
+              break;
+            case 'urgent':
+              severityLabel = '⚠️ URGENT';
+              severityColor = [255, 140, 0];
+              break;
+            case 'non_urgent':
+              severityLabel = '📋 NON-URGENT';
+              severityColor = [255, 193, 7];
+              break;
+          }
+
+          pdf.setTextColor(...severityColor);
+          pdf.text(severityLabel, leftCol, currentY);
+          currentY += 5;
+
+          // Description
+          pdf.setTextColor(0);
+          pdf.setFont('helvetica', 'normal');
+          const descText = pdf.splitTextToSize(defect.description, pageWidth - 2 * margin);
+          pdf.text(descText, leftCol, currentY);
+          currentY += descText.length * 4 + 2;
+
+          // Location on ride if present
+          if (defect.location_on_ride) {
+            pdf.setFontSize(8);
+            pdf.setTextColor(100);
+            pdf.text(`Location: ${defect.location_on_ride}`, leftCol, currentY);
+            currentY += 4;
+          }
+
+          // Reported date
+          pdf.setFontSize(8);
+          pdf.setTextColor(100);
+          pdf.text(`Reported: ${new Date(defect.reported_at).toLocaleDateString('en-GB')} ${new Date(defect.reported_at).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`, leftCol, currentY);
+          currentY += 6;
+
+          // Defect photos
+          const photos = defectPhotos[defect.id];
+          if (photos && photos.length > 0) {
+            checkPageOverflow(45);
+            
+            const photoSize = 35;
+            const photoSpacing = 5;
+            let photoX = leftCol;
+
+            for (const photoUrl of photos) {
+              if (photoX + photoSize > pageWidth - margin) {
+                photoX = leftCol;
+                currentY += photoSize + photoSpacing;
+                checkPageOverflow(45);
+              }
+
+              try {
+                pdf.addImage(photoUrl, 'JPEG', photoX, currentY, photoSize, photoSize);
+                photoX += photoSize + photoSpacing;
+              } catch (e) {
+                console.log('Could not add defect photo to PDF');
+              }
+            }
+            currentY += photoSize + 8;
+          }
+
+          currentY += 5;
+          pdf.setFontSize(9);
+          pdf.setTextColor(0);
+        }
+      }
+
       // === INSPECTOR NOTES SECTION ===
       if (inspectorNotes || environmentNotes) {
         currentY += 5;
-
-        if (currentY > 250) {
-          pdf.addPage();
-          currentY = margin;
-        }
+        checkPageOverflow(40);
 
         pdf.setDrawColor(200);
         pdf.line(margin, currentY, pageWidth - margin, currentY);
@@ -631,10 +782,11 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       return;
     }
 
+    const frequencyLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${frequency}-check-${ride.ride_name}-${new Date().toISOString().split('T')[0]}.pdf`;
+    link.download = `${frequencyLabel}-Safety-Check-${ride.ride_name.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
     link.click();
     URL.revokeObjectURL(url);
     
@@ -719,9 +871,16 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       if (resultsError) throw resultsError;
 
       // Generate and save PDF to documents (non-blocking)
-      generatePDFBlob().then(async (pdfBlob) => {
+      const checkIdForPdf = check.id;
+      const savedInspectorName = inspectorName;
+      const savedWeatherConditions = weatherConditions;
+      
+      generatePDFBlob(checkIdForPdf).then(async (pdfBlob) => {
         if (pdfBlob) {
-          const fileName = `${frequency}-check-${ride.ride_name}-${new Date().toISOString()}.pdf`;
+          // Create a proper frequency label for the document name
+          const frequencyLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
+          const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+          const fileName = `${frequencyLabel}-Check-${ride.ride_name.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
           const filePath = `${user?.id}/${ride.id}/check-records/${fileName}`;
           
           const { error: uploadError } = await supabase.storage
@@ -737,15 +896,16 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
               .insert({
                 user_id: user?.id,
                 ride_id: ride.id,
-                document_name: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check - ${new Date().toLocaleDateString()}`,
+                document_name: `${frequencyLabel} Safety Check - ${ride.ride_name} - ${dateStr}`,
                 document_type: 'Check Record',
                 file_path: filePath,
                 mime_type: 'application/pdf',
                 file_size: pdfBlob.size,
-                notes: `Checked by: ${inspectorName}${weatherConditions ? ` | Weather: ${weatherConditions}` : ''}`
+                notes: `Checked by: ${savedInspectorName}${savedWeatherConditions ? ` | Weather: ${savedWeatherConditions}` : ''}`
               });
             // Invalidate to pick up the new document
             queryClient.invalidateQueries({ queryKey: ['overview'] });
+            queryClient.invalidateQueries({ queryKey: ['documents'] });
           }
         }
       });
