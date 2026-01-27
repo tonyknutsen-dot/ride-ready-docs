@@ -1,83 +1,60 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { TestTube, Plus } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { TestTube, Upload, FileText, Eye, Trash2, ClipboardList, FileCheck } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { Ride } from '@/types/ride';
-import NDTScheduleForm from './ndt/NDTScheduleForm';
-import NDTScheduleCard from './ndt/NDTScheduleCard';
+import NDTDocumentUpload from './ndt/NDTDocumentUpload';
+import { format } from 'date-fns';
 
-type NDTSchedule = Tables<'ndt_schedules'>;
 type Document = Tables<'documents'>;
 
 interface NDTScheduleManagerProps {
   ride: Ride;
 }
 
-interface NDTScheduleFormData {
-  schedule_name: string;
-  component_description: string;
-  ndt_method: string;
-  frequency_months: number;
-  last_inspection_date: string;
-  notes: string;
-}
-
 const NDTScheduleManager = ({ ride }: NDTScheduleManagerProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [schedules, setSchedules] = useState<NDTSchedule[]>([]);
-  const [scheduleDocuments, setScheduleDocuments] = useState<Record<string, Document>>({});
+  const [scheduleDocuments, setScheduleDocuments] = useState<Document[]>([]);
+  const [reportDocuments, setReportDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showDialog, setShowDialog] = useState(false);
-  const [editingSchedule, setEditingSchedule] = useState<NDTSchedule | null>(null);
+  const [showScheduleUpload, setShowScheduleUpload] = useState(false);
+  const [showReportUpload, setShowReportUpload] = useState(false);
 
   useEffect(() => {
     if (user) {
-      loadSchedules();
+      loadDocuments();
     }
   }, [user, ride.id]);
 
-  const loadSchedules = async () => {
+  const loadDocuments = async () => {
     try {
       const { data, error } = await supabase
-        .from('ndt_schedules')
+        .from('documents')
         .select('*')
         .eq('user_id', user?.id)
         .eq('ride_id', ride.id)
-        .order('next_inspection_due', { ascending: true });
+        .in('document_type', ['ndt_schedule', 'ndt_report'])
+        .order('uploaded_at', { ascending: false });
 
       if (error) throw error;
 
-      setSchedules(data || []);
-
-      // Load linked documents
-      const documentIds = (data || [])
-        .filter(s => s.schedule_document_id)
-        .map(s => s.schedule_document_id as string);
-
-      if (documentIds.length > 0) {
-        const { data: docs, error: docsError } = await supabase
-          .from('documents')
-          .select('*')
-          .in('id', documentIds);
-
-        if (!docsError && docs) {
-          const docMap: Record<string, Document> = {};
-          docs.forEach(doc => {
-            docMap[doc.id] = doc;
-          });
-          setScheduleDocuments(docMap);
-        }
-      }
+      const schedules = (data || []).filter(d => d.document_type === 'ndt_schedule');
+      const reports = (data || []).filter(d => d.document_type === 'ndt_report');
+      
+      setScheduleDocuments(schedules);
+      setReportDocuments(reports);
     } catch (error: any) {
-      console.error('Error loading NDT schedules:', error);
+      console.error('Error loading NDT documents:', error);
       toast({
-        title: "Error loading schedules",
+        title: "Error loading documents",
         description: error.message,
         variant: "destructive",
       });
@@ -86,108 +63,108 @@ const NDTScheduleManager = ({ ride }: NDTScheduleManagerProps) => {
     }
   };
 
-  const handleEdit = (schedule: NDTSchedule) => {
-    setEditingSchedule(schedule);
-    setShowDialog(true);
-  };
-
-  const handleAddNew = () => {
-    setEditingSchedule(null);
-    setShowDialog(true);
-  };
-
-  const calculateNextDueDate = (lastDate: string, frequencyMonths: number): string => {
-    if (!lastDate) return '';
-    const date = new Date(lastDate);
-    date.setMonth(date.getMonth() + frequencyMonths);
-    return date.toISOString().split('T')[0];
-  };
-
-  const handleSave = async (formData: NDTScheduleFormData) => {
-    if (!formData.schedule_name.trim() || !formData.component_description.trim() || !formData.ndt_method) {
-      toast({
-        title: "Missing information",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const nextDueDate = formData.last_inspection_date 
-      ? calculateNextDueDate(formData.last_inspection_date, formData.frequency_months)
-      : null;
-
+  const handleViewDocument = async (doc: Document) => {
     try {
-      if (editingSchedule) {
-        const { error } = await supabase
-          .from('ndt_schedules')
-          .update({
-            ...formData,
-            next_inspection_due: nextDueDate,
-          })
-          .eq('id', editingSchedule.id);
+      const { data, error } = await supabase.storage
+        .from('ride-documents')
+        .createSignedUrl(doc.file_path, 3600);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        toast({
-          title: "Schedule updated",
-          description: "NDT schedule has been updated successfully",
-        });
-      } else {
-        const { error } = await supabase
-          .from('ndt_schedules')
-          .insert({
-            ...formData,
-            user_id: user?.id,
-            ride_id: ride.id,
-            next_inspection_due: nextDueDate,
-          });
-
-        if (error) throw error;
-
-        toast({
-          title: "Schedule created",
-          description: "NDT schedule has been created successfully",
-        });
-      }
-
-      setShowDialog(false);
-      setEditingSchedule(null);
-      loadSchedules();
+      window.open(data.signedUrl, '_blank');
     } catch (error: any) {
-      console.error('Error saving NDT schedule:', error);
+      console.error('Error viewing document:', error);
       toast({
-        title: "Error saving schedule",
+        title: "Error viewing document",
         description: error.message,
         variant: "destructive",
       });
     }
   };
 
-  const handleDelete = async (scheduleId: string) => {
+  const handleDeleteDocument = async (doc: Document) => {
     try {
+      // Delete from storage
+      await supabase.storage
+        .from('ride-documents')
+        .remove([doc.file_path]);
+
+      // Delete from database
       const { error } = await supabase
-        .from('ndt_schedules')
+        .from('documents')
         .delete()
-        .eq('id', scheduleId);
+        .eq('id', doc.id);
 
       if (error) throw error;
 
       toast({
-        title: "Schedule deleted",
-        description: "NDT schedule has been deleted successfully",
+        title: "Document deleted",
+        description: "The document has been removed",
       });
 
-      loadSchedules();
+      loadDocuments();
     } catch (error: any) {
-      console.error('Error deleting schedule:', error);
+      console.error('Error deleting document:', error);
       toast({
-        title: "Error deleting schedule",
+        title: "Error deleting document",
         description: error.message,
         variant: "destructive",
       });
     }
   };
+
+  const handleUploadSuccess = () => {
+    loadDocuments();
+    setShowScheduleUpload(false);
+    setShowReportUpload(false);
+  };
+
+  const DocumentCard = ({ doc, type }: { doc: Document; type: 'schedule' | 'report' }) => (
+    <Card>
+      <CardContent className="p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <FileText className="h-8 w-8 text-primary flex-shrink-0" />
+            <div className="min-w-0">
+              <p className="font-medium truncate">{doc.document_name}</p>
+              <p className="text-sm text-muted-foreground">
+                Uploaded {format(new Date(doc.uploaded_at), 'd MMM yyyy')}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button size="sm" variant="ghost" onClick={() => handleViewDocument(doc)}>
+              <Eye className="h-4 w-4" />
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button size="sm" variant="ghost">
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to delete "{doc.document_name}"? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={() => handleDeleteDocument(doc)}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   if (loading) {
     return (
@@ -195,7 +172,7 @@ const NDTScheduleManager = ({ ride }: NDTScheduleManagerProps) => {
         <CardContent className="pt-6">
           <div className="text-center py-4">
             <TestTube className="mx-auto h-8 w-8 text-muted-foreground animate-pulse" />
-            <p className="text-muted-foreground mt-2">Loading NDT schedules...</p>
+            <p className="text-muted-foreground mt-2">Loading NDT documents...</p>
           </div>
         </CardContent>
       </Card>
@@ -206,56 +183,93 @@ const NDTScheduleManager = ({ ride }: NDTScheduleManagerProps) => {
     <div className="space-y-6">
       <Alert>
         <AlertDescription>
-          <strong>NDT Schedule Tracking:</strong> Track when NDT (Non-Destructive Testing) inspections are due for ride components. Actual NDT inspections must be conducted by independent qualified NDT inspectors.
+          <strong>NDT Documentation:</strong> Upload your NDT schedules (what inspectors should test) and NDT reports (inspector findings). All documents are also available in your Documents section.
         </AlertDescription>
       </Alert>
 
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <h3 className="text-xl font-semibold">NDT Inspection Tracking</h3>
-          <p className="text-muted-foreground">
-            Track NDT inspection requirements for {ride.ride_name}. Actual inspections conducted by independent NDT inspectors.
-          </p>
-        </div>
-        <Button onClick={handleAddNew} className="flex items-center space-x-2">
-          <Plus className="h-4 w-4" />
-          <span>Add Schedule</span>
-        </Button>
-      </div>
-
-      {schedules.length === 0 ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8">
-              <TestTube className="mx-auto h-16 w-16 text-muted-foreground" />
-              <h3 className="text-lg font-semibold mt-4">No NDT tracking schedules</h3>
-              <p className="text-muted-foreground mb-4">
-                Create tracking schedules for NDT inspections required for your equipment. Actual inspections will be conducted by independent NDT inspectors.
-              </p>
+      {/* NDT Schedules Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ClipboardList className="h-5 w-5 text-primary" />
+              <div>
+                <CardTitle className="text-lg">NDT Schedules</CardTitle>
+                <CardDescription>Documents detailing what inspectors should test</CardDescription>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-4">
-          {schedules.map((schedule) => (
-            <NDTScheduleCard
-              key={schedule.id}
-              schedule={schedule}
-              scheduleDocument={schedule.schedule_document_id ? scheduleDocuments[schedule.schedule_document_id] : null}
-              rideId={ride.id}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onRefresh={loadSchedules}
-            />
-          ))}
-        </div>
-      )}
+            <Button onClick={() => setShowScheduleUpload(true)} size="sm">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Schedule
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {scheduleDocuments.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <ClipboardList className="mx-auto h-12 w-12 mb-3 opacity-50" />
+              <p>No NDT schedules uploaded yet</p>
+              <p className="text-sm">Upload a schedule document to share with NDT inspectors</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {scheduleDocuments.map((doc) => (
+                <DocumentCard key={doc.id} doc={doc} type="schedule" />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
-      <NDTScheduleForm
-        open={showDialog}
-        onOpenChange={setShowDialog}
-        editingSchedule={editingSchedule}
-        onSave={handleSave}
+      {/* NDT Reports Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FileCheck className="h-5 w-5 text-primary" />
+              <div>
+                <CardTitle className="text-lg">NDT Reports</CardTitle>
+                <CardDescription>Inspection reports from NDT inspectors</CardDescription>
+              </div>
+            </div>
+            <Button onClick={() => setShowReportUpload(true)} size="sm">
+              <Upload className="h-4 w-4 mr-2" />
+              Upload Report
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {reportDocuments.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              <FileCheck className="mx-auto h-12 w-12 mb-3 opacity-50" />
+              <p>No NDT reports uploaded yet</p>
+              <p className="text-sm">Upload reports received from NDT inspectors</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {reportDocuments.map((doc) => (
+                <DocumentCard key={doc.id} doc={doc} type="report" />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Upload Dialogs */}
+      <NDTDocumentUpload
+        open={showScheduleUpload}
+        onOpenChange={setShowScheduleUpload}
+        rideId={ride.id}
+        documentType="schedule"
+        onSuccess={handleUploadSuccess}
+      />
+
+      <NDTDocumentUpload
+        open={showReportUpload}
+        onOpenChange={setShowReportUpload}
+        rideId={ride.id}
+        documentType="report"
+        onSuccess={handleUploadSuccess}
       />
     </div>
   );
