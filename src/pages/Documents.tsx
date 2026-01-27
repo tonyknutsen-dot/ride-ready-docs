@@ -126,98 +126,109 @@ const Documents = () => {
           </div>
         ) : (
           <>
-            {/* Global Documents Section */}
+            {/* Global Documents Section - Prominent info-themed card */}
             {globalDocCount > 0 && (
-              <Collapsible defaultOpen>
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-4 h-auto border-2 border-info/30 rounded-xl bg-gradient-to-r from-info/10 to-info/5 hover:from-info/15 hover:to-info/10"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-info/20 rounded-lg">
-                        <Globe className="h-5 w-5 text-info" />
+              <div className="rounded-2xl border-2 border-info/40 bg-gradient-to-br from-info/15 via-info/10 to-info/5 overflow-hidden shadow-sm">
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between p-4 h-auto rounded-none hover:bg-info/10"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-info/25 rounded-xl border border-info/30">
+                          <Globe className="h-5 w-5 text-info" />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-semibold text-foreground flex items-center gap-2">
+                            🌐 Global Documents
+                          </div>
+                          <div className="text-xs text-info/80">Shared across all your equipment</div>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <div className="font-semibold text-foreground">Global Documents</div>
-                        <div className="text-xs text-muted-foreground">Available across all equipment</div>
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-info text-info-foreground border-0 shadow-sm">
+                          {globalDocCount} file{globalDocCount !== 1 ? 's' : ''}
+                        </Badge>
+                        <ChevronDown className="h-4 w-4 text-info transition-transform group-data-[state=open]:rotate-180" />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="bg-info/20 text-info border-0">
-                        {globalDocCount} file{globalDocCount !== 1 ? 's' : ''}
-                      </Badge>
-                      <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
-                    </div>
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-3 pl-2">
-                  <DocumentList 
-                    key={`global-${refreshKey}`}
-                    isGlobal
-                    onDocumentDeleted={handleDocumentDeleted}
-                    grouped
-                  />
-                </CollapsibleContent>
-              </Collapsible>
-            )}
-
-            {/* Ride Documents Header */}
-            {ridesWithDocs.length > 0 && (
-              <div className="flex items-center gap-2 pt-4 pb-1">
-                <FolderOpen className="h-4 w-4 text-muted-foreground" />
-                <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                  Ride Documents
-                </h2>
-                <div className="flex-1 h-px bg-border/50" />
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-4 pb-4">
+                    <DocumentList 
+                      key={`global-${refreshKey}`}
+                      isGlobal
+                      onDocumentDeleted={handleDocumentDeleted}
+                      grouped
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
             )}
 
-            {/* Rides with Documents */}
-            {ridesWithDocs.map(ride => (
-              <Collapsible 
-                key={ride.id} 
-                open={expandedRides.has(ride.id)}
-                onOpenChange={() => toggleRide(ride.id)}
-              >
-                <CollapsibleTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    className="w-full justify-between p-4 h-auto border-2 border-border/60 rounded-xl hover:border-primary/30 hover:bg-primary/5"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <FolderOpen className="h-5 w-5 text-primary" />
+            {/* Equipment Documents Section Header */}
+            {ridesWithDocs.length > 0 && (
+              <div className="flex items-center gap-3 pt-6 pb-2">
+                <div className="p-1.5 bg-primary/15 rounded-lg">
+                  <FolderOpen className="h-4 w-4 text-primary" />
+                </div>
+                <h2 className="text-sm font-semibold text-primary uppercase tracking-wide">
+                  Equipment Documents
+                </h2>
+                <div className="flex-1 h-px bg-primary/20" />
+                <span className="text-xs text-muted-foreground">
+                  {ridesWithDocs.reduce((sum, r) => sum + r.document_count, 0)} files
+                </span>
+              </div>
+            )}
+
+            {/* Equipment folders - distinct card style */}
+            <div className="space-y-2">
+              {ridesWithDocs.map(ride => (
+                <Collapsible 
+                  key={ride.id} 
+                  open={expandedRides.has(ride.id)}
+                  onOpenChange={() => toggleRide(ride.id)}
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between p-4 h-auto border border-border rounded-xl bg-card hover:border-primary/40 hover:bg-primary/5 transition-all"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-muted rounded-lg">
+                          <FolderOpen className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="text-left">
+                          <div className="font-semibold text-foreground">{ride.ride_name}</div>
+                          <div className="text-xs text-muted-foreground">{ride.category_name}</div>
+                        </div>
                       </div>
-                      <div className="text-left">
-                        <div className="font-semibold text-foreground">{ride.ride_name}</div>
-                        <div className="text-xs text-muted-foreground">{ride.category_name}</div>
+                      <div className="flex items-center gap-2">
+                        {ride.document_count > 0 ? (
+                          <Badge variant="outline" className="bg-background text-foreground border-border">
+                            {ride.document_count} file{ride.document_count !== 1 ? 's' : ''}
+                          </Badge>
+                        ) : (
+                          <span className="text-xs text-muted-foreground italic">Empty</span>
+                        )}
+                        <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expandedRides.has(ride.id) ? 'rotate-180' : ''}`} />
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {ride.document_count > 0 ? (
-                        <Badge variant="secondary" className="bg-primary/10 text-primary border-0">
-                          {ride.document_count} file{ride.document_count !== 1 ? 's' : ''}
-                        </Badge>
-                      ) : (
-                        <span className="text-xs text-muted-foreground">No documents</span>
-                      )}
-                      <ChevronDown className={`h-4 w-4 text-muted-foreground transition-transform ${expandedRides.has(ride.id) ? 'rotate-180' : ''}`} />
-                    </div>
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pt-3 pl-2">
-                  <DocumentList 
-                    key={`${ride.id}-${refreshKey}`}
-                    rideId={ride.id}
-                    rideName={ride.ride_name}
-                    onDocumentDeleted={handleDocumentDeleted}
-                    excludeGlobal
-                    grouped
-                  />
-                </CollapsibleContent>
-              </Collapsible>
-            ))}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pt-3 px-2">
+                    <DocumentList 
+                      key={`${ride.id}-${refreshKey}`}
+                      rideId={ride.id}
+                      rideName={ride.ride_name}
+                      onDocumentDeleted={handleDocumentDeleted}
+                      excludeGlobal
+                      grouped
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
 
             {/* Empty state */}
             {ridesWithDocs.length === 0 && globalDocCount === 0 && (
