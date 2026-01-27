@@ -21,6 +21,8 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import TemplateBuilder from './TemplateBuilder';
 import { EmptyState } from '@/components/EmptyState';
+import DefectReportDialog from './DefectReportDialog';
+import DefectsList from './DefectsList';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -56,6 +58,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
+  const [defectRefreshKey, setDefectRefreshKey] = useState(0);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -1098,7 +1101,14 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
             {/* Check Items */}
             <div className="space-y-4">
-              <h4 className="font-semibold">Inspection Items</h4>
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold">Inspection Items</h4>
+                <DefectReportDialog 
+                  rideId={ride.id} 
+                  rideName={ride.ride_name}
+                  onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
+                />
+              </div>
             {activeTemplate.daily_check_template_items
                 .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
                 .map((item) => (
@@ -1132,6 +1142,28 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                   </Card>
                 ))}
             </div>
+
+            {/* Open Defects Warning */}
+            <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2 text-orange-700 dark:text-orange-400">
+                  <AlertTriangle className="h-5 w-5" />
+                  Open Defects
+                </CardTitle>
+                <CardDescription>
+                  Any unresolved defects reported for this equipment
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DefectsList 
+                  key={defectRefreshKey}
+                  rideId={ride.id} 
+                  rideName={ride.ride_name}
+                  showResolved={false}
+                  onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
+                />
+              </CardContent>
+            </Card>
 
             <Button
               onClick={handleSubmitChecks} 
