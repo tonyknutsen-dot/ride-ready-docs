@@ -52,22 +52,22 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
           <span className="hidden sm:inline">Settings</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Settings2 className="h-5 w-5" />
-            Risk Calculation Settings
+            <Settings2 className="h-5 w-5 shrink-0" />
+            <span>Risk Calculation Settings</span>
           </DialogTitle>
           <DialogDescription>
             Customise how control measures reduce risk scores in your assessments.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 py-4">
+        <div className="space-y-5 py-4">
           {/* Explanation */}
           <Alert className="bg-info/10 border-info/30">
-            <Info className="h-4 w-4 text-info" />
-            <AlertDescription className="text-xs">
+            <Info className="h-4 w-4 text-info shrink-0" />
+            <AlertDescription className="text-xs leading-relaxed">
               These percentages determine how much existing controls and additional actions 
               reduce the inherent risk score. Adjust based on your organisation's risk appetite 
               and control effectiveness standards.
@@ -75,20 +75,20 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
           </Alert>
 
           {/* Existing Controls Reduction */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium">Existing Controls Reduction</Label>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Label className="text-sm font-medium truncate">Existing Controls</Label>
                 <Tooltip>
                   <TooltipTrigger>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>Reduction applied when existing control measures are documented. Higher values mean controls are considered more effective.</p>
+                    <p>Reduction applied when existing control measures are documented.</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <span className="text-lg font-bold font-mono text-primary">
+              <span className="text-lg font-bold font-mono text-primary shrink-0">
                 {localSettings.existingControlsReduction}%
               </span>
             </div>
@@ -101,26 +101,26 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>5% (minimal)</span>
-              <span>40% (highly effective)</span>
+              <span>5%</span>
+              <span>40%</span>
             </div>
           </div>
 
           {/* Additional Actions Reduction */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Label className="text-sm font-medium">Additional Actions Reduction</Label>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Label className="text-sm font-medium truncate">Additional Actions</Label>
                 <Tooltip>
                   <TooltipTrigger>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                    <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   </TooltipTrigger>
                   <TooltipContent className="max-w-xs">
-                    <p>Reduction applied when additional control actions are planned. Represents the expected future reduction once actions are completed.</p>
+                    <p>Reduction applied when additional control actions are planned.</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
-              <span className="text-lg font-bold font-mono text-primary">
+              <span className="text-lg font-bold font-mono text-primary shrink-0">
                 {localSettings.additionalActionsReduction}%
               </span>
             </div>
@@ -133,27 +133,26 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>5% (minor improvement)</span>
-              <span>35% (major improvement)</span>
+              <span>5%</span>
+              <span>35%</span>
             </div>
           </div>
 
           {/* Max Reduction Info */}
           <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
-            <strong>Combined maximum:</strong> {Math.min(localSettings.existingControlsReduction + localSettings.additionalActionsReduction, 50)}% 
-            <span className="text-muted-foreground"> (capped at 50%)</span>
+            <p><strong>Combined:</strong> {Math.min(localSettings.existingControlsReduction + localSettings.additionalActionsReduction, 50)}% (max 50%)</p>
             <p className="mt-1">Risk can never be reduced by more than 50% through controls alone.</p>
           </div>
         </div>
 
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button variant="outline" onClick={handleReset} className="gap-1.5">
+        <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
+          <Button variant="outline" onClick={handleReset} className="gap-1.5 w-full sm:w-auto">
             <RotateCcw className="h-4 w-4" />
-            Reset to Defaults
+            Reset
           </Button>
           <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving}>Save Settings</Button>
+            <Button variant="ghost" onClick={() => setOpen(false)} className="flex-1 sm:flex-initial">Cancel</Button>
+            <Button onClick={handleSave} disabled={saving} className="flex-1 sm:flex-initial">Save</Button>
           </div>
         </DialogFooter>
       </DialogContent>
