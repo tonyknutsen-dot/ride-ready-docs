@@ -382,7 +382,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
               📋 {existingDocuments.length} previous version{existingDocuments.length !== 1 ? 's' : ''} found
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              This will be saved as version {existingDocuments.length + 1} (uploaded {new Date().toLocaleDateString()})
+              This will be saved as version {existingDocuments.length + 1} (uploaded {new Date().toLocaleDateString('en-GB')})
             </p>
           </div>
         )}

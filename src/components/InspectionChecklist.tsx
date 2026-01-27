@@ -825,7 +825,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
           {
             type: 'check',
             title: `Safety check completed - ${ride.ride_name}`,
-            time: new Date().toLocaleDateString(),
+            time: new Date().toLocaleDateString('en-GB'),
             _optimistic: true
           },
           ...old.recentActivity.slice(0, 3)
@@ -1117,7 +1117,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                                 <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
                                   <li>• Total records: <strong className="text-foreground">{linkedChecksInfo.count}</strong></li>
                                   <li>• Date range: <strong className="text-foreground">
-                                    {new Date(linkedChecksInfo.earliest!).toLocaleDateString()} — {new Date(linkedChecksInfo.latest!).toLocaleDateString()}
+                                    {new Date(linkedChecksInfo.earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo.latest!).toLocaleDateString('en-GB')}
                                   </strong></li>
                                 </ul>
                                 <span className="block mt-2 text-xs text-muted-foreground">
@@ -1160,7 +1160,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                                 <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
                                   <li>• Total records: <strong className="text-foreground">{linkedChecksInfo.count}</strong></li>
                                   <li>• Date range: <strong className="text-foreground">
-                                    {new Date(linkedChecksInfo.earliest!).toLocaleDateString()} — {new Date(linkedChecksInfo.latest!).toLocaleDateString()}
+                                    {new Date(linkedChecksInfo.earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo.latest!).toLocaleDateString('en-GB')}
                                   </strong></li>
                                 </ul>
                                 <span className="block mt-2 text-xs text-destructive">
@@ -1352,7 +1352,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                   <div>
                     <div className="font-medium">{check.inspector_name}</div>
                     <div className="text-sm text-muted-foreground">
-                      {new Date(check.check_date).toLocaleDateString()}
+                      {new Date(check.check_date).toLocaleDateString('en-GB')}
                     </div>
                   </div>
                   <Badge variant={check.status === 'completed' ? 'default' : 'secondary'}>

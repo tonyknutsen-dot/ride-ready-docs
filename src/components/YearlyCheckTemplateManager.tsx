@@ -272,7 +272,7 @@ const YearlyCheckTemplateManager = ({ ride }: YearlyCheckTemplateManagerProps) =
                       <CardDescription>{template.description}</CardDescription>
                     )}
                     <div className="text-xs text-muted-foreground">
-                      Created: {new Date(template.created_at).toLocaleDateString()}
+                      Created: {new Date(template.created_at).toLocaleDateString('en-GB')}
                     </div>
                   </div>
                   <div className="flex space-x-2">

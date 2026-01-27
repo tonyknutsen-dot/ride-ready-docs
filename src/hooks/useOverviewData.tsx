@@ -106,7 +106,7 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
   // Process recent docs
   const recentDocs: RecentDocument[] = recentDocsResult.data?.map(doc => ({
     name: doc.document_name,
-    date: new Date(doc.uploaded_at).toLocaleDateString(),
+    date: new Date(doc.uploaded_at).toLocaleDateString('en-GB'),
     type: doc.document_type
   })) || [];
 
@@ -118,7 +118,7 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
       activity.push({
         type: 'check',
         title: `Safety check completed - ${(check as any).rides?.ride_name}`,
-        time: new Date(check.check_date).toLocaleDateString()
+        time: new Date(check.check_date).toLocaleDateString('en-GB')
       });
     });
   }
@@ -128,7 +128,7 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
       activity.push({
         type: 'maintenance',
         title: `${record.maintenance_type} - ${(record as any).rides?.ride_name}`,
-        time: new Date(record.maintenance_date).toLocaleDateString()
+        time: new Date(record.maintenance_date).toLocaleDateString('en-GB')
       });
     });
   }

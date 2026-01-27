@@ -116,7 +116,7 @@ export function useOptimisticDocumentUpload() {
           recentDocs: [
             {
               name: params.documentName,
-              date: new Date().toLocaleDateString(),
+              date: new Date().toLocaleDateString('en-GB'),
               type: params.documentType,
               _optimistic: true
             },
@@ -236,7 +236,7 @@ export function useOptimisticCheckComplete() {
             {
               type: 'check',
               title: `Safety check completed - ${params.rideName}`,
-              time: new Date().toLocaleDateString(),
+              time: new Date().toLocaleDateString('en-GB'),
               _optimistic: true
             },
             ...old.recentActivity.slice(0, 3)
