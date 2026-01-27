@@ -352,6 +352,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const prettyType = (raw: string) => {
     const t = raw.trim().toLowerCase();
     if (t === 'doc') return "📜 DOC Certificate";
+    if (t === 'check record' || t === 'check_record' || t.includes('safety check')) return "✅ Safety Check Records";
     if (t === 'risk_assessment' || t.includes('risk')) return "Risk Assessment (RA)";
     if (t === 'method_statement' || t.includes('method')) return "Method Statement";
     if (t === 'maintenance_report') return "Maintenance Report";
@@ -390,7 +391,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   };
 
   const groupByType = (docs: Document[]) => {
-    const ORDER = ["📜 DOC Certificate", "Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Device Photo", "Other"];
+    const ORDER = ["📜 DOC Certificate", "✅ Safety Check Records", "Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Device Photo", "Other"];
     const groups: Record<string, DocumentGroup[]> = {};
     
     // When isGlobal is true, we're showing ONLY global docs - don't separate them
