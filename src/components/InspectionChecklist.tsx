@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff } from 'lucide-react';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff, CloudOff, RefreshCw } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
@@ -24,6 +24,8 @@ import { EmptyState } from '@/components/EmptyState';
 import DefectReportDialog from './DefectReportDialog';
 import DefectsList from './DefectsList';
 import { useOfflineCheck } from '@/hooks/useOfflineCheck';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { getCachedTemplatesForRide, type CachedTemplate } from '@/lib/offlineDb';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -60,10 +62,12 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const [loading, setLoading] = useState(true);
   const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
   const [defectRefreshKey, setDefectRefreshKey] = useState(0);
+  const [usingCachedTemplate, setUsingCachedTemplate] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const { submitCheck, isOnline } = useOfflineCheck();
+  const { pendingCount, isSyncing, syncAll } = useOfflineSync();
 
   useEffect(() => {
     if (user) {
@@ -72,7 +76,36 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     }
   }, [user, ride.id, frequency]);
 
+  // Convert cached template to the Template type used by the component
+  const convertCachedToTemplate = (cached: CachedTemplate): Template => {
+    return {
+      id: cached.id,
+      ride_id: cached.rideId,
+      template_name: cached.templateName,
+      check_frequency: cached.checkFrequency,
+      is_active: cached.isActive,
+      is_archived: false,
+      user_id: user?.id || '',
+      created_at: cached.cachedAt,
+      updated_at: cached.cachedAt,
+      description: null,
+      template_type: cached.checkFrequency,
+      custom_interval_days: null,
+      daily_check_template_items: cached.items.map(item => ({
+        id: item.id,
+        template_id: cached.id,
+        check_item_text: item.checkItemText,
+        category: item.category || 'general',
+        is_required: item.isRequired,
+        sort_order: item.sortOrder,
+        created_at: cached.cachedAt,
+      })),
+    };
+  };
+
   const loadActiveTemplate = async () => {
+    setUsingCachedTemplate(false);
+    
     try {
       const { data, error } = await supabase
         .from('daily_check_templates')
@@ -94,11 +127,37 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       setActiveTemplate(data);
     } catch (error) {
       console.error('Error loading active template:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load inspection template",
-        variant: "destructive"
-      });
+      
+      // Try to load from offline cache
+      try {
+        const cachedTemplates = await getCachedTemplatesForRide(ride.id);
+        const matchingTemplate = cachedTemplates.find(
+          t => t.checkFrequency === frequency && t.isActive
+        );
+        
+        if (matchingTemplate) {
+          const convertedTemplate = convertCachedToTemplate(matchingTemplate);
+          setActiveTemplate(convertedTemplate);
+          setUsingCachedTemplate(true);
+          toast({
+            title: "Using cached template",
+            description: "You're offline. Using previously cached template.",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: "Failed to load template. No cached version available.",
+            variant: "destructive"
+          });
+        }
+      } catch (cacheError) {
+        console.error('Error loading cached template:', cacheError);
+        toast({
+          title: "Error",
+          description: "Failed to load inspection template",
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -1064,6 +1123,55 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
   return (
     <div id="inspection-checklist-form" className="space-y-6">
+      {/* Offline Mode Indicator */}
+      {(!isOnline || usingCachedTemplate || pendingCount > 0) && (
+        <Alert className={`border-2 ${!isOnline ? 'border-warning bg-warning/10' : pendingCount > 0 ? 'border-info bg-info/10' : 'border-muted'}`}>
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              {!isOnline ? (
+                <>
+                  <CloudOff className="h-5 w-5 text-warning" />
+                  <div>
+                    <p className="font-medium text-warning">Offline Mode</p>
+                    <p className="text-sm text-muted-foreground">
+                      Your check will be saved locally and synced when you're back online.
+                    </p>
+                  </div>
+                </>
+              ) : pendingCount > 0 ? (
+                <>
+                  <RefreshCw className={`h-5 w-5 text-info ${isSyncing ? 'animate-spin' : ''}`} />
+                  <div>
+                    <p className="font-medium text-info">
+                      {isSyncing ? 'Syncing...' : `${pendingCount} item${pendingCount > 1 ? 's' : ''} to sync`}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {isSyncing ? 'Uploading your saved checks' : 'Tap to sync your offline checks now'}
+                    </p>
+                  </div>
+                </>
+              ) : usingCachedTemplate ? (
+                <>
+                  <WifiOff className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="font-medium">Using Cached Template</p>
+                    <p className="text-sm text-muted-foreground">
+                      Template loaded from offline cache
+                    </p>
+                  </div>
+                </>
+              ) : null}
+            </div>
+            {isOnline && pendingCount > 0 && !isSyncing && (
+              <Button size="sm" variant="outline" onClick={syncAll} className="shrink-0">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Sync Now
+              </Button>
+            )}
+          </div>
+        </Alert>
+      )}
+
       <Alert>
         <AlertDescription>
           Complete all required check items, add detailed notes where necessary, and submit to save your {frequency} check record. You can export the results as a PDF.
