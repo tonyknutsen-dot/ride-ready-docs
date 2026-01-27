@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2 } from 'lucide-react';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
@@ -23,6 +23,7 @@ import TemplateBuilder from './TemplateBuilder';
 import { EmptyState } from '@/components/EmptyState';
 import DefectReportDialog from './DefectReportDialog';
 import DefectsList from './DefectsList';
+import { useOfflineCheck } from '@/hooks/useOfflineCheck';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -62,6 +63,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { submitCheck, isOnline } = useOfflineCheck();
 
   useEffect(() => {
     if (user) {
@@ -834,86 +836,78 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     });
 
     try {
-      // Create inspection check record
-      const { data: check, error: checkError } = await supabase
-        .from('checks')
-        .insert({
-          user_id: user?.id,
-          ride_id: ride.id,
-          template_id: activeTemplate.id,
-          inspector_name: inspectorName.trim(),
-          notes: inspectorNotes.trim() || null,
-          check_frequency: frequency,
-          status: 'completed',
-          weather_conditions: weatherConditions.trim() || null,
-          environment_notes: environmentNotes.trim() || null,
-          compliance_officer: complianceOfficer.trim() || null,
-          signature_data: signatureData.trim() || null,
-          location: location.trim() || null
-        })
-        .select()
-        .single();
+      // Prepare the check submission data
+      const checkSubmission = {
+        rideId: ride.id,
+        templateId: activeTemplate.id,
+        inspectorName: inspectorName.trim(),
+        checkDate: new Date().toISOString().split('T')[0],
+        checkFrequency: frequency,
+        status: 'completed',
+        notes: inspectorNotes.trim() || undefined,
+        weatherConditions: weatherConditions.trim() || undefined,
+        location: location.trim() || undefined,
+        signatureData: signatureData.trim() || undefined,
+        complianceOfficer: complianceOfficer.trim() || undefined,
+        environmentNotes: environmentNotes.trim() || undefined,
+        results: activeTemplate.daily_check_template_items.map(item => ({
+          templateItemId: item.id,
+          isChecked: checkedItems[item.id] || false,
+          notes: notes[item.id]?.trim() || undefined,
+        })),
+      };
 
-      if (checkError) throw checkError;
+      // Use the offline-aware submit function
+      const { success, isOffline } = await submitCheck(checkSubmission);
 
-      // Create inspection results
-      const results = activeTemplate.daily_check_template_items.map(item => ({
-        check_id: check.id,
-        template_item_id: item.id,
-        is_checked: checkedItems[item.id] || false,
-        notes: notes[item.id]?.trim() || null
-      }));
+      if (!success) {
+        throw new Error('Failed to submit check');
+      }
 
-      const { error: resultsError } = await supabase
-        .from('check_results')
-        .insert(results);
-
-      if (resultsError) throw resultsError;
-
-      // Generate and save PDF to documents (non-blocking)
-      const checkIdForPdf = check.id;
-      const savedInspectorName = inspectorName;
-      const savedWeatherConditions = weatherConditions;
-      
-      generatePDFBlob(checkIdForPdf).then(async (pdfBlob) => {
-        if (pdfBlob) {
-          // Create a proper frequency label for the document name
-          const frequencyLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
-          const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-          const fileName = `${frequencyLabel}-Check-${ride.ride_name.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
-          const filePath = `${user?.id}/${ride.id}/check-records/${fileName}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('ride-documents')
-            .upload(filePath, pdfBlob, {
-              contentType: 'application/pdf',
-              upsert: false
-            });
-
-          if (!uploadError) {
-            await supabase
-              .from('documents')
-              .insert({
-                user_id: user?.id,
-                ride_id: ride.id,
-                document_name: `${frequencyLabel} Safety Check - ${ride.ride_name} - ${dateStr}`,
-                document_type: 'Check Record',
-                file_path: filePath,
-                mime_type: 'application/pdf',
-                file_size: pdfBlob.size,
-                notes: `Checked by: ${savedInspectorName}${savedWeatherConditions ? ` | Weather: ${savedWeatherConditions}` : ''}`
+      // If submitted online, generate and save PDF (non-blocking)
+      if (!isOffline) {
+        const savedInspectorName = inspectorName;
+        const savedWeatherConditions = weatherConditions;
+        
+        generatePDFBlob().then(async (pdfBlob) => {
+          if (pdfBlob) {
+            const frequencyLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
+            const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+            const fileName = `${frequencyLabel}-Check-${ride.ride_name.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
+            const filePath = `${user?.id}/${ride.id}/check-records/${fileName}`;
+            
+            const { error: uploadError } = await supabase.storage
+              .from('ride-documents')
+              .upload(filePath, pdfBlob, {
+                contentType: 'application/pdf',
+                upsert: false
               });
-            // Invalidate to pick up the new document
-            queryClient.invalidateQueries({ queryKey: ['overview'] });
-            queryClient.invalidateQueries({ queryKey: ['documents'] });
-          }
-        }
-      });
 
-      toast({
-        title: "Check completed ✓",
-        description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}`
-      });
+            if (!uploadError) {
+              await supabase
+                .from('documents')
+                .insert({
+                  user_id: user?.id,
+                  ride_id: ride.id,
+                  document_name: `${frequencyLabel} Safety Check - ${ride.ride_name} - ${dateStr}`,
+                  document_type: 'Check Record',
+                  file_path: filePath,
+                  mime_type: 'application/pdf',
+                  file_size: pdfBlob.size,
+                  notes: `Checked by: ${savedInspectorName}${savedWeatherConditions ? ` | Weather: ${savedWeatherConditions}` : ''}`
+                });
+              queryClient.invalidateQueries({ queryKey: ['overview'] });
+              queryClient.invalidateQueries({ queryKey: ['documents'] });
+            }
+          }
+        });
+
+        toast({
+          title: "Check completed ✓",
+          description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}`
+        });
+      }
+      // If offline, the useOfflineCheck hook already shows a toast
 
       // Reset form
       setCheckedItems({});
@@ -926,12 +920,12 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       setSignatureData('');
       setLocation('');
 
-      // Reload recent checks
-      await loadRecentChecks();
-      
-      // Invalidate queries to sync
-      queryClient.invalidateQueries({ queryKey: ['overview'] });
-      queryClient.invalidateQueries({ queryKey: ['checks'] });
+      // Reload recent checks (will be empty if offline but that's expected)
+      if (!isOffline) {
+        await loadRecentChecks();
+        queryClient.invalidateQueries({ queryKey: ['overview'] });
+        queryClient.invalidateQueries({ queryKey: ['checks'] });
+      }
     } catch (error) {
       // Rollback optimistic update
       if (previousOverview) {
