@@ -58,6 +58,7 @@ const Documents = lazy(() => import("./pages/Documents"));
 const BatchSendDocuments = lazy(() => import("./pages/BatchSendDocuments"));
 const Marketing = lazy(() => import("./pages/Marketing"));
 const TesterInvite = lazy(() => import("./pages/TesterInvite"));
+const StaffInvite = lazy(() => import("./pages/StaffInvite"));
 const Diagnostics = lazy(() => import("./pages/Diagnostics"));
 const MyBugReports = lazy(() => import("./pages/MyBugReports"));
 
@@ -103,6 +104,7 @@ const App = () => (
               <Route path="/" element={<ComingSoon />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/diagnostics" element={<Diagnostics />} />
+              <Route path="/staff-invite/:token" element={<StaffInvite />} />
               <Route path="/tester-invite/:token" element={<TesterInvite />} />
               <Route 
                 path="/overview" 
