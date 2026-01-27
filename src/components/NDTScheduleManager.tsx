@@ -232,12 +232,12 @@ const NDTScheduleManager = ({ ride }: NDTScheduleManagerProps) => {
     <div className="space-y-6">
       <Alert>
         <AlertDescription>
-          <strong>NDT Schedule Tracking:</strong> Track when NDT (Non-Destructive Testing) inspections are due for ride components. Schedules are managed by showmen, but actual NDT inspections must be conducted by independent qualified NDT inspectors.
+          <strong>NDT Schedule Tracking:</strong> Track when NDT (Non-Destructive Testing) inspections are due for ride components. Actual NDT inspections must be conducted by independent qualified NDT inspectors.
         </AlertDescription>
       </Alert>
       <div className="flex items-center justify-between">
         <div className="space-y-2">
-          <h3 className="text-xl font-semibold">NDT Inspection Tracking (Showmen)</h3>
+          <h3 className="text-xl font-semibold">NDT Inspection Tracking</h3>
           <p className="text-muted-foreground">
             Track NDT inspection requirements for {ride.ride_name}. Actual inspections conducted by independent NDT inspectors.
           </p>
