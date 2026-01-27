@@ -1,20 +1,33 @@
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, Scale } from 'lucide-react';
+import { AlertTriangle, Scale, ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 interface RiskDisclaimerProps {
   variant?: 'compact' | 'full';
+  showLink?: boolean;
 }
 
-export function RiskDisclaimer({ variant = 'compact' }: RiskDisclaimerProps) {
+export function RiskDisclaimer({ variant = 'compact', showLink = false }: RiskDisclaimerProps) {
   if (variant === 'compact') {
     return (
       <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3 border border-muted">
         <div className="flex items-start gap-2">
           <Scale className="h-4 w-4 shrink-0 mt-0.5 text-muted-foreground" />
-          <div>
-            <strong className="text-foreground">Professional Judgement Required:</strong>{' '}
-            Calculated risk scores are guidance only. As the competent person completing this assessment, 
-            you are responsible for determining if the values and controls are appropriate for your specific circumstances.
+          <div className="space-y-1.5">
+            <p>
+              <strong className="text-foreground">Professional Judgement Required:</strong>{' '}
+              Calculated risk scores are guidance only. As the competent person completing this assessment, 
+              you are responsible for determining if the values and controls are appropriate for your specific circumstances.
+            </p>
+            {showLink && (
+              <Link 
+                to="/risk-assessments" 
+                className="inline-flex items-center gap-1 text-primary hover:underline font-medium"
+              >
+                <ExternalLink className="h-3 w-3" />
+                View Risk Assessments
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -50,6 +63,15 @@ export function RiskDisclaimer({ variant = 'compact' }: RiskDisclaimerProps) {
           Always verify that your risk assessment meets your legal obligations and is suitable 
           for the activities being assessed.
         </p>
+        {showLink && (
+          <Link 
+            to="/risk-assessments" 
+            className="inline-flex items-center gap-1 text-primary hover:underline font-medium mt-2"
+          >
+            <ExternalLink className="h-3 w-3" />
+            View Risk Assessments
+          </Link>
+        )}
       </AlertDescription>
     </Alert>
   );

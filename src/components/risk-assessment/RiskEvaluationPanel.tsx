@@ -34,6 +34,7 @@ interface RiskEvaluationPanelProps {
   onRiskLevelChange: (value: string) => void;
   onUseManualOverrideChange: (value: boolean) => void;
   riskSettings?: RiskSettings;
+  showDisclaimerLink?: boolean;
 }
 
 export function RiskEvaluationPanel({
@@ -48,6 +49,7 @@ export function RiskEvaluationPanel({
   onRiskLevelChange,
   onUseManualOverrideChange,
   riskSettings,
+  showDisclaimerLink = false,
 }: RiskEvaluationPanelProps) {
   const existingControlsPercent = riskSettings?.existingControlsReduction ?? 20;
   const additionalActionsPercent = riskSettings?.additionalActionsReduction ?? 15;
@@ -288,7 +290,7 @@ export function RiskEvaluationPanel({
       </div>
 
       {/* Disclaimer */}
-      <RiskDisclaimer variant="compact" />
+      <RiskDisclaimer variant="compact" showLink={showDisclaimerLink} />
     </div>
   );
 }

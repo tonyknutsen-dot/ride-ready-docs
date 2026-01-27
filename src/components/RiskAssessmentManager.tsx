@@ -1854,6 +1854,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     onRiskLevelChange={(value) => setItemFormData({ ...itemFormData, risk_level: value })}
                     onUseManualOverrideChange={setUseManualRiskOverride}
                     riskSettings={riskSettings}
+                    showDisclaimerLink={true}
                   />
                 </CardContent>
               </Card>
