@@ -7,10 +7,12 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { AdminProvider } from "@/contexts/AdminContext";
 import { TesterProvider } from "@/contexts/TesterContext";
+import { StaffProvider } from "@/contexts/StaffContext";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AdminRoute } from "@/components/AdminRoute";
 import { ProfileGuard } from "@/components/ProfileGuard";
 import { FeatureGate } from "@/components/FeatureGate";
+import { StaffRoute } from "@/components/StaffRoute";
 import ScrollToTop from "@/components/ScrollToTop";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
@@ -96,6 +98,7 @@ const App = () => (
         <AuthProvider>
           <AdminProvider>
             <TesterProvider>
+              <StaffProvider>
               <TestModeBanner />
               <TesterSessionTracker />
               <GlobalEventBridge />
@@ -182,9 +185,11 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <AppLayout>
-                        <PlanBilling />
-                      </AppLayout>
+                      <StaffRoute ownerOnly>
+                        <AppLayout>
+                          <PlanBilling />
+                        </AppLayout>
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
@@ -194,14 +199,16 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <AppLayout>
-                        <Settings />
-                      </AppLayout>
+                      <StaffRoute ownerOnly>
+                        <AppLayout>
+                          <Settings />
+                        </AppLayout>
+                      </StaffRoute>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
               />
-              <Route 
+              <Route
                 path="/my-bug-reports"
                 element={
                   <ProtectedRoute>
@@ -408,6 +415,7 @@ const App = () => (
               <MobileBottomNav />
               <FloatingBugButton />
               <CookieConsentBanner />
+              </StaffProvider>
             </TesterProvider>
           </AdminProvider>
         </AuthProvider>
