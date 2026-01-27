@@ -338,7 +338,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       </Card>
 
       {/* Add Items Section */}
-      <Card>
+      <Card className="border-primary/20 bg-primary/5">
         <CardHeader className="pb-3">
           <CardTitle className="text-base">Add Check Items</CardTitle>
           <CardDescription>
@@ -349,7 +349,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           {/* Quick Add from Library */}
           <CheckLibraryDialog
             trigger={
-              <Button variant="secondary" className="w-full bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary font-medium">
+              <Button className="w-full font-medium">
                 <Library className="w-4 h-4 mr-2" />
                 Browse Library Items
               </Button>
@@ -372,17 +372,24 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             }}
           />
 
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-primary/5 px-2 text-muted-foreground">or add your own</span>
+            </div>
+          </div>
+
           {/* Add Your Own */}
           <div className="space-y-2">
-            <Label htmlFor="custom-item" className="text-sm font-medium">
-              Add Your Own Check Item
-            </Label>
             <div className="flex gap-2">
               <Input
                 id="custom-item"
                 value={customItemText}
                 onChange={(e) => setCustomItemText(e.target.value)}
                 placeholder="e.g., Check hydraulic fluid levels"
+                className="bg-background"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -390,12 +397,12 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   }
                 }}
               />
-              <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()}>
+              <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()} variant="secondary">
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Press Enter or click + to add. Include any checks specific to your equipment that aren't in the library.
+              Press Enter or click + to add custom checks specific to your equipment.
             </p>
           </div>
         </CardContent>
