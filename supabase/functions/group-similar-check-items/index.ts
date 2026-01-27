@@ -147,32 +147,49 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use Lovable AI for smart grouping AND categorization
+    // Fetch ride categories for context
+    const { data: rideCategories } = await supabase
+      .from("ride_categories")
+      .select("id, name, category_group")
+      .order("name");
+
+    const rideCategoryList = rideCategories?.map(c => `- ${c.name} (${c.id})`).join("\n") || "";
+
+    // Use Lovable AI for smart grouping, categorization, AND placement suggestions
     const prompt = `You are analyzing safety check items submitted by fairground operators.
 
 TASK 1: Group semantically similar items (items that mean the same thing).
-TASK 2: Assign each item to the most appropriate category.
+TASK 2: Assign each item to the most appropriate technical category.
+TASK 3: Determine if each item is GENERIC (applies to all equipment) or SPECIFIC to a ride type.
 
-CATEGORIES (choose one for each item):
+TECHNICAL CATEGORIES (choose one for each item):
 ${CATEGORIES.map(c => `- ${c}`).join("\n")}
 
-LEARN FROM EXISTING ITEMS:
+RIDE TYPES (use ID if item is specific to a ride type):
+${rideCategoryList}
+
+LEARN FROM EXISTING LIBRARY ITEMS:
 ${existingExamples}
 
-ITEMS TO ANALYZE:
-${submissions.map((s, i) => `${i + 1}. "${s.label}" (freq: ${s.frequency})`).join("\n")}
+ITEMS TO ANALYZE (note: some include the ride category they were submitted from):
+${submissions.map((s, i) => `${i + 1}. "${s.label}" (freq: ${s.frequency}${s.ride_category_id ? `, from ride category: ${s.ride_category_id}` : ''})`).join("\n")}
 
 Respond with JSON only:
 {
-  "groups": [[1, 5, 8], [2, 3]], // Arrays of item numbers that are similar
-  "categories": {"1": "Restraints", "2": "Electrical", "3": "Electrical"} // Item number to category
+  "groups": [[1, 5, 8], [2, 3]],
+  "categories": {"1": "Restraints", "2": "Electrical"},
+  "placement": {"1": "generic", "2": "specific", "3": "generic"},
+  "ride_category_ids": {"2": "uuid-of-ride-category"}
 }
 
 Rules:
 - Only group items that are truly similar in meaning
 - Single items don't need a group
-- Every item needs a category assignment
-- Learn from the existing examples to categorize consistently`;
+- Every item needs a category AND placement assignment
+- "generic" = applies to ALL equipment types (e.g., "Fire extinguisher present", "Emergency stop accessible")
+- "specific" = only relevant to certain ride types (e.g., "Harness locks engaged" for thrill rides, "Carousel pole secure" for carousels)
+- If specific, include the ride_category_id it should apply to
+- Learn from existing items to stay consistent`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -196,7 +213,12 @@ Rules:
     const aiResult = await response.json();
     const content = aiResult.choices?.[0]?.message?.content || "{}";
     
-    let parsed: { groups?: number[][], categories?: Record<string, string> } = {};
+    let parsed: { 
+      groups?: number[][], 
+      categories?: Record<string, string>,
+      placement?: Record<string, string>,
+      ride_category_ids?: Record<string, string>
+    } = {};
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
@@ -225,15 +247,26 @@ Rules:
       }
     }
 
-    // Apply categories
+    // Apply categories and placement suggestions
     const categories = parsed.categories || {};
+    const placement = parsed.placement || {};
+    const rideCategoryIds = parsed.ride_category_ids || {};
     let categorizedCount = 0;
+    
     for (const [idx, category] of Object.entries(categories)) {
       const submission = submissions[parseInt(idx) - 1];
       if (submission && CATEGORIES.includes(category)) {
+        const isGeneric = placement[idx] === "generic";
+        const suggestedRideCategoryId = rideCategoryIds[idx] || null;
+        
         await supabase
           .from("user_submitted_check_items")
-          .update({ category })
+          .update({ 
+            category,
+            is_generic: isGeneric,
+            // Only set ride_category_id if AI suggests specific and provides an ID
+            ...(suggestedRideCategoryId && !isGeneric ? { ride_category_id: suggestedRideCategoryId } : {})
+          })
           .eq("id", submission.id);
         categorizedCount++;
       }
@@ -242,7 +275,7 @@ Rules:
     console.log(`Created ${groupCount} similarity groups, categorized ${categorizedCount} items`);
 
     return new Response(JSON.stringify({ 
-      message: `AI grouped ${groupCount} sets, categorized ${categorizedCount} items`,
+      message: `AI grouped ${groupCount} sets, categorized ${categorizedCount} items with placement suggestions`,
       groups: groupCount,
       categorized: categorizedCount,
       processed: totalPending,
