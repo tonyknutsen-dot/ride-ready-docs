@@ -276,7 +276,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          Add check items that you want to verify each {frequency === 'daily' ? 'day' : frequency === 'monthly' ? 'month' : 'year'}. 
+          Add check items that you want to verify {frequency === 'preopening' ? 'before opening to the public' : frequency === 'daily' ? 'each day' : frequency === 'monthly' ? 'each month' : 'each year'}. 
           You can pick from our library or add your own custom checks specific to your equipment.
         </AlertDescription>
       </Alert>
