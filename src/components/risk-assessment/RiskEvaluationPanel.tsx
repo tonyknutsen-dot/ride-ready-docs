@@ -1,7 +1,7 @@
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Info, TrendingDown, AlertTriangle, CheckCircle2, XCircle } from 'lucide-react';
+import { Info, TrendingDown, AlertTriangle, CheckCircle2, XCircle, UserCheck } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -14,7 +14,13 @@ import {
   LikelihoodKey,
   SeverityKey
 } from './RiskScoring';
+import { RiskDisclaimer } from './RiskDisclaimer';
 import { cn } from '@/lib/utils';
+
+export interface RiskSettings {
+  existingControlsReduction: number;
+  additionalActionsReduction: number;
+}
 
 interface RiskEvaluationPanelProps {
   likelihood: string;
@@ -27,6 +33,7 @@ interface RiskEvaluationPanelProps {
   onSeverityChange: (value: string) => void;
   onRiskLevelChange: (value: string) => void;
   onUseManualOverrideChange: (value: boolean) => void;
+  riskSettings?: RiskSettings;
 }
 
 export function RiskEvaluationPanel({
@@ -40,14 +47,25 @@ export function RiskEvaluationPanel({
   onSeverityChange,
   onRiskLevelChange,
   onUseManualOverrideChange,
+  riskSettings,
 }: RiskEvaluationPanelProps) {
-  const calculation = useRiskCalculation(likelihood, severity, existingControls, additionalActions);
+  const existingControlsPercent = riskSettings?.existingControlsReduction ?? 20;
+  const additionalActionsPercent = riskSettings?.additionalActionsReduction ?? 15;
+  
+  const calculation = useRiskCalculation(
+    likelihood, 
+    severity, 
+    existingControls, 
+    additionalActions,
+    existingControlsPercent,
+    additionalActionsPercent
+  );
   
   const likelihoodInfo = LIKELIHOOD_SCORES[likelihood as LikelihoodKey] || LIKELIHOOD_SCORES.possible;
   const severityInfo = SEVERITY_SCORES[severity as SeverityKey] || SEVERITY_SCORES.moderate;
 
-  // Sync calculated risk with form when not using manual override
-  const effectiveRiskLevel = useManualOverride ? riskLevel : calculation.residualLevel;
+  // Check if manual override differs from calculation
+  const isOverridden = useManualOverride && riskLevel !== calculation.residualLevel;
 
   return (
     <div className="space-y-4">
@@ -109,13 +127,25 @@ export function RiskEvaluationPanel({
       </div>
 
       {/* Risk Score Calculation Display */}
-      <div className={cn("rounded-lg border-2 p-4 space-y-3", getRiskBgColor(calculation.residualLevel))}>
+      <div className={cn(
+        "rounded-lg border-2 p-4 space-y-3", 
+        isOverridden ? "border-warning/50 bg-warning/5" : getRiskBgColor(calculation.residualLevel)
+      )}>
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            {calculation.residualLevel === 'high' && <XCircle className="h-5 w-5 text-red-600" />}
-            {calculation.residualLevel === 'medium' && <AlertTriangle className="h-5 w-5 text-orange-600" />}
-            {calculation.residualLevel === 'low' && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-            <span className="font-semibold">Risk Calculation</span>
+            {isOverridden ? (
+              <>
+                <UserCheck className="h-5 w-5 text-warning" />
+                <span className="font-semibold">Professional Override Applied</span>
+              </>
+            ) : (
+              <>
+                {calculation.residualLevel === 'high' && <XCircle className="h-5 w-5 text-red-600" />}
+                {calculation.residualLevel === 'medium' && <AlertTriangle className="h-5 w-5 text-orange-600" />}
+                {calculation.residualLevel === 'low' && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                <span className="font-semibold">Risk Calculation</span>
+              </>
+            )}
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span className="font-mono bg-background px-2 py-1 rounded border">
@@ -123,6 +153,21 @@ export function RiskEvaluationPanel({
             </span>
           </div>
         </div>
+
+        {/* Override Indicator */}
+        {isOverridden && (
+          <Alert className="border-warning/50 bg-warning/10">
+            <UserCheck className="h-4 w-4 text-warning" />
+            <AlertDescription className="text-xs">
+              <strong>Calculated: {calculation.residualLevel.toUpperCase()}</strong> → 
+              <strong className="ml-1">Overridden to: {riskLevel.toUpperCase()}</strong>
+              <p className="mt-1 text-muted-foreground">
+                This risk level has been manually set based on the assessor's professional judgement, 
+                overriding the calculated value.
+              </p>
+            </AlertDescription>
+          </Alert>
+        )}
 
         {/* Score Breakdown */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
@@ -148,24 +193,32 @@ export function RiskEvaluationPanel({
             </div>
           )}
           
-          <div className="bg-background rounded-lg p-3 border border-primary/30">
-            <div className="text-xs text-muted-foreground mb-1">Residual Risk</div>
+          <div className={cn(
+            "bg-background rounded-lg p-3 border",
+            isOverridden ? "border-warning/50" : "border-primary/30"
+          )}>
+            <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+              {isOverridden ? 'Override' : 'Residual'} Risk
+              {isOverridden && <UserCheck className="h-3 w-3 text-warning" />}
+            </div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold font-mono">{calculation.residualScore}</span>
-              <Badge className={cn("text-xs", getRiskColor(calculation.residualLevel))}>
-                {calculation.residualLevel.toUpperCase()}
+              <span className="text-lg font-bold font-mono">
+                {isOverridden ? '—' : calculation.residualScore}
+              </span>
+              <Badge className={cn("text-xs", getRiskColor(isOverridden ? riskLevel as any : calculation.residualLevel))}>
+                {(isOverridden ? riskLevel : calculation.residualLevel).toUpperCase()}
               </Badge>
             </div>
           </div>
         </div>
 
         {/* Control Impact Info */}
-        {calculation.reductionPercent > 0 && (
+        {calculation.reductionPercent > 0 && !isOverridden && (
           <div className="text-xs text-muted-foreground bg-green-50 border border-green-200 rounded p-2">
             <span className="font-medium text-green-700">Controls applied:</span>{' '}
-            {existingControls && 'Existing controls (-20%)'}
+            {existingControls && `Existing controls (-${existingControlsPercent}%)`}
             {existingControls && additionalActions && ', '}
-            {additionalActions && 'Additional actions (-15%)'}
+            {additionalActions && `Additional actions (-${additionalActionsPercent}%)`}
           </div>
         )}
 
@@ -233,6 +286,9 @@ export function RiskEvaluationPanel({
           </div>
         )}
       </div>
+
+      {/* Disclaimer */}
+      <RiskDisclaimer variant="compact" />
     </div>
   );
 }

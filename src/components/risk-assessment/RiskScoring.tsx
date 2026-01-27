@@ -43,14 +43,16 @@ export function getRiskLevel(score: number): 'low' | 'medium' | 'high' {
   return 'high';
 }
 
-// Calculate control effectiveness reduction (each control reduces risk by ~15-25%)
+// Calculate control effectiveness reduction
 export function calculateControlReduction(
   hasExistingControls: boolean,
-  hasAdditionalActions: boolean
+  hasAdditionalActions: boolean,
+  existingControlsPercent: number = 20,
+  additionalActionsPercent: number = 15
 ): number {
   let reduction = 0;
-  if (hasExistingControls) reduction += 0.20; // 20% reduction for existing controls
-  if (hasAdditionalActions) reduction += 0.15; // 15% reduction for additional actions
+  if (hasExistingControls) reduction += existingControlsPercent / 100;
+  if (hasAdditionalActions) reduction += additionalActionsPercent / 100;
   return Math.min(reduction, 0.50); // Max 50% reduction
 }
 
@@ -59,7 +61,9 @@ export function calculateRisk(
   likelihood: LikelihoodKey,
   severity: SeverityKey,
   existingControls: string | undefined,
-  additionalActions: string | undefined
+  additionalActions: string | undefined,
+  existingControlsPercent: number = 20,
+  additionalActionsPercent: number = 15
 ): RiskCalculation {
   const inherentScore = calculateRiskScore(likelihood, severity);
   const inherentLevel = getRiskLevel(inherentScore);
@@ -67,7 +71,12 @@ export function calculateRisk(
   const hasControls = !!(existingControls && existingControls.trim().length > 0);
   const hasActions = !!(additionalActions && additionalActions.trim().length > 0);
   
-  const reductionPercent = calculateControlReduction(hasControls, hasActions);
+  const reductionPercent = calculateControlReduction(
+    hasControls, 
+    hasActions, 
+    existingControlsPercent, 
+    additionalActionsPercent
+  );
   const reduction = inherentScore * reductionPercent;
   const residualScore = Math.max(1, Math.round(inherentScore - reduction));
   const residualLevel = getRiskLevel(residualScore);
@@ -106,14 +115,18 @@ export function useRiskCalculation(
   likelihood: string,
   severity: string,
   existingControls: string | undefined,
-  additionalActions: string | undefined
+  additionalActions: string | undefined,
+  existingControlsPercent: number = 20,
+  additionalActionsPercent: number = 15
 ) {
   return useMemo(() => {
     return calculateRisk(
       likelihood as LikelihoodKey,
       severity as SeverityKey,
       existingControls,
-      additionalActions
+      additionalActions,
+      existingControlsPercent,
+      additionalActionsPercent
     );
-  }, [likelihood, severity, existingControls, additionalActions]);
+  }, [likelihood, severity, existingControls, additionalActions, existingControlsPercent, additionalActionsPercent]);
 }

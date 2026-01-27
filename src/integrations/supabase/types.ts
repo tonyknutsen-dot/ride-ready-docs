@@ -1370,6 +1370,7 @@ export type Database = {
           id: string
           is_suspended: boolean
           operator_type: string | null
+          risk_settings: Json | null
           showmen_name: string | null
           stripe_customer_id: string | null
           stripe_customer_id_encrypted: string | null
@@ -1402,6 +1403,7 @@ export type Database = {
           id?: string
           is_suspended?: boolean
           operator_type?: string | null
+          risk_settings?: Json | null
           showmen_name?: string | null
           stripe_customer_id?: string | null
           stripe_customer_id_encrypted?: string | null
@@ -1434,6 +1436,7 @@ export type Database = {
           id?: string
           is_suspended?: boolean
           operator_type?: string | null
+          risk_settings?: Json | null
           showmen_name?: string | null
           stripe_customer_id?: string | null
           stripe_customer_id_encrypted?: string | null
