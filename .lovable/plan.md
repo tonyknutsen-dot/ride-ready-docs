@@ -1,281 +1,157 @@
 
-# Staff Management System
+
+# AI Help Chat for the Help Center
+
+This plan adds an AI-powered help assistant to the existing Help Center page, allowing users to ask questions about using Ride Ready Docs and get instant answers. The AI will be trained on the app's documentation, FAQs, and feature guides.
+
+---
 
 ## Overview
 
-This plan implements a complete staff management system where owners can invite staff members via email to perform checks, maintenance, or access specific equipment. Staff will have their own accounts with restricted access based on their assigned permissions.
+The AI help chat will be integrated directly into the Help Center page (`/help`), positioned prominently so users can quickly get answers without scrolling through FAQs. The assistant will understand the app's terminology, features, and UK fairground industry context.
 
 ---
 
-## How It Works
-
-### For You (The Owner)
-
-1. Go to a new "Staff" section in Settings or the sidebar
-2. Click "Invite Staff Member"
-3. Enter their email address
-4. Choose their permission level:
-   - **Checks Only** - Can perform pre-opening, daily, monthly, yearly checks
-   - **Checks + Maintenance** - Can also log maintenance activities
-   - **Full Access** - Can view documents, checks, maintenance, everything except billing
-5. Optionally assign them to specific rides (or leave blank for all rides)
-6. They receive an invite email and create their account
-
-### For Your Staff
-
-1. They receive an invite email with a button "Join [Your Company Name]"
-2. They create an account (or sign in if they already have one)
-3. They see a simplified version of the app showing only what they're allowed to access
-4. They can only see/work with the rides you've assigned to them
-
----
-
-## What Staff See
-
-When a staff member logs in, they see a streamlined interface:
-
-| Permission Level | What They See |
-|-----------------|---------------|
-| **Checks Only** | Overview (simplified), Rides, Checks, Calendar |
-| **Checks + Maintenance** | Above + Maintenance section |
-| **Full Access** | Above + Documents, Risk Assessments, Send Documents |
-
-**Always Hidden from Staff:**
-- Plan & Billing
-- Staff Management
-- Admin features
-- Settings (except their own profile)
-
----
-
-## Database Changes
-
-### New Tables
-
-**`organisations`** - Groups users together
-```text
-id, name, owner_id, created_at, settings
-```
-
-**`organisation_members`** - Staff linked to organisations
-```text
-id, organisation_id, user_id, permission_level, invited_by, 
-joined_at, is_active
-```
-
-**`staff_equipment_assignments`** - Which rides staff can access
-```text
-id, member_id, ride_id, assigned_at, assigned_by
-```
-
-**`staff_invites`** - Pending invitations (mirrors tester_invites pattern)
-```text
-id, organisation_id, email, permission_level, 
-invite_token, invited_by, status, expires_at, accepted_at
-```
-
-### New Enum
-
-**`staff_permission`**
-```text
-checks_only | checks_maintenance | full_access
-```
-
-### Row Level Security
-
-All existing tables (rides, checks, documents, etc.) will have their RLS policies updated to allow staff to access records for their assigned rides only:
-
-```sql
--- Example: Staff can view rides assigned to them OR if they're the owner
-CREATE POLICY "Users and staff can view assigned rides"
-ON public.rides FOR SELECT USING (
-  user_id = auth.uid() 
-  OR 
-  id IN (
-    SELECT ride_id FROM staff_equipment_assignments sea
-    JOIN organisation_members om ON sea.member_id = om.id
-    WHERE om.user_id = auth.uid() AND om.is_active = true
-  )
-);
-```
-
----
-
-## Frontend Changes
-
-### New Components
-
-**`StaffManagement.tsx`** - Page where owners manage their staff
-- List current staff with their permissions
-- Invite new staff button
-- Edit permissions / equipment assignments
-- Remove staff access
-
-**`StaffInviteDialog.tsx`** - Dialog to send invitations
-- Email input
-- Permission level selector
-- Equipment assignment (optional)
-
-**`StaffInvite.tsx`** - Page where invited staff accept (like TesterInvite.tsx)
-- Validates invite token
-- Allows sign up or sign in
-- Links staff to organisation
-
-**`StaffContext.tsx`** - React context for permission checking
-- Tracks if current user is staff vs owner
-- Provides permission level
-- Used to conditionally show/hide UI elements
-
-**`StaffRoute.tsx`** - Protected route component
-- Blocks access to routes staff shouldn't see
-- Redirects to overview if accessed
-
-### Modified Components
-
-**`AppSidebar.tsx`** - Updated navigation
-- Conditionally hide items based on permission level
-- Hide "Staff" section from staff users
-- Hide billing from staff
-
-**`RideManagement.tsx`** - Filter rides for staff
-- Only show assigned rides to staff
-- Show all rides to owners
-
----
-
-## Edge Functions
-
-### `send-staff-invite`
-- Owner sends invite
-- Creates invite record
-- Sends branded email with join link
-
-### `accept-staff-invite`
-- Validates token
-- Creates account if needed
-- Links user to organisation
-- Assigns equipment
-
-### `register-staff`
-- Creates new account with pre-confirmed email
-- Similar to existing register-tester function
-
----
-
-## Implementation Order
-
-### Phase 1: Database Foundation
-1. Add `staff_permission` enum
-2. Create `organisations` table
-3. Create `organisation_members` table
-4. Create `staff_equipment_assignments` table
-5. Create `staff_invites` table
-6. Add RLS policies for all new tables
-
-### Phase 2: Auto-Create Organisation
-1. Trigger to create organisation for existing users with rides
-2. Set owner_id on organisation
-
-### Phase 3: Staff Invite Flow
-1. Create `send-staff-invite` edge function
-2. Create `register-staff` edge function  
-3. Create `accept-staff-invite` edge function
-4. Create `StaffInvite.tsx` page
-5. Add route `/staff-invite/:token`
-
-### Phase 4: Staff Management UI
-1. Create `StaffContext.tsx`
-2. Create `StaffManagement.tsx` page
-3. Create `StaffInviteDialog.tsx`
-4. Add "Staff" to sidebar (owners only)
-
-### Phase 5: Permission Enforcement
-1. Create `useStaffPermissions` hook
-2. Update `AppSidebar.tsx` with permission checks
-3. Create `StaffRoute.tsx` component
-4. Update route protection
-
-### Phase 6: Equipment Filtering
-1. Update ride queries to filter by assignment
-2. Update check queries to filter by assignment
-3. Update maintenance queries to filter by assignment
-
----
-
-## Email Template
-
-Staff will receive an email like:
+## Architecture
 
 ```text
-Subject: You're invited to join [Company Name] on Ride Ready Docs
-
-Hi,
-
-[Controller Name] has invited you to join their team on Ride Ready Docs.
-
-As a staff member, you'll be able to:
-- Perform safety checks on assigned equipment
-- Log maintenance activities (if permitted)
-- Access documents (if permitted)
-
-[Accept Invitation Button]
-
-This invite expires in 7 days.
+┌─────────────────────────────────────────────────────────────────┐
+│                        Help Center Page                          │
+├─────────────────────────────────────────────────────────────────┤
+│  ┌──────────────────────────────────────────────────────────┐   │
+│  │                    AI Help Chat Card                      │   │
+│  │  ┌──────────────────────────────────────────────────┐    │   │
+│  │  │  Message History (scrollable)                     │    │   │
+│  │  │  - User: How do I upload documents?               │    │   │
+│  │  │  - AI: To upload documents, go to your ride...    │    │   │
+│  │  └──────────────────────────────────────────────────┘    │   │
+│  │  ┌──────────────────────────────────────────────────┐    │   │
+│  │  │  [Type your question...]           [Send]         │    │   │
+│  │  └──────────────────────────────────────────────────┘    │   │
+│  └──────────────────────────────────────────────────────────┘   │
+│                                                                  │
+│  [Existing Quick Start Guides...]                                │
+│  [Existing FAQs...]                                              │
+│  [Contact Support Section...]                                    │
+└─────────────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## Implementation Steps
+
+### 1. Create Help Chat Edge Function
+
+**File:** `supabase/functions/help-chat/index.ts`
+
+This edge function will:
+- Use Lovable AI (`google/gemini-3-flash-preview`) for fast, accurate responses
+- Include a comprehensive system prompt with all app documentation
+- Support streaming for a responsive UX
+- Handle rate limiting (402/429 errors) gracefully
+- Log conversations for quality improvement
+
+The system prompt will contain:
+- All FAQ content from the Help Center
+- Feature descriptions and step-by-step guides
+- Pricing information and plan differences
+- UK fairground industry terminology
+- Instructions to escalate complex issues to human support
+
+### 2. Create HelpChatWidget Component
+
+**File:** `src/components/HelpChatWidget.tsx`
+
+A reusable chat component featuring:
+- **Message history** with user/assistant distinction
+- **Streaming responses** rendered token-by-token with markdown support
+- **Suggested questions** to help users get started
+- **Loading states** and error handling
+- **"Contact Support" escalation** button
+- **Clear chat** option
+
+### 3. Integrate into Help Center
+
+**File:** `src/pages/HelpCenter.tsx` (modified)
+
+Add the AI chat section prominently:
+- Position between the hero section and Quick Start Guides
+- Full-width card with gradient border matching existing design
+- Mobile-responsive layout
+
+### 4. Update supabase/config.toml
+
+Add the new edge function configuration:
+```toml
+[functions.help-chat]
+verify_jwt = false
+```
+
+---
+
+## Technical Details
+
+### System Prompt Strategy
+
+The AI will be given context about:
+- **Features**: Overview, Rides, Calendar, Documents, Checks, Maintenance, Risk Assessments
+- **Plans**: Documents & Compliance (basic) vs Operations & Maintenance (advanced)
+- **Terminology**: UK showman terminology, ride categories, document types
+- **Limitations**: What requires human support (billing issues, bugs, account problems)
+
+### Suggested Starting Questions
+
+The chat will show clickable suggestions:
+- "How do I add my first ride?"
+- "What documents should I upload?"
+- "How do daily checks work?"
+- "What's included in my plan?"
+- "How do I schedule inspections?"
+
+### Rate Limiting
+
+- Uses the existing rate limit infrastructure from `_shared/rate-limit.ts`
+- Moderate limits suitable for help queries
+- Graceful error messages when limits exceeded
+
+### Markdown Rendering
+
+AI responses will be rendered with `react-markdown` for:
+- Formatted lists and steps
+- Bold/italic text for emphasis
+- Code formatting where relevant
+- Links to relevant pages
+
+---
+
+## Files to Create/Modify
+
+| File | Action | Description |
+|------|--------|-------------|
+| `supabase/functions/help-chat/index.ts` | Create | Edge function for AI chat with streaming |
+| `src/components/HelpChatWidget.tsx` | Create | React component for the chat interface |
+| `src/pages/HelpCenter.tsx` | Modify | Integrate chat widget into the page |
+| `supabase/config.toml` | Modify | Add function configuration |
+
+---
+
+## User Experience Flow
+
+1. User visits `/help` (Help Center)
+2. AI chat card is prominently displayed with suggested questions
+3. User types a question or clicks a suggestion
+4. AI streams a response with markdown formatting
+5. User can continue the conversation or ask new questions
+6. If AI can't help, it suggests contacting support with a button
+7. Conversation resets on page reload (no persistence needed)
 
 ---
 
 ## Security Considerations
 
-1. **Role separation**: Staff role is separate from the existing `app_role` enum - this is an organisation-level membership, not an app-level role
-2. **Equipment scoping**: All database queries scoped to assigned equipment via RLS
-3. **Audit trail**: Staff actions tracked with their user_id
-4. **Owner control**: Only owners can invite, remove, or modify staff permissions
-5. **Invite expiry**: Invites expire after 7 days
+- No authentication required (public help content)
+- Rate limiting prevents abuse
+- IP blocking for suspicious activity
+- System prompt prevents off-topic usage
+- No sensitive data exposed through the chat
 
----
-
-## Future Considerations (Not in Scope)
-
-- **Offline mode**: Requires PWA implementation (separate feature)
-- **Multi-organisation staff**: Staff working for multiple operators
-- **Staff seat limits**: Adding billing for number of staff
-- **Activity logging**: Detailed audit log of staff actions
-
----
-
-## Files to Create
-
-| File | Purpose |
-|------|---------|
-| `src/contexts/StaffContext.tsx` | Permission checking context |
-| `src/components/StaffManagement.tsx` | Staff management page |
-| `src/components/StaffInviteDialog.tsx` | Invite dialog |
-| `src/components/StaffRoute.tsx` | Permission-gated routing |
-| `src/pages/StaffInvite.tsx` | Accept invitation page |
-| `src/hooks/useStaffPermissions.tsx` | Permission utilities |
-| `supabase/functions/send-staff-invite/index.ts` | Send invite |
-| `supabase/functions/register-staff/index.ts` | Register staff |
-| `supabase/functions/accept-staff-invite/index.ts` | Accept invite |
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/AppSidebar.tsx` | Add Staff nav, permission filtering |
-| `src/App.tsx` | Add staff routes |
-| `supabase/config.toml` | Add new edge functions |
-
----
-
-## Summary
-
-This implementation adds a complete staff management system where:
-
-1. **Owners invite staff** via email with chosen permissions
-2. **Staff create accounts** using the invite link
-3. **Staff see a restricted UI** based on their permission level
-4. **Staff only access assigned rides** (or all rides if none specified)
-5. **All data is secured** via Row Level Security policies
-
-The architecture mirrors the existing tester invite system you already have, making it familiar and consistent.
