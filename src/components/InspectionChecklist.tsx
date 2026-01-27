@@ -140,61 +140,363 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     if (!activeTemplate) return null;
 
     try {
+      // Fetch profile for company branding
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+
+      // Fetch company logo if available
+      let logoDataUrl: string | null = null;
+      if (profile?.company_logo_path) {
+        try {
+          const { data: logoBlob } = await supabase.storage
+            .from('ride-documents')
+            .download(profile.company_logo_path);
+          if (logoBlob) {
+            logoDataUrl = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(logoBlob);
+            });
+          }
+        } catch (e) {
+          console.log('Could not load company logo');
+        }
+      }
+
+      // Fetch ride image if available
+      const { data: rideImage } = await supabase
+        .from('documents')
+        .select('file_path')
+        .eq('ride_id', ride.id)
+        .like('mime_type', 'image/%')
+        .limit(1)
+        .maybeSingle();
+
+      let rideImageDataUrl: string | null = null;
+      if (rideImage) {
+        try {
+          const { data: imageBlob } = await supabase.storage
+            .from('ride-documents')
+            .download(rideImage.file_path);
+          if (imageBlob) {
+            rideImageDataUrl = await new Promise<string>((resolve) => {
+              const reader = new FileReader();
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(imageBlob);
+            });
+          }
+        } catch (e) {
+          console.log('Could not load ride image');
+        }
+      }
+
       const pdf = new jsPDF();
       const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
       const margin = 20;
       let currentY = margin;
 
-      // Header
-      pdf.setFontSize(20);
-      pdf.text(`${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check Report`, margin, currentY);
-      currentY += 15;
+      // Helper function to add footer to each page
+      const addFooter = () => {
+        const totalPages = pdf.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+          pdf.setPage(i);
+          pdf.setFontSize(8);
+          pdf.setTextColor(128);
+          pdf.text('tarmacbuddy.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
+          pdf.text(`Page ${i} of ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
+          pdf.text(`Generated: ${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`, 20, pageHeight - 10, { align: 'left' });
+          pdf.setTextColor(0);
+        }
+      };
 
-      pdf.setFontSize(12);
-      pdf.text(`Ride: ${ride.ride_name}`, margin, currentY);
-      currentY += 8;
-      pdf.text(`Inspector: ${inspectorName}`, margin, currentY);
-      currentY += 8;
-      pdf.text(`Date: ${new Date().toLocaleDateString()}`, margin, currentY);
-      currentY += 8;
-      pdf.text(`Weather: ${weatherConditions}`, margin, currentY);
-      currentY += 15;
+      // === HEADER SECTION ===
+      // Logo on left, company info centered
+      if (logoDataUrl) {
+        try {
+          pdf.addImage(logoDataUrl, 'AUTO', margin, currentY - 5, 18, 18);
+        } catch (e) {
+          console.log('Could not add logo to PDF');
+        }
+      }
 
-      // Check items
-      pdf.setFontSize(14);
-      pdf.text('Check Items:', margin, currentY);
+      // Company name - always centered on page
+      pdf.setFontSize(16);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(40, 40, 40);
+      const companyName = profile?.company_name || profile?.showmen_name || 'Safety Inspection Report';
+      pdf.text(companyName, pageWidth / 2, currentY, { align: 'center' });
+      currentY += 6;
+
+      // Controller name below company
+      if (profile?.controller_name) {
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(100);
+        pdf.text(`Controller: ${profile.controller_name}`, pageWidth / 2, currentY, { align: 'center' });
+        currentY += 5;
+      }
+
+      currentY += 8;
+
+      // Report title with underline
+      pdf.setFontSize(13);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(50, 50, 50);
+      const reportTitle = `${frequency.toUpperCase()} SAFETY CHECK REPORT`;
+      pdf.text(reportTitle, pageWidth / 2, currentY, { align: 'center' });
+      currentY += 6;
+
+      // Date
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(80);
+      pdf.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, pageWidth / 2, currentY, { align: 'center' });
+      currentY += 8;
+
+      // Divider line
+      pdf.setDrawColor(180);
+      pdf.line(margin, currentY, pageWidth - margin, currentY);
       currentY += 10;
 
+      // === EQUIPMENT DETAILS SECTION WITH IMAGE ===
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(50, 50, 50);
+      pdf.text('Equipment Details', margin, currentY);
+      currentY += 8;
+
+      // Calculate layout - if image exists, put it on the right
+      const hasImage = !!rideImageDataUrl;
+      const imageX = pageWidth - 45;
+      const imageY = currentY;
+      const imageW = 30;
+      const imageH = 22;
+
       pdf.setFontSize(10);
-      activeTemplate.daily_check_template_items.forEach((item) => {
-        const isChecked = checkedItems[item.id];
-        const status = isChecked ? '✓ PASS' : '✗ FAIL';
-        const note = notes[item.id] || '';
-        
-        pdf.text(`${status} - ${item.check_item_text}`, margin, currentY);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0);
+
+      const leftCol = margin;
+      const labelWidth = 32;
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Name:', leftCol, currentY);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(ride.ride_name, leftCol + labelWidth, currentY);
+      currentY += 6;
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Category:', leftCol, currentY);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(ride.ride_categories?.name || '-', leftCol + labelWidth, currentY);
+      currentY += 6;
+
+      if (ride.manufacturer) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Manufacturer:', leftCol, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(ride.manufacturer, leftCol + labelWidth, currentY);
         currentY += 6;
-        
-        if (note) {
-          pdf.text(`    Note: ${note}`, margin, currentY);
-          currentY += 6;
+      }
+      if (ride.serial_number) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Serial No:', leftCol, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(ride.serial_number, leftCol + labelWidth, currentY);
+        currentY += 6;
+      }
+      if (ride.year_manufactured) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Year:', leftCol, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(ride.year_manufactured.toString(), leftCol + labelWidth, currentY);
+        currentY += 6;
+      }
+      if (ride.owner_name) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Owner:', leftCol, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(ride.owner_name, leftCol + labelWidth, currentY);
+        currentY += 6;
+      }
+
+      // Add ride image on the right side if available
+      if (rideImageDataUrl) {
+        try {
+          pdf.addImage(rideImageDataUrl, 'JPEG', imageX, imageY, imageW, imageH);
+          currentY = Math.max(currentY, imageY + imageH + 5);
+        } catch (e) {
+          console.log('Could not add ride image to PDF');
         }
-        
+      }
+
+      currentY += 5;
+
+      // === INSPECTION DETAILS SECTION ===
+      pdf.setDrawColor(200);
+      pdf.line(margin, currentY, pageWidth - margin, currentY);
+      currentY += 8;
+
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(50, 50, 50);
+      pdf.text('Inspection Details', margin, currentY);
+      currentY += 8;
+
+      pdf.setFontSize(10);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0);
+
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Inspector:', leftCol, currentY);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(inspectorName || '-', leftCol + labelWidth, currentY);
+      currentY += 6;
+
+      if (weatherConditions) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Weather:', leftCol, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(weatherConditions, leftCol + labelWidth, currentY);
+        currentY += 6;
+      }
+
+      if (complianceOfficer) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Compliance Officer:', leftCol, currentY);
+        pdf.setFont('helvetica', 'normal');
+        pdf.text(complianceOfficer, leftCol + labelWidth + 10, currentY);
+        currentY += 6;
+      }
+
+      // Calculate pass/fail summary
+      const totalItems = activeTemplate.daily_check_template_items.length;
+      const passedItems = Object.values(checkedItems).filter(Boolean).length;
+      const failedItems = totalItems - passedItems;
+      const allPassed = failedItems === 0;
+
+      currentY += 4;
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Result:', leftCol, currentY);
+      pdf.setFont('helvetica', 'normal');
+      if (allPassed) {
+        pdf.setTextColor(34, 139, 34); // Green
+        pdf.text('ALL CHECKS PASSED', leftCol + labelWidth, currentY);
+      } else {
+        pdf.setTextColor(220, 53, 69); // Red
+        pdf.text(`${failedItems} ITEM(S) FAILED`, leftCol + labelWidth, currentY);
+      }
+      pdf.setTextColor(0);
+      currentY += 10;
+
+      // === CHECK ITEMS TABLE ===
+      pdf.setDrawColor(200);
+      pdf.line(margin, currentY, pageWidth - margin, currentY);
+      currentY += 8;
+
+      pdf.setFontSize(11);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(50, 50, 50);
+      pdf.text('Check Items', margin, currentY);
+      currentY += 8;
+
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0);
+
+      activeTemplate.daily_check_template_items
+        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+        .forEach((item, index) => {
+          const isChecked = checkedItems[item.id];
+          const itemNote = notes[item.id] || '';
+
+          // Check for page overflow
+          if (currentY > 250) {
+            pdf.addPage();
+            currentY = margin;
+          }
+
+          // Status indicator with color
+          pdf.setFont('helvetica', 'bold');
+          if (isChecked) {
+            pdf.setTextColor(34, 139, 34); // Green
+            pdf.text('✓ PASS', leftCol, currentY);
+          } else {
+            pdf.setTextColor(220, 53, 69); // Red
+            pdf.text('✗ FAIL', leftCol, currentY);
+          }
+          pdf.setTextColor(0);
+
+          // Check item text
+          pdf.setFont('helvetica', 'normal');
+          const itemText = pdf.splitTextToSize(item.check_item_text, pageWidth - margin - 55);
+          pdf.text(itemText, leftCol + 20, currentY);
+          currentY += Math.max(itemText.length * 4, 5) + 2;
+
+          // Note if present
+          if (itemNote) {
+            pdf.setFontSize(8);
+            pdf.setTextColor(100);
+            const noteText = pdf.splitTextToSize(`Note: ${itemNote}`, pageWidth - margin - 30);
+            pdf.text(noteText, leftCol + 20, currentY);
+            currentY += Math.max(noteText.length * 3.5, 4) + 2;
+            pdf.setFontSize(9);
+            pdf.setTextColor(0);
+          }
+
+          currentY += 2;
+        });
+
+      // === INSPECTOR NOTES SECTION ===
+      if (inspectorNotes || environmentNotes) {
+        currentY += 5;
+
         if (currentY > 250) {
           pdf.addPage();
           currentY = margin;
         }
-      });
 
-      // Inspector notes
-      if (inspectorNotes) {
-        currentY += 10;
-        pdf.setFontSize(12);
-        pdf.text('Inspector Notes:', margin, currentY);
+        pdf.setDrawColor(200);
+        pdf.line(margin, currentY, pageWidth - margin, currentY);
         currentY += 8;
-        pdf.setFontSize(10);
-        const splitNotes = pdf.splitTextToSize(inspectorNotes, pageWidth - 2 * margin);
-        pdf.text(splitNotes, margin, currentY);
+
+        pdf.setFontSize(11);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(50, 50, 50);
+        pdf.text('Additional Notes', margin, currentY);
+        currentY += 8;
+
+        pdf.setFontSize(9);
+        pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(0);
+
+        if (inspectorNotes) {
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Inspector Notes:', leftCol, currentY);
+          currentY += 5;
+          pdf.setFont('helvetica', 'normal');
+          const splitNotes = pdf.splitTextToSize(inspectorNotes, pageWidth - 2 * margin);
+          pdf.text(splitNotes, leftCol, currentY);
+          currentY += splitNotes.length * 4 + 5;
+        }
+
+        if (environmentNotes) {
+          pdf.setFont('helvetica', 'bold');
+          pdf.text('Environment Notes:', leftCol, currentY);
+          currentY += 5;
+          pdf.setFont('helvetica', 'normal');
+          const splitEnv = pdf.splitTextToSize(environmentNotes, pageWidth - 2 * margin);
+          pdf.text(splitEnv, leftCol, currentY);
+          currentY += splitEnv.length * 4 + 5;
+        }
       }
+
+      // Add footer to all pages
+      addFooter();
 
       return pdf.output('blob');
     } catch (error) {
