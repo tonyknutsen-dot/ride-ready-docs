@@ -291,7 +291,7 @@ export default function CheckItemSubmissions() {
 
   const getFrequencyLabel = (freq: string) => {
     switch (freq) {
-      case 'preopening': return 'Pre-Use';
+      case 'preopening': return 'Pre-Opening';
       case 'daily': return 'Daily';
       case 'monthly': return 'Monthly';
       case 'yearly': return 'Yearly';
@@ -345,7 +345,7 @@ export default function CheckItemSubmissions() {
                 </SelectTrigger>
                 <SelectContent className="bg-background border shadow-lg z-50">
                   <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="preopening">Pre-Use</SelectItem>
+                  <SelectItem value="preopening">Pre-Opening</SelectItem>
                   <SelectItem value="daily">Daily</SelectItem>
                   <SelectItem value="monthly">Monthly</SelectItem>
                   <SelectItem value="yearly">Yearly</SelectItem>
