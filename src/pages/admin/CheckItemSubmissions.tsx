@@ -13,6 +13,18 @@ import { Check, X, Search, Loader2, Sparkles, Clock, CheckCircle2, XCircle, Copy
 import { format } from 'date-fns';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 
+// Predefined check item categories (headings)
+const CHECK_CATEGORIES = [
+  "Restraints",
+  "Structure", 
+  "Control Systems",
+  "Safety Devices",
+  "Electrical",
+  "Mechanical",
+  "Hydraulic/Pneumatic",
+  "General"
+];
+
 interface Submission {
   id: string;
   user_id: string;
@@ -24,6 +36,7 @@ interface Submission {
   status: string;
   admin_notes: string | null;
   similarity_group: string | null;
+  category: string | null;
   created_at: string;
   ride_category?: {
     name: string;
@@ -47,6 +60,7 @@ export default function CheckItemSubmissions() {
     label: '',
     hint: '',
     ride_category_id: '',
+    check_category: 'General',
     risk_level: 'low',
     admin_notes: ''
   });
@@ -125,6 +139,7 @@ export default function CheckItemSubmissions() {
       label: submission.label,
       hint: submission.hint || '',
       ride_category_id: submission.is_generic ? '' : (submission.ride_category_id || ''),
+      check_category: submission.category || 'General',
       risk_level: 'low',
       admin_notes: ''
     });
@@ -155,6 +170,7 @@ export default function CheckItemSubmissions() {
           hint: approvalData.hint.trim() || null,
           frequency: freq,
           ride_category_id: approvalData.ride_category_id || null,
+          category: approvalData.check_category,
           risk_level: approvalData.risk_level,
           sort_index: newSortIndex,
           is_active: true
@@ -401,6 +417,9 @@ export default function CheckItemSubmissions() {
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
                       {getStatusBadge(submission.status)}
                       <Badge variant="secondary">{getFrequencyLabel(submission.frequency)}</Badge>
+                      {submission.category && submission.category !== 'General' && (
+                        <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">{submission.category}</Badge>
+                      )}
                       {submission.is_generic ? (
                         <Badge variant="outline">Generic</Badge>
                       ) : submission.ride_category ? (
@@ -481,6 +500,22 @@ export default function CheckItemSubmissions() {
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name} ({cat.category_group})
                     </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Check Category (heading)</Label>
+              <Select 
+                value={approvalData.check_category} 
+                onValueChange={(v) => setApprovalData(d => ({ ...d, check_category: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent className="bg-background border shadow-lg z-50">
+                  {CHECK_CATEGORIES.map(cat => (
+                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

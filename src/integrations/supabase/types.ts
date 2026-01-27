@@ -326,6 +326,7 @@ export type Database = {
       }
       check_library_items: {
         Row: {
+          category: string | null
           created_at: string
           frequency: Database["public"]["Enums"]["check_frequency"]
           hint: string | null
@@ -337,6 +338,7 @@ export type Database = {
           sort_index: number
         }
         Insert: {
+          category?: string | null
           created_at?: string
           frequency: Database["public"]["Enums"]["check_frequency"]
           hint?: string | null
@@ -348,6 +350,7 @@ export type Database = {
           sort_index?: number
         }
         Update: {
+          category?: string | null
           created_at?: string
           frequency?: Database["public"]["Enums"]["check_frequency"]
           hint?: string | null
@@ -1769,6 +1772,7 @@ export type Database = {
       user_submitted_check_items: {
         Row: {
           admin_notes: string | null
+          category: string | null
           created_at: string
           frequency: string
           hint: string | null
@@ -1784,6 +1788,7 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string | null
+          category?: string | null
           created_at?: string
           frequency: string
           hint?: string | null
@@ -1799,6 +1804,7 @@ export type Database = {
         }
         Update: {
           admin_notes?: string | null
+          category?: string | null
           created_at?: string
           frequency?: string
           hint?: string | null

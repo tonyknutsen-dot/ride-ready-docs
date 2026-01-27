@@ -6,8 +6,19 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Predefined categories for check items
+const CATEGORIES = [
+  "Restraints",
+  "Structure", 
+  "Control Systems",
+  "Safety Devices",
+  "Electrical",
+  "Mechanical",
+  "Hydraulic/Pneumatic",
+  "General"
+];
+
 Deno.serve(async (req) => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -28,7 +39,6 @@ Deno.serve(async (req) => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Verify the user is an admin
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
@@ -54,10 +64,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Fetch all pending submissions
+    // Fetch all pending submissions without a similarity group
     const { data: submissions, error: fetchError } = await supabase
       .from("user_submitted_check_items")
-      .select("id, label, frequency, ride_category_id")
+      .select("id, label, frequency, ride_category_id, category")
       .eq("status", "pending")
       .is("similarity_group", null);
 
@@ -70,27 +80,33 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Processing ${submissions.length} submissions for similarity grouping`);
+    console.log(`Processing ${submissions.length} submissions for similarity grouping and categorization`);
 
-    // If we don't have Lovable API key, use simple text similarity
+    // Fetch existing library items to learn from
+    const { data: existingItems } = await supabase
+      .from("check_library_items")
+      .select("label, category, ride_category_id")
+      .eq("is_active", true);
+
+    const existingExamples = existingItems?.slice(0, 50).map(i => 
+      `"${i.label}" -> ${i.category || 'General'}`
+    ).join("\n") || "";
+
     if (!lovableApiKey) {
       console.log("No LOVABLE_API_KEY, using simple text matching");
       
-      // Simple grouping by normalized text
+      // Simple grouping fallback
       const groups: Map<string, string[]> = new Map();
       
       for (const sub of submissions) {
-        // Normalize: lowercase, remove extra spaces, remove punctuation
         const normalized = sub.label
           .toLowerCase()
           .replace(/[^\w\s]/g, "")
           .replace(/\s+/g, " ")
           .trim();
         
-        // Find existing group with similar text
         let foundGroup: string | null = null;
         for (const [key, ids] of groups) {
-          // Check Levenshtein distance or simple includes
           if (key.includes(normalized) || normalized.includes(key) || 
               levenshteinSimilarity(key, normalized) > 0.7) {
             foundGroup = key;
@@ -105,7 +121,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // Update submissions with group IDs
       let groupCount = 0;
       for (const [, ids] of groups) {
         if (ids.length > 1) {
@@ -121,7 +136,7 @@ Deno.serve(async (req) => {
       }
 
       return new Response(JSON.stringify({ 
-        message: `Grouped ${groupCount} sets of similar items`,
+        message: `Grouped ${groupCount} sets of similar items (no AI)`,
         groups: groupCount
       }), {
         status: 200,
@@ -129,20 +144,34 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Use AI for smarter grouping
-    const prompt = `You are analyzing check items submitted by users for safety inspection templates.
-Group these items by semantic similarity - items that mean the same thing should be in the same group.
+    // Use Lovable AI for smart grouping AND categorization
+    const prompt = `You are analyzing safety check items submitted by fairground operators.
 
-Items to analyze:
+TASK 1: Group semantically similar items (items that mean the same thing).
+TASK 2: Assign each item to the most appropriate category.
+
+CATEGORIES (choose one for each item):
+${CATEGORIES.map(c => `- ${c}`).join("\n")}
+
+LEARN FROM EXISTING ITEMS:
+${existingExamples}
+
+ITEMS TO ANALYZE:
 ${submissions.map((s, i) => `${i + 1}. "${s.label}" (freq: ${s.frequency})`).join("\n")}
 
-Respond with a JSON array of groups, where each group contains the item numbers (1-indexed) that are similar:
-Example: [[1, 5, 8], [2, 3], [4, 6, 7]]
+Respond with JSON only:
+{
+  "groups": [[1, 5, 8], [2, 3]], // Arrays of item numbers that are similar
+  "categories": {"1": "Restraints", "2": "Electrical", "3": "Electrical"} // Item number to category
+}
 
-Only group items that are truly similar in meaning. Single items don't need a group.
-Only output the JSON array, nothing else.`;
+Rules:
+- Only group items that are truly similar in meaning
+- Single items don't need a group
+- Every item needs a category assignment
+- Learn from the existing examples to categorize consistently`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/chat/completions", {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${lovableApiKey}`,
@@ -156,34 +185,33 @@ Only output the JSON array, nothing else.`;
     });
 
     if (!response.ok) {
-      console.error("AI API error:", await response.text());
-      throw new Error("Failed to call AI API");
+      const errorText = await response.text();
+      console.error("Lovable AI error:", response.status, errorText);
+      throw new Error("Failed to call Lovable AI");
     }
 
     const aiResult = await response.json();
-    const content = aiResult.choices?.[0]?.message?.content || "[]";
+    const content = aiResult.choices?.[0]?.message?.content || "{}";
     
-    // Parse the response
-    let groups: number[][] = [];
+    let parsed: { groups?: number[][], categories?: Record<string, string> } = {};
     try {
-      // Extract JSON from response (in case there's extra text)
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
-        groups = JSON.parse(jsonMatch[0]);
+        parsed = JSON.parse(jsonMatch[0]);
       }
     } catch (e) {
       console.error("Failed to parse AI response:", content);
-      groups = [];
     }
 
     // Apply groupings
     let groupCount = 0;
+    const groups = parsed.groups || [];
     for (const group of groups) {
       if (group.length > 1) {
         groupCount++;
         const groupId = crypto.randomUUID();
         for (const idx of group) {
-          const submission = submissions[idx - 1]; // 1-indexed
+          const submission = submissions[idx - 1];
           if (submission) {
             await supabase
               .from("user_submitted_check_items")
@@ -194,11 +222,26 @@ Only output the JSON array, nothing else.`;
       }
     }
 
-    console.log(`Created ${groupCount} similarity groups`);
+    // Apply categories
+    const categories = parsed.categories || {};
+    let categorizedCount = 0;
+    for (const [idx, category] of Object.entries(categories)) {
+      const submission = submissions[parseInt(idx) - 1];
+      if (submission && CATEGORIES.includes(category)) {
+        await supabase
+          .from("user_submitted_check_items")
+          .update({ category })
+          .eq("id", submission.id);
+        categorizedCount++;
+      }
+    }
+
+    console.log(`Created ${groupCount} similarity groups, categorized ${categorizedCount} items`);
 
     return new Response(JSON.stringify({ 
-      message: `AI grouped ${groupCount} sets of similar items`,
-      groups: groupCount
+      message: `AI grouped ${groupCount} sets, categorized ${categorizedCount} items`,
+      groups: groupCount,
+      categorized: categorizedCount
     }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
