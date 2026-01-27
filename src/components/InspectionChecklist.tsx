@@ -1352,54 +1352,96 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
               </p>
             </div>
 
-            {/* Progress */}
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>Progress</span>
-                <span>{Math.round(getProgress())}% complete</span>
+            {/* Progress - Enhanced for mobile */}
+            <div className="space-y-3 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border-2 border-primary/20">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
+                    <span className="text-sm font-bold text-primary">{Math.round(getProgress())}%</span>
+                  </div>
+                  <div>
+                    <span className="font-medium text-sm">Progress</span>
+                    <p className="text-xs text-muted-foreground">
+                      {Object.values(checkedItems).filter(Boolean).length} of {activeTemplate.daily_check_template_items.length} items
+                    </p>
+                  </div>
+                </div>
+                {getProgress() === 100 && (
+                  <Badge className="bg-success text-success-foreground">
+                    <CheckCircle className="h-3 w-3 mr-1" />
+                    Ready
+                  </Badge>
+                )}
               </div>
-              <Progress value={getProgress()} className="w-full" />
+              <Progress value={getProgress()} className="h-3" />
             </div>
 
-            {/* Check Items */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="font-semibold">Inspection Items</h4>
+            {/* Check Items - Enhanced for touch */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between gap-3 sticky top-0 z-10 bg-background py-2 -mx-1 px-1">
+                <h4 className="font-semibold text-base">Inspection Items</h4>
                 <DefectReportDialog 
                   rideId={ride.id} 
                   rideName={ride.ride_name}
                   onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
                 />
               </div>
-            {activeTemplate.daily_check_template_items
+              {activeTemplate.daily_check_template_items
                 .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                .map((item) => (
-                  <Card key={item.id} className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex items-start space-x-3">
-                        <Checkbox
-                          id={item.id}
-                          checked={checkedItems[item.id] || false}
-                          onCheckedChange={(checked) => 
-                            handleCheckChange(item.id, checked as boolean)
-                          }
-                        />
-                        <div className="flex-1">
-                          <Label htmlFor={item.id} className="text-sm font-medium">
+                .map((item, index) => (
+                  <Card 
+                    key={item.id} 
+                    className={`transition-all duration-200 ${
+                      checkedItems[item.id] 
+                        ? 'bg-success/5 border-success/30' 
+                        : 'hover:border-primary/30'
+                    }`}
+                  >
+                    <div className="p-4 space-y-3">
+                      {/* Main checkbox row - large touch target */}
+                      <label 
+                        htmlFor={item.id}
+                        className="flex items-start gap-4 cursor-pointer min-h-[44px]"
+                      >
+                        <div className="pt-0.5">
+                          <Checkbox
+                            id={item.id}
+                            checked={checkedItems[item.id] || false}
+                            onCheckedChange={(checked) => 
+                              handleCheckChange(item.id, checked as boolean)
+                            }
+                            className="h-6 w-6 rounded-md border-2"
+                          />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <span className={`text-sm font-medium leading-relaxed block ${
+                            checkedItems[item.id] ? 'text-muted-foreground line-through' : ''
+                          }`}>
                             {item.check_item_text}
-                          </Label>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            Category: {item.category}
+                          </span>
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+                              {item.category}
+                            </Badge>
+                            <span className="text-[10px] text-muted-foreground">
+                              #{index + 1}
+                            </span>
                           </div>
                         </div>
+                      </label>
+                      
+                      {/* Collapsible notes - only show input if has notes or item is checked */}
+                      <div className={`transition-all duration-200 ${
+                        notes[item.id] || checkedItems[item.id] ? 'opacity-100' : 'opacity-70'
+                      }`}>
+                        <Textarea
+                          placeholder="Add notes (optional)"
+                          value={notes[item.id] || ''}
+                          onChange={(e) => handleNoteChange(item.id, e.target.value)}
+                          className="min-h-[60px] text-sm resize-none"
+                          rows={2}
+                        />
                       </div>
-                      <Textarea
-                        placeholder="Add notes for this item (optional)"
-                        value={notes[item.id] || ''}
-                        onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                        className="mt-2"
-                        rows={2}
-                      />
                     </div>
                   </Card>
                 ))}
@@ -1429,37 +1471,60 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
             <Button
               onClick={handleSubmitChecks} 
-              disabled={submitting}
-              className="w-full"
+              disabled={submitting || !inspectorName.trim()}
+              size="lg"
+              className="w-full h-14 text-base font-semibold shadow-lg"
             >
-              {submitting ? 'Submitting...' : `Complete ${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Inspection`}
+              {submitting ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-5 w-5 mr-2" />
+                  Complete {frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check
+                </>
+              )}
             </Button>
+            {!inspectorName.trim() && (
+              <p className="text-xs text-center text-muted-foreground">
+                Enter your name in "Checked By" to submit
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Recent Checks */}
+      {/* Recent Checks - Compact mobile-friendly */}
       {recentChecks.length > 0 && (
-        <Card>
-          <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-              <Clock className="h-5 w-5" />
-              <span>Recent {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Checks</span>
+        <Card className="border-muted">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              Recent {frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1)} Checks
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
+          <CardContent className="pt-0">
+            <div className="divide-y divide-border">
               {recentChecks.map((check) => (
-                <div key={check.id} className="flex justify-between items-center p-3 border rounded-lg">
-                  <div>
-                    <div className="font-medium">{check.inspector_name}</div>
-                    <div className="text-sm text-muted-foreground">
-                      {new Date(check.check_date).toLocaleDateString('en-GB')}
-                    </div>
+                <div key={check.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-sm truncate">{check.inspector_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(check.check_date).toLocaleDateString('en-GB', { 
+                        day: 'numeric', 
+                        month: 'short',
+                        year: 'numeric'
+                      })}
+                    </p>
                   </div>
-                  <Badge variant={check.status === 'completed' ? 'default' : 'secondary'}>
+                  <Badge 
+                    variant={check.status === 'completed' ? 'default' : 'secondary'}
+                    className="text-xs shrink-0 ml-2"
+                  >
                     <CheckCircle className="h-3 w-3 mr-1" />
-                    {check.status}
+                    Done
                   </Badge>
                 </div>
               ))}

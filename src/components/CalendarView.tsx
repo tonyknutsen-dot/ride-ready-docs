@@ -536,43 +536,43 @@ const CalendarView = () => {
         </Card>
       )}
 
-      {/* Color Legend */}
+      {/* Color Legend - Compact mobile-friendly grid */}
       <Card className="border border-border/50">
         <CardContent className="py-3 px-4">
-          <div className="flex flex-wrap items-center gap-4 text-sm">
-            <span className="font-medium text-muted-foreground">Legend:</span>
+          <div className="grid grid-cols-2 sm:flex sm:flex-wrap sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm">
+            <span className="font-medium text-muted-foreground col-span-2 sm:col-span-1">Legend:</span>
             <div className="flex items-center gap-1.5">
-              <div className="w-3 h-3 rounded-full bg-destructive shadow-sm" />
-              <span>Document Expiry</span>
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-destructive shadow-sm shrink-0" />
+              <span className="truncate">Doc Expiry</span>
             </div>
             <div className={cn("flex items-center gap-1.5", isBasicPlan && "opacity-50")}>
-              <div className="w-3 h-3 rounded-full bg-primary shadow-sm" />
-              <span>Inspections</span>
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-primary shadow-sm shrink-0" />
+              <span className="truncate">Inspections</span>
               {isBasicPlan && (
-                <span className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium">Upgrade</span>
+                <span className="text-[8px] sm:text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium shrink-0">Pro</span>
               )}
             </div>
             <div className={cn("flex items-center gap-1.5", isBasicPlan && "opacity-50")}>
-              <div className="w-3 h-3 rounded-full bg-accent shadow-sm" />
-              <span>Maintenance</span>
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-accent shadow-sm shrink-0" />
+              <span className="truncate">Maintenance</span>
               {isBasicPlan && (
-                <span className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium">Upgrade</span>
+                <span className="text-[8px] sm:text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium shrink-0">Pro</span>
               )}
             </div>
             <div className={cn("flex items-center gap-1.5", isBasicPlan && "opacity-50")}>
-              <div className="w-3 h-3 rounded-full bg-info shadow-sm" />
-              <span>NDT Tests</span>
+              <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-info shadow-sm shrink-0" />
+              <span className="truncate">NDT</span>
               {isBasicPlan && (
-                <span className="text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium">Upgrade</span>
+                <span className="text-[8px] sm:text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium shrink-0">Pro</span>
               )}
             </div>
-            <div className="flex items-center gap-2 ml-auto">
-              <Clock className="h-3.5 w-3.5 text-amber-600" />
-              <span>Pending</span>
+            <div className="flex items-center gap-1.5 sm:ml-auto">
+              <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-600 shrink-0" />
+              <span className="truncate">Pending</span>
             </div>
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-3.5 w-3.5 text-destructive" />
-              <span>Overdue</span>
+            <div className="flex items-center gap-1.5">
+              <AlertTriangle className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-destructive shrink-0" />
+              <span className="truncate">Overdue</span>
             </div>
           </div>
         </CardContent>
@@ -986,33 +986,32 @@ const CalendarView = () => {
         </Card>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 lg:gap-6 lg:grid-cols-3">
         {/* Calendar */}
         <Card className="lg:col-span-2 border-2 border-primary/20 shadow-elegant">
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="p-3 sm:p-4 md:p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <h3 className="font-semibold text-lg flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-base sm:text-lg flex items-center gap-2">
+                <CalendarIcon className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 Your Events
               </h3>
-              <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/50 border border-border">
-                <Filter className="h-4 w-4 text-primary" />
-                <select 
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  className="text-sm border-0 bg-transparent focus:outline-none focus:ring-0 font-medium"
-                >
-                  <option value="all">All Events</option>
+              <Select value={filterType} onValueChange={setFilterType}>
+                <SelectTrigger className="w-full sm:w-[180px] h-9 text-sm">
+                  <Filter className="h-3.5 w-3.5 mr-2 text-primary shrink-0" />
+                  <SelectValue placeholder="Filter events" />
+                </SelectTrigger>
+                <SelectContent className="bg-popover z-50">
+                  <SelectItem value="all">All Events</SelectItem>
                   {!isBasicPlan && (
                     <>
-                      <option value="inspection">Inspections</option>
-                      <option value="maintenance">Maintenance</option>
-                      <option value="ndt">NDT Tests</option>
+                      <SelectItem value="inspection">Inspections</SelectItem>
+                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                      <SelectItem value="ndt">NDT Tests</SelectItem>
                     </>
                   )}
-                  <option value="document_expiry">Document Expiry</option>
-                </select>
-              </div>
+                  <SelectItem value="document_expiry">Document Expiry</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             
             <Calendar
@@ -1032,7 +1031,7 @@ const CalendarView = () => {
               }}
               month={currentMonth}
               onMonthChange={setCurrentMonth}
-              className="rounded-lg border-2 border-border bg-card [&_.rdp-day]:cursor-pointer [&_.rdp-day:hover]:bg-primary/10"
+              className="rounded-lg border-2 border-border bg-card w-full [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-day]:cursor-pointer [&_.rdp-day]:h-10 [&_.rdp-day]:sm:h-12 [&_.rdp-cell]:p-0.5 [&_.rdp-day:hover]:bg-primary/10 [&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-muted-foreground"
               components={{
                 DayContent: ({ date }) => {
                   const dayEvents = getEventsForDate(date);
@@ -1042,14 +1041,14 @@ const CalendarView = () => {
                   const hasNDT = dayEvents.some(e => e.type === 'ndt');
                   
                   return (
-                    <div className="relative w-full h-full flex flex-col items-center justify-center">
-                      <span>{date.getDate()}</span>
+                    <div className="relative w-full h-full flex flex-col items-center justify-center py-1">
+                      <span className="text-sm sm:text-base">{date.getDate()}</span>
                       {dayEvents.length > 0 && (
-                        <div className="flex gap-0.5 mt-0.5">
-                          {hasInspection && <div className="w-1.5 h-1.5 rounded-full bg-primary shadow-sm" />}
-                          {hasMaintenance && <div className="w-1.5 h-1.5 rounded-full bg-accent shadow-sm" />}
-                          {hasDocExpiry && <div className="w-1.5 h-1.5 rounded-full bg-destructive shadow-sm" />}
-                          {hasNDT && <div className="w-1.5 h-1.5 rounded-full bg-info shadow-sm" />}
+                        <div className="flex gap-0.5 mt-0.5 absolute bottom-1">
+                          {hasInspection && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-primary" />}
+                          {hasMaintenance && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-accent" />}
+                          {hasDocExpiry && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-destructive" />}
+                          {hasNDT && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-info" />}
                         </div>
                       )}
                     </div>
@@ -1094,65 +1093,77 @@ const CalendarView = () => {
         </Card>
 
         {/* Events for Selected Date */}
-        <Card className="border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-transparent shadow-elegant">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
+        <Card className="border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-transparent shadow-elegant lg:max-h-[600px] lg:overflow-y-auto">
+          <CardHeader className="pb-3 sticky top-0 bg-card z-10 border-b border-border/50">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
                 <CalendarIcon className="h-4 w-4 text-accent-foreground" />
               </div>
-              {format(selectedDate, 'MMMM d, yyyy')}
+              <span className="truncate">{format(selectedDate, 'MMM d, yyyy')}</span>
             </CardTitle>
-            <CardDescription>
-              {selectedDateEvents.length} event(s) scheduled
+            <CardDescription className="text-xs sm:text-sm">
+              {selectedDateEvents.length === 0 
+                ? 'No events - tap to add' 
+                : `${selectedDateEvents.length} event${selectedDateEvents.length > 1 ? 's' : ''}`}
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-4">
             {selectedDateEvents.length === 0 ? (
               <div className="text-center py-6 text-muted-foreground">
-                <div className="w-14 h-14 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-4">
-                  <CalendarIcon className="h-7 w-7 opacity-50" />
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-secondary/50 flex items-center justify-center mx-auto mb-3">
+                  <CalendarIcon className="h-6 w-6 sm:h-7 sm:w-7 opacity-50" />
                 </div>
-                <p className="font-medium mb-1">No events scheduled</p>
-                <p className="text-sm mb-4">Add an inspection for this date</p>
+                <p className="font-medium text-sm mb-1">No events</p>
+                <p className="text-xs mb-4">Tap to add an event</p>
                 <Button 
                   size="sm" 
                   onClick={() => openQuickAdd(selectedDate)}
-                  className="gap-2"
+                  className="gap-2 h-10 min-w-[120px]"
                 >
                   <Plus className="h-4 w-4" />
                   Add Event
                 </Button>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {selectedDateEvents.map((event) => (
-                  <div 
+                  <button 
                     key={event.id} 
                     onClick={() => handleEventClick(event)}
-                    className="p-2 md:p-3 rounded-lg border bg-card-hover hover:bg-accent/50 transition-smooth cursor-pointer"
+                    className="w-full p-3 rounded-lg border bg-card hover:bg-accent/30 active:bg-accent/50 transition-colors text-left min-h-[56px]"
                   >
-                    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                    <div className="flex items-start gap-3">
+                      {/* Status indicator */}
+                      <div className={cn(
+                        "w-2 h-2 rounded-full mt-1.5 shrink-0",
+                        event.type === 'inspection' && 'bg-primary',
+                        event.type === 'maintenance' && 'bg-accent',
+                        event.type === 'document_expiry' && 'bg-destructive',
+                        event.type === 'ndt' && 'bg-info'
+                      )} />
+                      
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5 mb-1">
+                        <div className="flex items-center gap-1.5 mb-0.5">
                           {getStatusIcon(event.status)}
-                          <p className="font-medium text-xs md:text-sm break-words">
-                            {event.title}
+                          <p className="font-medium text-sm truncate">
+                            {event.title.split(' - ').pop()}
                           </p>
                         </div>
                         {event.rideName && (
-                          <p className="text-xs text-muted-foreground break-words">
+                          <p className="text-xs text-muted-foreground truncate">
                             {event.rideName}
                           </p>
                         )}
                       </div>
+                      
                       <Badge 
                         variant="outline" 
-                        className={cn("text-xs shrink-0 self-start", getEventTypeColor(event.type))}
+                        className={cn("text-[10px] px-1.5 shrink-0", getEventTypeColor(event.type))}
                       >
-                        {event.type.replace('_', ' ')}
+                        {event.type === 'document_expiry' ? 'Expiry' : event.type.replace('_', ' ')}
                       </Badge>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             )}
