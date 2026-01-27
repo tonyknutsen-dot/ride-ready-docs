@@ -30,7 +30,7 @@ const getDocumentTypes = (isUK: boolean) => [
   { id: 'inservice_inspection', name: 'In-Service Inspection Report', description: 'Regular in-service inspection reports' },
   { id: 'insurance', name: '🛡️ Insurance Documents', description: '💼 Liability, employers, equipment insurance - Usually Global Documents', suggestGlobal: true },
   { id: 'method_statement', name: 'Method Statement', description: 'Work method statements and procedures' },
-  { id: 'ndt_inspection', name: 'NDT Inspection Report', description: 'Non-destructive testing reports' },
+  { id: 'ndt_report', name: 'NDT Report', description: 'Non-destructive testing inspection reports' },
   { id: 'ndt_schedule', name: 'NDT Schedule', description: 'Non-destructive testing schedules' },
   { id: 'operator_manual', name: 'Operator Manual', description: 'Operating manuals and instructions' },
   { id: 'other', name: 'Other Documents', description: 'Other document types' },

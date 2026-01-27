@@ -408,6 +408,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     if (t === 'risk_assessment' || t.includes('risk')) return "Risk Assessment (RA)";
     if (t === 'method_statement' || t.includes('method')) return "Method Statement";
     if (t === 'maintenance_report') return "Maintenance Report";
+    if (t === 'ndt_schedule') return "🔬 NDT Schedule";
+    if (t === 'ndt_report' || t === 'ndt_inspection') return "🔬 NDT Report";
     if (t.includes('insur')) return "Insurance";
     if (t.includes('cert')) return "Certificate";
     if (t === 'photo' || t.includes('photo')) return "Device Photo";
@@ -443,7 +445,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   };
 
   const groupByType = (docs: Document[]) => {
-    const ORDER = ["📜 DOC Certificate", "✅ Safety Check Records", "Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Device Photo", "Other"];
+    const ORDER = ["📜 DOC Certificate", "✅ Safety Check Records", "🔬 NDT Schedule", "🔬 NDT Report", "Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Device Photo", "Other"];
     const groups: Record<string, DocumentGroup[]> = {};
     
     // When isGlobal is true, we're showing ONLY global docs - don't separate them
