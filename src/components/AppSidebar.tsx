@@ -41,6 +41,7 @@ import { useStaff } from '@/contexts/StaffContext';
 import { useToast } from '@/hooks/use-toast';
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
+import { OfflineSyncIndicator } from '@/components/OfflineSyncIndicator';
 import logoIcon from '@/assets/logo-icon.png';
 
 const mainNavItems = [
@@ -290,6 +291,9 @@ export function AppSidebar() {
         </SidebarContent>
 
         <SidebarFooter className="p-3 space-y-2">
+          {/* Offline Sync Status */}
+          <OfflineSyncIndicator compact={collapsed} />
+          
           {/* Contact Support */}
           <Button
             variant="outline"

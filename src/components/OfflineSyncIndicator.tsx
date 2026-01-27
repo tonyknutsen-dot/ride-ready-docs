@@ -9,7 +9,11 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-export function OfflineSyncIndicator() {
+interface OfflineSyncIndicatorProps {
+  compact?: boolean;
+}
+
+export function OfflineSyncIndicator({ compact = false }: OfflineSyncIndicatorProps) {
   const { isOnline, isSyncing, pendingCount, syncAll } = useOfflineSync();
 
   if (isOnline && pendingCount === 0) {
@@ -17,9 +21,9 @@ export function OfflineSyncIndicator() {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-1.5 text-success px-2 py-1 rounded-md bg-success/10">
+            <div className={`flex items-center gap-1.5 text-success px-2 py-1 rounded-md bg-success/10 ${compact ? 'justify-center' : ''}`}>
               <CheckCircle2 className="h-4 w-4" />
-              <span className="text-xs font-medium hidden sm:inline">Synced</span>
+              {!compact && <span className="text-xs font-medium">Synced</span>}
             </div>
           </TooltipTrigger>
           <TooltipContent>
@@ -35,9 +39,9 @@ export function OfflineSyncIndicator() {
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className="flex items-center gap-1.5 text-warning px-2 py-1 rounded-md bg-warning/10">
+            <div className={`flex items-center gap-1.5 text-warning px-2 py-1 rounded-md bg-warning/10 ${compact ? 'justify-center' : ''}`}>
               <CloudOff className="h-4 w-4" />
-              <span className="text-xs font-medium">Offline</span>
+              {!compact && <span className="text-xs font-medium">Offline</span>}
               {pendingCount > 0 && (
                 <Badge variant="secondary" className="h-5 px-1.5 text-xs">
                   {pendingCount}
@@ -63,16 +67,18 @@ export function OfflineSyncIndicator() {
             size="sm"
             onClick={syncAll}
             disabled={isSyncing}
-            className="flex items-center gap-1.5 text-info px-2 py-1 h-auto"
+            className={`flex items-center gap-1.5 text-info px-2 py-1 h-auto w-full ${compact ? 'justify-center' : 'justify-start'}`}
           >
             {isSyncing ? (
               <RefreshCw className="h-4 w-4 animate-spin" />
             ) : (
               <Cloud className="h-4 w-4" />
             )}
-            <span className="text-xs font-medium hidden sm:inline">
-              {isSyncing ? 'Syncing...' : 'Sync'}
-            </span>
+            {!compact && (
+              <span className="text-xs font-medium">
+                {isSyncing ? 'Syncing...' : 'Sync'}
+              </span>
+            )}
             <Badge variant="secondary" className="h-5 px-1.5 text-xs">
               {pendingCount}
             </Badge>
