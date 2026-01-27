@@ -1364,6 +1364,7 @@ export type Database = {
           created_at: string
           current_period_end: string | null
           custom_terminology: Json | null
+          date_format: string | null
           enable_document_versioning: boolean
           extra_items_count: number | null
           id: string
@@ -1378,6 +1379,7 @@ export type Database = {
           subscription_status: string | null
           suspended_at: string | null
           suspended_reason: string | null
+          timezone: string | null
           trial_ends_at: string | null
           trial_started_at: string | null
           updated_at: string
@@ -1394,6 +1396,7 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           custom_terminology?: Json | null
+          date_format?: string | null
           enable_document_versioning?: boolean
           extra_items_count?: number | null
           id?: string
@@ -1408,6 +1411,7 @@ export type Database = {
           subscription_status?: string | null
           suspended_at?: string | null
           suspended_reason?: string | null
+          timezone?: string | null
           trial_ends_at?: string | null
           trial_started_at?: string | null
           updated_at?: string
@@ -1424,6 +1428,7 @@ export type Database = {
           created_at?: string
           current_period_end?: string | null
           custom_terminology?: Json | null
+          date_format?: string | null
           enable_document_versioning?: boolean
           extra_items_count?: number | null
           id?: string
@@ -1438,6 +1443,7 @@ export type Database = {
           subscription_status?: string | null
           suspended_at?: string | null
           suspended_reason?: string | null
+          timezone?: string | null
           trial_ends_at?: string | null
           trial_started_at?: string | null
           updated_at?: string

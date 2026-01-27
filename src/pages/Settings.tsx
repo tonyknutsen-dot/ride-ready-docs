@@ -6,8 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Settings as SettingsIcon, User, FileText, Globe, ArrowRight, Mail, ArrowLeft, Info, Bug } from 'lucide-react';
+import { Settings as SettingsIcon, User, FileText, Globe, ArrowRight, Mail, ArrowLeft, Info, Bug, Calendar } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DateTimeSettings, COUNTRY_TIMEZONES, COUNTRY_DATE_FORMATS } from '@/components/DateTimeSettings';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,6 +41,9 @@ const Settings = () => {
   const [showCountryDialog, setShowCountryDialog] = useState(false);
   const [customTerminology, setCustomTerminology] = useState<CustomTerminology | null>(null);
   const [savingTerminology, setSavingTerminology] = useState(false);
+  const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
+  const [timezone, setTimezone] = useState('Europe/London');
+  const [savingDateTime, setSavingDateTime] = useState(false);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -55,6 +59,8 @@ const Settings = () => {
       setProfile(data);
       setCountry(data.country || 'GB');
       setCustomTerminology(data.custom_terminology as CustomTerminology | null);
+      setDateFormat(data.date_format || COUNTRY_DATE_FORMATS[data.country || 'GB'] || 'DD/MM/YYYY');
+      setTimezone(data.timezone || COUNTRY_TIMEZONES[data.country || 'GB'] || 'Europe/London');
     }
     setLoading(false);
   };
@@ -124,6 +130,56 @@ const Settings = () => {
       });
     }
     setSavingTerminology(false);
+  };
+
+  const handleDateFormatChange = async (newFormat: string) => {
+    if (!user) return;
+    
+    setSavingDateTime(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ date_format: newFormat })
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update date format",
+        variant: "destructive",
+      });
+    } else {
+      setDateFormat(newFormat);
+      toast({
+        title: "Date format updated",
+        description: `Dates will now display as ${newFormat}`,
+      });
+    }
+    setSavingDateTime(false);
+  };
+
+  const handleTimezoneChange = async (newTimezone: string) => {
+    if (!user) return;
+    
+    setSavingDateTime(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ timezone: newTimezone })
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update timezone",
+        variant: "destructive",
+      });
+    } else {
+      setTimezone(newTimezone);
+      toast({
+        title: "Timezone updated",
+        description: "Your timezone preference has been saved",
+      });
+    }
+    setSavingDateTime(false);
   };
 
   useEffect(() => {
@@ -343,7 +399,38 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Account Card */}
+        {/* Date & Time Settings Card */}
+        <Card className="border-2 border-warning/30 bg-gradient-to-br from-warning/5 to-transparent shadow-elegant">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-warning" />
+              </div>
+              <CardTitle className="text-base">Date & Time</CardTitle>
+            </div>
+            <CardDescription className="text-sm">
+              Set your preferred date format and timezone
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="space-y-4">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            ) : (
+              <DateTimeSettings
+                dateFormat={dateFormat}
+                timezone={timezone}
+                country={country}
+                onDateFormatChange={handleDateFormatChange}
+                onTimezoneChange={handleTimezoneChange}
+                disabled={savingDateTime}
+              />
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="border-2 border-success/30 bg-gradient-to-br from-success/5 to-transparent shadow-elegant">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
