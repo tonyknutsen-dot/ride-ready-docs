@@ -10,7 +10,7 @@ const PrivacyPolicy = () => {
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-6 max-w-4xl">
           <h1 className="text-4xl font-bold mb-6">Privacy Policy</h1>
-          <p className="text-muted-foreground mb-8">Last updated: {new Date().toLocaleDateString()}</p>
+          <p className="text-muted-foreground mb-8">Last updated: {new Date().toLocaleDateString('en-GB')}</p>
 
           <Card className="mb-8 border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
             <CardContent className="pt-6 space-y-6">

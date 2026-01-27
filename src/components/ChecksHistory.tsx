@@ -257,7 +257,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       // Header
       doc.setFontSize(14);
       doc.setFont('helvetica', 'bold');
-      doc.text(`Safety Check - ${format(parseISO(check.check_date), 'PPP')}`, margin, currentY);
+      doc.text(`Safety Check - ${format(parseISO(check.check_date), 'd MMM yyyy')}`, margin, currentY);
       currentY += 10;
       
       doc.setDrawColor(180);
@@ -269,7 +269,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       doc.setFont('helvetica', 'normal');
       
       const details = [
-        ['Date:', format(parseISO(check.check_date), 'PPP')],
+        ['Date:', format(parseISO(check.check_date), 'd MMM yyyy')],
         ['Checked By:', check.inspector_name],
         ['Frequency:', check.check_frequency],
         ['Status:', check.status.toUpperCase()],
@@ -545,7 +545,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customStartDate ? format(customStartDate, "PPP") : "Pick start date"}
+                      {customStartDate ? format(customStartDate, "d MMM yyyy") : "Pick start date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-popover z-50" align="start">
@@ -575,7 +575,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customEndDate ? format(customEndDate, "PPP") : "Pick end date"}
+                      {customEndDate ? format(customEndDate, "d MMM yyyy") : "Pick end date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-popover z-50" align="start">

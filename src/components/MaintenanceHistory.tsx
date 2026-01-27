@@ -470,7 +470,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                     </div>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-muted-foreground">
-                      <div><span className="font-medium">Date:</span> {format(parseISO(record.maintenance_date), 'PPP')}</div>
+                      <div><span className="font-medium">Date:</span> {format(parseISO(record.maintenance_date), 'd MMM yyyy')}</div>
                       <div><span className="font-medium">Performed by:</span> {record.performed_by}</div>
                       {record.cost && (
                         <div><span className="font-medium">Cost:</span> £{record.cost}</div>

@@ -794,7 +794,7 @@ const CalendarView = () => {
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
-                          {formData.due_date ? format(formData.due_date, "PPP") : "Select due date"}
+                          {formData.due_date ? format(formData.due_date, "d MMM yyyy") : "Select due date"}
                         </Button>
                       </PopoverTrigger>
                       <PopoverContent className="w-auto p-0 bg-popover z-50" align="start">

@@ -411,7 +411,7 @@ const NDTScheduleManager = ({ ride }: NDTScheduleManagerProps) => {
                       <Calendar className="h-4 w-4" />
                       <span>
                         {schedule.next_inspection_due 
-                          ? format(new Date(schedule.next_inspection_due), 'PPP')
+                          ? format(new Date(schedule.next_inspection_due), 'd MMM yyyy')
                           : 'Not scheduled'
                         }
                       </span>

@@ -308,7 +308,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.due_date ? format(formData.due_date, "PPP") : "Select due date"}
+                      {formData.due_date ? format(formData.due_date, "d MMM yyyy") : "Select due date"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
@@ -385,7 +385,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
                     </div>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p><span className="font-medium">Type:</span> {INSPECTION_TYPES.find(t => t.value === schedule.inspection_type)?.label || schedule.inspection_type}</p>
-                      <p><span className="font-medium">Due Date:</span> {format(new Date(schedule.due_date), 'PPP')}</p>
+                      <p><span className="font-medium">Due Date:</span> {format(new Date(schedule.due_date), 'd MMM yyyy')}</p>
                       <p><span className="font-medium">Advance Notice:</span> {schedule.advance_notice_days} days</p>
                       {schedule.notes && (
                         <p><span className="font-medium">Notes:</span> {schedule.notes}</p>
