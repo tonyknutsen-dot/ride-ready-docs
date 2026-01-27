@@ -1103,6 +1103,7 @@ export type Database = {
           component_tested: string
           created_at: string
           defects_found: string | null
+          document_id: string | null
           id: string
           inspection_company: string | null
           inspection_date: string
@@ -1121,6 +1122,7 @@ export type Database = {
           component_tested: string
           created_at?: string
           defects_found?: string | null
+          document_id?: string | null
           id?: string
           inspection_company?: string | null
           inspection_date: string
@@ -1139,6 +1141,7 @@ export type Database = {
           component_tested?: string
           created_at?: string
           defects_found?: string | null
+          document_id?: string | null
           id?: string
           inspection_company?: string | null
           inspection_date?: string
@@ -1153,6 +1156,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "ndt_reports_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "ndt_reports_ndt_schedule_id_fkey"
             columns: ["ndt_schedule_id"]
@@ -1181,6 +1191,7 @@ export type Database = {
           next_inspection_due: string | null
           notes: string | null
           ride_id: string
+          schedule_document_id: string | null
           schedule_name: string
           updated_at: string
           user_id: string
@@ -1196,6 +1207,7 @@ export type Database = {
           next_inspection_due?: string | null
           notes?: string | null
           ride_id: string
+          schedule_document_id?: string | null
           schedule_name: string
           updated_at?: string
           user_id: string
@@ -1211,6 +1223,7 @@ export type Database = {
           next_inspection_due?: string | null
           notes?: string | null
           ride_id?: string
+          schedule_document_id?: string | null
           schedule_name?: string
           updated_at?: string
           user_id?: string
@@ -1221,6 +1234,13 @@ export type Database = {
             columns: ["ride_id"]
             isOneToOne: false
             referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ndt_schedules_schedule_document_id_fkey"
+            columns: ["schedule_document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
             referencedColumns: ["id"]
           },
         ]
