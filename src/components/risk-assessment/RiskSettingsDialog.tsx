@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Settings2, Info, RotateCcw, Scale } from 'lucide-react';
+import { Settings2, Info, RotateCcw, Scale, AlertTriangle } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -17,6 +17,8 @@ const DEFAULT_SETTINGS: RiskSettings = {
   additionalActionsReduction: 15,
 };
 
+const MAX_COMBINED_REDUCTION = 50;
+
 interface RiskSettingsDialogProps {
   settings: RiskSettings;
   onSave: (settings: RiskSettings) => void;
@@ -27,6 +29,9 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
   const [open, setOpen] = useState(false);
   const [localSettings, setLocalSettings] = useState<RiskSettings>(settings);
 
+  const combinedTotal = localSettings.existingControlsReduction + localSettings.additionalActionsReduction;
+  const isOverLimit = combinedTotal > MAX_COMBINED_REDUCTION;
+
   const handleOpen = (isOpen: boolean) => {
     if (isOpen) {
       setLocalSettings(settings);
@@ -34,14 +39,43 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
     setOpen(isOpen);
   };
 
+  const handleExistingControlsChange = (value: number) => {
+    // Cap to ensure combined doesn't exceed max
+    const maxAllowed = MAX_COMBINED_REDUCTION - localSettings.additionalActionsReduction;
+    const cappedValue = Math.min(value, maxAllowed);
+    setLocalSettings(s => ({ ...s, existingControlsReduction: cappedValue }));
+  };
+
+  const handleAdditionalActionsChange = (value: number) => {
+    // Cap to ensure combined doesn't exceed max
+    const maxAllowed = MAX_COMBINED_REDUCTION - localSettings.existingControlsReduction;
+    const cappedValue = Math.min(value, maxAllowed);
+    setLocalSettings(s => ({ ...s, additionalActionsReduction: cappedValue }));
+  };
+
   const handleSave = () => {
-    onSave(localSettings);
+    // Final validation - cap values if somehow over limit
+    const finalSettings = {
+      existingControlsReduction: Math.min(localSettings.existingControlsReduction, MAX_COMBINED_REDUCTION - 5),
+      additionalActionsReduction: Math.min(localSettings.additionalActionsReduction, MAX_COMBINED_REDUCTION - 5),
+    };
+    
+    // Ensure combined doesn't exceed max
+    if (finalSettings.existingControlsReduction + finalSettings.additionalActionsReduction > MAX_COMBINED_REDUCTION) {
+      finalSettings.additionalActionsReduction = MAX_COMBINED_REDUCTION - finalSettings.existingControlsReduction;
+    }
+    
+    onSave(finalSettings);
     setOpen(false);
   };
 
   const handleReset = () => {
     setLocalSettings(DEFAULT_SETTINGS);
   };
+
+  // Calculate dynamic max for each slider
+  const maxExistingControls = Math.min(40, MAX_COMBINED_REDUCTION - 5); // Min 5% for additional
+  const maxAdditionalActions = Math.min(35, MAX_COMBINED_REDUCTION - localSettings.existingControlsReduction);
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
@@ -68,8 +102,7 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
             <Info className="h-4 w-4 text-info shrink-0" />
             <AlertDescription className="text-xs leading-relaxed">
               These percentages determine how much existing controls and additional actions 
-              reduce the inherent risk score. Adjust based on your organisation's risk appetite 
-              and control effectiveness standards.
+              reduce the inherent risk score. Combined total is capped at {MAX_COMBINED_REDUCTION}%.
             </AlertDescription>
           </Alert>
 
@@ -93,15 +126,15 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
             </div>
             <Slider
               value={[localSettings.existingControlsReduction]}
-              onValueChange={([value]) => setLocalSettings(s => ({ ...s, existingControlsReduction: value }))}
+              onValueChange={([value]) => handleExistingControlsChange(value)}
               min={5}
-              max={40}
+              max={maxExistingControls}
               step={5}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>5%</span>
-              <span>40%</span>
+              <span>{maxExistingControls}%</span>
             </div>
           </div>
 
@@ -125,22 +158,32 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
             </div>
             <Slider
               value={[localSettings.additionalActionsReduction]}
-              onValueChange={([value]) => setLocalSettings(s => ({ ...s, additionalActionsReduction: value }))}
+              onValueChange={([value]) => handleAdditionalActionsChange(value)}
               min={5}
-              max={35}
+              max={maxAdditionalActions}
               step={5}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>5%</span>
-              <span>35%</span>
+              <span>{maxAdditionalActions}%</span>
             </div>
           </div>
 
-          {/* Max Reduction Info */}
-          <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
-            <p><strong>Combined:</strong> {Math.min(localSettings.existingControlsReduction + localSettings.additionalActionsReduction, 50)}% (max 50%)</p>
-            <p className="mt-1">Risk can never be reduced by more than 50% through controls alone.</p>
+          {/* Combined Total Display */}
+          <div className={`text-xs rounded-lg p-3 ${
+            combinedTotal === MAX_COMBINED_REDUCTION 
+              ? 'bg-primary/10 border border-primary/30 text-primary' 
+              : 'bg-muted/50 text-muted-foreground'
+          }`}>
+            <p className="font-medium">
+              Combined: {combinedTotal}% / {MAX_COMBINED_REDUCTION}% max
+            </p>
+            <p className="mt-1 text-muted-foreground">
+              {combinedTotal === MAX_COMBINED_REDUCTION 
+                ? 'Maximum reduction reached. Adjust one slider to increase the other.'
+                : 'Risk can never be reduced by more than 50% through controls alone.'}
+            </p>
           </div>
 
           {/* Professional Disclaimer */}
@@ -149,8 +192,8 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
               <Scale className="h-4 w-4 shrink-0 mt-0.5 text-warning" />
               <div>
                 <strong className="text-foreground">Your Professional Judgement:</strong>{' '}
-                These default values are suggestions only. You must determine appropriate reduction percentages 
-                based on your organisation's specific control effectiveness, risk appetite, and industry standards. 
+                These values are suggestions only. You must determine appropriate reduction percentages 
+                based on your organisation's control effectiveness and risk appetite. 
                 The operators of this application accept no liability for values selected.
               </div>
             </div>
