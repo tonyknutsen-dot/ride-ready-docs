@@ -459,7 +459,7 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
                                         <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
                                           <li>• Total records: <strong className="text-foreground">{linkedChecksInfo[template.id].count}</strong></li>
                                           <li>• Date range: <strong className="text-foreground">
-                                            {new Date(linkedChecksInfo[template.id].earliest!).toLocaleDateString()} — {new Date(linkedChecksInfo[template.id].latest!).toLocaleDateString()}
+                                            {new Date(linkedChecksInfo[template.id].earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo[template.id].latest!).toLocaleDateString('en-GB')}
                                           </strong></li>
                                         </ul>
                                         <span className="block mt-2 text-xs text-muted-foreground">
@@ -503,7 +503,7 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
                                       <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
                                         <li>• Total records: <strong className="text-foreground">{linkedChecksInfo[template.id].count}</strong></li>
                                         <li>• Date range: <strong className="text-foreground">
-                                          {new Date(linkedChecksInfo[template.id].earliest!).toLocaleDateString()} — {new Date(linkedChecksInfo[template.id].latest!).toLocaleDateString()}
+                                          {new Date(linkedChecksInfo[template.id].earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo[template.id].latest!).toLocaleDateString('en-GB')}
                                         </strong></li>
                                       </ul>
                                       <span className="block mt-2 text-xs text-destructive">
@@ -533,7 +533,7 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
                 </div>
                 <CardDescription>
                   {template.daily_check_template_items.length} check items • 
-                  Created {new Date(template.created_at).toLocaleDateString()}
+                  Created {new Date(template.created_at).toLocaleDateString('en-GB')}
                 </CardDescription>
               </CardHeader>
               <CardContent>
