@@ -83,7 +83,7 @@ const handler = async (req: Request): Promise<Response> => {
       : generateBulkHTMLReport(checks);
 
     const subject = checks.length === 1
-      ? `Daily Safety Check Report - ${checks[0].rides.ride_name} - ${new Date(checks[0].check_date).toLocaleDateString()}`
+      ? `Daily Safety Check Report - ${checks[0].rides.ride_name} - ${new Date(checks[0].check_date).toLocaleDateString('en-GB')}`
       : `Daily Safety Check Reports - ${checks.length} Reports`;
 
     // Send email with the report
