@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, Plus, Trash2, GripVertical, Save, Library, Info } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, GripVertical, Save, Library, Info, Pencil, Check, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -75,6 +75,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const [selectedItems, setSelectedItems] = useState<BuilderItem[]>([]);
   const [customItemText, setCustomItemText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editText, setEditText] = useState('');
 
   useEffect(() => {
     if (template) {
@@ -150,6 +152,24 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     setSelectedItems(items);
   };
 
+  const handleStartEdit = (index: number) => {
+    setEditingIndex(index);
+    setEditText(selectedItems[index].check_item_text);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingIndex === null || !editText.trim()) return;
+    setSelectedItems(prev => prev.map((item, i) => 
+      i === editingIndex ? { ...item, check_item_text: editText.trim() } : item
+    ));
+    setEditingIndex(null);
+    setEditText('');
+  };
+
+  const handleCancelEdit = () => {
+    setEditingIndex(null);
+    setEditText('');
+  };
   const handleSaveTemplate = async () => {
     if (!templateName.trim()) {
       toast({
@@ -382,7 +402,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                       size="sm"
                       variant="ghost"
                       onClick={() => handleMoveItem(index, 'up')}
-                      disabled={index === 0}
+                      disabled={index === 0 || editingIndex !== null}
                       className="h-5 w-5 p-0"
                     >
                       ↑
@@ -391,26 +411,61 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                       size="sm"
                       variant="ghost"
                       onClick={() => handleMoveItem(index, 'down')}
-                      disabled={index === selectedItems.length - 1}
+                      disabled={index === selectedItems.length - 1 || editingIndex !== null}
                       className="h-5 w-5 p-0"
                     >
                       ↓
                     </Button>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm truncate">{item.check_item_text}</p>
-                    <Badge variant="outline" className="text-xs mt-1">
-                      {item.category === 'custom' ? 'Custom' : item.category === 'library' ? 'Library' : item.category}
-                    </Badge>
+                    {editingIndex === index ? (
+                      <div className="flex gap-2 items-center">
+                        <Input
+                          value={editText}
+                          onChange={(e) => setEditText(e.target.value)}
+                          className="flex-1 h-8 text-sm"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') handleSaveEdit();
+                            if (e.key === 'Escape') handleCancelEdit();
+                          }}
+                        />
+                        <Button size="sm" variant="ghost" onClick={handleSaveEdit} className="h-7 w-7 p-0 text-green-600">
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={handleCancelEdit} className="h-7 w-7 p-0 text-muted-foreground">
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm truncate">{item.check_item_text}</p>
+                        <Badge variant="outline" className="text-xs mt-1">
+                          {item.category === 'custom' ? 'Custom' : item.category === 'library' ? 'Library' : item.category}
+                        </Badge>
+                      </>
+                    )}
                   </div>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => handleRemoveItem(index)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
+                  {editingIndex !== index && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleStartEdit(index)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRemoveItem(index)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
