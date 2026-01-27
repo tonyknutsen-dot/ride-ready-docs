@@ -92,7 +92,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     }
   }, [template]);
 
-  const handleAddCustomItem = () => {
+  const handleAddCustomItem = async () => {
     if (!customItemText.trim()) {
       toast({
         title: "Missing information",
@@ -111,6 +111,23 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     };
 
     setSelectedItems(prev => [...prev, newItem]);
+    
+    // Submit to user_submitted_check_items for admin review (fire and forget)
+    if (user?.id) {
+      supabase
+        .from('user_submitted_check_items')
+        .insert({
+          user_id: user.id,
+          label: customItemText.trim(),
+          frequency: frequency,
+          ride_category_id: ride.category_id,
+          is_generic: false, // Default to ride-specific
+        })
+        .then(({ error }) => {
+          if (error) console.log('Failed to submit for review:', error);
+        });
+    }
+    
     setCustomItemText('');
     toast({
       title: "Item added",

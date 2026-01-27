@@ -51,6 +51,7 @@ const UserManagement = lazy(() => import("./pages/admin/UserManagement"));
 const SupportMessages = lazy(() => import("./pages/admin/SupportMessages"));
 const SecurityDashboard = lazy(() => import("./pages/admin/SecurityDashboard"));
 const BugReports = lazy(() => import("./pages/admin/BugReports"));
+const CheckItemSubmissions = lazy(() => import("./pages/admin/CheckItemSubmissions"));
 const RiskAssessments = lazy(() => import("./pages/RiskAssessments"));
 const GlobalDocumentsPage = lazy(() => import("./pages/GlobalDocumentsPage"));
 const Documents = lazy(() => import("./pages/Documents"));
@@ -381,6 +382,18 @@ const App = () => (
                     <AdminRoute>
                       <AppLayout>
                         <BugReports />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/check-items" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <CheckItemSubmissions />
                       </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>
