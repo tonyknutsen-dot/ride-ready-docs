@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive } from 'lucide-react';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
@@ -51,6 +51,8 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const [environmentNotes, setEnvironmentNotes] = useState('');
   const [complianceOfficer, setComplianceOfficer] = useState('');
   const [signatureData, setSignatureData] = useState('');
+  const [location, setLocation] = useState('');
+  const [gettingLocation, setGettingLocation] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
@@ -134,6 +136,77 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     const totalItems = activeTemplate.daily_check_template_items.length;
     const checkedCount = Object.values(checkedItems).filter(Boolean).length;
     return totalItems > 0 ? (checkedCount / totalItems) * 100 : 0;
+  };
+
+  const getGPSLocation = async () => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "GPS not available",
+        description: "Your device doesn't support GPS location",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setGettingLocation(true);
+    
+    try {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+      
+      // Try to get address using reverse geocoding (free service)
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
+          { headers: { 'Accept-Language': 'en' } }
+        );
+        const data = await response.json();
+        
+        if (data.display_name) {
+          // Extract a shorter, cleaner address
+          const parts = [];
+          if (data.address?.road) parts.push(data.address.road);
+          if (data.address?.village || data.address?.town || data.address?.city) {
+            parts.push(data.address.village || data.address.town || data.address.city);
+          }
+          if (data.address?.county) parts.push(data.address.county);
+          if (data.address?.postcode) parts.push(data.address.postcode);
+          
+          const shortAddress = parts.length > 0 ? parts.join(', ') : data.display_name;
+          setLocation(shortAddress);
+          toast({
+            title: "Location detected",
+            description: shortAddress,
+          });
+        } else {
+          // Fallback to coordinates
+          setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        }
+      } catch {
+        // Fallback to coordinates if geocoding fails
+        setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+      }
+    } catch (error: any) {
+      let message = "Could not get your location";
+      if (error.code === 1) message = "Location access denied. Please enable GPS permissions.";
+      if (error.code === 2) message = "Location unavailable. Try again.";
+      if (error.code === 3) message = "Location request timed out.";
+      
+      toast({
+        title: "GPS Error",
+        description: message,
+        variant: "destructive"
+      });
+    } finally {
+      setGettingLocation(false);
+    }
   };
 
   const generatePDFBlob = async (): Promise<Blob | null> => {
@@ -365,6 +438,17 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         currentY += 6;
       }
 
+      // Location if available
+      const checkLocation = location;
+      if (checkLocation) {
+        pdf.setFont('helvetica', 'bold');
+        pdf.text('Location:', leftCol, currentY);
+        pdf.setFont('helvetica', 'normal');
+        const locationText = pdf.splitTextToSize(checkLocation, pageWidth - margin - labelWidth - 25);
+        pdf.text(locationText, leftCol + labelWidth, currentY);
+        currentY += Math.max(locationText.length * 4, 6);
+      }
+
       if (complianceOfficer) {
         pdf.setFont('helvetica', 'bold');
         pdf.text('Compliance Officer:', leftCol, currentY);
@@ -581,7 +665,8 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
           weather_conditions: weatherConditions.trim() || null,
           environment_notes: environmentNotes.trim() || null,
           compliance_officer: complianceOfficer.trim() || null,
-          signature_data: signatureData.trim() || null
+          signature_data: signatureData.trim() || null,
+          location: location.trim() || null
         })
         .select()
         .single();
@@ -648,6 +733,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       setEnvironmentNotes('');
       setComplianceOfficer('');
       setSignatureData('');
+      setLocation('');
 
       // Reload recent checks
       await loadRecentChecks();
@@ -937,6 +1023,40 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                   placeholder="e.g. Sunny, 20°C, Light wind"
                 />
               </div>
+            </div>
+
+            {/* Location Field with GPS */}
+            <div className="space-y-2">
+              <Label htmlFor="location" className="flex items-center gap-2">
+                <MapPin className="h-4 w-4" />
+                Location
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="location"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="Enter location or use GPS"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={getGPSLocation}
+                  disabled={gettingLocation}
+                  title="Get GPS location"
+                >
+                  {gettingLocation ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Locate className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Tap the GPS button to auto-detect your location, or type it manually
+              </p>
             </div>
 
             {/* Progress */}
