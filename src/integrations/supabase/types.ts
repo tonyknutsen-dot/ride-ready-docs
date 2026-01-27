@@ -423,6 +423,7 @@ export type Database = {
           id: string
           inspector_name: string
           is_test_data: boolean
+          location: string | null
           notes: string | null
           ride_id: string
           signature_data: string | null
@@ -440,6 +441,7 @@ export type Database = {
           id?: string
           inspector_name: string
           is_test_data?: boolean
+          location?: string | null
           notes?: string | null
           ride_id: string
           signature_data?: string | null
@@ -457,6 +459,7 @@ export type Database = {
           id?: string
           inspector_name?: string
           is_test_data?: boolean
+          location?: string | null
           notes?: string | null
           ride_id?: string
           signature_data?: string | null

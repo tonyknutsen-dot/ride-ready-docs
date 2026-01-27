@@ -20,9 +20,11 @@ import {
   TrendingUp,
   CheckCircle2,
   XCircle,
-  MinusCircle
+  MinusCircle,
+  MapPin,
+  Cloud
 } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, subDays, parseISO } from 'date-fns';
+import { format, startOfMonth, endOfMonth, startOfYear, subDays, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -64,7 +66,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const [searchTerm, setSearchTerm] = useState('');
   const [frequencyFilter, setFrequencyFilter] = useState<'all' | 'daily' | 'monthly' | 'yearly'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'passed' | 'failed' | 'partial'>('all');
-  const [dateRange, setDateRange] = useState<'7' | '30' | '90' | 'custom'>('30');
+  const [dateRange, setDateRange] = useState<'7' | '30' | '90' | 'thisMonth' | 'thisYear' | 'custom'>('30');
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
   const [customEndDate, setCustomEndDate] = useState<Date | undefined>();
   const [currentPage, setCurrentPage] = useState(1);
@@ -90,6 +92,12 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
     if (dateRange === 'custom' && customStartDate && customEndDate) {
       startDate = customStartDate;
       endDate = customEndDate;
+    } else if (dateRange === 'thisMonth') {
+      startDate = startOfMonth(today);
+      endDate = endOfMonth(today);
+    } else if (dateRange === 'thisYear') {
+      startDate = startOfYear(today);
+      endDate = today;
     } else {
       const days = parseInt(dateRange);
       startDate = subDays(today, days);
@@ -207,54 +215,148 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
     return <Badge variant={variant}>{label}</Badge>;
   };
 
-  const exportToPDF = () => {
+  const exportToPDF = async () => {
     const doc = new jsPDF();
-    
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margin = 20;
+
+    // Helper function to add footer
+    const addFooter = (pageNum: number, totalPages: number) => {
+      doc.setFontSize(8);
+      doc.setTextColor(128);
+      doc.text('tarmacbuddy.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
+      doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
+      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, pageHeight - 10, { align: 'left' });
+      doc.setTextColor(0);
+    };
+
+    // Cover page
     doc.setFontSize(18);
-    doc.text(`Checks History - ${rideName}`, 14, 20);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Safety Checks Report`, pageWidth / 2, 40, { align: 'center' });
+    
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'normal');
+    doc.text(rideName, pageWidth / 2, 52, { align: 'center' });
     
     doc.setFontSize(11);
-    doc.text(`Generated: ${format(new Date(), 'PPP')}`, 14, 30);
-    doc.text(`Period: ${getDateRange().startDate} to ${getDateRange().endDate}`, 14, 37);
-    
-    const tableData = filteredChecks.map(check => [
-      format(parseISO(check.check_date), 'PP'),
-      check.check_frequency,
-      check.inspector_name,
-      check.status,
-      check.notes || '-'
-    ]);
+    doc.setTextColor(80);
+    doc.text(`Period: ${getDateRange().startDate} to ${getDateRange().endDate}`, pageWidth / 2, 65, { align: 'center' });
+    doc.text(`Total Checks: ${filteredChecks.length}`, pageWidth / 2, 75, { align: 'center' });
+    doc.text(`Pass Rate: ${overallStats.passRate}%`, pageWidth / 2, 85, { align: 'center' });
+    doc.setTextColor(0);
 
-    (doc as any).autoTable({
-      startY: 45,
-      head: [['Date', 'Frequency', 'Inspector', 'Status', 'Notes']],
-      body: tableData,
-      theme: 'grid',
-      styles: { fontSize: 9 },
-      headStyles: { fillColor: [59, 130, 246] }
-    });
+    // Each check on its own page
+    for (let i = 0; i < filteredChecks.length; i++) {
+      const check = filteredChecks[i];
+      doc.addPage();
+      
+      let currentY = margin;
+      
+      // Header
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`Safety Check - ${format(parseISO(check.check_date), 'PPP')}`, margin, currentY);
+      currentY += 10;
+      
+      doc.setDrawColor(180);
+      doc.line(margin, currentY, pageWidth - margin, currentY);
+      currentY += 10;
+      
+      // Details
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      
+      const details = [
+        ['Date:', format(parseISO(check.check_date), 'PPP')],
+        ['Inspector:', check.inspector_name],
+        ['Frequency:', check.check_frequency],
+        ['Status:', check.status.toUpperCase()],
+      ];
+      
+      if ((check as any).weather_conditions) {
+        details.push(['Weather:', (check as any).weather_conditions]);
+      }
+      if ((check as any).location) {
+        details.push(['Location:', (check as any).location]);
+      }
+      if (check.notes) {
+        details.push(['Notes:', check.notes]);
+      }
+      
+      details.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(label, margin, currentY);
+        doc.setFont('helvetica', 'normal');
+        const valueText = doc.splitTextToSize(value, pageWidth - margin - 50);
+        doc.text(valueText, margin + 35, currentY);
+        currentY += Math.max(valueText.length * 5, 7);
+      });
+      
+      currentY += 5;
+      
+      // Check results if available
+      if (check.check_results && check.check_results.length > 0) {
+        doc.setDrawColor(200);
+        doc.line(margin, currentY, pageWidth - margin, currentY);
+        currentY += 8;
+        
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Check Items', margin, currentY);
+        currentY += 8;
+        
+        const passed = check.check_results.filter(r => r.is_checked).length;
+        const total = check.check_results.length;
+        
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`${passed} of ${total} items passed`, margin, currentY);
+        currentY += 8;
+        
+        // Status indicator
+        if (passed === total) {
+          doc.setTextColor(34, 139, 34);
+          doc.text('✓ ALL CHECKS PASSED', margin, currentY);
+        } else {
+          doc.setTextColor(220, 53, 69);
+          doc.text(`✗ ${total - passed} ITEM(S) REQUIRE ATTENTION`, margin, currentY);
+        }
+        doc.setTextColor(0);
+      }
+    }
 
-    doc.save(`checks-history-${rideName}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    // Add footers to all pages
+    const totalPages = doc.getNumberOfPages();
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      addFooter(i, totalPages);
+    }
+
+    doc.save(`checks-report-${rideName}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
 
     toast({
       title: "Export Complete",
-      description: "Checks history exported to PDF",
+      description: `Professional report with ${filteredChecks.length} checks exported`,
     });
   };
 
   const exportToCSV = () => {
-    const headers = ['Date', 'Frequency', 'Inspector', 'Status', 'Notes'];
+    const headers = ['Date', 'Frequency', 'Inspector', 'Status', 'Weather', 'Location', 'Notes'];
     const rows = filteredChecks.map(check => [
       format(parseISO(check.check_date), 'yyyy-MM-dd'),
       check.check_frequency,
       check.inspector_name,
       check.status,
+      (check as any).weather_conditions || '',
+      (check as any).location || '',
       check.notes || ''
     ]);
 
     const csvContent = [
       headers.join(','),
-      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -420,6 +522,8 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
                   <SelectItem value="7">Last 7 Days</SelectItem>
                   <SelectItem value="30">Last 30 Days</SelectItem>
                   <SelectItem value="90">Last 90 Days</SelectItem>
+                  <SelectItem value="thisMonth">This Month</SelectItem>
+                  <SelectItem value="thisYear">This Year</SelectItem>
                   <SelectItem value="custom">Custom Range</SelectItem>
                 </SelectContent>
               </Select>
@@ -544,13 +648,26 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <User className="h-3 w-3" />
                               <span>{check.inspector_name}</span>
-                              {check.notes && (
+                              {(check as any).weather_conditions && (
                                 <>
                                   <span>•</span>
-                                  <span className="italic">{check.notes.substring(0, 50)}{check.notes.length > 50 ? '...' : ''}</span>
+                                  <Cloud className="h-3 w-3" />
+                                  <span>{(check as any).weather_conditions}</span>
+                                </>
+                              )}
+                              {(check as any).location && (
+                                <>
+                                  <span>•</span>
+                                  <MapPin className="h-3 w-3" />
+                                  <span className="truncate max-w-[200px]">{(check as any).location}</span>
                                 </>
                               )}
                             </div>
+                            {check.notes && (
+                              <p className="text-xs text-muted-foreground italic mt-1">
+                                {check.notes.substring(0, 80)}{check.notes.length > 80 ? '...' : ''}
+                              </p>
+                            )}
                           </div>
                         </div>
                         {getStatusBadge(check.status)}
