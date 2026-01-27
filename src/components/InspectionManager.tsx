@@ -10,6 +10,7 @@ import InspectionChecklist from './InspectionChecklist';
 import NDTScheduleManager from './NDTScheduleManager';
 import InspectionScheduleManager from './InspectionScheduleManager';
 import ChecksHistory from './ChecksHistory';
+import EquipmentTimelineReport from './EquipmentTimelineReport';
 
 interface InspectionManagerProps {
   ride: Ride;
@@ -207,10 +208,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         </TabsContent>
 
         <TabsContent value="reports">
-          <div className="text-center text-muted-foreground p-8">
-            <CalendarDays className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>Historical reports and compliance documentation coming soon</p>
-          </div>
+          <EquipmentTimelineReport ride={ride} />
         </TabsContent>
       </Tabs>
     </div>
