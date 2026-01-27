@@ -1,10 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { FileText, Download, Trash2, Calendar, AlertTriangle, Eye, Link2, History, ChevronDown, Globe } from 'lucide-react';
+import { FileText, Download, Trash2, Calendar, AlertTriangle, Eye, Link2, History, ChevronDown, Globe, Send, Filter } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +12,8 @@ import { Tables } from '@/integrations/supabase/types';
 import ImageViewer from './ImageViewer';
 import PDFViewer from './PDFViewer';
 import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
+import { SendCheckRecordsDialog } from './SendCheckRecordsDialog';
+import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters, isCheckRecord, filterCheckRecords } from './CheckRecordFilters';
 
 type Document = Tables<'documents'>;
 
@@ -46,6 +48,11 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     name: string;
     document: Document | null;
   }>({ type: null, url: '', name: '', document: null });
+  
+  // Check record filters and send dialog
+  const [checkRecordFilters, setCheckRecordFilters] = useState<CheckRecordFiltersState>(defaultCheckRecordFilters);
+  const [showCheckRecordFilters, setShowCheckRecordFilters] = useState(false);
+  const [sendCheckRecordsOpen, setSendCheckRecordsOpen] = useState(false);
 
   // Helper to identify image documents
   const isImageDoc = (doc: Document) => {
@@ -650,6 +657,14 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           onDownload={() => viewerState.document && handleDownload(viewerState.document)}
         />
         
+        {/* Send Check Records Dialog */}
+        <SendCheckRecordsDialog
+          isOpen={sendCheckRecordsOpen}
+          onClose={() => setSendCheckRecordsOpen(false)}
+          rideId={rideId}
+          rideName={rideName}
+        />
+        
         {/* Cleanup old versions dialog */}
         <AlertDialog open={cleanupDialogOpen} onOpenChange={setCleanupDialogOpen}>
           <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
@@ -696,53 +711,107 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         {groupedDocs.map((g, groupIdx) => {
           // Use consistent color for all document type groups
           const isGlobalSection = g.type === "🌐 Global Documents";
+          const isCheckRecordSection = g.type === "✅ Safety Check Records";
           
-          // Count total documents including versions
-          const totalDocs = g.items.reduce((sum, docGroup) => sum + 1 + docGroup.olderVersions.length, 0);
+          // Apply filters to check record sections
+          let displayItems = g.items;
+          if (isCheckRecordSection && (checkRecordFilters.dateFrom || checkRecordFilters.dateTo || checkRecordFilters.checkType !== 'all' || checkRecordFilters.searchQuery)) {
+            // Flatten, filter, then re-group
+            const allDocs = g.items.flatMap(docGroup => [docGroup.latestDoc, ...docGroup.olderVersions]);
+            const filteredDocs = filterCheckRecords(allDocs, checkRecordFilters);
+            displayItems = groupDocumentsByName(filteredDocs);
+          }
+          
+          // Count total documents including versions (for original or filtered)
+          const totalDocs = displayItems.reduce((sum, docGroup) => sum + 1 + docGroup.olderVersions.length, 0);
+          const originalTotal = g.items.reduce((sum, docGroup) => sum + 1 + docGroup.olderVersions.length, 0);
+          const isFiltered = isCheckRecordSection && totalDocs !== originalTotal;
           
           return (
             <section key={g.type} className="space-y-3">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between flex-wrap gap-2">
                 <h3 className="text-lg font-semibold flex items-center gap-2">
                   <span className={`w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center`}>
                     <FileText className="w-3.5 h-3.5 text-white" />
                   </span>
                   {g.type}
                 </h3>
-                <span className="text-xs px-3 py-1 rounded-full border font-medium bg-primary/10 text-primary border-primary/30">
-                  {totalDocs} file{totalDocs !== 1 ? "s" : ""}
-                </span>
+                <div className="flex items-center gap-2">
+                  {isCheckRecordSection && originalTotal >= 5 && (
+                    <>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => setShowCheckRecordFilters(!showCheckRecordFilters)}
+                      >
+                        <Filter className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Filter</span>
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-xs gap-1"
+                        onClick={() => setSendCheckRecordsOpen(true)}
+                      >
+                        <Send className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline">Send</span>
+                      </Button>
+                    </>
+                  )}
+                  <span className="text-xs px-3 py-1 rounded-full border font-medium bg-primary/10 text-primary border-primary/30">
+                    {isFiltered ? `${totalDocs} of ${originalTotal}` : `${totalDocs} file${totalDocs !== 1 ? "s" : ""}`}
+                  </span>
+                </div>
               </div>
-              <div className="grid grid-cols-1 gap-3">
-                {g.items.map(docGroup => (
-                  <div key={docGroup.latestDoc.id} className="space-y-2">
-                    {/* Latest version */}
-                    <DocumentRow doc={docGroup.latestDoc} hasMultipleVersions={docGroup.olderVersions.length > 0} />
-                    
-                    {/* Older versions - collapsible */}
-                    {docGroup.olderVersions.length > 0 && (
-                      <Collapsible>
-                        <CollapsibleTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground ml-2"
-                          >
-                            <History className="h-3.5 w-3.5" />
-                            <span>{docGroup.olderVersions.length} older version{docGroup.olderVersions.length !== 1 ? 's' : ''}</span>
-                            <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform group-data-[state=open]:rotate-180" />
-                          </Button>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent className="space-y-2 ml-4 mt-2 pl-2 border-l-2 border-muted">
-                          {docGroup.olderVersions.map(olderDoc => (
-                            <DocumentRow key={olderDoc.id} doc={olderDoc} isOlderVersion />
-                          ))}
-                        </CollapsibleContent>
-                      </Collapsible>
-                    )}
-                  </div>
-                ))}
-              </div>
+              
+              {/* Check record filters */}
+              {isCheckRecordSection && showCheckRecordFilters && (
+                <CheckRecordFilters
+                  filters={checkRecordFilters}
+                  onFiltersChange={setCheckRecordFilters}
+                  onClear={() => setCheckRecordFilters(defaultCheckRecordFilters)}
+                  documentCount={originalTotal}
+                  filteredCount={totalDocs}
+                />
+              )}
+              
+              {displayItems.length === 0 ? (
+                <div className="text-center py-6 text-muted-foreground text-sm">
+                  No records match your filters
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3">
+                  {displayItems.map(docGroup => (
+                    <div key={docGroup.latestDoc.id} className="space-y-2">
+                      {/* Latest version */}
+                      <DocumentRow doc={docGroup.latestDoc} hasMultipleVersions={docGroup.olderVersions.length > 0} />
+                      
+                      {/* Older versions - collapsible */}
+                      {docGroup.olderVersions.length > 0 && (
+                        <Collapsible>
+                          <CollapsibleTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground ml-2"
+                            >
+                              <History className="h-3.5 w-3.5" />
+                              <span>{docGroup.olderVersions.length} older version{docGroup.olderVersions.length !== 1 ? 's' : ''}</span>
+                              <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform group-data-[state=open]:rotate-180" />
+                            </Button>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="space-y-2 ml-4 mt-2 pl-2 border-l-2 border-muted">
+                            {docGroup.olderVersions.map(olderDoc => (
+                              <DocumentRow key={olderDoc.id} doc={olderDoc} isOlderVersion />
+                            ))}
+                          </CollapsibleContent>
+                        </Collapsible>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           );
         })}
