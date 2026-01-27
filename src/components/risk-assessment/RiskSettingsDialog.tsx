@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Settings2, Info, RotateCcw } from 'lucide-react';
+import { Settings2, Info, RotateCcw, Scale } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -142,6 +141,19 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
           <div className="text-xs text-muted-foreground bg-muted/50 rounded-lg p-3">
             <p><strong>Combined:</strong> {Math.min(localSettings.existingControlsReduction + localSettings.additionalActionsReduction, 50)}% (max 50%)</p>
             <p className="mt-1">Risk can never be reduced by more than 50% through controls alone.</p>
+          </div>
+
+          {/* Professional Disclaimer */}
+          <div className="text-xs text-muted-foreground bg-warning/10 border border-warning/30 rounded-lg p-3">
+            <div className="flex items-start gap-2">
+              <Scale className="h-4 w-4 shrink-0 mt-0.5 text-warning" />
+              <div>
+                <strong className="text-foreground">Your Professional Judgement:</strong>{' '}
+                These default values are suggestions only. You must determine appropriate reduction percentages 
+                based on your organisation's specific control effectiveness, risk appetite, and industry standards. 
+                The operators of this application accept no liability for values selected.
+              </div>
+            </div>
           </div>
         </div>
 
