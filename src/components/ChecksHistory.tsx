@@ -270,7 +270,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       
       const details = [
         ['Date:', format(parseISO(check.check_date), 'PPP')],
-        ['Inspector:', check.inspector_name],
+        ['Checked By:', check.inspector_name],
         ['Frequency:', check.check_frequency],
         ['Status:', check.status.toUpperCase()],
       ];
