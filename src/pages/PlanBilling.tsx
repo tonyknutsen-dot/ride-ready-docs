@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTester } from "@/contexts/TesterContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription, PRICING } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock, RefreshCw, X } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock, RefreshCw, X, ShieldAlert } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -18,6 +19,7 @@ import { format } from "date-fns";
 export default function PlanBilling() {
   const { user } = useAuth();
   const { isTester } = useTester();
+  const { isStaff, isOwner } = useStaff();
   const { toast } = useToast();
   const nav = useNavigate();
   const [searchParams] = useSearchParams();
@@ -26,6 +28,37 @@ export default function PlanBilling() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showReturnBanner, setShowReturnBanner] = useState(false);
   const [showStripeModal, setShowStripeModal] = useState(false);
+
+  // Block staff members from accessing billing
+  if (isStaff && !isOwner) {
+    return (
+      <div className="p-4 max-w-2xl mx-auto space-y-4 pb-20 md:pb-4">
+        <Button variant="ghost" onClick={() => nav('/overview')} className="hover:bg-primary/10">
+          <ArrowLeft className="w-4 h-4 mr-2" />Back to Overview
+        </Button>
+
+        <Card className="border-2 border-destructive/30 bg-gradient-to-br from-destructive/5 to-transparent shadow-elegant">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-destructive" />
+              Access Restricted
+            </CardTitle>
+            <CardDescription>Staff members cannot access billing settings.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert className="border-destructive/30">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle>Staff Account</AlertTitle>
+              <AlertDescription>
+                Billing and subscription management is only available to the account owner. 
+                Please contact your organisation administrator if you need to discuss billing matters.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   // Handle success/cancel from Stripe checkout
   useEffect(() => {
     const success = searchParams.get('success');
