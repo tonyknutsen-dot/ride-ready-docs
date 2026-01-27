@@ -53,6 +53,10 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const [checkRecordFilters, setCheckRecordFilters] = useState<CheckRecordFiltersState>(defaultCheckRecordFilters);
   const [showCheckRecordFilters, setShowCheckRecordFilters] = useState(false);
   const [sendCheckRecordsOpen, setSendCheckRecordsOpen] = useState(false);
+  
+  // Pagination for large sections (safety check records)
+  const [checkRecordDisplayLimit, setCheckRecordDisplayLimit] = useState(20);
+  const CHECK_RECORD_PAGE_SIZE = 20;
 
   // Helper to identify image documents
   const isImageDoc = (doc: Document) => {
@@ -769,8 +773,14 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
               {isCheckRecordSection && showCheckRecordFilters && (
                 <CheckRecordFilters
                   filters={checkRecordFilters}
-                  onFiltersChange={setCheckRecordFilters}
-                  onClear={() => setCheckRecordFilters(defaultCheckRecordFilters)}
+                  onFiltersChange={(newFilters) => {
+                    setCheckRecordFilters(newFilters);
+                    setCheckRecordDisplayLimit(CHECK_RECORD_PAGE_SIZE); // Reset pagination on filter change
+                  }}
+                  onClear={() => {
+                    setCheckRecordFilters(defaultCheckRecordFilters);
+                    setCheckRecordDisplayLimit(CHECK_RECORD_PAGE_SIZE); // Reset pagination on clear
+                  }}
                   documentCount={originalTotal}
                   filteredCount={totalDocs}
                 />
@@ -781,36 +791,67 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                   No records match your filters
                 </div>
               ) : (
-                <div className="grid grid-cols-1 gap-3">
-                  {displayItems.map(docGroup => (
-                    <div key={docGroup.latestDoc.id} className="space-y-2">
-                      {/* Latest version */}
-                      <DocumentRow doc={docGroup.latestDoc} hasMultipleVersions={docGroup.olderVersions.length > 0} />
-                      
-                      {/* Older versions - collapsible */}
-                      {docGroup.olderVersions.length > 0 && (
-                        <Collapsible>
-                          <CollapsibleTrigger asChild>
+                <>
+                  {/* Pagination for check records - only show limited items */}
+                  {(() => {
+                    const itemsToShow = isCheckRecordSection 
+                      ? displayItems.slice(0, checkRecordDisplayLimit)
+                      : displayItems;
+                    const hasMore = isCheckRecordSection && displayItems.length > checkRecordDisplayLimit;
+                    const remainingCount = displayItems.length - checkRecordDisplayLimit;
+                    
+                    return (
+                      <>
+                        <div className="grid grid-cols-1 gap-3">
+                          {itemsToShow.map(docGroup => (
+                            <div key={docGroup.latestDoc.id} className="space-y-2">
+                              {/* Latest version */}
+                              <DocumentRow doc={docGroup.latestDoc} hasMultipleVersions={docGroup.olderVersions.length > 0} />
+                              
+                              {/* Older versions - collapsible */}
+                              {docGroup.olderVersions.length > 0 && (
+                                <Collapsible>
+                                  <CollapsibleTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground ml-2"
+                                    >
+                                      <History className="h-3.5 w-3.5" />
+                                      <span>{docGroup.olderVersions.length} older version{docGroup.olderVersions.length !== 1 ? 's' : ''}</span>
+                                      <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform group-data-[state=open]:rotate-180" />
+                                    </Button>
+                                  </CollapsibleTrigger>
+                                  <CollapsibleContent className="space-y-2 ml-4 mt-2 pl-2 border-l-2 border-muted">
+                                    {docGroup.olderVersions.map(olderDoc => (
+                                      <DocumentRow key={olderDoc.id} doc={olderDoc} isOlderVersion />
+                                    ))}
+                                  </CollapsibleContent>
+                                </Collapsible>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                        
+                        {/* Load more button for check records */}
+                        {hasMore && (
+                          <div className="flex justify-center pt-4">
                             <Button
-                              variant="ghost"
+                              variant="outline"
                               size="sm"
-                              className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground ml-2"
+                              onClick={() => setCheckRecordDisplayLimit(prev => prev + CHECK_RECORD_PAGE_SIZE)}
+                              className="gap-2"
                             >
-                              <History className="h-3.5 w-3.5" />
-                              <span>{docGroup.olderVersions.length} older version{docGroup.olderVersions.length !== 1 ? 's' : ''}</span>
-                              <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform group-data-[state=open]:rotate-180" />
+                              <ChevronDown className="h-4 w-4" />
+                              Load {Math.min(remainingCount, CHECK_RECORD_PAGE_SIZE)} more
+                              <span className="text-muted-foreground">({remainingCount} remaining)</span>
                             </Button>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent className="space-y-2 ml-4 mt-2 pl-2 border-l-2 border-muted">
-                            {docGroup.olderVersions.map(olderDoc => (
-                              <DocumentRow key={olderDoc.id} doc={olderDoc} isOlderVersion />
-                            ))}
-                          </CollapsibleContent>
-                        </Collapsible>
-                      )}
-                    </div>
-                  ))}
-                </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
               )}
             </section>
           );
