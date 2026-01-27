@@ -26,49 +26,49 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
           <TabsList className="inline-flex gap-2 p-1.5 bg-muted/60 h-auto min-w-max">
             <TabsTrigger 
               value="preopening" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
+              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
             >
               <PlayCircle className="h-5 w-5" />
-              <span>Pre-Opening</span>
+              <span>Pre-Use</span>
             </TabsTrigger>
             <TabsTrigger 
               value="daily" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
+              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
             >
               <Clock className="h-5 w-5" />
               <span>Daily</span>
             </TabsTrigger>
             <TabsTrigger 
               value="monthly" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
+              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
             >
               <Calendar className="h-5 w-5" />
               <span>Monthly</span>
             </TabsTrigger>
             <TabsTrigger 
               value="yearly" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
+              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
             >
               <CalendarDays className="h-5 w-5" />
               <span>Yearly</span>
             </TabsTrigger>
             <TabsTrigger 
               value="annual" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
+              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
             >
               <Building className="h-5 w-5" />
               <span>External</span>
             </TabsTrigger>
             <TabsTrigger 
               value="ndt" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
+              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
             >
               <TestTube className="h-5 w-5" />
               <span>NDT</span>
             </TabsTrigger>
             <TabsTrigger 
               value="reports" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
+              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
             >
               <FileText className="h-5 w-5" />
               <span>Reports</span>
