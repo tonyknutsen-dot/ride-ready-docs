@@ -21,7 +21,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { cn } from '@/lib/utils';
-import logoImage from '@/assets/logo.png';
 import { useTerminology } from '@/hooks/useTerminology';
 import { WhoAtRiskSelector } from './risk-assessment/WhoAtRiskSelector';
 import { RiskEvaluationPanel, RiskSettings } from './risk-assessment/RiskEvaluationPanel';
@@ -35,6 +34,8 @@ interface RiskAssessmentManagerProps {
     ride_name: string;
     manufacturer?: string;
     year_manufactured?: number;
+    serial_number?: string;
+    owner_name?: string;
   };
 }
 
@@ -482,104 +483,229 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     }
   };
 
+  // Helper function to fetch company logo
+  const fetchCompanyLogo = async (): Promise<string | null> => {
+    if (!profile?.company_logo_path) return null;
+    try {
+      const { data: logoBlob } = await supabase.storage
+        .from('ride-documents')
+        .download(profile.company_logo_path);
+      if (logoBlob) {
+        return await new Promise<string>((resolve) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.readAsDataURL(logoBlob);
+        });
+      }
+    } catch (e) {
+      console.log('Could not load company logo');
+    }
+    return null;
+  };
+
+  // Helper function to fetch ride image with proper aspect ratio
+  const fetchRideImage = async (): Promise<{ dataUrl: string; aspectRatio: number } | null> => {
+    try {
+      const { data: rideImage } = await supabase
+        .from('documents')
+        .select('file_path')
+        .eq('ride_id', ride.id)
+        .like('mime_type', 'image/%')
+        .limit(1)
+        .maybeSingle();
+
+      if (rideImage) {
+        const { data: imageBlob } = await supabase.storage
+          .from('ride-documents')
+          .download(rideImage.file_path);
+        if (imageBlob) {
+          const dataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(imageBlob);
+          });
+          
+          // Get natural aspect ratio
+          const img = new Image();
+          img.src = dataUrl;
+          await new Promise((resolve) => { img.onload = resolve; });
+          const aspectRatio = img.naturalWidth / img.naturalHeight;
+          
+          return { dataUrl, aspectRatio };
+        }
+      }
+    } catch (e) {
+      console.log('Could not load ride image');
+    }
+    return null;
+  };
+
+  // Add footer to all pages
+  const addPDFFooter = (doc: jsPDF) => {
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const totalPages = doc.getNumberOfPages();
+    
+    for (let i = 1; i <= totalPages; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128);
+      doc.text('ridereadydocs.com', pageWidth / 2, pageHeight - 8, { align: 'center' });
+      doc.text(`Page ${i} of ${totalPages}`, pageWidth - 14, pageHeight - 8, { align: 'right' });
+      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, pageHeight - 8, { align: 'left' });
+      doc.setTextColor(0);
+    }
+  };
+
   const generatePDFBlob = async (): Promise<{ blob: Blob; fileName: string }> => {
     if (!selectedAssessment) throw new Error('No assessment selected');
 
     const doc = new jsPDF({ orientation: 'landscape' });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
     
-    // Add logo
-    const logoImg = new Image();
-    logoImg.src = logoImage;
-    await new Promise((resolve) => {
-      logoImg.onload = resolve;
-    });
-    doc.addImage(logoImg, 'PNG', 14, 5, 20, 20);
+    // Fetch company logo
+    const logoDataUrl = await fetchCompanyLogo();
     
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Showmans Ride Ready', 38, 13);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
-    doc.text('Operational & Maintenance Docs', 38, 18);
+    // Fetch ride image with aspect ratio
+    const rideImageData = await fetchRideImage();
     
-    if (ridePhotoUrl) {
+    // === HEADER SECTION ===
+    let yPos = 15;
+    
+    // Company logo on left (if available)
+    if (logoDataUrl) {
       try {
-        const rideImg = new Image();
-        rideImg.crossOrigin = 'anonymous';
-        rideImg.src = ridePhotoUrl;
-        await new Promise((resolve, reject) => {
-          rideImg.onload = resolve;
-          rideImg.onerror = reject;
-        });
-        doc.addImage(rideImg, 'JPEG', 235, 5, 50, 30);
+        doc.addImage(logoDataUrl, 'AUTO', 14, yPos - 5, 18, 18);
       } catch (e) {
-        console.warn('Failed to load ride photo for PDF');
+        console.log('Could not add logo to PDF');
       }
     }
     
-    doc.setFontSize(18);
-    doc.setTextColor(0, 0, 0);
+    // Company name - centered
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('Risk Assessment', 14, 35);
+    doc.setTextColor(40, 40, 40);
+    const companyName = profile?.company_name || 'Risk Assessment';
+    doc.text(companyName, pageWidth / 2, yPos, { align: 'center' });
+    yPos += 6;
+
+    // Controller name below company
+    if (profile?.controller_name) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100);
+      doc.text(`Controller: ${profile.controller_name}`, pageWidth / 2, yPos, { align: 'center' });
+      yPos += 5;
+    }
     
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
+    yPos += 4;
+
+    // Report title
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(50, 50, 50);
+    doc.text('RISK ASSESSMENT', pageWidth / 2, yPos, { align: 'center' });
+    yPos += 5;
+
+    // Divider line
+    doc.setDrawColor(180);
+    doc.line(14, yPos, pageWidth - 14, yPos);
+    yPos += 8;
+
+    // === EQUIPMENT DETAILS WITH IMAGE ===
     const leftCol = 14;
-    const rightCol = 160;
-    let yPos = 45;
+    const labelWidth = 38;
+    const rightCol = 180;
+    const detailsStartY = yPos;
     
+    doc.setFontSize(10);
+    doc.setTextColor(0);
+
+    // Equipment info - left side
     doc.setFont('helvetica', 'bold');
-    doc.text('Ride/Equipment:', leftCol, yPos);
+    doc.text('Equipment:', leftCol, yPos);
     doc.setFont('helvetica', 'normal');
-    doc.text(ride.ride_name, leftCol + 35, yPos);
+    doc.text(ride.ride_name, leftCol + labelWidth, yPos);
+    yPos += 5;
     
     if (ride.manufacturer) {
-      yPos += 6;
       doc.setFont('helvetica', 'bold');
       doc.text('Manufacturer:', leftCol, yPos);
       doc.setFont('helvetica', 'normal');
-      doc.text(ride.manufacturer, leftCol + 35, yPos);
+      doc.text(ride.manufacturer, leftCol + labelWidth, yPos);
+      yPos += 5;
+    }
+    
+    if (ride.serial_number) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Serial Number:', leftCol, yPos);
+      doc.setFont('helvetica', 'normal');
+      doc.text(ride.serial_number, leftCol + labelWidth, yPos);
+      yPos += 5;
     }
     
     if (ride.year_manufactured) {
-      yPos += 6;
       doc.setFont('helvetica', 'bold');
       doc.text('Year Manufactured:', leftCol, yPos);
       doc.setFont('helvetica', 'normal');
-      doc.text(ride.year_manufactured.toString(), leftCol + 35, yPos);
+      doc.text(ride.year_manufactured.toString(), leftCol + labelWidth, yPos);
+      yPos += 5;
     }
-    
-    yPos = 45;
-    if (profile) {
-      if (profile.controller_name) {
-        doc.setFont('helvetica', 'bold');
-        doc.text('Controller:', rightCol, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(profile.controller_name, rightCol + 25, yPos);
-        yPos += 6;
-      }
-      if (profile.company_name) {
-        doc.setFont('helvetica', 'bold');
-        doc.text('Company:', rightCol, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(profile.company_name, rightCol + 25, yPos);
-        yPos += 6;
-      }
-    }
-    
-    yPos = 63;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Assessment Date:', leftCol, yPos);
-    doc.setFont('helvetica', 'normal');
-    doc.text(format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy'), leftCol + 35, yPos);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('Assessor:', rightCol, yPos);
-    doc.setFont('helvetica', 'normal');
-    doc.text(selectedAssessment.assessor_name, rightCol + 25, yPos);
 
+    // Assessment info - middle
+    const midCol = 100;
+    let midY = detailsStartY;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Assessment Date:', midCol, midY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy'), midCol + 32, midY);
+    midY += 5;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Assessor:', midCol, midY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(selectedAssessment.assessor_name, midCol + 32, midY);
+    midY += 5;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Status:', midCol, midY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(selectedAssessment.overall_status.replace('_', ' ').toUpperCase(), midCol + 32, midY);
+    midY += 5;
+    
+    if (selectedAssessment.revision_number && selectedAssessment.revision_number > 1) {
+      doc.setFont('helvetica', 'bold');
+      doc.text('Revision:', midCol, midY);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Rev ${selectedAssessment.revision_number}`, midCol + 32, midY);
+    }
+
+    // Ride image on right - preserve aspect ratio
+    if (rideImageData) {
+      try {
+        const maxWidth = 45;
+        const maxHeight = 30;
+        let imgWidth = maxWidth;
+        let imgHeight = maxWidth / rideImageData.aspectRatio;
+        
+        if (imgHeight > maxHeight) {
+          imgHeight = maxHeight;
+          imgWidth = maxHeight * rideImageData.aspectRatio;
+        }
+        
+        const imgX = pageWidth - imgWidth - 14;
+        doc.addImage(rideImageData.dataUrl, 'JPEG', imgX, detailsStartY - 2, imgWidth, imgHeight);
+        yPos = Math.max(yPos, detailsStartY + imgHeight + 3);
+      } catch (e) {
+        console.warn('Failed to add ride image to PDF');
+      }
+    }
+    
+    yPos = Math.max(yPos, midY) + 5;
+
+    // === HAZARDS TABLE ===
     const tableData = assessmentItems.map(item => [
       item.hazard_description,
       item.who_at_risk,
@@ -592,7 +718,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     ]);
 
     autoTable(doc, {
-      startY: 72,
+      startY: yPos,
       head: [['Hazard', 'Who at Risk', 'Existing Controls', 'Risk', 'Likelihood', 'Severity', 'Additional Actions', 'Status']],
       body: tableData,
       styles: { fontSize: 7, cellPadding: 2 },
@@ -607,6 +733,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         6: { cellWidth: 45 },
         7: { cellWidth: 20 }
       },
+      margin: { bottom: 20 },
       didParseCell: function(data) {
         if (data.column.index === 3 && data.section === 'body') {
           const risk = data.cell.raw as string;
@@ -625,13 +752,19 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     });
 
     const finalY = (doc as any).lastAutoTable.finalY + 10;
-    const sigY = finalY;
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Compiled by: ___________________________________', leftCol, sigY);
-    doc.text(`${selectedAssessment.assessor_name}`, leftCol + 25, sigY);
-    doc.text('Date: ___________________________________', rightCol, sigY);
-    doc.text(format(new Date(), 'dd/MM/yyyy'), rightCol + 12, sigY);
+    
+    // Signature section (if fits on page)
+    if (finalY < pageHeight - 30) {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Compiled by: ___________________________________', leftCol, finalY);
+      doc.text(`${selectedAssessment.assessor_name}`, leftCol + 28, finalY);
+      doc.text('Date: _______________', rightCol, finalY);
+      doc.text(format(new Date(), 'dd/MM/yyyy'), rightCol + 15, finalY);
+    }
+
+    // Add footer to all pages
+    addPDFFooter(doc);
 
     const fileName = `risk-assessment-${ride.ride_name}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
     return { blob: doc.output('blob'), fileName };
@@ -743,173 +876,24 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const exportToPDF = async () => {
     if (!selectedAssessment) return;
 
-    const doc = new jsPDF({ orientation: 'landscape' });
-    
-    // Add logo
-    const logoImg = new Image();
-    logoImg.src = logoImage;
-    await new Promise((resolve) => {
-      logoImg.onload = resolve;
-    });
-    doc.addImage(logoImg, 'PNG', 14, 5, 20, 20);
-    
-    // App name next to logo
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Showmans Ride Ready', 38, 13);
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
-    doc.text('Operational & Maintenance Docs', 38, 18);
-    
-    // Add ride photo if available
-    if (ridePhotoUrl) {
-      try {
-        const rideImg = new Image();
-        rideImg.crossOrigin = 'anonymous';
-        rideImg.src = ridePhotoUrl;
-        await new Promise((resolve, reject) => {
-          rideImg.onload = resolve;
-          rideImg.onerror = reject;
-        });
-        doc.addImage(rideImg, 'JPEG', 235, 5, 50, 30);
-      } catch (e) {
-        console.warn('Failed to load ride photo for PDF');
-      }
+    try {
+      const { blob, fileName } = await generatePDFBlob();
+      
+      // Create download link
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast({ title: 'Success', description: 'PDF downloaded' });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({ title: 'Error', description: 'Failed to generate PDF', variant: 'destructive' });
     }
-    
-    // Title
-    doc.setFontSize(18);
-    doc.setTextColor(0, 0, 0);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Risk Assessment', 14, 35);
-    
-    // Details section
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    const leftCol = 14;
-    const rightCol = 160;
-    let yPos = 45;
-    
-    // Left column - Ride details
-    doc.setFont('helvetica', 'bold');
-    doc.text('Ride/Equipment:', leftCol, yPos);
-    doc.setFont('helvetica', 'normal');
-    doc.text(ride.ride_name, leftCol + 35, yPos);
-    
-    if (ride.manufacturer) {
-      yPos += 6;
-      doc.setFont('helvetica', 'bold');
-      doc.text('Manufacturer:', leftCol, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(ride.manufacturer, leftCol + 35, yPos);
-    }
-    
-    if (ride.year_manufactured) {
-      yPos += 6;
-      doc.setFont('helvetica', 'bold');
-      doc.text('Year Manufactured:', leftCol, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(ride.year_manufactured.toString(), leftCol + 35, yPos);
-    }
-    
-    // Right column - Controller details
-    yPos = 45;
-    if (profile) {
-      if (profile.controller_name) {
-        doc.setFont('helvetica', 'bold');
-        doc.text('Controller:', rightCol, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(profile.controller_name, rightCol + 25, yPos);
-        yPos += 6;
-      }
-      if (profile.company_name) {
-        doc.setFont('helvetica', 'bold');
-        doc.text('Company:', rightCol, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(profile.company_name, rightCol + 25, yPos);
-        yPos += 6;
-      }
-    }
-    
-    // Assessment info
-    yPos = 63;
-    doc.setFont('helvetica', 'bold');
-    doc.text('Assessment Date:', leftCol, yPos);
-    doc.setFont('helvetica', 'normal');
-    doc.text(format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy'), leftCol + 35, yPos);
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('Assessor:', rightCol, yPos);
-    doc.setFont('helvetica', 'normal');
-    doc.text(selectedAssessment.assessor_name, rightCol + 25, yPos);
-
-    const tableData = assessmentItems.map(item => [
-      item.hazard_description,
-      item.who_at_risk,
-      item.existing_controls || '-',
-      item.risk_level.toUpperCase(),
-      item.likelihood,
-      item.severity,
-      item.additional_actions || '-',
-      item.status
-    ]);
-
-    autoTable(doc, {
-      startY: 72,
-      head: [['Hazard', 'Who at Risk', 'Existing Controls', 'Risk', 'Likelihood', 'Severity', 'Additional Actions', 'Status']],
-      body: tableData,
-      styles: { 
-        fontSize: 7,
-        cellPadding: 2
-      },
-      headStyles: { 
-        fillColor: [66, 139, 202],
-        fontSize: 8,
-        fontStyle: 'bold'
-      },
-      columnStyles: {
-        0: { cellWidth: 50 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 40 },
-        3: { cellWidth: 18 },
-        4: { cellWidth: 22 },
-        5: { cellWidth: 20 },
-        6: { cellWidth: 45 },
-        7: { cellWidth: 20 }
-      },
-      didParseCell: function(data) {
-        if (data.column.index === 3 && data.section === 'body') {
-          const risk = data.cell.raw as string;
-          if (risk === 'HIGH') {
-            data.cell.styles.fillColor = [239, 68, 68];
-            data.cell.styles.textColor = [255, 255, 255];
-          } else if (risk === 'MEDIUM') {
-            data.cell.styles.fillColor = [251, 146, 60];
-            data.cell.styles.textColor = [255, 255, 255];
-          } else if (risk === 'LOW') {
-            data.cell.styles.fillColor = [34, 197, 94];
-            data.cell.styles.textColor = [255, 255, 255];
-          }
-        }
-      }
-    });
-
-    // Get final Y position after table
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
-    
-    // Signature section
-    const sigY = finalY;
-    doc.setFontSize(8);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Compiled by: ___________________________________', leftCol, sigY);
-    doc.text(`${selectedAssessment.assessor_name}`, leftCol + 25, sigY);
-    doc.text('Date: ___________________________________', rightCol, sigY);
-    doc.text(format(new Date(), 'dd/MM/yyyy'), rightCol + 12, sigY);
-
-    doc.save(`risk-assessment-${ride.ride_name}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
-    toast({ title: 'Success', description: 'PDF downloaded' });
   };
 
   const saveToDocuments = async () => {
@@ -936,177 +920,10 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     }
 
     try {
-      // Generate PDF
-      const doc = new jsPDF({ orientation: 'landscape' });
-      
-      // Add logo
-      const logoImg = new Image();
-      logoImg.src = logoImage;
-      await new Promise((resolve) => {
-        logoImg.onload = resolve;
-      });
-      doc.addImage(logoImg, 'PNG', 14, 5, 20, 20);
-      
-      // App name next to logo
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Showmans Ride Ready', 38, 13);
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100, 100, 100);
-      doc.text('Operational & Maintenance Docs', 38, 18);
-      
-      // Add ride photo if available
-      if (ridePhotoUrl) {
-        try {
-          const rideImg = new Image();
-          rideImg.crossOrigin = 'anonymous';
-          rideImg.src = ridePhotoUrl;
-          await new Promise((resolve, reject) => {
-            rideImg.onload = resolve;
-            rideImg.onerror = reject;
-          });
-          doc.addImage(rideImg, 'JPEG', 235, 5, 50, 30);
-        } catch (e) {
-          console.warn('Failed to load ride photo for PDF');
-        }
-      }
-      
-      // Title
-      doc.setFontSize(18);
-      doc.setTextColor(0, 0, 0);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Risk Assessment', 14, 35);
-      
-      // Details section
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      const leftCol = 14;
-      const rightCol = 160;
-      let yPos = 45;
-      
-      // Left column - Ride details
-      doc.setFont('helvetica', 'bold');
-      doc.text('Ride/Equipment:', leftCol, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(ride.ride_name, leftCol + 35, yPos);
-      
-      if (ride.manufacturer) {
-        yPos += 6;
-        doc.setFont('helvetica', 'bold');
-        doc.text('Manufacturer:', leftCol, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(ride.manufacturer, leftCol + 35, yPos);
-      }
-      
-      if (ride.year_manufactured) {
-        yPos += 6;
-        doc.setFont('helvetica', 'bold');
-        doc.text('Year Manufactured:', leftCol, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(ride.year_manufactured.toString(), leftCol + 35, yPos);
-      }
-      
-      // Right column - Controller details
-      yPos = 45;
-      if (profile) {
-        if (profile.controller_name) {
-          doc.setFont('helvetica', 'bold');
-          doc.text('Controller:', rightCol, yPos);
-          doc.setFont('helvetica', 'normal');
-          doc.text(profile.controller_name, rightCol + 25, yPos);
-          yPos += 6;
-        }
-        if (profile.company_name) {
-          doc.setFont('helvetica', 'bold');
-          doc.text('Company:', rightCol, yPos);
-          doc.setFont('helvetica', 'normal');
-          doc.text(profile.company_name, rightCol + 25, yPos);
-          yPos += 6;
-        }
-      }
-      
-      // Assessment info
-      yPos = 63;
-      doc.setFont('helvetica', 'bold');
-      doc.text('Assessment Date:', leftCol, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy'), leftCol + 35, yPos);
-      
-      doc.setFont('helvetica', 'bold');
-      doc.text('Assessor:', rightCol, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(selectedAssessment.assessor_name, rightCol + 25, yPos);
-
-      const tableData = assessmentItems.map(item => [
-        item.hazard_description,
-        item.who_at_risk,
-        item.existing_controls || '-',
-        item.risk_level.toUpperCase(),
-        item.likelihood,
-        item.severity,
-        item.additional_actions || '-',
-        item.status
-      ]);
-
-      autoTable(doc, {
-        startY: 72,
-        head: [['Hazard', 'Who at Risk', 'Existing Controls', 'Risk', 'Likelihood', 'Severity', 'Additional Actions', 'Status']],
-        body: tableData,
-        styles: { 
-          fontSize: 7,
-          cellPadding: 2
-        },
-        headStyles: { 
-          fillColor: [66, 139, 202],
-          fontSize: 8,
-          fontStyle: 'bold'
-        },
-        columnStyles: {
-          0: { cellWidth: 50 },
-          1: { cellWidth: 30 },
-          2: { cellWidth: 40 },
-          3: { cellWidth: 18 },
-          4: { cellWidth: 22 },
-          5: { cellWidth: 20 },
-          6: { cellWidth: 45 },
-          7: { cellWidth: 20 }
-        },
-        didParseCell: function(data) {
-          if (data.column.index === 3 && data.section === 'body') {
-            const risk = data.cell.raw as string;
-            if (risk === 'HIGH') {
-              data.cell.styles.fillColor = [239, 68, 68];
-              data.cell.styles.textColor = [255, 255, 255];
-            } else if (risk === 'MEDIUM') {
-              data.cell.styles.fillColor = [251, 146, 60];
-              data.cell.styles.textColor = [255, 255, 255];
-            } else if (risk === 'LOW') {
-              data.cell.styles.fillColor = [34, 197, 94];
-              data.cell.styles.textColor = [255, 255, 255];
-            }
-          }
-        }
-      });
-
-      // Get final Y position after table
-      const finalY = (doc as any).lastAutoTable.finalY + 10;
-      
-      // Signature section
-      const sigY = finalY;
-      doc.setFontSize(8);
-      doc.setFont('helvetica', 'normal');
-      doc.text('Compiled by: ___________________________________', leftCol, sigY);
-      doc.text(`${selectedAssessment.assessor_name}`, leftCol + 25, sigY);
-      doc.text('Date: ___________________________________', rightCol, sigY);
-      doc.text(format(new Date(), 'dd/MM/yyyy'), rightCol + 12, sigY);
-
-      // Convert PDF to blob
-      const pdfBlob = doc.output('blob');
+      // Reuse the centralized PDF generation function
+      const { blob: pdfBlob, fileName } = await generatePDFBlob();
       
       // Upload to storage
-      const fileName = `risk-assessment-${ride.ride_name}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
       const filePath = `${user.id}/${ride.id}/${fileName}`;
       
       const { error: uploadError } = await supabase.storage
