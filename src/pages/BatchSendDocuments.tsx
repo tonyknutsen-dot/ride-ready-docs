@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Calendar } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { 
   Mail, 
   FileText, 
@@ -22,7 +24,9 @@ import {
   Star,
   Plus,
   Trash2,
-  BookUser
+  BookUser,
+  CalendarIcon,
+  ClipboardCheck
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -41,6 +45,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useTerminology } from '@/hooks/useTerminology';
+import { format, startOfMonth, endOfMonth, subDays, startOfYear, endOfYear } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { isCheckRecord, filterCheckRecords, CheckRecordFiltersState, defaultCheckRecordFilters } from '@/components/CheckRecordFilters';
 
 interface Document {
   id: string;
@@ -50,6 +57,9 @@ interface Document {
   file_size?: number;
   is_global: boolean;
   ride_id: string | null;
+  uploaded_at?: string;
+  notes?: string | null;
+  file_path?: string;
 }
 
 interface Ride {
@@ -104,6 +114,13 @@ const BatchSendDocuments = () => {
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
   const [newTemplateName, setNewTemplateName] = useState('');
   const [newTemplateType, setNewTemplateType] = useState('');
+  
+  // Check records state
+  const [checkRecords, setCheckRecords] = useState<Document[]>([]);
+  const [checkRecordFilters, setCheckRecordFilters] = useState<CheckRecordFiltersState>(defaultCheckRecordFilters);
+  const [checkRecordsExpanded, setCheckRecordsExpanded] = useState(false);
+  const [fromOpen, setFromOpen] = useState(false);
+  const [toOpen, setToOpen] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -152,15 +169,29 @@ const BatchSendDocuments = () => {
       // Load all documents
       const { data: allDocuments, error: docsError } = await supabase
         .from('documents')
-        .select('id, document_name, document_type, expires_at, file_size, is_global, ride_id')
+        .select('id, document_name, document_type, expires_at, file_size, is_global, ride_id, uploaded_at, notes, file_path')
         .eq('user_id', user?.id)
-        .order('document_name');
+        .order('uploaded_at', { ascending: false });
 
       if (docsError) throw docsError;
 
-      // Separate global and ride-specific documents
-      const global = allDocuments?.filter(doc => doc.is_global) || [];
-      const rideSpecific = allDocuments?.filter(doc => !doc.is_global && doc.ride_id) || [];
+      // Separate check records from other documents
+      const checkRecordDocs: Document[] = [];
+      const otherDocs: Document[] = [];
+      
+      (allDocuments || []).forEach(doc => {
+        if (isCheckRecord(doc.document_type, doc.file_path || undefined)) {
+          checkRecordDocs.push(doc);
+        } else {
+          otherDocs.push(doc);
+        }
+      });
+      
+      setCheckRecords(checkRecordDocs);
+
+      // Separate global and ride-specific documents (excluding check records)
+      const global = otherDocs.filter(doc => doc.is_global);
+      const rideSpecific = otherDocs.filter(doc => !doc.is_global && doc.ride_id);
 
       setGlobalDocuments(global);
 
@@ -444,13 +475,50 @@ const BatchSendDocuments = () => {
     return expiry <= thirtyDaysFromNow;
   };
 
-  // Calculate totals
-  const allDocs = [...globalDocuments, ...rides.flatMap(r => r.documents)];
+  // Filtered check records
+  const filteredCheckRecords = useMemo(() => {
+    return filterCheckRecords(checkRecords, checkRecordFilters);
+  }, [checkRecords, checkRecordFilters]);
+
+  // Group check records by month
+  const checkRecordsByMonth = useMemo(() => {
+    const groups: Record<string, Document[]> = {};
+    filteredCheckRecords.forEach(doc => {
+      const monthKey = doc.uploaded_at ? format(new Date(doc.uploaded_at), 'MMMM yyyy') : 'Unknown';
+      if (!groups[monthKey]) groups[monthKey] = [];
+      groups[monthKey].push(doc);
+    });
+    return Object.entries(groups).sort(([a], [b]) => 
+      new Date(b).getTime() - new Date(a).getTime()
+    );
+  }, [filteredCheckRecords]);
+
+  // Select all check records in filtered range
+  const handleSelectAllCheckRecords = () => {
+    const filteredIds = filteredCheckRecords.map(d => d.id);
+    const allSelected = filteredIds.every(id => selectedDocuments.includes(id));
+    
+    if (allSelected) {
+      setSelectedDocuments(prev => prev.filter(id => !filteredIds.includes(id)));
+    } else {
+      setSelectedDocuments(prev => [...new Set([...prev, ...filteredIds])]);
+    }
+  };
+
+  // Calculate totals (include check records)
+  const allDocs = [...globalDocuments, ...rides.flatMap(r => r.documents), ...checkRecords];
   const totalFileSize = allDocs
     .filter(doc => selectedDocuments.includes(doc.id))
     .reduce((sum, doc) => sum + (doc.file_size || 0), 0);
   const totalSizeMB = totalFileSize / (1024 * 1024);
   const exceedsEmailLimit = totalSizeMB > 10;
+
+  const datePresets = [
+    { label: 'This Month', getValue: () => ({ from: startOfMonth(new Date()), to: endOfMonth(new Date()) }) },
+    { label: 'Last 30 Days', getValue: () => ({ from: subDays(new Date(), 30), to: new Date() }) },
+    { label: 'Last 90 Days', getValue: () => ({ from: subDays(new Date(), 90), to: new Date() }) },
+    { label: 'This Year', getValue: () => ({ from: startOfYear(new Date()), to: endOfYear(new Date()) }) },
+  ];
 
   if (loading) {
     return (
@@ -505,6 +573,106 @@ const BatchSendDocuments = () => {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {/* Safety Check Records Section */}
+              {checkRecords.length > 0 && (
+                <Collapsible open={checkRecordsExpanded} onOpenChange={setCheckRecordsExpanded}>
+                  <div className="border-2 border-green-500/20 rounded-lg">
+                    <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-green-500/5 transition-colors gap-2">
+                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                        <ClipboardCheck className="h-4 w-4 text-green-600 shrink-0" />
+                        <span className="font-medium text-xs sm:text-sm truncate">Safety Check Records</span>
+                        <Badge variant="outline" className="text-xs shrink-0 border-green-500/30 text-green-600">
+                          {filteredCheckRecords.length !== checkRecords.length 
+                            ? `${filteredCheckRecords.length}/${checkRecords.length}` 
+                            : checkRecords.length}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="h-6 sm:h-7 text-xs px-2"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSelectAllCheckRecords();
+                          }}
+                        >
+                          {filteredCheckRecords.every(d => selectedDocuments.includes(d.id)) ? 'Deselect' : 'Select All'}
+                        </Button>
+                        <ChevronDown className="h-4 w-4" />
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="px-2 sm:px-4 pb-3 space-y-3">
+                        {/* Date range filters */}
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {datePresets.map((preset) => (
+                            <Button
+                              key={preset.label}
+                              variant="outline"
+                              size="sm"
+                              className="h-6 text-xs px-2"
+                              onClick={() => {
+                                const { from, to } = preset.getValue();
+                                setCheckRecordFilters({ ...checkRecordFilters, dateFrom: from, dateTo: to });
+                              }}
+                            >
+                              {preset.label}
+                            </Button>
+                          ))}
+                          {(checkRecordFilters.dateFrom || checkRecordFilters.dateTo) && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 text-xs"
+                              onClick={() => setCheckRecordFilters(defaultCheckRecordFilters)}
+                            >
+                              Clear
+                            </Button>
+                          )}
+                        </div>
+                        
+                        {/* Grouped by month */}
+                        {checkRecordsByMonth.map(([month, docs]) => (
+                          <div key={month}>
+                            <div className="text-xs font-medium text-muted-foreground mb-1.5">{month}</div>
+                            <div className="space-y-1">
+                              {docs.map(doc => (
+                                <label 
+                                  key={doc.id} 
+                                  className="flex items-start gap-2 p-2 border rounded cursor-pointer hover:bg-accent/50 transition-colors"
+                                >
+                                  <Checkbox
+                                    checked={selectedDocuments.includes(doc.id)}
+                                    onCheckedChange={() => handleDocumentToggle(doc.id)}
+                                    className="mt-0.5 shrink-0"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs font-medium break-words leading-tight">{doc.document_name}</p>
+                                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                      <span className="text-xs text-muted-foreground">
+                                        {doc.uploaded_at && format(new Date(doc.uploaded_at), 'dd MMM yyyy')}
+                                      </span>
+                                      {doc.file_size && (
+                                        <span className="text-xs text-muted-foreground">• {formatFileSize(doc.file_size)}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                        
+                        {filteredCheckRecords.length === 0 && (
+                          <p className="text-xs text-muted-foreground text-center py-4">No records match your filters</p>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </div>
+                </Collapsible>
               )}
 
               {/* Global Documents */}
