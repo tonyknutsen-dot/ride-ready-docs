@@ -159,8 +159,29 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
   const handleSaveEdit = () => {
     if (editingIndex === null || !editText.trim()) return;
+    
+    const originalText = selectedItems[editingIndex].check_item_text;
+    const newText = editText.trim();
+    
+    // Only submit if text actually changed
+    if (newText !== originalText && user?.id) {
+      // Submit edited item to user_submitted_check_items for admin review (fire and forget)
+      supabase
+        .from('user_submitted_check_items')
+        .insert({
+          user_id: user.id,
+          label: newText,
+          frequency: frequency,
+          ride_category_id: ride.category_id,
+          is_generic: false,
+        })
+        .then(({ error }) => {
+          if (error) console.log('Failed to submit edit for review:', error);
+        });
+    }
+    
     setSelectedItems(prev => prev.map((item, i) => 
-      i === editingIndex ? { ...item, check_item_text: editText.trim() } : item
+      i === editingIndex ? { ...item, check_item_text: newText } : item
     ));
     setEditingIndex(null);
     setEditText('');
