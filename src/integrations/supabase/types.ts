@@ -1261,6 +1261,77 @@ export type Database = {
         }
         Relationships: []
       }
+      organisation_members: {
+        Row: {
+          created_at: string
+          id: string
+          invited_by: string
+          is_active: boolean
+          joined_at: string
+          organisation_id: string
+          permission_level: Database["public"]["Enums"]["staff_permission"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          invited_by: string
+          is_active?: boolean
+          joined_at?: string
+          organisation_id: string
+          permission_level?: Database["public"]["Enums"]["staff_permission"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          invited_by?: string
+          is_active?: boolean
+          joined_at?: string
+          organisation_id?: string
+          permission_level?: Database["public"]["Enums"]["staff_permission"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "organisation_members_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      organisations: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          settings: Json | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          settings?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          settings?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           address: string | null
@@ -1712,6 +1783,98 @@ export type Database = {
         }
         Relationships: []
       }
+      staff_equipment_assignments: {
+        Row: {
+          assigned_at: string
+          assigned_by: string
+          id: string
+          member_id: string
+          ride_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          assigned_by: string
+          id?: string
+          member_id: string
+          ride_id: string
+        }
+        Update: {
+          assigned_at?: string
+          assigned_by?: string
+          id?: string
+          member_id?: string
+          ride_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_equipment_assignments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "organisation_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "staff_equipment_assignments_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      staff_invites: {
+        Row: {
+          accepted_at: string | null
+          accepted_by: string | null
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invite_token: string
+          invited_by: string
+          organisation_id: string
+          permission_level: Database["public"]["Enums"]["staff_permission"]
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invite_token?: string
+          invited_by: string
+          organisation_id: string
+          permission_level?: Database["public"]["Enums"]["staff_permission"]
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          accepted_by?: string | null
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invite_token?: string
+          invited_by?: string
+          organisation_id?: string
+          permission_level?: Database["public"]["Enums"]["staff_permission"]
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "staff_invites_organisation_id_fkey"
+            columns: ["organisation_id"]
+            isOneToOne: false
+            referencedRelation: "organisations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_messages: {
         Row: {
           admin_response: string | null
@@ -2005,6 +2168,10 @@ export type Database = {
       cleanup_old_blocked_ips: { Args: never; Returns: number }
       decrypt_sensitive: { Args: { ciphertext: string }; Returns: string }
       encrypt_sensitive: { Args: { plaintext: string }; Returns: string }
+      get_staff_permission: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: Database["public"]["Enums"]["staff_permission"]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2021,13 +2188,26 @@ export type Database = {
           reason: string
         }[]
       }
+      is_org_member: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_org_owner: {
+        Args: { _org_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_tester: { Args: { _user_id: string }; Returns: boolean }
+      staff_can_access_ride: {
+        Args: { _ride_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "tester"
       check_frequency: "daily" | "monthly" | "yearly" | "preopening"
       defect_severity: "non_urgent" | "urgent" | "stop_operation"
       defect_status: "open" | "acknowledged" | "in_progress" | "resolved"
+      staff_permission: "checks_only" | "checks_maintenance" | "full_access"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2159,6 +2339,7 @@ export const Constants = {
       check_frequency: ["daily", "monthly", "yearly", "preopening"],
       defect_severity: ["non_urgent", "urgent", "stop_operation"],
       defect_status: ["open", "acknowledged", "in_progress", "resolved"],
+      staff_permission: ["checks_only", "checks_maintenance", "full_access"],
     },
   },
 } as const
