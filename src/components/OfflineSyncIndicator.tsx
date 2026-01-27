@@ -1,0 +1,87 @@
+import { Cloud, CloudOff, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
+export function OfflineSyncIndicator() {
+  const { isOnline, isSyncing, pendingCount, syncAll } = useOfflineSync();
+
+  if (isOnline && pendingCount === 0) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 text-success px-2 py-1 rounded-md bg-success/10">
+              <CheckCircle2 className="h-4 w-4" />
+              <span className="text-xs font-medium hidden sm:inline">Synced</span>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>All data is synced</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  if (!isOnline) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className="flex items-center gap-1.5 text-warning px-2 py-1 rounded-md bg-warning/10">
+              <CloudOff className="h-4 w-4" />
+              <span className="text-xs font-medium">Offline</span>
+              {pendingCount > 0 && (
+                <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+                  {pendingCount}
+                </Badge>
+              )}
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>You're offline. {pendingCount > 0 ? `${pendingCount} items waiting to sync` : 'Changes will sync when online'}</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // Online but has pending items
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={syncAll}
+            disabled={isSyncing}
+            className="flex items-center gap-1.5 text-info px-2 py-1 h-auto"
+          >
+            {isSyncing ? (
+              <RefreshCw className="h-4 w-4 animate-spin" />
+            ) : (
+              <Cloud className="h-4 w-4" />
+            )}
+            <span className="text-xs font-medium hidden sm:inline">
+              {isSyncing ? 'Syncing...' : 'Sync'}
+            </span>
+            <Badge variant="secondary" className="h-5 px-1.5 text-xs">
+              {pendingCount}
+            </Badge>
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{isSyncing ? 'Syncing data...' : `${pendingCount} items to sync. Click to sync now.`}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
