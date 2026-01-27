@@ -8,6 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { RequestFeatureDialog } from "@/components/RequestFeatureDialog";
+import { OfflineSyncIndicator } from "@/components/OfflineSyncIndicator";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/contexts/AdminContext";
 import { useStaff } from "@/contexts/StaffContext";
@@ -179,7 +180,10 @@ export default function MobileBottomNav() {
           </SheetTrigger>
           <SheetContent side="bottom" className="max-h-[80vh] rounded-t-3xl px-4 pb-8 border-t-2 border-primary/20 overflow-y-auto">
             <SheetHeader className="pb-4 sticky top-0 bg-background z-10">
-              <SheetTitle className="text-left text-lg">Menu</SheetTitle>
+              <div className="flex items-center justify-between">
+                <SheetTitle className="text-left text-lg">Menu</SheetTitle>
+                <OfflineSyncIndicator />
+              </div>
             </SheetHeader>
 
             <div className="space-y-4">
