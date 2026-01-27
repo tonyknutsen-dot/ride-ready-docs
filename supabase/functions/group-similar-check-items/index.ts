@@ -155,12 +155,13 @@ Deno.serve(async (req) => {
 
     const rideCategoryList = rideCategories?.map(c => `- ${c.name} (${c.id})`).join("\n") || "";
 
-    // Use Lovable AI for smart grouping, categorization, AND placement suggestions
+    // Use Lovable AI for smart grouping, categorization, placement suggestions, AND spell-check
     const prompt = `You are analyzing safety check items submitted by fairground operators.
 
 TASK 1: Group semantically similar items (items that mean the same thing).
 TASK 2: Assign each item to the most appropriate technical category.
 TASK 3: Determine if each item is GENERIC (applies to all equipment) or SPECIFIC to a ride type.
+TASK 4: Fix any spelling or grammar errors in the labels.
 
 TECHNICAL CATEGORIES (choose one for each item):
 ${CATEGORIES.map(c => `- ${c}`).join("\n")}
@@ -179,7 +180,8 @@ Respond with JSON only:
   "groups": [[1, 5, 8], [2, 3]],
   "categories": {"1": "Restraints", "2": "Electrical"},
   "placement": {"1": "generic", "2": "specific", "3": "generic"},
-  "ride_category_ids": {"2": "uuid-of-ride-category"}
+  "ride_category_ids": {"2": "uuid-of-ride-category"},
+  "corrected_labels": {"1": "Corrected label text", "3": "Another corrected label"}
 }
 
 Rules:
@@ -189,7 +191,9 @@ Rules:
 - "generic" = applies to ALL equipment types (e.g., "Fire extinguisher present", "Emergency stop accessible")
 - "specific" = only relevant to certain ride types (e.g., "Harness locks engaged" for thrill rides, "Carousel pole secure" for carousels)
 - If specific, include the ride_category_id it should apply to
-- Learn from existing items to stay consistent`;
+- Learn from existing items to stay consistent
+- ONLY include corrected_labels for items that have spelling/grammar errors - use proper British English
+- Keep technical terms and abbreviations intact (e.g., "NDT", "RCD", "LOLER")`;
 
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
@@ -217,8 +221,17 @@ Rules:
       groups?: number[][], 
       categories?: Record<string, string>,
       placement?: Record<string, string>,
-      ride_category_ids?: Record<string, string>
+      ride_category_ids?: Record<string, string>,
+      corrected_labels?: Record<string, string>
     } = {};
+    try {
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        parsed = JSON.parse(jsonMatch[0]);
+      }
+    } catch (e) {
+      console.error("Failed to parse AI response:", content);
+    }
     try {
       const jsonMatch = content.match(/\{[\s\S]*\}/);
       if (jsonMatch) {
@@ -247,37 +260,52 @@ Rules:
       }
     }
 
-    // Apply categories and placement suggestions
+    // Apply categories, placement suggestions, and spell corrections
     const categories = parsed.categories || {};
     const placement = parsed.placement || {};
     const rideCategoryIds = parsed.ride_category_ids || {};
+    const correctedLabels = parsed.corrected_labels || {};
     let categorizedCount = 0;
+    let spellCorrectedCount = 0;
     
     for (const [idx, category] of Object.entries(categories)) {
       const submission = submissions[parseInt(idx) - 1];
       if (submission && CATEGORIES.includes(category)) {
         const isGeneric = placement[idx] === "generic";
         const suggestedRideCategoryId = rideCategoryIds[idx] || null;
+        const correctedLabel = correctedLabels[idx];
+        
+        const updateData: Record<string, any> = { 
+          category,
+          is_generic: isGeneric,
+        };
+        
+        // Only set ride_category_id if AI suggests specific and provides an ID
+        if (suggestedRideCategoryId && !isGeneric) {
+          updateData.ride_category_id = suggestedRideCategoryId;
+        }
+        
+        // Apply spell correction if provided
+        if (correctedLabel && correctedLabel !== submission.label) {
+          updateData.label = correctedLabel;
+          spellCorrectedCount++;
+        }
         
         await supabase
           .from("user_submitted_check_items")
-          .update({ 
-            category,
-            is_generic: isGeneric,
-            // Only set ride_category_id if AI suggests specific and provides an ID
-            ...(suggestedRideCategoryId && !isGeneric ? { ride_category_id: suggestedRideCategoryId } : {})
-          })
+          .update(updateData)
           .eq("id", submission.id);
         categorizedCount++;
       }
     }
 
-    console.log(`Created ${groupCount} similarity groups, categorized ${categorizedCount} items`);
+    console.log(`Created ${groupCount} similarity groups, categorized ${categorizedCount} items, corrected ${spellCorrectedCount} spellings`);
 
     return new Response(JSON.stringify({ 
-      message: `AI grouped ${groupCount} sets, categorized ${categorizedCount} items with placement suggestions`,
+      message: `AI grouped ${groupCount} sets, categorized ${categorizedCount} items, corrected ${spellCorrectedCount} spellings`,
       groups: groupCount,
       categorized: categorizedCount,
+      spellCorrected: spellCorrectedCount,
       processed: totalPending,
       note: totalPending === 50 ? "More items pending - run again to process next batch" : undefined
     }), {
