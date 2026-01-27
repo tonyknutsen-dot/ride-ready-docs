@@ -1285,7 +1285,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 p-0 hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="h-8 w-8 p-0 hover:bg-destructive/10"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setAssessmentToDelete(assessment);
