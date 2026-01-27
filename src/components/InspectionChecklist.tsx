@@ -454,10 +454,9 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       pdf.setTextColor(0);
 
       pdf.setFont('helvetica', 'bold');
-      pdf.text('Inspector:', leftCol, currentY);
+      pdf.text('Checked By:', leftCol, currentY);
       pdf.setFont('helvetica', 'normal');
       pdf.text(inspectorName || '-', leftCol + labelWidth, currentY);
-      currentY += 6;
 
       if (weatherConditions) {
         pdf.setFont('helvetica', 'bold');
@@ -648,8 +647,8 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     // Validation
     if (!inspectorName.trim()) {
       toast({
-        title: "Inspector name required",
-        description: "Please enter the inspector's name",
+        title: "Name required",
+        description: "Please enter the name of the person performing this check",
         variant: "destructive"
       });
       return;
@@ -740,7 +739,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                 file_path: filePath,
                 mime_type: 'application/pdf',
                 file_size: pdfBlob.size,
-                notes: `Inspector: ${inspectorName}${weatherConditions ? ` | Weather: ${weatherConditions}` : ''}`
+                notes: `Checked by: ${inspectorName}${weatherConditions ? ` | Weather: ${weatherConditions}` : ''}`
               });
             // Invalidate to pick up the new document
             queryClient.invalidateQueries({ queryKey: ['overview'] });
@@ -778,7 +777,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       console.error('Error submitting checks:', error);
       toast({
         title: "Error",
-        description: "Failed to save inspection",
+        description: "Failed to save check",
         variant: "destructive"
       });
     } finally {
@@ -910,7 +909,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     <div id="inspection-checklist-form" className="space-y-6">
       <Alert>
         <AlertDescription>
-          Complete all required inspection items, add detailed notes where necessary, and submit to save your {frequency} inspection record. You can export the results as a PDF.
+          Complete all required check items, add detailed notes where necessary, and submit to save your {frequency} check record. You can export the results as a PDF.
         </AlertDescription>
       </Alert>
       <Card>
@@ -1032,15 +1031,15 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {/* Inspector Information */}
+            {/* Staff Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="inspector">Inspector Name *</Label>
+              <Label htmlFor="checkedBy">Checked By *</Label>
                 <Input
-                  id="inspector"
+                  id="checkedBy"
                   value={inspectorName}
                   onChange={(e) => setInspectorName(e.target.value)}
-                  placeholder="Enter inspector name"
+                  placeholder="Enter staff name"
                 />
               </div>
               <div className="space-y-2">
@@ -1149,9 +1148,9 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       {recentChecks.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
+          <CardTitle className="flex items-center space-x-2">
               <Clock className="h-5 w-5" />
-              <span>Recent {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Inspections</span>
+              <span>Recent {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Checks</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
