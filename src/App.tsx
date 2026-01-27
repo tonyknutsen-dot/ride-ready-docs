@@ -54,6 +54,7 @@ const SupportMessages = lazy(() => import("./pages/admin/SupportMessages"));
 const SecurityDashboard = lazy(() => import("./pages/admin/SecurityDashboard"));
 const BugReports = lazy(() => import("./pages/admin/BugReports"));
 const CheckItemSubmissions = lazy(() => import("./pages/admin/CheckItemSubmissions"));
+const RiskItemSubmissions = lazy(() => import("./pages/admin/RiskItemSubmissions"));
 const RiskAssessments = lazy(() => import("./pages/RiskAssessments"));
 const GlobalDocumentsPage = lazy(() => import("./pages/GlobalDocumentsPage"));
 const Documents = lazy(() => import("./pages/Documents"));
@@ -418,6 +419,18 @@ const App = () => (
                     <AdminRoute>
                       <AppLayout>
                         <CheckItemSubmissions />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/risk-items" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <RiskItemSubmissions />
                       </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>

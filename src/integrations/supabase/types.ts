@@ -2098,6 +2098,66 @@ export type Database = {
           },
         ]
       }
+      user_submitted_risk_items: {
+        Row: {
+          admin_notes: string | null
+          category: string | null
+          created_at: string
+          id: string
+          item_type: string
+          label: string
+          ride_category_id: string | null
+          similarity_group: string | null
+          source_assessment_id: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          item_type: string
+          label: string
+          ride_category_id?: string | null
+          similarity_group?: string | null
+          source_assessment_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          item_type?: string
+          label?: string
+          ride_category_id?: string | null
+          similarity_group?: string | null
+          source_assessment_id?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_submitted_risk_items_ride_category_id_fkey"
+            columns: ["ride_category_id"]
+            isOneToOne: false
+            referencedRelation: "ride_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_submitted_risk_items_source_assessment_id_fkey"
+            columns: ["source_assessment_id"]
+            isOneToOne: false
+            referencedRelation: "risk_assessments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       profiles_safe: {
