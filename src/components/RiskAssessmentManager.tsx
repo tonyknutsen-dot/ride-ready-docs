@@ -24,8 +24,10 @@ import { cn } from '@/lib/utils';
 import logoImage from '@/assets/logo.png';
 import { useTerminology } from '@/hooks/useTerminology';
 import { WhoAtRiskSelector } from './risk-assessment/WhoAtRiskSelector';
-import { RiskEvaluationPanel } from './risk-assessment/RiskEvaluationPanel';
+import { RiskEvaluationPanel, RiskSettings } from './risk-assessment/RiskEvaluationPanel';
 import { calculateRisk, LikelihoodKey, SeverityKey } from './risk-assessment/RiskScoring';
+import { RiskSettingsDialog, DEFAULT_RISK_SETTINGS } from './risk-assessment/RiskSettingsDialog';
+import { RiskDisclaimer } from './risk-assessment/RiskDisclaimer';
 
 interface RiskAssessmentManagerProps {
   ride: {
@@ -91,6 +93,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const [useCustomHazard, setUseCustomHazard] = useState(false);
   const [useCustomControls, setUseCustomControls] = useState(false);
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
+  const [riskSettings, setRiskSettings] = useState<RiskSettings>(DEFAULT_RISK_SETTINGS);
+  const [savingRiskSettings, setSavingRiskSettings] = useState(false);
 
   const [emailFormData, setEmailFormData] = useState({
     recipientEmail: '',
@@ -147,7 +151,40 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       .select('*')
       .eq('user_id', user.id)
       .single();
-    if (data) setProfile(data);
+    if (data) {
+      setProfile(data);
+      // Load risk settings from profile
+      if (data.risk_settings && typeof data.risk_settings === 'object' && !Array.isArray(data.risk_settings)) {
+        const rs = data.risk_settings as Record<string, unknown>;
+        setRiskSettings({
+          existingControlsReduction: typeof rs.existingControlsReduction === 'number' ? rs.existingControlsReduction : 20,
+          additionalActionsReduction: typeof rs.additionalActionsReduction === 'number' ? rs.additionalActionsReduction : 15,
+        });
+      }
+    }
+  };
+
+  const handleSaveRiskSettings = async (settings: RiskSettings) => {
+    if (!user) return;
+    
+    setSavingRiskSettings(true);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        risk_settings: {
+          existingControlsReduction: settings.existingControlsReduction,
+          additionalActionsReduction: settings.additionalActionsReduction,
+        } 
+      })
+      .eq('user_id', user.id);
+
+    if (error) {
+      toast({ title: 'Error saving settings', description: error.message, variant: 'destructive' });
+    } else {
+      setRiskSettings(settings);
+      toast({ title: 'Settings saved', description: 'Risk calculation settings updated' });
+    }
+    setSavingRiskSettings(false);
   };
 
   const loadRidePhoto = async () => {
@@ -278,7 +315,9 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         itemFormData.likelihood as LikelihoodKey,
         itemFormData.severity as SeverityKey,
         itemFormData.existing_controls,
-        itemFormData.additional_actions
+        itemFormData.additional_actions,
+        riskSettings.existingControlsReduction,
+        riskSettings.additionalActionsReduction
       );
       finalRiskLevel = calculation.residualLevel;
     }
@@ -1342,6 +1381,11 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+                <RiskSettingsDialog
+                  settings={riskSettings}
+                  onSave={handleSaveRiskSettings}
+                  saving={savingRiskSettings}
+                />
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -1809,6 +1853,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     onSeverityChange={(value) => setItemFormData({ ...itemFormData, severity: value })}
                     onRiskLevelChange={(value) => setItemFormData({ ...itemFormData, risk_level: value })}
                     onUseManualOverrideChange={setUseManualRiskOverride}
+                    riskSettings={riskSettings}
                   />
                 </CardContent>
               </Card>
