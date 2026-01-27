@@ -24,7 +24,7 @@ import { cn } from '@/lib/utils';
 import { useTerminology } from '@/hooks/useTerminology';
 import { WhoAtRiskSelector } from './risk-assessment/WhoAtRiskSelector';
 import { RiskEvaluationPanel, RiskSettings } from './risk-assessment/RiskEvaluationPanel';
-import { calculateRisk, LikelihoodKey, SeverityKey } from './risk-assessment/RiskScoring';
+import { calculateRisk, LikelihoodKey, SeverityKey, LIKELIHOOD_SCORES, SEVERITY_SCORES } from './risk-assessment/RiskScoring';
 import { RiskSettingsDialog, DEFAULT_RISK_SETTINGS } from './risk-assessment/RiskSettingsDialog';
 import { RiskDisclaimer } from './risk-assessment/RiskDisclaimer';
 
@@ -64,6 +64,7 @@ interface RiskAssessmentItem {
   target_date?: string;
   status: string;
   sort_order: number;
+  is_manually_overridden?: boolean;
 }
 
 interface AuditLogEntry {
@@ -327,7 +328,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     const itemData = {
       ...itemFormData,
       risk_level: finalRiskLevel,
-      target_date: itemFormData.target_date || null
+      target_date: itemFormData.target_date || null,
+      is_manually_overridden: useManualRiskOverride
     };
 
     try {
@@ -706,37 +708,56 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     yPos = Math.max(yPos, midY) + 5;
 
     // === HAZARDS TABLE ===
-    const tableData = assessmentItems.map(item => [
-      item.hazard_description,
-      item.who_at_risk,
-      item.existing_controls || '-',
-      item.risk_level.toUpperCase(),
-      item.likelihood,
-      item.severity,
-      item.additional_actions || '-',
-      item.status
-    ]);
+    // Helper to format likelihood/severity with numbers
+    const formatWithScore = (key: string, type: 'likelihood' | 'severity') => {
+      if (type === 'likelihood') {
+        const scoreData = LIKELIHOOD_SCORES[key as LikelihoodKey];
+        if (scoreData) return `${scoreData.score} - ${scoreData.label}`;
+      } else {
+        const scoreData = SEVERITY_SCORES[key as SeverityKey];
+        if (scoreData) return `${scoreData.score} - ${scoreData.label}`;
+      }
+      return key;
+    };
+
+    // Track overridden items for footnotes
+    const overriddenItems = assessmentItems.filter(item => item.is_manually_overridden);
+    const hasOverrides = overriddenItems.length > 0;
+
+    const tableData = assessmentItems.map((item, index) => {
+      const overrideMarker = item.is_manually_overridden ? ' *' : '';
+      return [
+        item.hazard_description,
+        item.who_at_risk,
+        item.existing_controls || '-',
+        item.risk_level.toUpperCase() + overrideMarker,
+        formatWithScore(item.likelihood, 'likelihood'),
+        formatWithScore(item.severity, 'severity'),
+        item.additional_actions || '-',
+        item.status
+      ];
+    });
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Hazard', 'Who at Risk', 'Existing Controls', 'Risk', 'Likelihood', 'Severity', 'Additional Actions', 'Status']],
+      head: [['Hazard', 'Who at Risk', 'Existing Controls', 'Risk Level', 'Likelihood (1-5)', 'Severity (1-5)', 'Additional Actions', 'Status']],
       body: tableData,
       styles: { fontSize: 7, cellPadding: 2 },
       headStyles: { fillColor: [66, 139, 202], fontSize: 8, fontStyle: 'bold' },
       columnStyles: {
-        0: { cellWidth: 50 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 40 },
-        3: { cellWidth: 18 },
-        4: { cellWidth: 22 },
-        5: { cellWidth: 20 },
-        6: { cellWidth: 45 },
-        7: { cellWidth: 20 }
+        0: { cellWidth: 48 },
+        1: { cellWidth: 28 },
+        2: { cellWidth: 38 },
+        3: { cellWidth: 20 },
+        4: { cellWidth: 26 },
+        5: { cellWidth: 26 },
+        6: { cellWidth: 42 },
+        7: { cellWidth: 18 }
       },
-      margin: { bottom: 20 },
+      margin: { bottom: 25 },
       didParseCell: function(data) {
         if (data.column.index === 3 && data.section === 'body') {
-          const risk = data.cell.raw as string;
+          const risk = (data.cell.raw as string).replace(' *', '');
           if (risk === 'HIGH') {
             data.cell.styles.fillColor = [239, 68, 68];
             data.cell.styles.textColor = [255, 255, 255];
@@ -751,16 +772,112 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       }
     });
 
-    const finalY = (doc as any).lastAutoTable.finalY + 10;
+    let currentY = (doc as any).lastAutoTable.finalY + 8;
+
+    // === METHODOLOGY SECTION ===
+    const methodologyNeeded = currentY + 35 < pageHeight - 40;
+    if (methodologyNeeded) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(50, 50, 50);
+      doc.text('Risk Calculation Methodology', leftCol, currentY);
+      currentY += 5;
+      
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      
+      const methodologyText = [
+        `• Inherent Risk Score = Likelihood (1-5) × Severity (1-5), giving a score from 1-25`,
+        `• Risk Levels: Low (1-6), Medium (7-12), High (13-25)`,
+        `• Control Reduction Applied: Existing Controls -${riskSettings.existingControlsReduction}%, Additional Actions -${riskSettings.additionalActionsReduction}%`,
+        `• Maximum combined reduction capped at 50%`
+      ];
+      
+      methodologyText.forEach(line => {
+        doc.text(line, leftCol, currentY);
+        currentY += 4;
+      });
+      currentY += 4;
+    } else {
+      doc.addPage();
+      currentY = 20;
+      
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(50, 50, 50);
+      doc.text('Risk Calculation Methodology', leftCol, currentY);
+      currentY += 5;
+      
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      
+      const methodologyText = [
+        `• Inherent Risk Score = Likelihood (1-5) × Severity (1-5), giving a score from 1-25`,
+        `• Risk Levels: Low (1-6), Medium (7-12), High (13-25)`,
+        `• Control Reduction Applied: Existing Controls -${riskSettings.existingControlsReduction}%, Additional Actions -${riskSettings.additionalActionsReduction}%`,
+        `• Maximum combined reduction capped at 50%`
+      ];
+      
+      methodologyText.forEach(line => {
+        doc.text(line, leftCol, currentY);
+        currentY += 4;
+      });
+      currentY += 4;
+    }
+
+    // === OVERRIDE FOOTNOTES ===
+    if (hasOverrides) {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(100, 80, 0);
+      doc.text('* Professional Overrides Applied', leftCol, currentY);
+      currentY += 4;
+      
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(100, 100, 100);
+      const overrideNote = `The following hazards have risk levels set by professional judgement rather than calculated values: ${
+        overriddenItems.map(item => `"${item.hazard_description.substring(0, 30)}${item.hazard_description.length > 30 ? '...' : ''}"`).join(', ')
+      }`;
+      const overrideLines = doc.splitTextToSize(overrideNote, pageWidth - 28);
+      doc.text(overrideLines, leftCol, currentY);
+      currentY += overrideLines.length * 3.5 + 4;
+    }
+
+    // === DISCLAIMER SECTION ===
+    // Check if we need a new page for disclaimer
+    if (currentY + 30 > pageHeight - 25) {
+      doc.addPage();
+      currentY = 20;
+    }
+
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(80, 80, 80);
+    doc.text('Important Disclaimer', leftCol, currentY);
+    currentY += 4;
     
-    // Signature section (if fits on page)
-    if (finalY < pageHeight - 30) {
+    doc.setFontSize(6.5);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+    
+    const disclaimerText = `This risk assessment is provided as a guidance tool and does not guarantee the elimination of all hazards. Risk scores are calculated using a standardised matrix but must be interpreted in the context of your specific operating environment. The reduction percentages applied for existing controls and additional actions are organisational settings and may not reflect actual control effectiveness. Professional judgement must always be applied when determining final risk levels. Users are responsible for verifying that all controls are implemented and effective. The operators of this software accept no liability for incidents arising from the use of this assessment. This document should be reviewed regularly and updated when conditions change.`;
+    
+    const disclaimerLines = doc.splitTextToSize(disclaimerText, pageWidth - 28);
+    doc.text(disclaimerLines, leftCol, currentY);
+    currentY += disclaimerLines.length * 3 + 6;
+
+    // Signature section
+    if (currentY + 10 < pageHeight - 20) {
       doc.setFontSize(8);
       doc.setFont('helvetica', 'normal');
-      doc.text('Compiled by: ___________________________________', leftCol, finalY);
-      doc.text(`${selectedAssessment.assessor_name}`, leftCol + 28, finalY);
-      doc.text('Date: _______________', rightCol, finalY);
-      doc.text(format(new Date(), 'dd/MM/yyyy'), rightCol + 15, finalY);
+      doc.setTextColor(0);
+      doc.text('Compiled by: ___________________________________', leftCol, currentY);
+      doc.text(`${selectedAssessment.assessor_name}`, leftCol + 28, currentY);
+      doc.text('Date: _______________', rightCol, currentY);
+      doc.text(format(new Date(), 'dd/MM/yyyy'), rightCol + 15, currentY);
     }
 
     // Add footer to all pages

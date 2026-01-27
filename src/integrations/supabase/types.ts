@@ -1643,6 +1643,7 @@ export type Database = {
           existing_controls: string | null
           hazard_description: string
           id: string
+          is_manually_overridden: boolean | null
           last_modified_at: string | null
           last_modified_by: string | null
           likelihood: string
@@ -1661,6 +1662,7 @@ export type Database = {
           existing_controls?: string | null
           hazard_description: string
           id?: string
+          is_manually_overridden?: boolean | null
           last_modified_at?: string | null
           last_modified_by?: string | null
           likelihood?: string
@@ -1679,6 +1681,7 @@ export type Database = {
           existing_controls?: string | null
           hazard_description?: string
           id?: string
+          is_manually_overridden?: boolean | null
           last_modified_at?: string | null
           last_modified_by?: string | null
           likelihood?: string
