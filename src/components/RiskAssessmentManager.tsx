@@ -23,6 +23,9 @@ import autoTable from 'jspdf-autotable';
 import { cn } from '@/lib/utils';
 import logoImage from '@/assets/logo.png';
 import { useTerminology } from '@/hooks/useTerminology';
+import { WhoAtRiskSelector } from './risk-assessment/WhoAtRiskSelector';
+import { RiskEvaluationPanel } from './risk-assessment/RiskEvaluationPanel';
+import { calculateRisk, LikelihoodKey, SeverityKey } from './risk-assessment/RiskScoring';
 
 interface RiskAssessmentManagerProps {
   ride: {
@@ -121,6 +124,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     target_date: '',
     status: 'open'
   });
+
+  const [useManualRiskOverride, setUseManualRiskOverride] = useState(false);
 
   useEffect(() => {
     loadAssessments();
@@ -243,9 +248,22 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const handleSaveItem = async () => {
     if (!selectedAssessment) return;
 
+    // Calculate risk level if not using manual override
+    let finalRiskLevel = itemFormData.risk_level;
+    if (!useManualRiskOverride) {
+      const calculation = calculateRisk(
+        itemFormData.likelihood as LikelihoodKey,
+        itemFormData.severity as SeverityKey,
+        itemFormData.existing_controls,
+        itemFormData.additional_actions
+      );
+      finalRiskLevel = calculation.residualLevel;
+    }
+
     // Convert empty strings to null for date fields
     const itemData = {
       ...itemFormData,
+      risk_level: finalRiskLevel,
       target_date: itemFormData.target_date || null
     };
 
@@ -262,6 +280,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         setShowItemDialog(false);
         setEditingItem(null);
         resetItemForm();
+        setUseManualRiskOverride(false);
         loadAssessmentItems();
       }
     } else {
@@ -279,6 +298,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         toast({ title: 'Success', description: 'Risk item added' });
         setShowItemDialog(false);
         resetItemForm();
+        setUseManualRiskOverride(false);
         loadAssessmentItems();
       }
     }
@@ -1625,48 +1645,10 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     )}
                   </div>
 
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Label>Who is at Risk * (Select all that apply)</Label>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                        </TooltipTrigger>
-                        <TooltipContent className="max-w-xs">
-                          <p>Identify who could be harmed by this hazard</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3 p-4 border rounded-md bg-muted/30">
-                      {['Public', 'Staff', 'Contractors', 'Spectators', 'Operators', 'Maintenance personnel', 'All persons'].map((option) => {
-                        const selectedGroups = itemFormData.who_at_risk ? itemFormData.who_at_risk.split(', ') : [];
-                        const isChecked = selectedGroups.includes(option);
-                        
-                        return (
-                          <div key={option} className="flex items-center space-x-2">
-                            <Checkbox
-                              id={`risk-${option}`}
-                              checked={isChecked}
-                              onCheckedChange={(checked) => {
-                                let newGroups = [...selectedGroups];
-                                if (checked) {
-                                  if (!newGroups.includes(option)) {
-                                    newGroups.push(option);
-                                  }
-                                } else {
-                                  newGroups = newGroups.filter(g => g !== option);
-                                }
-                                setItemFormData({ ...itemFormData, who_at_risk: newGroups.join(', ') });
-                              }}
-                            />
-                            <Label htmlFor={`risk-${option}`} className="text-sm font-normal cursor-pointer">
-                              {option}
-                            </Label>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
+                  <WhoAtRiskSelector
+                    value={itemFormData.who_at_risk}
+                    onChange={(value) => setItemFormData({ ...itemFormData, who_at_risk: value })}
+                  />
 
                   <div>
                     <div className="flex items-center gap-2 mb-2">
@@ -1784,50 +1766,23 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                   <CardTitle className="text-base flex items-center gap-2">
                     <span className="text-orange-600">2.</span> Risk Evaluation
                   </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Risk is calculated as Likelihood × Severity. Controls reduce the residual risk.
+                  </p>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="likelihood">Likelihood</Label>
-                      <p className="text-xs text-muted-foreground italic mb-2">How likely is this hazard to cause harm?</p>
-                      <Select value={itemFormData.likelihood} onValueChange={(value) => setItemFormData({ ...itemFormData, likelihood: value })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="rare">Rare - May occur only in exceptional circumstances</SelectItem>
-                          <SelectItem value="unlikely">Unlikely - Could occur at some time</SelectItem>
-                          <SelectItem value="possible">Possible - Might occur at some time</SelectItem>
-                          <SelectItem value="likely">Likely - Will probably occur in most circumstances</SelectItem>
-                          <SelectItem value="certain">Certain - Expected to occur in most circumstances</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="severity">Severity</Label>
-                      <p className="text-xs text-muted-foreground italic mb-2">How serious would the injury or harm be?</p>
-                      <Select value={itemFormData.severity} onValueChange={(value) => setItemFormData({ ...itemFormData, severity: value })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="negligible">Negligible - No injury or minimal impact</SelectItem>
-                          <SelectItem value="minor">Minor - First aid treatment, minor injuries</SelectItem>
-                          <SelectItem value="moderate">Moderate - Medical attention required</SelectItem>
-                          <SelectItem value="major">Major - Serious injury or long-term health effects</SelectItem>
-                          <SelectItem value="catastrophic">Catastrophic - Death or permanent disability</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="col-span-2">
-                      <Label htmlFor="risk_level">Overall Risk Level</Label>
-                      <p className="text-xs text-muted-foreground italic mb-2">Combine likelihood and severity to determine overall risk. High risk requires immediate action.</p>
-                      <Select value={itemFormData.risk_level} onValueChange={(value) => setItemFormData({ ...itemFormData, risk_level: value })}>
-                        <SelectTrigger><SelectValue /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="low">Low - Acceptable risk with controls in place</SelectItem>
-                          <SelectItem value="medium">Medium - Risk requires additional controls</SelectItem>
-                          <SelectItem value="high">High - Unacceptable risk, immediate action required</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  <RiskEvaluationPanel
+                    likelihood={itemFormData.likelihood}
+                    severity={itemFormData.severity}
+                    riskLevel={itemFormData.risk_level}
+                    existingControls={itemFormData.existing_controls}
+                    additionalActions={itemFormData.additional_actions}
+                    useManualOverride={useManualRiskOverride}
+                    onLikelihoodChange={(value) => setItemFormData({ ...itemFormData, likelihood: value })}
+                    onSeverityChange={(value) => setItemFormData({ ...itemFormData, severity: value })}
+                    onRiskLevelChange={(value) => setItemFormData({ ...itemFormData, risk_level: value })}
+                    onUseManualOverrideChange={setUseManualRiskOverride}
+                  />
                 </CardContent>
               </Card>
 
@@ -1950,16 +1905,20 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                             <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
-                            <p>Who is responsible for completing the additional actions?</p>
+                            <p>The person accountable for implementing this action. They are responsible for ensuring it gets done.</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
                       <Input
                         id="action_owner"
-                        placeholder="e.g., Site Manager"
+                        placeholder="Name of person responsible for this action"
                         value={itemFormData.action_owner}
                         onChange={(e) => setItemFormData({ ...itemFormData, action_owner: e.target.value })}
+                        className="placeholder:text-muted-foreground/60"
                       />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Enter the name/role of who will implement and verify this control
+                      </p>
                     </div>
                     
                     <div>
