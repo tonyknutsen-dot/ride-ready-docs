@@ -397,8 +397,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   }
                 }}
               />
-              <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()} variant="secondary">
-                <Plus className="h-4 w-4" />
+              <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()} className="bg-background border border-input hover:bg-accent shrink-0">
+                <Plus className="h-4 w-4 text-foreground" />
               </Button>
             </div>
             <p className="text-xs text-muted-foreground">
