@@ -376,7 +376,7 @@ const AnnualInspectionManager = ({ ride }: AnnualInspectionManagerProps) => {
                     <div>
                       <CardTitle>Annual Inspection {report.inspection_year}</CardTitle>
                       <CardDescription>
-                        {report.inspection_company} • {format(new Date(report.inspection_date), 'PPP')}
+                        {report.inspection_company} • {format(new Date(report.inspection_date), 'd MMM yyyy')}
                       </CardDescription>
                     </div>
                   </div>
@@ -428,7 +428,7 @@ const AnnualInspectionManager = ({ ride }: AnnualInspectionManagerProps) => {
                       <Calendar className="h-4 w-4" />
                       <span>
                         {report.next_inspection_due 
-                          ? format(new Date(report.next_inspection_due), 'PPP')
+                          ? format(new Date(report.next_inspection_due), 'd MMM yyyy')
                           : 'Not scheduled'
                         }
                       </span>

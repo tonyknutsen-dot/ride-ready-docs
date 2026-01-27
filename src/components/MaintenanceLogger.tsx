@@ -295,7 +295,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {formData.maintenance_date ? format(formData.maintenance_date, "PPP") : "Select date"}
+                  {formData.maintenance_date ? format(formData.maintenance_date, "d MMM yyyy") : "Select date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">

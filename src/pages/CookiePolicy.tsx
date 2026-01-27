@@ -55,7 +55,7 @@ const CookiePolicy = () => {
               <Cookie className="h-8 w-8 text-primary" />
             </div>
             <h1 className="text-4xl font-bold mb-4">Cookie Policy</h1>
-            <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString()}</p>
+            <p className="text-muted-foreground">Last updated: {new Date().toLocaleDateString('en-GB')}</p>
           </div>
 
           <Card className="mb-8 border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">

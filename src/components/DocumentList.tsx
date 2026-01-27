@@ -583,8 +583,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           )}
         </div>
         <div className="text-xs text-muted-foreground break-words">
-          {doc.expires_at && <span>Expires {new Date(doc.expires_at).toLocaleDateString()}</span>}
-          {!isOlderVersion && <span> • Uploaded {new Date(doc.uploaded_at).toLocaleDateString()}</span>}
+          {doc.expires_at && <span>Expires {new Date(doc.expires_at).toLocaleDateString('en-GB')}</span>}
+          {!isOlderVersion && <span> • Uploaded {new Date(doc.uploaded_at).toLocaleDateString('en-GB')}</span>}
         </div>
         {doc.notes && !isOlderVersion && (
           <p className="text-xs text-muted-foreground mt-1 break-words">{doc.notes}</p>
@@ -950,7 +950,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                             'text-muted-foreground'
                           }`}>
                             {isExpired(doc.expires_at) && <AlertTriangle className="h-3 w-3" />}
-                            {new Date(doc.expires_at).toLocaleDateString()}
+                            {new Date(doc.expires_at).toLocaleDateString('en-GB')}
                           </span>
                         </>
                       )}
