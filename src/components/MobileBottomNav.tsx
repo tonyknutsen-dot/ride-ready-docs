@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home, FolderOpen, CheckSquare, MoreHorizontal,
-  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut, Send, Wrench, Shield, Lightbulb
+  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut, Send, Wrench, Shield, Lightbulb, Users
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -10,6 +10,7 @@ import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { RequestFeatureDialog } from "@/components/RequestFeatureDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAdmin } from "@/contexts/AdminContext";
+import { useStaff } from "@/contexts/StaffContext";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,6 +22,17 @@ export default function MobileBottomNav() {
   const loc = useLocation();
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
+  const { 
+    isStaff,
+    canAccessChecks,
+    canAccessMaintenance,
+    canAccessDocuments,
+    canAccessRiskAssessments,
+    canAccessSendDocuments,
+    canAccessBilling,
+    canAccessSettings,
+    canManageStaff,
+  } = useStaff();
   const { toast } = useToast();
   const [open, setOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
@@ -135,14 +147,16 @@ export default function MobileBottomNav() {
           label="Rides"
         />
 
-        {/* CHECKS - Central prominent button */}
-        <NavButton 
-          onClick={() => go("/checks")}
-          active={isActive(["/checks"])}
-          icon={CheckSquare}
-          label="Checks"
-          highlight={true}
-        />
+        {/* CHECKS - Central prominent button (only if has permission) */}
+        {canAccessChecks && (
+          <NavButton 
+            onClick={() => go("/checks")}
+            active={isActive(["/checks"])}
+            icon={CheckSquare}
+            label="Checks"
+            highlight={true}
+          />
+        )}
 
         {/* Calendar */}
         <NavButton 
@@ -169,79 +183,103 @@ export default function MobileBottomNav() {
             </SheetHeader>
 
             <div className="space-y-4">
-              {/* Quick Actions */}
+              {/* Quick Actions - filtered by permission */}
               <div className="grid grid-cols-3 gap-2">
-                <button
-                  className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-xl text-sm font-medium hover:bg-primary/15 transition-all active:scale-95"
-                  onClick={() => setUploadDialogOpen(true)}
-                >
-                  <div className="p-2.5 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
-                    <PlusCircle className="h-5 w-5 text-primary" />
-                  </div>
-                  <span className="text-xs">Upload</span>
-                </button>
-                <button
-                  className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-accent/5 to-accent/10 border border-accent/20 rounded-xl text-sm font-medium hover:bg-accent/15 transition-all active:scale-95"
-                  onClick={() => go("/send-documents")}
-                >
-                  <div className="p-2.5 bg-gradient-to-br from-accent/20 to-accent/10 rounded-lg">
-                    <Send className="h-5 w-5 text-accent" />
-                  </div>
-                  <span className="text-xs">Send</span>
-                </button>
-                <button
-                  className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-success/5 to-success/10 border border-success/20 rounded-xl text-sm font-medium hover:bg-success/15 transition-all active:scale-95"
-                  onClick={() => go("/risk-assessments")}
-                >
-                  <div className="p-2.5 bg-gradient-to-br from-success/20 to-success/10 rounded-lg">
-                    <ShieldCheck className="h-5 w-5 text-success" />
-                  </div>
-                  <span className="text-xs">Risk</span>
-                </button>
+                {canAccessDocuments && (
+                  <button
+                    className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/20 rounded-xl text-sm font-medium hover:bg-primary/15 transition-all active:scale-95"
+                    onClick={() => setUploadDialogOpen(true)}
+                  >
+                    <div className="p-2.5 bg-gradient-to-br from-primary/20 to-primary/10 rounded-lg">
+                      <PlusCircle className="h-5 w-5 text-primary" />
+                    </div>
+                    <span className="text-xs">Upload</span>
+                  </button>
+                )}
+                {canAccessSendDocuments && (
+                  <button
+                    className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-accent/5 to-accent/10 border border-accent/20 rounded-xl text-sm font-medium hover:bg-accent/15 transition-all active:scale-95"
+                    onClick={() => go("/send-documents")}
+                  >
+                    <div className="p-2.5 bg-gradient-to-br from-accent/20 to-accent/10 rounded-lg">
+                      <Send className="h-5 w-5 text-accent" />
+                    </div>
+                    <span className="text-xs">Send</span>
+                  </button>
+                )}
+                {canAccessRiskAssessments && (
+                  <button
+                    className="flex flex-col items-center gap-2 p-3 bg-gradient-to-br from-success/5 to-success/10 border border-success/20 rounded-xl text-sm font-medium hover:bg-success/15 transition-all active:scale-95"
+                    onClick={() => go("/risk-assessments")}
+                  >
+                    <div className="p-2.5 bg-gradient-to-br from-success/20 to-success/10 rounded-lg">
+                      <ShieldCheck className="h-5 w-5 text-success" />
+                    </div>
+                    <span className="text-xs">Risk</span>
+                  </button>
+                )}
               </div>
 
               <Separator />
 
-              {/* Features Section */}
+              {/* Features Section - filtered by permission */}
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Features</p>
-                <MenuItem 
-                  icon={FileText} 
-                  label="Documents" 
-                  onClick={() => go("/documents")} 
-                  active={isActive(["/documents"])}
-                />
-                <MenuItem 
-                  icon={Wrench} 
-                  label="Maintenance" 
-                  onClick={() => go("/maintenance")} 
-                  active={isActive(["/maintenance"])}
-                />
-                <MenuItem 
-                  icon={FileText} 
-                  label="Global Documents" 
-                  onClick={() => go("/global-documents")} 
-                  active={isActive(["/global-documents"])}
-                />
+                {canAccessDocuments && (
+                  <MenuItem 
+                    icon={FileText} 
+                    label="Documents" 
+                    onClick={() => go("/documents")} 
+                    active={isActive(["/documents"])}
+                  />
+                )}
+                {canAccessMaintenance && (
+                  <MenuItem 
+                    icon={Wrench} 
+                    label="Maintenance" 
+                    onClick={() => go("/maintenance")} 
+                    active={isActive(["/maintenance"])}
+                  />
+                )}
+                {canAccessDocuments && (
+                  <MenuItem 
+                    icon={FileText} 
+                    label="Global Documents" 
+                    onClick={() => go("/global-documents")} 
+                    active={isActive(["/global-documents"])}
+                  />
+                )}
               </div>
 
               <Separator />
 
-              {/* Account Section */}
+              {/* Account Section - filtered by permission */}
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Account</p>
-                <MenuItem 
-                  icon={CreditCard} 
-                  label="Plan & Billing" 
-                  onClick={() => go("/billing")} 
-                  active={isActive(["/billing"])}
-                />
-                <MenuItem 
-                  icon={Settings} 
-                  label="Settings" 
-                  onClick={() => go("/settings")} 
-                  active={isActive(["/settings"])}
-                />
+                {canAccessBilling && (
+                  <MenuItem 
+                    icon={CreditCard} 
+                    label="Plan & Billing" 
+                    onClick={() => go("/billing")} 
+                    active={isActive(["/billing"])}
+                  />
+                )}
+                {canAccessSettings && (
+                  <MenuItem 
+                    icon={Settings} 
+                    label="Settings" 
+                    onClick={() => go("/settings")} 
+                    active={isActive(["/settings"])}
+                  />
+                )}
+                {canManageStaff && (
+                  <MenuItem 
+                    icon={Users} 
+                    label="Staff Management" 
+                    onClick={() => go("/settings#staff")} 
+                    active={false}
+                  />
+                )}
                 <MenuItem 
                   icon={HelpCircle} 
                   label="Help & Support" 

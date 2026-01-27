@@ -17,8 +17,8 @@ import {
   MessageCircle,
   ChevronLeft,
   ChevronRight,
-  Menu,
   Wrench,
+  Users,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -31,13 +31,13 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
-  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/contexts/AdminContext';
+import { useStaff } from '@/contexts/StaffContext';
 import { useToast } from '@/hooks/use-toast';
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
@@ -47,19 +47,19 @@ const mainNavItems = [
   { title: 'Overview', url: '/overview', icon: Home },
   { title: 'Rides', url: '/rides', icon: FolderOpen },
   { title: 'Calendar', url: '/calendar', icon: CalendarIcon },
-  { title: 'Documents', url: '/documents', icon: FileText },
+  { title: 'Documents', url: '/documents', icon: FileText, requiresPermission: 'full_access' as const },
 ];
 
 const featureNavItems = [
-  { title: 'Checks', url: '/checks', icon: CheckSquare },
-  { title: 'Maintenance', url: '/maintenance', icon: Wrench },
-  { title: 'Risk Assessments', url: '/risk-assessments', icon: ShieldCheck },
-  { title: 'Send Documents', url: '/send-documents', icon: Send },
+  { title: 'Checks', url: '/checks', icon: CheckSquare, requiresPermission: 'checks_only' as const },
+  { title: 'Maintenance', url: '/maintenance', icon: Wrench, requiresPermission: 'checks_maintenance' as const },
+  { title: 'Risk Assessments', url: '/risk-assessments', icon: ShieldCheck, requiresPermission: 'full_access' as const },
+  { title: 'Send Documents', url: '/send-documents', icon: Send, requiresPermission: 'full_access' as const },
 ];
 
 const accountNavItems = [
-  { title: 'Plan & Billing', url: '/billing', icon: CreditCard },
-  { title: 'Settings', url: '/settings', icon: Settings },
+  { title: 'Plan & Billing', url: '/billing', icon: CreditCard, ownerOnly: true },
+  { title: 'Settings', url: '/settings', icon: Settings, ownerOnly: true },
   { title: 'Help & Support', url: '/help', icon: HelpCircle },
 ];
 
@@ -67,12 +67,35 @@ export function AppSidebar() {
   const location = useLocation();
   const { signOut } = useAuth();
   const { isAdmin } = useAdmin();
+  const { 
+    isStaff, 
+    isOwner, 
+    permissionLevel,
+    canAccessChecks,
+    canAccessMaintenance,
+    canAccessDocuments,
+    canAccessRiskAssessments,
+    canAccessSendDocuments,
+    canAccessBilling,
+    canAccessSettings,
+    canManageStaff,
+  } = useStaff();
   const { toast } = useToast();
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === 'collapsed';
 
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
+
+  // Permission check helper
+  const hasPermission = (requiredPermission?: 'checks_only' | 'checks_maintenance' | 'full_access') => {
+    if (!requiredPermission) return true;
+    if (isOwner && !isStaff) return true;
+    if (!permissionLevel) return false;
+    
+    const hierarchy = { 'checks_only': 1, 'checks_maintenance': 2, 'full_access': 3 };
+    return hierarchy[permissionLevel] >= hierarchy[requiredPermission];
+  };
 
   const handleSignOut = async () => {
     const { error } = await signOut();
@@ -95,7 +118,22 @@ export function AppSidebar() {
     return location.pathname === path;
   };
 
-  const NavItem = ({ item }: { item: { title: string; url: string; icon: any } }) => {
+  // Filter nav items based on permissions
+  type NavItem = { title: string; url: string; icon: any; requiresPermission?: 'checks_only' | 'checks_maintenance' | 'full_access'; ownerOnly?: boolean };
+  
+  const filterNavItems = (items: NavItem[]) => {
+    return items.filter(item => {
+      if (item.ownerOnly && isStaff) return false;
+      if (item.requiresPermission && !hasPermission(item.requiresPermission)) return false;
+      return true;
+    });
+  };
+
+  const filteredMainNav = filterNavItems(mainNavItems as NavItem[]);
+  const filteredFeatureNav = filterNavItems(featureNavItems as NavItem[]);
+  const filteredAccountNav = filterNavItems(accountNavItems as NavItem[]);
+
+  const NavItem = ({ item }: { item: NavItem }) => {
     const active = isActive(item.url);
     const Icon = item.icon;
 
@@ -145,7 +183,7 @@ export function AppSidebar() {
             )}
             <SidebarGroupContent>
               <SidebarMenu>
-                {mainNavItems.map((item) => (
+                {filteredMainNav.map((item) => (
                   <NavItem key={item.url} item={item} />
                 ))}
               </SidebarMenu>
@@ -155,20 +193,22 @@ export function AppSidebar() {
           <Separator className="my-3" />
 
           {/* Features */}
-          <SidebarGroup>
-            {!collapsed && (
-              <SidebarGroupLabel className="text-xs font-medium text-muted-foreground mb-2">
-                Features
-              </SidebarGroupLabel>
-            )}
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {featureNavItems.map((item) => (
-                  <NavItem key={item.url} item={item} />
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+          {filteredFeatureNav.length > 0 && (
+            <SidebarGroup>
+              {!collapsed && (
+                <SidebarGroupLabel className="text-xs font-medium text-muted-foreground mb-2">
+                  Features
+                </SidebarGroupLabel>
+              )}
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {filteredFeatureNav.map((item) => (
+                    <NavItem key={item.url} item={item} />
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          )}
 
           <Separator className="my-3" />
 
@@ -181,9 +221,23 @@ export function AppSidebar() {
             )}
             <SidebarGroupContent>
               <SidebarMenu>
-                {accountNavItems.map((item) => (
+                {filteredAccountNav.map((item) => (
                   <NavItem key={item.url} item={item} />
                 ))}
+                {/* Staff Management - owners only */}
+                {canManageStaff && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/settings' && location.hash === '#staff'}>
+                      <Link
+                        to="/settings#staff"
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all text-muted-foreground hover:text-foreground hover:bg-muted`}
+                      >
+                        <Users className="h-5 w-5 flex-shrink-0" />
+                        {!collapsed && <span>Staff</span>}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => setFeatureDialogOpen(true)}
