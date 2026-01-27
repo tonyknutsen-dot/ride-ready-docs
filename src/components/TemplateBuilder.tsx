@@ -349,7 +349,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           {/* Quick Add from Library */}
           <CheckLibraryDialog
             trigger={
-              <Button variant="outline" className="w-full">
+              <Button variant="secondary" className="w-full bg-primary/10 hover:bg-primary/20 border border-primary/20 text-primary font-medium">
                 <Library className="w-4 h-4 mr-2" />
                 Browse Library Items
               </Button>
