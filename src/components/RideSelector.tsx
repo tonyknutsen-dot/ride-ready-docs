@@ -187,10 +187,10 @@ const RideSelector = ({
                     e.stopPropagation();
                     onRideSelect(ride);
                   }}
-                  className="w-full h-11 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 shadow-sm"
+                  className="w-full h-11 bg-gradient-to-r from-primary to-primary/80 hover:opacity-90 shadow-sm text-xs sm:text-sm"
                 >
-                  <Icon className="h-4 w-4 mr-2" />
-                  {actionLabel}
+                  <Icon className="h-4 w-4 mr-2 shrink-0" />
+                  <span className="truncate">{actionLabel}</span>
                 </Button>
               </CardContent>
             </Card>
