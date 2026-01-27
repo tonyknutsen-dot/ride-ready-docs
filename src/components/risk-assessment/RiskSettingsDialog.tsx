@@ -51,18 +51,18 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
           <span className="hidden sm:inline">Settings</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)]">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-w-[calc(100vw-2rem)] max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-2">
           <DialogTitle className="flex items-center gap-2">
             <Settings2 className="h-5 w-5 shrink-0" />
             <span>Risk Calculation Settings</span>
           </DialogTitle>
-          <DialogDescription>
-            Customise how control measures reduce risk scores in your assessments.
+          <DialogDescription className="text-xs">
+            Customise how control measures reduce risk scores.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5 py-4">
+        <div className="space-y-4 py-2">
           {/* Explanation */}
           <Alert className="bg-info/10 border-info/30">
             <Info className="h-4 w-4 text-info shrink-0" />
