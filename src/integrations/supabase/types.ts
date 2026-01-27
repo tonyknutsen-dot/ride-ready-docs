@@ -576,6 +576,78 @@ export type Database = {
           },
         ]
       }
+      defects: {
+        Row: {
+          check_id: string | null
+          created_at: string
+          description: string
+          id: string
+          is_test_data: boolean
+          location_on_ride: string | null
+          photo_paths: string[] | null
+          reported_at: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          ride_id: string
+          severity: Database["public"]["Enums"]["defect_severity"]
+          status: Database["public"]["Enums"]["defect_status"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          check_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          is_test_data?: boolean
+          location_on_ride?: string | null
+          photo_paths?: string[] | null
+          reported_at?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          ride_id: string
+          severity?: Database["public"]["Enums"]["defect_severity"]
+          status?: Database["public"]["Enums"]["defect_status"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          check_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          is_test_data?: boolean
+          location_on_ride?: string | null
+          photo_paths?: string[] | null
+          reported_at?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          ride_id?: string
+          severity?: Database["public"]["Enums"]["defect_severity"]
+          status?: Database["public"]["Enums"]["defect_status"]
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "defects_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "defects_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       document_ride_assignments: {
         Row: {
           assigned_at: string
@@ -1954,6 +2026,8 @@ export type Database = {
     Enums: {
       app_role: "admin" | "user" | "tester"
       check_frequency: "daily" | "monthly" | "yearly" | "preopening"
+      defect_severity: "non_urgent" | "urgent" | "stop_operation"
+      defect_status: "open" | "acknowledged" | "in_progress" | "resolved"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2083,6 +2157,8 @@ export const Constants = {
     Enums: {
       app_role: ["admin", "user", "tester"],
       check_frequency: ["daily", "monthly", "yearly", "preopening"],
+      defect_severity: ["non_urgent", "urgent", "stop_operation"],
+      defect_status: ["open", "acknowledged", "in_progress", "resolved"],
     },
   },
 } as const
