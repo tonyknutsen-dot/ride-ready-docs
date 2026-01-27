@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { FileText, Calendar, Bell, Upload, CheckCircle, Shield, Mail, Crown, ArrowRight, ArrowLeft } from "lucide-react";
 import { useSubscription, PRICING, RIDE_LIMITS } from "@/hooks/useSubscription";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
+import { HelpChatWidget } from "@/components/HelpChatWidget";
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTerminology } from "@/hooks/useTerminology";
@@ -417,6 +418,13 @@ const HelpCenter = () => {
           <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
             Find answers to common questions and learn how to get the most out of Ride Ready Docs
           </p>
+        </section>
+
+        {/* AI Help Chat */}
+        <section className="container mx-auto px-6 py-8">
+          <div className="max-w-3xl mx-auto">
+            <HelpChatWidget />
+          </div>
         </section>
 
         {/* Quick Links */}

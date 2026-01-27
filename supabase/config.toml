@@ -183,6 +183,9 @@ verify_jwt = false
 [functions.accept-staff-invite]
 verify_jwt = false
 
+[functions.help-chat]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 54327
