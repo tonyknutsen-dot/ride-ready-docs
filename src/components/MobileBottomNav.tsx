@@ -276,8 +276,8 @@ export default function MobileBottomNav() {
                   <MenuItem 
                     icon={Users} 
                     label="Staff Management" 
-                    onClick={() => go("/settings#staff")} 
-                    active={false}
+                    onClick={() => go("/staff")} 
+                    active={isActive(["/staff"])}
                   />
                 )}
                 <MenuItem 

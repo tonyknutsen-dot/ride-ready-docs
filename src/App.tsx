@@ -61,6 +61,7 @@ const BatchSendDocuments = lazy(() => import("./pages/BatchSendDocuments"));
 const Marketing = lazy(() => import("./pages/Marketing"));
 const TesterInvite = lazy(() => import("./pages/TesterInvite"));
 const StaffInvite = lazy(() => import("./pages/StaffInvite"));
+const Staff = lazy(() => import("./pages/Staff"));
 const Diagnostics = lazy(() => import("./pages/Diagnostics"));
 const MyBugReports = lazy(() => import("./pages/MyBugReports"));
 
@@ -202,6 +203,20 @@ const App = () => (
                       <StaffRoute ownerOnly>
                         <AppLayout>
                           <Settings />
+                        </AppLayout>
+                      </StaffRoute>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/staff"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <StaffRoute ownerOnly>
+                        <AppLayout>
+                          <Staff />
                         </AppLayout>
                       </StaffRoute>
                     </ProfileGuard>
