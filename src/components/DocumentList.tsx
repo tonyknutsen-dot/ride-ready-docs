@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import { formatDateUK } from '@/utils/dateFormat';
 import ImageViewer from './ImageViewer';
 import PDFViewer from './PDFViewer';
 import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
@@ -73,6 +74,44 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   // Helper to check if document is viewable
   const isViewable = (doc: Document) => {
     return isImageDoc(doc) || isPDFDoc(doc);
+  };
+
+  // Some legacy Safety Check Record PDFs were saved with US date strings in the document_name,
+  // e.g. "Preopening Check - 1/27/2026". We can't change the already-generated PDF content,
+  // but we can render a UK-friendly display name in the list (and for download/view titles).
+  const normalizeLegacyCheckRecordTitle = (name: string): string => {
+    // Find a single US-style date fragment anywhere in the title.
+    const m = name.match(/^(.*?)(\d{1,2})\/(\d{1,2})\/(\d{4})(.*)$/);
+    if (!m) return name;
+
+    const prefix = m[1];
+    const a = Number(m[2]);
+    const b = Number(m[3]);
+    const year = Number(m[4]);
+    const suffix = m[5];
+
+    // Heuristic:
+    // - if the "day" part is > 12, it's definitely MM/DD (US)
+    // - if the "month" part is > 12, it's definitely DD/MM (already UK)
+    if (b > 12 && a >= 1 && a <= 12) {
+      const d = new Date(year, a - 1, b);
+      return `${prefix}${formatDateUK(d)}${suffix}`;
+    }
+
+    if (a > 12 && b >= 1 && b <= 12) {
+      const d = new Date(year, b - 1, a);
+      return `${prefix}${formatDateUK(d)}${suffix}`;
+    }
+
+    // Ambiguous (e.g. 2/11/2026) – don't guess.
+    return name;
+  };
+
+  const getDocumentDisplayName = (doc: Document) => {
+    const raw = doc.document_name || '';
+    const isSafetyCheckRecord = isCheckRecord(doc.document_type, doc.file_path);
+    if (!isSafetyCheckRecord) return raw;
+    return normalizeLegacyCheckRecordTitle(raw);
   };
 
   useEffect(() => {
@@ -186,6 +225,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
 
   const handleView = async (document: Document) => {
     try {
+      const displayName = getDocumentDisplayName(document);
       const { data, error } = await supabase.storage
         .from('ride-documents')
         .createSignedUrl(document.file_path, 3600); // 1 hour
@@ -197,14 +237,14 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           setViewerState({
             type: 'image',
             url: data.signedUrl,
-            name: document.document_name,
+            name: displayName,
             document
           });
         } else if (isPDFDoc(document)) {
           setViewerState({
             type: 'pdf',
             url: data.signedUrl,
-            name: document.document_name,
+            name: displayName,
             document
           });
         }
@@ -221,6 +261,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
 
   const handleDownload = async (document: Document) => {
     try {
+      const displayName = getDocumentDisplayName(document);
       const { data, error } = await supabase.storage
         .from('ride-documents')
         .download(document.file_path);
@@ -236,13 +277,13 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
       const url = window.URL.createObjectURL(blob);
       const a = window.document.createElement('a');
       a.href = url;
-      a.download = document.document_name;
+      a.download = displayName;
       a.click();
       window.URL.revokeObjectURL(url);
 
       toast({
         title: "Download started",
-        description: `Downloading ${document.document_name}`,
+        description: `Downloading ${displayName}`,
       });
     } catch (error: any) {
       console.error('Download error:', error);
@@ -539,6 +580,9 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   // Grouped render for mobile-first clarity
   // Component to render a single document row
   const DocumentRow = ({ doc, isOlderVersion = false, hasMultipleVersions = false }: { doc: Document; isOlderVersion?: boolean; hasMultipleVersions?: boolean }) => (
+    (() => {
+      const displayName = getDocumentDisplayName(doc);
+      return (
     <div className={`border-2 rounded-2xl p-3 flex items-start gap-3 transition-all min-w-0 bg-card ${
       isOlderVersion 
         ? 'border-border/40 opacity-75 hover:opacity-100' 
@@ -548,7 +592,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         {thumbs[doc.id] ? (
           <img
             src={thumbs[doc.id]}
-            alt={doc.document_name}
+            alt={displayName}
             className={`rounded-xl object-cover border-2 border-primary/20 cursor-pointer shadow-sm hover:shadow-md transition-shadow ${
               isOlderVersion ? 'w-10 h-10' : 'w-12 h-12'
             }`}
@@ -563,7 +607,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         )}
       </div>
       <div className="flex-1 min-w-0">
-        <div className={`font-medium truncate flex items-center gap-2 ${isOlderVersion ? 'text-sm' : 'text-[15px]'}`} title={doc.document_name}>
+        <div className={`font-medium truncate flex items-center gap-2 ${isOlderVersion ? 'text-sm' : 'text-[15px]'}`} title={displayName}>
           {isOlderVersion ? (
             <span className="text-muted-foreground">
               📅 {new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -573,7 +617,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
               {doc.is_global && (
                 <Globe className="h-4 w-4 text-info shrink-0" />
               )}
-              <span className="truncate">{doc.document_name}</span>
+              <span className="truncate">{displayName}</span>
               {hasMultipleVersions && (
                 <Badge variant="secondary" className="shrink-0 bg-primary/10 text-primary text-[10px] px-1.5 py-0">
                   Latest
@@ -621,7 +665,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
             <AlertDialogHeader>
               <AlertDialogTitle>Delete Document</AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete "{doc.document_name}"? This action cannot be undone.
+                Are you sure you want to delete "{displayName}"? This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -637,6 +681,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         </AlertDialog>
       </div>
     </div>
+      );
+    })()
   );
 
   if (grouped) {
