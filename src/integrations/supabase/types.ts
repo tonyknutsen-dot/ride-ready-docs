@@ -1766,6 +1766,62 @@ export type Database = {
         }
         Relationships: []
       }
+      user_submitted_check_items: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          frequency: string
+          hint: string | null
+          id: string
+          is_generic: boolean
+          label: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          ride_category_id: string | null
+          similarity_group: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          frequency: string
+          hint?: string | null
+          id?: string
+          is_generic?: boolean
+          label: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          ride_category_id?: string | null
+          similarity_group?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          frequency?: string
+          hint?: string | null
+          id?: string
+          is_generic?: boolean
+          label?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          ride_category_id?: string | null
+          similarity_group?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_submitted_check_items_ride_category_id_fkey"
+            columns: ["ride_category_id"]
+            isOneToOne: false
+            referencedRelation: "ride_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       profiles_safe: {

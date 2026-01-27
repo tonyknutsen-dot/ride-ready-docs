@@ -165,6 +165,15 @@ verify_jwt = false
 [functions.register-tester]
 verify_jwt = false
 
+[functions.send-tester-expiry-reminders]
+verify_jwt = false
+
+[functions.gdpr-cleanup]
+verify_jwt = false
+
+[functions.group-similar-check-items]
+verify_jwt = true
+
 [analytics]
 enabled = false
 port = 54327
