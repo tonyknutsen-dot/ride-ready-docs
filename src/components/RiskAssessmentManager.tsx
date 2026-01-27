@@ -86,10 +86,13 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const [showItemDialog, setShowItemDialog] = useState(false);
   const [showEmailDialog, setShowEmailDialog] = useState(false);
   const [showAuditHistory, setShowAuditHistory] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [assessmentToDelete, setAssessmentToDelete] = useState<RiskAssessment | null>(null);
   const [editingItem, setEditingItem] = useState<RiskAssessmentItem | null>(null);
   const [loading, setLoading] = useState(true);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [savingItem, setSavingItem] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [ridePhotoUrl, setRidePhotoUrl] = useState<string | null>(null);
   const [useCustomHazard, setUseCustomHazard] = useState(false);
@@ -413,6 +416,49 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     } else {
       toast({ title: 'Success', description: 'Risk item deleted' });
       loadAssessmentItems();
+    }
+  };
+
+  const handleDeleteAssessment = async () => {
+    if (!assessmentToDelete || deleting) return;
+    
+    // Only allow deletion of non-completed assessments
+    if (assessmentToDelete.overall_status === 'completed') {
+      toast({ 
+        title: 'Cannot delete', 
+        description: 'Completed assessments cannot be deleted as they form part of your audit trail.',
+        variant: 'destructive' 
+      });
+      setShowDeleteConfirm(false);
+      setAssessmentToDelete(null);
+      return;
+    }
+
+    setDeleting(true);
+    
+    try {
+      // First delete any associated items
+      await supabase
+        .from('risk_assessment_items')
+        .delete()
+        .eq('risk_assessment_id', assessmentToDelete.id);
+      
+      // Then delete the assessment itself
+      const { error } = await supabase
+        .from('risk_assessments')
+        .delete()
+        .eq('id', assessmentToDelete.id);
+
+      if (error) {
+        toast({ title: 'Error deleting assessment', description: error.message, variant: 'destructive' });
+      } else {
+        toast({ title: 'Success', description: 'Risk assessment deleted' });
+        loadAssessments();
+      }
+    } finally {
+      setDeleting(false);
+      setShowDeleteConfirm(false);
+      setAssessmentToDelete(null);
     }
   };
 
@@ -1200,18 +1246,20 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           {assessments.map((assessment) => (
             <Card 
               key={assessment.id} 
-              className="cursor-pointer hover:bg-muted/50 transition-all group border-l-4"
+              className="hover:bg-muted/50 transition-all group border-l-4"
               style={{
                 borderLeftColor: 
                   assessment.overall_status === 'completed' ? 'rgb(34, 197, 94)' :
                   assessment.overall_status === 'in_progress' ? 'rgb(59, 130, 246)' :
                   'rgb(156, 163, 175)'
               }}
-              onClick={() => setSelectedAssessment(assessment)}
             >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between gap-4">
-                  <div className="flex-1">
+                  <div 
+                    className="flex-1 cursor-pointer"
+                    onClick={() => setSelectedAssessment(assessment)}
+                  >
                     <div className="flex items-center gap-2 mb-1">
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <p className="font-medium text-sm">Risk Assessment</p>
@@ -1230,13 +1278,72 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     }`}>
                       {assessment.overall_status.replace('_', ' ')}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform rotate-[-90deg]" />
+                    {assessment.overall_status !== 'completed' && (
+                      <TooltipProvider delayDuration={0}>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 p-0 hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setAssessmentToDelete(assessment);
+                                setShowDeleteConfirm(true);
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="left">
+                            <p className="text-xs">Delete this draft assessment</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
+                    <ChevronDown 
+                      className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform rotate-[-90deg] cursor-pointer" 
+                      onClick={() => setSelectedAssessment(assessment)}
+                    />
                   </div>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Risk Assessment?</DialogTitle>
+              <DialogDescription>
+                This will permanently delete this draft risk assessment and all its items. This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            {assessmentToDelete && (
+              <div className="py-2">
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Assessment from:</span>{' '}
+                  <span className="font-medium">{format(new Date(assessmentToDelete.assessment_date), 'dd MMM yyyy')}</span>
+                </p>
+                <p className="text-sm">
+                  <span className="text-muted-foreground">Assessor:</span>{' '}
+                  <span className="font-medium">{assessmentToDelete.assessor_name}</span>
+                </p>
+              </div>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowDeleteConfirm(false)} disabled={deleting}>
+                Cancel
+              </Button>
+              <Button variant="destructive" onClick={handleDeleteAssessment} disabled={deleting}>
+                {deleting ? <Loader2 className="h-4 w-4 animate-spin mr-1.5" /> : <Trash2 className="h-4 w-4 mr-1.5" />}
+                Delete
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={showNewAssessment} onOpenChange={setShowNewAssessment}>
           <DialogContent>
