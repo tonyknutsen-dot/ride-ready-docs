@@ -150,14 +150,35 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
     setGettingLocation(true);
     
-    try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+    // Helper to attempt GPS with specific accuracy settings
+    const attemptGPS = (highAccuracy: boolean, timeout: number): Promise<GeolocationPosition> => {
+      return new Promise((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 60000
+          enableHighAccuracy: highAccuracy,
+          timeout: timeout,
+          maximumAge: 300000 // 5 minutes cache is fine for location
         });
       });
+    };
+
+    try {
+      let position: GeolocationPosition;
+      
+      try {
+        // First try: high accuracy with 30 second timeout
+        position = await attemptGPS(true, 30000);
+      } catch (firstError: any) {
+        // If high accuracy times out, try with low accuracy (faster, uses network/wifi)
+        if (firstError.code === 3) {
+          toast({
+            title: "Trying alternative location method...",
+            description: "High accuracy GPS timed out, using network location",
+          });
+          position = await attemptGPS(false, 15000);
+        } else {
+          throw firstError;
+        }
+      }
 
       const { latitude, longitude } = position.coords;
       
@@ -188,16 +209,24 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         } else {
           // Fallback to coordinates
           setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+          toast({
+            title: "Location captured",
+            description: "Coordinates saved (address lookup unavailable)",
+          });
         }
       } catch {
         // Fallback to coordinates if geocoding fails
         setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        toast({
+          title: "Location captured",
+          description: "Coordinates saved (address lookup failed)",
+        });
       }
     } catch (error: any) {
       let message = "Could not get your location";
-      if (error.code === 1) message = "Location access denied. Please enable GPS permissions.";
-      if (error.code === 2) message = "Location unavailable. Try again.";
-      if (error.code === 3) message = "Location request timed out.";
+      if (error.code === 1) message = "Location access denied. Please enable GPS permissions in your browser/device settings.";
+      if (error.code === 2) message = "Location unavailable. Please check GPS is enabled on your device.";
+      if (error.code === 3) message = "Location request timed out. Please try again or enter location manually.";
       
       toast({
         title: "GPS Error",
