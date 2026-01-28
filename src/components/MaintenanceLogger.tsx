@@ -74,13 +74,32 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
     'text/csv',
   ];
 
+  // Count how many images are already uploaded
+  const imageCount = uploadedFiles.filter(f => f.type.startsWith('image/')).length;
+  const MAX_PHOTOS = 3;
+
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
     const processedFiles: File[] = [];
     
+    // Track how many images we're adding
+    let newImageCount = 0;
+    const currentImageCount = uploadedFiles.filter(f => f.type.startsWith('image/')).length;
+    
     for (const file of files) {
-      const isValidType = ALLOWED_TYPES.includes(file.type) || file.type.startsWith('image/');
+      const isImage = file.type.startsWith('image/');
+      const isValidType = ALLOWED_TYPES.includes(file.type) || isImage;
       const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB limit
+      
+      // Check photo limit
+      if (isImage && currentImageCount + newImageCount >= MAX_PHOTOS) {
+        toast({
+          title: "Photo Limit Reached",
+          description: `Maximum ${MAX_PHOTOS} photos allowed per maintenance record.`,
+          variant: "destructive",
+        });
+        continue;
+      }
       
       if (!isValidType) {
         toast({
@@ -101,7 +120,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
       }
       
       // Compress images larger than 500KB
-      if (file.type.startsWith('image/') && file.size > 500000) {
+      if (isImage && file.size > 500000) {
         try {
           const compressed = await compressImage(file);
           if (compressed.size < file.size) {
@@ -111,12 +130,15 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             });
           }
           processedFiles.push(compressed);
+          newImageCount++;
         } catch (error) {
           console.error('Compression failed:', error);
           processedFiles.push(file);
+          newImageCount++;
         }
       } else {
         processedFiles.push(file);
+        if (isImage) newImageCount++;
       }
     }
 
@@ -443,8 +465,13 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Max 10MB per file. Supports: Images, PDF, Word, Excel, Text files
+            Max 10MB per file. Supports: Images (max {MAX_PHOTOS}), PDF, Word, Excel, Text files
           </p>
+          {imageCount > 0 && (
+            <p className="text-xs text-primary font-medium">
+              📷 {imageCount}/{MAX_PHOTOS} photos added
+            </p>
+          )}
         </div>
 
         {/* Uploaded Files */}
