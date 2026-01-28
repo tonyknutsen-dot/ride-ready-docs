@@ -1,157 +1,112 @@
 
 
-# AI Help Chat for the Help Center
+## Offline GPS Location with Deferred Address Resolution
 
-This plan adds an AI-powered help assistant to the existing Help Center page, allowing users to ask questions about using Ride Ready Docs and get instant answers. The AI will be trained on the app's documentation, FAQs, and feature guides.
+This plan implements two enhancements to the GPS location feature for offline use:
+1. Show a clear message when offline indicating GPS coordinates are captured and address will resolve when online
+2. Resolve the address from raw coordinates during the sync process
 
----
-
-## Overview
-
-The AI help chat will be integrated directly into the Help Center page (`/help`), positioned prominently so users can quickly get answers without scrolling through FAQs. The assistant will understand the app's terminology, features, and UK fairground industry context.
-
----
-
-## Architecture
+### How It Will Work
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│                        Help Center Page                          │
-├─────────────────────────────────────────────────────────────────┤
-│  ┌──────────────────────────────────────────────────────────┐   │
-│  │                    AI Help Chat Card                      │   │
-│  │  ┌──────────────────────────────────────────────────┐    │   │
-│  │  │  Message History (scrollable)                     │    │   │
-│  │  │  - User: How do I upload documents?               │    │   │
-│  │  │  - AI: To upload documents, go to your ride...    │    │   │
-│  │  └──────────────────────────────────────────────────┘    │   │
-│  │  ┌──────────────────────────────────────────────────┐    │   │
-│  │  │  [Type your question...]           [Send]         │    │   │
-│  │  └──────────────────────────────────────────────────┘    │   │
-│  └──────────────────────────────────────────────────────────┘   │
-│                                                                  │
-│  [Existing Quick Start Guides...]                                │
-│  [Existing FAQs...]                                              │
-│  [Contact Support Section...]                                    │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────┐
+│                        OFFLINE GPS FLOW                             │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                     │
+│  User taps "Get GPS Location" while offline:                       │
+│                                                                     │
+│  1. GPS hardware captures coordinates (works via satellite)        │
+│  2. App detects offline status                                     │
+│  3. Stores raw coordinates: "52.485612, -1.890401"                 │
+│  4. Sets flag: needsAddressResolution = true                       │
+│  5. Shows toast: "GPS captured - address resolves when online"     │
+│                                                                     │
+│  When sync runs (online):                                          │
+│                                                                     │
+│  1. Check finds pending checks with unresolved coordinates         │
+│  2. Calls OpenStreetMap API to convert to readable address         │
+│  3. Updates location field with full address                       │
+│  4. Submits to Supabase with resolved address                      │
+│                                                                     │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
----
+### Changes Overview
 
-## Implementation Steps
+**1. Update OfflineCheck interface** (`src/lib/offlineDb.ts`)
+   - Add new fields to track raw GPS coordinates separately:
+     - `rawLatitude?: number` - Raw GPS latitude  
+     - `rawLongitude?: number` - Raw GPS longitude
+     - `needsAddressResolution?: boolean` - Flag indicating address needs lookup
+   - Bump database version to add migration support
 
-### 1. Create Help Chat Edge Function
+**2. Modify GPS capture in InspectionChecklist** (`src/components/InspectionChecklist.tsx`)
+   - Detect if offline when GPS button is pressed
+   - If offline:
+     - Store raw coordinates in the location field (e.g., "52.4856, -1.8904")
+     - Track that this needs address resolution
+     - Show toast: "📍 GPS location captured - address will resolve when online"
+   - Pass the raw coordinates to the check submission
 
-**File:** `supabase/functions/help-chat/index.ts`
+**3. Update useOfflineCheck hook** (`src/hooks/useOfflineCheck.tsx`)
+   - Accept new optional parameters for raw coordinates
+   - Store `rawLatitude`, `rawLongitude`, and `needsAddressResolution` in IndexedDB
 
-This edge function will:
-- Use Lovable AI (`google/gemini-3-flash-preview`) for fast, accurate responses
-- Include a comprehensive system prompt with all app documentation
-- Support streaming for a responsive UX
-- Handle rate limiting (402/429 errors) gracefully
-- Log conversations for quality improvement
+**4. Enhance sync process** (`src/hooks/useOfflineSync.tsx`)
+   - Before syncing a check that has `needsAddressResolution = true`:
+     - Call OpenStreetMap Nominatim API to reverse geocode coordinates
+     - Build a clean, short address from the response
+     - Update the location field with the resolved address
+   - If address resolution fails, keep the raw coordinates (fallback)
 
-The system prompt will contain:
-- All FAQ content from the Help Center
-- Feature descriptions and step-by-step guides
-- Pricing information and plan differences
-- UK fairground industry terminology
-- Instructions to escalate complex issues to human support
+### Technical Details
 
-### 2. Create HelpChatWidget Component
-
-**File:** `src/components/HelpChatWidget.tsx`
-
-A reusable chat component featuring:
-- **Message history** with user/assistant distinction
-- **Streaming responses** rendered token-by-token with markdown support
-- **Suggested questions** to help users get started
-- **Loading states** and error handling
-- **"Contact Support" escalation** button
-- **Clear chat** option
-
-### 3. Integrate into Help Center
-
-**File:** `src/pages/HelpCenter.tsx` (modified)
-
-Add the AI chat section prominently:
-- Position between the hero section and Quick Start Guides
-- Full-width card with gradient border matching existing design
-- Mobile-responsive layout
-
-### 4. Update supabase/config.toml
-
-Add the new edge function configuration:
-```toml
-[functions.help-chat]
-verify_jwt = false
+**Address Resolution Function:**
+```typescript
+async function resolveAddress(lat: number, lon: number): Promise<string | null> {
+  try {
+    const response = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
+      { headers: { 'Accept-Language': 'en' } }
+    );
+    const data = await response.json();
+    
+    if (data.address) {
+      const parts = [];
+      if (data.address.road) parts.push(data.address.road);
+      if (data.address.village || data.address.town || data.address.city) {
+        parts.push(data.address.village || data.address.town || data.address.city);
+      }
+      if (data.address.county) parts.push(data.address.county);
+      if (data.address.postcode) parts.push(data.address.postcode);
+      return parts.join(', ') || data.display_name;
+    }
+  } catch (e) {
+    console.error('Address resolution failed:', e);
+  }
+  return null;
+}
 ```
 
----
+**Yes, the address will resolve during sync** because:
+- The sync process runs when the device is online
+- The Nominatim geocoding API is publicly accessible
+- We resolve the address before inserting into Supabase, so the database receives the full address
 
-## Technical Details
+### User Experience
 
-### System Prompt Strategy
+| Scenario | Current Behavior | New Behavior |
+|----------|-----------------|--------------|
+| GPS button pressed offline | Coordinates saved with "address lookup failed" message | Coordinates saved with "GPS captured - address will resolve when online" message |
+| Check synced later | Raw coordinates stored permanently | Address automatically resolved and stored |
+| Address resolution fails during sync | N/A | Falls back to raw coordinates (safe fallback) |
 
-The AI will be given context about:
-- **Features**: Overview, Rides, Calendar, Documents, Checks, Maintenance, Risk Assessments
-- **Plans**: Documents & Compliance (basic) vs Operations & Maintenance (advanced)
-- **Terminology**: UK showman terminology, ride categories, document types
-- **Limitations**: What requires human support (billing issues, bugs, account problems)
+### Files to Modify
 
-### Suggested Starting Questions
-
-The chat will show clickable suggestions:
-- "How do I add my first ride?"
-- "What documents should I upload?"
-- "How do daily checks work?"
-- "What's included in my plan?"
-- "How do I schedule inspections?"
-
-### Rate Limiting
-
-- Uses the existing rate limit infrastructure from `_shared/rate-limit.ts`
-- Moderate limits suitable for help queries
-- Graceful error messages when limits exceeded
-
-### Markdown Rendering
-
-AI responses will be rendered with `react-markdown` for:
-- Formatted lists and steps
-- Bold/italic text for emphasis
-- Code formatting where relevant
-- Links to relevant pages
-
----
-
-## Files to Create/Modify
-
-| File | Action | Description |
-|------|--------|-------------|
-| `supabase/functions/help-chat/index.ts` | Create | Edge function for AI chat with streaming |
-| `src/components/HelpChatWidget.tsx` | Create | React component for the chat interface |
-| `src/pages/HelpCenter.tsx` | Modify | Integrate chat widget into the page |
-| `supabase/config.toml` | Modify | Add function configuration |
-
----
-
-## User Experience Flow
-
-1. User visits `/help` (Help Center)
-2. AI chat card is prominently displayed with suggested questions
-3. User types a question or clicks a suggestion
-4. AI streams a response with markdown formatting
-5. User can continue the conversation or ask new questions
-6. If AI can't help, it suggests contacting support with a button
-7. Conversation resets on page reload (no persistence needed)
-
----
-
-## Security Considerations
-
-- No authentication required (public help content)
-- Rate limiting prevents abuse
-- IP blocking for suspicious activity
-- System prompt prevents off-topic usage
-- No sensitive data exposed through the chat
+| File | Changes |
+|------|---------|
+| `src/lib/offlineDb.ts` | Add coordinate fields to OfflineCheck interface, bump DB version |
+| `src/components/InspectionChecklist.tsx` | Detect offline state in GPS capture, show appropriate toast, pass raw coords |
+| `src/hooks/useOfflineCheck.tsx` | Add coordinate parameters to CheckSubmission interface |
+| `src/hooks/useOfflineSync.tsx` | Add address resolution step before syncing checks |
 
