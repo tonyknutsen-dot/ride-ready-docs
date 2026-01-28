@@ -202,6 +202,10 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     return totalItems > 0 ? (checkedCount / totalItems) * 100 : 0;
   };
 
+  // State for raw GPS coordinates (for deferred resolution when offline)
+  const [rawGpsCoords, setRawGpsCoords] = useState<{ lat: number; lon: number } | null>(null);
+  const [needsAddressResolution, setNeedsAddressResolution] = useState(false);
+
   const getGPSLocation = async () => {
     if (!navigator.geolocation) {
       toast({
@@ -246,7 +250,21 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
       const { latitude, longitude } = position.coords;
       
-      // Try to get address using reverse geocoding (free service)
+      // Check if we're online - if offline, store coordinates for deferred resolution
+      if (!navigator.onLine) {
+        // Store raw coordinates - address will be resolved during sync
+        setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        setRawGpsCoords({ lat: latitude, lon: longitude });
+        setNeedsAddressResolution(true);
+        toast({
+          title: "📍 GPS location captured",
+          description: "Address will resolve when online",
+        });
+        setGettingLocation(false);
+        return;
+      }
+      
+      // Online - try to get address using reverse geocoding
       try {
         const response = await fetch(
           `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
@@ -266,6 +284,8 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
           
           const shortAddress = parts.length > 0 ? parts.join(', ') : data.display_name;
           setLocation(shortAddress);
+          setRawGpsCoords(null);
+          setNeedsAddressResolution(false);
           toast({
             title: "Location detected",
             description: shortAddress,
@@ -273,17 +293,21 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         } else {
           // Fallback to coordinates
           setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+          setRawGpsCoords({ lat: latitude, lon: longitude });
+          setNeedsAddressResolution(true);
           toast({
             title: "Location captured",
             description: "Coordinates saved (address lookup unavailable)",
           });
         }
       } catch {
-        // Fallback to coordinates if geocoding fails
+        // Fallback to coordinates if geocoding fails - mark for deferred resolution
         setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
+        setRawGpsCoords({ lat: latitude, lon: longitude });
+        setNeedsAddressResolution(true);
         toast({
-          title: "Location captured",
-          description: "Coordinates saved (address lookup failed)",
+          title: "📍 GPS location captured",
+          description: "Address will resolve when online",
         });
       }
     } catch (error: any) {
@@ -947,6 +971,10 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         signatureData: signatureData.trim() || undefined,
         complianceOfficer: complianceOfficer.trim() || undefined,
         environmentNotes: environmentNotes.trim() || undefined,
+        // GPS coordinate fields for deferred address resolution
+        rawLatitude: rawGpsCoords?.lat,
+        rawLongitude: rawGpsCoords?.lon,
+        needsAddressResolution: needsAddressResolution,
         results: activeTemplate.daily_check_template_items.map(item => ({
           templateItemId: item.id,
           isChecked: checkedItems[item.id] || false,

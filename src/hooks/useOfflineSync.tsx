@@ -28,6 +28,31 @@ export function useOfflineSync() {
     setPendingCount(checks.length + defects.length);
   }, []);
 
+  // Resolve address from coordinates using OpenStreetMap Nominatim
+  const resolveAddress = async (lat: number, lon: number): Promise<string | null> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1`,
+        { headers: { 'Accept-Language': 'en' } }
+      );
+      const data = await response.json();
+      
+      if (data.address) {
+        const parts = [];
+        if (data.address.road) parts.push(data.address.road);
+        if (data.address.village || data.address.town || data.address.city) {
+          parts.push(data.address.village || data.address.town || data.address.city);
+        }
+        if (data.address.county) parts.push(data.address.county);
+        if (data.address.postcode) parts.push(data.address.postcode);
+        return parts.length > 0 ? parts.join(', ') : data.display_name;
+      }
+    } catch (e) {
+      console.error('Address resolution failed:', e);
+    }
+    return null;
+  };
+
   // Sync a single check to the server
   const syncCheck = async (check: OfflineCheck): Promise<boolean> => {
     if (!user) return false;
@@ -38,6 +63,19 @@ export function useOfflineSync() {
         .where('localId')
         .equals(check.localId)
         .modify({ syncStatus: 'syncing' });
+
+      // Resolve address if needed
+      let resolvedLocation = check.location;
+      if (check.needsAddressResolution && check.rawLatitude && check.rawLongitude) {
+        const address = await resolveAddress(check.rawLatitude, check.rawLongitude);
+        if (address) {
+          resolvedLocation = address;
+          console.log('Address resolved:', address);
+        } else {
+          // Keep raw coordinates as fallback
+          console.log('Address resolution failed, keeping coordinates');
+        }
+      }
 
       // Insert the check
       const { data: checkData, error: checkError } = await supabase
@@ -51,7 +89,7 @@ export function useOfflineSync() {
           status: check.status,
           notes: check.notes,
           weather_conditions: check.weatherConditions,
-          location: check.location,
+          location: resolvedLocation,
           signature_data: check.signatureData,
           compliance_officer: check.complianceOfficer,
           environment_notes: check.environmentNotes,
