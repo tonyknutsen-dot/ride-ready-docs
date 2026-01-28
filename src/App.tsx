@@ -22,6 +22,8 @@ import FloatingBugButton from "@/components/FloatingBugButton";
 import { InstallPromptBanner } from "@/components/InstallPromptBanner";
 import TesterSessionTracker from "@/components/TesterSessionTracker";
 import { AppLayout } from "@/components/AppLayout";
+import { PWAUpdateModal } from "@/components/PWAUpdateModal";
+import { StartupUpdateCheck } from "@/components/StartupUpdateCheck";
 import { Loader2, FileText } from "lucide-react";
 
 // Eager load critical pages
@@ -93,10 +95,11 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
+  <StartupUpdateCheck>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>
@@ -444,6 +447,7 @@ const App = () => (
               </Routes>
               </Suspense>
               <MobileBottomNav />
+              <PWAUpdateModal />
               <FloatingBugButton />
               <InstallPromptBanner />
               <CookieConsentBanner />
@@ -454,6 +458,7 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
+  </StartupUpdateCheck>
 );
 
 export default App;
