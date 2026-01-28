@@ -221,6 +221,80 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 20;
 
+    // Fetch profile for company branding
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user?.id)
+      .single();
+
+    // Fetch company logo if available
+    let logoDataUrl: string | null = null;
+    if (profile?.company_logo_path) {
+      try {
+        const { data: logoBlob } = await supabase.storage
+          .from('ride-documents')
+          .download(profile.company_logo_path);
+        if (logoBlob) {
+          logoDataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(logoBlob);
+          });
+        }
+      } catch (e) {
+        console.log('Could not load company logo');
+      }
+    }
+
+    // Fetch ride image if available
+    const { data: rideImageDoc } = await supabase
+      .from('documents')
+      .select('file_path')
+      .eq('ride_id', rideId)
+      .like('mime_type', 'image/%')
+      .limit(1)
+      .maybeSingle();
+
+    let rideImageDataUrl: string | null = null;
+    let imageW = 40, imageH = 30;
+    if (rideImageDoc) {
+      try {
+        const { data: imageBlob } = await supabase.storage
+          .from('ride-documents')
+          .download(rideImageDoc.file_path);
+        if (imageBlob) {
+          rideImageDataUrl = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result as string);
+            reader.readAsDataURL(imageBlob);
+          });
+          
+          // Calculate aspect-ratio-preserving dimensions
+          const img = new Image();
+          await new Promise<void>((resolve) => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            img.src = rideImageDataUrl!;
+          });
+          
+          if (img.naturalWidth && img.naturalHeight) {
+            const aspectRatio = img.naturalWidth / img.naturalHeight;
+            const maxW = 40, maxH = 30;
+            if (aspectRatio > maxW / maxH) {
+              imageW = maxW;
+              imageH = maxW / aspectRatio;
+            } else {
+              imageH = maxH;
+              imageW = maxH * aspectRatio;
+            }
+          }
+        }
+      } catch (e) {
+        console.log('Could not load ride image');
+      }
+    }
+
     // Helper function to add footer
     const addFooter = (pageNum: number, totalPages: number) => {
       doc.setFontSize(8);
@@ -231,21 +305,123 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       doc.setTextColor(0);
     };
 
-    // Cover page
-    doc.setFontSize(18);
+    let currentY = margin;
+
+    // === HEADER SECTION ===
+    // Logo on left, company info centered
+    if (logoDataUrl) {
+      try {
+        doc.addImage(logoDataUrl, 'AUTO', margin, currentY - 5, 18, 18);
+      } catch (e) {
+        console.log('Could not add logo to PDF');
+      }
+    }
+
+    // Company name - always centered on page
+    doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text(`Safety Checks Report`, pageWidth / 2, 40, { align: 'center' });
-    
-    doc.setFontSize(14);
+    doc.setTextColor(40, 40, 40);
+    const companyName = profile?.company_name || profile?.showmen_name || 'Safety Checks Report';
+    doc.text(companyName, pageWidth / 2, currentY, { align: 'center' });
+    currentY += 6;
+
+    // Controller name below company
+    if (profile?.controller_name) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100);
+      doc.text(`Controller: ${profile.controller_name}`, pageWidth / 2, currentY, { align: 'center' });
+      currentY += 5;
+    }
+
+    currentY += 8;
+
+    // Report title with underline
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(50, 50, 50);
+    const frequencyLabel = frequency === 'daily' ? 'DAILY' : frequency === 'monthly' ? 'MONTHLY' : frequency === 'yearly' ? 'YEARLY' : frequency.toUpperCase();
+    doc.text(`${frequencyLabel} SAFETY CHECKS REPORT`, pageWidth / 2, currentY, { align: 'center' });
+    currentY += 6;
+
+    // Date range
+    doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
-    doc.text(rideName, pageWidth / 2, 52, { align: 'center' });
-    
-    doc.setFontSize(11);
     doc.setTextColor(80);
-    doc.text(`Period: ${getDateRange().startDate} to ${getDateRange().endDate}`, pageWidth / 2, 65, { align: 'center' });
-    doc.text(`Total Checks: ${filteredChecks.length}`, pageWidth / 2, 75, { align: 'center' });
-    doc.text(`Pass Rate: ${overallStats.passRate}%`, pageWidth / 2, 85, { align: 'center' });
+    doc.text(`Period: ${getDateRange().startDate} to ${getDateRange().endDate}`, pageWidth / 2, currentY, { align: 'center' });
+    currentY += 8;
+
+    // Divider line
+    doc.setDrawColor(180);
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+    currentY += 10;
+
+    // === EQUIPMENT DETAILS SECTION WITH IMAGE ===
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(50, 50, 50);
+    doc.text('Equipment Details', margin, currentY);
+    currentY += 8;
+
+    const imageX = pageWidth - margin - imageW;
+    const imageY = currentY;
+    const labelWidth = 32;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
     doc.setTextColor(0);
+    doc.text('Name:', margin, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(rideName, margin + labelWidth, currentY);
+    currentY += 6;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Total Checks:', margin, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${filteredChecks.length}`, margin + labelWidth, currentY);
+    currentY += 6;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Pass Rate:', margin, currentY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${overallStats.passRate}%`, margin + labelWidth, currentY);
+    currentY += 6;
+
+    // Add ride image on the right side if available - with proper aspect ratio
+    if (rideImageDataUrl) {
+      try {
+        doc.setDrawColor(200);
+        doc.setLineWidth(0.5);
+        doc.rect(imageX - 1, imageY - 1, imageW + 2, imageH + 2);
+        doc.addImage(rideImageDataUrl, 'JPEG', imageX, imageY, imageW, imageH);
+        currentY = Math.max(currentY, imageY + imageH + 5);
+      } catch (e) {
+        console.log('Could not add ride image to PDF');
+      }
+    }
+
+    currentY += 5;
+    doc.setDrawColor(200);
+    doc.line(margin, currentY, pageWidth - margin, currentY);
+    currentY += 10;
+
+    // Summary stats
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Summary', margin, currentY);
+    currentY += 8;
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(34, 139, 34);
+    doc.text(`✓ Passed: ${overallStats.passed}`, margin, currentY);
+    doc.setTextColor(220, 53, 69);
+    doc.text(`✗ Failed: ${overallStats.failed}`, margin + 50, currentY);
+    doc.setTextColor(180, 130, 50);
+    doc.text(`◐ Partial: ${overallStats.partial}`, margin + 100, currentY);
+    doc.setTextColor(0);
+    currentY += 10;
+
 
     // Each check on its own page
     for (let i = 0; i < filteredChecks.length; i++) {
