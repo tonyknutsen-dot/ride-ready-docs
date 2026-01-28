@@ -1861,6 +1861,7 @@ export type Database = {
           created_at: string
           email: string
           expires_at: string
+          expiry_reminder_sent: boolean | null
           id: string
           invite_token: string
           invited_by: string
@@ -1875,6 +1876,7 @@ export type Database = {
           created_at?: string
           email: string
           expires_at?: string
+          expiry_reminder_sent?: boolean | null
           id?: string
           invite_token?: string
           invited_by: string
@@ -1889,6 +1891,7 @@ export type Database = {
           created_at?: string
           email?: string
           expires_at?: string
+          expiry_reminder_sent?: boolean | null
           id?: string
           invite_token?: string
           invited_by?: string

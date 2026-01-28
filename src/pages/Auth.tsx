@@ -8,12 +8,13 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, CheckCircle2, AlertCircle, Info } from 'lucide-react';
+import { Loader2, Eye, EyeOff, CheckCircle2, AlertCircle, Info, ShieldAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { z } from 'zod';
 import logo from '@/assets/logo.png';
 import { COUNTRIES } from '@/constants/profile';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
+import { useAuthRateLimit } from '@/hooks/useAuthRateLimit';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address').max(255, 'Email must be less than 255 characters'),
@@ -50,6 +51,26 @@ const Auth = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { checkRateLimit, recordAttempt, getRemainingLockTime, isLocked, attemptsRemaining } = useAuthRateLimit();
+  const [lockCountdown, setLockCountdown] = useState(0);
+
+  // Update countdown timer when locked
+  useEffect(() => {
+    if (isLocked) {
+      const updateCountdown = () => {
+        const remaining = getRemainingLockTime();
+        setLockCountdown(remaining);
+        if (remaining <= 0) {
+          setFormNotice(null);
+        }
+      };
+      updateCountdown();
+      const interval = setInterval(updateCountdown, 1000);
+      return () => clearInterval(interval);
+    } else {
+      setLockCountdown(0);
+    }
+  }, [isLocked, getRemainingLockTime]);
 
   // Clear notice when switching tabs
   useEffect(() => {
@@ -129,6 +150,19 @@ const Auth = () => {
     
     // Clear previous notices
     setFormNotice(null);
+
+    // Check rate limiting
+    if (!checkRateLimit()) {
+      const remainingSeconds = getRemainingLockTime();
+      const minutes = Math.floor(remainingSeconds / 60);
+      const seconds = remainingSeconds % 60;
+      setFormNotice({
+        type: 'error',
+        title: 'Too many attempts',
+        message: `For security, please wait ${minutes}:${seconds.toString().padStart(2, '0')} before trying again.`
+      });
+      return;
+    }
     
     if (activeTab === 'signin') {
       if (!validateForm(formData)) return;
@@ -144,13 +178,19 @@ const Auth = () => {
         : await signUp(formData.email, formData.password, formData.country);
 
       if (error) {
+        // Record failed attempt for rate limiting (only for signin to prevent brute force)
+        if (activeTab === 'signin') {
+          recordAttempt(false);
+        }
+        
         const errorMsg = error.message?.toLowerCase() || '';
         
         if (errorMsg.includes('invalid login credentials')) {
+          const remaining = attemptsRemaining - 1;
           setFormNotice({
             type: 'error',
             title: 'Login failed',
-            message: 'Invalid email or password. Please check your credentials and try again.'
+            message: `Invalid email or password.${remaining <= 2 ? ` ${remaining} attempt${remaining !== 1 ? 's' : ''} remaining.` : ''}`
           });
         } else if (errorMsg.includes('already registered') || errorMsg.includes('user already') || errorMsg.includes('already exists')) {
           // Account already exists - offer to sign in or reset password
@@ -176,6 +216,9 @@ const Auth = () => {
           });
         }
       } else {
+        // Record successful attempt (resets rate limit)
+        recordAttempt(true);
+        
         if (activeTab === 'signup') {
           setFormNotice({
             type: 'success',
@@ -195,6 +238,7 @@ const Auth = () => {
         }
       }
     } catch (err) {
+      recordAttempt(false);
       setFormNotice({
         type: 'error',
         title: 'Error',
@@ -334,10 +378,21 @@ const Auth = () => {
           </p>
         </div>
 
+        {/* Rate limit lockout warning */}
+        {isLocked && lockCountdown > 0 && (
+          <Alert variant="destructive" className="border-orange-500 bg-orange-50 dark:bg-orange-950/20">
+            <ShieldAlert className="h-4 w-4" />
+            <AlertTitle>Temporarily Locked</AlertTitle>
+            <AlertDescription>
+              Too many failed attempts. Please wait {Math.floor(lockCountdown / 60)}:{(lockCountdown % 60).toString().padStart(2, '0')} before trying again.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="signin">Sign In</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            <TabsTrigger value="signin" disabled={isLocked}>Sign In</TabsTrigger>
+            <TabsTrigger value="signup" disabled={isLocked}>Sign Up</TabsTrigger>
           </TabsList>
 
           <TabsContent value="signin" className="space-y-4 mt-4">
@@ -417,7 +472,7 @@ const Auth = () => {
                     <Button
                       type="submit"
                       className="w-full"
-                      disabled={isLoading}
+                      disabled={isLoading || isLocked}
                     >
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       Sign In
@@ -544,7 +599,7 @@ const Auth = () => {
                   <Button
                     type="submit"
                     className="w-full"
-                    disabled={isLoading}
+                    disabled={isLoading || isLocked}
                   >
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Create Account

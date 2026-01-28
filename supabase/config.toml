@@ -186,6 +186,9 @@ verify_jwt = false
 [functions.help-chat]
 verify_jwt = false
 
+[functions.send-staff-invite-expiry]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 54327
