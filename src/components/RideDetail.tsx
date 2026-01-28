@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, FileText, CheckSquare, Upload, Settings, Mail, Wrench, Pencil, ImageIcon } from 'lucide-react';
+import { ArrowLeft, FileText, CheckSquare, Upload, Settings, Mail, Wrench, Pencil, ImageIcon, Trash2 } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -17,6 +17,7 @@ import { RestrictedFeatureCard } from './RestrictedFeatureCard';
 import RideForm from './RideForm';
 import SafetyCertificateCard from './SafetyCertificateCard';
 import ImageViewer from './ImageViewer';
+import { DeleteRideDialog } from './DeleteRideDialog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -187,6 +188,19 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                   className="h-10 w-10 shrink-0 active:scale-95 transition-transform"
                 >
                   <Mail className="h-4 w-4" />
+                </Button>
+              }
+            />
+            <DeleteRideDialog
+              ride={ride}
+              onDeleted={onBack}
+              trigger={
+                <Button 
+                  variant="ghost"
+                  size="icon"
+                  className="h-10 w-10 shrink-0 active:scale-95 transition-transform text-destructive hover:text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               }
             />
