@@ -60,18 +60,34 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
 
   // Allowed MIME types for maintenance documents
   const ALLOWED_TYPES = [
+    // Images
     'image/jpeg',
     'image/png',
     'image/gif',
     'image/webp',
     'image/heic',
+    'image/tiff',
+    'image/bmp',
+    // Documents
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     'application/vnd.ms-excel',
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'application/vnd.ms-powerpoint',
+    'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    // Text files
     'text/plain',
     'text/csv',
+    // Videos
+    'video/mp4',
+    'video/quicktime',
+    'video/x-msvideo',
+    'video/webm',
+    'video/mpeg',
+    // Archives
+    'application/zip',
+    'application/x-rar-compressed',
   ];
 
   // Count how many images are already uploaded
@@ -104,7 +120,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
       if (!isValidType) {
         toast({
           title: "Invalid File Type",
-          description: `${file.name} is not supported. Please upload images, PDFs, or Word documents only.`,
+          description: `${file.name} is not supported. Supported: Images, PDFs, Word, Excel, PowerPoint, Text, Videos, ZIP.`,
           variant: "destructive",
         });
         continue;
@@ -428,7 +444,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           <input
             type="file"
             multiple
-            accept="image/*,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx"
+            accept="image/*,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.ppt,.pptx,.mp4,.mov,.avi,.webm,.mpeg,.zip,.rar,.tiff,.tif,.bmp"
             onChange={handleFileUpload}
             className="hidden"
             id="file-upload"
@@ -465,7 +481,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             </Button>
           </div>
           <p className="text-xs text-muted-foreground">
-            Max 10MB per file. Supports: Images (max {MAX_PHOTOS}), PDF, Word, Excel, Text files
+            Max 10MB per file. Supports: Images (max {MAX_PHOTOS}), PDF, Word, Excel, PowerPoint, Text, Videos, ZIP
           </p>
           {imageCount > 0 && (
             <p className="text-xs text-primary font-medium">
