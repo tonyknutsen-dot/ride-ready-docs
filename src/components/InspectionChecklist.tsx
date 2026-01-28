@@ -495,10 +495,43 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
       // Calculate layout - if image exists, put it on the right
       const hasImage = !!rideImageDataUrl;
-      const imageX = pageWidth - 45;
+      const maxImageW = 40;
+      const maxImageH = 30;
+      let imageW = maxImageW;
+      let imageH = maxImageH;
+      
+      // Calculate aspect-ratio-preserving dimensions if we have an image
+      if (rideImageDataUrl) {
+        try {
+          // Create a temporary image to get dimensions
+          const img = new Image();
+          await new Promise<void>((resolve) => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            img.src = rideImageDataUrl;
+          });
+          
+          if (img.naturalWidth && img.naturalHeight) {
+            const aspectRatio = img.naturalWidth / img.naturalHeight;
+            
+            // Fit within max bounds while preserving aspect ratio
+            if (aspectRatio > maxImageW / maxImageH) {
+              // Image is wider - constrain by width
+              imageW = maxImageW;
+              imageH = maxImageW / aspectRatio;
+            } else {
+              // Image is taller - constrain by height
+              imageH = maxImageH;
+              imageW = maxImageH * aspectRatio;
+            }
+          }
+        } catch (e) {
+          console.log('Could not calculate image dimensions');
+        }
+      }
+      
+      const imageX = pageWidth - margin - imageW;
       const imageY = currentY;
-      const imageW = 30;
-      const imageH = 22;
 
       pdf.setFontSize(10);
       pdf.setFont('helvetica', 'normal');
@@ -506,6 +539,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
       const leftCol = margin;
       const labelWidth = 32;
+      const textMaxWidth = hasImage ? imageX - margin - 10 : pageWidth - margin * 2;
 
       pdf.setFont('helvetica', 'bold');
       pdf.text('Name:', leftCol, currentY);
@@ -548,9 +582,13 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         currentY += 6;
       }
 
-      // Add ride image on the right side if available
+      // Add ride image on the right side if available - with proper aspect ratio
       if (rideImageDataUrl) {
         try {
+          // Add a subtle border around the image
+          pdf.setDrawColor(200);
+          pdf.setLineWidth(0.5);
+          pdf.rect(imageX - 1, imageY - 1, imageW + 2, imageH + 2);
           pdf.addImage(rideImageDataUrl, 'JPEG', imageX, imageY, imageW, imageH);
           currentY = Math.max(currentY, imageY + imageH + 5);
         } catch (e) {
