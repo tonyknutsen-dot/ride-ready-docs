@@ -76,7 +76,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
 
   // Count how many images are already uploaded
   const imageCount = uploadedFiles.filter(f => f.type.startsWith('image/')).length;
-  const MAX_PHOTOS = 3;
+  const MAX_PHOTOS = 5;
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
