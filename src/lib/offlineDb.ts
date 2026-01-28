@@ -77,12 +77,24 @@ export interface CachedTemplateItem {
   sortOrder: number;
 }
 
+// Cached location for offline address lookup
+export interface CachedLocation {
+  id?: number;
+  latitude: number;
+  longitude: number;
+  address: string;
+  usageCount: number;
+  lastUsed: string;
+  cachedAt: string;
+}
+
 // Dexie database class
 class OfflineDatabase extends Dexie {
   offlineChecks!: EntityTable<OfflineCheck, 'id'>;
   offlineDefects!: EntityTable<OfflineDefect, 'id'>;
   cachedRides!: EntityTable<CachedRide, 'id'>;
   cachedTemplates!: EntityTable<CachedTemplate, 'id'>;
+  cachedLocations!: EntityTable<CachedLocation, 'id'>;
 
   constructor() {
     super('RideReadyOfflineDB');
@@ -100,6 +112,15 @@ class OfflineDatabase extends Dexie {
       offlineDefects: '++id, localId, rideId, checkLocalId, syncStatus',
       cachedRides: 'id, cachedAt',
       cachedTemplates: 'id, rideId, cachedAt'
+    });
+
+    // Version 3: Add cached locations for offline address lookup
+    this.version(3).stores({
+      offlineChecks: '++id, localId, rideId, syncStatus, createdAt, needsAddressResolution',
+      offlineDefects: '++id, localId, rideId, checkLocalId, syncStatus',
+      cachedRides: 'id, cachedAt',
+      cachedTemplates: 'id, rideId, cachedAt',
+      cachedLocations: '++id, latitude, longitude, lastUsed'
     });
   }
 }
@@ -172,4 +193,77 @@ export async function getCachedRides(): Promise<CachedRide[]> {
 
 export async function getCachedTemplatesForRide(rideId: string): Promise<CachedTemplate[]> {
   return offlineDb.cachedTemplates.where('rideId').equals(rideId).toArray();
+}
+
+// Location caching helpers
+
+// Calculate distance between two coordinates in meters (Haversine formula)
+function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000; // Earth's radius in meters
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lon2 - lon1) * Math.PI) / 180;
+
+  const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+// Find a cached address within proximity (default 150 meters)
+export async function findCachedAddress(lat: number, lon: number, radiusMeters = 150): Promise<CachedLocation | null> {
+  const allLocations = await offlineDb.cachedLocations.toArray();
+  
+  for (const loc of allLocations) {
+    const distance = calculateDistance(lat, lon, loc.latitude, loc.longitude);
+    if (distance <= radiusMeters) {
+      // Update usage stats
+      await offlineDb.cachedLocations.update(loc.id!, {
+        usageCount: loc.usageCount + 1,
+        lastUsed: new Date().toISOString()
+      });
+      return loc;
+    }
+  }
+  
+  return null;
+}
+
+// Cache a new location address
+export async function cacheLocationAddress(lat: number, lon: number, address: string): Promise<void> {
+  // Check if we already have this location cached (within 50m to avoid duplicates)
+  const existing = await findCachedAddress(lat, lon, 50);
+  if (existing) {
+    // Update existing cache entry with potentially better address
+    await offlineDb.cachedLocations.update(existing.id!, {
+      address,
+      lastUsed: new Date().toISOString()
+    });
+    return;
+  }
+
+  // Add new cached location
+  await offlineDb.cachedLocations.add({
+    latitude: lat,
+    longitude: lon,
+    address,
+    usageCount: 1,
+    lastUsed: new Date().toISOString(),
+    cachedAt: new Date().toISOString()
+  });
+
+  // Limit cache size - keep only the 50 most recently used locations
+  const allLocations = await offlineDb.cachedLocations.orderBy('lastUsed').toArray();
+  if (allLocations.length > 50) {
+    const toDelete = allLocations.slice(0, allLocations.length - 50);
+    await offlineDb.cachedLocations.bulkDelete(toDelete.map(l => l.id!));
+  }
+}
+
+// Get all cached locations (for UI display if needed)
+export async function getCachedLocations(): Promise<CachedLocation[]> {
+  return offlineDb.cachedLocations.orderBy('usageCount').reverse().toArray();
 }

@@ -25,7 +25,7 @@ import DefectReportDialog from './DefectReportDialog';
 import DefectsList from './DefectsList';
 import { useOfflineCheck } from '@/hooks/useOfflineCheck';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
-import { getCachedTemplatesForRide, type CachedTemplate } from '@/lib/offlineDb';
+import { getCachedTemplatesForRide, findCachedAddress, cacheLocationAddress, type CachedTemplate } from '@/lib/offlineDb';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -250,9 +250,23 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
       const { latitude, longitude } = position.coords;
       
-      // Check if we're online - if offline, store coordinates for deferred resolution
+      // Check if we're online - if offline, try cache first then store coordinates for deferred resolution
       if (!navigator.onLine) {
-        // Store raw coordinates - address will be resolved during sync
+        // Try to find a cached address for this location
+        const cachedLocation = await findCachedAddress(latitude, longitude);
+        if (cachedLocation) {
+          setLocation(cachedLocation.address);
+          setRawGpsCoords(null);
+          setNeedsAddressResolution(false);
+          toast({
+            title: "📍 Location found (cached)",
+            description: cachedLocation.address,
+          });
+          setGettingLocation(false);
+          return;
+        }
+        
+        // No cached address - store raw coordinates for deferred resolution
         setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
         setRawGpsCoords({ lat: latitude, lon: longitude });
         setNeedsAddressResolution(true);
@@ -286,6 +300,10 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
           setLocation(shortAddress);
           setRawGpsCoords(null);
           setNeedsAddressResolution(false);
+          
+          // Cache this address for future offline use
+          await cacheLocationAddress(latitude, longitude, shortAddress);
+          
           toast({
             title: "Location detected",
             description: shortAddress,

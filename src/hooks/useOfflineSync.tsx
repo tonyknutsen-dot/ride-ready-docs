@@ -10,6 +10,7 @@ import {
   markCheckSynced,
   markCheckFailed,
   clearSyncedData,
+  cacheLocationAddress,
   type OfflineCheck,
   type OfflineDefect,
 } from '@/lib/offlineDb';
@@ -70,7 +71,9 @@ export function useOfflineSync() {
         const address = await resolveAddress(check.rawLatitude, check.rawLongitude);
         if (address) {
           resolvedLocation = address;
-          console.log('Address resolved:', address);
+          // Cache this address for future offline use
+          await cacheLocationAddress(check.rawLatitude, check.rawLongitude, address);
+          console.log('Address resolved and cached:', address);
         } else {
           // Keep raw coordinates as fallback
           console.log('Address resolution failed, keeping coordinates');
