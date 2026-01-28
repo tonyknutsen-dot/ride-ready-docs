@@ -1,6 +1,15 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "npm:resend@2.0.0";
+import { 
+  checkRateLimit, 
+  getClientIdentifier, 
+  createRateLimitResponse,
+  getSecureHeaders,
+  checkIpBlocked,
+  createBlockedIpResponse,
+  getClientIp
+} from "../_shared/rate-limit.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
@@ -24,6 +33,21 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
+    // Check IP blocking first
+    const clientIp = getClientIp(req);
+    const ipBlockResult = await checkIpBlocked(clientIp);
+    if (ipBlockResult.isBlocked) {
+      return createBlockedIpResponse(ipBlockResult, corsHeaders);
+    }
+
+    // Rate limiting for email endpoint (critical - fail closed)
+    const rateLimitKey = getClientIdentifier(req, "send-staff-invite");
+    const rateLimitResult = await checkRateLimit(rateLimitKey, "email");
+    
+    if (!rateLimitResult.allowed) {
+      console.warn(`[STAFF-INVITE] Rate limit exceeded for ${rateLimitKey}`);
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
+    }
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
