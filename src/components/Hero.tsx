@@ -112,7 +112,7 @@ const Hero = () => {
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-accent" />
-              <span>Cancel anytime</span>
+              <span>Install on any device</span>
             </div>
             <div className="flex items-center gap-2">
               <Globe className="h-4 w-4 text-accent" />

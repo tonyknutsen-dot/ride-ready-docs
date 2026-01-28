@@ -5,6 +5,7 @@ import Header from "../components/Header";
 // Lazy load below-fold components for better performance
 const EquipmentShowcase = lazy(() => import("../components/EquipmentShowcase"));
 const Features = lazy(() => import("../components/Features"));
+const InstallSection = lazy(() => import("../components/InstallSection"));
 const Pricing = lazy(() => import("../components/Pricing"));
 const CallToAction = lazy(() => import("../components/CallToAction"));
 const Footer = lazy(() => import("../components/Footer"));
@@ -28,6 +29,11 @@ const Index = memo(() => {
         <section id="features">
           <Suspense fallback={<SectionLoader />}>
             <Features />
+          </Suspense>
+        </section>
+        <section id="install">
+          <Suspense fallback={<SectionLoader />}>
+            <InstallSection />
           </Suspense>
         </section>
         <section id="pricing">
