@@ -1,24 +1,120 @@
-import { useNavigate } from 'react-router-dom';
-import { Wrench } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Wrench, ArrowLeft } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
 import RideSelector from '@/components/RideSelector';
 import PageHeader from '@/components/PageHeader';
+import MaintenanceManager from '@/components/MaintenanceManager';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
     name: string;
     description: string | null;
+    category_group: string;
   };
 };
 
 const Maintenance = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rideIdFromUrl = searchParams.get('rideId');
+  
+  const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
+  const [loading, setLoading] = useState(!!rideIdFromUrl);
+
+  // Load ride from URL param if present
+  useEffect(() => {
+    const loadRide = async () => {
+      if (!rideIdFromUrl || !user) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from('rides')
+          .select('*, ride_categories(name, description, category_group)')
+          .eq('id', rideIdFromUrl)
+          .eq('user_id', user.id)
+          .single();
+
+        if (error) throw error;
+        setSelectedRide(data as Ride);
+      } catch (error) {
+        console.error('Error loading ride:', error);
+        // Clear invalid rideId from URL
+        setSearchParams({});
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadRide();
+  }, [rideIdFromUrl, user, setSearchParams]);
 
   const handleRideSelect = (ride: Ride) => {
-    // Navigate to ride detail with maintenance tab active
-    navigate(`/rides/${ride.id}?tab=maintenance`);
+    setSelectedRide(ride);
+    setSearchParams({ rideId: ride.id });
   };
 
+  const handleBack = () => {
+    setSelectedRide(null);
+    setSearchParams({});
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background pb-28 md:pb-8">
+        <header className="border-b-2 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
+          <div className="container mx-auto px-4 py-4">
+            <Skeleton className="h-12 w-64" />
+          </div>
+        </header>
+        <main className="container mx-auto px-4 py-5">
+          <Skeleton className="h-64 w-full" />
+        </main>
+      </div>
+    );
+  }
+
+  // Show MaintenanceManager when a ride is selected
+  if (selectedRide) {
+    return (
+      <div className="min-h-screen bg-background pb-28 md:pb-8">
+        <header className="border-b-2 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center gap-3">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleBack}
+                className="h-10 w-10 shrink-0"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <PageHeader
+                icon={<Wrench className="h-5 w-5 text-amber-600" />}
+                iconBgClass="from-amber-500/20 to-amber-500/10"
+                title={selectedRide.ride_name}
+                subtitle="Maintenance Management"
+              />
+            </div>
+          </div>
+        </header>
+        
+        <main className="container mx-auto px-4 py-5">
+          <MaintenanceManager ride={selectedRide} />
+        </main>
+      </div>
+    );
+  }
+
+  // Show ride selector when no ride is selected
   return (
     <div className="min-h-screen bg-background pb-28 md:pb-8">
       <header className="border-b-2 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent backdrop-blur-sm sticky top-0 z-40">

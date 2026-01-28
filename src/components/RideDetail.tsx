@@ -348,7 +348,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             >
               <Card 
                 className="active:scale-[0.98] transition-all cursor-pointer border-accent/30 bg-gradient-to-r from-accent/5 to-accent/10 hover:shadow-elegant"
-                onClick={() => navigate(`/rides/${ride.id}?tab=maintenance`)}
+                onClick={() => navigate(`/maintenance?rideId=${ride.id}`)}
               >
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-accent/20 flex items-center justify-center shrink-0 shadow-sm">
