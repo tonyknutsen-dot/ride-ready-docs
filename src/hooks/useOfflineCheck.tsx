@@ -22,6 +22,10 @@ interface CheckSubmission {
   signatureData?: string;
   complianceOfficer?: string;
   environmentNotes?: string;
+  // GPS coordinate fields for deferred address resolution
+  rawLatitude?: number;
+  rawLongitude?: number;
+  needsAddressResolution?: boolean;
   results: {
     templateItemId: string;
     isChecked: boolean;
@@ -102,6 +106,10 @@ export function useOfflineCheck() {
         signatureData: check.signatureData,
         complianceOfficer: check.complianceOfficer,
         environmentNotes: check.environmentNotes,
+        // GPS coordinate fields for deferred address resolution
+        rawLatitude: check.rawLatitude,
+        rawLongitude: check.rawLongitude,
+        needsAddressResolution: check.needsAddressResolution,
         results: check.results.map(r => ({
           templateItemId: r.templateItemId,
           isChecked: r.isChecked,

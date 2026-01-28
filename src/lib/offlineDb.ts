@@ -22,6 +22,10 @@ export interface OfflineCheck {
   syncError?: string;
   syncAttempts: number;
   lastSyncAttempt?: string;
+  // GPS coordinate fields for deferred address resolution
+  rawLatitude?: number;
+  rawLongitude?: number;
+  needsAddressResolution?: boolean;
 }
 
 export interface OfflineCheckResult {
@@ -85,6 +89,14 @@ class OfflineDatabase extends Dexie {
     
     this.version(1).stores({
       offlineChecks: '++id, localId, rideId, syncStatus, createdAt',
+      offlineDefects: '++id, localId, rideId, checkLocalId, syncStatus',
+      cachedRides: 'id, cachedAt',
+      cachedTemplates: 'id, rideId, cachedAt'
+    });
+
+    // Version 2: Add GPS coordinate fields for deferred address resolution
+    this.version(2).stores({
+      offlineChecks: '++id, localId, rideId, syncStatus, createdAt, needsAddressResolution',
       offlineDefects: '++id, localId, rideId, checkLocalId, syncStatus',
       cachedRides: 'id, cachedAt',
       cachedTemplates: 'id, rideId, cachedAt'
