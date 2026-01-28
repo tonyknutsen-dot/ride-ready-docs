@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { ArrowRight, Sparkles } from "lucide-react";
+import { ArrowRight, Sparkles, Share, Download } from "lucide-react";
 import { useDetectedTerminology } from "@/hooks/useTerminology";
 
 const CallToAction = () => {
@@ -12,6 +12,22 @@ const CallToAction = () => {
   const handleStartTrial = () => {
     if (loading) return;
     navigate(user ? '/overview' : '/auth');
+  };
+
+  const handleShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'Ride Ready Docs',
+          text: 'Complete operations management for fairground and amusement operators. Manage documents, safety checks, and stay compliant.',
+          url: window.location.origin,
+        });
+      } catch (err) {
+        console.log('Share cancelled');
+      }
+    } else {
+      await navigator.clipboard.writeText(window.location.origin);
+    }
   };
 
   return (
@@ -58,12 +74,39 @@ const CallToAction = () => {
               Start Free 30-Day Trial
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
+            
+            <Button 
+              size="lg" 
+              variant="outline"
+              className="w-full sm:w-auto border-white/30 text-white hover:bg-white/10 px-6 py-6 text-base font-semibold"
+              onClick={handleShare}
+            >
+              <Share className="mr-2 h-4 w-4" />
+              Share with a Colleague
+            </Button>
           </div>
           
           <div className="mt-10 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/70">
             <span>✓ No credit card required</span>
             <span>✓ Both apps included</span>
-            <span>✓ Cancel anytime</span>
+            <span>✓ Install on any device</span>
+          </div>
+
+          {/* Install hint */}
+          <div className="mt-8 pt-8 border-t border-white/10">
+            <p className="text-white/60 text-sm mb-3">
+              Works on all your devices — install it like a native app
+            </p>
+            <Link to="/install">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white/70 hover:text-white hover:bg-white/10"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Learn how to install
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
