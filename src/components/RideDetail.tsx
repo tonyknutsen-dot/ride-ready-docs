@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import RideDocuments from './RideDocuments';
 import InspectionManager from './InspectionManager';
-import MaintenanceManager from './MaintenanceManager';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
 import { FeatureGate } from './FeatureGate';
 import { RestrictedFeatureCard } from './RestrictedFeatureCard';
@@ -37,6 +36,7 @@ interface RideDetailProps {
 const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDetailProps) => {
   const { user } = useAuth();
   const { subscription } = useSubscription();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Sync tab state with URL for proper back/forward navigation
@@ -258,7 +258,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-        <TabsList className="grid w-full h-auto p-1.5 gap-1.5 bg-secondary border border-border" style={{ gridTemplateColumns: isAdvanced ? 'repeat(2, 1fr)' : 'repeat(1, 1fr)' }}>
+        <TabsList className="grid w-full h-auto p-1.5 gap-1.5 bg-secondary border border-border grid-cols-1">
           <TabsTrigger 
             value="overview" 
             className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-lg min-h-[60px] transition-all"
@@ -266,15 +266,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             <FileText className="h-5 w-5" />
             <span>Home</span>
           </TabsTrigger>
-          {isAdvanced && (
-            <TabsTrigger 
-              value="maintenance" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-semibold data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:shadow-md rounded-lg min-h-[60px] transition-all"
-            >
-              <Wrench className="h-5 w-5" />
-              <span>Maintenance</span>
-            </TabsTrigger>
-          )}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 animate-fade-in">
@@ -342,7 +333,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
               </CardContent>
             </Card>
 
-            {/* Maintenance Quick Action */}
+            {/* Maintenance Quick Action - Navigate to dedicated Maintenance page */}
             <FeatureGate 
               requiredPlan="advanced" 
               feature="Maintenance Logging"
@@ -357,7 +348,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             >
               <Card 
                 className="active:scale-[0.98] transition-all cursor-pointer border-accent/30 bg-gradient-to-r from-accent/5 to-accent/10 hover:shadow-elegant"
-                onClick={() => setActiveTab("maintenance")}
+                onClick={() => navigate(`/rides/${ride.id}?tab=maintenance`)}
               >
                 <CardContent className="p-4 flex items-center gap-4">
                   <div className="w-14 h-14 rounded-2xl bg-accent/20 flex items-center justify-center shrink-0 shadow-sm">
@@ -389,11 +380,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           </FeatureGate>
         </TabsContent>
 
-        <TabsContent value="maintenance" className="animate-fade-in">
-          <FeatureGate requiredPlan="advanced" feature="Maintenance Logging">
-            <MaintenanceManager ride={ride} />
-          </FeatureGate>
-        </TabsContent>
       </Tabs>
     </div>
   );
