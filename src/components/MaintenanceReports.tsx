@@ -234,13 +234,41 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
       doc.text('Equipment Details', 20, yPos);
       yPos += 8;
 
-      // Calculate layout - if image exists, put it on the right (smaller image)
+      // Calculate layout - if image exists, put it on the right with proper aspect ratio
       const hasImage = !!imageDataUrl;
-      const detailsWidth = hasImage ? 120 : pageWidth - 40;
-      const imageX = pageWidth - 45;
+      const maxImageW = 40;
+      const maxImageH = 30;
+      let imageW = maxImageW;
+      let imageH = maxImageH;
+      
+      // Calculate aspect-ratio-preserving dimensions if we have an image
+      if (imageDataUrl) {
+        try {
+          const img = new Image();
+          await new Promise<void>((resolve) => {
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            img.src = imageDataUrl;
+          });
+          
+          if (img.naturalWidth && img.naturalHeight) {
+            const aspectRatio = img.naturalWidth / img.naturalHeight;
+            
+            if (aspectRatio > maxImageW / maxImageH) {
+              imageW = maxImageW;
+              imageH = maxImageW / aspectRatio;
+            } else {
+              imageH = maxImageH;
+              imageW = maxImageH * aspectRatio;
+            }
+          }
+        } catch (e) {
+          console.log('Could not calculate image dimensions');
+        }
+      }
+      
+      const imageX = pageWidth - 20 - imageW;
       const imageY = yPos;
-      const imageW = 30;
-      const imageH = 22;
 
       doc.setFontSize(10);
       doc.setFont('helvetica', 'normal');
@@ -291,9 +319,12 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
         yPos += 6;
       }
 
-      // Add ride image on the right side if available
+      // Add ride image on the right side if available - with proper aspect ratio and border
       if (imageDataUrl) {
         try {
+          doc.setDrawColor(200);
+          doc.setLineWidth(0.5);
+          doc.rect(imageX - 1, imageY - 1, imageW + 2, imageH + 2);
           doc.addImage(imageDataUrl, 'JPEG', imageX, imageY, imageW, imageH);
           yPos = Math.max(yPos, imageY + imageH + 5);
         } catch (e) {
