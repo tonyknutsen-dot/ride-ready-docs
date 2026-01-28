@@ -568,11 +568,13 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
           doc.text(`Record ${attachment.recordIndex}: ${attachment.recordDate} - ${attachment.recordType}`, 20, yPos);
           yPos += 10;
           
-          // Display images inline
+          // Display images inline with auto-context labels
+          let photoCounter = 0;
           for (const docItem of attachment.docs) {
             const isImage = docItem.mime_type?.startsWith('image/');
             
             if (isImage) {
+              photoCounter++;
               try {
                 const { data: imageBlob } = await supabase.storage
                   .from('ride-documents')
@@ -591,24 +593,30 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
                     yPos = 20;
                   }
                   
-                  // Add image with label
-                  doc.setFontSize(8);
-                  doc.setFont('helvetica', 'normal');
-                  doc.setTextColor(80);
-                  doc.text(docItem.document_name, 25, yPos);
-                  yPos += 4;
+                  // Add image with auto-context label: "Photo 1 - Preventive Maintenance - 15 Jan 2024"
+                  doc.setFontSize(9);
+                  doc.setFont('helvetica', 'bold');
+                  doc.setTextColor(50, 50, 50);
+                  const photoLabel = `Photo ${photoCounter} - ${attachment.recordType} - ${attachment.recordDate}`;
+                  doc.text(photoLabel, 25, yPos);
+                  yPos += 5;
                   
                   try {
                     doc.addImage(imageDataUrl, 'AUTO', 25, yPos, 60, 45);
-                    yPos += 50;
+                    yPos += 52;
                   } catch (e) {
+                    doc.setFontSize(8);
+                    doc.setFont('helvetica', 'normal');
+                    doc.setTextColor(128);
                     doc.text('[Image could not be embedded]', 25, yPos);
                     yPos += 6;
                   }
                 }
               } catch (e) {
                 doc.setFontSize(8);
-                doc.text(`• ${docItem.document_name} (file not available)`, 25, yPos);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(128);
+                doc.text(`• Photo ${photoCounter} - ${attachment.recordType} - ${attachment.recordDate} (file not available)`, 25, yPos);
                 yPos += 5;
               }
             } else {
