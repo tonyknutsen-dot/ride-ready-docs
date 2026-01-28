@@ -5,11 +5,12 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Loader2, UserPlus, Users, Mail, Clock, Trash2, Edit2, FolderOpen } from 'lucide-react';
+import { Loader2, UserPlus, Users, Mail, Clock, Trash2, Settings2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { StaffInviteDialog } from './StaffInviteDialog';
+import { StaffEquipmentDialog } from './StaffEquipmentDialog';
 import { Database } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
 
@@ -42,6 +43,8 @@ export function StaffManagement() {
   const [organisationId, setOrganisationId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
+  const [equipmentDialogOpen, setEquipmentDialogOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<StaffMember | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -326,7 +329,19 @@ export function StaffManagement() {
                         {format(new Date(member.joined_at), 'MMM d, yyyy')}
                       </TableCell>
                       <TableCell>
-                        <AlertDialog>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              setSelectedMember(member);
+                              setEquipmentDialogOpen(true);
+                            }}
+                            title="Manage equipment access"
+                          >
+                            <Settings2 className="h-4 w-4" />
+                          </Button>
+                          <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
                               <Trash2 className="h-4 w-4" />
@@ -350,6 +365,7 @@ export function StaffManagement() {
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -419,6 +435,22 @@ export function StaffManagement() {
           }
         }}
       />
+
+      {/* Equipment Assignment Dialog */}
+      {selectedMember && (
+        <StaffEquipmentDialog
+          open={equipmentDialogOpen}
+          onOpenChange={setEquipmentDialogOpen}
+          memberId={selectedMember.id}
+          memberEmail={selectedMember.email || 'Staff member'}
+          currentAssignments={selectedMember.assigned_rides.map(r => r.id)}
+          onSuccess={() => {
+            if (organisationId) {
+              fetchStaff(organisationId);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
