@@ -19,6 +19,7 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 import GlobalEventBridge from "@/components/GlobalEventBridge";
 import TestModeBanner from "@/components/TestModeBanner";
 import FloatingBugButton from "@/components/FloatingBugButton";
+import { InstallPromptBanner } from "@/components/InstallPromptBanner";
 import TesterSessionTracker from "@/components/TesterSessionTracker";
 import { AppLayout } from "@/components/AppLayout";
 import { Loader2, FileText } from "lucide-react";
@@ -65,6 +66,7 @@ const StaffInvite = lazy(() => import("./pages/StaffInvite"));
 const Staff = lazy(() => import("./pages/Staff"));
 const Diagnostics = lazy(() => import("./pages/Diagnostics"));
 const MyBugReports = lazy(() => import("./pages/MyBugReports"));
+const Install = lazy(() => import("./pages/Install"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -124,6 +126,7 @@ const App = () => (
                 } 
               />
               <Route path="/how-it-works" element={<HowItWorks />} />
+              <Route path="/install" element={<Install />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/help" element={<HelpCenter />} />
@@ -442,6 +445,7 @@ const App = () => (
               </Suspense>
               <MobileBottomNav />
               <FloatingBugButton />
+              <InstallPromptBanner />
               <CookieConsentBanner />
               </StaffProvider>
             </TesterProvider>
