@@ -1,16 +1,7 @@
 import React from 'react';
 import { Download, Loader2, RefreshCw, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { usePWAUpdate } from '@/hooks/usePWAUpdate';
-import { APP_VERSION, getLastUpdateDate, formatVersionDate } from '@/config/appVersion';
 
 export const PWAUpdateModal = () => {
   const { 
@@ -20,98 +11,70 @@ export const PWAUpdateModal = () => {
     dismissUpdate 
   } = usePWAUpdate();
 
-  // Don't render anything if no update is needed
-  if (!needsUpdate && !isUpdating) {
+  // Show blocking overlay only during actual update
+  if (isUpdating) {
+    return (
+      <div className="fixed inset-0 z-[9999] bg-background/95 backdrop-blur-sm flex items-center justify-center">
+        <div className="text-center space-y-4 p-8">
+          <Loader2 className="h-12 w-12 text-primary animate-spin mx-auto" />
+          <div>
+            <h2 className="text-xl font-semibold">Updating App...</h2>
+            <p className="text-sm text-muted-foreground mt-2">
+              Please wait, this will only take a moment.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show non-blocking banner when update is available
+  if (!needsUpdate) {
     return null;
   }
 
-  const lastUpdate = formatVersionDate(getLastUpdateDate());
-
   return (
-    <AlertDialog open={needsUpdate || isUpdating}>
-      <AlertDialogContent className="max-w-md">
-        <AlertDialogHeader>
-          <div className="flex items-center gap-3 mb-2">
-            <div className="p-3 bg-primary/10 rounded-full">
-              {isUpdating ? (
-                <Loader2 className="h-6 w-6 text-primary animate-spin" />
-              ) : (
-                <Download className="h-6 w-6 text-primary" />
-              )}
-            </div>
-            <AlertDialogTitle className="text-xl">
-              {isUpdating ? 'Updating App...' : 'Update Available'}
-            </AlertDialogTitle>
+    <div className="fixed bottom-20 md:bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 z-50 animate-in slide-in-from-bottom-4 duration-300">
+      <div className="bg-card border rounded-lg shadow-lg p-4">
+        <div className="flex items-start gap-3">
+          <div className="p-2 bg-primary/10 rounded-full shrink-0">
+            <Download className="h-5 w-5 text-primary" />
           </div>
-          <AlertDialogDescription className="text-left space-y-3">
-            {isUpdating ? (
-              <>
-                <p>
-                  Please wait while the app updates. This will only take a moment.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Do not close or refresh the app.
-                </p>
-              </>
-            ) : (
-              <>
-                <p>
-                  A new version of Ride Ready Docs is available with improvements and bug fixes.
-                </p>
-                <div className="bg-muted/50 rounded-lg p-3 text-sm">
-                  <p className="text-muted-foreground">
-                    Current version: <span className="font-medium text-foreground">{APP_VERSION}</span>
-                  </p>
-                  <p className="text-muted-foreground">
-                    Last updated: <span className="font-medium text-foreground">{lastUpdate}</span>
-                  </p>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  We recommend updating now for the best experience.
-                </p>
-              </>
-            )}
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        
-        {!isUpdating && (
-          <AlertDialogFooter className="flex-col sm:flex-row gap-2">
-            <Button
-              variant="outline"
-              onClick={dismissUpdate}
-              disabled={isUpdating}
-              className="w-full sm:w-auto"
-            >
-              <X className="h-4 w-4 mr-2" />
-              Later
-            </Button>
-            <Button
-              onClick={applyUpdate}
-              disabled={isUpdating}
-              className="w-full sm:w-auto"
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Update Now
-            </Button>
-          </AlertDialogFooter>
-        )}
-
-        {/* Progress indicator during update */}
-        {isUpdating && (
-          <div className="mt-4">
-            <div className="h-2 bg-muted rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary rounded-full animate-pulse"
-                style={{ width: '100%' }}
-              />
-            </div>
-            <p className="text-xs text-center text-muted-foreground mt-2">
-              Installing update...
+          <div className="flex-1 min-w-0">
+            <h3 className="font-medium text-sm">Update Available</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              A new version is ready to install
             </p>
+            <div className="flex gap-2 mt-3">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={dismissUpdate}
+                className="h-8 text-xs"
+              >
+                Later
+              </Button>
+              <Button
+                size="sm"
+                onClick={applyUpdate}
+                className="h-8 text-xs"
+              >
+                <RefreshCw className="h-3 w-3 mr-1.5" />
+                Update
+              </Button>
+            </div>
           </div>
-        )}
-      </AlertDialogContent>
-    </AlertDialog>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={dismissUpdate}
+            className="h-6 w-6 shrink-0 -mt-1 -mr-1"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 };
 

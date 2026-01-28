@@ -2,10 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 
 interface UpdateState {
   needsUpdate: boolean;
-  isChecking: boolean;
   isUpdating: boolean;
   lastChecked: Date | null;
-  error: string | null;
 }
 
 // Store the service worker registration globally
@@ -14,10 +12,8 @@ let swRegistration: ServiceWorkerRegistration | null = null;
 export const usePWAUpdate = () => {
   const [state, setState] = useState<UpdateState>({
     needsUpdate: false,
-    isChecking: false,
     isUpdating: false,
     lastChecked: null,
-    error: null,
   });
 
   useEffect(() => {
@@ -56,34 +52,35 @@ export const usePWAUpdate = () => {
           }
         });
       });
-
-      // Check for updates periodically (every 60 seconds)
-      const intervalId = setInterval(() => {
-        console.log('[PWA] Checking for updates...');
-        setState(prev => ({ ...prev, isChecking: true }));
-        registration.update().then(() => {
-          setState(prev => ({ 
-            ...prev, 
-            isChecking: false, 
-            lastChecked: new Date() 
-          }));
-        }).catch((err) => {
-          console.error('[PWA] Update check failed:', err);
-          setState(prev => ({ 
-            ...prev, 
-            isChecking: false, 
-            error: 'Failed to check for updates' 
-          }));
-        });
-      }, 60 * 1000);
-
-      return () => clearInterval(intervalId);
     });
+
+    // Check for updates when app regains focus (user returns to app)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // Only check if we haven't checked in the last 5 minutes
+        const now = new Date();
+        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
+        
+        if (!state.lastChecked || state.lastChecked < fiveMinutesAgo) {
+          console.log('[PWA] App visible, checking for updates...');
+          navigator.serviceWorker.getRegistration().then((reg) => {
+            if (reg) {
+              reg.update().then(() => {
+                setState(prev => ({ ...prev, lastChecked: new Date() }));
+              }).catch(console.error);
+            }
+          });
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     return () => {
       navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [state.lastChecked]);
 
   const applyUpdate = useCallback(async () => {
     setState(prev => ({ ...prev, isUpdating: true }));
@@ -101,58 +98,29 @@ export const usePWAUpdate = () => {
       }
     } catch (err) {
       console.error('[PWA] Update failed:', err);
-      setState(prev => ({ 
-        ...prev, 
-        isUpdating: false, 
-        error: 'Update failed. Please refresh manually.' 
-      }));
+      setState(prev => ({ ...prev, isUpdating: false }));
+      // Fallback: just reload
+      window.location.reload();
     }
   }, []);
 
   const dismissUpdate = useCallback(() => {
     setState(prev => ({ ...prev, needsUpdate: false }));
+    // Store dismissal in session so it doesn't keep appearing
+    sessionStorage.setItem('pwa-update-dismissed', 'true');
   }, []);
 
-  const checkForUpdates = useCallback(async () => {
-    setState(prev => ({ ...prev, isChecking: true }));
-    
-    try {
-      const registration = await navigator.serviceWorker?.getRegistration();
-      if (registration) {
-        await registration.update();
-        
-        // Check if there's a waiting worker after update
-        if (registration.waiting) {
-          setState(prev => ({ 
-            ...prev, 
-            isChecking: false, 
-            lastChecked: new Date(),
-            needsUpdate: true
-          }));
-        } else {
-          setState(prev => ({ 
-            ...prev, 
-            isChecking: false, 
-            lastChecked: new Date() 
-          }));
-        }
-      } else {
-        setState(prev => ({ ...prev, isChecking: false }));
-      }
-    } catch (err) {
-      console.error('[PWA] Manual update check failed:', err);
-      setState(prev => ({ 
-        ...prev, 
-        isChecking: false, 
-        error: 'Could not check for updates' 
-      }));
+  // Check if update was dismissed this session
+  useEffect(() => {
+    const wasDismissed = sessionStorage.getItem('pwa-update-dismissed');
+    if (wasDismissed && state.needsUpdate) {
+      setState(prev => ({ ...prev, needsUpdate: false }));
     }
-  }, []);
+  }, [state.needsUpdate]);
 
   return {
     ...state,
     applyUpdate,
     dismissUpdate,
-    checkForUpdates,
   };
 };
