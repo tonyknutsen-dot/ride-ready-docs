@@ -7,9 +7,9 @@
  * This is the SINGLE source of truth for the app version.
  */
 
-export const APP_VERSION = "v0.10";
+export const APP_VERSION = "v0.11";
 
-export const APP_NAME = "Showmen's Ride Ready";
+export const APP_NAME = "Ride Ready Docs";
 
 /**
  * Internal Change Log
@@ -24,6 +24,11 @@ export interface ChangeLogEntry {
 }
 
 export const CHANGE_LOG: ChangeLogEntry[] = [
+  {
+    version: "v0.11",
+    date: "2026-01-28",
+    description: "Major update: Staff management with role-based permissions, organisation structure, equipment assignments. Enhanced risk assessments with audit logging, revision history, and improved PDF export. AI-powered help assistant in Help Center. Global rebrand to Ride Ready Docs. Improved check item library with AI categorisation."
+  },
   {
     version: "v0.10",
     date: "2026-01-23",
