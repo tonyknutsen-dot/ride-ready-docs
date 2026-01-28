@@ -7,23 +7,33 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Eye, EyeOff, CheckCircle2, AlertCircle, Info, ShieldAlert } from 'lucide-react';
+import { Loader2, Eye, EyeOff, CheckCircle2, AlertCircle, Info, ShieldAlert, Check, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { z } from 'zod';
 import logo from '@/assets/logo.png';
 import { COUNTRIES } from '@/constants/profile';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { useAuthRateLimit } from '@/hooks/useAuthRateLimit';
+import { getEmailSuggestion, validatePasswordStrength, type EmailSuggestion } from '@/utils/emailSuggestion';
+
+const REMEMBER_EMAIL_KEY = 'rrd_remembered_email';
 
 const authSchema = z.object({
   email: z.string().email('Please enter a valid email address').max(255, 'Email must be less than 255 characters'),
   password: z.string().min(6, 'Password must be at least 6 characters').max(128, 'Password must be less than 128 characters')
 });
 
+// Stronger password validation for signup
 const signupSchema = z.object({
   email: z.string().email('Please enter a valid email address').max(255, 'Email must be less than 255 characters'),
-  password: z.string().min(6, 'Password must be at least 6 characters').max(128, 'Password must be less than 128 characters'),
+  password: z.string()
+    .min(8, 'Password must be at least 8 characters')
+    .max(128, 'Password must be less than 128 characters')
+    .regex(/[a-zA-Z]/, 'Password must contain at least one letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^a-zA-Z0-9]/, 'Password must contain at least one special character'),
   country: z.string().min(1, 'Please select your country')
 });
 
@@ -46,6 +56,9 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [formNotice, setFormNotice] = useState<FormNotice | null>(null);
+  const [rememberEmail, setRememberEmail] = useState(false);
+  const [emailSuggestion, setEmailSuggestion] = useState<EmailSuggestion | null>(null);
+  const [passwordValidation, setPasswordValidation] = useState<ReturnType<typeof validatePasswordStrength> | null>(null);
   
   const { signIn, signUp, resetPassword, user } = useAuth();
   const navigate = useNavigate();
@@ -53,6 +66,15 @@ const Auth = () => {
   const { toast } = useToast();
   const { checkRateLimit, recordAttempt, getRemainingLockTime, isLocked, attemptsRemaining } = useAuthRateLimit();
   const [lockCountdown, setLockCountdown] = useState(0);
+
+  // Load remembered email on mount
+  useEffect(() => {
+    const savedEmail = localStorage.getItem(REMEMBER_EMAIL_KEY);
+    if (savedEmail) {
+      setFormData(prev => ({ ...prev, email: savedEmail }));
+      setRememberEmail(true);
+    }
+  }, []);
 
   // Update countdown timer when locked
   useEffect(() => {
@@ -219,6 +241,11 @@ const Auth = () => {
         // Record successful attempt (resets rate limit)
         recordAttempt(true);
         
+        // Handle remember email
+        if (activeTab === 'signin') {
+          handleRememberEmail(formData.email, rememberEmail);
+        }
+        
         if (activeTab === 'signup') {
           setFormNotice({
             type: 'success',
@@ -292,6 +319,33 @@ const Auth = () => {
     // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
+    }
+    
+    // Check for email suggestions
+    if (name === 'email') {
+      const suggestion = getEmailSuggestion(value);
+      setEmailSuggestion(suggestion);
+    }
+    
+    // Validate password strength for signup
+    if (name === 'password' && activeTab === 'signup') {
+      setPasswordValidation(validatePasswordStrength(value));
+    }
+  };
+
+  const acceptEmailSuggestion = () => {
+    if (emailSuggestion) {
+      setFormData(prev => ({ ...prev, email: emailSuggestion.suggested }));
+      setEmailSuggestion(null);
+    }
+  };
+
+  // Handle remember email on successful login
+  const handleRememberEmail = (email: string, remember: boolean) => {
+    if (remember) {
+      localStorage.setItem(REMEMBER_EMAIL_KEY, email);
+    } else {
+      localStorage.removeItem(REMEMBER_EMAIL_KEY);
     }
   };
 
@@ -429,6 +483,15 @@ const Auth = () => {
                       disabled={isLoading}
                       className={errors.email ? 'border-destructive' : ''}
                     />
+                    {emailSuggestion && activeTab === 'signin' && (
+                      <button
+                        type="button"
+                        onClick={acceptEmailSuggestion}
+                        className="text-sm text-primary hover:underline flex items-center gap-1"
+                      >
+                        Did you mean <span className="font-medium">{emailSuggestion.suggested}</span>?
+                      </button>
+                    )}
                     {errors.email && (
                       <p className="text-sm text-destructive">{errors.email}</p>
                     )}
@@ -466,6 +529,17 @@ const Auth = () => {
                     {errors.password && (
                       <p className="text-sm text-destructive">{errors.password}</p>
                     )}
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="remember-email"
+                      checked={rememberEmail}
+                      onCheckedChange={(checked) => setRememberEmail(checked === true)}
+                    />
+                    <Label htmlFor="remember-email" className="text-sm text-muted-foreground cursor-pointer">
+                      Remember my email
+                    </Label>
                   </div>
 
                   <div className="space-y-2">
@@ -527,6 +601,15 @@ const Auth = () => {
                       disabled={isLoading}
                       className={errors.email ? 'border-destructive' : ''}
                     />
+                    {emailSuggestion && activeTab === 'signup' && (
+                      <button
+                        type="button"
+                        onClick={acceptEmailSuggestion}
+                        className="text-sm text-primary hover:underline flex items-center gap-1"
+                      >
+                        Did you mean <span className="font-medium">{emailSuggestion.suggested}</span>?
+                      </button>
+                    )}
                     {errors.email && (
                       <p className="text-sm text-destructive">{errors.email}</p>
                     )}
@@ -539,7 +622,7 @@ const Auth = () => {
                         id="signup-password"
                         name="password"
                         type={showPassword ? 'text' : 'password'}
-                        placeholder="Create a password (min 6 characters)"
+                        placeholder="Create a strong password"
                         value={formData.password}
                         onChange={handleInputChange}
                         disabled={isLoading}
@@ -561,10 +644,34 @@ const Auth = () => {
                         <span className="sr-only">{showPassword ? 'Hide password' : 'Show password'}</span>
                       </Button>
                     </div>
-                    {errors.password ? (
+                    
+                    {/* Password requirements checklist */}
+                    {formData.password && passwordValidation && (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="grid grid-cols-2 gap-1 text-xs">
+                          <div className={`flex items-center gap-1 ${passwordValidation.requirements.minLength ? 'text-green-600' : 'text-muted-foreground'}`}>
+                            {passwordValidation.requirements.minLength ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                            8+ characters
+                          </div>
+                          <div className={`flex items-center gap-1 ${passwordValidation.requirements.hasLetter ? 'text-green-600' : 'text-muted-foreground'}`}>
+                            {passwordValidation.requirements.hasLetter ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                            Letter
+                          </div>
+                          <div className={`flex items-center gap-1 ${passwordValidation.requirements.hasNumber ? 'text-green-600' : 'text-muted-foreground'}`}>
+                            {passwordValidation.requirements.hasNumber ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                            Number
+                          </div>
+                          <div className={`flex items-center gap-1 ${passwordValidation.requirements.hasSpecial ? 'text-green-600' : 'text-muted-foreground'}`}>
+                            {passwordValidation.requirements.hasSpecial ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                            Special (!@#$)
+                          </div>
+                        </div>
+                        <PasswordStrengthIndicator password={formData.password} />
+                      </div>
+                    )}
+                    
+                    {errors.password && (
                       <p className="text-sm text-destructive">{errors.password}</p>
-                    ) : (
-                      <PasswordStrengthIndicator password={formData.password} />
                     )}
                   </div>
 
