@@ -223,19 +223,19 @@ const AuditLogs = () => {
     <AdminLayout>
       <div className="space-y-4 md:space-y-6 min-w-0">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <History className="h-6 w-6 text-primary" />
-              Audit Logs
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+              <History className="h-5 w-5 md:h-6 md:w-6 text-primary flex-shrink-0" />
+              <span className="truncate">Audit Logs</span>
             </h1>
-            <p className="text-muted-foreground">
-              Platform-wide activity tracking and compliance audit trail
+            <p className="text-sm text-muted-foreground hidden sm:block">
+              Platform-wide activity tracking
             </p>
           </div>
-          <Button variant="outline" onClick={handleRefresh} disabled={refreshing}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+          <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing} className="flex-shrink-0">
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline ml-2">Refresh</span>
           </Button>
         </div>
 
@@ -283,12 +283,12 @@ const AuditLogs = () => {
         </div>
 
         {/* Filters */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Activity Log</CardTitle>
-            <CardDescription>View all platform activity with filters</CardDescription>
+        <Card className="overflow-hidden">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">Activity Log</CardTitle>
+            <CardDescription className="text-sm">Platform activity with filters</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 px-3 md:px-6">
             {/* Search */}
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
