@@ -86,13 +86,19 @@ const PrivacyPolicy = () => {
               <section>
                 <h2 className="text-2xl font-semibold mb-4">5. Data Sharing and Disclosure</h2>
                 <p className="text-muted-foreground mb-4">
-                  We do not sell your personal information. We may share your information only in these circumstances:
+                  <strong className="text-foreground">We do not sell, monitor, review, or routinely access your personal documents or data.</strong> 
+                  Your documents are yours — the platform owner cannot browse user files and no admin interface exists for this purpose.
+                </p>
+                <p className="text-muted-foreground mb-4">
+                  Data is never shared with regulatory bodies (including HSE or local authorities) unless legally compelled by a court order.
+                </p>
+                <p className="text-muted-foreground mb-4">
+                  We may share your information only in these limited circumstances:
                 </p>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2">
-                  <li><strong>With your consent:</strong> When you explicitly request document sharing</li>
-                  <li><strong>Service providers:</strong> Trusted third parties who assist in operating our platform (e.g., hosting, payment processing)</li>
-                  <li><strong>Legal requirements:</strong> When required by law, court order, or regulatory authority</li>
-                  <li><strong>Safety and compliance:</strong> To protect the rights, property, or safety of our users or the public</li>
+                  <li><strong>With your consent:</strong> When you explicitly request document sharing (e.g., sending documents via email)</li>
+                  <li><strong>Service providers:</strong> Trusted third parties who assist in operating our platform (e.g., hosting, payment processing) — they cannot access document contents</li>
+                  <li><strong>Legal requirements:</strong> Only when legally compelled by a court order or similar legal process</li>
                 </ul>
               </section>
 

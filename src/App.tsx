@@ -69,6 +69,7 @@ const Staff = lazy(() => import("./pages/Staff"));
 const Diagnostics = lazy(() => import("./pages/Diagnostics"));
 const MyBugReports = lazy(() => import("./pages/MyBugReports"));
 const Install = lazy(() => import("./pages/Install"));
+const DataIndependence = lazy(() => import("./pages/DataIndependence"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -135,6 +136,7 @@ const App = () => (
               <Route path="/help" element={<HelpCenter />} />
               <Route path="/security" element={<Security />} />
               <Route path="/cookies" element={<CookiePolicy />} />
+              <Route path="/data-independence" element={<DataIndependence />} />
               <Route path="/dpa" element={<DataProcessingAgreement />} />
               <Route 
                 path="/profile-setup" 

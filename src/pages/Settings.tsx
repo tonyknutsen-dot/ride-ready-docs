@@ -28,6 +28,7 @@ import { APP_NAME, APP_VERSION, formatVersionDate, getLastUpdateDate } from '@/c
 import AboutAppDialog from '@/components/AboutAppDialog';
 import TesterTools from '@/components/TesterTools';
 import BugReportDialog from '@/components/BugReportDialog';
+import ActivityLog from '@/components/ActivityLog';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -430,6 +431,9 @@ const Settings = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Activity Log */}
+        <ActivityLog limit={5} showViewAll={false} />
 
         <Card className="border-2 border-success/30 bg-gradient-to-br from-success/5 to-transparent shadow-elegant">
           <CardHeader className="pb-3">
