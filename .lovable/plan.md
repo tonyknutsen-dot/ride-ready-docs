@@ -1,161 +1,276 @@
 
-# Trust & Privacy Implementation Plan
+# Admin Audit & Support Access System
 
 ## Overview
-This plan addresses the specific concern of building trust with Showmen operators who may be wary of document access due to your inspector background. The approach combines technical protections, transparent messaging, and cultural sensitivity.
-
-## Current Security Status (Already Implemented)
-
-Your app already has strong privacy foundations:
-- **Row-Level Security**: Admin cannot query other users' documents via database
-- **Storage Isolation**: Files are isolated by user ID in folder structure
-- **Audit Logging**: All document views/downloads/shares are tracked
-- **No Admin Document Browser**: Admin dashboard only shows aggregate counts, not document contents
-- **Encryption**: TLS 1.3 in transit, AES-256 at rest via Supabase infrastructure
+This plan implements a comprehensive system for platform auditing and user-requested support access. It addresses the need for admin oversight while maintaining the privacy-first principles established in the Data Independence work.
 
 ---
 
-## Phase 1: Trust Messaging & Transparency
+## Current State Analysis
 
-### 1.1 New "Data Independence Statement" Page
-Create a dedicated `/data-independence` page with plain-English commitments:
+### What Exists
+- `audit_logs` table with RLS allowing admins to view all logs
+- `useAuditLog` hook logging document views, downloads, shares, exports
+- User-facing `ActivityLog` component showing personal activity
+- Login/logout action types defined but **not being recorded**
+- Security Dashboard exists but focuses on rate limiting/IP blocking, not audit logs
 
-```text
-DATA INDEPENDENCE STATEMENT
-
-• RideReadyDocs is NOT an inspection body
-• RideReadyDocs is NOT a regulator  
-• RideReadyDocs does NOT share data with HSE or any third party
-• Your documents are yours — we cannot see them without your explicit request
-• Platform staff access is restricted, logged, and auditable
-```
-
-This page will be linked prominently from the Footer and Security page.
-
-### 1.2 Update Security Page
-Add a new section: **"Your Data, Your Control"** that explicitly states:
-- Platform owner cannot browse user files
-- Any support access requires user request
-- All access is logged and auditable
-
-### 1.3 Update Privacy Policy
-Add explicit statements:
-- "We do not monitor, review, or access user documents"
-- "Data is never shared with regulatory bodies unless legally compelled"
+### What's Missing
+1. **Login/logout events not logged** - AuthContext doesn't call the audit hook
+2. **No admin UI** to browse platform-wide audit logs
+3. **No support access mechanism** - admin cannot view user documents even when needed
+4. **No session tracking** - who logged in when, from where
 
 ---
 
-## Phase 2: User-Facing Audit Log
+## Implementation Plan
 
-### 2.1 Activity Log Page
-Create a `/settings/activity` page where users can see:
-- Document views (who viewed, when)
-- Document downloads
-- Document shares
-- This builds trust by showing: "If anyone accessed your files, you'd know"
+### Phase 1: Login/Logout Audit Logging
 
-### 2.2 Audit Log Display
-Show recent activity on the Settings page:
+**File: `src/contexts/AuthContext.tsx`**
+
+Add audit logging for authentication events:
+- Log `login` action when `signInWithPassword` succeeds
+- Log `logout` action when `signOut` is called
+- Include IP address and user agent in details when possible
+
 ```text
-Recent Activity
-• You downloaded "Safety Certificate - Waltzer" - 2 hours ago
-• You shared documents with "inspector@email.com" - 3 days ago
+Changes:
+- Import and use logEvent from useAuditLog (via supabase RPC directly since hooks can't be used in context)
+- After successful login: call log_audit_event RPC with action='login', resource_type='session'
+- Before signOut: call log_audit_event RPC with action='logout', resource_type='session'
 ```
 
 ---
 
-## Phase 3: Branding Cleanup
+### Phase 2: Admin Audit Log Viewer
 
-### 3.1 Remove KnutsSoftware References
-Update these files to use "Ride Ready Docs" branding:
-- `src/index.css` — Change design system comment from "Knuts Software Brand"
-- `src/contexts/AuthContext.tsx` — Change suspension email to `support@ridereadydocs.com`
+**New File: `src/pages/admin/AuditLogs.tsx`**
 
-### 3.2 Soften "HSE" References
-In `src/pages/BatchSendDocuments.tsx`:
-- Rename "HSE" recipient type to "Regulatory Body" (neutral language)
-- This avoids direct HSE association in the interface
+A dedicated admin page to view all platform audit activity with:
 
----
+**Features:**
+- Filterable by action type (login, logout, view, download, share, export)
+- Filterable by resource type (session, document, check, defect, etc.)
+- Searchable by user (shows email from profiles join)
+- Date range filter
+- Sortable by timestamp
+- Pagination (50 entries per page)
 
-## Phase 4: Trust Signals Throughout App
+**UI Components:**
+- Stats cards: Total events (24h), Unique users (24h), Document accesses, Failed logins
+- Filter bar with dropdowns for action, resource type, date range
+- Data table with columns: Timestamp, User, Action, Resource, Details, IP Address
 
-### 4.1 Document Upload Confirmation
-After uploading a document, show a subtle message:
-```text
-✓ Encrypted and stored securely. Only you can access this file.
-```
-
-### 4.2 Settings Page Trust Banner
-Add a small banner on Settings:
-```text
-🔒 Your data is private. We cannot access your documents.
-```
+**Security:**
+- Uses existing RLS policy: "Admins can view all audit logs"
+- No document content is exposed - only metadata (file names, action types)
 
 ---
 
-## Technical Changes Summary
+### Phase 3: User-Requested Support Access
+
+**New Database Table: `support_access_grants`**
+
+```sql
+CREATE TABLE support_access_grants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  granted_to_admin UUID REFERENCES auth.users(id),
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'expired', 'revoked')),
+  granted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  revoked_at TIMESTAMPTZ,
+  access_scope TEXT NOT NULL DEFAULT 'read_only',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- RLS Policies
+-- Users can view and revoke their own grants
+-- Admins can view all grants
+-- Only the granting user can create a grant
+```
+
+**New Component: `src/components/SupportAccessManager.tsx`**
+
+For users (in Settings):
+- "Request Support Access" button
+- Shows active grants with expiry countdown
+- "Revoke Access" button to immediately end a grant
+
+**New Admin Component: `src/components/admin/ActiveSupportGrants.tsx`**
+
+For admins:
+- List of active support grants
+- Shows which user granted access and why
+- When admin has an active grant, document links become viewable for that user only
+
+**Workflow:**
+1. User contacts support with an issue
+2. User clicks "Grant Support Access" in Settings
+3. User enters reason and selects duration (1hr, 24hr, 7 days)
+4. Admin sees the grant in Admin Panel
+5. Admin can now view (read-only) that specific user's documents
+6. All admin views are logged to audit_logs with `action='support_view'`
+7. Access automatically expires or user revokes manually
+
+---
+
+### Phase 4: Integration & Navigation
+
+**File: `src/components/admin/AdminLayout.tsx`**
+
+Add navigation item:
+```text
+{ name: 'Audit Logs', href: '/admin/audit-logs', icon: History, count: 0 }
+```
+
+**File: `src/App.tsx`**
+
+Add route:
+```text
+/admin/audit-logs -> AuditLogs component (AdminRoute protected)
+```
+
+**File: `src/pages/Settings.tsx`**
+
+Add "Support Access" section:
+- Shows current active grants (if any)
+- Button to grant temporary access
+- Privacy reminder about what this does
+
+---
+
+## Database Migration
+
+```sql
+-- Support access grants table
+CREATE TABLE public.support_access_grants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL,
+  granted_to_admin UUID,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'active',
+  granted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  expires_at TIMESTAMPTZ NOT NULL,
+  revoked_at TIMESTAMPTZ,
+  access_scope TEXT NOT NULL DEFAULT 'read_only',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  
+  CONSTRAINT valid_status CHECK (status IN ('active', 'expired', 'revoked'))
+);
+
+-- Enable RLS
+ALTER TABLE public.support_access_grants ENABLE ROW LEVEL SECURITY;
+
+-- Policies
+CREATE POLICY "Users can view their own grants"
+  ON public.support_access_grants FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create their own grants"
+  ON public.support_access_grants FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can revoke their own grants"
+  ON public.support_access_grants FOR UPDATE
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id AND status = 'revoked');
+
+CREATE POLICY "Admins can view all grants"
+  ON public.support_access_grants FOR SELECT
+  USING (has_role(auth.uid(), 'admin'));
+
+-- Function to check if admin has active support access
+CREATE OR REPLACE FUNCTION public.admin_has_support_access(_admin_id uuid, _user_id uuid)
+RETURNS boolean
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT EXISTS (
+    SELECT 1 FROM public.support_access_grants
+    WHERE granted_to_admin = _admin_id
+      AND user_id = _user_id
+      AND status = 'active'
+      AND expires_at > now()
+  )
+$$;
+
+-- Auto-expire grants (for scheduled cleanup)
+CREATE OR REPLACE FUNCTION public.expire_support_grants()
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  expired_count INTEGER;
+BEGIN
+  UPDATE public.support_access_grants
+  SET status = 'expired'
+  WHERE status = 'active' AND expires_at <= now();
+  
+  GET DIAGNOSTICS expired_count = ROW_COUNT;
+  RETURN expired_count;
+END;
+$$;
+```
+
+---
+
+## Files to Create
+
+| File | Purpose |
+|------|---------|
+| `src/pages/admin/AuditLogs.tsx` | Admin audit log viewer with filters |
+| `src/components/admin/AuditLogTable.tsx` | Reusable table component for audit logs |
+| `src/components/SupportAccessManager.tsx` | User-facing support access UI |
+| `src/components/admin/ActiveSupportGrants.tsx` | Admin view of active grants |
+
+## Files to Modify
 
 | File | Change |
 |------|--------|
-| `src/pages/DataIndependence.tsx` | New page with trust statement |
-| `src/pages/Security.tsx` | Add "Your Data, Your Control" section |
-| `src/pages/Settings.tsx` | Add activity log section + trust banner |
-| `src/components/DocumentUpload.tsx` | Add encryption confirmation message |
-| `src/components/Footer.tsx` | Add link to Data Independence page |
-| `src/index.css` | Remove "Knuts Software" comment |
-| `src/contexts/AuthContext.tsx` | Update suspension email |
-| `src/pages/BatchSendDocuments.tsx` | Rename "HSE" to "Regulatory Body" |
-| `src/App.tsx` | Add route for Data Independence page |
+| `src/contexts/AuthContext.tsx` | Add login/logout audit logging |
+| `src/components/admin/AdminLayout.tsx` | Add "Audit Logs" navigation |
+| `src/App.tsx` | Add `/admin/audit-logs` route |
+| `src/pages/Settings.tsx` | Add Support Access section |
+| `src/pages/admin/SecurityDashboard.tsx` | Add link to Audit Logs |
 
 ---
 
-## What This Does NOT Include (And Why)
+## Security Considerations
 
-### End-to-End Client-Side Encryption
-While mentioned as an option, this is NOT recommended for Phase 1 because:
-- Adds significant complexity
-- Prevents search/preview features
-- Recovery becomes impossible if key is lost
-- Current server-side encryption is sufficient
-
-**Future Option**: "Private Vault Mode" could be added later as opt-in for users who want client-controlled encryption.
+1. **Audit logs never expose document content** - only filenames and action types
+2. **Support access is always user-initiated** - admin cannot request access
+3. **All support views are logged** - creates accountability
+4. **Time-limited by design** - grants auto-expire
+5. **User can revoke instantly** - maintains control
+6. **Scope is read-only** - admin cannot modify user data
 
 ---
 
-## Marketing/Cultural Considerations
+## Trust Statement Addition
 
-### What to Say
-> "This system was built by someone who knows how inspections actually work — and why operators need control of their own records."
+Update the Data Independence page to include:
 
-### What NOT to Say
-- "We work closely with HSE"
-- "Compliance monitoring"
-- "Regulatory alignment"
-
-### Suggested Footer Text
-> "RideReadyDocs is an independent platform. We do not share your data with inspectors, regulators, or any third party."
-
----
-
-## Post-Implementation Verification
-
-Once implemented:
-1. Audit log correctly shows user's own activity
-2. Admin dashboard shows NO way to access individual documents
-3. All branding references updated
-4. Trust statements visible on key pages
-5. HSE reference removed from recipient types
+> **Support Access**: If you ever need help with your account, you can grant us temporary, time-limited access to troubleshoot. This access is:
+> - Only granted when you explicitly request it
+> - Logged in your activity history
+> - Automatically expires after the time you choose
+> - Revocable by you at any time
 
 ---
 
 ## Summary
 
-The focus is on **transparency over encryption**. The security is already there — this plan makes it visible and trustworthy. Showmen will see:
+This implementation provides:
+1. Complete audit trail of all login/logout events
+2. Admin visibility into platform activity (without document content access)
+3. User-controlled support access mechanism with full transparency
+4. All access is logged, time-limited, and revocable
 
-1. A clear statement that you're independent from regulators
-2. Proof they can see all access to their files  
-3. Technical language that backs up the promises
-4. No enforcement-related language in the interface
-
-This turns your inspector background from a liability into an asset: *"Built by someone who understands the industry — and built it to protect operators."*
+The system maintains the privacy-first approach while enabling legitimate support and auditing needs.
