@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import type { CheckItemResult } from '@/lib/offlineDb';
 
 // Types for optimistic document
 interface OptimisticDocument {
@@ -152,6 +153,7 @@ export function useOptimisticDocumentUpload() {
   });
 }
 
+
 // Types for optimistic check
 interface CompleteCheckParams {
   rideId: string;
@@ -159,7 +161,7 @@ interface CompleteCheckParams {
   templateId: string;
   inspectorName: string;
   frequency: string;
-  checkedItems: Record<string, boolean>;
+  itemResults: Record<string, CheckItemResult>;
   notes: Record<string, string>;
   templateItems: Array<{ id: string }>;
   weatherConditions?: string;
@@ -200,12 +202,16 @@ export function useOptimisticCheckComplete() {
       if (checkError) throw checkError;
 
       // Create check results
-      const results = params.templateItems.map(item => ({
-        check_id: check.id,
-        template_item_id: item.id,
-        is_checked: params.checkedItems[item.id] || false,
-        notes: params.notes[item.id]?.trim() || null
-      }));
+      const results = params.templateItems.map(item => {
+        const result = params.itemResults[item.id] || 'na';
+        return {
+          check_id: check.id,
+          template_item_id: item.id,
+          is_checked: result === 'pass',
+          result: result,
+          notes: params.notes[item.id]?.trim() || null
+        };
+      });
 
       const { error: resultsError } = await supabase
         .from('check_results')
