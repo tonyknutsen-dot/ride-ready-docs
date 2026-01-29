@@ -284,7 +284,9 @@ export function StaffManagement() {
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -309,7 +311,7 @@ export function StaffManagement() {
                           <SelectTrigger className="w-[140px]">
                             <SelectValue />
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-popover z-50">
                             <SelectItem value="checks_only">Checks Only</SelectItem>
                             <SelectItem value="checks_maintenance">Checks & Maint.</SelectItem>
                             <SelectItem value="full_access">Full Access</SelectItem>
@@ -356,7 +358,7 @@ export function StaffManagement() {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </AlertDialogTrigger>
-                          <AlertDialogContent>
+                          <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
                             <AlertDialogHeader>
                               <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
                               <AlertDialogDescription>
@@ -381,6 +383,105 @@ export function StaffManagement() {
                 </TableBody>
               </Table>
             </div>
+
+            {/* Mobile Card View */}
+            <div className="md:hidden space-y-3">
+              {staff.map((member) => (
+                <Card key={member.id} className="border-border/50">
+                  <CardContent className="p-4 space-y-3">
+                    {/* Email & Actions Row */}
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{member.email || 'Unknown'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          Joined {format(new Date(member.joined_at), 'MMM d, yyyy')}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setSelectedMember(member);
+                            setEquipmentDialogOpen(true);
+                          }}
+                          title="Manage equipment access"
+                        >
+                          <Settings2 className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This will revoke their access. They can be re-invited later.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction 
+                                onClick={() => removeStaff(member.id)}
+                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              >
+                                Remove
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </div>
+                    
+                    {/* Permission & Equipment */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-muted-foreground">Permission:</span>
+                        <Select
+                          value={member.permission_level}
+                          onValueChange={(v) => handlePermissionChange(member.id, v as StaffPermission, member.email || 'this staff member')}
+                        >
+                          <SelectTrigger className="w-[140px] h-8 text-xs">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent className="bg-popover z-50">
+                            <SelectItem value="checks_only">Checks Only</SelectItem>
+                            <SelectItem value="checks_maintenance">Checks & Maint.</SelectItem>
+                            <SelectItem value="full_access">Full Access</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-muted-foreground">Equipment:</span>
+                        <div className="flex flex-wrap gap-1 justify-end">
+                          {member.assigned_rides.length === 0 ? (
+                            <span className="text-xs text-muted-foreground">All</span>
+                          ) : (
+                            <>
+                              {member.assigned_rides.slice(0, 1).map(r => (
+                                <Badge key={r.id} variant="outline" className="text-[10px] px-1.5 py-0 max-w-[100px] truncate">
+                                  {r.ride_name}
+                                </Badge>
+                              ))}
+                              {member.assigned_rides.length > 1 && (
+                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                  +{member.assigned_rides.length - 1}
+                                </Badge>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            </>
           )}
         </CardContent>
       </Card>

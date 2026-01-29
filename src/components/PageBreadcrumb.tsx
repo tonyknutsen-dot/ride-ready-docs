@@ -48,9 +48,9 @@ const PageBreadcrumb = ({ items, showHome = false }: PageBreadcrumbProps) => {
           const isLast = index === items.length - 1;
           
           return (
-            <BreadcrumbItem key={index}>
-              {!isLast && item.href ? (
-                <>
+            <span key={index} className="contents">
+              <BreadcrumbItem>
+                {!isLast && item.href ? (
                   <BreadcrumbLink asChild>
                     <Link 
                       to={item.href}
@@ -59,16 +59,18 @@ const PageBreadcrumb = ({ items, showHome = false }: PageBreadcrumbProps) => {
                       {item.label}
                     </Link>
                   </BreadcrumbLink>
-                  <BreadcrumbSeparator>
-                    <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
-                  </BreadcrumbSeparator>
-                </>
-              ) : (
-                <BreadcrumbPage className="font-semibold text-foreground">
-                  {item.label}
-                </BreadcrumbPage>
+                ) : (
+                  <BreadcrumbPage className="font-semibold text-foreground">
+                    {item.label}
+                  </BreadcrumbPage>
+                )}
+              </BreadcrumbItem>
+              {!isLast && (
+                <BreadcrumbSeparator>
+                  <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
+                </BreadcrumbSeparator>
               )}
-            </BreadcrumbItem>
+            </span>
           );
         })}
       </BreadcrumbList>

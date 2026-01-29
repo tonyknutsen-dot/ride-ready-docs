@@ -128,7 +128,7 @@ export default function MobileBottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 md:hidden safe-area-pb">
-      <div className="mx-auto max-w-screen-sm grid grid-cols-5 gap-1 px-2 py-1">
+      <div className={`mx-auto max-w-screen-sm grid gap-1 px-2 py-1 ${canAccessChecks ? 'grid-cols-5' : 'grid-cols-4'}`}>
         {/* Overview */}
         <NavButton 
           onClick={() => {
