@@ -1,7 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Lock, UserX, Server, CheckCircle, Eye, FileText, Building2 } from "lucide-react";
+import { Shield, Lock, UserX, Server, CheckCircle, Eye, FileText, Building2, Key } from "lucide-react";
 import { Link } from "react-router-dom";
 import TrustBadges from "@/components/TrustBadges";
 
@@ -170,6 +170,38 @@ const DataIndependence = () => {
                     <li className="flex items-start gap-2">
                       <CheckCircle className="h-4 w-4 text-success mt-1 flex-shrink-0" />
                       <span className="text-muted-foreground text-sm">Any support access requires your explicit request and is logged</span>
+                    </li>
+                  </ul>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-warning/30 bg-gradient-to-b from-warning/5 to-transparent">
+                <CardHeader>
+                  <CardTitle className="text-xl flex items-center gap-3">
+                    <Key className="h-5 w-5 text-warning" />
+                    Support Access
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-muted-foreground text-sm mb-4">
+                    If you ever need help with your account, you can grant us temporary, time-limited access to troubleshoot. This access is:
+                  </p>
+                  <ul className="space-y-2">
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-success mt-1 flex-shrink-0" />
+                      <span className="text-muted-foreground text-sm">Only granted when you explicitly request it</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-success mt-1 flex-shrink-0" />
+                      <span className="text-muted-foreground text-sm">Logged in your activity history</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-success mt-1 flex-shrink-0" />
+                      <span className="text-muted-foreground text-sm">Automatically expires after the time you choose</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <CheckCircle className="h-4 w-4 text-success mt-1 flex-shrink-0" />
+                      <span className="text-muted-foreground text-sm">Revocable by you at any time</span>
                     </li>
                   </ul>
                 </CardContent>

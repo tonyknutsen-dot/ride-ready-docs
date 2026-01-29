@@ -29,6 +29,7 @@ import AboutAppDialog from '@/components/AboutAppDialog';
 import TesterTools from '@/components/TesterTools';
 import BugReportDialog from '@/components/BugReportDialog';
 import ActivityLog from '@/components/ActivityLog';
+import SupportAccessManager from '@/components/SupportAccessManager';
 
 const Settings = () => {
   const { user } = useAuth();
@@ -434,6 +435,9 @@ const Settings = () => {
 
         {/* Activity Log */}
         <ActivityLog limit={5} showViewAll={false} />
+
+        {/* Support Access */}
+        <SupportAccessManager />
 
         <Card className="border-2 border-success/30 bg-gradient-to-br from-success/5 to-transparent shadow-elegant">
           <CardHeader className="pb-3">

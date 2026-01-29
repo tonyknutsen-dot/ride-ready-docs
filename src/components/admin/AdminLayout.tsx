@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle, Mail, Activity, Bug } from 'lucide-react';
+import { Shield, FileText, FolderOpen, Users, LogOut, Menu, MessageCircle, Mail, Activity, Bug, History, Key } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useAuth } from '@/contexts/AuthContext';
@@ -57,7 +57,9 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     { name: 'Ride Type Requests', href: '/admin/ride-requests', icon: FolderOpen, count: pendingCounts.rideRequests },
     { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText, count: pendingCounts.documentRequests },
     { name: 'Support Messages', href: '/admin/support', icon: MessageCircle, count: pendingCounts.supportMessages },
+    { name: 'Support Access', href: '/admin/support-access', icon: Key, count: 0 },
     { name: 'User Management', href: '/admin/users', icon: Users, count: 0 },
+    { name: 'Audit Logs', href: '/admin/audit-logs', icon: History, count: 0 },
     { name: 'Security', href: '/admin/security', icon: Activity, count: 0 },
     { name: 'Marketing', href: '/marketing', icon: Mail, count: 0 },
   ];

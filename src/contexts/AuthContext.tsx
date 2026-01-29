@@ -159,6 +159,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } 
         };
       }
+      
+      // Log successful login to audit log
+      try {
+        await supabase.rpc('log_audit_event', {
+          p_action: 'login',
+          p_resource_type: 'session',
+          p_resource_id: null,
+          p_details: { 
+            method: 'password',
+            user_agent: navigator.userAgent,
+          }
+        });
+      } catch (auditError) {
+        console.error('Failed to log login event:', auditError);
+      }
     }
 
     return { error };
@@ -195,6 +210,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const signOut = async () => {
+    // Log logout event before signing out
+    try {
+      await supabase.rpc('log_audit_event', {
+        p_action: 'logout',
+        p_resource_type: 'session',
+        p_resource_id: null,
+        p_details: { method: 'manual' }
+      });
+    } catch (auditError) {
+      console.error('Failed to log logout event:', auditError);
+    }
+    
     setIsSuspended(false);
     setSuspensionReason(null);
     const { error } = await supabase.auth.signOut();
