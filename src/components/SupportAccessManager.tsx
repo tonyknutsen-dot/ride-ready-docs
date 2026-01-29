@@ -242,13 +242,13 @@ export const SupportAccessManager = () => {
               {activeGrants.length > 0 ? 'Grant Additional Access' : 'Grant Support Access'}
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent aria-describedby="grant-access-description">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Key className="h-5 w-5" />
                 Grant Support Access
               </DialogTitle>
-              <DialogDescription>
+              <DialogDescription id="grant-access-description">
                 This allows our support team to temporarily view your documents to help troubleshoot issues.
               </DialogDescription>
             </DialogHeader>
