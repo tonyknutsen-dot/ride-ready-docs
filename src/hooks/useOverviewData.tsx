@@ -44,7 +44,8 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     maintenanceCountResult,
     recentDocsResult,
     recentChecksResult,
-    recentMaintenanceResult
+    recentMaintenanceResult,
+    ridesResult
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -88,10 +89,13 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
       .limit(2),
     supabase
       .from('maintenance_records')
-      .select('maintenance_date, maintenance_type, ride_id, rides(ride_name)')
+      .select('maintenance_date, maintenance_type, ride_id')
       .eq('user_id', userId)
       .order('maintenance_date', { ascending: false })
-      .limit(2)
+      .limit(2),
+    supabase
+      .from('rides')
+      .select('id, ride_name')
   ]);
 
   // Process stats
@@ -123,11 +127,18 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     });
   }
   
+  // Create a ride lookup map
+  const rideMap = new Map<string, string>();
+  ridesResult.data?.forEach(ride => {
+    rideMap.set(ride.id, ride.ride_name);
+  });
+  
   if (recentMaintenanceResult.data) {
     recentMaintenanceResult.data.forEach(record => {
+      const rideName = rideMap.get(record.ride_id) || 'Unknown';
       activity.push({
         type: 'maintenance',
-        title: `${record.maintenance_type} - ${(record as any).rides?.ride_name}`,
+        title: `${record.maintenance_type} - ${rideName}`,
         time: new Date(record.maintenance_date).toLocaleDateString('en-GB')
       });
     });
