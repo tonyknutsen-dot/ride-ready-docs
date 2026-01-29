@@ -164,11 +164,11 @@ const RideSelector = ({
                 </div>
               )}
               <CardHeader className="pb-2">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base leading-tight flex-1 min-w-0 break-words">
+                <div className="flex flex-col gap-1.5">
+                  <CardTitle className="text-base leading-tight min-w-0 break-words line-clamp-2">
                     {ride.ride_name}
                   </CardTitle>
-                  <Badge variant="outline" className="text-xs px-2 py-0.5 bg-primary/10 text-primary border-primary/30 shrink-0 font-medium">
+                  <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30 w-fit font-medium truncate max-w-full">
                     {ride.ride_categories.name}
                   </Badge>
                 </div>
