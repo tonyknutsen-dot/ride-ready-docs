@@ -60,6 +60,11 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
+                <Link to="/data-independence" className="text-background/70 hover:text-accent transition-colors">
+                  Data Independence
+                </Link>
+              </li>
+              <li>
                 <Link to="/security" className="text-background/70 hover:text-accent transition-colors">
                   Security
                 </Link>
@@ -92,7 +97,10 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-background/10 mt-12 pt-8 text-center text-background/50 text-sm space-y-2">
+        <div className="border-t border-background/10 mt-12 pt-8 text-center text-background/50 text-sm space-y-4">
+          <p className="text-xs text-background/60 max-w-2xl mx-auto">
+            RideReadyDocs is an independent platform. We do not share your data with inspectors, regulators, or any third party.
+          </p>
           <p>&copy; {currentYear} Ride Ready Docs. All rights reserved. Built for amusement professionals worldwide.</p>
           <div className="flex items-center justify-center gap-2">
             <span className="text-xs font-mono opacity-70">{APP_VERSION}</span>

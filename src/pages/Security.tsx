@@ -1,7 +1,8 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Lock, Database, Eye, CheckCircle, Server } from "lucide-react";
+import { Shield, Lock, Database, Eye, CheckCircle, Server, UserX, FileText } from "lucide-react";
+import { Link } from "react-router-dom";
 import TrustBadges from "@/components/TrustBadges";
 
 const Security = () => {
@@ -128,6 +129,49 @@ const Security = () => {
               </Card>
             ))}
           </div>
+        </section>
+
+        {/* Your Data, Your Control Section */}
+        <section className="container mx-auto px-6 py-16">
+          <Card className="max-w-4xl mx-auto border-2 border-accent/30 bg-gradient-to-b from-card to-accent/[0.03]">
+            <CardHeader className="text-center">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-accent/20 to-primary/10 flex items-center justify-center mx-auto mb-4 border border-accent/30">
+                <UserX className="h-6 w-6 text-accent-foreground" />
+              </div>
+              <CardTitle className="text-2xl">Your Data, Your Control</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-6">
+                We've designed RideReadyDocs so that your documents remain private and under your control at all times.
+              </p>
+              
+              <div className="grid md:grid-cols-3 gap-4">
+                <div className="p-4 rounded-lg bg-secondary/50 border border-border/50 text-center">
+                  <Lock className="h-8 w-8 text-primary mx-auto mb-2" />
+                  <h4 className="font-semibold mb-1 text-sm">Platform Owner Cannot Browse</h4>
+                  <p className="text-xs text-muted-foreground">No admin interface exists to view user files</p>
+                </div>
+                
+                <div className="p-4 rounded-lg bg-secondary/50 border border-border/50 text-center">
+                  <Eye className="h-8 w-8 text-primary mx-auto mb-2" />
+                  <h4 className="font-semibold mb-1 text-sm">All Access Is Logged</h4>
+                  <p className="text-xs text-muted-foreground">View your activity log in Settings</p>
+                </div>
+                
+                <div className="p-4 rounded-lg bg-secondary/50 border border-border/50 text-center">
+                  <FileText className="h-8 w-8 text-primary mx-auto mb-2" />
+                  <h4 className="font-semibold mb-1 text-sm">Support Access on Request Only</h4>
+                  <p className="text-xs text-muted-foreground">We only access your data if you ask us to</p>
+                </div>
+              </div>
+              
+              <div className="text-center pt-4">
+                <Link to="/data-independence" className="text-primary hover:underline text-sm font-medium">
+                  Read our full Data Independence Statement →
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
         </section>
 
         {/* Security Practices */}

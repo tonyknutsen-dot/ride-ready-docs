@@ -155,7 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await supabase.auth.signOut();
         return { 
           error: { 
-            message: `Your account has been suspended.${reason ? ` Reason: ${reason}` : ''} Please contact info@knutssoftware.co.uk to resolve this issue.` 
+            message: `Your account has been suspended.${reason ? ` Reason: ${reason}` : ''} Please contact support@ridereadydocs.com to resolve this issue.` 
           } 
         };
       }

@@ -397,6 +397,16 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
         <Upload className="mr-2 h-5 w-5" />
         {uploading ? 'Uploading...' : 'Upload'}
       </Button>
+      
+      {/* Privacy confirmation after successful upload */}
+      {uploadMutation.isSuccess && (
+        <div className="rounded-lg border border-success/30 bg-success/10 p-3 animate-fade-in">
+          <p className="text-sm font-medium text-success flex items-center gap-2">
+            <span>✓</span>
+            Encrypted and stored securely. Only you can access this file.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

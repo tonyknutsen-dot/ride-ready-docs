@@ -925,7 +925,7 @@ const BatchSendDocuments = () => {
                               <SelectItem value="guild">{terminology.isUK ? 'Guild / Trade Association' : 'Trade Association'}</SelectItem>
                               <SelectItem value="insurer">Insurance Company</SelectItem>
                               <SelectItem value="inspector">Inspection Body</SelectItem>
-                            <SelectItem value="hse">HSE</SelectItem>
+                            <SelectItem value="regulatory_body">Regulatory Body</SelectItem>
                             <SelectItem value="other">Other</SelectItem>
                           </SelectContent>
                         </Select>
@@ -1025,7 +1025,7 @@ const BatchSendDocuments = () => {
                                 <SelectItem value="guild">Trade Association</SelectItem>
                                 <SelectItem value="insurer">Insurance Company</SelectItem>
                                 <SelectItem value="inspector">Inspection Body</SelectItem>
-                                <SelectItem value="hse">HSE</SelectItem>
+                                <SelectItem value="regulatory_body">Regulatory Body</SelectItem>
                                 <SelectItem value="other">Other</SelectItem>
                               </SelectContent>
                             </Select>
