@@ -149,7 +149,7 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-4 md:p-8">
+        <main className="flex-1 p-4 md:p-8 min-w-0 overflow-x-hidden">
           {children}
         </main>
       </div>
