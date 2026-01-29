@@ -240,45 +240,45 @@ const AuditLogs = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Events (24h)</CardTitle>
-              <History className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total24h}</div>
-            </CardContent>
+        <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+          <Card className="p-3 md:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Events (24h)</p>
+                <p className="text-xl md:text-2xl font-bold">{stats.total24h}</p>
+              </div>
+              <History className="h-5 w-5 text-muted-foreground hidden sm:block" />
+            </div>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Unique Users (24h)</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.uniqueUsers24h}</div>
-            </CardContent>
+          <Card className="p-3 md:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Users (24h)</p>
+                <p className="text-xl md:text-2xl font-bold">{stats.uniqueUsers24h}</p>
+              </div>
+              <Users className="h-5 w-5 text-muted-foreground hidden sm:block" />
+            </div>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Document Accesses</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.documentAccesses}</div>
-            </CardContent>
+          <Card className="p-3 md:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Doc Accesses</p>
+                <p className="text-xl md:text-2xl font-bold">{stats.documentAccesses}</p>
+              </div>
+              <FileText className="h-5 w-5 text-muted-foreground hidden sm:block" />
+            </div>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Login Events</CardTitle>
-              <LogIn className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.loginEvents}</div>
-            </CardContent>
+          <Card className="p-3 md:p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-muted-foreground">Logins</p>
+                <p className="text-xl md:text-2xl font-bold">{stats.loginEvents}</p>
+              </div>
+              <LogIn className="h-5 w-5 text-muted-foreground hidden sm:block" />
+            </div>
           </Card>
         </div>
 
@@ -289,18 +289,21 @@ const AuditLogs = () => {
             <CardDescription>View all platform activity with filters</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search by user, action, or details..."
-                  className="pl-9"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by user, action, or details..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            
+            {/* Filters - horizontal scroll on mobile */}
+            <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
               <Select value={actionFilter} onValueChange={setActionFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[120px] flex-shrink-0">
                   <SelectValue placeholder="Action" />
                 </SelectTrigger>
                 <SelectContent>
@@ -315,7 +318,7 @@ const AuditLogs = () => {
                 </SelectContent>
               </Select>
               <Select value={resourceFilter} onValueChange={setResourceFilter}>
-                <SelectTrigger className="w-[140px]">
+                <SelectTrigger className="w-[120px] flex-shrink-0">
                   <SelectValue placeholder="Resource" />
                 </SelectTrigger>
                 <SelectContent>
@@ -330,8 +333,8 @@ const AuditLogs = () => {
                 </SelectContent>
               </Select>
               <Select value={dateFilter} onValueChange={setDateFilter}>
-                <SelectTrigger className="w-[130px]">
-                  <SelectValue placeholder="Date range" />
+                <SelectTrigger className="w-[110px] flex-shrink-0">
+                  <SelectValue placeholder="Date" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="1">Last 24h</SelectItem>
@@ -342,23 +345,22 @@ const AuditLogs = () => {
               </Select>
             </div>
 
-            {/* Logs Table */}
-            <div className="rounded-md border">
+            {/* Logs - Card view on mobile, Table on desktop */}
+            <div className="hidden md:block rounded-md border">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[160px]">Timestamp</TableHead>
+                    <TableHead className="w-[140px]">Timestamp</TableHead>
                     <TableHead>User</TableHead>
-                    <TableHead className="w-[120px]">Action</TableHead>
-                    <TableHead className="w-[120px]">Resource</TableHead>
+                    <TableHead className="w-[110px]">Action</TableHead>
+                    <TableHead className="w-[110px]">Resource</TableHead>
                     <TableHead>Details</TableHead>
-                    <TableHead className="w-[120px]">IP Address</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredLogs.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                         No audit logs found
                       </TableCell>
                     </TableRow>
@@ -370,7 +372,7 @@ const AuditLogs = () => {
                           <div className="text-muted-foreground">{format(new Date(log.created_at), 'HH:mm:ss')}</div>
                         </TableCell>
                         <TableCell>
-                          <div className="font-medium text-sm truncate max-w-[200px]">
+                          <div className="font-medium text-sm truncate max-w-[180px]">
                             {log.user_email || 'Unknown'}
                           </div>
                         </TableCell>
@@ -378,17 +380,45 @@ const AuditLogs = () => {
                         <TableCell>
                           <Badge variant="secondary">{log.resource_type}</Badge>
                         </TableCell>
-                        <TableCell className="max-w-[250px]">
+                        <TableCell className="max-w-[200px]">
                           <div className="truncate">{formatDetails(log.details)}</div>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs text-muted-foreground">
-                          {log.ip_address || '-'}
                         </TableCell>
                       </TableRow>
                     ))
                   )}
                 </TableBody>
               </Table>
+            </div>
+
+            {/* Mobile card view */}
+            <div className="md:hidden space-y-3">
+              {filteredLogs.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                  No audit logs found
+                </div>
+              ) : (
+                filteredLogs.map((log) => (
+                  <div key={log.id} className="p-3 border rounded-lg space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{log.user_email || 'Unknown'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(log.created_at), 'dd MMM yyyy HH:mm')}
+                        </p>
+                      </div>
+                      {getActionBadge(log.action)}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-xs">{log.resource_type}</Badge>
+                      {log.details && Object.keys(log.details).length > 0 && (
+                        <span className="text-xs text-muted-foreground truncate">
+                          {Object.entries(log.details).slice(0, 1).map(([k, v]) => `${k}: ${String(v).slice(0, 20)}`)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
 
             {hasMore && filteredLogs.length > 0 && (
