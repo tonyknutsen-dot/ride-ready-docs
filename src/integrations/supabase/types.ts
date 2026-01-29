@@ -1949,6 +1949,45 @@ export type Database = {
           },
         ]
       }
+      support_access_grants: {
+        Row: {
+          access_scope: string
+          created_at: string
+          expires_at: string
+          granted_at: string
+          granted_to_admin: string | null
+          id: string
+          reason: string
+          revoked_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          access_scope?: string
+          created_at?: string
+          expires_at: string
+          granted_at?: string
+          granted_to_admin?: string | null
+          id?: string
+          reason: string
+          revoked_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          access_scope?: string
+          created_at?: string
+          expires_at?: string
+          granted_at?: string
+          granted_to_admin?: string | null
+          id?: string
+          reason?: string
+          revoked_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
           admin_response: string | null
@@ -2294,6 +2333,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_has_support_access: {
+        Args: { _admin_id: string; _user_id: string }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: { p_key: string; p_max_requests: number; p_window_ms: number }
         Returns: Json
@@ -2302,6 +2345,7 @@ export type Database = {
       cleanup_old_blocked_ips: { Args: never; Returns: number }
       decrypt_sensitive: { Args: { ciphertext: string }; Returns: string }
       encrypt_sensitive: { Args: { plaintext: string }; Returns: string }
+      expire_support_grants: { Args: never; Returns: number }
       get_staff_permission: {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["staff_permission"]
