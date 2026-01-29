@@ -414,6 +414,7 @@ export type Database = {
           id: string
           is_checked: boolean
           notes: string | null
+          result: string | null
           template_item_id: string
         }
         Insert: {
@@ -422,6 +423,7 @@ export type Database = {
           id?: string
           is_checked: boolean
           notes?: string | null
+          result?: string | null
           template_item_id: string
         }
         Update: {
@@ -430,6 +432,7 @@ export type Database = {
           id?: string
           is_checked?: boolean
           notes?: string | null
+          result?: string | null
           template_item_id?: string
         }
         Relationships: [

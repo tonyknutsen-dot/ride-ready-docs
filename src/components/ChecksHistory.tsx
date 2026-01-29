@@ -39,6 +39,7 @@ type Check = Tables<'checks'>;
 type CheckWithResults = Check & {
   check_results: Array<{
     is_checked: boolean;
+    result: 'pass' | 'fail' | 'na' | null;
     template_item_id: string;
   }>;
 };
@@ -120,6 +121,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
           *,
           check_results (
             is_checked,
+            result,
             template_item_id
           )
         `)
@@ -483,21 +485,25 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         doc.text('Check Items', margin, currentY);
         currentY += 8;
         
-        const passed = check.check_results.filter(r => r.is_checked).length;
+        const passed = check.check_results.filter(r => r.result === 'pass' || (r.result === null && r.is_checked)).length;
+        const failed = check.check_results.filter(r => r.result === 'fail').length;
         const total = check.check_results.length;
         
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text(`${passed} of ${total} items passed`, margin, currentY);
+        doc.text(`${passed} pass, ${failed} fail, ${total - passed - failed} N/A`, margin, currentY);
         currentY += 8;
         
         // Status indicator
-        if (passed === total) {
+        if (failed === 0 && passed === total) {
           doc.setTextColor(34, 139, 34);
           doc.text('✓ ALL CHECKS PASSED', margin, currentY);
-        } else {
+        } else if (failed > 0) {
           doc.setTextColor(220, 53, 69);
-          doc.text(`✗ ${total - passed} ITEM(S) REQUIRE ATTENTION`, margin, currentY);
+          doc.text(`✗ ${failed} ITEM(S) FAILED`, margin, currentY);
+        } else {
+          doc.setTextColor(100);
+          doc.text(`${passed} of ${total} items checked`, margin, currentY);
         }
         doc.setTextColor(0);
       }

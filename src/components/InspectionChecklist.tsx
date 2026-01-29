@@ -4,12 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff, CloudOff, RefreshCw } from 'lucide-react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
@@ -25,7 +25,7 @@ import DefectReportDialog from './DefectReportDialog';
 import DefectsList from './DefectsList';
 import { useOfflineCheck } from '@/hooks/useOfflineCheck';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
-import { getCachedTemplatesForRide, findCachedAddress, cacheLocationAddress, type CachedTemplate } from '@/lib/offlineDb';
+import { getCachedTemplatesForRide, findCachedAddress, cacheLocationAddress, type CachedTemplate, type CheckItemResult } from '@/lib/offlineDb';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -48,7 +48,7 @@ interface InspectionChecklistProps {
 const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
   const [recentChecks, setRecentChecks] = useState<Check[]>([]);
-  const [checkedItems, setCheckedItems] = useState<{ [key: string]: boolean }>({});
+  const [itemResults, setItemResults] = useState<{ [key: string]: CheckItemResult }>({});
   const [notes, setNotes] = useState<{ [key: string]: string }>({});
   const [inspectorName, setInspectorName] = useState('');
   const [inspectorNotes, setInspectorNotes] = useState('');
@@ -181,10 +181,10 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     }
   };
 
-  const handleCheckChange = (itemId: string, checked: boolean) => {
-    setCheckedItems(prev => ({
+  const handleResultChange = (itemId: string, result: CheckItemResult) => {
+    setItemResults(prev => ({
       ...prev,
-      [itemId]: checked
+      [itemId]: result
     }));
   };
 
@@ -198,8 +198,8 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const getProgress = () => {
     if (!activeTemplate?.daily_check_template_items) return 0;
     const totalItems = activeTemplate.daily_check_template_items.length;
-    const checkedCount = Object.values(checkedItems).filter(Boolean).length;
-    return totalItems > 0 ? (checkedCount / totalItems) * 100 : 0;
+    const answeredCount = Object.values(itemResults).filter(r => r === 'pass' || r === 'fail').length;
+    return totalItems > 0 ? (answeredCount / totalItems) * 100 : 0;
   };
 
   // State for raw GPS coordinates (for deferred resolution when offline)
@@ -690,9 +690,10 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
       // Calculate pass/fail summary
       const totalItems = activeTemplate.daily_check_template_items.length;
-      const passedItems = Object.values(checkedItems).filter(Boolean).length;
-      const failedItems = totalItems - passedItems;
-      const allPassed = failedItems === 0;
+      const passedItems = Object.values(itemResults).filter(r => r === 'pass').length;
+      const failedItems = Object.values(itemResults).filter(r => r === 'fail').length;
+      const naItems = totalItems - passedItems - failedItems;
+      const allPassed = failedItems === 0 && naItems === 0;
 
       currentY += 4;
       pdf.setFont('helvetica', 'bold');
@@ -701,12 +702,15 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       if (allPassed && defects.length === 0) {
         pdf.setTextColor(34, 139, 34); // Green
         pdf.text('ALL CHECKS PASSED', leftCol + labelWidth, currentY);
-      } else if (allPassed && defects.length > 0) {
+      } else if (failedItems === 0 && defects.length > 0) {
         pdf.setTextColor(255, 140, 0); // Orange
         pdf.text(`PASSED WITH ${defects.length} DEFECT(S) NOTED`, leftCol + labelWidth, currentY);
-      } else {
+      } else if (failedItems > 0) {
         pdf.setTextColor(220, 53, 69); // Red
         pdf.text(`${failedItems} ITEM(S) FAILED`, leftCol + labelWidth, currentY);
+      } else {
+        pdf.setTextColor(100); // Gray
+        pdf.text(`${passedItems} PASS, ${failedItems} FAIL, ${naItems} N/A`, leftCol + labelWidth, currentY);
       }
       pdf.setTextColor(0);
       currentY += 10;
@@ -729,7 +733,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       activeTemplate.daily_check_template_items
         .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
         .forEach((item, index) => {
-          const isChecked = checkedItems[item.id];
+          const itemResult = itemResults[item.id] || 'na';
           const itemNote = notes[item.id] || '';
 
           // Check for page overflow
@@ -737,12 +741,15 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
           // Status indicator with color
           pdf.setFont('helvetica', 'bold');
-          if (isChecked) {
+          if (itemResult === 'pass') {
             pdf.setTextColor(34, 139, 34); // Green
             pdf.text('✓ PASS', leftCol, currentY);
-          } else {
+          } else if (itemResult === 'fail') {
             pdf.setTextColor(220, 53, 69); // Red
             pdf.text('✗ FAIL', leftCol, currentY);
+          } else {
+            pdf.setTextColor(128, 128, 128); // Gray
+            pdf.text('○ N/A', leftCol, currentY);
           }
           pdf.setTextColor(0);
 
@@ -993,11 +1000,15 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         rawLatitude: rawGpsCoords?.lat,
         rawLongitude: rawGpsCoords?.lon,
         needsAddressResolution: needsAddressResolution,
-        results: activeTemplate.daily_check_template_items.map(item => ({
-          templateItemId: item.id,
-          isChecked: checkedItems[item.id] || false,
-          notes: notes[item.id]?.trim() || undefined,
-        })),
+        results: activeTemplate.daily_check_template_items.map(item => {
+          const result = itemResults[item.id] || 'na';
+          return {
+            templateItemId: item.id,
+            isChecked: result === 'pass', // backward compatibility
+            result: result,
+            notes: notes[item.id]?.trim() || undefined,
+          };
+        }),
       };
 
       // Use the offline-aware submit function
@@ -1053,7 +1064,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       // If offline, the useOfflineCheck hook already shows a toast
 
       // Reset form
-      setCheckedItems({});
+      setItemResults({});
       setNotes({});
       setInspectorName('');
       setInspectorNotes('');
@@ -1446,7 +1457,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                   <div>
                     <span className="font-medium text-sm">Progress</span>
                     <p className="text-xs text-muted-foreground">
-                      {Object.values(checkedItems).filter(Boolean).length} of {activeTemplate.daily_check_template_items.length} items
+                      {Object.values(itemResults).filter(r => r === 'pass' || r === 'fail').length} of {activeTemplate.daily_check_template_items.length} items
                     </p>
                   </div>
                 </div>
@@ -1472,63 +1483,95 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
               </div>
               {activeTemplate.daily_check_template_items
                 .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                .map((item, index) => (
+                .map((item, index) => {
+                  const currentResult = itemResults[item.id];
+                  return (
                   <Card 
                     key={item.id} 
                     className={`transition-all duration-200 ${
-                      checkedItems[item.id] 
+                      currentResult === 'pass'
                         ? 'bg-success/5 border-success/30' 
+                        : currentResult === 'fail'
+                        ? 'bg-destructive/5 border-destructive/30'
                         : 'hover:border-primary/30'
                     }`}
                   >
-                    <div className="p-4 space-y-3">
-                      {/* Main checkbox row - large touch target */}
-                      <label 
-                        htmlFor={item.id}
-                        className="flex items-start gap-4 cursor-pointer min-h-[44px]"
-                      >
-                        <div className="pt-0.5">
-                          <Checkbox
-                            id={item.id}
-                            checked={checkedItems[item.id] || false}
-                            onCheckedChange={(checked) => 
-                              handleCheckChange(item.id, checked as boolean)
-                            }
-                            className="h-6 w-6 rounded-md border-2"
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <span className={`text-sm font-medium leading-relaxed block ${
-                            checkedItems[item.id] ? 'text-muted-foreground line-through' : ''
-                          }`}>
-                            {item.check_item_text}
+                    <div className="p-4 space-y-4">
+                      {/* Check item text */}
+                      <div className="flex-1 min-w-0">
+                        <span className="text-sm font-medium leading-relaxed block">
+                          {item.check_item_text}
+                        </span>
+                        <div className="flex items-center gap-2 mt-1.5">
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
+                            {item.category}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground">
+                            #{index + 1}
                           </span>
-                          <div className="flex items-center gap-2 mt-1.5">
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
-                              {item.category}
-                            </Badge>
-                            <span className="text-[10px] text-muted-foreground">
-                              #{index + 1}
-                            </span>
-                          </div>
                         </div>
-                      </label>
+                      </div>
                       
-                      {/* Collapsible notes - only show input if has notes or item is checked */}
+                      {/* Pass/Fail/N/A Radio buttons */}
+                      <RadioGroup 
+                        value={currentResult || ''} 
+                        onValueChange={(value) => handleResultChange(item.id, value as CheckItemResult)}
+                        className="flex gap-2"
+                      >
+                        <label 
+                          htmlFor={`${item.id}-pass`}
+                          className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                            currentResult === 'pass' 
+                              ? 'border-success bg-success/10 text-success' 
+                              : 'border-border hover:border-success/50'
+                          }`}
+                        >
+                          <RadioGroupItem value="pass" id={`${item.id}-pass`} className="sr-only" />
+                          <CheckCircle className="h-5 w-5" />
+                          <span className="font-medium text-sm">Pass</span>
+                        </label>
+                        <label 
+                          htmlFor={`${item.id}-fail`}
+                          className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                            currentResult === 'fail' 
+                              ? 'border-destructive bg-destructive/10 text-destructive' 
+                              : 'border-border hover:border-destructive/50'
+                          }`}
+                        >
+                          <RadioGroupItem value="fail" id={`${item.id}-fail`} className="sr-only" />
+                          <XCircle className="h-5 w-5" />
+                          <span className="font-medium text-sm">Fail</span>
+                        </label>
+                        <label 
+                          htmlFor={`${item.id}-na`}
+                          className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                            currentResult === 'na' 
+                              ? 'border-muted-foreground bg-muted text-muted-foreground' 
+                              : 'border-border hover:border-muted-foreground/50'
+                          }`}
+                        >
+                          <RadioGroupItem value="na" id={`${item.id}-na`} className="sr-only" />
+                          <MinusCircle className="h-5 w-5" />
+                          <span className="font-medium text-sm">N/A</span>
+                        </label>
+                      </RadioGroup>
+                      
+                      {/* Notes - always visible for fail, otherwise toggleable */}
                       <div className={`transition-all duration-200 ${
-                        notes[item.id] || checkedItems[item.id] ? 'opacity-100' : 'opacity-70'
+                        notes[item.id] || currentResult === 'fail' ? 'opacity-100' : 'opacity-70'
                       }`}>
                         <Textarea
-                          placeholder="Add notes (optional)"
+                          placeholder={currentResult === 'fail' ? "Add notes about the failure (required)" : "Add notes (optional)"}
                           value={notes[item.id] || ''}
                           onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                          className="min-h-[60px] text-sm resize-none"
+                          className={`min-h-[60px] text-sm resize-none ${currentResult === 'fail' && !notes[item.id] ? 'border-destructive' : ''}`}
                           rows={2}
                         />
                       </div>
                     </div>
                   </Card>
-                ))}
+                  );
+                })}
             </div>
 
             {/* Open Defects Warning */}

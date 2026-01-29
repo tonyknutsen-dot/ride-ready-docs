@@ -28,9 +28,12 @@ export interface OfflineCheck {
   needsAddressResolution?: boolean;
 }
 
+export type CheckItemResult = 'pass' | 'fail' | 'na';
+
 export interface OfflineCheckResult {
   templateItemId: string;
-  isChecked: boolean;
+  isChecked: boolean; // Keep for backward compatibility
+  result: CheckItemResult; // New pass/fail/na field
   notes?: string;
 }
 

@@ -109,6 +109,7 @@ export function useOfflineSync() {
           check_id: checkData.id,
           template_item_id: r.templateItemId,
           is_checked: r.isChecked,
+          result: r.result || (r.isChecked ? 'pass' : 'na'), // Support old data without result field
           notes: r.notes,
         }));
 

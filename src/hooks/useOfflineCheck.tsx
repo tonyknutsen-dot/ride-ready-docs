@@ -9,6 +9,8 @@ import {
   type OfflineCheckResult,
 } from '@/lib/offlineDb';
 
+import type { CheckItemResult } from '@/lib/offlineDb';
+
 interface CheckSubmission {
   rideId: string;
   templateId: string;
@@ -29,6 +31,7 @@ interface CheckSubmission {
   results: {
     templateItemId: string;
     isChecked: boolean;
+    result: CheckItemResult;
     notes?: string;
   }[];
 }
@@ -72,6 +75,7 @@ export function useOfflineCheck() {
             check_id: checkData.id,
             template_item_id: r.templateItemId,
             is_checked: r.isChecked,
+            result: r.result,
             notes: r.notes,
           }));
 
@@ -113,6 +117,7 @@ export function useOfflineCheck() {
         results: check.results.map(r => ({
           templateItemId: r.templateItemId,
           isChecked: r.isChecked,
+          result: r.result,
           notes: r.notes,
         })),
         createdAt: new Date().toISOString(),
