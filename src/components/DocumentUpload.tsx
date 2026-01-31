@@ -13,30 +13,64 @@ import { compressImage } from '@/utils/imageCompression';
 import { EmptyState } from '@/components/EmptyState';
 import { useOptimisticDocumentUpload } from '@/hooks/useOptimisticMutations';
 
-// Base document types - will be filtered/modified based on user's country
-const getDocumentTypes = (isUK: boolean) => [
-  // Safety Certificates - Featured at top
-  { id: 'declaration_of_compliance', name: '📜 Annual Inspection Certificate', description: '⭐ REQUIRED - Your annual safety certificate to operate', featured: true, category: 'safety' },
+// Document categories with grouped types
+const DOCUMENT_CATEGORIES = {
+  'Inspection Reports': [
+    { id: 'declaration_of_compliance', name: '📜 Annual Inspection Certificate', description: 'Annual safety certificate to operate', featured: true },
+    { id: 'electrical_inspection', name: 'Electrical Inspection Report', description: 'Electrical safety inspection reports' },
+    { id: 'inservice_inspection', name: 'In-Service Inspection Report', description: 'Regular in-service inspection reports' },
+    { id: 'initial_test_report', name: 'Initial Test Report', description: 'Initial testing and commissioning reports' },
+  ],
+  'Checks': [
+    { id: 'daily_check', name: 'Daily Check Record', description: 'Daily pre-opening check documentation' },
+    { id: 'monthly_check', name: 'Monthly Check Record', description: 'Monthly inspection documentation' },
+    { id: 'yearly_check', name: 'Yearly Check Record', description: 'Annual check documentation' },
+  ],
+  'NDT': [
+    { id: 'ndt_schedule', name: 'NDT Schedule', description: 'Non-destructive testing schedules' },
+    { id: 'ndt_report', name: 'NDT Report', description: 'Non-destructive testing inspection reports' },
+  ],
+  'Design & Review': [
+    { id: 'design_review', name: 'Design Review Report', description: 'Design review documents' },
+    { id: 'conformity_design', name: 'Conformity to Design', description: 'Design conformity certificates' },
+  ],
+  'Risk Assessments': [
+    { id: 'risk_assessment', name: 'Risk Assessment', description: 'General, fire, confined space, working at height assessments' },
+    { id: 'method_statement', name: 'Method Statement', description: 'Work method statements and procedures' },
+  ],
+  'Maintenance': [
+    { id: 'maintenance_report', name: 'Maintenance Report', description: 'Generated maintenance reports' },
+    { id: 'maintenance_log', name: 'Maintenance Log', description: 'Maintenance documentation' },
+  ],
+  'Manuals & Procedures': [
+    { id: 'operator_manual', name: 'Operator Manual', description: 'Operating manuals and instructions' },
+    { id: 'controller_manual', name: 'Controller Manual', description: 'Control system manuals' },
+    { id: 'build_up_down', name: 'Build Up and Down Procedure', description: 'Procedures for ride assembly and dismantling' },
+    { id: 'emergency_action_plan', name: 'Emergency Action Plan', description: 'Emergency response and action procedures' },
+    { id: 'evacuation_plan', name: 'Evacuation Plan', description: 'Evacuation procedures and plans' },
+  ],
+  'Insurance & Certificates': [
+    { id: 'insurance', name: '🛡️ Insurance Documents', description: 'Liability, employers, equipment insurance', suggestGlobal: true },
+    { id: 'certificate', name: 'Certificate', description: 'Other certificates' },
+  ],
+  'Other': [
+    { id: 'photo', name: 'Device Photo', description: 'Pictures of the ride for identification' },
+    { id: 'other', name: 'Other Documents', description: 'Other document types' },
+  ],
+};
+
+// Flatten for select dropdown with category headers
+const getDocumentTypes = (_isUK: boolean) => {
+  const types: Array<{ id: string; name: string; description: string; category: string; featured?: boolean; suggestGlobal?: boolean }> = [];
   
-  // Other document types
-  { id: 'build_up_down', name: 'Build Up and Down Procedure', description: 'Procedures for ride assembly and dismantling' },
-  { id: 'conformity_design', name: 'Conformity to Design', description: 'Design conformity certificates' },
-  { id: 'controller_manual', name: 'Controller Manual', description: 'Control system manuals' },
-  { id: 'design_review', name: 'Design Review', description: 'Design review documents' },
-  { id: 'electrical_inspection', name: 'Electrical Inspection Report', description: 'Electrical safety inspection reports' },
-  { id: 'emergency_action_plan', name: 'Emergency Action Plan', description: 'Emergency response and action procedures' },
-  { id: 'evacuation_plan', name: 'Evacuation Plan', description: 'Evacuation procedures and plans' },
-  { id: 'initial_test_report', name: 'Initial Test Report', description: 'Initial testing and commissioning reports' },
-  { id: 'inservice_inspection', name: 'In-Service Inspection Report', description: 'Regular in-service inspection reports' },
-  { id: 'insurance', name: '🛡️ Insurance Documents', description: '💼 Liability, employers, equipment insurance - Usually Global Documents', suggestGlobal: true },
-  { id: 'method_statement', name: 'Method Statement', description: 'Work method statements and procedures' },
-  { id: 'ndt_report', name: 'NDT Report', description: 'Non-destructive testing inspection reports' },
-  { id: 'ndt_schedule', name: 'NDT Schedule', description: 'Non-destructive testing schedules' },
-  { id: 'operator_manual', name: 'Operator Manual', description: 'Operating manuals and instructions' },
-  { id: 'other', name: 'Other Documents', description: 'Other document types' },
-  { id: 'photo', name: 'Device Photo', description: 'Pictures of the ride for identification and sharing' },
-  { id: 'risk_assessment', name: 'Risk Assessment', description: 'General, fire, confined space, working at height, design, and maturity risk assessments' },
-];
+  Object.entries(DOCUMENT_CATEGORIES).forEach(([category, items]) => {
+    items.forEach(item => {
+      types.push({ ...item, category });
+    });
+  });
+  
+  return types;
+};
 
 interface DocumentUploadProps {
   rideId?: string;
@@ -292,24 +326,25 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
 
       {/* Form Fields */}
       <div className="space-y-3">
-        {/* Document Type */}
+        {/* Document Type with Category Headers */}
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-muted-foreground">Type</Label>
+          <Label className="text-xs font-medium text-muted-foreground">Category</Label>
           <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
             <SelectTrigger className="h-11">
-              <SelectValue placeholder="Select type..." />
+              <SelectValue placeholder="Select document category..." />
             </SelectTrigger>
-            <SelectContent>
-              {/* No terminology note needed - fully generic */}
-              {documentTypes.map((type) => (
-                <SelectItem key={type.id} value={type.id}>
-                  <div className="flex flex-col">
-                    <span className={(type as any).featured ? 'text-primary font-medium' : ''}>{type.name}</span>
-                    {(type as any).ukOnly && (
-                      <span className="text-[10px] text-muted-foreground">{type.description}</span>
-                    )}
+            <SelectContent className="max-h-80">
+              {Object.entries(DOCUMENT_CATEGORIES).map(([category, items]) => (
+                <div key={category}>
+                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 sticky top-0">
+                    {category}
                   </div>
-                </SelectItem>
+                  {items.map((item) => (
+                    <SelectItem key={item.id} value={item.id} className="pl-4">
+                      <span className={item.featured ? 'text-primary font-medium' : ''}>{item.name}</span>
+                    </SelectItem>
+                  ))}
+                </div>
               ))}
             </SelectContent>
           </Select>

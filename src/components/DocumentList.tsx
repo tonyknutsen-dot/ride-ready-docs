@@ -403,17 +403,40 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
 
   const prettyType = (raw: string) => {
     const t = raw.trim().toLowerCase();
-    if (t === 'doc') return "📜 DOC Certificate";
-    if (t === 'check record' || t === 'check_record' || t.includes('safety check')) return "✅ Safety Check Records";
-    if (t === 'risk_assessment' || t.includes('risk')) return "Risk Assessment (RA)";
-    if (t === 'method_statement' || t.includes('method')) return "Method Statement";
-    if (t === 'maintenance_report') return "Maintenance Report";
-    if (t === 'ndt_schedule') return "🔬 NDT Schedule";
-    if (t === 'ndt_report' || t === 'ndt_inspection') return "🔬 NDT Report";
-    if (t.includes('insur')) return "Insurance";
-    if (t.includes('cert')) return "Certificate";
-    if (t === 'photo' || t.includes('photo')) return "Device Photo";
-    return "Other";
+    
+    // Inspection Reports
+    if (t === 'doc' || t === 'declaration_of_compliance') return "📜 Inspection Reports";
+    if (t === 'electrical_inspection' || t === 'inservice_inspection' || t === 'initial_test_report') return "📜 Inspection Reports";
+    
+    // Checks
+    if (t === 'check record' || t === 'check_record' || t.includes('safety check')) return "✅ Check Records";
+    if (t === 'daily_check' || t === 'monthly_check' || t === 'yearly_check') return "✅ Check Records";
+    
+    // NDT
+    if (t === 'ndt_schedule') return "🔬 NDT";
+    if (t === 'ndt_report' || t === 'ndt_inspection') return "🔬 NDT";
+    
+    // Design & Review
+    if (t === 'design_review' || t === 'conformity_design') return "📐 Design & Review";
+    
+    // Risk Assessments
+    if (t === 'risk_assessment' || t.includes('risk')) return "⚠️ Risk Assessments";
+    if (t === 'method_statement' || t.includes('method')) return "⚠️ Risk Assessments";
+    
+    // Maintenance
+    if (t === 'maintenance_report' || t === 'maintenance_log' || t === 'maintenance') return "🔧 Maintenance";
+    
+    // Manuals & Procedures
+    if (t === 'operator_manual' || t === 'controller_manual' || t === 'build_up_down') return "📖 Manuals & Procedures";
+    if (t === 'emergency_action_plan' || t === 'evacuation_plan') return "📖 Manuals & Procedures";
+    
+    // Insurance & Certificates
+    if (t.includes('insur')) return "🛡️ Insurance & Certificates";
+    if (t.includes('cert') || t === 'certificate') return "🛡️ Insurance & Certificates";
+    
+    // Other
+    if (t === 'photo' || t.includes('photo')) return "📸 Device Photos";
+    return "📁 Other";
   };
 
   // Group documents by name to detect versions
@@ -445,7 +468,18 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   };
 
   const groupByType = (docs: Document[]) => {
-    const ORDER = ["📜 DOC Certificate", "✅ Safety Check Records", "🔬 NDT Schedule", "🔬 NDT Report", "Risk Assessment (RA)", "Method Statement", "Insurance", "Certificate", "Device Photo", "Other"];
+    const ORDER = [
+      "📜 Inspection Reports",
+      "✅ Check Records", 
+      "🔬 NDT",
+      "📐 Design & Review",
+      "⚠️ Risk Assessments",
+      "🔧 Maintenance",
+      "📖 Manuals & Procedures",
+      "🛡️ Insurance & Certificates",
+      "📸 Device Photos",
+      "📁 Other"
+    ];
     const groups: Record<string, DocumentGroup[]> = {};
     
     // When isGlobal is true, we're showing ONLY global docs - don't separate them
