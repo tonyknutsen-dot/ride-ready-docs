@@ -365,7 +365,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
         {/* Expiry & Notes Row */}
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Expires</Label>
+            <Label className="text-xs font-medium text-muted-foreground">Expires (Optional)</Label>
             <Input
               type="date"
               value={expiryDate}
