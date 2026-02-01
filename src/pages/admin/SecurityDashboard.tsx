@@ -296,10 +296,10 @@ const SecurityDashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-5">
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Requests (24h)</CardTitle>
+              <CardTitle className="text-xs font-medium">Requests (24h)</CardTitle>
               <TrendingUp className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -325,7 +325,7 @@ const SecurityDashboard = () => {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Rate Limit Entries</CardTitle>
+              <CardTitle className="text-xs font-medium">Rate Limits</CardTitle>
               <Clock className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -338,7 +338,7 @@ const SecurityDashboard = () => {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Abuse Patterns</CardTitle>
+              <CardTitle className="text-xs font-medium">Abuse</CardTitle>
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
