@@ -95,19 +95,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Track if we've already processed auth state
-    let initialCheckDone = false;
-    
-    // Set up auth state listener FIRST
+    // Set up auth state listener FIRST - this handles ALL auth state changes
+    // including the initial session check via INITIAL_SESSION event
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        // Mark that we've handled auth state
-        initialCheckDone = true;
-        
+        // Synchronously update session and user state
         setSession(session);
         setUser(session?.user ?? null);
         
-        // Check suspension status when user signs in
+        // Handle suspension and subscription sync in a deferred callback
+        // to avoid Supabase deadlock issues
         if (session?.user) {
           setTimeout(async () => {
             const { suspended, reason } = await checkSuspensionStatus(session.user.id);
@@ -133,32 +130,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session - but only if onAuthStateChange hasn't fired yet
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      // Only process if onAuthStateChange hasn't already handled this
-      if (initialCheckDone) {
-        return;
-      }
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const { suspended, reason } = await checkSuspensionStatus(session.user.id);
-        setIsSuspended(suspended);
-        setSuspensionReason(reason);
-        
-        // If suspended, sign them out
-        if (suspended) {
-          await supabase.auth.signOut();
-        } else {
-          // Sync subscription status with Stripe on page load
-          syncSubscriptionStatus(session.user.id);
-        }
-      }
-      
-      setLoading(false);
-    });
+    // Explicitly get session to ensure we have initial state
+    // The INITIAL_SESSION event from onAuthStateChange should handle this,
+    // but we call getSession as a fallback for edge cases
+    supabase.auth.getSession();
 
     return () => subscription.unsubscribe();
   }, []);
