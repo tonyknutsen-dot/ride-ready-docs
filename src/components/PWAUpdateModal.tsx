@@ -1,12 +1,13 @@
 import React from 'react';
-import { Download, Loader2, RefreshCw, X } from 'lucide-react';
+import { Download, Loader2, RefreshCw, X, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePWAUpdate } from '@/hooks/usePWAUpdate';
 
 export const PWAUpdateModal = () => {
   const { 
     needsUpdate, 
-    isUpdating, 
+    isUpdating,
+    isChecking,
     applyUpdate, 
     dismissUpdate 
   } = usePWAUpdate();
@@ -23,6 +24,18 @@ export const PWAUpdateModal = () => {
               Please wait, this will only take a moment.
             </p>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show checking indicator for installed PWA users
+  if (isChecking) {
+    return (
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="bg-card border rounded-full shadow-lg px-4 py-2 flex items-center gap-2">
+          <Loader2 className="h-4 w-4 text-primary animate-spin" />
+          <span className="text-sm text-muted-foreground">Checking for updates...</span>
         </div>
       </div>
     );
