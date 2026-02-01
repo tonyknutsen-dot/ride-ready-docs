@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
@@ -64,7 +64,7 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
   const [featurePermissions, setFeaturePermissions] = useState<FeaturePermissions | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchStaffStatus = async () => {
+  const fetchStaffStatus = useCallback(async () => {
     if (!user) {
       setIsStaff(false);
       setIsOwner(true);
@@ -146,7 +146,7 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error('Error in fetchStaffStatus:', error);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     // Defer staff status check to not block initial render
@@ -172,27 +172,33 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
   const canAccessSettings = isOwner && !isStaff;
   const canManageStaff = isOwner && !isStaff;
 
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
+    isStaff,
+    isOwner,
+    staffMembership,
+    permissionLevel,
+    featurePermissions,
+    loading,
+    canAccessCalendar,
+    canAccessChecks,
+    canAccessMaintenance,
+    canAccessDocuments,
+    canAccessRiskAssessments,
+    canAccessSendDocuments,
+    canAccessBilling,
+    canAccessSettings,
+    canManageStaff,
+    refetch: fetchStaffStatus,
+  }), [
+    isStaff, isOwner, staffMembership, permissionLevel, featurePermissions, loading,
+    canAccessCalendar, canAccessChecks, canAccessMaintenance, canAccessDocuments,
+    canAccessRiskAssessments, canAccessSendDocuments, canAccessBilling, canAccessSettings,
+    canManageStaff, fetchStaffStatus
+  ]);
+
   return (
-    <StaffContext.Provider
-      value={{
-        isStaff,
-        isOwner,
-        staffMembership,
-        permissionLevel,
-        featurePermissions,
-        loading,
-        canAccessCalendar,
-        canAccessChecks,
-        canAccessMaintenance,
-        canAccessDocuments,
-        canAccessRiskAssessments,
-        canAccessSendDocuments,
-        canAccessBilling,
-        canAccessSettings,
-        canManageStaff,
-        refetch: fetchStaffStatus,
-      }}
-    >
+    <StaffContext.Provider value={value}>
       {children}
     </StaffContext.Provider>
   );

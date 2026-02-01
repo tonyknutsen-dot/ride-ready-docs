@@ -547,19 +547,21 @@ export function StaffManagement() {
         </Card>
       )}
 
-      {/* Invite Dialog */}
-      <StaffInviteDialog
-        open={inviteDialogOpen}
-        onOpenChange={setInviteDialogOpen}
-        onSuccess={() => {
-          if (organisationId) {
-            fetchInvites(organisationId);
-          }
-        }}
-      />
+      {/* Invite Dialog - only mount when open to prevent ref loops */}
+      {inviteDialogOpen && (
+        <StaffInviteDialog
+          open={inviteDialogOpen}
+          onOpenChange={setInviteDialogOpen}
+          onSuccess={() => {
+            if (organisationId) {
+              fetchInvites(organisationId);
+            }
+          }}
+        />
+      )}
 
       {/* Equipment Assignment Dialog */}
-      {selectedMember && (
+      {selectedMember && equipmentDialogOpen && (
         <StaffEquipmentDialog
           open={equipmentDialogOpen}
           onOpenChange={setEquipmentDialogOpen}
@@ -574,48 +576,48 @@ export function StaffManagement() {
         />
       )}
 
-      {/* Full Access Warning Dialog */}
-      <AlertDialog open={!!permissionWarning} onOpenChange={(open) => !open && setPermissionWarning(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
-              <Settings2 className="h-5 w-5" />
-              Grant Full Access?
-            </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-2">
-              <p>
-                You are about to grant <strong>Full Access</strong> to {permissionWarning?.email}.
-              </p>
-              <p className="text-amber-600 font-medium">
-                This will allow them to view and manage:
-              </p>
-              <ul className="list-disc list-inside text-sm space-y-1 ml-2">
-                <li>All checks and inspections</li>
-                <li>Maintenance records</li>
-                <li>Documents and certificates</li>
-                <li>Risk assessments</li>
-              </ul>
-              <p className="text-sm text-muted-foreground mt-2">
-                Only grant this level of access to trusted team members.
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (permissionWarning) {
+      {/* Full Access Warning Dialog - only mount when needed */}
+      {permissionWarning && (
+        <AlertDialog open onOpenChange={(open) => !open && setPermissionWarning(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
+                <Settings2 className="h-5 w-5" />
+                Grant Full Access?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <p>
+                  You are about to grant <strong>Full Access</strong> to {permissionWarning.email}.
+                </p>
+                <p className="text-amber-600 font-medium">
+                  This will allow them to view and manage:
+                </p>
+                <ul className="list-disc list-inside text-sm space-y-1 ml-2">
+                  <li>All checks and inspections</li>
+                  <li>Maintenance records</li>
+                  <li>Documents and certificates</li>
+                  <li>Risk assessments</li>
+                </ul>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Only grant this level of access to trusted team members.
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
                   updatePermission(permissionWarning.memberId, 'full_access');
                   setPermissionWarning(null);
-                }
-              }}
-              className="bg-amber-600 hover:bg-amber-700"
-            >
-              Yes, Grant Full Access
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+                }}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                Yes, Grant Full Access
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
     </div>
   );
 }
