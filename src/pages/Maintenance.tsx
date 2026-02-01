@@ -36,7 +36,7 @@ const Maintenance = () => {
   // Load ride from URL param if present
   useEffect(() => {
     const loadRide = async () => {
-      if (!rideIdFromUrl || !user) {
+      if (!rideIdFromUrl || !user || !effectiveUserId) {
         setLoading(false);
         return;
       }
@@ -47,11 +47,8 @@ const Maintenance = () => {
           .select('*, ride_categories(name, description, category_group)')
           .eq('id', rideIdFromUrl);
 
-        // For owners, verify they own the ride
-        // For staff, skip user_id filter - RLS handles access via staff_can_access_ride()
-        if (!isStaff) {
-          query = query.eq('user_id', effectiveUserId);
-        }
+        // Always scope to the *current operator* (effectiveUserId).
+        query = query.eq('user_id', effectiveUserId);
 
         const { data, error } = await query.single();
 

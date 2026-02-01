@@ -54,10 +54,10 @@ const RideSelector = ({
   };
 
   useEffect(() => {
-    if (user) {
+    if (user && effectiveUserId) {
       loadRides();
     }
-  }, [user]);
+  }, [user, effectiveUserId]);
 
   const loadRides = async () => {
     try {
@@ -73,11 +73,9 @@ const RideSelector = ({
         `)
         .order('ride_name');
 
-      // For owners, filter by their user_id
-      // For staff, skip user_id filter - RLS handles access via staff_can_access_ride()
-      if (!isStaff) {
-        query = query.eq('user_id', effectiveUserId);
-      }
+      // Always scope to the *current operator* (effectiveUserId).
+      // RLS will further restrict staff to assigned rides when applicable.
+      query = query.eq('user_id', effectiveUserId);
 
       const { data, error } = await query;
 
@@ -93,6 +91,7 @@ const RideSelector = ({
                 .from('documents')
                 .select('id,file_path,document_type')
                 .eq('ride_id', ride.id)
+                .eq('user_id', effectiveUserId)
                 .eq('document_type', 'photo')
                 .order('uploaded_at', { ascending: false })
                 .limit(1);
