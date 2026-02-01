@@ -20,7 +20,7 @@ const Checks = () => {
 
   const handleRideSelect = (ride: Ride) => {
     // Navigate to ride detail with checks tab active
-    navigate(`/rides/${ride.id}?tab=inspections`);
+    navigate(`/rides/${ride.id}?tab=checks`);
   };
 
   return (
@@ -43,7 +43,7 @@ const Checks = () => {
                 className="text-muted-foreground hover:text-foreground"
               >
                 <HelpCircle className="h-4 w-4" />
-                <span className="hidden sm:inline ml-1">How it works</span>
+                <span className="hidden sm:inline ml-1">How does it work?</span>
               </Button>
             }
           />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Wrench, ArrowLeft } from 'lucide-react';
+import { Wrench, ArrowLeft, HelpCircle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,7 @@ import PageHeader from '@/components/PageHeader';
 import MaintenanceManager from '@/components/MaintenanceManager';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { MaintenanceOnboardingModal } from '@/components/MaintenanceOnboardingModal';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -26,6 +27,7 @@ const Maintenance = () => {
   
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(!!rideIdFromUrl);
+  const [showGuide, setShowGuide] = useState(false);
 
   // Load ride from URL param if present
   useEffect(() => {
@@ -86,6 +88,7 @@ const Maintenance = () => {
   if (selectedRide) {
     return (
       <div className="min-h-screen bg-background pb-28 md:pb-8">
+        <MaintenanceOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
         <header className="border-b-2 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
           <div className="container mx-auto px-4 py-4">
             <div className="flex items-center gap-3">
@@ -97,12 +100,25 @@ const Maintenance = () => {
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <PageHeader
-                icon={<Wrench className="h-5 w-5 text-amber-600" />}
-                iconBgClass="from-amber-500/20 to-amber-500/10"
-                title={selectedRide.ride_name}
-                subtitle="Maintenance Management"
-              />
+              <div className="flex-1">
+                <PageHeader
+                  icon={<Wrench className="h-5 w-5 text-amber-600" />}
+                  iconBgClass="from-amber-500/20 to-amber-500/10"
+                  title={selectedRide.ride_name}
+                  subtitle="Maintenance Management"
+                  actions={
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setShowGuide(true)}
+                      className="text-muted-foreground hover:text-foreground"
+                    >
+                      <HelpCircle className="h-4 w-4" />
+                      <span className="hidden sm:inline ml-1">How does it work?</span>
+                    </Button>
+                  }
+                />
+              </div>
             </div>
           </div>
         </header>
@@ -117,6 +133,7 @@ const Maintenance = () => {
   // Show ride selector when no ride is selected
   return (
     <div className="min-h-screen bg-background pb-28 md:pb-8">
+      <MaintenanceOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
       <header className="border-b-2 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <PageHeader
@@ -126,6 +143,17 @@ const Maintenance = () => {
             subtitle="Select equipment to manage maintenance"
             showBackButton
             backTo="/overview"
+            actions={
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowGuide(true)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <HelpCircle className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">How does it work?</span>
+              </Button>
+            }
           />
         </div>
       </header>
