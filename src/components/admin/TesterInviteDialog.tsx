@@ -117,6 +117,7 @@ export function TesterInviteDialog({ trigger, onInviteSent }: TesterInviteDialog
                   min="0"
                   value={expiryDays}
                   onChange={(e) => setExpiryDays(e.target.value)}
+                  placeholder="Optional"
                   className="w-24"
                   disabled={loading}
                 />
