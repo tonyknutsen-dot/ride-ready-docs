@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Upload, X, Camera, FileText, Save, Plus, FolderOpen } from 'lucide-react';
+import { CalendarIcon, Upload, X, Camera, FileText, Save, Plus, FolderOpen, Info } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -319,6 +320,13 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <Alert className="bg-primary/5 border-primary/20">
+          <Info className="h-4 w-4 text-primary" />
+          <AlertDescription>
+            Attached photos and documents will be saved to your Documents list under "Maintenance". Generated reports will also appear there.
+          </AlertDescription>
+        </Alert>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Maintenance Date */}
           <div className="space-y-2">

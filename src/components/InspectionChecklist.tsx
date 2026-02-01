@@ -1267,9 +1267,10 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         </Alert>
       )}
 
-      <Alert>
+      <Alert className="bg-primary/5 border-primary/20">
+        <FileText className="h-4 w-4 text-primary" />
         <AlertDescription>
-          Complete all required check items, add detailed notes where necessary, and submit to save your {frequency} check record. You can export the results as a PDF.
+          Complete all required items and submit. A PDF record will be automatically saved to your Documents under "Check Records".
         </AlertDescription>
       </Alert>
       <Card>

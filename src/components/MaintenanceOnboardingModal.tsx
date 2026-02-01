@@ -35,8 +35,8 @@ const steps = [
   {
     icon: FileText,
     title: 'Build a Service History',
-    description: 'Every record builds your equipment\'s complete maintenance history. Export reports for inspections or resale.',
-    tip: 'A full service history adds value to your equipment.',
+    description: 'Every record builds your equipment\'s complete maintenance history. Attachments and reports are automatically saved to your Documents.',
+    tip: 'Find all maintenance files in Documents under "Maintenance".',
   },
 ];
 

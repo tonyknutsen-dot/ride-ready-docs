@@ -35,8 +35,8 @@ const steps = [
   {
     icon: History,
     title: 'Review & Export',
-    description: 'All completed checks are saved in your history. Generate PDF reports anytime for compliance records or inspections.',
-    tip: 'Your check history builds a complete audit trail.',
+    description: 'All completed checks are saved in your history and automatically added to your Documents. Generate PDF reports anytime for compliance or inspections.',
+    tip: 'Check records appear in Documents under "Check Records" for easy access.',
   },
 ];
 

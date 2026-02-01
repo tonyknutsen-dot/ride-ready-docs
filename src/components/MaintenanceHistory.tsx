@@ -158,6 +158,39 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
 
   const handleDelete = async (recordId: string) => {
     try {
+      // 1. Fetch the record to get document_ids for cascade delete
+      const { data: record, error: fetchError } = await supabase
+        .from('maintenance_records')
+        .select('document_ids')
+        .eq('id', recordId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // 2. If there are linked documents, delete them from storage and database
+      if (record?.document_ids && record.document_ids.length > 0) {
+        // Get file paths for storage deletion
+        const { data: docs } = await supabase
+          .from('documents')
+          .select('file_path')
+          .in('id', record.document_ids);
+
+        // Delete from storage
+        if (docs && docs.length > 0) {
+          const filePaths = docs.map(d => d.file_path);
+          await supabase.storage
+            .from('ride-documents')
+            .remove(filePaths);
+        }
+
+        // Delete document records from database
+        await supabase
+          .from('documents')
+          .delete()
+          .in('id', record.document_ids);
+      }
+
+      // 3. Delete the maintenance record itself
       const { error } = await supabase
         .from('maintenance_records')
         .delete()
@@ -167,7 +200,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
 
       toast({
         title: "Success",
-        description: "Maintenance record deleted successfully",
+        description: "Maintenance record and attachments deleted successfully",
       });
 
       loadMaintenanceRecords();
