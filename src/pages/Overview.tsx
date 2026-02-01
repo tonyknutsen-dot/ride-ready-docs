@@ -13,6 +13,7 @@ import { useOverviewData } from "@/hooks/useOverviewData";
 import { useState, useCallback } from "react";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { WelcomeModal } from "@/components/WelcomeModal";
+import StaffAccountBanner from "@/components/StaffAccountBanner";
 
 const Overview = () => {
   const navigate = useNavigate();
@@ -87,6 +88,7 @@ const Overview = () => {
   return (
     <>
     <WelcomeModal />
+    <StaffAccountBanner />
     <PullToRefresh onRefresh={handleRefresh} disabled={isLoading}>
     <div className="container mx-auto py-8 pb-24 md:pb-8 space-y-8">
       {/* Device Hint for Mobile Users */}

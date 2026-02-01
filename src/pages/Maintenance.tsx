@@ -12,6 +12,7 @@ import MaintenanceManager from '@/components/MaintenanceManager';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MaintenanceOnboardingModal } from '@/components/MaintenanceOnboardingModal';
+import StaffAccountBanner from '@/components/StaffAccountBanner';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -95,6 +96,7 @@ const Maintenance = () => {
   if (selectedRide) {
     return (
       <div className="min-h-screen bg-background pb-28 md:pb-8">
+        <StaffAccountBanner />
         <MaintenanceOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
         <header className="border-b-2 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
           <div className="container mx-auto px-4 py-4">
@@ -140,6 +142,7 @@ const Maintenance = () => {
   // Show ride selector when no ride is selected
   return (
     <div className="min-h-screen bg-background pb-28 md:pb-8">
+      <StaffAccountBanner />
       <MaintenanceOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
       <header className="border-b-2 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
