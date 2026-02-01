@@ -48,15 +48,15 @@ import appLogo from '@/assets/app-logo.jpg';
 const mainNavItems = [
   { title: 'Overview', url: '/overview', icon: Home },
   { title: 'Rides', url: '/rides', icon: FolderOpen },
-  { title: 'Calendar', url: '/calendar', icon: CalendarIcon },
-  { title: 'Documents', url: '/documents', icon: FileText, requiresPermission: 'full_access' as const },
+  { title: 'Calendar', url: '/calendar', icon: CalendarIcon, feature: 'calendar' as const },
+  { title: 'Documents', url: '/documents', icon: FileText, feature: 'documents' as const },
 ];
 
 const featureNavItems = [
-  { title: 'Checks', url: '/checks', icon: CheckSquare, requiresPermission: 'checks_only' as const },
-  { title: 'Maintenance', url: '/maintenance', icon: Wrench, requiresPermission: 'checks_maintenance' as const },
-  { title: 'Risk Assessments', url: '/risk-assessments', icon: ShieldCheck, requiresPermission: 'full_access' as const },
-  { title: 'Send Documents', url: '/send-documents', icon: Send, requiresPermission: 'full_access' as const },
+  { title: 'Checks', url: '/checks', icon: CheckSquare, feature: 'checks' as const },
+  { title: 'Maintenance', url: '/maintenance', icon: Wrench, feature: 'maintenance' as const },
+  { title: 'Risk Assessments', url: '/risk-assessments', icon: ShieldCheck, feature: 'risk_assessments' as const },
+  { title: 'Send Documents', url: '/send-documents', icon: Send, feature: 'send_documents' as const },
 ];
 
 const accountNavItems = [
@@ -72,7 +72,7 @@ export function AppSidebar() {
   const { 
     isStaff, 
     isOwner, 
-    permissionLevel,
+    canAccessCalendar,
     canAccessChecks,
     canAccessMaintenance,
     canAccessDocuments,
@@ -88,14 +88,20 @@ export function AppSidebar() {
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
 
-  // Permission check helper
-  const hasPermission = (requiredPermission?: 'checks_only' | 'checks_maintenance' | 'full_access') => {
-    if (!requiredPermission) return true;
+  // Feature permission check helper
+  const hasFeatureAccess = (feature?: 'calendar' | 'documents' | 'checks' | 'maintenance' | 'risk_assessments' | 'send_documents') => {
+    if (!feature) return true;
     if (isOwner && !isStaff) return true;
-    if (!permissionLevel) return false;
     
-    const hierarchy = { 'checks_only': 1, 'checks_maintenance': 2, 'full_access': 3 };
-    return hierarchy[permissionLevel] >= hierarchy[requiredPermission];
+    const featureMap = {
+      calendar: canAccessCalendar,
+      documents: canAccessDocuments,
+      checks: canAccessChecks,
+      maintenance: canAccessMaintenance,
+      risk_assessments: canAccessRiskAssessments,
+      send_documents: canAccessSendDocuments,
+    };
+    return featureMap[feature] ?? false;
   };
 
   const handleSignOut = async () => {
@@ -120,12 +126,12 @@ export function AppSidebar() {
   };
 
   // Filter nav items based on permissions
-  type NavItem = { title: string; url: string; icon: any; requiresPermission?: 'checks_only' | 'checks_maintenance' | 'full_access'; ownerOnly?: boolean };
+  type NavItem = { title: string; url: string; icon: any; feature?: 'calendar' | 'documents' | 'checks' | 'maintenance' | 'risk_assessments' | 'send_documents'; ownerOnly?: boolean };
   
   const filterNavItems = (items: NavItem[]) => {
     return items.filter(item => {
       if (item.ownerOnly && isStaff) return false;
-      if (item.requiresPermission && !hasPermission(item.requiresPermission)) return false;
+      if (item.feature && !hasFeatureAccess(item.feature)) return false;
       return true;
     });
   };

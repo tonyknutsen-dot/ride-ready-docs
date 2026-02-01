@@ -25,6 +25,7 @@ export default function MobileBottomNav() {
   const { isAdmin } = useAdmin();
   const { 
     isStaff,
+    canAccessCalendar,
     canAccessChecks,
     canAccessMaintenance,
     canAccessDocuments,
@@ -128,7 +129,7 @@ export default function MobileBottomNav() {
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/40 bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80 md:hidden safe-area-pb">
-      <div className={`mx-auto max-w-screen-sm grid gap-1 px-2 py-1 ${canAccessChecks ? 'grid-cols-5' : 'grid-cols-4'}`}>
+      <div className={`mx-auto max-w-screen-sm grid gap-1 px-2 py-1 ${canAccessChecks ? (canAccessCalendar ? 'grid-cols-5' : 'grid-cols-4') : (canAccessCalendar ? 'grid-cols-4' : 'grid-cols-3')}`}>
         {/* Overview */}
         <NavButton 
           onClick={() => {
@@ -159,13 +160,15 @@ export default function MobileBottomNav() {
           />
         )}
 
-        {/* Calendar */}
-        <NavButton 
-          onClick={() => go("/calendar")}
-          active={isActive(["/calendar"])}
-          icon={CalendarIcon}
-          label="Calendar"
-        />
+        {/* Calendar - only if has permission */}
+        {canAccessCalendar && (
+          <NavButton 
+            onClick={() => go("/calendar")}
+            active={isActive(["/calendar"])}
+            icon={CalendarIcon}
+            label="Calendar"
+          />
+        )}
 
         {/* More - Full menu sheet */}
         <Sheet open={open} onOpenChange={setOpen}>
