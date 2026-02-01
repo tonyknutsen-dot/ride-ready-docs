@@ -12,7 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Eye, EyeOff, CheckCircle2, AlertCircle, Info, ShieldAlert, Check, X } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { z } from 'zod';
-import logo from '@/assets/logo.png';
+import appLogo from '@/assets/app-logo.jpg';
 import { COUNTRIES } from '@/constants/profile';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { useAuthRateLimit } from '@/hooks/useAuthRateLimit';
@@ -354,8 +354,8 @@ const Auth = () => {
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
         <div className="w-full max-w-md space-y-6 animate-fade-up">
           <div className="text-center space-y-3">
-            <Link to="/" className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto hover:shadow-elegant transition-smooth border-2 border-primary/20">
-              <img src={logo} alt="Ride Ready Docs home" className="h-28 w-auto" width={112} height={112} loading="lazy" />
+            <Link to="/" className="inline-block mx-auto hover:opacity-90 transition-smooth">
+              <img src={appLogo} alt="Ride Ready Docs home" className="h-24 w-24 rounded-full shadow-elegant" width={96} height={96} loading="lazy" />
             </Link>
             <h1 className="text-2xl font-bold">Reset Password</h1>
             <p className="text-muted-foreground text-sm">
@@ -423,8 +423,8 @@ const Auth = () => {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6 animate-fade-up">
         <div className="text-center space-y-3">
-          <Link to="/" className="inline-block bg-card p-4 rounded-2xl shadow-card mx-auto hover:shadow-elegant transition-smooth border-2 border-primary/20">
-            <img src={logo} alt="Ride Ready Docs home" className="h-28 w-auto" width={112} height={112} loading="lazy" />
+          <Link to="/" className="inline-block mx-auto hover:opacity-90 transition-smooth">
+            <img src={appLogo} alt="Ride Ready Docs home" className="h-24 w-24 rounded-full shadow-elegant" width={96} height={96} loading="lazy" />
           </Link>
           <h1 className="text-2xl font-bold">Ride Ready Docs</h1>
           <p className="text-muted-foreground text-sm">
