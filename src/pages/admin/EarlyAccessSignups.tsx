@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { RefreshCw, Sparkles, Search, Download, Mail, Users, Loader2 } from 'lucide-react';
+import { RefreshCw, Sparkles, Search, Download, Mail, Users, Loader2, UserPlus, Check } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface EarlyAccessSignup {
@@ -16,6 +16,7 @@ interface EarlyAccessSignup {
   name: string | null;
   source: string;
   created_at: string;
+  imported_to_marketing_at: string | null;
 }
 
 export default function EarlyAccessSignups() {
@@ -24,6 +25,8 @@ export default function EarlyAccessSignups() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [importing, setImporting] = useState<string | null>(null);
+  const [importingAll, setImportingAll] = useState(false);
 
   const fetchSignups = async () => {
     try {
@@ -61,12 +64,13 @@ export default function EarlyAccessSignups() {
   };
 
   const handleExportCSV = () => {
-    const headers = ['Email', 'Name', 'Source', 'Signed Up'];
+    const headers = ['Email', 'Name', 'Source', 'Signed Up', 'Imported to Marketing'];
     const rows = signups.map(s => [
       s.email,
       s.name || '',
       s.source,
-      format(new Date(s.created_at), 'yyyy-MM-dd HH:mm')
+      format(new Date(s.created_at), 'yyyy-MM-dd HH:mm'),
+      s.imported_to_marketing_at ? format(new Date(s.imported_to_marketing_at), 'yyyy-MM-dd HH:mm') : ''
     ]);
     
     const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -84,10 +88,92 @@ export default function EarlyAccessSignups() {
     });
   };
 
+  const importToMarketing = async (signupIds: string[]) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('import-early-access-to-marketing', {
+        body: { signup_ids: signupIds }
+      });
+
+      if (error) throw error;
+      return data;
+    } catch (error: any) {
+      console.error('Import error:', error);
+      throw error;
+    }
+  };
+
+  const handleImportSingle = async (signup: EarlyAccessSignup) => {
+    setImporting(signup.id);
+    try {
+      const result = await importToMarketing([signup.id]);
+      
+      if (result.imported > 0) {
+        toast({
+          title: 'Added to Marketing',
+          description: `${signup.email} has been added to your marketing contacts`,
+        });
+      } else if (result.skipped > 0) {
+        toast({
+          title: 'Already Exists',
+          description: `${signup.email} is already in your marketing contacts`,
+        });
+      } else {
+        toast({
+          title: 'Import Failed',
+          description: 'Could not add contact to marketing list',
+          variant: 'destructive',
+        });
+      }
+      
+      await fetchSignups();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to import contact',
+        variant: 'destructive',
+      });
+    } finally {
+      setImporting(null);
+    }
+  };
+
+  const handleImportAll = async () => {
+    const notImported = signups.filter(s => !s.imported_to_marketing_at);
+    if (notImported.length === 0) {
+      toast({
+        title: 'Nothing to Import',
+        description: 'All signups have already been imported',
+      });
+      return;
+    }
+
+    setImportingAll(true);
+    try {
+      const result = await importToMarketing(notImported.map(s => s.id));
+      
+      toast({
+        title: 'Import Complete',
+        description: `${result.imported} added, ${result.skipped} already existed, ${result.errors} failed`,
+      });
+      
+      await fetchSignups();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to import contacts',
+        variant: 'destructive',
+      });
+    } finally {
+      setImportingAll(false);
+    }
+  };
+
   const filteredSignups = signups.filter(s =>
     s.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (s.name?.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  const notImportedCount = signups.filter(s => !s.imported_to_marketing_at).length;
 
   if (loading) {
     return (
@@ -113,20 +199,32 @@ export default function EarlyAccessSignups() {
               Users who signed up for early access from the coming soon page
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={refreshing}>
               <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
             <Button variant="outline" size="sm" onClick={handleExportCSV} disabled={signups.length === 0}>
               <Download className="h-4 w-4 mr-2" />
-              Export CSV
+              Export
+            </Button>
+            <Button 
+              size="sm" 
+              onClick={handleImportAll} 
+              disabled={importingAll || notImportedCount === 0}
+            >
+              {importingAll ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <UserPlus className="h-4 w-4 mr-2" />
+              )}
+              Import All ({notImportedCount})
             </Button>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
           <Card>
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
@@ -156,16 +254,27 @@ export default function EarlyAccessSignups() {
               </div>
             </CardContent>
           </Card>
-          <Card className="col-span-2 md:col-span-1">
+          <Card>
             <CardContent className="pt-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">With Name</p>
+                  <p className="text-xs text-muted-foreground">In Marketing</p>
                   <p className="text-2xl font-bold">
-                    {signups.filter(s => s.name).length}
+                    {signups.filter(s => s.imported_to_marketing_at).length}
                   </p>
                 </div>
                 <Mail className="h-5 w-5 text-muted-foreground" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">Not Imported</p>
+                  <p className="text-2xl font-bold">{notImportedCount}</p>
+                </div>
+                <UserPlus className="h-5 w-5 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>
@@ -176,7 +285,7 @@ export default function EarlyAccessSignups() {
           <CardHeader>
             <CardTitle className="text-lg">Signups</CardTitle>
             <CardDescription>
-              All early access registrations from the coming soon page
+              Import signups to your marketing contacts to include them in campaigns
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -205,6 +314,7 @@ export default function EarlyAccessSignups() {
                         <TableHead>Name</TableHead>
                         <TableHead>Source</TableHead>
                         <TableHead>Signed Up</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -218,6 +328,30 @@ export default function EarlyAccessSignups() {
                           <TableCell className="text-muted-foreground">
                             {format(new Date(signup.created_at), 'dd MMM yyyy HH:mm')}
                           </TableCell>
+                          <TableCell className="text-right">
+                            {signup.imported_to_marketing_at ? (
+                              <Badge variant="outline" className="text-green-600 border-green-600">
+                                <Check className="h-3 w-3 mr-1" />
+                                In Marketing
+                              </Badge>
+                            ) : (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleImportSingle(signup)}
+                                disabled={importing === signup.id}
+                              >
+                                {importing === signup.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  <>
+                                    <UserPlus className="h-3 w-3 mr-1" />
+                                    Add
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -229,7 +363,7 @@ export default function EarlyAccessSignups() {
                   {filteredSignups.map((signup) => (
                     <div key={signup.id} className="p-3 border rounded-lg space-y-2">
                       <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="font-medium text-sm truncate">{signup.email}</p>
                           {signup.name && (
                             <p className="text-xs text-muted-foreground">{signup.name}</p>
@@ -237,9 +371,34 @@ export default function EarlyAccessSignups() {
                         </div>
                         <Badge variant="secondary" className="text-xs shrink-0">{signup.source}</Badge>
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {format(new Date(signup.created_at), 'dd MMM yyyy HH:mm')}
-                      </p>
+                      <div className="flex items-center justify-between">
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(signup.created_at), 'dd MMM yyyy HH:mm')}
+                        </p>
+                        {signup.imported_to_marketing_at ? (
+                          <Badge variant="outline" className="text-green-600 border-green-600 text-xs">
+                            <Check className="h-3 w-3 mr-1" />
+                            In Marketing
+                          </Badge>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleImportSingle(signup)}
+                            disabled={importing === signup.id}
+                            className="h-7 text-xs"
+                          >
+                            {importing === signup.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <>
+                                <UserPlus className="h-3 w-3 mr-1" />
+                                Add
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>

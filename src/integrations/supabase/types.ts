@@ -935,6 +935,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          imported_to_marketing_at: string | null
           name: string | null
           source: string
         }
@@ -942,6 +943,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          imported_to_marketing_at?: string | null
           name?: string | null
           source?: string
         }
@@ -949,6 +951,7 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          imported_to_marketing_at?: string | null
           name?: string | null
           source?: string
         }

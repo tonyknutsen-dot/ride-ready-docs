@@ -192,6 +192,9 @@ verify_jwt = false
 [functions.send-staff-invite-expiry]
 verify_jwt = false
 
+[functions.import-early-access-to-marketing]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 54327
