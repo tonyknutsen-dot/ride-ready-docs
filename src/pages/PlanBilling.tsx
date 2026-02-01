@@ -240,21 +240,21 @@ export default function PlanBilling() {
         <CardContent className="space-y-4">
           {/* Current Plan Display */}
           <div className="rounded-lg border-2 border-primary/20 p-4 space-y-3 bg-gradient-to-br from-primary/5 to-transparent">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3 min-w-0 flex-1">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
                   <CheckCircle2 className="w-5 h-5 text-primary" />
                 </div>
-                <div>
-                  <div className="font-semibold flex items-center gap-2">
-                    {getPlanName()}
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold flex flex-wrap items-center gap-2">
+                    <span className="break-words">{getPlanName()}</span>
                     {!isTrialOrExpired && (
-                      <Badge variant="outline" className="text-xs bg-accent/20 border-accent/50 text-accent-foreground">
+                      <Badge variant="outline" className="text-xs bg-accent/20 border-accent/50 text-accent-foreground flex-shrink-0">
                         {billingCycle === "yearly" ? "Annual" : "Monthly"}
                       </Badge>
                     )}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-muted-foreground mt-1">
                     {plan === "advanced" 
                       ? "Document storage + operations & maintenance features" 
                       : plan === "basic"
@@ -265,33 +265,33 @@ export default function PlanBilling() {
                   </div>
                 </div>
               </div>
-              {plan === "advanced" && <Crown className="w-6 h-6 text-accent" />}
+              {plan === "advanced" && <Crown className="w-6 h-6 text-accent flex-shrink-0" />}
             </div>
 
             {/* Subscription Details */}
             {!isTrialOrExpired && (
               <>
                 <Separator className="bg-primary/20" />
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-success/20">
-                    <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/50 border border-success/20 min-w-0">
+                    <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
                       <CreditCard className="w-4 h-4 text-success" />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <div className="text-muted-foreground text-xs">Price</div>
-                      <div className="font-semibold">
-                        £{getPlanPrice().toFixed(2)}/{billingCycle === "yearly" ? "year" : "month"}
+                      <div className="font-semibold truncate">
+                        £{getPlanPrice().toFixed(2)}/{billingCycle === "yearly" ? "yr" : "mo"}
                       </div>
                     </div>
                   </div>
                   {subscription?.currentPeriodEnd && (
-                    <div className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50 border border-info/20">
-                      <div className="w-8 h-8 rounded-full bg-info/10 flex items-center justify-center">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/50 border border-info/20 min-w-0">
+                      <div className="w-8 h-8 rounded-full bg-info/10 flex items-center justify-center flex-shrink-0">
                         <Calendar className="w-4 h-4 text-info" />
                       </div>
-                      <div>
+                      <div className="min-w-0">
                         <div className="text-muted-foreground text-xs">Renews</div>
-                        <div className="font-semibold">
+                        <div className="font-semibold truncate">
                           {format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}
                         </div>
                       </div>
