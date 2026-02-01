@@ -2191,6 +2191,7 @@ export type Database = {
           created_at: string
           duration_minutes: number | null
           id: string
+          last_heartbeat: string | null
           session_end: string | null
           session_start: string
           user_id: string
@@ -2199,6 +2200,7 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          last_heartbeat?: string | null
           session_end?: string | null
           session_start?: string
           user_id: string
@@ -2207,6 +2209,7 @@ export type Database = {
           created_at?: string
           duration_minutes?: number | null
           id?: string
+          last_heartbeat?: string | null
           session_end?: string | null
           session_start?: string
           user_id?: string
@@ -2460,6 +2463,7 @@ export type Database = {
       }
       cleanup_expired_blocks: { Args: never; Returns: number }
       cleanup_old_blocked_ips: { Args: never; Returns: number }
+      close_stale_tester_sessions: { Args: never; Returns: number }
       decrypt_sensitive: { Args: { ciphertext: string }; Returns: string }
       encrypt_sensitive: { Args: { plaintext: string }; Returns: string }
       end_tester_session: { Args: { p_session_id: string }; Returns: undefined }
@@ -2505,6 +2509,11 @@ export type Database = {
       staff_can_access_ride: {
         Args: { _ride_id: string; _user_id: string }
         Returns: boolean
+      }
+      start_tester_session: { Args: { p_user_id: string }; Returns: string }
+      update_tester_heartbeat: {
+        Args: { p_session_id: string }
+        Returns: undefined
       }
     }
     Enums: {
