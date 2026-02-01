@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Loader2, UserPlus, Users, Mail, Clock, Trash2, Settings2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -45,6 +45,8 @@ export function StaffManagement() {
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [equipmentDialogOpen, setEquipmentDialogOpen] = useState(false);
   const [selectedMember, setSelectedMember] = useState<StaffMember | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<StaffMember | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [permissionWarning, setPermissionWarning] = useState<{ memberId: string; email: string } | null>(null);
 
   useEffect(() => {
@@ -364,30 +366,18 @@ export function StaffManagement() {
                           >
                             <Settings2 className="h-4 w-4" />
                           </Button>
-                          <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will revoke their access. They can be re-invited later.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => removeStaff(member.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Remove
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                           <Button
+                             variant="ghost"
+                             size="icon"
+                             className="text-destructive hover:text-destructive"
+                             onClick={() => {
+                               setDeleteTarget(member);
+                               setDeleteDialogOpen(true);
+                             }}
+                             title="Remove staff member"
+                           >
+                             <Trash2 className="h-4 w-4" />
+                           </Button>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -422,30 +412,18 @@ export function StaffManagement() {
                         >
                           <Settings2 className="h-4 w-4" />
                         </Button>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This will revoke their access. They can be re-invited later.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                onClick={() => removeStaff(member.id)}
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                              >
-                                Remove
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => {
+                            setDeleteTarget(member);
+                            setDeleteDialogOpen(true);
+                          }}
+                          title="Remove staff member"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
                     </div>
                     
@@ -613,6 +591,39 @@ export function StaffManagement() {
                 className="bg-amber-600 hover:bg-amber-700"
               >
                 Yes, Grant Full Access
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      )}
+
+      {/* Remove Staff Dialog - single instance to avoid Radix ref loops */}
+      {deleteTarget && (
+        <AlertDialog
+          open={deleteDialogOpen}
+          onOpenChange={(open) => {
+            setDeleteDialogOpen(open);
+            if (!open) setDeleteTarget(null);
+          }}
+        >
+          <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will revoke their access. They can be re-invited later.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={async () => {
+                  await removeStaff(deleteTarget.id);
+                  setDeleteDialogOpen(false);
+                  setDeleteTarget(null);
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Remove
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
