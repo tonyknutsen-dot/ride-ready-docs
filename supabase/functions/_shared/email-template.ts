@@ -1,6 +1,9 @@
 // Shared email template styles and components for Ride Ready Docs
 // Brand colors: Primary blue #1e4a8f, Accent gold #f59e0b
 
+// Logo hosted in Supabase storage for email compatibility
+export const LOGO_URL = 'https://sbtldudgiskqfqqkrmaa.supabase.co/storage/v1/object/public/email-assets/app-logo.jpg?v=1';
+
 export const brandColors = {
   primary: '#1e4a8f',
   primaryLight: '#2563eb',
@@ -140,7 +143,18 @@ export const emailStyles = {
   `,
 };
 
-// Logo as inline SVG for email compatibility
+// Logo as HTML img tag for better email client compatibility
+export const logoHtml = `
+  <img 
+    src="${LOGO_URL}" 
+    alt="Ride Ready Docs" 
+    width="80" 
+    height="80" 
+    style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 16px;"
+  />
+`;
+
+// Legacy SVG logo (kept for fallback)
 export const logoSvg = `
 <svg width="180" height="40" viewBox="0 0 180 40" xmlns="http://www.w3.org/2000/svg">
   <defs>
@@ -172,7 +186,7 @@ export function generateEmailWrapper(title: string, subtitle: string, content: s
   <div style="${emailStyles.container}">
     <!-- Header -->
     <div style="${emailStyles.header}">
-      ${showLogo ? `<div style="margin-bottom: 16px;">${logoSvg}</div>` : ''}
+      ${showLogo ? logoHtml : ''}
       <h1 style="${emailStyles.headerTitle}">${title}</h1>
       ${subtitle ? `<p style="${emailStyles.headerSubtitle}">${subtitle}</p>` : ''}
     </div>
@@ -195,6 +209,18 @@ export function generateEmailWrapper(title: string, subtitle: string, content: s
 </body>
 </html>
 `;
+}
+
+export function escapeHtml(text: string | null | undefined): string {
+  if (!text) return '';
+  const map: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
 }
 
 export function escapeHtml(text: string | null | undefined): string {
