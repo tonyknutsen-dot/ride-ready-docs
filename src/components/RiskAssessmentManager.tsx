@@ -1397,143 +1397,151 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
         </Button>
         
         <Card>
-          <CardHeader className="pb-3">
-            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <FileText className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-lg">Risk Assessment</CardTitle>
+          <CardHeader className="pb-3 px-4 sm:px-6">
+            {/* Title & Meta */}
+            <div className="flex items-start gap-3 mb-3">
+              <div className="p-2 bg-primary/10 rounded-lg shrink-0">
+                <FileText className="h-5 w-5 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <CardTitle className="text-base sm:text-lg">Risk Assessment</CardTitle>
                   {selectedAssessment.revision_number && selectedAssessment.revision_number > 1 && (
                     <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
                       Rev {selectedAssessment.revision_number}
                     </span>
                   )}
                 </div>
-                <CardDescription className="text-sm mb-2">
+                <CardDescription className="text-xs sm:text-sm mt-0.5">
                   <span className="font-medium text-foreground">{ride.ride_name}</span>
                   {' • '}
                   {format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')} • {selectedAssessment.assessor_name}
                 </CardDescription>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Label className="text-xs text-muted-foreground">Status:</Label>
-                  <Select value={selectedAssessment.overall_status} onValueChange={handleStatusChange}>
-                    <SelectTrigger className="h-7 w-[140px] text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="in_progress">
-                        <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                          In Progress
-                        </span>
-                      </SelectItem>
-                      <SelectItem value="completed">
-                        <span className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                          Completed
-                        </span>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => {
-                      setFormData({
-                        assessor_name: selectedAssessment.assessor_name,
-                        assessment_date: selectedAssessment.assessment_date,
-                        review_date: selectedAssessment.review_date || '',
-                        overall_status: selectedAssessment.overall_status,
-                        notes: selectedAssessment.notes || ''
-                      });
-                      setShowEditAssessment(true);
-                    }}
-                  >
-                    <Pencil className="h-3 w-3 mr-1" /> Edit
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-7 text-xs"
-                    onClick={() => {
-                      loadAuditLog();
-                      setShowAuditHistory(true);
-                    }}
-                  >
-                    <History className="h-3 w-3 mr-1" /> History
-                  </Button>
-                </div>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                <TooltipProvider delayDuration={0}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-block">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => setShowEmailDialog(true)}
-                          disabled={assessmentItems.length === 0}
-                          className="group hover:bg-success hover:text-success-foreground transition-all disabled:opacity-50"
-                        >
-                          <Mail className="h-3.5 w-3.5 mr-1.5 group-hover:scale-110 transition-transform" /> 
-                          Email
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      <p className="text-xs max-w-[200px]">
-                        {assessmentItems.length === 0 
-                          ? 'Add risk items before emailing' 
-                          : 'Email this assessment as a PDF'}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider delayDuration={0}>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="inline-block">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={saveToDocuments}
-                          disabled={selectedAssessment.overall_status !== 'completed' || assessmentItems.length === 0}
-                          className="group hover:bg-primary hover:text-primary-foreground transition-all disabled:opacity-50"
-                        >
-                          <Save className="h-3.5 w-3.5 mr-1.5 group-hover:scale-110 transition-transform" /> 
-                          Save
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      <p className="text-xs max-w-[200px]">
-                        {assessmentItems.length === 0 
-                          ? 'Add risk items before saving to documents' 
-                          : selectedAssessment.overall_status !== 'completed'
-                          ? 'Mark assessment as completed to save to documents'
-                          : 'Save this assessment as a PDF in the Documents section'}
-                      </p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <RiskSettingsDialog
-                  settings={riskSettings}
-                  onSave={handleSaveRiskSettings}
-                  saving={savingRiskSettings}
-                />
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={exportToPDF}
-                >
-                  <Download className="h-3.5 w-3.5 mr-1.5" /> PDF
-                </Button>
-                <Button onClick={() => setShowItemDialog(true)} size="sm" className="bg-primary hover:bg-primary/90">
-                  <Plus className="h-3.5 w-3.5 mr-1.5" /> Add Item
-                </Button>
-              </div>
+            </div>
+            
+            {/* Status & Edit Row */}
+            <div className="flex items-center gap-2 flex-wrap mb-3">
+              <Label className="text-xs text-muted-foreground">Status:</Label>
+              <Select value={selectedAssessment.overall_status} onValueChange={handleStatusChange}>
+                <SelectTrigger className="h-8 w-[130px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="in_progress">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                      In Progress
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="completed">
+                    <span className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                      Completed
+                    </span>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-xs"
+                onClick={() => {
+                  setFormData({
+                    assessor_name: selectedAssessment.assessor_name,
+                    assessment_date: selectedAssessment.assessment_date,
+                    review_date: selectedAssessment.review_date || '',
+                    overall_status: selectedAssessment.overall_status,
+                    notes: selectedAssessment.notes || ''
+                  });
+                  setShowEditAssessment(true);
+                }}
+              >
+                <Pencil className="h-3.5 w-3.5 sm:mr-1" /> 
+                <span className="hidden sm:inline">Edit</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-xs"
+                onClick={() => {
+                  loadAuditLog();
+                  setShowAuditHistory(true);
+                }}
+              >
+                <History className="h-3.5 w-3.5 sm:mr-1" /> 
+                <span className="hidden sm:inline">History</span>
+              </Button>
+              <RiskSettingsDialog
+                settings={riskSettings}
+                onSave={handleSaveRiskSettings}
+                saving={savingRiskSettings}
+              />
+            </div>
+
+            {/* Primary Actions - Full width on mobile */}
+            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+              <Button onClick={() => setShowItemDialog(true)} size="sm" className="bg-primary hover:bg-primary/90 h-9">
+                <Plus className="h-4 w-4 mr-1.5" /> Add Item
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={exportToPDF}
+                className="h-9"
+              >
+                <Download className="h-4 w-4 mr-1.5" /> PDF
+              </Button>
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-block">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={saveToDocuments}
+                        disabled={selectedAssessment.overall_status !== 'completed' || assessmentItems.length === 0}
+                        className="h-9 w-full disabled:opacity-50"
+                      >
+                        <Save className="h-4 w-4 mr-1.5" /> Save
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs max-w-[200px]">
+                      {assessmentItems.length === 0 
+                        ? 'Add risk items before saving' 
+                        : selectedAssessment.overall_status !== 'completed'
+                        ? 'Mark as completed to save'
+                        : 'Save PDF to Documents'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="inline-block">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={() => setShowEmailDialog(true)}
+                        disabled={assessmentItems.length === 0}
+                        className="h-9 w-full disabled:opacity-50"
+                      >
+                        <Mail className="h-4 w-4 mr-1.5" /> Email
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p className="text-xs max-w-[200px]">
+                      {assessmentItems.length === 0 
+                        ? 'Add risk items before emailing' 
+                        : 'Email as PDF'}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </CardHeader>
         </Card>
