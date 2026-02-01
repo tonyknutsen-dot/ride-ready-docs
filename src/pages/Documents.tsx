@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { supabase } from '@/integrations/supabase/client';
+import StaffAccountBanner from '@/components/StaffAccountBanner';
 
 interface RideWithDocs {
   id: string;
@@ -119,6 +120,7 @@ const Documents = () => {
 
   return (
     <div className="min-h-screen bg-background pb-28 md:pb-8">
+      <StaffAccountBanner />
       <header className="border-b-2 border-primary/30 bg-gradient-to-r from-primary/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <PageHeader

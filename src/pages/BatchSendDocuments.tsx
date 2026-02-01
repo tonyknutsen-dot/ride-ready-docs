@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -51,6 +52,7 @@ import { useTerminology } from '@/hooks/useTerminology';
 import { format, startOfMonth, endOfMonth, subDays, startOfYear, endOfYear } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { isCheckRecord, filterCheckRecords, CheckRecordFiltersState, defaultCheckRecordFilters } from '@/components/CheckRecordFilters';
+import StaffAccountBanner from '@/components/StaffAccountBanner';
 
 interface Document {
   id: string;
@@ -96,6 +98,7 @@ interface EmailTemplate {
 
 const BatchSendDocuments = () => {
   const { user } = useAuth();
+  const { effectiveUserId, actualUserId } = useEffectiveUserId();
   const { terminology } = useTerminology();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -132,54 +135,54 @@ const BatchSendDocuments = () => {
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
 
   useEffect(() => {
-    if (user) {
+    if (effectiveUserId) {
       loadData();
     }
-  }, [user]);
+  }, [effectiveUserId]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      // Load user profile
+      // Load user profile (use effectiveUserId to get operator's profile for staff)
       const { data: profileData } = await supabase
         .from('profiles')
         .select('company_name, controller_name, showmen_name, address')
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .single();
       setProfile(profileData);
 
-      // Load saved recipients
+      // Load saved recipients (use effectiveUserId for operator's recipients)
       const { data: recipientsData } = await supabase
         .from('saved_recipients')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .order('is_favorite', { ascending: false })
         .order('name');
       setSavedRecipients(recipientsData || []);
 
-      // Load email templates
+      // Load email templates (use effectiveUserId for operator's templates)
       const { data: templatesData } = await supabase
         .from('email_templates')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .order('is_default', { ascending: false })
         .order('name');
       setEmailTemplates(templatesData || []);
 
-      // Load all rides
+      // Load all rides (use effectiveUserId for operator's rides)
       const { data: ridesData, error: ridesError } = await supabase
         .from('rides')
         .select('id, ride_name, manufacturer')
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .order('ride_name');
 
       if (ridesError) throw ridesError;
 
-      // Load all documents
+      // Load all documents (use effectiveUserId for operator's documents)
       const { data: allDocuments, error: docsError } = await supabase
         .from('documents')
         .select('id, document_name, document_type, expires_at, file_size, is_global, ride_id, uploaded_at, notes, file_path')
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .order('uploaded_at', { ascending: false });
 
       if (docsError) throw docsError;
@@ -238,7 +241,7 @@ const BatchSendDocuments = () => {
       const { error } = await supabase
         .from('saved_recipients')
         .insert({
-          user_id: user?.id,
+          user_id: effectiveUserId,
           name: recipientName,
           email: recipientEmail,
           organization_type: newRecipientOrg || null
@@ -254,7 +257,7 @@ const BatchSendDocuments = () => {
       const { data: recipientsData } = await supabase
         .from('saved_recipients')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .order('is_favorite', { ascending: false })
         .order('name');
       setSavedRecipients(recipientsData || []);
@@ -320,7 +323,7 @@ const BatchSendDocuments = () => {
       const { error } = await supabase
         .from('email_templates')
         .insert({
-          user_id: user?.id,
+          user_id: effectiveUserId,
           name: newTemplateName,
           message_body: message,
           recipient_type: newTemplateType || null
@@ -337,7 +340,7 @@ const BatchSendDocuments = () => {
       const { data: templatesData } = await supabase
         .from('email_templates')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .order('is_default', { ascending: false })
         .order('name');
       setEmailTemplates(templatesData || []);
@@ -371,7 +374,7 @@ const BatchSendDocuments = () => {
         await supabase
           .from('email_templates')
           .update({ is_default: false })
-          .eq('user_id', user?.id);
+          .eq('user_id', effectiveUserId);
       }
 
       const { error } = await supabase
