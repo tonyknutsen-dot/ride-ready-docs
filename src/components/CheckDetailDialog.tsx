@@ -133,8 +133,8 @@ const CheckDetailDialog = ({ check, open, onOpenChange }: CheckDetailDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+        <DialogHeader className="shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5" />
             Check Record Details
@@ -144,7 +144,7 @@ const CheckDetailDialog = ({ check, open, onOpenChange }: CheckDetailDialogProps
           </DialogDescription>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
+        <ScrollArea className="flex-1 -mx-6 px-6 min-h-0">
           <div className="space-y-6 pb-4">
             {/* Header Info */}
             <div className="grid grid-cols-2 gap-4">
