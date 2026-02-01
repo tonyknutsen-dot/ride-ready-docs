@@ -156,10 +156,10 @@ export default function AdminDashboard() {
         ) : (
           <>
             {/* Pending Requests */}
-            <div className="grid gap-6 md:grid-cols-3">
+            <div className="grid gap-4 grid-cols-2 md:grid-cols-3">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Ride Requests</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">Pending Rides</CardTitle>
                   <FolderOpen className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -172,7 +172,7 @@ export default function AdminDashboard() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Pending Doc Requests</CardTitle>
+                  <CardTitle className="text-xs sm:text-sm font-medium">Pending Docs</CardTitle>
                   <FileText className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
@@ -213,7 +213,7 @@ export default function AdminDashboard() {
                   </Badge>
                 )}
               </div>
-              <div className="grid gap-6 md:grid-cols-4">
+              <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
                 <Card className={excludeTestData && stats.testRides > 0 ? 'border-l-4 border-l-success' : ''}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Total Rides</CardTitle>
@@ -279,7 +279,7 @@ export default function AdminDashboard() {
 
                 <Card className={excludeTestData && stats.testMaintenanceRecords > 0 ? 'border-l-4 border-l-success' : ''}>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Maintenance Records</CardTitle>
+                    <CardTitle className="text-xs sm:text-sm font-medium">Maintenance</CardTitle>
                     <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
