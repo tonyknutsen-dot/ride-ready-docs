@@ -728,6 +728,11 @@ export default function UserManagement() {
                         <div className="text-xs text-muted-foreground truncate">
                           {user.email || 'No email'}
                         </div>
+                        {/* Show company on mobile within this cell */}
+                        <div className="md:hidden flex items-center gap-1 text-xs text-muted-foreground mt-1">
+                          <Building className="h-3 w-3 shrink-0" />
+                          <span className="truncate">{user.profile?.company_name || 'No company'}</span>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
