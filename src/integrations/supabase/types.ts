@@ -2499,6 +2499,19 @@ export type Database = {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["staff_permission"]
       }
+      get_subscription_context: {
+        Args: never
+        Returns: {
+          billing_cycle: string
+          current_period_end: string
+          extra_items_count: number
+          profile_user_id: string
+          subscription_plan: string
+          subscription_status: string
+          trial_ends_at: string
+          trial_started_at: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
