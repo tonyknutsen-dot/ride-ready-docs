@@ -36,7 +36,16 @@ const handler = async (req: Request): Promise<Response> => {
     // Verify the invite token is valid and matches the email
     const { data: invite, error: inviteError } = await supabaseAdmin
       .from("staff_invites")
-      .select("*, organisations(id, name, owner_id)")
+      .select(`
+        *, 
+        organisations(id, name, owner_id),
+        can_access_calendar,
+        can_access_documents,
+        can_access_checks,
+        can_access_maintenance,
+        can_access_risk_assessments,
+        can_access_send_documents
+      `)
       .eq("invite_token", token)
       .eq("status", "pending")
       .maybeSingle();
@@ -110,7 +119,7 @@ const handler = async (req: Request): Promise<Response> => {
       .maybeSingle();
 
     if (!existingMember) {
-      // Add user as organisation member
+      // Add user as organisation member with granular permissions
       const { error: memberError } = await supabaseAdmin
         .from("organisation_members")
         .insert({
@@ -118,6 +127,12 @@ const handler = async (req: Request): Promise<Response> => {
           organisation_id: invite.organisation_id,
           permission_level: invite.permission_level,
           invited_by: invite.invited_by,
+          can_access_calendar: invite.can_access_calendar ?? true,
+          can_access_documents: invite.can_access_documents ?? false,
+          can_access_checks: invite.can_access_checks ?? true,
+          can_access_maintenance: invite.can_access_maintenance ?? false,
+          can_access_risk_assessments: invite.can_access_risk_assessments ?? false,
+          can_access_send_documents: invite.can_access_send_documents ?? false,
         });
 
       if (memberError) {
@@ -129,10 +144,19 @@ const handler = async (req: Request): Promise<Response> => {
       }
       console.log("Added user to organisation:", invite.organisation_id);
     } else {
-      // Update existing membership to active
+      // Update existing membership to active with new permissions
       await supabaseAdmin
         .from("organisation_members")
-        .update({ is_active: true, permission_level: invite.permission_level })
+        .update({ 
+          is_active: true, 
+          permission_level: invite.permission_level,
+          can_access_calendar: invite.can_access_calendar ?? true,
+          can_access_documents: invite.can_access_documents ?? false,
+          can_access_checks: invite.can_access_checks ?? true,
+          can_access_maintenance: invite.can_access_maintenance ?? false,
+          can_access_risk_assessments: invite.can_access_risk_assessments ?? false,
+          can_access_send_documents: invite.can_access_send_documents ?? false,
+        })
         .eq("id", existingMember.id);
     }
 

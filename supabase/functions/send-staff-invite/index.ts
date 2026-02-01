@@ -19,10 +19,20 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+interface FeaturePermissions {
+  calendar: boolean;
+  documents: boolean;
+  checks: boolean;
+  maintenance: boolean;
+  risk_assessments: boolean;
+  send_documents: boolean;
+}
+
 interface StaffInviteRequest {
   email: string;
   permissionLevel: "checks_only" | "checks_maintenance" | "full_access";
-  rideIds?: string[]; // Optional: if empty, staff can access all rides
+  assignedRides?: string[] | null;
+  featurePermissions?: FeaturePermissions;
 }
 
 const msPerDay = 24 * 60 * 60 * 1000;
@@ -87,7 +97,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { email, permissionLevel, rideIds }: StaffInviteRequest = await req.json();
+    const { email, permissionLevel, assignedRides, featurePermissions }: StaffInviteRequest = await req.json();
 
     if (!email) {
       return new Response(
@@ -145,18 +155,35 @@ const handler = async (req: Request): Promise<Response> => {
       }
     }
 
-    // Store ride assignments in invite metadata (we'll apply them when accepted)
-    const rideIdsJson = rideIds && rideIds.length > 0 ? JSON.stringify(rideIds) : null;
+    // Default feature permissions based on permission level if not provided
+    const defaultPermissions: FeaturePermissions = {
+      calendar: true,
+      checks: true,
+      documents: permissionLevel === 'full_access',
+      maintenance: permissionLevel === 'checks_maintenance' || permissionLevel === 'full_access',
+      risk_assessments: permissionLevel === 'full_access',
+      send_documents: permissionLevel === 'full_access',
+    };
+
+    const permissions = featurePermissions || defaultPermissions;
 
     // Create or reuse invite
     let invite: { id: string; invite_token: string; expires_at: string } | null = null;
     let inviteIdForCleanup: string | null = null;
 
     if (existingInvite && (!existingInvite.expires_at || new Date(existingInvite.expires_at) >= new Date())) {
-      // Reuse existing valid invite, but update permission level
+      // Reuse existing valid invite, but update permission level and feature permissions
       await supabase
         .from("staff_invites")
-        .update({ permission_level: permissionLevel })
+        .update({ 
+          permission_level: permissionLevel,
+          can_access_calendar: permissions.calendar,
+          can_access_documents: permissions.documents,
+          can_access_checks: permissions.checks,
+          can_access_maintenance: permissions.maintenance,
+          can_access_risk_assessments: permissions.risk_assessments,
+          can_access_send_documents: permissions.send_documents,
+        })
         .eq("id", existingInvite.id);
       
       invite = {
@@ -175,6 +202,12 @@ const handler = async (req: Request): Promise<Response> => {
           permission_level: permissionLevel,
           invited_by: user.id,
           expires_at: expiresAt,
+          can_access_calendar: permissions.calendar,
+          can_access_documents: permissions.documents,
+          can_access_checks: permissions.checks,
+          can_access_maintenance: permissions.maintenance,
+          can_access_risk_assessments: permissions.risk_assessments,
+          can_access_send_documents: permissions.send_documents,
         })
         .select("id, invite_token, expires_at")
         .single();
@@ -191,12 +224,6 @@ const handler = async (req: Request): Promise<Response> => {
       invite = createdInvite;
     }
 
-    // Store ride assignments temporarily (we'll use a separate table or metadata)
-    if (rideIds && rideIds.length > 0) {
-      // Store in a temp table or we'll pass via URL params - for now, store in invite
-      // We can enhance this later if needed
-    }
-
     // Get owner's profile for personalisation
     const { data: profile } = await supabase
       .from("profiles")
@@ -211,12 +238,14 @@ const handler = async (req: Request): Promise<Response> => {
     const baseUrl = "https://ride-ready-docs.lovable.app";
     const inviteUrl = `${baseUrl}/staff-invite/${invite.invite_token}`;
 
-    // Permission descriptions
-    const permissionDescriptions = {
-      checks_only: "Perform safety checks on assigned equipment",
-      checks_maintenance: "Perform safety checks and log maintenance activities",
-      full_access: "Full access to checks, maintenance, documents, and risk assessments",
-    };
+    // Build feature list for email
+    const featureList: string[] = [];
+    if (permissions.checks) featureList.push("Safety checks");
+    if (permissions.calendar) featureList.push("Calendar & schedules");
+    if (permissions.maintenance) featureList.push("Maintenance logging");
+    if (permissions.documents) featureList.push("Documents");
+    if (permissions.risk_assessments) featureList.push("Risk assessments");
+    if (permissions.send_documents) featureList.push("Send documents externally");
 
     // Send email
     const emailResponse = await resend.emails.send({
@@ -235,7 +264,10 @@ const handler = async (req: Request): Promise<Response> => {
             .button { display: inline-block; background: #FCBA04; color: #000; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; margin: 20px 0; }
             .footer { text-align: center; color: #666; font-size: 12px; margin-top: 20px; }
             .badge { display: inline-block; background: #FCBA04; color: #000; padding: 5px 10px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-            .permission-box { background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 15px 0; }
+            .feature-box { background: #e8f4f8; padding: 15px; border-radius: 8px; margin: 15px 0; }
+            .feature-list { list-style: none; padding: 0; margin: 10px 0 0 0; }
+            .feature-list li { padding: 4px 0; }
+            .feature-list li:before { content: "✓ "; color: #22c55e; font-weight: bold; }
           </style>
         </head>
         <body>
@@ -248,18 +280,12 @@ const handler = async (req: Request): Promise<Response> => {
               <p>Hi there!</p>
               <p><strong>${inviterName}</strong> has invited you to join <strong>${companyName}</strong> on Ride Ready Docs.</p>
               
-              <div class="permission-box">
-                <p style="margin: 0; font-weight: bold;">Your access level:</p>
-                <p style="margin: 5px 0 0 0;">${permissionDescriptions[permissionLevel]}</p>
+              <div class="feature-box">
+                <p style="margin: 0; font-weight: bold;">You'll have access to:</p>
+                <ul class="feature-list">
+                  ${featureList.map(f => `<li>${f}</li>`).join('')}
+                </ul>
               </div>
-
-              <p>As a staff member, you'll be able to:</p>
-              <ul>
-                <li>Access equipment assigned to you</li>
-                <li>Complete safety checks${permissionLevel !== 'checks_only' ? ' and log maintenance' : ''}</li>
-                ${permissionLevel === 'full_access' ? '<li>View documents and risk assessments</li>' : ''}
-                <li>Collaborate with your team</li>
-              </ul>
 
               <p style="text-align: center;">
                 <a href="${inviteUrl}" class="button">Accept Invitation</a>

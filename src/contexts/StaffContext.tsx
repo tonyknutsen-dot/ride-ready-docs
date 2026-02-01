@@ -5,12 +5,22 @@ import { Database } from '@/integrations/supabase/types';
 
 type StaffPermission = Database['public']['Enums']['staff_permission'];
 
+interface FeaturePermissions {
+  calendar: boolean;
+  documents: boolean;
+  checks: boolean;
+  maintenance: boolean;
+  risk_assessments: boolean;
+  send_documents: boolean;
+}
+
 interface StaffMembership {
   organisationId: string;
   organisationName: string;
   permissionLevel: StaffPermission;
   memberId: string;
   ownerId: string;
+  featurePermissions: FeaturePermissions;
 }
 
 interface StaffContextType {
@@ -18,8 +28,10 @@ interface StaffContextType {
   isOwner: boolean;
   staffMembership: StaffMembership | null;
   permissionLevel: StaffPermission | null;
+  featurePermissions: FeaturePermissions | null;
   loading: boolean;
   // Permission check helpers
+  canAccessCalendar: boolean;
   canAccessChecks: boolean;
   canAccessMaintenance: boolean;
   canAccessDocuments: boolean;
@@ -33,12 +45,23 @@ interface StaffContextType {
 
 const StaffContext = createContext<StaffContextType | undefined>(undefined);
 
+// Default permissions for owners (everything enabled)
+const OWNER_PERMISSIONS: FeaturePermissions = {
+  calendar: true,
+  documents: true,
+  checks: true,
+  maintenance: true,
+  risk_assessments: true,
+  send_documents: true,
+};
+
 export function StaffProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
   const [isStaff, setIsStaff] = useState(false);
   const [isOwner, setIsOwner] = useState(true); // Default to owner for non-staff
   const [staffMembership, setStaffMembership] = useState<StaffMembership | null>(null);
   const [permissionLevel, setPermissionLevel] = useState<StaffPermission | null>(null);
+  const [featurePermissions, setFeaturePermissions] = useState<FeaturePermissions | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchStaffStatus = async () => {
@@ -47,12 +70,12 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
       setIsOwner(true);
       setStaffMembership(null);
       setPermissionLevel(null);
+      setFeaturePermissions(null);
       setLoading(false);
       return;
     }
 
     // Set loading false early for faster initial render
-    // Staff status doesn't block basic app functionality
     setLoading(false);
 
     try {
@@ -63,6 +86,12 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
           id,
           permission_level,
           organisation_id,
+          can_access_calendar,
+          can_access_documents,
+          can_access_checks,
+          can_access_maintenance,
+          can_access_risk_assessments,
+          can_access_send_documents,
           organisations (
             id,
             name,
@@ -84,23 +113,35 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
         // Check if user is the owner of this organisation
         const userIsOwner = org.owner_id === user.id;
         
+        // Build feature permissions from database columns
+        const permissions: FeaturePermissions = {
+          calendar: membership.can_access_calendar ?? true,
+          documents: membership.can_access_documents ?? false,
+          checks: membership.can_access_checks ?? true,
+          maintenance: membership.can_access_maintenance ?? false,
+          risk_assessments: membership.can_access_risk_assessments ?? false,
+          send_documents: membership.can_access_send_documents ?? false,
+        };
+
         setIsStaff(!userIsOwner);
         setIsOwner(userIsOwner);
         setPermissionLevel(membership.permission_level);
+        setFeaturePermissions(userIsOwner ? OWNER_PERMISSIONS : permissions);
         setStaffMembership({
           organisationId: org.id,
           organisationName: org.name,
           permissionLevel: membership.permission_level,
           memberId: membership.id,
           ownerId: org.owner_id,
+          featurePermissions: userIsOwner ? OWNER_PERMISSIONS : permissions,
         });
       } else {
-        // User is not a staff member - default state is already correct (owner=true, staff=false)
-        // Skip the extra query to check owned org - not needed for basic functionality
+        // User is not a staff member - default state is owner
         setIsStaff(false);
         setIsOwner(true);
         setStaffMembership(null);
         setPermissionLevel(null);
+        setFeaturePermissions(OWNER_PERMISSIONS);
       }
     } catch (error) {
       console.error('Error in fetchStaffStatus:', error);
@@ -110,11 +151,9 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Defer staff status check to not block initial render
     if (user) {
-      // Use requestIdleCallback if available for non-blocking fetch
       if ('requestIdleCallback' in window) {
         (window as any).requestIdleCallback(() => fetchStaffStatus(), { timeout: 2000 });
       } else {
-        // Fallback: small delay to let critical content render first
         setTimeout(fetchStaffStatus, 100);
       }
     } else {
@@ -122,12 +161,13 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
     }
   }, [user]);
 
-  // Permission helpers based on permission level
-  const canAccessChecks = isOwner || (isStaff && permissionLevel !== null);
-  const canAccessMaintenance = isOwner || (isStaff && (permissionLevel === 'checks_maintenance' || permissionLevel === 'full_access'));
-  const canAccessDocuments = isOwner || (isStaff && permissionLevel === 'full_access');
-  const canAccessRiskAssessments = isOwner || (isStaff && permissionLevel === 'full_access');
-  const canAccessSendDocuments = isOwner || (isStaff && permissionLevel === 'full_access');
+  // Permission helpers using granular permissions
+  const canAccessCalendar = isOwner || (isStaff && (featurePermissions?.calendar ?? false));
+  const canAccessChecks = isOwner || (isStaff && (featurePermissions?.checks ?? false));
+  const canAccessMaintenance = isOwner || (isStaff && (featurePermissions?.maintenance ?? false));
+  const canAccessDocuments = isOwner || (isStaff && (featurePermissions?.documents ?? false));
+  const canAccessRiskAssessments = isOwner || (isStaff && (featurePermissions?.risk_assessments ?? false));
+  const canAccessSendDocuments = isOwner || (isStaff && (featurePermissions?.send_documents ?? false));
   const canAccessBilling = isOwner && !isStaff;
   const canAccessSettings = isOwner && !isStaff;
   const canManageStaff = isOwner && !isStaff;
@@ -139,7 +179,9 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
         isOwner,
         staffMembership,
         permissionLevel,
+        featurePermissions,
         loading,
+        canAccessCalendar,
         canAccessChecks,
         canAccessMaintenance,
         canAccessDocuments,
