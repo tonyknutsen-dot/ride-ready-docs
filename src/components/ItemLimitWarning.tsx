@@ -14,10 +14,15 @@ export const ItemLimitWarning = ({ className }: ItemLimitWarningProps) => {
 
   if (!subscription) return null;
 
-  const { rideCount, rideLimit, subscriptionStatus, isTesterAccount } = subscription;
+  const { rideCount, rideLimit, subscriptionStatus, isTesterAccount, isStaffMember } = subscription;
   
   // TESTER BYPASS: Don't show limit warnings for testers
   if (isTesterAccount) {
+    return null;
+  }
+  
+  // STAFF BYPASS: Staff can't manage billing - don't show upgrade warnings
+  if (isStaffMember) {
     return null;
   }
   

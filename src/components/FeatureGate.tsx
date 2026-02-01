@@ -25,11 +25,26 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
     return fallback || <UpgradePrompt feature={feature} requiredPlan={requiredPlan} />;
   }
 
-  const { subscriptionStatus, isTrialActive, isTesterAccount } = subscription;
+  const { subscriptionStatus, isTrialActive, isTesterAccount, isStaffMember } = subscription;
 
   // TESTER BYPASS: Grant full access to all features
   if (isTesterAccount) {
     return <>{children}</>;
+  }
+
+  // STAFF BYPASS: Staff inherit owner's subscription - grant access based on owner's plan
+  if (isStaffMember) {
+    // Staff have access if owner has required plan
+    const hasAccess = 
+      subscriptionStatus === requiredPlan || 
+      (requiredPlan === 'basic' && subscriptionStatus === 'advanced');
+    
+    if (hasAccess) {
+      return <>{children}</>;
+    }
+    // If owner doesn't have access, still show the content but without upgrade prompt
+    // (staff can't upgrade - only owner can)
+    return fallback || null;
   }
 
   // During trial, allow basic features only

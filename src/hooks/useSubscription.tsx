@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTester } from '@/contexts/TesterContext';
+import { useStaff } from '@/contexts/StaffContext';
 import { supabase } from '@/integrations/supabase/client';
-
 // Item limits per plan (rides, stalls, games, equipment)
 export const RIDE_LIMITS = {
   trial: 5,
@@ -60,11 +60,13 @@ export interface SubscriptionData {
   hasStripeCustomer: boolean;
   hasStripeSubscription: boolean;
   isTesterAccount: boolean;
+  isStaffMember: boolean; // Staff inherit owner's subscription
 }
 
 export const useSubscription = () => {
   const { user } = useAuth();
   const { isTester, isLoading: testerLoading } = useTester();
+  const { isStaff, staffMembership, loading: staffLoading } = useStaff();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -75,13 +77,21 @@ export const useSubscription = () => {
       return;
     }
 
-    // Wait for tester status to be determined
-    if (testerLoading) {
+    // Wait for tester and staff status to be determined
+    if (testerLoading || staffLoading) {
       return;
     }
 
     try {
+      // Determine which user's profile to fetch:
+      // - If staff member, fetch the organization owner's profile
+      // - Otherwise, fetch the current user's profile
+      const profileUserId = isStaff && staffMembership?.ownerId 
+        ? staffMembership.ownerId 
+        : user.id;
+
       // Fetch profile and ride count in parallel
+      // Note: ride count is always for the owner's rides (staff access owner's data)
       const [profileResult, rideCountResult] = await Promise.all([
         supabase
           .from('profiles')
@@ -89,12 +99,12 @@ export const useSubscription = () => {
           // These sensitive payment IDs should never be exposed to client-side code
           // All Stripe operations are handled by edge functions with service role
           .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, extra_items_count, current_period_end')
-          .eq('user_id', user.id)
+          .eq('user_id', profileUserId)
           .maybeSingle(),
         supabase
           .from('rides')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
+          .eq('user_id', profileUserId)
       ]);
 
       if (profileResult.error) {
@@ -131,6 +141,7 @@ export const useSubscription = () => {
             hasStripeCustomer: false, // No Stripe for testers
             hasStripeSubscription: false,
             isTesterAccount: true,
+            isStaffMember: false,
           };
           setSubscription(testerSubscription);
           setLoading(false);
@@ -160,6 +171,7 @@ export const useSubscription = () => {
           hasStripeCustomer: status !== 'trial' && status !== 'expired',
           hasStripeSubscription: status === 'basic' || status === 'advanced',
           isTesterAccount: false,
+          isStaffMember: isStaff,
         };
 
         setSubscription(subscriptionData);
@@ -169,7 +181,7 @@ export const useSubscription = () => {
     } finally {
       setLoading(false);
     }
-  }, [user, isTester, testerLoading]);
+  }, [user, isTester, testerLoading, isStaff, staffMembership, staffLoading]);
 
   useEffect(() => {
     fetchSubscriptionData();

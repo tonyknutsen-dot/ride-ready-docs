@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogTrigger } from '@/components/ui/dialog';
 import { PlanSelection } from './PlanSelection';
 import { useTester } from '@/contexts/TesterContext';
+import { useStaff } from '@/contexts/StaffContext';
 
 interface UpgradePromptProps {
   feature: string;
@@ -18,9 +19,15 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
   compact = false
 }) => {
   const { isTester } = useTester();
+  const { isStaff } = useStaff();
   
   // TESTER BYPASS: Don't show upgrade prompts for testers
   if (isTester) {
+    return null;
+  }
+  
+  // STAFF BYPASS: Staff can't upgrade - only owners can manage billing
+  if (isStaff) {
     return null;
   }
   
