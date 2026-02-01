@@ -149,37 +149,64 @@ const Rides = () => {
   };
 
   const loadRidePhotos = async (ridesData: Ride[]) => {
+    if (ridesData.length === 0) return;
+    
     const photos: Record<string, string | null> = {};
+    const rideIds = ridesData.map(r => r.id);
     
-    await Promise.all(ridesData.map(async (ride) => {
-      try {
-        const { data: photoDoc } = await supabase
-          .from('documents')
-          .select('file_path')
-          .eq('user_id', user?.id)
-          .eq('ride_id', ride.id)
-          .eq('document_type', 'photo')
-          .eq('is_latest_version', true)
-          .order('uploaded_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+    try {
+      // Batch query: Get all photo documents for all rides in ONE query
+      const { data: photoDocs } = await supabase
+        .from('documents')
+        .select('ride_id, file_path')
+        .eq('user_id', user?.id)
+        .in('ride_id', rideIds)
+        .eq('document_type', 'photo')
+        .eq('is_latest_version', true)
+        .order('uploaded_at', { ascending: false });
 
-        if (photoDoc?.file_path) {
-          const { data } = await supabase.storage
-            .from('ride-documents')
-            .createSignedUrl(photoDoc.file_path, 3600);
-          
-          photos[ride.id] = data?.signedUrl || null;
-        } else {
-          photos[ride.id] = null;
+      // Group by ride_id (take first/latest for each)
+      const photoByRide: Record<string, string> = {};
+      photoDocs?.forEach(doc => {
+        if (doc.ride_id && !photoByRide[doc.ride_id]) {
+          photoByRide[doc.ride_id] = doc.file_path;
         }
-      } catch (error) {
-        console.error(`Error loading photo for ride ${ride.id}:`, error);
-        photos[ride.id] = null;
+      });
+
+      // Initialize all rides with null (no photo) first for immediate UI update
+      rideIds.forEach(id => {
+        photos[id] = photoByRide[id] ? undefined : null; // undefined = loading, null = no photo
+      });
+      setRidePhotos({ ...photos });
+
+      // Now generate signed URLs in batches of 5 for rides that have photos
+      const ridesWithPhotos = Object.entries(photoByRide);
+      const batchSize = 5;
+      
+      for (let i = 0; i < ridesWithPhotos.length; i += batchSize) {
+        const batch = ridesWithPhotos.slice(i, i + batchSize);
+        
+        await Promise.all(batch.map(async ([rideId, filePath]) => {
+          try {
+            const { data } = await supabase.storage
+              .from('ride-documents')
+              .createSignedUrl(filePath, 3600);
+            
+            photos[rideId] = data?.signedUrl || null;
+          } catch {
+            photos[rideId] = null;
+          }
+        }));
+        
+        // Update state after each batch for progressive loading
+        setRidePhotos(prev => ({ ...prev, ...photos }));
       }
-    }));
-    
-    setRidePhotos(photos);
+    } catch (error) {
+      console.error('Error loading ride photos:', error);
+      // Mark all as no photo on error
+      rideIds.forEach(id => { photos[id] = null; });
+      setRidePhotos(photos);
+    }
   };
 
   const handleRideAdded = () => {
