@@ -1,9 +1,18 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version',
 };
+
+// Rate limiting configuration
+const RATE_LIMIT_MAX_REQUESTS = 30; // 30 requests per hour
+const RATE_LIMIT_WINDOW_MS = 3600000; // 1 hour in milliseconds
+
+// Input validation limits
+const MAX_MESSAGES = 50;
+const MAX_MESSAGE_LENGTH = 4000;
 
 const SYSTEM_PROMPT = `You are the AI Help Assistant for Ride Ready Docs, a document and compliance management application for fairground operators and showmen worldwide. You help users understand how to use the app effectively.
 
@@ -155,6 +164,11 @@ Ride Ready Docs helps fairground operators manage:
 
 Remember: You're helping fairground operators manage their equipment documentation and compliance. Be accurate, practical and helpful! If you're not 100% certain about something, recommend contacting support.`;
 
+interface ChatMessage {
+  role: string;
+  content: string;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -162,13 +176,123 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     
+    // Check for authorization header
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader?.startsWith('Bearer ')) {
+      console.error('Missing or invalid authorization header');
+      return new Response(
+        JSON.stringify({ error: 'Authentication required. Please log in to use the help assistant.' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create Supabase client with user's auth context
+    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: authHeader } }
+    });
+
+    // Verify the user's JWT token
+    const token = authHeader.replace('Bearer ', '');
+    const { data: claimsData, error: claimsError } = await supabase.auth.getClaims(token);
+    
+    if (claimsError || !claimsData?.claims?.sub) {
+      console.error('JWT verification failed:', claimsError);
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired session. Please log in again.' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = claimsData.claims.sub;
+    console.log('Authenticated user:', userId);
+
+    // Rate limiting check using the existing check_rate_limit function
+    const rateLimitKey = `help-chat:${userId}`;
+    const { data: rateLimitResult, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+      p_key: rateLimitKey,
+      p_max_requests: RATE_LIMIT_MAX_REQUESTS,
+      p_window_ms: RATE_LIMIT_WINDOW_MS
+    });
+
+    if (rateLimitError) {
+      console.error('Rate limit check error:', rateLimitError);
+      // Continue without rate limiting if there's an error - don't block users
+    } else if (rateLimitResult && !rateLimitResult.allowed) {
+      console.warn('Rate limit exceeded for user:', userId);
+      const retryAfterSeconds = Math.ceil((rateLimitResult.retry_after_ms || 60000) / 1000);
+      return new Response(
+        JSON.stringify({ 
+          error: `You've reached the help chat limit. Please try again in ${Math.ceil(retryAfterSeconds / 60)} minutes.` 
+        }),
+        { 
+          status: 429, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Retry-After': String(retryAfterSeconds)
+          } 
+        }
+      );
+    }
+
+    // Parse and validate request body
+    const body = await req.json();
+    const { messages } = body;
+    
+    // Validate messages array exists
     if (!messages || !Array.isArray(messages)) {
       return new Response(
         JSON.stringify({ error: 'Messages array is required' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Validate messages count
+    if (messages.length === 0) {
+      return new Response(
+        JSON.stringify({ error: 'At least one message is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (messages.length > MAX_MESSAGES) {
+      return new Response(
+        JSON.stringify({ error: `Too many messages. Maximum ${MAX_MESSAGES} messages per conversation.` }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Validate each message structure and content
+    for (let i = 0; i < messages.length; i++) {
+      const msg = messages[i] as ChatMessage;
+      
+      // Validate role
+      if (!msg.role || typeof msg.role !== 'string' || !['user', 'assistant', 'system'].includes(msg.role)) {
+        return new Response(
+          JSON.stringify({ error: `Invalid message role at index ${i}. Must be 'user', 'assistant', or 'system'.` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Validate content exists and is a string
+      if (msg.content === undefined || msg.content === null || typeof msg.content !== 'string') {
+        return new Response(
+          JSON.stringify({ error: `Invalid message content at index ${i}. Content must be a string.` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      // Validate content length
+      if (msg.content.length > MAX_MESSAGE_LENGTH) {
+        return new Response(
+          JSON.stringify({ error: `Message at index ${i} is too long. Maximum ${MAX_MESSAGE_LENGTH} characters per message.` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
     }
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
@@ -180,7 +304,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('Processing help chat request with', messages.length, 'messages');
+    console.log('Processing help chat request for user', userId, 'with', messages.length, 'messages');
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -192,7 +316,7 @@ serve(async (req) => {
         model: 'google/gemini-3-flash-preview',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          ...messages.map((msg: { role: string; content: string }) => ({
+          ...messages.map((msg: ChatMessage) => ({
             role: msg.role,
             content: msg.content,
           })),

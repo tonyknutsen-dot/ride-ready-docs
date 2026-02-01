@@ -8,6 +8,7 @@ import { Bot, Send, User, Sparkles, RotateCcw, MessageCircle } from "lucide-reac
 import { toast } from "@/hooks/use-toast";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 import ReactMarkdown from "react-markdown";
+import { supabase } from "@/integrations/supabase/client";
 
 type Message = {
   role: "user" | "assistant";
@@ -21,8 +22,6 @@ const SUGGESTED_QUESTIONS = [
   "What's included in my plan?",
   "How do I schedule inspections?",
 ];
-
-const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/help-chat`;
 
 export function HelpChatWidget() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -65,11 +64,19 @@ export function HelpChatWidget() {
     };
 
     try {
-      const resp = await fetch(CHAT_URL, {
+      // Get the current user's session for authentication
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.access_token) {
+        throw new Error("Please log in to use the help assistant.");
+      }
+
+      const resp = await fetch(`https://sbtldudgiskqfqqkrmaa.supabase.co/functions/v1/help-chat`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+          "Authorization": `Bearer ${session.access_token}`,
+          "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNidGxkdWRnaXNrcWZxcWtybWFhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3MzA1NzMsImV4cCI6MjA3NDMwNjU3M30.I0WeylvH8HQzNROhpqsfvd5HCKxX21DbC0g6AN0dwb8",
         },
         body: JSON.stringify({ messages: [...messages, userMessage] }),
       });
