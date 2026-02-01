@@ -7,7 +7,7 @@
  * This is the SINGLE source of truth for the app version.
  */
 
-export const APP_VERSION = "v0.11";
+export const APP_VERSION = "v0.12";
 
 export const APP_NAME = "Ride Ready Docs";
 
@@ -24,6 +24,11 @@ export interface ChangeLogEntry {
 }
 
 export const CHANGE_LOG: ChangeLogEntry[] = [
+  {
+    version: "v0.12",
+    date: "2026-02-01",
+    description: "Granular staff permissions: owners can now select exactly which features each staff member can access via checkboxes (Calendar, Documents, Checks, Maintenance, Risk Assessments, Send Documents). Improved PWA update detection with visible 'Checking for updates' indicator for installed app users. UI terminology updated to 'Equipment' for broader asset type support."
+  },
   {
     version: "v0.11",
     date: "2026-01-28",
