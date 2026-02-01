@@ -206,7 +206,7 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-hidden flex flex-col">
+      <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
@@ -253,7 +253,7 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
                   </div>
                 </div>
 
-                <div className="max-h-[200px] overflow-y-auto space-y-2 pr-1">
+                <div className="space-y-2">
                   {FEATURE_CONFIG.map(({ key, label, icon: Icon, description, sensitive }) => (
                     <div
                       key={key}
