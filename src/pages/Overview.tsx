@@ -379,7 +379,7 @@ const Overview = () => {
                 Upload Document
               </Button>
               <Button 
-                className="w-full justify-start gap-3 h-11" 
+                className="w-full justify-start gap-3 h-11 min-w-0" 
                 variant="outline"
                 onClick={() => {
                   if (userPlan === 'advanced') {
@@ -390,7 +390,9 @@ const Overview = () => {
                 }}
               >
                 <Wrench className="w-4 h-4" />
-                {userPlan === 'advanced' ? 'Ops & Maintenance' : 'Upgrade for Advanced'}
+                <span className="min-w-0 flex-1 truncate">
+                  {userPlan === 'advanced' ? 'Ops & Maintenance' : 'Upgrade for Advanced'}
+                </span>
               </Button>
               {userPlan === 'advanced' && (
                 <Button 
