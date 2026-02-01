@@ -34,6 +34,7 @@ import { TesterInviteDialog } from '@/components/admin/TesterInviteDialog';
 interface UserWithProfile {
   id: string;
   email: string;
+  name: string | null;
   created_at: string;
   profile: {
     company_name: string | null;
@@ -259,6 +260,16 @@ export default function UserManagement() {
 
       if (rolesError) throw rolesError;
 
+      // Fetch user emails and names from edge function
+      const { data: authData, error: authError } = await supabase.functions.invoke('get-users-admin');
+      
+      const userEmailMap = new Map<string, { email: string; name: string | null }>();
+      if (!authError && authData?.users) {
+        for (const u of authData.users) {
+          userEmailMap.set(u.id, { email: u.email, name: u.name });
+        }
+      }
+
       const adminUserIds = new Set(userRoles?.filter(r => r.role === 'admin').map(r => r.user_id) || []);
       const testerRoles = new Map(
         userRoles?.filter(r => r.role === 'tester').map(r => [r.user_id, r.expires_at]) || []
@@ -268,10 +279,12 @@ export default function UserManagement() {
       const usersData: UserWithProfile[] = (profiles || []).map(profile => {
         const testerExpiresAt = testerRoles.get(profile.user_id) || null;
         const isTesterExpired = testerExpiresAt ? new Date(testerExpiresAt) < new Date() : false;
+        const authInfo = userEmailMap.get(profile.user_id);
         
         return {
           id: profile.user_id,
-          email: '', // We'll need to get this from auth.users via edge function if needed
+          email: authInfo?.email || '',
+          name: authInfo?.name || null,
           created_at: profile.created_at,
           profile: {
             company_name: profile.company_name,
@@ -576,6 +589,8 @@ export default function UserManagement() {
     const searchLower = searchQuery.toLowerCase();
     return (
       user.id.toLowerCase().includes(searchLower) ||
+      user.email.toLowerCase().includes(searchLower) ||
+      user.name?.toLowerCase().includes(searchLower) ||
       user.profile?.company_name?.toLowerCase().includes(searchLower) ||
       user.profile?.country?.toLowerCase().includes(searchLower)
     );
@@ -673,7 +688,7 @@ export default function UserManagement() {
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search by company name, country, or user ID..."
+            placeholder="Search by name, email, company, country, or user ID..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
@@ -692,11 +707,12 @@ export default function UserManagement() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Company</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead className="hidden md:table-cell">Company</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Country</TableHead>
-                  <TableHead>Joined</TableHead>
+                  <TableHead className="hidden sm:table-cell">Plan</TableHead>
+                  <TableHead className="hidden lg:table-cell">Country</TableHead>
+                  <TableHead className="hidden sm:table-cell">Joined</TableHead>
                   <TableHead>Role</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -705,9 +721,19 @@ export default function UserManagement() {
                 {filteredUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">
+                          {user.name || user.email?.split('@')[0] || 'Unknown'}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">
+                          {user.email || 'No email'}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
                       <div className="flex items-center gap-2">
-                        <Building className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">
+                        <Building className="h-4 w-4 text-muted-foreground shrink-0" />
+                        <span className="font-medium truncate">
                           {user.profile?.company_name || 'No company'}
                         </span>
                       </div>
@@ -715,15 +741,15 @@ export default function UserManagement() {
                     <TableCell>
                       {getStatusBadge(user.profile?.subscription_status, user.profile?.is_suspended ?? false)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <span className="capitalize">
                         {user.profile?.subscription_plan || '-'}
                       </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden lg:table-cell">
                       {user.profile?.country || '-'}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <div className="flex items-center gap-1 text-sm text-muted-foreground">
                         <Calendar className="h-3 w-3" />
                         {format(new Date(user.created_at), 'MMM d, yyyy')}
