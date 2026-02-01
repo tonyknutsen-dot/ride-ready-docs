@@ -275,13 +275,27 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-        <TabsList className="grid w-full h-auto p-1.5 gap-1.5 bg-secondary border border-border grid-cols-1">
+        <TabsList className="grid w-full h-auto p-1.5 gap-1.5 bg-secondary border border-border grid-cols-3">
           <TabsTrigger 
             value="overview" 
             className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-lg min-h-[60px] transition-all"
           >
             <FileText className="h-5 w-5" />
             <span>Home</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="checks" 
+            className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-semibold data-[state=active]:bg-success data-[state=active]:text-success-foreground data-[state=active]:shadow-md rounded-lg min-h-[60px] transition-all"
+          >
+            <CheckSquare className="h-5 w-5" />
+            <span>Checks</span>
+          </TabsTrigger>
+          <TabsTrigger 
+            value="documents" 
+            className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-lg min-h-[60px] transition-all"
+          >
+            <FileText className="h-5 w-5" />
+            <span>Docs</span>
           </TabsTrigger>
         </TabsList>
 
@@ -308,7 +322,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             >
               <Card 
                 className="active:scale-[0.98] transition-all cursor-pointer border-2 border-success/50 bg-gradient-to-r from-success/10 via-success/15 to-success/20 hover:shadow-elegant"
-                onClick={() => setActiveTab("inspections")}
+                onClick={() => setActiveTab("checks")}
               >
                 <CardContent className="p-5 flex items-center gap-4">
                   <div className="w-16 h-16 rounded-2xl bg-success/25 flex items-center justify-center shrink-0 shadow-sm">
@@ -403,8 +417,8 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           <RideDocuments ride={ride} />
         </TabsContent>
 
-        <TabsContent value="inspections" className="animate-fade-in">
-          <FeatureGate requiredPlan="advanced" feature="Inspections">
+        <TabsContent value="checks" className="animate-fade-in">
+          <FeatureGate requiredPlan="advanced" feature="Safety Checks">
             <InspectionManager ride={ride} />
           </FeatureGate>
         </TabsContent>

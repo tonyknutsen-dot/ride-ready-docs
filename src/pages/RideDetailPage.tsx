@@ -68,7 +68,8 @@ const RideDetailPage = () => {
     if (initialTab && initialTab !== 'overview' && ride) {
       const tabLabels: Record<string, string> = {
         documents: 'Documents',
-        inspections: 'Checks'
+        checks: 'Checks',
+        inspections: 'Checks' // legacy fallback
       };
       
       if (tabLabels[initialTab]) {
