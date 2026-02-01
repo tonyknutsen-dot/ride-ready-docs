@@ -2462,6 +2462,7 @@ export type Database = {
       cleanup_old_blocked_ips: { Args: never; Returns: number }
       decrypt_sensitive: { Args: { ciphertext: string }; Returns: string }
       encrypt_sensitive: { Args: { plaintext: string }; Returns: string }
+      end_tester_session: { Args: { p_session_id: string }; Returns: undefined }
       expire_support_grants: { Args: never; Returns: number }
       get_staff_permission: {
         Args: { _org_id: string; _user_id: string }

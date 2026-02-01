@@ -10,11 +10,16 @@ export const useTesterSessionTracking = () => {
   const { user } = useAuth();
   const sessionIdRef = useRef<string | null>(null);
   const heartbeatRef = useRef<NodeJS.Timeout | null>(null);
+  const isInitializedRef = useRef(false);
 
   const startSession = useCallback(async () => {
-    if (!user || !isTester || sessionIdRef.current) return;
+    if (!user || !isTester || sessionIdRef.current) {
+      console.log('[TesterSession] Skip start:', { hasUser: !!user, isTester, hasSession: !!sessionIdRef.current });
+      return;
+    }
 
     try {
+      console.log('[TesterSession] Starting session for user:', user.id);
       const { data, error } = await supabase
         .from('tester_sessions')
         .insert({
@@ -25,14 +30,15 @@ export const useTesterSessionTracking = () => {
         .single();
 
       if (error) {
-        console.error('Failed to start tester session:', error);
+        console.error('[TesterSession] Failed to start session:', error);
         return;
       }
 
       sessionIdRef.current = data.id;
-      console.log('Tester session started:', data.id);
+      isInitializedRef.current = true;
+      console.log('[TesterSession] Session started:', data.id);
     } catch (err) {
-      console.error('Error starting tester session:', err);
+      console.error('[TesterSession] Error starting session:', err);
     }
   }, [user, isTester]);
 
@@ -43,60 +49,84 @@ export const useTesterSessionTracking = () => {
     sessionIdRef.current = null;
 
     try {
-      // Get the session start time first
+      console.log('[TesterSession] Ending session:', sessionId);
+      
+      // Use the RPC function for reliable session ending
+      const { error } = await supabase.rpc('end_tester_session', {
+        p_session_id: sessionId
+      });
+
+      if (error) {
+        console.error('[TesterSession] RPC error:', error);
+        // Fallback to direct update
+        const { data: session } = await supabase
+          .from('tester_sessions')
+          .select('session_start')
+          .eq('id', sessionId)
+          .single();
+
+        if (session) {
+          const sessionStart = new Date(session.session_start);
+          const sessionEnd = new Date();
+          const durationMinutes = Math.round((sessionEnd.getTime() - sessionStart.getTime()) / 60000);
+
+          await supabase
+            .from('tester_sessions')
+            .update({
+              session_end: sessionEnd.toISOString(),
+              duration_minutes: durationMinutes,
+            })
+            .eq('id', sessionId);
+        }
+      }
+
+      console.log('[TesterSession] Session ended:', sessionId);
+    } catch (err) {
+      console.error('[TesterSession] Error ending session:', err);
+    }
+  }, []);
+
+  const updateHeartbeat = useCallback(async () => {
+    if (!sessionIdRef.current) {
+      console.log('[TesterSession] Heartbeat skipped - no active session');
+      return;
+    }
+
+    try {
+      const sessionId = sessionIdRef.current;
+      
+      // Get the session start time
       const { data: session } = await supabase
         .from('tester_sessions')
         .select('session_start')
         .eq('id', sessionId)
         .single();
 
-      if (!session) return;
-
-      const sessionStart = new Date(session.session_start);
-      const sessionEnd = new Date();
-      const durationMinutes = Math.round((sessionEnd.getTime() - sessionStart.getTime()) / 60000);
-
-      await supabase
-        .from('tester_sessions')
-        .update({
-          session_end: sessionEnd.toISOString(),
-          duration_minutes: durationMinutes,
-        })
-        .eq('id', sessionId);
-
-      console.log('Tester session ended:', sessionId, `Duration: ${durationMinutes} minutes`);
-    } catch (err) {
-      console.error('Error ending tester session:', err);
-    }
-  }, []);
-
-  const updateHeartbeat = useCallback(async () => {
-    if (!sessionIdRef.current) return;
-
-    try {
-      // Get the session start time
-      const { data: session } = await supabase
-        .from('tester_sessions')
-        .select('session_start')
-        .eq('id', sessionIdRef.current)
-        .single();
-
-      if (!session) return;
+      if (!session) {
+        console.log('[TesterSession] Heartbeat - session not found:', sessionId);
+        return;
+      }
 
       const sessionStart = new Date(session.session_start);
       const now = new Date();
       const durationMinutes = Math.round((now.getTime() - sessionStart.getTime()) / 60000);
 
       // Update the session with current end time and duration (in case of crash)
-      await supabase
+      const { error } = await supabase
         .from('tester_sessions')
         .update({
           session_end: now.toISOString(),
           duration_minutes: durationMinutes,
         })
-        .eq('id', sessionIdRef.current);
+        .eq('id', sessionId);
+
+      if (error) {
+        console.error('[TesterSession] Heartbeat update error:', error);
+      } else {
+        console.log('[TesterSession] Heartbeat updated - duration:', durationMinutes, 'minutes');
+      }
     } catch (err) {
-      console.error('Error updating session heartbeat:', err);
+      console.error('[TesterSession] Error updating heartbeat:', err);
     }
   }, []);
 
@@ -104,12 +134,16 @@ export const useTesterSessionTracking = () => {
     if (isTester && user) {
       startSession();
 
-      // Set up heartbeat
-      heartbeatRef.current = setInterval(updateHeartbeat, HEARTBEAT_INTERVAL);
+      // Set up heartbeat - run first one after 10 seconds, then every 60 seconds
+      const initialHeartbeat = setTimeout(() => {
+        updateHeartbeat();
+        heartbeatRef.current = setInterval(updateHeartbeat, HEARTBEAT_INTERVAL);
+      }, 10000);
 
       // Handle visibility change (tab switch, minimize)
       const handleVisibilityChange = () => {
         if (document.hidden) {
+          console.log('[TesterSession] Page hidden - updating heartbeat');
           updateHeartbeat();
         }
       };
@@ -117,12 +151,19 @@ export const useTesterSessionTracking = () => {
       // Handle before unload (close tab/window)
       const handleBeforeUnload = () => {
         if (sessionIdRef.current) {
-          // Use sendBeacon for reliable delivery on page close
+          console.log('[TesterSession] Page unloading - sending beacon');
           const sessionId = sessionIdRef.current;
-          navigator.sendBeacon?.(
-            `${import.meta.env.VITE_SUPABASE_URL || 'https://sbtldudgiskqfqqkrmaa.supabase.co'}/rest/v1/rpc/end_tester_session`,
-            JSON.stringify({ session_id: sessionId })
-          );
+          
+          // Use sendBeacon with the RPC endpoint
+          const url = `https://sbtldudgiskqfqqkrmaa.supabase.co/rest/v1/rpc/end_tester_session`;
+          const body = JSON.stringify({ p_session_id: sessionId });
+          
+          // Get the current session token
+          const token = supabase.auth.getSession().then(({ data }) => data.session?.access_token);
+          
+          // sendBeacon doesn't support custom headers well, so we use a simple POST
+          // The RPC function uses SECURITY DEFINER so it will work
+          navigator.sendBeacon?.(url, body);
         }
       };
 
@@ -130,6 +171,7 @@ export const useTesterSessionTracking = () => {
       window.addEventListener('beforeunload', handleBeforeUnload);
 
       return () => {
+        clearTimeout(initialHeartbeat);
         if (heartbeatRef.current) {
           clearInterval(heartbeatRef.current);
         }
@@ -139,6 +181,7 @@ export const useTesterSessionTracking = () => {
       };
     } else if (sessionIdRef.current) {
       // User is no longer a tester, end the session
+      console.log('[TesterSession] User no longer tester - ending session');
       endSession();
       if (heartbeatRef.current) {
         clearInterval(heartbeatRef.current);
