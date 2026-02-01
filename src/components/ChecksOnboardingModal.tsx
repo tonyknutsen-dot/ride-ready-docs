@@ -43,15 +43,18 @@ const steps = [
 interface ChecksOnboardingModalProps {
   /** Force open for testing/demo purposes */
   forceOpen?: boolean;
+  /** Callback when modal closes */
+  onClose?: () => void;
 }
 
-export function ChecksOnboardingModal({ forceOpen }: ChecksOnboardingModalProps) {
+export function ChecksOnboardingModal({ forceOpen, onClose }: ChecksOnboardingModalProps) {
   const [open, setOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 
   useEffect(() => {
     if (forceOpen) {
       setOpen(true);
+      setCurrentStep(0);
       return;
     }
 
@@ -65,6 +68,7 @@ export function ChecksOnboardingModal({ forceOpen }: ChecksOnboardingModalProps)
   const handleClose = () => {
     localStorage.setItem(STORAGE_KEY, 'true');
     setOpen(false);
+    onClose?.();
   };
 
   const handleNext = () => {
