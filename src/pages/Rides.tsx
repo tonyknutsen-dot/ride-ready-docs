@@ -111,11 +111,14 @@ const Rides = () => {
     
     for (const ride of ridesData) {
       try {
+        // Count ride-specific documents only (exclude global and maintenance docs for display)
         const { count: docCount } = await supabase
           .from('documents')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user?.id)
-          .eq('ride_id', ride.id);
+          .eq('ride_id', ride.id)
+          .neq('document_type', 'maintenance')
+          .neq('document_type', 'photo');
         
         const { count: checkCount } = await supabase
           .from('checks')

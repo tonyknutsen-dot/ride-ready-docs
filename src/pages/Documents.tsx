@@ -44,12 +44,13 @@ const Documents = () => {
 
       if (ridesError) throw ridesError;
 
-      // Get document counts per ride
+      // Get document counts per ride (exclude maintenance and photo docs)
       const { data: docs, error: docsError } = await supabase
         .from('documents')
         .select('id, ride_id, is_global')
         .eq('user_id', user?.id)
-        .neq('document_type', 'maintenance');
+        .neq('document_type', 'maintenance')
+        .neq('document_type', 'photo');
 
       if (docsError) throw docsError;
 
