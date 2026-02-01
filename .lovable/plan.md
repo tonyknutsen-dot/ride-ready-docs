@@ -1,152 +1,128 @@
 
+# Plan: Fix Staff Data Access and Upgrade Prompt Display
 
-# Plan: Document Linking Awareness & Cascade Deletion
+## Problem Summary
 
-## Overview
-This plan addresses two key user experience issues:
-1. Users should be informed that checks, maintenance logs, and risk assessments automatically create entries in their Documents list
-2. Deleting a check, maintenance record, or risk assessment should also delete any associated documents
+When staff members log in, they see empty data (0 rides, 0 documents, etc.) despite having proper RLS policies configured. This occurs because:
 
-## What Will Change
+1. **Client-side filtering blocks results**: Every data query includes `.eq('user_id', user.id)` where `user.id` is the logged-in staff member's ID
+2. **Data belongs to the organization owner**: All rides, documents, checks, etc. have `user_id` set to the owner's ID, not the staff member's
+3. **RLS policies are correct**: The database allows staff to see owner data via `staff_can_access_ride()` function, but client queries filter it out before RLS can help
 
-### 1. Add Informational Alerts to Forms
+Additionally, staff members should see upgrade prompts as **disabled** (not hidden or clickable) when features are locked.
 
-Add clear info banners to each creation form explaining that records will appear in Documents:
+---
 
-**Safety Checks (InspectionChecklist.tsx)**
-- Add an info alert above the submit button: "When you complete this check, a PDF record will be automatically saved to your Documents under 'Check Records'."
+## Solution Overview
 
-**Maintenance Logger (MaintenanceLogger.tsx)**
-- Add an info alert: "Attached photos and documents will be saved to your Documents list under 'Maintenance'. If you generate a report later, it will also appear there."
+### Phase 1: Create an "Effective User ID" Helper
 
-**Risk Assessments (RiskAssessmentManager.tsx)**
-- Add info when creating: "When you download or email this assessment, a PDF copy will be saved to your Documents."
+Introduce a centralized way to determine whose data should be fetched:
+- **Owners**: Use their own `user.id`
+- **Staff**: Use the organization `ownerId` from `StaffContext`
 
-### 2. Update Onboarding Modals
+This will be provided via a new hook `useEffectiveUserId()` that components and data hooks can consume.
 
-Enhance the existing onboarding walkthroughs to mention document integration:
+### Phase 2: Update Data Fetching Hooks
 
-**ChecksOnboardingModal.tsx**
-- Update Step 3 description to mention PDF auto-save to Documents
+Modify data-fetching code to conditionally remove `user_id` filters for staff members, allowing RLS policies to control access:
 
-**MaintenanceOnboardingModal.tsx**
-- Update Step 3 description to mention attachments and reports go to Documents
+**Core Files to Update:**
 
-**RiskAssessmentOnboardingModal.tsx**
-- Add mention that exported PDFs are saved to Documents
+| File | Change |
+|------|--------|
+| `src/hooks/useOverviewData.tsx` | Use effective user ID for all counts and recent activity |
+| `src/pages/Rides.tsx` | Remove `.eq('user_id', user?.id)` for staff; let RLS handle it |
+| `src/pages/Documents.tsx` | Same approach |
+| `src/components/DocumentList.tsx` | Same approach |
+| `src/components/RideDetail.tsx` | Same approach |
+| `src/pages/RideDetailPage.tsx` | Remove owner check in query |
 
-### 3. Implement Cascade Delete for Maintenance Records
+**Strategy:**
 
-When deleting a maintenance record:
-- Fetch the `document_ids` array from the record
-- Delete the corresponding document entries from `documents` table
-- Delete the physical files from Supabase storage
-- Then delete the maintenance record itself
+For staff members, queries will either:
+- Remove the `user_id` filter entirely (relying on RLS)
+- Or use the owner's ID if needed for profile-type queries
 
-**File: MaintenanceHistory.tsx - handleDelete function**
+### Phase 3: Update Upgrade Prompts for Staff
 
-### 4. Implement Cascade Delete for Check Records
+Modify UI components to show **disabled** upgrade buttons for staff instead of functional ones:
 
-When check templates/checks are deleted, the associated Check Record PDFs should also be removed:
-- Find documents where `document_type = 'Check Record'` and `ride_id` matches
-- Delete from storage and documents table
-- This applies to template archival/deletion scenarios
+| Component | Change |
+|-----------|--------|
+| `src/components/UpgradePrompt.tsx` | Show disabled button with "Ask owner to upgrade" text |
+| `src/components/ItemLimitWarning.tsx` | Hide or show disabled version for staff |
+| `src/pages/Overview.tsx` | Ensure staff see disabled "Upgrade" buttons on locked features |
 
-### 5. Implement Cascade Delete for Risk Assessments
-
-Already partially handled - RAs only generate PDFs on download/email, not auto-save. But if we add auto-save later, ensure cascade delete is in place.
+---
 
 ## Technical Details
 
-### New Info Alert Component Pattern
-```tsx
-<Alert className="bg-primary/5 border-primary/20">
-  <Info className="h-4 w-4 text-primary" />
-  <AlertDescription className="text-sm">
-    This record will be saved to your Documents list automatically.
-  </AlertDescription>
-</Alert>
+### New Hook: `useEffectiveUserId`
+
+```text
+File: src/hooks/useEffectiveUserId.tsx
+
+Purpose:
+- Returns { effectiveUserId, isStaff } 
+- For owners: effectiveUserId = user.id
+- For staff: effectiveUserId = staffMembership.ownerId
+- Used by data hooks to know whose data to fetch
 ```
 
-### Updated Delete Function (Maintenance)
-```tsx
-const handleDelete = async (recordId: string) => {
-  try {
-    // 1. Fetch the record to get document_ids
-    const { data: record } = await supabase
-      .from('maintenance_records')
-      .select('document_ids')
-      .eq('id', recordId)
-      .single();
+### Data Query Changes
 
-    // 2. If there are linked documents, delete them
-    if (record?.document_ids?.length) {
-      // Get file paths
-      const { data: docs } = await supabase
-        .from('documents')
-        .select('file_path')
-        .in('id', record.document_ids);
+**Example for Rides Page:**
 
-      // Delete from storage
-      if (docs?.length) {
-        await supabase.storage
-          .from('ride-documents')
-          .remove(docs.map(d => d.file_path));
-      }
-
-      // Delete document records
-      await supabase
-        .from('documents')
-        .delete()
-        .in('id', record.document_ids);
-    }
-
-    // 3. Delete the maintenance record
-    await supabase
-      .from('maintenance_records')
-      .delete()
-      .eq('id', recordId);
-
-    toast({ title: "Success", description: "Record and attachments deleted" });
-    loadMaintenanceRecords();
-  } catch (error) {
-    // Error handling
-  }
-};
+Before (staff sees nothing):
+```typescript
+.from('rides')
+.select(...)
+.eq('user_id', user?.id)  // Staff's ID = 0 results
 ```
 
-## Files to Modify
+After (staff sees assigned rides via RLS):
+```typescript
+// For staff: don't filter by user_id, let RLS handle it
+let query = supabase.from('rides').select(...);
+if (!isStaff) {
+  query = query.eq('user_id', user?.id);
+}
+// RLS policy "Staff can view assigned rides" kicks in for staff
+```
 
-| File | Changes |
-|------|---------|
-| `src/components/InspectionChecklist.tsx` | Add info alert near submit button |
-| `src/components/MaintenanceLogger.tsx` | Add info alert about document saving |
-| `src/components/RiskAssessmentManager.tsx` | Add info alert when creating/exporting |
-| `src/components/MaintenanceHistory.tsx` | Update `handleDelete` to cascade delete documents |
-| `src/components/ChecksOnboardingModal.tsx` | Update step 3 text |
-| `src/components/MaintenanceOnboardingModal.tsx` | Update step 3 text |
-| `src/components/RiskAssessmentOnboardingModal.tsx` | Update tip about exports |
+### Upgrade Prompt UI Change
 
-## User Experience Flow
+Staff will see:
+- Upgrade button is **grayed out / disabled**
+- Text says "Ask your company admin to upgrade"
+- Button does not navigate to billing
 
-### After Implementation:
+---
 
-**Creating a Check:**
-1. User completes safety check
-2. User sees info alert: "A PDF record will be saved to Documents"
-3. User submits check
-4. PDF appears in Documents under "Check Records"
+## File Changes Summary
 
-**Deleting a Maintenance Record:**
-1. User clicks delete on maintenance record
-2. Confirmation shows attachments will also be removed
-3. System deletes: maintenance record + linked documents + storage files
-4. Documents list no longer shows those attachments
+| File | Type | Description |
+|------|------|-------------|
+| `src/hooks/useEffectiveUserId.tsx` | **NEW** | Helper hook for effective user ID |
+| `src/hooks/useOverviewData.tsx` | Edit | Use effective user ID; remove user_id filter for staff |
+| `src/pages/Rides.tsx` | Edit | Remove user_id filter for staff |
+| `src/pages/Documents.tsx` | Edit | Remove user_id filter for staff |
+| `src/pages/RideDetailPage.tsx` | Edit | Remove owner check in query for staff |
+| `src/components/DocumentList.tsx` | Edit | Remove user_id filter for staff |
+| `src/components/RideDetail.tsx` | Edit | Remove user_id filter for staff |
+| `src/components/UpgradePrompt.tsx` | Edit | Show disabled button for staff |
+| `src/components/ItemLimitWarning.tsx` | Edit | Hide for staff or show read-only message |
+| `src/components/FeatureGate.tsx` | Edit | Pass staff context to fallback components |
 
-## Benefits
+---
 
-- **Transparency**: Users understand where their data goes
-- **Data Hygiene**: No orphaned documents when records are deleted
-- **Audit Trail**: Users know their compliance records are preserved
-- **Storage Efficiency**: Deleted records don't leave behind unused files
+## Testing Checklist
 
+After implementation, verify:
+1. Staff member can see company rides on /rides page
+2. Staff member can see company documents on /documents page
+3. Staff member can see stats (ride count, document count) on /overview
+4. Locked features show disabled "Upgrade" buttons with appropriate messaging
+5. Owner still sees full data and functional upgrade buttons
+6. Staff cannot access billing or settings pages
