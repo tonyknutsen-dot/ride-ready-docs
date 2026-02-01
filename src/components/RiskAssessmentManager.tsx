@@ -2474,6 +2474,12 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             <DialogTitle>Email Risk Assessment</DialogTitle>
             <DialogDescription>Send this assessment as a PDF attachment.</DialogDescription>
           </DialogHeader>
+          <Alert className="bg-primary/5 border-primary/20 mb-4">
+            <Info className="h-4 w-4 text-primary" />
+            <AlertDescription className="text-xs">
+              A PDF copy will be saved to your Documents under "Risk Assessments".
+            </AlertDescription>
+          </Alert>
           <div className="space-y-4">
             <div>
               <Label htmlFor="recipient_email">Recipient Email *</Label>

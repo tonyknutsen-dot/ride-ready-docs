@@ -35,8 +35,8 @@ const steps = [
   {
     icon: ClipboardCheck,
     title: 'Review & Update',
-    description: 'Risk assessments should be living documents. Review them regularly and update when circumstances change.',
-    tip: 'Keep an audit trail of changes for compliance records.',
+    description: 'Risk assessments should be living documents. Review them regularly and update when circumstances change. Exported PDFs are saved to Documents.',
+    tip: 'Downloaded or emailed assessments appear in Documents under "Risk Assessments".',
   },
 ];
 
