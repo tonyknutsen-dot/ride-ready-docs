@@ -1,0 +1,170 @@
+import { useState, useEffect } from 'react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { 
+  ClipboardList, 
+  CheckCircle2, 
+  History, 
+  ArrowRight, 
+  ArrowLeft,
+  Sparkles 
+} from 'lucide-react';
+
+const STORAGE_KEY = 'checksOnboardingSeen';
+
+const steps = [
+  {
+    icon: ClipboardList,
+    title: 'Build Your Template',
+    description: 'Create a checklist template for each type of check (pre-opening, daily, monthly). Add items from our library or create your own custom checks.',
+    tip: 'Templates save time — build once, use every day.',
+  },
+  {
+    icon: CheckCircle2,
+    title: 'Perform Your Checks',
+    description: 'Work through each item marking Pass, Fail, or N/A. Add notes where needed and sign off when complete.',
+    tip: 'Failed items can be logged as defects for follow-up.',
+  },
+  {
+    icon: History,
+    title: 'Review & Export',
+    description: 'All completed checks are saved in your history. Generate PDF reports anytime for compliance records or inspections.',
+    tip: 'Your check history builds a complete audit trail.',
+  },
+];
+
+interface ChecksOnboardingModalProps {
+  /** Force open for testing/demo purposes */
+  forceOpen?: boolean;
+}
+
+export function ChecksOnboardingModal({ forceOpen }: ChecksOnboardingModalProps) {
+  const [open, setOpen] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+
+  useEffect(() => {
+    if (forceOpen) {
+      setOpen(true);
+      return;
+    }
+
+    // Check if user has seen the onboarding
+    const hasSeen = localStorage.getItem(STORAGE_KEY);
+    if (!hasSeen) {
+      setOpen(true);
+    }
+  }, [forceOpen]);
+
+  const handleClose = () => {
+    localStorage.setItem(STORAGE_KEY, 'true');
+    setOpen(false);
+  };
+
+  const handleNext = () => {
+    if (currentStep < steps.length - 1) {
+      setCurrentStep(currentStep + 1);
+    } else {
+      handleClose();
+    }
+  };
+
+  const handleBack = () => {
+    if (currentStep > 0) {
+      setCurrentStep(currentStep - 1);
+    }
+  };
+
+  const step = steps[currentStep];
+  const Icon = step.icon;
+  const isLastStep = currentStep === steps.length - 1;
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && handleClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader className="text-center sm:text-left">
+          <div className="flex items-center gap-2 mb-2">
+            <Sparkles className="h-5 w-5 text-success" />
+            <DialogTitle className="text-lg">How Safety Checks Work</DialogTitle>
+          </div>
+          <DialogDescription className="sr-only">
+            Learn how to use safety checks in 3 simple steps
+          </DialogDescription>
+        </DialogHeader>
+
+        {/* Step indicator */}
+        <div className="flex justify-center gap-2 py-2">
+          {steps.map((_, index) => (
+            <div
+              key={index}
+              className={`h-1.5 w-8 rounded-full transition-colors ${
+                index === currentStep 
+                  ? 'bg-success' 
+                  : index < currentStep 
+                    ? 'bg-success/40' 
+                    : 'bg-muted'
+              }`}
+            />
+          ))}
+        </div>
+
+        {/* Step content */}
+        <div className="py-4">
+          <div className="flex flex-col items-center text-center mb-4">
+            <div className="w-14 h-14 rounded-full bg-success/10 flex items-center justify-center mb-3">
+              <Icon className="h-7 w-7 text-success" />
+            </div>
+            <h3 className="font-semibold text-lg mb-1">
+              {currentStep + 1}. {step.title}
+            </h3>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              {step.description}
+            </p>
+          </div>
+
+          <div className="bg-muted/50 rounded-lg p-3 border border-border/50">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">💡 Tip:</span> {step.tip}
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter className="flex-row justify-between gap-2">
+          <Button
+            variant="ghost"
+            onClick={currentStep === 0 ? handleClose : handleBack}
+            className="flex-1"
+          >
+            {currentStep === 0 ? (
+              'Skip'
+            ) : (
+              <>
+                <ArrowLeft className="h-4 w-4 mr-1" />
+                Back
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={handleNext}
+            className="flex-1 bg-success hover:bg-success/90"
+          >
+            {isLastStep ? (
+              "Let's Go!"
+            ) : (
+              <>
+                Next
+                <ArrowRight className="h-4 w-4 ml-1" />
+              </>
+            )}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
