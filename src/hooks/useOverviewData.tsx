@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
+import { useEffectiveUserId } from "./useEffectiveUserId";
 
 export interface OverviewStats {
   totalDocuments: number;
@@ -155,12 +155,12 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
 }
 
 export function useOverviewData() {
-  const { user } = useAuth();
+  const { effectiveUserId, loading: staffLoading } = useEffectiveUserId();
 
   return useQuery({
-    queryKey: ['overview', user?.id],
-    queryFn: () => fetchOverviewData(user!.id),
-    enabled: !!user?.id,
+    queryKey: ['overview', effectiveUserId],
+    queryFn: () => fetchOverviewData(effectiveUserId!),
+    enabled: !!effectiveUserId && !staffLoading,
     staleTime: 1000 * 60 * 2, // Fresh for 2 minutes (override default for frequently changing data)
   });
 }

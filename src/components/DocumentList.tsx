@@ -6,6 +6,8 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FileText, Download, Trash2, Calendar, AlertTriangle, Eye, Link2, History, ChevronDown, Globe, Send, Filter } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -35,6 +37,8 @@ interface DocumentListProps {
 
 const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, showAllDocuments = false, excludeGlobal = false, onDocumentDeleted }: DocumentListProps) => {
   const { user } = useAuth();
+  const { isStaff } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,21 +119,26 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   };
 
   useEffect(() => {
-    if (user) {
+    if (effectiveUserId) {
       loadDocuments();
       if (isGlobal) {
         loadAssignments();
       }
     }
-  }, [user, rideId, isGlobal]);
+  }, [effectiveUserId, rideId, isGlobal]);
 
   const loadAssignments = async () => {
-    if (!user) return;
+    if (!effectiveUserId) return;
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('document_ride_assignments')
-        .select('document_id, rides(ride_name)')
-        .eq('user_id', user.id);
+        .select('document_id, rides(ride_name)');
+      
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
+      
+      const { data, error } = await query;
 
       if (error) throw error;
 
@@ -151,12 +160,17 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
 
   const loadDocuments = async () => {
     try {
+      // For staff, don't filter by user_id - RLS handles access
+      // For owners, filter by effectiveUserId
       let query = supabase
         .from('documents')
         .select('*')
-        .eq('user_id', user?.id)
         .neq('document_type', 'maintenance') // Exclude maintenance attachments - they belong to maintenance section only
         .order('uploaded_at', { ascending: false });
+      
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
 
       if (showAllDocuments) {
         // Show all documents - no filter needed
