@@ -34,11 +34,14 @@ export function useInstallPrompt(): InstallPromptState {
   const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
   const isAndroid = /Android/.test(userAgent);
   
-  // Check if running as standalone PWA
-  const isStandalone = 
-    typeof window !== 'undefined' && 
-    (window.matchMedia('(display-mode: standalone)').matches || 
-     (window.navigator as any).standalone === true);
+  // Check if running as standalone PWA - be more strict to avoid false positives
+  // Only consider it standalone if we're NOT in an iframe AND the media query matches
+  const isInIframe = typeof window !== 'undefined' && window.self !== window.top;
+  const mediaQueryStandalone = typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches;
+  const navigatorStandalone = typeof window !== 'undefined' && (window.navigator as any).standalone === true;
+  
+  // Only truly standalone if not in iframe and detected as standalone
+  const isStandalone = !isInIframe && (mediaQueryStandalone || navigatorStandalone);
 
   // Check localStorage for dismissed state
   useEffect(() => {
