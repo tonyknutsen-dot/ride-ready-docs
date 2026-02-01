@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
 import { useToast } from "@/hooks/use-toast";
 import type { CheckItemResult } from '@/lib/offlineDb';
 
@@ -39,6 +40,7 @@ interface UploadDocumentParams {
 
 export function useOptimisticDocumentUpload() {
   const { user } = useAuth();
+  const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -46,13 +48,16 @@ export function useOptimisticDocumentUpload() {
     mutationFn: async (params: UploadDocumentParams) => {
       const { file, documentName, documentType, rideId, isGlobal, expiryDate, notes, versionNumber, versionNotes, replacingDocumentId } = params;
       
-      if (!user) throw new Error("Not authenticated");
+      if (!user || !effectiveUserId) throw new Error("Not authenticated");
 
-      // Create file path
+      // Use effectiveUserId (operator's ID) for data storage so staff data syncs with operator
+      const storageUserId = effectiveUserId;
+
+      // Create file path using effective user ID (operator's folder)
       const fileName = `${Date.now()}-${file.name}`;
       const filePath = isGlobal 
-        ? `${user.id}/global/${fileName}`
-        : `${user.id}/${rideId}/${fileName}`;
+        ? `${storageUserId}/global/${fileName}`
+        : `${storageUserId}/${rideId}/${fileName}`;
 
       // Upload file to storage
       const { error: uploadError } = await supabase.storage
@@ -61,9 +66,9 @@ export function useOptimisticDocumentUpload() {
 
       if (uploadError) throw uploadError;
 
-      // Save document metadata
+      // Save document metadata - use effectiveUserId so staff data syncs with operator
       const documentData = {
-        user_id: user.id,
+        user_id: storageUserId,
         ride_id: isGlobal ? null : rideId,
         document_name: documentName,
         document_type: documentType,
@@ -173,18 +178,22 @@ interface CompleteCheckParams {
 
 export function useOptimisticCheckComplete() {
   const { user } = useAuth();
+  const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (params: CompleteCheckParams) => {
-      if (!user) throw new Error("Not authenticated");
+      if (!user || !effectiveUserId) throw new Error("Not authenticated");
+
+      // Use effectiveUserId (operator's ID) so staff data syncs with operator
+      const storageUserId = effectiveUserId;
 
       // Create check record
       const { data: check, error: checkError } = await supabase
         .from('checks')
         .insert({
-          user_id: user.id,
+          user_id: storageUserId,
           ride_id: params.rideId,
           template_id: params.templateId,
           inspector_name: params.inspectorName.trim(),
