@@ -22,7 +22,8 @@ import {
   XCircle,
   MinusCircle,
   MapPin,
-  Cloud
+  Cloud,
+  Eye
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfYear, subDays, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { EmptyState } from '@/components/EmptyState';
+import CheckDetailDialog from './CheckDetailDialog';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 
@@ -73,6 +75,8 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const [currentPage, setCurrentPage] = useState(1);
   const [startCalendarOpen, setStartCalendarOpen] = useState(false);
   const [endCalendarOpen, setEndCalendarOpen] = useState(false);
+  const [selectedCheck, setSelectedCheck] = useState<CheckWithResults | null>(null);
+  const [showCheckDetail, setShowCheckDetail] = useState(false);
   const itemsPerPage = 20;
 
   useEffect(() => {
@@ -814,7 +818,14 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
                 <CollapsibleContent>
                   <CardContent className="space-y-2">
                     {group.checks.map((check) => (
-                      <div key={check.id} className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors">
+                      <div 
+                        key={check.id} 
+                        className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          setSelectedCheck(check);
+                          setShowCheckDetail(true);
+                        }}
+                      >
                         <div className="flex items-center gap-4">
                           {getStatusIcon(check.status)}
                           <div className="flex flex-col gap-1">
@@ -852,7 +863,10 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
                             )}
                           </div>
                         </div>
-                        {getStatusBadge(check.status)}
+                        <div className="flex items-center gap-2">
+                          {getStatusBadge(check.status)}
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                        </div>
                       </div>
                     ))}
                   </CardContent>
@@ -893,6 +907,13 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
           </CardContent>
         </Card>
       )}
+
+      {/* Check Detail Dialog */}
+      <CheckDetailDialog
+        check={selectedCheck}
+        open={showCheckDetail}
+        onOpenChange={setShowCheckDetail}
+      />
     </div>
   );
 };

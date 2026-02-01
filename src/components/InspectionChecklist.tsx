@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle } from 'lucide-react';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, Eye } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,7 @@ import DefectsList from './DefectsList';
 import { useOfflineCheck } from '@/hooks/useOfflineCheck';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { getCachedTemplatesForRide, findCachedAddress, cacheLocationAddress, type CachedTemplate, type CheckItemResult } from '@/lib/offlineDb';
+import CheckDetailDialog from './CheckDetailDialog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -63,6 +64,8 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
   const [defectRefreshKey, setDefectRefreshKey] = useState(0);
   const [usingCachedTemplate, setUsingCachedTemplate] = useState(false);
+  const [selectedCheck, setSelectedCheck] = useState<Check | null>(null);
+  const [showCheckDetail, setShowCheckDetail] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -1636,7 +1639,14 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
           <CardContent className="pt-0">
             <div className="divide-y divide-border">
               {recentChecks.map((check) => (
-                <div key={check.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                <div 
+                  key={check.id} 
+                  className="flex items-center justify-between py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-muted/50 -mx-4 px-4 rounded-md transition-colors"
+                  onClick={() => {
+                    setSelectedCheck(check);
+                    setShowCheckDetail(true);
+                  }}
+                >
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm truncate">{check.inspector_name}</p>
                     <p className="text-xs text-muted-foreground">
@@ -1647,19 +1657,29 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                       })}
                     </p>
                   </div>
-                  <Badge 
-                    variant={check.status === 'completed' ? 'default' : 'secondary'}
-                    className="text-xs shrink-0 ml-2"
-                  >
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Done
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge 
+                      variant={check.status === 'completed' ? 'default' : 'secondary'}
+                      className="text-xs shrink-0"
+                    >
+                      <CheckCircle className="h-3 w-3 mr-1" />
+                      Done
+                    </Badge>
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  </div>
                 </div>
               ))}
             </div>
           </CardContent>
         </Card>
       )}
+
+      {/* Check Detail Dialog */}
+      <CheckDetailDialog
+        check={selectedCheck}
+        open={showCheckDetail}
+        onOpenChange={setShowCheckDetail}
+      />
     </div>
   );
 };
