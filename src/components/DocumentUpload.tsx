@@ -370,8 +370,9 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
               type="date"
               value={expiryDate}
               onChange={(e) => setExpiryDate(e.target.value)}
+              placeholder="Optional"
               disabled={uploading}
-              className="h-11"
+              className={`h-11 ${!expiryDate ? 'text-muted-foreground' : ''}`}
             />
           </div>
           <div className="space-y-1.5">
