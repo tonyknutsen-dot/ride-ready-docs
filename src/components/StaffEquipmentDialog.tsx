@@ -38,12 +38,16 @@ export function StaffEquipmentDialog({
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  // Avoid infinite loops: parent passes a new array instance each render.
+  // Using a stable key (by value) prevents this effect from re-triggering endlessly.
+  const currentAssignmentsKey = [...currentAssignments].sort().join('|');
+
   useEffect(() => {
-    if (open && user) {
-      fetchRides();
-      setSelectedRides(currentAssignments);
-    }
-  }, [open, user, currentAssignments]);
+    if (!open || !user) return;
+    fetchRides();
+    setSelectedRides(currentAssignments);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, user, memberId, currentAssignmentsKey]);
 
   const fetchRides = async () => {
     if (!user) return;
