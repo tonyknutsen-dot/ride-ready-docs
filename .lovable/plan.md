@@ -1,128 +1,167 @@
 
-# Plan: Fix Staff Data Access and Upgrade Prompt Display
+# Plan: Fix Staff Equipment Access and Improve Operator Warnings
 
 ## Problem Summary
 
-When staff members log in, they see empty data (0 rides, 0 documents, etc.) despite having proper RLS policies configured. This occurs because:
+Staff members cannot see any rides/equipment even when properly invited because:
 
-1. **Client-side filtering blocks results**: Every data query includes `.eq('user_id', user.id)` where `user.id` is the logged-in staff member's ID
-2. **Data belongs to the organization owner**: All rides, documents, checks, etc. have `user_id` set to the owner's ID, not the staff member's
-3. **RLS policies are correct**: The database allows staff to see owner data via `staff_can_access_ride()` function, but client queries filter it out before RLS can help
+1. **Client-side filtering blocks data**: Components like `RideSelector`, `Maintenance`, and `CalendarView` filter by `.eq('user_id', user.id)` which returns nothing for staff (they don't own the data)
 
-Additionally, staff members should see upgrade prompts as **disabled** (not hidden or clickable) when features are locked.
+2. **RLS policies are already correct**: The database function `staff_can_access_ride()` properly handles:
+   - Staff with specific assignments see only those rides
+   - Staff with NO assignments see ALL rides
+
+3. **Operator warning could be clearer**: The current hint about equipment assignment is easy to miss
 
 ---
 
 ## Solution Overview
 
-### Phase 1: Create an "Effective User ID" Helper
+### Part 1: Update Components to Use Staff-Aware Data Fetching
 
-Introduce a centralized way to determine whose data should be fetched:
-- **Owners**: Use their own `user.id`
-- **Staff**: Use the organization `ownerId` from `StaffContext`
+Remove explicit `user_id` filters for staff members and let RLS policies control access.
 
-This will be provided via a new hook `useEffectiveUserId()` that components and data hooks can consume.
+| Component | Current Issue | Fix |
+|-----------|---------------|-----|
+| `RideSelector.tsx` | Filters by `user.id` | Use `effectiveUserId` pattern; skip filter for staff |
+| `Maintenance.tsx` | Filters by `user.id` | Same approach |
+| `CalendarView.tsx` | Filters by `user.id` in multiple queries | Same approach |
+| `DocumentRideAssignmentDialog.tsx` | Filters by `user.id` | Same approach |
+| Other components with ride queries | Same issue | Apply pattern consistently |
 
-### Phase 2: Update Data Fetching Hooks
+### Part 2: Improve Operator Warning About Equipment Access
 
-Modify data-fetching code to conditionally remove `user_id` filters for staff members, allowing RLS policies to control access:
+Make it very clear that not selecting specific equipment grants full access:
 
-**Core Files to Update:**
+**Current UI:**
+```
+Assign Equipment (Optional)
+Leave empty to allow access to all your equipment
+```
 
-| File | Change |
-|------|--------|
-| `src/hooks/useOverviewData.tsx` | Use effective user ID for all counts and recent activity |
-| `src/pages/Rides.tsx` | Remove `.eq('user_id', user?.id)` for staff; let RLS handle it |
-| `src/pages/Documents.tsx` | Same approach |
-| `src/components/DocumentList.tsx` | Same approach |
-| `src/components/RideDetail.tsx` | Same approach |
-| `src/pages/RideDetailPage.tsx` | Remove owner check in query |
+**Proposed UI:**
+```
+Restrict Equipment Access
+┌─────────────────────────────────────────────┐
+│ ⚠️ No equipment selected                    │
+│ Staff will have access to ALL your          │
+│ equipment. Select specific items below      │
+│ to restrict their access.                   │
+└─────────────────────────────────────────────┘
+```
 
-**Strategy:**
-
-For staff members, queries will either:
-- Remove the `user_id` filter entirely (relying on RLS)
-- Or use the owner's ID if needed for profile-type queries
-
-### Phase 3: Update Upgrade Prompts for Staff
-
-Modify UI components to show **disabled** upgrade buttons for staff instead of functional ones:
-
-| Component | Change |
-|-----------|--------|
-| `src/components/UpgradePrompt.tsx` | Show disabled button with "Ask owner to upgrade" text |
-| `src/components/ItemLimitWarning.tsx` | Hide or show disabled version for staff |
-| `src/pages/Overview.tsx` | Ensure staff see disabled "Upgrade" buttons on locked features |
+Also add a confirmation step when no equipment is selected.
 
 ---
 
-## Technical Details
+## Technical Changes
 
-### New Hook: `useEffectiveUserId`
+### File: `src/components/RideSelector.tsx`
+
+Add staff-aware data fetching:
 
 ```text
-File: src/hooks/useEffectiveUserId.tsx
-
-Purpose:
-- Returns { effectiveUserId, isStaff } 
-- For owners: effectiveUserId = user.id
-- For staff: effectiveUserId = staffMembership.ownerId
-- Used by data hooks to know whose data to fetch
+Before:
+  .eq('user_id', user?.id)
+  
+After:
+  // For staff, skip user_id filter - RLS handles access
+  if (!isStaff) {
+    query = query.eq('user_id', effectiveUserId);
+  }
 ```
 
-### Data Query Changes
+### File: `src/pages/Maintenance.tsx`
 
-**Example for Rides Page:**
+Same pattern for the ride loading query.
 
-Before (staff sees nothing):
-```typescript
-.from('rides')
-.select(...)
-.eq('user_id', user?.id)  // Staff's ID = 0 results
-```
+### File: `src/components/CalendarView.tsx`
 
-After (staff sees assigned rides via RLS):
-```typescript
-// For staff: don't filter by user_id, let RLS handle it
-let query = supabase.from('rides').select(...);
-if (!isStaff) {
-  query = query.eq('user_id', user?.id);
-}
-// RLS policy "Staff can view assigned rides" kicks in for staff
-```
+Update all 6+ queries that filter by user_id.
 
-### Upgrade Prompt UI Change
+### File: `src/components/StaffInviteDialog.tsx`
 
-Staff will see:
-- Upgrade button is **grayed out / disabled**
-- Text says "Ask your company admin to upgrade"
-- Button does not navigate to billing
+1. Change section label from "Assign Equipment (Optional)" to "Restrict Equipment Access"
+2. Add prominent warning alert when no equipment is selected
+3. Add confirmation when sending invite with no equipment selected
+
+### Files to Update (Complete List)
+
+| File | Priority | Description |
+|------|----------|-------------|
+| `src/components/RideSelector.tsx` | High | Used by Checks and other pages |
+| `src/pages/Maintenance.tsx` | High | Direct ride loading |
+| `src/components/CalendarView.tsx` | High | Multiple queries |
+| `src/components/DocumentRideAssignmentDialog.tsx` | Medium | Ride assignment |
+| `src/components/DailyCheckTemplateManager.tsx` | Medium | Template loading |
+| `src/components/StaffInviteDialog.tsx` | High | Improve warning UI |
+| `src/components/StaffEquipmentDialog.tsx` | Medium | Already has good warning |
 
 ---
 
-## File Changes Summary
+## UI Changes for StaffInviteDialog
 
-| File | Type | Description |
-|------|------|-------------|
-| `src/hooks/useEffectiveUserId.tsx` | **NEW** | Helper hook for effective user ID |
-| `src/hooks/useOverviewData.tsx` | Edit | Use effective user ID; remove user_id filter for staff |
-| `src/pages/Rides.tsx` | Edit | Remove user_id filter for staff |
-| `src/pages/Documents.tsx` | Edit | Remove user_id filter for staff |
-| `src/pages/RideDetailPage.tsx` | Edit | Remove owner check in query for staff |
-| `src/components/DocumentList.tsx` | Edit | Remove user_id filter for staff |
-| `src/components/RideDetail.tsx` | Edit | Remove user_id filter for staff |
-| `src/components/UpgradePrompt.tsx` | Edit | Show disabled button for staff |
-| `src/components/ItemLimitWarning.tsx` | Edit | Hide for staff or show read-only message |
-| `src/components/FeatureGate.tsx` | Edit | Pass staff context to fallback components |
+### Updated Equipment Section
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│ 📦 Equipment Access                                     │
+│                                                         │
+│ ┌─────────────────────────────────────────────────────┐ │
+│ │ ⚠️ FULL ACCESS                                      │ │
+│ │ No equipment selected - this staff member will     │ │
+│ │ be able to see and interact with ALL your rides,   │ │
+│ │ generators, and equipment.                         │ │
+│ │                                                     │ │
+│ │ Select specific items below to restrict access.    │ │
+│ └─────────────────────────────────────────────────────┘ │
+│                                                         │
+│ ☐ Waltzer                                              │
+│ ☐ Dodgems                                              │
+│ ☐ Generator 1                                          │
+│ ...                                                     │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Confirmation Dialog (when no equipment selected)
+
+When the operator clicks "Send Invitation" without selecting equipment:
+
+```text
+┌─────────────────────────────────────────────────────────┐
+│ Confirm Full Access                                     │
+│                                                         │
+│ You haven't selected any specific equipment.            │
+│                                                         │
+│ This means staff@example.com will have access to        │
+│ ALL 12 items in your equipment list.                    │
+│                                                         │
+│ Is this what you want?                                  │
+│                                                         │
+│        [Go Back]              [Yes, Grant Full Access]  │
+└─────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Implementation Steps
+
+1. **Update RideSelector.tsx** - Add `useEffectiveUserId` and `useStaff`, conditionally skip user_id filter
+2. **Update Maintenance.tsx** - Same pattern for ride loading
+3. **Update CalendarView.tsx** - Apply to all queries
+4. **Update StaffInviteDialog.tsx** - Add prominent warning and confirmation
+5. **Update remaining components** - Apply pattern consistently
+6. **Test as staff** - Verify rides appear correctly
 
 ---
 
 ## Testing Checklist
 
-After implementation, verify:
-1. Staff member can see company rides on /rides page
-2. Staff member can see company documents on /documents page
-3. Staff member can see stats (ride count, document count) on /overview
-4. Locked features show disabled "Upgrade" buttons with appropriate messaging
-5. Owner still sees full data and functional upgrade buttons
-6. Staff cannot access billing or settings pages
+After implementation:
+- [ ] Staff with NO assignments sees ALL operator's rides
+- [ ] Staff with specific assignments sees only those rides
+- [ ] Operator sees clear warning when no equipment is selected
+- [ ] Operator gets confirmation dialog before granting full access
+- [ ] Checks page works for staff
+- [ ] Maintenance page works for staff
+- [ ] Calendar page works for staff
