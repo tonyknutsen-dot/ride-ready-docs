@@ -357,15 +357,19 @@ export function AppSidebar() {
       </Sidebar>
 
       {/* Dialogs - mounted outside sidebar */}
-      <RequestFeatureDialog
-        open={featureDialogOpen}
-        onOpenChange={setFeatureDialogOpen}
-        hideTrigger
-      />
-      <ContactSupportDialog
-        open={contactDialogOpen}
-        onOpenChange={setContactDialogOpen}
-      />
+      {featureDialogOpen && (
+        <RequestFeatureDialog
+          open={featureDialogOpen}
+          onOpenChange={setFeatureDialogOpen}
+          hideTrigger
+        />
+      )}
+      {contactDialogOpen && (
+        <ContactSupportDialog
+          open={contactDialogOpen}
+          onOpenChange={setContactDialogOpen}
+        />
+      )}
     </>
   );
 }
