@@ -1,16 +1,15 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { FeatureGate } from '@/components/FeatureGate';
 import { RiskAssessmentManager } from '@/components/RiskAssessmentManager';
 import RideSelector from '@/components/RideSelector';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, ArrowLeft, ShieldCheck } from 'lucide-react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ArrowLeft, ShieldCheck, HelpCircle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import PageBreadcrumb from '@/components/PageBreadcrumb';
+import PageHeader from '@/components/PageHeader';
+import { RiskAssessmentOnboardingModal } from '@/components/RiskAssessmentOnboardingModal';
 
 type Ride = Tables<'rides'> & {
   ride_categories: Tables<'ride_categories'>;
@@ -20,6 +19,7 @@ const RiskAssessments = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
+  const [showGuide, setShowGuide] = useState(false);
 
   const handleRideSelect = (ride: Ride) => {
     setSelectedRide(ride);
@@ -41,58 +41,82 @@ const RiskAssessments = () => {
 
   return (
     <FeatureGate requiredPlan="advanced" feature="Risk Assessments">
-      <div className="container mx-auto py-8 px-4 pb-24 md:pb-8">
-        {/* Back Button - show when no ride selected */}
-        {!selectedRide && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate('/overview')}
-            className="w-fit gap-1.5 -ml-2 mb-4 text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Button>
-        )}
+      <div className="min-h-screen bg-background pb-28 md:pb-8">
+        <RiskAssessmentOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
         
-        {selectedRide && (
-          <PageBreadcrumb items={getBreadcrumbItems()} showHome />
-        )}
-        
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-warning/20 to-destructive/10 flex items-center justify-center shadow-sm">
-              <ShieldCheck className="h-5 w-5 text-warning" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">Risk Assessments</h1>
-              <p className="text-sm text-muted-foreground">
-                Identify hazards and implement controls for safe operation
-              </p>
-            </div>
+        <header className="border-b-2 border-warning/30 bg-gradient-to-r from-warning/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
+          <div className="container mx-auto px-4 py-4">
+            {selectedRide ? (
+              <div className="flex items-center gap-3">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  onClick={handleBack}
+                  className="h-10 w-10 shrink-0"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </Button>
+                <div className="flex-1">
+                  <PageHeader
+                    icon={<ShieldCheck className="h-5 w-5 text-warning" />}
+                    iconBgClass="from-warning/20 to-destructive/10"
+                    title={selectedRide.ride_name}
+                    subtitle="Risk Assessment"
+                    actions={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setShowGuide(true)}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <HelpCircle className="h-4 w-4" />
+                        <span className="hidden sm:inline ml-1">How does it work?</span>
+                      </Button>
+                    }
+                  />
+                </div>
+              </div>
+            ) : (
+              <PageHeader
+                icon={<ShieldCheck className="h-5 w-5 text-warning" />}
+                iconBgClass="from-warning/20 to-destructive/10"
+                title="Risk Assessments"
+                subtitle="Identify hazards and implement controls"
+                showBackButton
+                backTo="/overview"
+                actions={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowGuide(true)}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <HelpCircle className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-1">How does it work?</span>
+                  </Button>
+                }
+              />
+            )}
           </div>
-        </div>
+        </header>
 
-        {!selectedRide ? (
-          <RideSelector
-            title="Select Equipment"
-            description="Choose a ride or stall to manage its risk assessments"
-            actionLabel="Manage Risk Assessments"
-            icon={ShieldCheck}
-            onRideSelect={handleRideSelect}
-          />
-        ) : (
-          <div>
-            <Button 
-              variant="ghost" 
-              onClick={handleBack} 
-              className="mb-4 hover:bg-warning/10 hover:text-warning"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" /> Back to Equipment Selection
-            </Button>
+        <main className="container mx-auto px-4 py-5">
+          {selectedRide && (
+            <PageBreadcrumb items={getBreadcrumbItems()} showHome />
+          )}
+          
+          {!selectedRide ? (
+            <RideSelector
+              title="Select Equipment"
+              description="Choose a ride or stall to manage its risk assessments"
+              actionLabel="Manage Risk Assessments"
+              icon={ShieldCheck}
+              onRideSelect={handleRideSelect}
+            />
+          ) : (
             <RiskAssessmentManager ride={selectedRide} />
-          </div>
-        )}
+          )}
+        </main>
       </div>
     </FeatureGate>
   );
