@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import DailyCheckTemplateManager from './DailyCheckTemplateManager';
 import MonthlyCheckTemplateManager from './MonthlyCheckTemplateManager';
@@ -11,6 +12,7 @@ import NDTScheduleManager from './NDTScheduleManager';
 import InspectionScheduleManager from './InspectionScheduleManager';
 import ChecksHistory from './ChecksHistory';
 import EquipmentTimelineReport from './EquipmentTimelineReport';
+import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 
 interface InspectionManagerProps {
   ride: Ride;
@@ -18,9 +20,24 @@ interface InspectionManagerProps {
 
 const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const [activeTab, setActiveTab] = useState('preopening');
+  const [showGuide, setShowGuide] = useState(false);
 
   return (
     <div className="space-y-6">
+      <ChecksOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
+      
+      {/* Help button */}
+      <div className="flex justify-end">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => setShowGuide(true)}
+          className="text-muted-foreground hover:text-foreground"
+        >
+          <HelpCircle className="h-4 w-4" />
+          <span className="ml-1">How does it work?</span>
+        </Button>
+      </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6 relative">
         {/* Mobile-friendly scrollable tabs */}
         <div className="overflow-x-auto -mx-4 px-4 pb-2">
