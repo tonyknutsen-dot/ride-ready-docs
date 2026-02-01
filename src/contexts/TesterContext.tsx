@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -123,8 +123,15 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
     return () => window.removeEventListener('focus', handleFocus);
   }, [user, checkTesterStatus]);
 
+  // Memoize context value to prevent unnecessary re-renders
+  const value = useMemo(() => ({
+    isTester,
+    isLoading,
+    recheckTesterStatus: checkTesterStatus
+  }), [isTester, isLoading, checkTesterStatus]);
+
   return (
-    <TesterContext.Provider value={{ isTester, isLoading, recheckTesterStatus: checkTesterStatus }}>
+    <TesterContext.Provider value={value}>
       {children}
     </TesterContext.Provider>
   );
