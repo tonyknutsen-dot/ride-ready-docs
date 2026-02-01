@@ -43,7 +43,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
 import { OfflineSyncIndicator } from '@/components/OfflineSyncIndicator';
-import logoIcon from '@/assets/logo-icon.png';
+import appLogo from '@/assets/app-logo.jpg';
 
 const mainNavItems = [
   { title: 'Overview', url: '/overview', icon: Home },
@@ -165,7 +165,7 @@ export function AppSidebar() {
       >
         <SidebarHeader className="p-4">
           <Link to="/overview" className="flex items-center gap-3 group">
-            <img src={logoIcon} alt="Ride Ready Docs" className="h-8 w-8" />
+            <img src={appLogo} alt="Ride Ready Docs" className="h-8 w-8 rounded-full" />
             {!collapsed && (
               <span className="font-bold text-lg group-hover:text-primary transition-colors">
                 Ride Ready Docs

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import logoImage from '@/assets/logo.png';
+import appLogo from '@/assets/app-logo.jpg';
 
 interface SharedDocument {
   id: string;
@@ -163,7 +163,7 @@ const SharedDocuments = () => {
       <header className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <img src={logoImage} alt="Ride Ready Docs" className="h-8 w-auto" />
+            <img src={appLogo} alt="Ride Ready Docs" className="h-8 w-8 rounded-full" />
             <div>
               <h1 className="font-semibold text-sm sm:text-base">Ride Ready Docs</h1>
               <p className="text-xs text-muted-foreground">Secure Document Download</p>
