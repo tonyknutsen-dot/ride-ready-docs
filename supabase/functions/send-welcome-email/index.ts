@@ -58,15 +58,18 @@ const handler = async (req: Request): Promise<Response> => {
     <div style="background: white; padding: 40px; border: 1px solid #e5e7eb; border-top: none;">
       <p style="font-size: 16px; margin-top: 0;">Hello and welcome!</p>
       
-      <p style="font-size: 15px;">Thank you for joining <strong>Ride Ready Docs</strong>. We're excited to help you manage your amusement equipment compliance with ease and confidence.</p>
+      <p style="font-size: 15px;">Thank you for joining <strong>Ride Ready Docs</strong>. We're excited to help you manage your amusement equipment operations with ease and confidence.</p>
+      
+      <p style="font-size: 15px;">From daily operational checks to document management and compliance tracking, everything you need is in one place.</p>
       
       <div style="background: #eff6ff; border-left: 4px solid ${primary}; padding: 20px; border-radius: 0 8px 8px 0; margin: 24px 0;">
         <h3 style="margin: 0 0 12px 0; color: ${primary}; font-size: 16px;">🚀 Getting Started</h3>
         <ul style="margin: 0; padding-left: 20px; color: #374151;">
           <li style="margin-bottom: 8px;">Complete your profile setup</li>
-          <li style="margin-bottom: 8px;">Add your first ride or equipment</li>
-          <li style="margin-bottom: 8px;">Upload important documents</li>
-          <li style="margin-bottom: 0;">Set up inspection schedules</li>
+          <li style="margin-bottom: 8px;">Add your rides and equipment</li>
+          <li style="margin-bottom: 8px;">Create check templates for daily operations</li>
+          <li style="margin-bottom: 8px;">Upload certificates and compliance documents</li>
+          <li style="margin-bottom: 0;">Schedule inspections and track maintenance</li>
         </ul>
       </div>
       
