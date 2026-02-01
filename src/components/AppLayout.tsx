@@ -20,7 +20,7 @@ export function AppLayout({ children }: AppLayoutProps) {
         <AppSidebar />
         <main className="flex-1 overflow-auto">
           <div className="md:hidden px-4 pt-4">
-            <DeviceHintBanner />
+            <DeviceHintBanner storageKey="app-device-hint" />
           </div>
           {children}
         </main>
