@@ -17,6 +17,11 @@ export const useTesterSessionTracking = () => {
       return null;
     }
 
+    // Prevent duplicate starts
+    if (sessionIdRef.current) {
+      return sessionIdRef.current;
+    }
+
     isStartingRef.current = true;
 
     try {
@@ -26,15 +31,15 @@ export const useTesterSessionTracking = () => {
       });
 
       if (error) {
-        console.error('[TesterSession] Failed to start session:', error);
+        // Don't spam console for non-critical tracking errors
+        console.warn('[TesterSession] Failed to start session:', error.message);
         return null;
       }
 
       sessionIdRef.current = data;
-      console.log('[TesterSession] Session started/resumed:', data);
       return data;
     } catch (err) {
-      console.error('[TesterSession] Error starting session:', err);
+      // Silently fail - tracking should never break the app
       return null;
     } finally {
       isStartingRef.current = false;
@@ -48,19 +53,11 @@ export const useTesterSessionTracking = () => {
     sessionIdRef.current = null;
 
     try {
-      console.log('[TesterSession] Ending session:', sessionId);
-      
-      const { error } = await supabase.rpc('end_tester_session', {
+      await supabase.rpc('end_tester_session', {
         p_session_id: sessionId
       });
-
-      if (error) {
-        console.error('[TesterSession] RPC error:', error);
-      } else {
-        console.log('[TesterSession] Session ended:', sessionId);
-      }
-    } catch (err) {
-      console.error('[TesterSession] Error ending session:', err);
+    } catch {
+      // Silently fail - don't block app shutdown
     }
   }, []);
 
@@ -80,18 +77,18 @@ export const useTesterSessionTracking = () => {
       });
 
       if (error) {
-        console.error('[TesterSession] Heartbeat update error:', error);
-        // Session might have been closed, try to start a new one
+        // Session might have been closed by idle timeout, try to start a new one
         sessionIdRef.current = null;
         await startSession();
       }
-    } catch (err) {
-      console.error('[TesterSession] Error updating heartbeat:', err);
+    } catch {
+      // Silently fail - tracking errors shouldn't affect the app
     }
   }, [startSession]);
 
   useEffect(() => {
     if (isTester && user) {
+      // Start session in background - don't block rendering
       startSession();
 
       // Set up heartbeat - run first one after 10 seconds, then every 60 seconds
@@ -107,21 +104,25 @@ export const useTesterSessionTracking = () => {
           updateHeartbeat();
         } else {
           // Tab visible again - ensure we have an active session
-          // This handles the case where session was closed due to inactivity
           startSession();
         }
       };
 
-      // Handle before unload (close tab/window)
-      const handleBeforeUnload = () => {
+      // Handle before unload - best effort session end
+      const handleBeforeUnload = async () => {
         if (sessionIdRef.current) {
           const sessionId = sessionIdRef.current;
+          sessionIdRef.current = null;
           
-          // Use sendBeacon with the RPC endpoint for reliable session end
-          const url = `https://sbtldudgiskqfqqkrmaa.supabase.co/rest/v1/rpc/end_tester_session`;
-          const body = JSON.stringify({ p_session_id: sessionId });
-          
-          navigator.sendBeacon?.(url, body);
+          // Try to end session - this may or may not complete before page unloads
+          // The idle timeout cleanup will handle incomplete sessions
+          try {
+            await supabase.rpc('end_tester_session', {
+              p_session_id: sessionId
+            });
+          } catch {
+            // Best effort - idle timeout will clean up if this fails
+          }
         }
       };
 
