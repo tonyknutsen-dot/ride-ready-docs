@@ -128,6 +128,9 @@ const BatchSendDocuments = () => {
   const [fromOpen, setFromOpen] = useState(false);
   const [toOpen, setToOpen] = useState(false);
 
+  // Selected ride for document selection step
+  const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
+
   useEffect(() => {
     if (user) {
       loadData();
@@ -558,6 +561,16 @@ const BatchSendDocuments = () => {
     );
   }
 
+  // Get current ride's documents (when a ride is selected)
+  const currentRideDocuments = selectedRide 
+    ? rides.find(r => r.id === selectedRide.id)?.documents || []
+    : [];
+
+  // Check records for selected ride
+  const currentRideCheckRecords = selectedRide
+    ? checkRecords.filter(doc => doc.ride_id === selectedRide.id)
+    : [];
+
   return (
     <div className="container mx-auto py-8 px-4 pb-24 md:pb-8">
       <div className="mb-6">
@@ -570,328 +583,381 @@ const BatchSendDocuments = () => {
         </p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
-        {/* Left Column - Document Selection */}
-        <div className="space-y-4">
-          <Card className="border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
-            <CardHeader className="pb-3 px-3 sm:px-6">
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle className="text-sm sm:text-base">Select Documents</CardTitle>
-                <Badge variant="secondary" className="text-xs shrink-0">{selectedDocuments.length} selected</Badge>
+      {/* Step 1: Ride Selection (if no ride selected) */}
+      {!selectedRide ? (
+        <Card className="border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Select Item to Send Documents
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {rides.length === 0 ? (
+              <div className="text-center py-8">
+                <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                <p className="text-sm text-muted-foreground">No items found</p>
+                <p className="text-xs text-muted-foreground mt-1">Add an item to start sending documents</p>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3 px-3 sm:px-6">
-              {/* File size indicator */}
-              {selectedDocuments.length > 0 && (
-                <div className="flex items-center justify-between text-xs bg-secondary/50 border border-primary/20 rounded-lg px-2 sm:px-3 py-2">
-                  <span className="text-muted-foreground">Total size:</span>
-                  <Badge variant={exceedsEmailLimit ? "destructive" : "outline"} className="text-xs">
-                    {formatFileSize(totalFileSize)}
-                  </Badge>
-                </div>
-              )}
-
-              {/* Send method selector - shows when size exceeds limit or when explicitly set */}
-              {(exceedsEmailLimit || sendMethod !== 'auto') && (
-                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                  <div className="flex gap-2 text-blue-700 dark:text-blue-400 mb-3">
-                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <div className="text-xs">
-                      <p className="font-medium">Large file size ({totalSizeMB.toFixed(1)}MB)</p>
-                      <p className="text-muted-foreground mt-0.5">Choose how to send these documents</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2">
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                {rides.map(ride => {
+                  const docCount = ride.documents.length;
+                  const rideCheckRecords = checkRecords.filter(doc => doc.ride_id === ride.id);
+                  const totalDocs = docCount + rideCheckRecords.length;
+                  
+                  return (
                     <button
-                      type="button"
-                      onClick={() => setSendMethod('links')}
-                      className={cn(
-                        "flex items-center gap-2 p-2.5 rounded-lg border-2 transition-all text-left",
-                        (sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit))
-                          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                          : "border-border hover:border-primary/50"
-                      )}
+                      key={ride.id}
+                      onClick={() => setSelectedRide(ride)}
+                      className="p-4 border-2 border-border rounded-xl text-left hover:border-primary/50 hover:bg-primary/5 transition-all group"
                     >
-                      <Link className="h-4 w-4 text-primary shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium">Download Link</p>
-                        <p className="text-[10px] text-muted-foreground">Recommended</p>
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setSendMethod('attachments')}
-                      className={cn(
-                        "flex items-center gap-2 p-2.5 rounded-lg border-2 transition-all text-left",
-                        sendMethod === 'attachments'
-                          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
-                          : "border-border hover:border-primary/50"
-                      )}
-                    >
-                      <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium">Attachments</p>
-                        <p className="text-[10px] text-muted-foreground">Multiple emails</p>
-                      </div>
-                    </button>
-                  </div>
-                  {(sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit)) && (
-                    <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
-                      <Link className="h-3 w-3" />
-                      Recipient will receive a secure link valid for 7 days
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Safety Check Records Section */}
-              {checkRecords.length > 0 && (
-                <Collapsible open={checkRecordsExpanded} onOpenChange={setCheckRecordsExpanded}>
-                  <div className="border-2 border-green-500/20 rounded-lg">
-                    <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-green-500/5 transition-colors gap-2">
-                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                        <ClipboardCheck className="h-4 w-4 text-green-600 shrink-0" />
-                        <span className="font-medium text-xs sm:text-sm truncate">Safety Check Records</span>
-                        <Badge variant="outline" className="text-xs shrink-0 border-green-500/30 text-green-600">
-                          {filteredCheckRecords.length !== checkRecords.length 
-                            ? `${filteredCheckRecords.length}/${checkRecords.length}` 
-                            : checkRecords.length}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                        <span 
-                          role="button"
-                          tabIndex={0}
-                          className="h-6 sm:h-7 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectAllCheckRecords();
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.stopPropagation();
-                              handleSelectAllCheckRecords();
-                            }
-                          }}
-                        >
-                          {filteredCheckRecords.every(d => selectedDocuments.includes(d.id)) ? 'Deselect' : 'Select All'}
-                        </span>
-                        <ChevronDown className="h-4 w-4" />
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="px-2 sm:px-4 pb-3 space-y-3">
-                        {/* Date range filters */}
-                        <div className="flex flex-wrap gap-1.5 pt-1">
-                          {datePresets.map((preset) => (
-                            <Button
-                              key={preset.label}
-                              variant="outline"
-                              size="sm"
-                              className="h-6 text-xs px-2"
-                              onClick={() => {
-                                const { from, to } = preset.getValue();
-                                setCheckRecordFilters({ ...checkRecordFilters, dateFrom: from, dateTo: to });
-                              }}
-                            >
-                              {preset.label}
-                            </Button>
-                          ))}
-                          {(checkRecordFilters.dateFrom || checkRecordFilters.dateTo) && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 text-xs"
-                              onClick={() => setCheckRecordFilters(defaultCheckRecordFilters)}
-                            >
-                              Clear
-                            </Button>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                            {ride.ride_name}
+                          </p>
+                          {ride.manufacturer && (
+                            <p className="text-xs text-muted-foreground truncate mt-0.5">
+                              {ride.manufacturer}
+                            </p>
                           )}
                         </div>
-                        
-                        {/* Grouped by month */}
-                        {checkRecordsByMonth.map(([month, docs]) => (
-                          <div key={month}>
-                            <div className="text-xs font-medium text-muted-foreground mb-1.5">{month}</div>
-                            <div className="space-y-1">
-                              {docs.map(doc => (
-                                <label 
-                                  key={doc.id} 
-                                  className="flex items-start gap-2 p-2 border rounded cursor-pointer hover:bg-accent/50 transition-colors"
-                                >
-                                  <Checkbox
-                                    checked={selectedDocuments.includes(doc.id)}
-                                    onCheckedChange={() => handleDocumentToggle(doc.id)}
-                                    className="mt-0.5 shrink-0"
-                                  />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-xs font-medium break-words leading-tight">{doc.document_name}</p>
-                                    <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                                      <span className="text-xs text-muted-foreground">
-                                        {doc.uploaded_at && format(new Date(doc.uploaded_at), 'dd MMM yyyy')}
-                                      </span>
-                                      {doc.file_size && (
-                                        <span className="text-xs text-muted-foreground">• {formatFileSize(doc.file_size)}</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                        
-                        {filteredCheckRecords.length === 0 && (
-                          <p className="text-xs text-muted-foreground text-center py-4">No records match your filters</p>
-                        )}
+                        <Badge variant="secondary" className="shrink-0 text-xs">
+                          {totalDocs} {totalDocs === 1 ? 'doc' : 'docs'}
+                        </Badge>
                       </div>
-                    </CollapsibleContent>
-                  </div>
-                </Collapsible>
-              )}
-
-              {/* Global Documents */}
-              {globalDocuments.length > 0 && (
-                <Collapsible defaultOpen>
-                  <div className="border-2 border-primary/20 rounded-lg">
-                    <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-primary/5 transition-colors gap-2">
-                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                        <Building2 className="h-4 w-4 text-primary shrink-0" />
-                        <span className="font-medium text-xs sm:text-sm truncate">Global Docs</span>
-                        <Badge variant="outline" className="text-xs shrink-0">{globalDocuments.length}</Badge>
-                      </div>
-                      <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                        <span 
-                          role="button"
-                          tabIndex={0}
-                          className="h-6 sm:h-7 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleSelectAllGlobal();
-                          }}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.stopPropagation();
-                              handleSelectAllGlobal();
-                            }
-                          }}
-                        >
-                          <span className="hidden sm:inline">{globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'Deselect All' : 'Select All'}</span>
-                          <span className="sm:hidden">{globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}</span>
+                      <div className="flex items-center gap-1.5 mt-2">
+                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                        <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                          Select documents
                         </span>
-                        <ChevronDown className="h-4 w-4" />
                       </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="px-2 sm:px-4 pb-3 space-y-2">
-                        {globalDocuments.map(doc => (
-                          <label 
-                            key={doc.id} 
-                            className="flex items-start gap-2 sm:gap-3 p-2 border rounded cursor-pointer hover:bg-accent/50 transition-colors"
-                          >
-                            <Checkbox
-                              checked={selectedDocuments.includes(doc.id)}
-                              onCheckedChange={() => handleDocumentToggle(doc.id)}
-                              className="mt-0.5 shrink-0"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs sm:text-sm font-medium break-words leading-tight">{doc.document_name}</p>
-                              <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                                <Badge variant="outline" className="text-xs">{doc.document_type}</Badge>
-                                {doc.expires_at && isExpiringSoon(doc.expires_at) && (
-                                  <Badge variant="destructive" className="text-xs">Expiring</Badge>
-                                )}
-                                {doc.file_size && (
-                                  <span className="text-xs text-muted-foreground">{formatFileSize(doc.file_size)}</span>
-                                )}
-                              </div>
-                            </div>
-                          </label>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Back to ride selection */}
+          <div className="mb-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedRide(null);
+                setSelectedDocuments([]);
+              }}
+              className="gap-1.5 text-muted-foreground hover:text-foreground"
+            >
+              <ChevronRight className="h-4 w-4 rotate-180" />
+              <span>Back to item selection</span>
+            </Button>
+            <div className="flex items-center gap-2 mt-2">
+              <Badge variant="outline" className="text-sm font-medium">
+                {selectedRide.ride_name}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                {currentRideDocuments.length + currentRideCheckRecords.length} documents available
+              </span>
+            </div>
+          </div>
+
+          <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
+            {/* Left Column - Document Selection */}
+            <div className="space-y-4">
+              <Card className="border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
+                <CardHeader className="pb-3 px-3 sm:px-6">
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-sm sm:text-base">Select Documents</CardTitle>
+                    <Badge variant="secondary" className="text-xs shrink-0">{selectedDocuments.length} selected</Badge>
                   </div>
-                </Collapsible>
-              )}
+                </CardHeader>
+                <CardContent className="space-y-3 px-3 sm:px-6">
+                  {/* File size indicator */}
+                  {selectedDocuments.length > 0 && (
+                    <div className="flex items-center justify-between text-xs bg-secondary/50 border border-primary/20 rounded-lg px-2 sm:px-3 py-2">
+                      <span className="text-muted-foreground">Total size:</span>
+                      <Badge variant={exceedsEmailLimit ? "destructive" : "outline"} className="text-xs">
+                        {formatFileSize(totalFileSize)}
+                      </Badge>
+                    </div>
+                  )}
 
-              {/* Ride-specific Documents */}
-              {rides.filter(r => r.documents.length > 0).map(ride => (
-                <Collapsible 
-                  key={ride.id} 
-                  open={ride.expanded}
-                  onOpenChange={() => toggleRideExpanded(ride.id)}
-                >
-                  <div className="border-2 border-accent/20 rounded-lg">
-                    <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-accent/5 transition-colors gap-2">
-                      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                        {ride.expanded ? <ChevronDown className="h-4 w-4 shrink-0" /> : <ChevronRight className="h-4 w-4 shrink-0" />}
-                        <span className="font-medium text-xs sm:text-sm truncate">{ride.ride_name}</span>
-                        <Badge variant="outline" className="text-xs shrink-0">{ride.documents.length}</Badge>
+                  {/* Send method selector */}
+                  {(exceedsEmailLimit || sendMethod !== 'auto') && (
+                    <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                      <div className="flex gap-2 text-blue-700 dark:text-blue-400 mb-3">
+                        <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                        <div className="text-xs">
+                          <p className="font-medium">Large file size ({totalSizeMB.toFixed(1)}MB)</p>
+                          <p className="text-muted-foreground mt-0.5">Choose how to send these documents</p>
+                        </div>
                       </div>
-                      <span 
-                        role="button"
-                        tabIndex={0}
-                        className="h-6 sm:h-7 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer shrink-0"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleSelectAllRide(ride.id, ride.documents);
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
-                            e.stopPropagation();
-                            handleSelectAllRide(ride.id, ride.documents);
-                          }
-                        }}
-                      >
-                        <span className="hidden sm:inline">{ride.documents.every(d => selectedDocuments.includes(d.id)) ? 'Deselect All' : 'Select All'}</span>
-                        <span className="sm:hidden">{ride.documents.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}</span>
-                      </span>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="px-2 sm:px-4 pb-3 space-y-2">
-                        {ride.documents.map(doc => (
-                          <label 
-                            key={doc.id} 
-                            className="flex items-start gap-2 sm:gap-3 p-2 border rounded cursor-pointer hover:bg-accent/50 transition-colors"
-                          >
-                            <Checkbox
-                              checked={selectedDocuments.includes(doc.id)}
-                              onCheckedChange={() => handleDocumentToggle(doc.id)}
-                              className="mt-0.5 shrink-0"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs sm:text-sm font-medium break-words leading-tight">{doc.document_name}</p>
-                              <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                                <Badge variant="outline" className="text-xs">{doc.document_type}</Badge>
-                                {doc.expires_at && isExpiringSoon(doc.expires_at) && (
-                                  <Badge variant="destructive" className="text-xs">Expiring</Badge>
-                                )}
-                                {doc.file_size && (
-                                  <span className="text-xs text-muted-foreground">{formatFileSize(doc.file_size)}</span>
-                                )}
-                              </div>
-                            </div>
-                          </label>
-                        ))}
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSendMethod('links')}
+                          className={cn(
+                            "flex items-center gap-2 p-2.5 rounded-lg border-2 transition-all text-left",
+                            (sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit))
+                              ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                              : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <Link className="h-4 w-4 text-primary shrink-0" />
+                          <div>
+                            <p className="text-xs font-medium">Download Link</p>
+                            <p className="text-[10px] text-muted-foreground">Recommended</p>
+                          </div>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSendMethod('attachments')}
+                          className={cn(
+                            "flex items-center gap-2 p-2.5 rounded-lg border-2 transition-all text-left",
+                            sendMethod === 'attachments'
+                              ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                              : "border-border hover:border-primary/50"
+                          )}
+                        >
+                          <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <div>
+                            <p className="text-xs font-medium">Attachments</p>
+                            <p className="text-[10px] text-muted-foreground">Multiple emails</p>
+                          </div>
+                        </button>
                       </div>
-                    </CollapsibleContent>
-                  </div>
-                </Collapsible>
-              ))}
+                      {(sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit)) && (
+                        <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+                          <Link className="h-3 w-3" />
+                          Recipient will receive a secure link valid for 7 days
+                        </p>
+                      )}
+                    </div>
+                  )}
 
-              {globalDocuments.length === 0 && rides.every(r => r.documents.length === 0) && (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="mx-auto h-12 w-12 mb-3 opacity-30" />
-                  <p className="text-sm font-medium">No documents available</p>
-                  <p className="text-xs mt-1">Upload documents to your rides first</p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                  {/* Check Records for this ride */}
+                  {currentRideCheckRecords.length > 0 && (
+                    <Collapsible open={checkRecordsExpanded} onOpenChange={setCheckRecordsExpanded}>
+                      <div className="border-2 border-green-500/20 rounded-lg">
+                        <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-green-500/5 transition-colors gap-2">
+                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                            <ClipboardCheck className="h-4 w-4 text-green-600 shrink-0" />
+                            <span className="font-medium text-xs sm:text-sm truncate">Safety Check Records</span>
+                            <Badge variant="outline" className="text-xs shrink-0 border-green-500/30 text-green-600">
+                              {currentRideCheckRecords.length}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                            <span 
+                              role="button"
+                              tabIndex={0}
+                              className="h-6 sm:h-7 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const ids = currentRideCheckRecords.map(d => d.id);
+                                const allSelected = ids.every(id => selectedDocuments.includes(id));
+                                if (allSelected) {
+                                  setSelectedDocuments(prev => prev.filter(id => !ids.includes(id)));
+                                } else {
+                                  setSelectedDocuments(prev => [...new Set([...prev, ...ids])]);
+                                }
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.stopPropagation();
+                                  const ids = currentRideCheckRecords.map(d => d.id);
+                                  const allSelected = ids.every(id => selectedDocuments.includes(id));
+                                  if (allSelected) {
+                                    setSelectedDocuments(prev => prev.filter(id => !ids.includes(id)));
+                                  } else {
+                                    setSelectedDocuments(prev => [...new Set([...prev, ...ids])]);
+                                  }
+                                }
+                              }}
+                            >
+                              {currentRideCheckRecords.every(d => selectedDocuments.includes(d.id)) ? 'Deselect' : 'Select All'}
+                            </span>
+                            <ChevronDown className="h-4 w-4" />
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="px-2 sm:px-4 pb-3 space-y-2">
+                            {currentRideCheckRecords.map(doc => (
+                              <label 
+                                key={doc.id} 
+                                className="flex items-start gap-2 p-2 border rounded cursor-pointer hover:bg-accent/50 transition-colors"
+                              >
+                                <Checkbox
+                                  checked={selectedDocuments.includes(doc.id)}
+                                  onCheckedChange={() => handleDocumentToggle(doc.id)}
+                                  className="mt-0.5 shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs font-medium break-words leading-tight">{doc.document_name}</p>
+                                  <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                    <span className="text-xs text-muted-foreground">
+                                      {doc.uploaded_at && format(new Date(doc.uploaded_at), 'dd MMM yyyy')}
+                                    </span>
+                                    {doc.file_size && (
+                                      <span className="text-xs text-muted-foreground">• {formatFileSize(doc.file_size)}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  )}
 
-        {/* Right Column - Recipient & Send */}
-        <div className="space-y-4">
+                  {/* Ride Documents */}
+                  {currentRideDocuments.length > 0 && (
+                    <Collapsible defaultOpen>
+                      <div className="border-2 border-accent/20 rounded-lg">
+                        <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-accent/5 transition-colors gap-2">
+                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                            <FileText className="h-4 w-4 text-accent-foreground shrink-0" />
+                            <span className="font-medium text-xs sm:text-sm truncate">Documents</span>
+                            <Badge variant="outline" className="text-xs shrink-0">{currentRideDocuments.length}</Badge>
+                          </div>
+                          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                            <span 
+                              role="button"
+                              tabIndex={0}
+                              className="h-6 sm:h-7 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectAllRide(selectedRide.id, currentRideDocuments);
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.stopPropagation();
+                                  handleSelectAllRide(selectedRide.id, currentRideDocuments);
+                                }
+                              }}
+                            >
+                              <span className="hidden sm:inline">{currentRideDocuments.every(d => selectedDocuments.includes(d.id)) ? 'Deselect All' : 'Select All'}</span>
+                              <span className="sm:hidden">{currentRideDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}</span>
+                            </span>
+                            <ChevronDown className="h-4 w-4" />
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="px-2 sm:px-4 pb-3 space-y-2">
+                            {currentRideDocuments.map(doc => (
+                              <label 
+                                key={doc.id} 
+                                className="flex items-start gap-2 sm:gap-3 p-2 border rounded cursor-pointer hover:bg-accent/50 transition-colors"
+                              >
+                                <Checkbox
+                                  checked={selectedDocuments.includes(doc.id)}
+                                  onCheckedChange={() => handleDocumentToggle(doc.id)}
+                                  className="mt-0.5 shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs sm:text-sm font-medium break-words leading-tight">{doc.document_name}</p>
+                                  <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                    <Badge variant="outline" className="text-xs">{doc.document_type}</Badge>
+                                    {doc.expires_at && isExpiringSoon(doc.expires_at) && (
+                                      <Badge variant="destructive" className="text-xs">Expiring</Badge>
+                                    )}
+                                    {doc.file_size && (
+                                      <span className="text-xs text-muted-foreground">{formatFileSize(doc.file_size)}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  )}
+
+                  {/* Global Documents - always available */}
+                  {globalDocuments.length > 0 && (
+                    <Collapsible defaultOpen={currentRideDocuments.length === 0}>
+                      <div className="border-2 border-primary/20 rounded-lg">
+                        <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-primary/5 transition-colors gap-2">
+                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+                            <Building2 className="h-4 w-4 text-primary shrink-0" />
+                            <span className="font-medium text-xs sm:text-sm truncate">Global Docs</span>
+                            <Badge variant="outline" className="text-xs shrink-0">{globalDocuments.length}</Badge>
+                          </div>
+                          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                            <span 
+                              role="button"
+                              tabIndex={0}
+                              className="h-6 sm:h-7 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleSelectAllGlobal();
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') {
+                                  e.stopPropagation();
+                                  handleSelectAllGlobal();
+                                }
+                              }}
+                            >
+                              <span className="hidden sm:inline">{globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'Deselect All' : 'Select All'}</span>
+                              <span className="sm:hidden">{globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}</span>
+                            </span>
+                            <ChevronDown className="h-4 w-4" />
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="px-2 sm:px-4 pb-3 space-y-2">
+                            {globalDocuments.map(doc => (
+                              <label 
+                                key={doc.id} 
+                                className="flex items-start gap-2 sm:gap-3 p-2 border rounded cursor-pointer hover:bg-accent/50 transition-colors"
+                              >
+                                <Checkbox
+                                  checked={selectedDocuments.includes(doc.id)}
+                                  onCheckedChange={() => handleDocumentToggle(doc.id)}
+                                  className="mt-0.5 shrink-0"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-xs sm:text-sm font-medium break-words leading-tight">{doc.document_name}</p>
+                                  <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                    <Badge variant="outline" className="text-xs">{doc.document_type}</Badge>
+                                    {doc.expires_at && isExpiringSoon(doc.expires_at) && (
+                                      <Badge variant="destructive" className="text-xs">Expiring</Badge>
+                                    )}
+                                    {doc.file_size && (
+                                      <span className="text-xs text-muted-foreground">{formatFileSize(doc.file_size)}</span>
+                                    )}
+                                  </div>
+                                </div>
+                              </label>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  )}
+
+                  {/* Empty state */}
+                  {currentRideDocuments.length === 0 && currentRideCheckRecords.length === 0 && globalDocuments.length === 0 && (
+                    <div className="text-center py-8">
+                      <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                      <p className="text-sm text-muted-foreground">No documents available</p>
+                      <p className="text-xs text-muted-foreground mt-1">Upload documents to this item first</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column - Recipient & Send */}
+            <div className="space-y-4">
           {/* Sender Info */}
           <Card>
             <CardHeader className="pb-3 px-3 sm:px-6">
@@ -1204,8 +1270,10 @@ const BatchSendDocuments = () => {
               </Button>
             </CardContent>
           </Card>
-        </div>
-      </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 };
