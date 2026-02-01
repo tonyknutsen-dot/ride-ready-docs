@@ -659,17 +659,23 @@ const BatchSendDocuments = () => {
                         </Badge>
                       </div>
                       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-6 sm:h-7 text-xs px-2"
+                        <span 
+                          role="button"
+                          tabIndex={0}
+                          className="h-6 sm:h-7 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleSelectAllCheckRecords();
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation();
+                              handleSelectAllCheckRecords();
+                            }
+                          }}
                         >
                           {filteredCheckRecords.every(d => selectedDocuments.includes(d.id)) ? 'Deselect' : 'Select All'}
-                        </Button>
+                        </span>
                         <ChevronDown className="h-4 w-4" />
                       </div>
                     </CollapsibleTrigger>
@@ -755,18 +761,24 @@ const BatchSendDocuments = () => {
                         <Badge variant="outline" className="text-xs shrink-0">{globalDocuments.length}</Badge>
                       </div>
                       <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-6 sm:h-7 text-xs px-2"
+                        <span 
+                          role="button"
+                          tabIndex={0}
+                          className="h-6 sm:h-7 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleSelectAllGlobal();
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation();
+                              handleSelectAllGlobal();
+                            }
+                          }}
                         >
                           <span className="hidden sm:inline">{globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'Deselect All' : 'Select All'}</span>
                           <span className="sm:hidden">{globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}</span>
-                        </Button>
+                        </span>
                         <ChevronDown className="h-4 w-4" />
                       </div>
                     </CollapsibleTrigger>
@@ -816,18 +828,24 @@ const BatchSendDocuments = () => {
                         <span className="font-medium text-xs sm:text-sm truncate">{ride.ride_name}</span>
                         <Badge variant="outline" className="text-xs shrink-0">{ride.documents.length}</Badge>
                       </div>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="h-6 sm:h-7 text-xs px-2 shrink-0"
+                      <span 
+                        role="button"
+                        tabIndex={0}
+                        className="h-6 sm:h-7 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer shrink-0"
                         onClick={(e) => {
                           e.stopPropagation();
                           handleSelectAllRide(ride.id, ride.documents);
                         }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.stopPropagation();
+                            handleSelectAllRide(ride.id, ride.documents);
+                          }
+                        }}
                       >
                         <span className="hidden sm:inline">{ride.documents.every(d => selectedDocuments.includes(d.id)) ? 'Deselect All' : 'Select All'}</span>
                         <span className="sm:hidden">{ride.documents.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}</span>
-                      </Button>
+                      </span>
                     </CollapsibleTrigger>
                     <CollapsibleContent>
                       <div className="px-2 sm:px-4 pb-3 space-y-2">
