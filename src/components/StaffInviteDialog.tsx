@@ -3,7 +3,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Mail, UserPlus, FolderOpen, Calendar, FileText, CheckSquare, Wrench, ShieldCheck, Send, AlertTriangle } from 'lucide-react';
@@ -254,19 +253,21 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
 
                 <div className="space-y-2">
                   {FEATURE_CONFIG.map(({ key, label, icon: Icon, description, sensitive }) => (
-                    <div
+                    <label
                       key={key}
+                      htmlFor={`feature-${key}`}
                       className={`flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-muted/50 ${
                         permissions[key as keyof FeaturePermissions] 
                           ? 'border-primary/50 bg-primary/5' 
                           : 'border-border'
                       }`}
-                      onClick={() => togglePermission(key as keyof FeaturePermissions)}
                     >
-                      <Checkbox
+                      <input
+                        id={`feature-${key}`}
+                        type="checkbox"
                         checked={permissions[key as keyof FeaturePermissions]}
-                        onCheckedChange={() => togglePermission(key as keyof FeaturePermissions)}
-                        className="mt-0.5"
+                        onChange={() => togglePermission(key as keyof FeaturePermissions)}
+                        className="mt-0.5 h-4 w-4 rounded border border-input bg-background accent-primary"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -280,7 +281,7 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
                         </div>
                         <p className="text-xs text-muted-foreground mt-0.5">{description}</p>
                       </div>
-                    </div>
+                    </label>
                   ))}
                 </div>
 
@@ -319,10 +320,12 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
                     <div className="space-y-2">
                       {rides.map((ride) => (
                         <div key={ride.id} className="flex items-center space-x-2">
-                          <Checkbox
+                          <input
                             id={ride.id}
+                            type="checkbox"
                             checked={selectedRides.includes(ride.id)}
-                            onCheckedChange={() => toggleRide(ride.id)}
+                            onChange={() => toggleRide(ride.id)}
+                            className="h-4 w-4 rounded border border-input bg-background accent-primary"
                           />
                           <label
                             htmlFor={ride.id}
