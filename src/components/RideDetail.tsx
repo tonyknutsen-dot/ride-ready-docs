@@ -70,11 +70,14 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
     if (!user) return;
 
     try {
+      // Count ride-specific documents only (exclude maintenance and photo docs for display)
       const { count: docCount } = await supabase
         .from('documents')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
-        .eq('ride_id', ride.id);
+        .eq('ride_id', ride.id)
+        .neq('document_type', 'maintenance')
+        .neq('document_type', 'photo');
 
       const today = new Date().toISOString().split('T')[0];
       const { count: todayChecks } = await supabase
