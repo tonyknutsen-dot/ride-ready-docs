@@ -60,6 +60,7 @@ const SupportAccessAdmin = lazy(() => import("./pages/admin/SupportAccessAdmin")
 const BugReports = lazy(() => import("./pages/admin/BugReports"));
 const CheckItemSubmissions = lazy(() => import("./pages/admin/CheckItemSubmissions"));
 const RiskItemSubmissions = lazy(() => import("./pages/admin/RiskItemSubmissions"));
+const EarlyAccessSignups = lazy(() => import("./pages/admin/EarlyAccessSignups"));
 const RiskAssessments = lazy(() => import("./pages/RiskAssessments"));
 const GlobalDocumentsPage = lazy(() => import("./pages/GlobalDocumentsPage"));
 const Documents = lazy(() => import("./pages/Documents"));
@@ -466,6 +467,18 @@ const App = () => (
                     <AdminRoute>
                       <AppLayout>
                         <RiskItemSubmissions />
+                      </AppLayout>
+                    </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/admin/early-access" 
+                element={
+                  <ProtectedRoute>
+                    <AdminRoute>
+                      <AppLayout>
+                        <EarlyAccessSignups />
                       </AppLayout>
                     </AdminRoute>
                   </ProtectedRoute>
