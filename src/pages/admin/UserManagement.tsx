@@ -67,9 +67,12 @@ interface RoleChangeAudit {
 interface TesterTimeData {
   user_id: string;
   company_name: string | null;
+  email: string | null;
+  name: string | null;
   total_minutes: number;
   session_count: number;
   last_session: string | null;
+  has_active_session: boolean;
 }
 
 export default function UserManagement() {
@@ -140,18 +143,25 @@ export default function UserManagement() {
     try {
       const { startDate, endDate } = getMonthDateRange(selectedMonth);
 
-      // Get tester sessions for selected month
+      // Get tester sessions for selected month (include session_end for active session calculation)
       const { data: sessions, error } = await supabase
         .from('tester_sessions')
-        .select('user_id, duration_minutes, session_start')
+        .select('user_id, duration_minutes, session_start, session_end')
         .gte('session_start', startDate.toISOString())
         .lte('session_start', endDate.toISOString())
         .order('session_start', { ascending: false });
 
       if (error) throw error;
 
+      console.log('[TesterTimeTracking] Fetched sessions:', sessions?.length, sessions);
+
       // Get unique user IDs
       const userIds = [...new Set((sessions || []).map(s => s.user_id))];
+
+      if (userIds.length === 0) {
+        setTesterTimeData([]);
+        return;
+      }
 
       // Get profiles for these users
       const { data: profiles } = await supabase
@@ -159,31 +169,55 @@ export default function UserManagement() {
         .select('user_id, company_name')
         .in('user_id', userIds);
 
+      // Get auth data for email/name
+      const { data: authData } = await supabase.functions.invoke('get-users-admin');
+      const userEmailMap = new Map<string, { email: string; name: string | null }>();
+      authData?.users?.forEach((u: any) => {
+        userEmailMap.set(u.id, { email: u.email, name: u.name });
+      });
+
       const profileMap = new Map(profiles?.map(p => [p.user_id, p.company_name]) || []);
 
-      // Aggregate by user
-      const userTimeMap = new Map<string, { total: number; count: number; lastSession: string | null }>();
+      // Aggregate by user - calculate live duration for active sessions
+      const userTimeMap = new Map<string, { total: number; count: number; lastSession: string | null; hasActiveSession: boolean }>();
+      const now = new Date();
       
       for (const session of sessions || []) {
-        const existing = userTimeMap.get(session.user_id) || { total: 0, count: 0, lastSession: null };
+        const existing = userTimeMap.get(session.user_id) || { total: 0, count: 0, lastSession: null, hasActiveSession: false };
+        
+        // Calculate duration - if session is active (no end), calculate from start to now
+        let sessionDuration = session.duration_minutes || 0;
+        const isActiveSession = !session.session_end;
+        
+        if (isActiveSession && session.session_start) {
+          // Calculate live duration for active session
+          const sessionStart = new Date(session.session_start);
+          sessionDuration = Math.round((now.getTime() - sessionStart.getTime()) / 60000);
+        }
+        
         userTimeMap.set(session.user_id, {
-          total: existing.total + (session.duration_minutes || 0),
+          total: existing.total + sessionDuration,
           count: existing.count + 1,
           lastSession: existing.lastSession || session.session_start,
+          hasActiveSession: existing.hasActiveSession || isActiveSession,
         });
       }
 
       const timeData: TesterTimeData[] = Array.from(userTimeMap.entries()).map(([userId, data]) => ({
         user_id: userId,
         company_name: profileMap.get(userId) || null,
+        email: userEmailMap.get(userId)?.email || null,
+        name: userEmailMap.get(userId)?.name || null,
         total_minutes: data.total,
         session_count: data.count,
         last_session: data.lastSession,
+        has_active_session: data.hasActiveSession,
       }));
 
       // Sort by total time descending
       timeData.sort((a, b) => b.total_minutes - a.total_minutes);
 
+      console.log('[TesterTimeTracking] Processed time data:', timeData);
       setTesterTimeData(timeData);
     } catch (error: any) {
       console.error('Error fetching tester time data:', error);
@@ -1175,12 +1209,25 @@ export default function UserManagement() {
                       {testerTimeData.map((tester) => (
                         <TableRow key={tester.user_id}>
                           <TableCell>
-                            <div className="font-medium">
-                              {tester.company_name || 'Unknown'}
+                            <div className="flex items-center gap-2">
+                              <div className="font-medium">
+                                {tester.name || tester.company_name || tester.email?.split('@')[0] || 'Unknown'}
+                              </div>
+                              {tester.has_active_session && (
+                                <Badge variant="default" className="bg-success text-success-foreground text-xs">
+                                  Active
+                                </Badge>
+                              )}
                             </div>
-                            <div className="text-xs text-muted-foreground truncate max-w-[150px]">
-                              {tester.user_id.slice(0, 8)}...
+                            <div className="text-xs text-muted-foreground">
+                              {tester.email || tester.user_id.slice(0, 8) + '...'}
                             </div>
+                            {tester.company_name && tester.name && (
+                              <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                <Building className="h-3 w-3" />
+                                {tester.company_name}
+                              </div>
+                            )}
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="font-mono">
