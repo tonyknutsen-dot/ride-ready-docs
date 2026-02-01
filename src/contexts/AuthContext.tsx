@@ -24,32 +24,44 @@ export const useAuth = () => {
   return context;
 };
 
-// Sync subscription status with Stripe (debounced)
+// Sync subscription status with Stripe (debounced and deferred)
 // Skip for testers to avoid unnecessary API calls
+// This runs in the background AFTER the UI is interactive
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
 const syncSubscriptionStatus = async (userId: string) => {
   // Debounce syncs to avoid excessive API calls
   if (syncTimeout) clearTimeout(syncTimeout);
-  syncTimeout = setTimeout(async () => {
-    try {
-      // Check if user is a tester first - skip Stripe sync for testers
-      const { data: testerRole } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .eq('role', 'tester')
-        .maybeSingle();
-      
-      if (testerRole) {
-        console.log('[AUTH] Skipping Stripe sync for tester account');
-        return;
+  
+  // Use requestIdleCallback for non-blocking background sync
+  const scheduleSync = () => {
+    syncTimeout = setTimeout(async () => {
+      try {
+        // Check if user is a tester first - skip Stripe sync for testers
+        const { data: testerRole } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .eq('role', 'tester')
+          .maybeSingle();
+        
+        if (testerRole) {
+          console.log('[AUTH] Skipping Stripe sync for tester account');
+          return;
+        }
+        
+        await supabase.functions.invoke('check-subscription');
+      } catch (error) {
+        console.error('Error syncing subscription:', error);
       }
-      
-      await supabase.functions.invoke('check-subscription');
-    } catch (error) {
-      console.error('Error syncing subscription:', error);
-    }
-  }, 1000);
+    }, 2000); // Increased delay for better initial page load
+  };
+  
+  // Schedule during idle time if available, otherwise use setTimeout
+  if ('requestIdleCallback' in window) {
+    (window as any).requestIdleCallback(scheduleSync, { timeout: 5000 });
+  } else {
+    scheduleSync();
+  }
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {

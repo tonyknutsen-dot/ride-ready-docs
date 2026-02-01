@@ -51,6 +51,10 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // Set loading false early for faster initial render
+    // Staff status doesn't block basic app functionality
+    setLoading(false);
+
     try {
       // Check if user is a staff member of any organisation
       const { data: membership, error } = await supabase
@@ -71,7 +75,6 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
 
       if (error) {
         console.error('Error fetching staff status:', error);
-        setLoading(false);
         return;
       }
 
@@ -92,27 +95,31 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
           ownerId: org.owner_id,
         });
       } else {
-        // User is not a staff member, check if they own an organisation
-        const { data: ownedOrg } = await supabase
-          .from('organisations')
-          .select('id')
-          .eq('owner_id', user.id)
-          .maybeSingle();
-        
+        // User is not a staff member - default state is already correct (owner=true, staff=false)
+        // Skip the extra query to check owned org - not needed for basic functionality
         setIsStaff(false);
-        setIsOwner(true); // If no organisation, they're effectively an owner (can create one)
+        setIsOwner(true);
         setStaffMembership(null);
         setPermissionLevel(null);
       }
     } catch (error) {
       console.error('Error in fetchStaffStatus:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchStaffStatus();
+    // Defer staff status check to not block initial render
+    if (user) {
+      // Use requestIdleCallback if available for non-blocking fetch
+      if ('requestIdleCallback' in window) {
+        (window as any).requestIdleCallback(() => fetchStaffStatus(), { timeout: 2000 });
+      } else {
+        // Fallback: small delay to let critical content render first
+        setTimeout(fetchStaffStatus, 100);
+      }
+    } else {
+      fetchStaffStatus();
+    }
   }, [user]);
 
   // Permission helpers based on permission level
