@@ -55,7 +55,9 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     supabase
       .from('documents')
       .select('*', { count: 'exact', head: true })
-      .eq('user_id', userId),
+      .eq('user_id', userId)
+      .neq('document_type', 'maintenance')
+      .neq('document_type', 'photo'),
     supabase
       .from('rides')
       .select('*', { count: 'exact', head: true })
