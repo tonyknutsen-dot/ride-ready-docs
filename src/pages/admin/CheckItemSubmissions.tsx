@@ -488,14 +488,14 @@ export default function CheckItemSubmissions() {
             <div>
               <Label>Category (leave empty for generic)</Label>
               <Select 
-                value={approvalData.ride_category_id} 
-                onValueChange={(v) => setApprovalData(d => ({ ...d, ride_category_id: v }))}
+                value={approvalData.ride_category_id || '__generic__'} 
+                onValueChange={(v) => setApprovalData(d => ({ ...d, ride_category_id: v === '__generic__' ? '' : v }))}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Generic (all equipment)" />
                 </SelectTrigger>
                 <SelectContent className="bg-background border shadow-lg z-50 max-h-[300px]">
-                  <SelectItem value="">Generic (all equipment)</SelectItem>
+                  <SelectItem value="__generic__">Generic (all equipment)</SelectItem>
                   {categories.map(cat => (
                     <SelectItem key={cat.id} value={cat.id}>
                       {cat.name} ({cat.category_group})
