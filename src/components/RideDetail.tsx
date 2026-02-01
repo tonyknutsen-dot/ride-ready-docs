@@ -8,6 +8,8 @@ import { ArrowLeft, FileText, CheckSquare, Upload, Settings, Mail, Wrench, Penci
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useSubscription } from '@/hooks/useSubscription';
 import RideDocuments from './RideDocuments';
 import InspectionManager from './InspectionManager';
@@ -37,6 +39,8 @@ interface RideDetailProps {
 
 const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDetailProps) => {
   const { user } = useAuth();
+  const { isStaff } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
   const { subscription } = useSubscription();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -67,31 +71,35 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   }, [ride.id, user]);
 
   const loadRideStatistics = async () => {
-    if (!user) return;
+    if (!effectiveUserId) return;
 
     try {
       // Count ride-specific documents only (exclude maintenance and photo docs for display)
-      const { count: docCount } = await supabase
+      // For staff, don't filter by user_id - RLS handles access
+      let docQuery = supabase
         .from('documents')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
         .eq('ride_id', ride.id)
         .neq('document_type', 'maintenance')
         .neq('document_type', 'photo');
+      if (!isStaff) docQuery = docQuery.eq('user_id', effectiveUserId);
+      const { count: docCount } = await docQuery;
 
       const today = new Date().toISOString().split('T')[0];
-      const { count: todayChecks } = await supabase
+      let checksQuery = supabase
         .from('checks')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
         .eq('ride_id', ride.id)
         .eq('check_date', today);
+      if (!isStaff) checksQuery = checksQuery.eq('user_id', effectiveUserId);
+      const { count: todayChecks } = await checksQuery;
 
-      const { count: maintenanceCount } = await supabase
+      let maintenanceQuery = supabase
         .from('maintenance_records')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
         .eq('ride_id', ride.id);
+      if (!isStaff) maintenanceQuery = maintenanceQuery.eq('user_id', effectiveUserId);
+      const { count: maintenanceCount } = await maintenanceQuery;
 
       setRideStats({
         docCount: docCount || 0,
@@ -106,20 +114,21 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   };
 
   const loadRidePhoto = async () => {
-    if (!user) return;
+    if (!effectiveUserId) return;
 
     try {
       // Get the device photo document
-      const { data: photoDoc } = await supabase
+      // For staff, RLS handles access; for owners, filter by user_id
+      let photoQuery = supabase
         .from('documents')
         .select('file_path')
-        .eq('user_id', user.id)
         .eq('ride_id', ride.id)
         .eq('document_type', 'photo')
         .eq('is_latest_version', true)
         .order('uploaded_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(1);
+      if (!isStaff) photoQuery = photoQuery.eq('user_id', effectiveUserId);
+      const { data: photoDoc } = await photoQuery.maybeSingle();
 
       if (photoDoc?.file_path) {
         // Bucket is private, so use signed URL

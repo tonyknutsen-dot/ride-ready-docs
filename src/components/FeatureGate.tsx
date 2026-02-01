@@ -32,9 +32,8 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
     return <>{children}</>;
   }
 
-  // STAFF BYPASS: Staff inherit owner's subscription - grant access based on owner's plan
+  // STAFF: Check if owner has access - if yes, grant access; if no, show disabled prompt
   if (isStaffMember) {
-    // Staff have access if owner has required plan
     const hasAccess = 
       subscriptionStatus === requiredPlan || 
       (requiredPlan === 'basic' && subscriptionStatus === 'advanced');
@@ -42,9 +41,9 @@ export const FeatureGate: React.FC<FeatureGateProps> = ({
     if (hasAccess) {
       return <>{children}</>;
     }
-    // If owner doesn't have access, still show the content but without upgrade prompt
-    // (staff can't upgrade - only owner can)
-    return fallback || null;
+    // Staff doesn't have access - show the fallback if provided, otherwise show disabled upgrade prompt
+    // UpgradePrompt will detect isStaff and show a disabled version
+    return fallback || <UpgradePrompt feature={feature} requiredPlan={requiredPlan} />;
   }
 
   // During trial, allow basic features only

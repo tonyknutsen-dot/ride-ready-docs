@@ -2,6 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTester } from '@/contexts/TesterContext';
+import { useStaff } from '@/contexts/StaffContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -35,6 +37,8 @@ const Rides = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { subscription } = useSubscription();
   const { isTester } = useTester();
+  const { isStaff } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
   const [rides, setRides] = useState<Ride[]>([]);
   const [ridePhotos, setRidePhotos] = useState<Record<string, string | null>>({});
   const [rideStats, setRideStats] = useState<Record<string, {
@@ -61,14 +65,16 @@ const Rides = () => {
   const hasAdvancedAccess = subscription?.subscriptionStatus === 'advanced' || isTester;
 
   useEffect(() => {
-    if (user) {
+    if (effectiveUserId) {
       loadRides();
     }
-  }, [user]);
+  }, [effectiveUserId]);
 
   const loadRides = async () => {
     try {
-      const { data, error } = await supabase
+      // For staff, don't filter by user_id - let RLS handle access control
+      // For owners, filter by their own user_id
+      let query = supabase
         .from('rides')
         .select(`
           *,
@@ -78,8 +84,13 @@ const Rides = () => {
             category_group
           )
         `)
-        .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
+      
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
+      
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error loading rides:', error);
@@ -112,24 +123,35 @@ const Rides = () => {
     for (const ride of ridesData) {
       try {
         // Count ride-specific documents only (exclude global and maintenance docs for display)
-        const { count: docCount } = await supabase
+        // For staff, RLS will filter; for owners, we filter by effectiveUserId
+        let docQuery = supabase
           .from('documents')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user?.id)
           .eq('ride_id', ride.id)
           .neq('document_type', 'maintenance')
           .neq('document_type', 'photo');
+        if (!isStaff) docQuery = docQuery.eq('user_id', effectiveUserId);
+        const { count: docCount } = await docQuery;
         
-        const { count: checkCount } = await supabase
+        let checkQuery = supabase
           .from('checks')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user?.id)
           .eq('ride_id', ride.id);
+        if (!isStaff) checkQuery = checkQuery.eq('user_id', effectiveUserId);
+        const { count: checkCount } = await checkQuery;
         
+        // For maintenance/inspection queries, staff rely on RLS
+        const userId = effectiveUserId;
         const [maintenanceQuery, inspectionQuery, ndtQuery] = await Promise.all([
-          supabase.from('maintenance_records').select('next_maintenance_due').eq('user_id', user?.id).eq('ride_id', ride.id).not('next_maintenance_due', 'is', null).order('next_maintenance_due', { ascending: true }).limit(1).maybeSingle(),
-          supabase.from('annual_inspection_reports').select('next_inspection_due').eq('user_id', user?.id).eq('ride_id', ride.id).not('next_inspection_due', 'is', null).order('next_inspection_due', { ascending: true }).limit(1).maybeSingle(),
-          supabase.from('ndt_reports').select('next_inspection_due').eq('user_id', user?.id).eq('ride_id', ride.id).not('next_inspection_due', 'is', null).order('next_inspection_due', { ascending: true }).limit(1).maybeSingle()
+          isStaff 
+            ? supabase.from('maintenance_records').select('next_maintenance_due').eq('ride_id', ride.id).not('next_maintenance_due', 'is', null).order('next_maintenance_due', { ascending: true }).limit(1).maybeSingle()
+            : supabase.from('maintenance_records').select('next_maintenance_due').eq('user_id', userId).eq('ride_id', ride.id).not('next_maintenance_due', 'is', null).order('next_maintenance_due', { ascending: true }).limit(1).maybeSingle(),
+          isStaff
+            ? supabase.from('annual_inspection_reports').select('next_inspection_due').eq('ride_id', ride.id).not('next_inspection_due', 'is', null).order('next_inspection_due', { ascending: true }).limit(1).maybeSingle()
+            : supabase.from('annual_inspection_reports').select('next_inspection_due').eq('user_id', userId).eq('ride_id', ride.id).not('next_inspection_due', 'is', null).order('next_inspection_due', { ascending: true }).limit(1).maybeSingle(),
+          isStaff
+            ? supabase.from('ndt_reports').select('next_inspection_due').eq('ride_id', ride.id).not('next_inspection_due', 'is', null).order('next_inspection_due', { ascending: true }).limit(1).maybeSingle()
+            : supabase.from('ndt_reports').select('next_inspection_due').eq('user_id', userId).eq('ride_id', ride.id).not('next_inspection_due', 'is', null).order('next_inspection_due', { ascending: true }).limit(1).maybeSingle()
         ]);
         
         const dueDates = [
@@ -159,14 +181,16 @@ const Rides = () => {
     
     try {
       // Batch query: Get all photo documents for all rides in ONE query
-      const { data: photoDocs } = await supabase
+      // For staff, rely on RLS; for owners, filter by effectiveUserId
+      let photoQuery = supabase
         .from('documents')
         .select('ride_id, file_path')
-        .eq('user_id', user?.id)
         .in('ride_id', rideIds)
         .eq('document_type', 'photo')
         .eq('is_latest_version', true)
         .order('uploaded_at', { ascending: false });
+      if (!isStaff) photoQuery = photoQuery.eq('user_id', effectiveUserId);
+      const { data: photoDocs } = await photoQuery;
 
       // Group by ride_id (take first/latest for each)
       const photoByRide: Record<string, string> = {};
@@ -224,7 +248,7 @@ const Rides = () => {
   const handleRefresh = useCallback(async () => {
     setLoading(true);
     await loadRides();
-  }, [user]);
+  }, [effectiveUserId]);
 
   const handleQuickPhotoUpload = async (rideId: string, file: File) => {
     if (!user) return;

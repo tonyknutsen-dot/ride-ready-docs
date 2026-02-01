@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Settings } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,18 +24,22 @@ const RideDetailPage = () => {
   const initialTab = searchParams.get('tab') || 'overview';
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isStaff } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
   const [ride, setRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user && id) {
+    if (effectiveUserId && id) {
       loadRide();
     }
-  }, [user, id]);
+  }, [effectiveUserId, id]);
 
   const loadRide = async () => {
     try {
-      const { data, error } = await supabase
+      // For staff, RLS handles access - just query by ID
+      // For owners, also filter by user_id
+      let query = supabase
         .from('rides')
         .select(`
           *,
@@ -43,9 +49,13 @@ const RideDetailPage = () => {
             category_group
           )
         `)
-        .eq('id', id)
-        .eq('user_id', user?.id)
-        .single();
+        .eq('id', id);
+      
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
+      
+      const { data, error } = await query.single();
 
       if (error) throw error;
       setRide(data as Ride);

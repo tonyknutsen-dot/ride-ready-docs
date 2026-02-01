@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/PageHeader';
 import DocumentList from '@/components/DocumentList';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { supabase } from '@/integrations/supabase/client';
 
 interface RideWithDocs {
@@ -17,6 +19,8 @@ interface RideWithDocs {
 
 const Documents = () => {
   const { user } = useAuth();
+  const { isStaff } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
   const [ridesWithDocs, setRidesWithDocs] = useState<RideWithDocs[]>([]);
   const [globalDocCount, setGlobalDocCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -24,33 +28,44 @@ const Documents = () => {
   const [expandedRides, setExpandedRides] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (user) {
+    if (effectiveUserId) {
       loadRidesWithDocuments();
     }
-  }, [user, refreshKey]);
+  }, [effectiveUserId, refreshKey]);
 
   const loadRidesWithDocuments = async () => {
     try {
-      // Get all rides with their document counts
-      const { data: rides, error: ridesError } = await supabase
+      // For staff, don't filter by user_id - RLS handles access
+      // For owners, filter by effectiveUserId
+      let ridesQuery = supabase
         .from('rides')
         .select(`
           id,
           ride_name,
           ride_categories(name)
         `)
-        .eq('user_id', user?.id)
         .order('ride_name');
+      
+      if (!isStaff) {
+        ridesQuery = ridesQuery.eq('user_id', effectiveUserId);
+      }
+      
+      const { data: rides, error: ridesError } = await ridesQuery;
 
       if (ridesError) throw ridesError;
 
       // Get document counts per ride (exclude maintenance and photo docs)
-      const { data: docs, error: docsError } = await supabase
+      let docsQuery = supabase
         .from('documents')
         .select('id, ride_id, is_global')
-        .eq('user_id', user?.id)
         .neq('document_type', 'maintenance')
         .neq('document_type', 'photo');
+      
+      if (!isStaff) {
+        docsQuery = docsQuery.eq('user_id', effectiveUserId);
+      }
+      
+      const { data: docs, error: docsError } = await docsQuery;
 
       if (docsError) throw docsError;
 

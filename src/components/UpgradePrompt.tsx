@@ -26,13 +26,60 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
     return null;
   }
   
-  // STAFF BYPASS: Staff can't upgrade - only owners can manage billing
-  if (isStaff) {
-    return null;
-  }
-  
   const planName = requiredPlan === 'basic' ? 'Documents & Compliance' : 'Operations & Maintenance';
   const price = requiredPlan === 'basic' ? '£6.99' : '£18.99';
+  
+  // STAFF: Show disabled upgrade prompt instead of functional one
+  if (isStaff) {
+    if (compact) {
+      return (
+        <Card className="border-muted bg-muted/30">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Lock className="h-5 w-5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium text-muted-foreground">{feature}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Requires {planName} plan
+                  </p>
+                </div>
+              </div>
+              <Button size="sm" disabled className="opacity-50">
+                Ask admin to upgrade
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+    
+    return (
+      <Card className="border-muted bg-muted/20">
+        <CardHeader className="text-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+            <Lock className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <CardTitle className="flex items-center justify-center gap-2 text-muted-foreground">
+            <span>{feature}</span>
+            <Badge variant="secondary" className="ml-2">
+              {planName} Feature
+            </Badge>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="text-center space-y-4">
+          <p className="text-muted-foreground">
+            This feature requires the {planName} plan. Contact your company administrator to upgrade.
+          </p>
+          <Button disabled className="opacity-50">
+            Ask admin to upgrade
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // OWNER: Show functional upgrade prompt
   if (compact) {
     return <Card className="border-primary/20 bg-primary/5">
         <CardContent className="p-4">
