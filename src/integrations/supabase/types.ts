@@ -729,6 +729,96 @@ export type Database = {
           },
         ]
       }
+      document_share_items: {
+        Row: {
+          created_at: string
+          document_id: string | null
+          document_name: string
+          document_type: string
+          file_path: string
+          id: string
+          ride_name: string | null
+          share_id: string
+        }
+        Insert: {
+          created_at?: string
+          document_id?: string | null
+          document_name: string
+          document_type: string
+          file_path: string
+          id?: string
+          ride_name?: string | null
+          share_id: string
+        }
+        Update: {
+          created_at?: string
+          document_id?: string | null
+          document_name?: string
+          document_type?: string
+          file_path?: string
+          id?: string
+          ride_name?: string | null
+          share_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "document_share_items_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "document_share_items_share_id_fkey"
+            columns: ["share_id"]
+            isOneToOne: false
+            referencedRelation: "document_shares"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      document_shares: {
+        Row: {
+          access_count: number
+          accessed_at: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          is_revoked: boolean
+          message: string | null
+          recipient_email: string
+          recipient_name: string | null
+          share_token: string
+          user_id: string
+        }
+        Insert: {
+          access_count?: number
+          accessed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_revoked?: boolean
+          message?: string | null
+          recipient_email: string
+          recipient_name?: string | null
+          share_token: string
+          user_id: string
+        }
+        Update: {
+          access_count?: number
+          accessed_at?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          is_revoked?: boolean
+          message?: string | null
+          recipient_email?: string
+          recipient_name?: string | null
+          share_token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       document_type_requests: {
         Row: {
           admin_notes: string | null

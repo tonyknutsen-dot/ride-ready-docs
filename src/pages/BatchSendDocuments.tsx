@@ -26,7 +26,10 @@ import {
   Trash2,
   BookUser,
   CalendarIcon,
-  ClipboardCheck
+  ClipboardCheck,
+  Link,
+  Paperclip,
+  Info
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -103,6 +106,9 @@ const BatchSendDocuments = () => {
   const [recipientName, setRecipientName] = useState('');
   const [message, setMessage] = useState('');
   const [profile, setProfile] = useState<any>(null);
+  
+  // Send method state - 'auto', 'attachments', or 'links'
+  const [sendMethod, setSendMethod] = useState<'auto' | 'attachments' | 'links'>('auto');
   
   // Saved recipients state
   const [savedRecipients, setSavedRecipients] = useState<SavedRecipient[]>([]);
@@ -430,28 +436,50 @@ const BatchSendDocuments = () => {
 
     setSending(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-batch-documents', {
-        body: {
-          recipientEmail,
-          recipientName,
-          message,
-          documentIds: selectedDocuments
-        }
-      });
+      // Determine which method to use
+      const useDownloadLinks = sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit);
+      
+      if (useDownloadLinks) {
+        // Use secure download links
+        const { data, error } = await supabase.functions.invoke('create-document-share', {
+          body: {
+            recipientEmail,
+            recipientName,
+            message,
+            documentIds: selectedDocuments,
+            expiryDays: 7
+          }
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      const successMessage = data.wasSplit 
-        ? `Successfully sent ${data.documentsCount} documents to ${recipientEmail} across ${data.emailsSent} separate emails`
-        : `Successfully sent ${data.documentsCount} documents to ${recipientEmail}`;
-        
-      toast.success(successMessage);
+        toast.success(`Sent secure download link for ${data.documentsCount} documents to ${recipientEmail}`);
+      } else {
+        // Use traditional attachments
+        const { data, error } = await supabase.functions.invoke('send-batch-documents', {
+          body: {
+            recipientEmail,
+            recipientName,
+            message,
+            documentIds: selectedDocuments
+          }
+        });
+
+        if (error) throw error;
+
+        const successMessage = data.wasSplit 
+          ? `Successfully sent ${data.documentsCount} documents to ${recipientEmail} across ${data.emailsSent} separate emails`
+          : `Successfully sent ${data.documentsCount} documents to ${recipientEmail}`;
+          
+        toast.success(successMessage);
+      }
       
       // Reset form
       setRecipientEmail('');
       setRecipientName('');
       setMessage('');
       setSelectedDocuments([]);
+      setSendMethod('auto');
       
     } catch (error: any) {
       console.error('Error sending documents:', error);
@@ -563,15 +591,56 @@ const BatchSendDocuments = () => {
                 </div>
               )}
 
-              {exceedsEmailLimit && (
-                <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-3">
-                  <div className="flex gap-2 text-amber-700 dark:text-amber-400">
-                    <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+              {/* Send method selector - shows when size exceeds limit or when explicitly set */}
+              {(exceedsEmailLimit || sendMethod !== 'auto') && (
+                <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                  <div className="flex gap-2 text-blue-700 dark:text-blue-400 mb-3">
+                    <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
                     <div className="text-xs">
                       <p className="font-medium">Large file size ({totalSizeMB.toFixed(1)}MB)</p>
-                      <p className="text-muted-foreground mt-0.5">Will be split into multiple emails automatically</p>
+                      <p className="text-muted-foreground mt-0.5">Choose how to send these documents</p>
                     </div>
                   </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setSendMethod('links')}
+                      className={cn(
+                        "flex items-center gap-2 p-2.5 rounded-lg border-2 transition-all text-left",
+                        (sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit))
+                          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      <Link className="h-4 w-4 text-primary shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium">Download Link</p>
+                        <p className="text-[10px] text-muted-foreground">Recommended</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSendMethod('attachments')}
+                      className={cn(
+                        "flex items-center gap-2 p-2.5 rounded-lg border-2 transition-all text-left",
+                        sendMethod === 'attachments'
+                          ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                          : "border-border hover:border-primary/50"
+                      )}
+                    >
+                      <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium">Attachments</p>
+                        <p className="text-[10px] text-muted-foreground">Multiple emails</p>
+                      </div>
+                    </button>
+                  </div>
+                  {(sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit)) && (
+                    <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+                      <Link className="h-3 w-3" />
+                      Recipient will receive a secure link valid for 7 days
+                    </p>
+                  )}
                 </div>
               )}
 

@@ -72,6 +72,7 @@ const Diagnostics = lazy(() => import("./pages/Diagnostics"));
 const MyBugReports = lazy(() => import("./pages/MyBugReports"));
 const Install = lazy(() => import("./pages/Install"));
 const DataIndependence = lazy(() => import("./pages/DataIndependence"));
+const SharedDocuments = lazy(() => import("./pages/SharedDocuments"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -470,6 +471,8 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              {/* Public shared documents download page - no auth required */}
+              <Route path="/shared/:token" element={<SharedDocuments />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
               </Routes>
