@@ -174,17 +174,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           </div>
           
           <div className="flex gap-1.5">
-            {activeTab === 'inspections' && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowChecksGuide(true)}
-                className="h-10 w-10 shrink-0 active:scale-95 transition-transform"
-                aria-label="How checks work"
-              >
-                <HelpCircle className="h-4 w-4" />
-              </Button>
-            )}
             <Button 
               variant="ghost" 
               size="icon"
@@ -335,6 +324,18 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                     </p>
                     <p className="text-[10px] text-muted-foreground uppercase font-semibold">Today</p>
                   </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowChecksGuide(true);
+                    }}
+                    className="h-10 w-10 shrink-0 text-success/70 hover:text-success hover:bg-success/10"
+                    aria-label="How checks work"
+                  >
+                    <HelpCircle className="h-5 w-5" />
+                  </Button>
                 </CardContent>
               </Card>
             </FeatureGate>
