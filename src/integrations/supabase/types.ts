@@ -2408,20 +2408,17 @@ export type Database = {
           country: string | null
           created_at: string | null
           current_period_end: string | null
-          custom_terminology: Json | null
+          date_format: string | null
           enable_document_versioning: boolean | null
           extra_items_count: number | null
           has_stripe_customer: boolean | null
           has_stripe_subscription: boolean | null
-          has_subscription: boolean | null
           id: string | null
           is_suspended: boolean | null
-          is_trial: boolean | null
           operator_type: string | null
-          showmen_name: string | null
           subscription_plan: string | null
           subscription_status: string | null
-          suspension_info: string | null
+          timezone: string | null
           trial_ends_at: string | null
           trial_started_at: string | null
           updated_at: string | null
@@ -2437,20 +2434,17 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           current_period_end?: string | null
-          custom_terminology?: Json | null
+          date_format?: string | null
           enable_document_versioning?: boolean | null
           extra_items_count?: number | null
           has_stripe_customer?: never
           has_stripe_subscription?: never
-          has_subscription?: never
           id?: string | null
           is_suspended?: boolean | null
-          is_trial?: never
           operator_type?: string | null
-          showmen_name?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
-          suspension_info?: never
+          timezone?: string | null
           trial_ends_at?: string | null
           trial_started_at?: string | null
           updated_at?: string | null
@@ -2466,20 +2460,17 @@ export type Database = {
           country?: string | null
           created_at?: string | null
           current_period_end?: string | null
-          custom_terminology?: Json | null
+          date_format?: string | null
           enable_document_versioning?: boolean | null
           extra_items_count?: number | null
           has_stripe_customer?: never
           has_stripe_subscription?: never
-          has_subscription?: never
           id?: string | null
           is_suspended?: boolean | null
-          is_trial?: never
           operator_type?: string | null
-          showmen_name?: string | null
           subscription_plan?: string | null
           subscription_status?: string | null
-          suspension_info?: never
+          timezone?: string | null
           trial_ends_at?: string | null
           trial_started_at?: string | null
           updated_at?: string | null
