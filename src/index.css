@@ -41,13 +41,13 @@
     /* Font family */
     --font-sans: 'Inter', 'Source Sans 3', 'Roboto', system-ui, sans-serif;
 
-    /* Core backgrounds - clean white */
-    /* Background: #FFFFFF */
-    --background: 0 0% 100%;
+    /* Core backgrounds - subtle off-white for better mobile contrast */
+    /* Background: #F8FAFC (very light blue-gray) */
+    --background: 210 40% 98%;
     /* Text: #0F172A */
     --foreground: 222 47% 11%;
 
-    /* Card surfaces - white */
+    /* Card surfaces - pure white for contrast against background */
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
@@ -59,12 +59,12 @@
     --primary: 215 52% 25%;
     --primary-foreground: 0 0% 100%;
 
-    /* Section Background: #F4F6F8 */
-    --secondary: 210 20% 97%;
+    /* Section Background: #EEF2F6 - more visible distinction */
+    --secondary: 214 20% 94%;
     --secondary-foreground: 222 47% 11%;
 
     /* Muted surfaces - section background */
-    --muted: 210 20% 97%;
+    --muted: 214 20% 94%;
     --muted-foreground: 215 25% 40%;
 
     /* Accent Golden Yellow: #FCBA04 - CTAs, links, highlights */
@@ -75,9 +75,9 @@
     --destructive: 0 85% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    /* Borders - subtle */
-    --border: 210 20% 88%;
-    --input: 210 20% 90%;
+    /* Borders - more visible on mobile */
+    --border: 214 25% 82%;
+    --input: 214 25% 88%;
     /* Secondary Blue: #2F6FB2 - Icons, highlights, hover states */
     --ring: 209 58% 44%;
 
@@ -88,11 +88,11 @@
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 44 98% 50%;
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 210 20% 90%;
+    --sidebar-border: 214 25% 88%;
     --sidebar-ring: 209 58% 44%;
 
     /* Interactive states */
-    --card-hover: 210 20% 98%;
+    --card-hover: 210 25% 97%;
 
     /* Status colors */
     /* Success uses Accent Green */
@@ -107,13 +107,13 @@
     /* Gradients - brand colors */
     --accent-gradient: linear-gradient(135deg, hsl(215 52% 25%), hsl(209 58% 44%));
     --hero-gradient: linear-gradient(to bottom, hsl(0 0% 0% / 0.4), hsl(0 0% 0% / 0.6));
-    --card-gradient: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 20% 98%));
+    --card-gradient: linear-gradient(180deg, hsl(0 0% 100%), hsl(210 25% 97%));
 
-    /* Shadows - professional depth */
-    --shadow-elegant: 0 10px 40px -10px hsl(215 52% 25% / 0.2), 0 4px 12px -4px hsl(215 30% 30% / 0.1);
+    /* Shadows - professional depth - stronger for mobile visibility */
+    --shadow-elegant: 0 10px 40px -10px hsl(215 52% 25% / 0.25), 0 4px 12px -4px hsl(215 30% 30% / 0.12);
     --shadow-glow: 0 0 35px -5px hsl(44 98% 50% / 0.5);
-    --shadow-card: 0 2px 12px -3px hsl(215 40% 30% / 0.1), 0 1px 4px -1px hsl(215 30% 20% / 0.06);
-    --shadow-card-hover: 0 8px 25px -5px hsl(215 52% 25% / 0.15), 0 4px 10px -3px hsl(215 30% 20% / 0.08);
+    --shadow-card: 0 2px 8px -2px hsl(215 40% 30% / 0.08), 0 1px 3px -1px hsl(215 30% 20% / 0.05);
+    --shadow-card-hover: 0 8px 25px -5px hsl(215 52% 25% / 0.18), 0 4px 10px -3px hsl(215 30% 20% / 0.1);
 
     /* Transitions */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
