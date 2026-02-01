@@ -183,6 +183,10 @@ verify_jwt = true
 [functions.register-staff]
 verify_jwt = false
 
+[functions.admin-stripe-data]
+enabled = true
+verify_jwt = true
+
 [functions.accept-staff-invite]
 verify_jwt = false
 
