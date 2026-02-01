@@ -95,9 +95,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Track if we've already processed auth state
+    let initialCheckDone = false;
+    
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        // Mark that we've handled auth state
+        initialCheckDone = true;
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -127,8 +133,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // THEN check for existing session
+    // THEN check for existing session - but only if onAuthStateChange hasn't fired yet
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      // Only process if onAuthStateChange hasn't already handled this
+      if (initialCheckDone) {
+        return;
+      }
+      
       setSession(session);
       setUser(session?.user ?? null);
       
