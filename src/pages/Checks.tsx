@@ -28,25 +28,25 @@ const Checks = () => {
       <ChecksOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
       <header className="border-b-2 border-success/30 bg-gradient-to-r from-success/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-start justify-between gap-2">
-            <PageHeader
-              icon={<CheckSquare className="h-5 w-5 text-success" />}
-              iconBgClass="from-success/20 to-success/10"
-              title="Safety Checks"
-              subtitle="Select equipment to perform checks"
-              showBackButton
-              backTo="/overview"
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowGuide(true)}
-              className="text-muted-foreground hover:text-foreground shrink-0 mt-1"
-            >
-              <HelpCircle className="h-4 w-4 mr-1" />
-              <span className="hidden sm:inline">How it works</span>
-            </Button>
-          </div>
+          <PageHeader
+            icon={<CheckSquare className="h-5 w-5 text-success" />}
+            iconBgClass="from-success/20 to-success/10"
+            title="Safety Checks"
+            subtitle="Select equipment to perform checks"
+            showBackButton
+            backTo="/overview"
+            actions={
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowGuide(true)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <HelpCircle className="h-4 w-4" />
+                <span className="hidden sm:inline ml-1">How it works</span>
+              </Button>
+            }
+          />
         </div>
       </header>
       
