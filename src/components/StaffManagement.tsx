@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Loader2, UserPlus, Users, Mail, Clock, Trash2, Settings2 } from 'lucide-react';
@@ -318,19 +317,21 @@ export function StaffManagement() {
                         {member.email || 'Unknown'}
                       </TableCell>
                       <TableCell>
-                        <Select
+                        <select
                           value={member.permission_level}
-                          onValueChange={(v) => handlePermissionChange(member.id, v as StaffPermission, member.email || 'this staff member')}
+                          onChange={(e) =>
+                            handlePermissionChange(
+                              member.id,
+                              e.target.value as StaffPermission,
+                              member.email || 'this staff member',
+                            )
+                          }
+                          className="h-10 w-[140px] rounded-md border border-input bg-background px-3 py-2 text-sm"
                         >
-                          <SelectTrigger className="w-[140px]">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover z-50">
-                            <SelectItem value="checks_only">Checks Only</SelectItem>
-                            <SelectItem value="checks_maintenance">Checks & Maint.</SelectItem>
-                            <SelectItem value="full_access">Full Access</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          <option value="checks_only">Checks Only</option>
+                          <option value="checks_maintenance">Checks & Maint.</option>
+                          <option value="full_access">Full Access</option>
+                        </select>
                       </TableCell>
                       <TableCell>
                         {member.assigned_rides.length === 0 ? (
@@ -431,19 +432,21 @@ export function StaffManagement() {
                     <div className="flex flex-col gap-2">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs text-muted-foreground">Permission:</span>
-                        <Select
+                        <select
                           value={member.permission_level}
-                          onValueChange={(v) => handlePermissionChange(member.id, v as StaffPermission, member.email || 'this staff member')}
+                          onChange={(e) =>
+                            handlePermissionChange(
+                              member.id,
+                              e.target.value as StaffPermission,
+                              member.email || 'this staff member',
+                            )
+                          }
+                          className="h-8 w-[140px] rounded-md border border-input bg-background px-2 text-xs"
                         >
-                          <SelectTrigger className="w-[140px] h-8 text-xs">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent className="bg-popover z-50">
-                            <SelectItem value="checks_only">Checks Only</SelectItem>
-                            <SelectItem value="checks_maintenance">Checks & Maint.</SelectItem>
-                            <SelectItem value="full_access">Full Access</SelectItem>
-                          </SelectContent>
-                        </Select>
+                          <option value="checks_only">Checks Only</option>
+                          <option value="checks_maintenance">Checks & Maint.</option>
+                          <option value="full_access">Full Access</option>
+                        </select>
                       </div>
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-xs text-muted-foreground">Equipment:</span>
