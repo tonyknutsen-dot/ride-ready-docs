@@ -27,6 +27,23 @@ export function WelcomeModal() {
       }
 
       try {
+        // Check if user is a staff member - don't show welcome modal for staff
+        const { data: memberData } = await supabase
+          .from('organisation_members')
+          .select('id, organisation_id, organisations!inner(owner_id)')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        const isStaff = memberData && (memberData.organisations as any)?.owner_id !== user.id;
+        
+        // Staff members don't see the welcome modal
+        if (isStaff) {
+          setOpen(false);
+          setLoading(false);
+          return;
+        }
+
         // Check if user has any rides - show modal if they don't
         const { count: rideCount } = await supabase
           .from('rides')

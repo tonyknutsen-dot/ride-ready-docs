@@ -1,12 +1,17 @@
 import { X, Download, Smartphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 export function InstallPromptBanner() {
   const { shouldShowReminder, promptInstall, dismiss, isIOS, isInstallable } = useInstallPrompt();
+  const location = useLocation();
 
-  if (!shouldShowReminder) {
+  // Don't show install banner on invite pages - user is focused on joining
+  const isInvitePage = location.pathname.startsWith('/staff-invite') || 
+                        location.pathname.startsWith('/tester-invite');
+
+  if (!shouldShowReminder || isInvitePage) {
     return null;
   }
 

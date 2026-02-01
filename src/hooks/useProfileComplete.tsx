@@ -5,17 +5,39 @@ import { supabase } from '@/integrations/supabase/client';
 export function useProfileComplete() {
   const { user } = useAuth();
   const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
+  const [isStaffMember, setIsStaffMember] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
       setIsProfileComplete(null);
+      setIsStaffMember(false);
       setLoading(false);
       return;
     }
 
     const checkProfile = async () => {
       try {
+        // First check if user is a staff member (part of an organisation they don't own)
+        const { data: memberData } = await supabase
+          .from('organisation_members')
+          .select('id, organisation_id, organisations!inner(owner_id)')
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        // User is a staff member if they're in an org they don't own
+        const isStaff = memberData && (memberData.organisations as any)?.owner_id !== user.id;
+        setIsStaffMember(!!isStaff);
+
+        // Staff members don't need to complete profile setup - they're part of an existing company
+        if (isStaff) {
+          setIsProfileComplete(true);
+          setLoading(false);
+          return;
+        }
+
+        // For non-staff (owners), check profile completion
         const { data, error } = await supabase
           .from('profiles')
           .select('company_name, controller_name')
@@ -44,5 +66,5 @@ export function useProfileComplete() {
     checkProfile();
   }, [user]);
 
-  return { isProfileComplete, loading };
+  return { isProfileComplete, isStaffMember, loading };
 }
