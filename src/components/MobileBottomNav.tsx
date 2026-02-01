@@ -219,7 +219,7 @@ export default function MobileBottomNav() {
                     <div className="p-2.5 bg-gradient-to-br from-success/20 to-success/10 rounded-lg">
                       <ShieldCheck className="h-5 w-5 text-success" />
                     </div>
-                    <span className="text-xs">Risk</span>
+                    <span className="text-xs">Risk Assessment</span>
                   </button>
                 )}
               </div>
