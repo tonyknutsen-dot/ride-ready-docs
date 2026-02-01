@@ -1,137 +1,152 @@
 
 
-# Integrate Early Access Signups with Marketing
+# Plan: Document Linking Awareness & Cascade Deletion
 
 ## Overview
-Add functionality to import early access signups directly into your marketing contacts list, enabling you to include these warm leads in email campaigns.
+This plan addresses two key user experience issues:
+1. Users should be informed that checks, maintenance logs, and risk assessments automatically create entries in their Documents list
+2. Deleting a check, maintenance record, or risk assessment should also delete any associated documents
 
----
+## What Will Change
 
-## What You'll Get
+### 1. Add Informational Alerts to Forms
 
-### On the Admin Early Access Page
-- **"Add to Marketing"** button for individual signups
-- **"Import All to Marketing"** bulk action button
-- Visual indicator showing which signups have already been imported
-- Automatic "early-access" tag applied to imported contacts
+Add clear info banners to each creation form explaining that records will appear in Documents:
 
-### Result
-Early access signups become usable marketing contacts that can receive your campaigns, while still being tracked separately in admin for analytics.
+**Safety Checks (InspectionChecklist.tsx)**
+- Add an info alert above the submit button: "When you complete this check, a PDF record will be automatically saved to your Documents under 'Check Records'."
 
----
+**Maintenance Logger (MaintenanceLogger.tsx)**
+- Add an info alert: "Attached photos and documents will be saved to your Documents list under 'Maintenance'. If you generate a report later, it will also appear there."
 
-## User Flow
+**Risk Assessments (RiskAssessmentManager.tsx)**
+- Add info when creating: "When you download or email this assessment, a PDF copy will be saved to your Documents."
 
-```text
-Early Access Admin Page
-┌─────────────────────────────────────────────────────┐
-│ Email: tony@example.com                             │
-│ Name: Tony K                                        │
-│ Source: coming_soon                                 │
-│                                                     │
-│ [✓ In Marketing List]  or  [Add to Marketing →]    │
-└─────────────────────────────────────────────────────┘
-                           │
-                           ▼
-               ┌───────────────────────┐
-               │ marketing_contacts    │
-               │ - email: tony@...     │
-               │ - name: Tony K        │
-               │ - tags: [early-access]│
-               │ - user_id: YOUR_ID    │
-               └───────────────────────┘
-                           │
-                           ▼
-                  Can receive campaigns!
+### 2. Update Onboarding Modals
+
+Enhance the existing onboarding walkthroughs to mention document integration:
+
+**ChecksOnboardingModal.tsx**
+- Update Step 3 description to mention PDF auto-save to Documents
+
+**MaintenanceOnboardingModal.tsx**
+- Update Step 3 description to mention attachments and reports go to Documents
+
+**RiskAssessmentOnboardingModal.tsx**
+- Add mention that exported PDFs are saved to Documents
+
+### 3. Implement Cascade Delete for Maintenance Records
+
+When deleting a maintenance record:
+- Fetch the `document_ids` array from the record
+- Delete the corresponding document entries from `documents` table
+- Delete the physical files from Supabase storage
+- Then delete the maintenance record itself
+
+**File: MaintenanceHistory.tsx - handleDelete function**
+
+### 4. Implement Cascade Delete for Check Records
+
+When check templates/checks are deleted, the associated Check Record PDFs should also be removed:
+- Find documents where `document_type = 'Check Record'` and `ride_id` matches
+- Delete from storage and documents table
+- This applies to template archival/deletion scenarios
+
+### 5. Implement Cascade Delete for Risk Assessments
+
+Already partially handled - RAs only generate PDFs on download/email, not auto-save. But if we add auto-save later, ensure cascade delete is in place.
+
+## Technical Details
+
+### New Info Alert Component Pattern
+```tsx
+<Alert className="bg-primary/5 border-primary/20">
+  <Info className="h-4 w-4 text-primary" />
+  <AlertDescription className="text-sm">
+    This record will be saved to your Documents list automatically.
+  </AlertDescription>
+</Alert>
 ```
 
----
+### Updated Delete Function (Maintenance)
+```tsx
+const handleDelete = async (recordId: string) => {
+  try {
+    // 1. Fetch the record to get document_ids
+    const { data: record } = await supabase
+      .from('maintenance_records')
+      .select('document_ids')
+      .eq('id', recordId)
+      .single();
 
-## Technical Implementation
+    // 2. If there are linked documents, delete them
+    if (record?.document_ids?.length) {
+      // Get file paths
+      const { data: docs } = await supabase
+        .from('documents')
+        .select('file_path')
+        .in('id', record.document_ids);
 
-### 1. Update Early Access Admin Page (`src/pages/admin/EarlyAccessSignups.tsx`)
+      // Delete from storage
+      if (docs?.length) {
+        await supabase.storage
+          .from('ride-documents')
+          .remove(docs.map(d => d.file_path));
+      }
 
-**New Features:**
-- Fetch marketing contacts to check which emails are already imported
-- Add "Add to Marketing" button per signup row
-- Add "Import All New" bulk action in header
-- Show "Already in list" badge for imported contacts
+      // Delete document records
+      await supabase
+        .from('documents')
+        .delete()
+        .in('id', record.document_ids);
+    }
 
-**Import Logic:**
-```text
-For each signup:
-1. Check if email exists in marketing_contacts
-2. If not, insert with:
-   - email, name from signup
-   - tags: ["early-access"]
-   - user_id: admin's ID (fetched from your profile or passed in)
-3. Show success/skip counts
+    // 3. Delete the maintenance record
+    await supabase
+      .from('maintenance_records')
+      .delete()
+      .eq('id', recordId);
+
+    toast({ title: "Success", description: "Record and attachments deleted" });
+    loadMaintenanceRecords();
+  } catch (error) {
+    // Error handling
+  }
+};
 ```
 
-### 2. Edge Function (New): `import-early-access-to-marketing`
+## Files to Modify
 
-Creates a server-side function to handle the import securely:
-- Accepts array of signup IDs to import
-- Validates admin role
-- Inserts to marketing_contacts with proper user_id
-- Returns success/duplicate/error counts
+| File | Changes |
+|------|---------|
+| `src/components/InspectionChecklist.tsx` | Add info alert near submit button |
+| `src/components/MaintenanceLogger.tsx` | Add info alert about document saving |
+| `src/components/RiskAssessmentManager.tsx` | Add info alert when creating/exporting |
+| `src/components/MaintenanceHistory.tsx` | Update `handleDelete` to cascade delete documents |
+| `src/components/ChecksOnboardingModal.tsx` | Update step 3 text |
+| `src/components/MaintenanceOnboardingModal.tsx` | Update step 3 text |
+| `src/components/RiskAssessmentOnboardingModal.tsx` | Update tip about exports |
 
-**Why an edge function?** 
-The `marketing_contacts` table requires a `user_id` and has RLS. Since admin is viewing early access signups (which don't have user_id), we need server-side logic to properly assign ownership.
+## User Experience Flow
 
-### 3. Track Import Status
+### After Implementation:
 
-Add a new column to `early_access_signups`:
-- `imported_to_marketing_at` (timestamp, nullable)
-- Set when successfully imported
-- Allows showing status in admin UI
+**Creating a Check:**
+1. User completes safety check
+2. User sees info alert: "A PDF record will be saved to Documents"
+3. User submits check
+4. PDF appears in Documents under "Check Records"
 
----
+**Deleting a Maintenance Record:**
+1. User clicks delete on maintenance record
+2. Confirmation shows attachments will also be removed
+3. System deletes: maintenance record + linked documents + storage files
+4. Documents list no longer shows those attachments
 
-## Files to Create/Modify
+## Benefits
 
-| File | Action | Purpose |
-|------|--------|---------|
-| `src/pages/admin/EarlyAccessSignups.tsx` | Modify | Add import buttons, status indicators |
-| `supabase/functions/import-early-access-to-marketing/index.ts` | Create | Handle secure import with proper user_id |
-| Database migration | Create | Add `imported_to_marketing_at` column |
-
----
-
-## UI Changes
-
-### Desktop Table Row (After)
-```text
-┌─────────────────────────────────────────────────────────────────────┐
-│ Email             │ Name   │ Source      │ Signed Up     │ Actions │
-├───────────────────┼────────┼─────────────┼───────────────┼─────────┤
-│ tony@example.com  │ Tony K │ coming_soon │ 01 Feb 2026   │ [Add →] │
-│ jane@example.com  │ Jane   │ coming_soon │ 30 Jan 2026   │ ✓ Added │
-└─────────────────────────────────────────────────────────────────────┘
-```
-
-### Header Actions (After)
-```text
-[Refresh] [Export CSV] [Import All New to Marketing]
-```
-
----
-
-## Imported Contacts
-
-When imported, contacts will appear in your Marketing page with:
-- **Tag**: `early-access` (for easy filtering/segmentation)
-- **Notes**: "Imported from early access signup"
-- **Subscribed**: Yes (default)
-
-You can then:
-- Include them in campaigns
-- Add additional tags
-- Track engagement
-
----
-
-## Alternative Considered
-
-**Auto-sync on signup**: Could automatically add to marketing_contacts when someone signs up. However, this requires knowing which admin user should "own" the contact, making it more complex for multi-admin setups. The manual import approach gives you control and works cleanly.
+- **Transparency**: Users understand where their data goes
+- **Data Hygiene**: No orphaned documents when records are deleted
+- **Audit Trail**: Users know their compliance records are preserved
+- **Storage Efficiency**: Deleted records don't leave behind unused files
 
