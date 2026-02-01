@@ -2,7 +2,7 @@
 // Brand colors: Primary blue #1e4a8f, Accent gold #f59e0b
 
 // Logo hosted in Supabase storage for email compatibility
-export const LOGO_URL = 'https://sbtldudgiskqfqqkrmaa.supabase.co/storage/v1/object/public/email-assets/app-logo.jpg?v=1';
+export const LOGO_URL = 'https://sbtldudgiskqfqqkrmaa.supabase.co/storage/v1/object/public/email-assets/app%20-%20logo.jpeg?v=1';
 
 export const brandColors = {
   primary: '#1e4a8f',
