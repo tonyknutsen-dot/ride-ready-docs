@@ -60,7 +60,7 @@ const Auth = () => {
   const [emailSuggestion, setEmailSuggestion] = useState<EmailSuggestion | null>(null);
   const [passwordValidation, setPasswordValidation] = useState<ReturnType<typeof validatePasswordStrength> | null>(null);
   
-  const { signIn, signUp, resetPassword, user } = useAuth();
+  const { signIn, signUp, resetPassword, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
@@ -101,11 +101,13 @@ const Auth = () => {
   }, [activeTab]);
 
   useEffect(() => {
-    if (user) {
+    // Only redirect if user exists AND we're not in a loading state
+    // This prevents false redirects from stale session data
+    if (user && !authLoading) {
       const from = (location.state as any)?.from?.pathname || '/overview';
       navigate(from, { replace: true });
     }
-  }, [user, navigate, location]);
+  }, [user, authLoading, navigate, location]);
 
   const validateForm = (data: typeof formData) => {
     try {
