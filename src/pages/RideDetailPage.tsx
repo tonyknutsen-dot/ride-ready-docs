@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import RideDetail from '@/components/RideDetail';
 import PageBreadcrumb from '@/components/PageBreadcrumb';
+import StaffAccountBanner from '@/components/StaffAccountBanner';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -120,6 +121,7 @@ const RideDetailPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-5 pb-28 md:pb-8">
+      <StaffAccountBanner />
       <Button
         variant="ghost"
         size="sm"

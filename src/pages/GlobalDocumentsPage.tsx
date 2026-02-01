@@ -4,6 +4,7 @@ import { Upload, FileText, FolderOpen } from 'lucide-react';
 import DocumentUpload from '@/components/DocumentUpload';
 import DocumentList from '@/components/DocumentList';
 import PageHeader from '@/components/PageHeader';
+import StaffAccountBanner from '@/components/StaffAccountBanner';
 
 const GlobalDocumentsPage = () => {
   const [refreshKey, setRefreshKey] = useState(0);
@@ -19,6 +20,7 @@ const GlobalDocumentsPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-5 pb-28 md:pb-8">
+      <StaffAccountBanner />
       {/* Header */}
       <div className="mb-5">
         <PageHeader

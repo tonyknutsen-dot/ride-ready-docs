@@ -10,6 +10,7 @@ import { Tables } from '@/integrations/supabase/types';
 import PageBreadcrumb from '@/components/PageBreadcrumb';
 import PageHeader from '@/components/PageHeader';
 import { RiskAssessmentOnboardingModal } from '@/components/RiskAssessmentOnboardingModal';
+import StaffAccountBanner from '@/components/StaffAccountBanner';
 
 type Ride = Tables<'rides'> & {
   ride_categories: Tables<'ride_categories'>;
@@ -42,6 +43,7 @@ const RiskAssessments = () => {
   return (
     <FeatureGate requiredPlan="advanced" feature="Risk Assessments">
       <div className="min-h-screen bg-background pb-28 md:pb-8">
+        <StaffAccountBanner />
         <RiskAssessmentOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
         
         <header className="border-b-2 border-warning/30 bg-gradient-to-r from-warning/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
