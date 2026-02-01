@@ -245,6 +245,14 @@ export default function MobileBottomNav() {
                     active={isActive(["/maintenance"])}
                   />
                 )}
+                {canAccessRiskAssessments && (
+                  <MenuItem 
+                    icon={ShieldCheck} 
+                    label="Risk Assessments" 
+                    onClick={() => go("/risk-assessments")} 
+                    active={isActive(["/risk-assessments"])}
+                  />
+                )}
                 {canAccessDocuments && (
                   <MenuItem 
                     icon={FileText} 
