@@ -359,6 +359,37 @@ const HelpCenter = () => {
       ]
     },
     {
+      category: "Staff Management",
+      planRequired: "advanced",
+      questions: [
+        {
+          q: "How do I invite staff members?",
+          a: "Go to the Staff page from the main menu, click 'Invite Staff', enter their email address, and select which features they can access. They'll receive an email invitation to join your organisation.",
+          planRequired: "advanced"
+        },
+        {
+          q: "What permissions can I give staff members?",
+          a: "You can grant access to specific features: Calendar, Documents, Checks, Maintenance, Risk Assessments, and Send Documents. Staff never have access to billing, settings, or staff management.",
+          planRequired: "advanced"
+        },
+        {
+          q: "Can staff members see all my equipment?",
+          a: "Yes, staff can view equipment you've added, but only access the features you've enabled for them. For example, if you only enable 'Checks', they can perform safety checks but won't see documents or maintenance records.",
+          planRequired: "advanced"
+        },
+        {
+          q: "How do I remove a staff member?",
+          a: "Go to the Staff page, find the staff member, and click 'Remove'. Their access is revoked immediately. They can no longer log in to your organisation's data.",
+          planRequired: "advanced"
+        },
+        {
+          q: "Can I change staff permissions after inviting them?",
+          a: "Yes, go to the Staff page, click on the staff member, and update their feature access. Changes take effect immediately.",
+          planRequired: "advanced"
+        }
+      ]
+    },
+    {
       category: "Security and Data",
       questions: [
         {
@@ -371,7 +402,7 @@ const HelpCenter = () => {
         },
         {
           q: "Who can see my documents?",
-          a: "Only you and users you authorize can access your documents. We have strict row-level security - you can only see data for your own rides and equipment."
+          a: "Only you and staff members you authorize can access your documents. We have strict row-level security - you can only see data for your own organisation's equipment."
         },
         {
           q: "What happens to my data if I cancel?",
