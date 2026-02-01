@@ -14,16 +14,10 @@ import { ProfileGuard } from "@/components/ProfileGuard";
 import { FeatureGate } from "@/components/FeatureGate";
 import { StaffRoute } from "@/components/StaffRoute";
 import ScrollToTop from "@/components/ScrollToTop";
-import MobileBottomNav from "@/components/MobileBottomNav";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
-import GlobalEventBridge from "@/components/GlobalEventBridge";
-import TestModeBanner from "@/components/TestModeBanner";
-import FloatingBugButton from "@/components/FloatingBugButton";
-import { InstallPromptBanner } from "@/components/InstallPromptBanner";
-import TesterSessionTracker from "@/components/TesterSessionTracker";
 import { AppLayout } from "@/components/AppLayout";
-import { PWAUpdateModal } from "@/components/PWAUpdateModal";
 import { StartupUpdateCheck } from "@/components/StartupUpdateCheck";
+import { AuthenticatedAppShell } from "@/components/AuthenticatedAppShell";
 import { Loader2, FileText } from "lucide-react";
 
 // Eager load critical pages
@@ -112,9 +106,8 @@ const App = () => (
           <AdminProvider>
             <TesterProvider>
               <StaffProvider>
-              <TestModeBanner />
-              <TesterSessionTracker />
-              <GlobalEventBridge />
+              {/* Authenticated user components loaded lazily */}
+              <AuthenticatedAppShell />
               <Suspense fallback={<PageLoader />}>
               <Routes>
               <Route path="/" element={<ComingSoon />} />
@@ -503,10 +496,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
               </Routes>
               </Suspense>
-              <MobileBottomNav />
-              <PWAUpdateModal />
-              <FloatingBugButton />
-              <InstallPromptBanner />
+              {/* Cookie consent shown globally (lightweight) */}
               <CookieConsentBanner />
               </StaffProvider>
             </TesterProvider>

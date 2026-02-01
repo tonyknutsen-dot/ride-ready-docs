@@ -28,14 +28,16 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   const checkTesterStatus = useCallback(async () => {
-    // No user - not tester, done loading
+    // No user - not tester, done loading immediately
     if (!user) {
       setIsTester(false);
       setIsLoading(false);
       return;
     }
 
-    setIsLoading(true);
+    // Don't block - set loading false early, then update if needed
+    // This allows the UI to render faster
+    setIsLoading(false);
 
     try {
       const { data, error } = await supabase
@@ -54,22 +56,13 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
       // Check if role exists and hasn't expired
       if (data) {
         const isExpired = data.expires_at ? new Date(data.expires_at) < new Date() : false;
-        console.log('[TesterContext] Status check:', { 
-          userId: user.id, 
-          hasRole: true, 
-          expiresAt: data.expires_at, 
-          isExpired 
-        });
         setIsTester(!isExpired);
       } else {
-        console.log('[TesterContext] No tester role found for user:', user.id);
         setIsTester(false);
       }
     } catch (error) {
       console.error('[TesterContext] Error checking tester status:', error);
       setIsTester(false);
-    } finally {
-      setIsLoading(false);
     }
   }, [user]);
 
@@ -110,11 +103,18 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [user, checkTesterStatus]);
 
-  // Also recheck on window focus (backup for realtime issues)
+  // Recheck on window focus only after extended absence (5+ minutes)
+  // This reduces unnecessary API calls while still catching role changes
   useEffect(() => {
+    if (!user) return;
+    
+    let lastCheck = Date.now();
+    
     const handleFocus = () => {
-      if (user) {
-        console.log('[TesterContext] Window focused, rechecking status');
+      const now = Date.now();
+      // Only recheck if more than 5 minutes have passed
+      if (now - lastCheck > 5 * 60 * 1000) {
+        lastCheck = now;
         checkTesterStatus();
       }
     };
