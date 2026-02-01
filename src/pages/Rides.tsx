@@ -72,8 +72,8 @@ const Rides = () => {
 
   const loadRides = async () => {
     try {
-      // For staff, don't filter by user_id - let RLS handle access control
-      // For owners, filter by their own user_id
+      // Always scope to the *current operator* (effectiveUserId).
+      // RLS will further restrict staff to assigned rides when applicable.
       let query = supabase
         .from('rides')
         .select(`
@@ -85,10 +85,8 @@ const Rides = () => {
           )
         `)
         .order('created_at', { ascending: false });
-      
-      if (!isStaff) {
-        query = query.eq('user_id', effectiveUserId);
-      }
+
+      query = query.eq('user_id', effectiveUserId);
       
       const { data, error } = await query;
 
@@ -123,21 +121,20 @@ const Rides = () => {
     for (const ride of ridesData) {
       try {
         // Count ride-specific documents only (exclude global and maintenance docs for display)
-        // For staff, RLS will filter; for owners, we filter by effectiveUserId
         let docQuery = supabase
           .from('documents')
           .select('*', { count: 'exact', head: true })
           .eq('ride_id', ride.id)
           .neq('document_type', 'maintenance')
           .neq('document_type', 'photo');
-        if (!isStaff) docQuery = docQuery.eq('user_id', effectiveUserId);
+        docQuery = docQuery.eq('user_id', effectiveUserId);
         const { count: docCount } = await docQuery;
         
         let checkQuery = supabase
           .from('checks')
           .select('*', { count: 'exact', head: true })
           .eq('ride_id', ride.id);
-        if (!isStaff) checkQuery = checkQuery.eq('user_id', effectiveUserId);
+        checkQuery = checkQuery.eq('user_id', effectiveUserId);
         const { count: checkCount } = await checkQuery;
         
         // For maintenance/inspection queries, staff rely on RLS
@@ -180,8 +177,7 @@ const Rides = () => {
     const rideIds = ridesData.map(r => r.id);
     
     try {
-      // Batch query: Get all photo documents for all rides in ONE query
-      // For staff, rely on RLS; for owners, filter by effectiveUserId
+       // Batch query: Get all photo documents for all rides in ONE query
       let photoQuery = supabase
         .from('documents')
         .select('ride_id, file_path')
@@ -189,7 +185,7 @@ const Rides = () => {
         .eq('document_type', 'photo')
         .eq('is_latest_version', true)
         .order('uploaded_at', { ascending: false });
-      if (!isStaff) photoQuery = photoQuery.eq('user_id', effectiveUserId);
+       photoQuery = photoQuery.eq('user_id', effectiveUserId);
       const { data: photoDocs } = await photoQuery;
 
       // Group by ride_id (take first/latest for each)

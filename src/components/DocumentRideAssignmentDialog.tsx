@@ -45,10 +45,10 @@ const DocumentRideAssignmentDialog = ({
   const [originalAssignments, setOriginalAssignments] = useState<Set<string>>(new Set());
 
   useEffect(() => {
-    if (isOpen && document && user) {
+    if (isOpen && document && user && effectiveUserId) {
       loadRidesAndAssignments();
     }
-  }, [isOpen, document, user]);
+  }, [isOpen, document, user, effectiveUserId]);
 
   const loadRidesAndAssignments = async () => {
     if (!document || !user) return;
@@ -61,9 +61,8 @@ const DocumentRideAssignmentDialog = ({
         .select('id, ride_name, ride_categories(name)')
         .order('ride_name');
 
-      if (!isStaff) {
-        ridesQuery = ridesQuery.eq('user_id', effectiveUserId);
-      }
+      // Always scope to the current operator.
+      ridesQuery = ridesQuery.eq('user_id', effectiveUserId);
 
       const { data: ridesData, error: ridesError } = await ridesQuery;
 

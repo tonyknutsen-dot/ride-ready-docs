@@ -121,13 +121,13 @@ const CalendarView = () => {
   const isBasicPlan = subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic';
 
   useEffect(() => {
-    if (user && subscription) {
+    if (user && subscription && effectiveUserId) {
       loadCalendarEvents();
       loadRides();
     } else {
       setLoading(false);
     }
-  }, [user, currentMonth, subscription?.subscriptionStatus]);
+  }, [user, currentMonth, subscription?.subscriptionStatus, effectiveUserId]);
 
   const loadRides = async () => {
     if (!user?.id) return;
@@ -138,11 +138,8 @@ const CalendarView = () => {
         .select('*')
         .order('ride_name');
 
-      // For owners, filter by their user_id
-      // For staff, skip user_id filter - RLS handles access
-      if (!isStaff) {
-        query = query.eq('user_id', effectiveUserId);
-      }
+      // Always scope to the *current operator* (effectiveUserId).
+      query = query.eq('user_id', effectiveUserId);
 
       const { data, error } = await query;
 
@@ -167,10 +164,8 @@ const CalendarView = () => {
         .eq('ride_id', rideId)
         .order('document_name');
 
-      // For owners, filter by user_id; staff rely on RLS
-      if (!isStaff) {
-        query = query.eq('user_id', effectiveUserId);
-      }
+      // Always scope to the current operator.
+      query = query.eq('user_id', effectiveUserId);
 
       const { data, error } = await query;
 
@@ -201,12 +196,9 @@ const CalendarView = () => {
       const rideIds = new Set<string>();
 
       // Build queries based on staff status
-      // For staff, skip user_id filter - RLS handles access via staff_can_access_ride()
       const buildQuery = (baseQuery: any) => {
-        if (!isStaff) {
-          return baseQuery.eq('user_id', effectiveUserId);
-        }
-        return baseQuery;
+        // Always scope to the current operator; RLS narrows staff access further.
+        return baseQuery.eq('user_id', effectiveUserId);
       };
 
       // Load inspection checks
@@ -341,7 +333,8 @@ const CalendarView = () => {
         const { data: rides } = await supabase
           .from('rides')
           .select('id, ride_name')
-          .in('id', Array.from(rideIds));
+          .in('id', Array.from(rideIds))
+          .eq('user_id', effectiveUserId);
 
         const rideMap = new Map(rides?.map(r => [r.id, r.ride_name]) || []);
         

@@ -45,10 +45,10 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
   const [showArchived, setShowArchived] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && effectiveUserId) {
       loadTemplates();
     }
-  }, [user, ride.id, showArchived]);
+  }, [user, effectiveUserId, ride.id, showArchived]);
 
   const loadTemplates = async () => {
     try {
@@ -62,10 +62,8 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
         .eq('check_frequency', frequency)
         .order('created_at', { ascending: false });
 
-      // For owners, filter by their user_id; for staff, RLS handles access
-      if (!isStaff) {
-        query = query.eq('user_id', effectiveUserId);
-      }
+      // Always scope to the current operator.
+      query = query.eq('user_id', effectiveUserId);
 
       if (!showArchived) {
         query = query.eq('is_archived', false);
@@ -98,9 +96,7 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
         .update({ is_active: false })
         .eq('ride_id', ride.id);
 
-      if (!isStaff) {
-        deactivateQuery = deactivateQuery.eq('user_id', effectiveUserId);
-      }
+      deactivateQuery = deactivateQuery.eq('user_id', effectiveUserId);
 
       await deactivateQuery;
 
