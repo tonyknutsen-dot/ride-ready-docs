@@ -19,7 +19,9 @@ import {
   ChevronRight,
   Wrench,
   Users,
+  Download,
 } from 'lucide-react';
+import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import {
   Sidebar,
   SidebarContent,
@@ -84,9 +86,13 @@ export function AppSidebar() {
   const { toast } = useToast();
   const { state, toggleSidebar } = useSidebar();
   const collapsed = state === 'collapsed';
+  const { isInstalled, isStandalone } = useInstallPrompt();
 
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
+
+  // Show install link only if not already installed
+  const showInstallLink = !isInstalled && !isStandalone;
 
   // Permission check helper
   const hasPermission = (requiredPermission?: 'checks_only' | 'checks_maintenance' | 'full_access') => {
@@ -239,6 +245,23 @@ export function AppSidebar() {
                       >
                         <Users className="h-5 w-5 flex-shrink-0" />
                         {!collapsed && <span>Staff</span>}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
+                {showInstallLink && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={location.pathname === '/install'}>
+                      <Link
+                        to="/install"
+                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+                          location.pathname === '/install'
+                            ? 'bg-primary text-primary-foreground font-medium'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <Download className="h-5 w-5 flex-shrink-0" />
+                        {!collapsed && <span>Install App</span>}
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
