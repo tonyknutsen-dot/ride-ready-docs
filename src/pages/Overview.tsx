@@ -149,7 +149,7 @@ const Overview = () => {
             </div>
             <div className="flex-1">
               <h2 className="text-xl font-bold text-success mb-1">Start Safety Check</h2>
-              <p className="text-sm text-muted-foreground">Perform daily, monthly or yearly inspections on your equipment</p>
+              <p className="text-sm text-muted-foreground">Perform pre-opening, daily, monthly or yearly checks on your equipment</p>
             </div>
             <div className="text-right">
               <p className="text-3xl font-bold text-success">{stats.recentChecks}</p>
