@@ -34,7 +34,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Rate limiting - public endpoint so stricter limits
     const rateLimitKey = getClientIdentifier(req, "get-shared-documents");
-    const rateLimitResult = await checkRateLimit(rateLimitKey, "api");
+    const rateLimitResult = await checkRateLimit(rateLimitKey, "public");
     if (!rateLimitResult.allowed) {
       console.log(`Rate limit exceeded for ${clientIp}`);
       return createRateLimitResponse(rateLimitResult, corsHeaders);
