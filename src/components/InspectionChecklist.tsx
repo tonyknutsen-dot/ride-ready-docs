@@ -15,6 +15,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Tables } from '@/integrations/supabase/types';
 import { useQueryClient } from '@tanstack/react-query';
 import jsPDF from 'jspdf';
@@ -68,6 +69,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const [showCheckDetail, setShowCheckDetail] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { effectiveUserId, isStaff } = useEffectiveUserId();
   const queryClient = useQueryClient();
   const { submitCheck, isOnline } = useOfflineCheck();
   const { pendingCount, isSyncing, syncAll } = useOfflineSync();
@@ -110,18 +112,23 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     setUsingCachedTemplate(false);
     
     try {
-      const { data, error } = await supabase
+      // Build query - for staff, skip user_id filter (RLS handles access)
+      let query = supabase
         .from('daily_check_templates')
         .select(`
           *,
           daily_check_template_items (*)
         `)
-        .eq('user_id', user?.id)
         .eq('ride_id', ride.id)
         .eq('check_frequency', frequency)
         .eq('is_active', true)
-        .eq('is_archived', false)
-        .maybeSingle();
+        .eq('is_archived', false);
+
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
+
+      const { data, error } = await query.maybeSingle();
 
       if (error && error.code !== 'PGRST116') {
         throw error;
@@ -168,14 +175,20 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
 
   const loadRecentChecks = async () => {
     try {
-      const { data, error } = await supabase
+      // Build query - for staff, skip user_id filter (RLS handles access)
+      let query = supabase
         .from('checks')
         .select('*')
-        .eq('user_id', user?.id)
         .eq('ride_id', ride.id)
         .eq('check_frequency', frequency)
         .order('check_date', { ascending: false })
         .limit(5);
+
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setRecentChecks(data || []);
@@ -351,11 +364,11 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     if (!activeTemplate) return null;
 
     try {
-      // Fetch profile for company branding
+      // Fetch profile for company branding - use effectiveUserId to get operator's profile
       const { data: profile } = await supabase
         .from('profiles')
         .select('*')
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .single();
 
       // Fetch company logo if available
@@ -405,13 +418,19 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
       }
 
       // Fetch defects for this ride (open ones or ones linked to this check)
-      const { data: defectsData } = await supabase
+      // Build query - for staff, skip user_id filter (RLS handles access)
+      let defectsQuery = supabase
         .from('defects')
         .select('*')
         .eq('ride_id', ride.id)
-        .eq('user_id', user?.id)
         .neq('status', 'resolved')
         .order('severity', { ascending: false });
+
+      if (!isStaff) {
+        defectsQuery = defectsQuery.eq('user_id', effectiveUserId);
+      }
+
+      const { data: defectsData } = await defectsQuery;
 
       // Type the defects
       type DefectRecord = {
@@ -1031,7 +1050,8 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
             const frequencyLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
             const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
             const fileName = `${frequencyLabel}-Check-${ride.ride_name.replace(/[^a-zA-Z0-9]/g, '-')}-${new Date().toISOString().split('T')[0]}.pdf`;
-            const filePath = `${user?.id}/${ride.id}/check-records/${fileName}`;
+            // Use effectiveUserId for storage path so staff data syncs with operator
+            const filePath = `${effectiveUserId}/${ride.id}/check-records/${fileName}`;
             
             const { error: uploadError } = await supabase.storage
               .from('ride-documents')
@@ -1041,10 +1061,11 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
               });
 
             if (!uploadError) {
+              // Use effectiveUserId for document record so staff data syncs with operator
               await supabase
                 .from('documents')
                 .insert({
-                  user_id: user?.id,
+                  user_id: effectiveUserId,
                   ride_id: ride.id,
                   document_name: `${frequencyLabel} Safety Check - ${ride.ride_name} - ${dateStr}`,
                   document_type: 'Check Record',

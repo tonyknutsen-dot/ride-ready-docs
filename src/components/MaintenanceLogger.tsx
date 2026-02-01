@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Tables } from '@/integrations/supabase/types';
 import { compressImage } from '@/utils/imageCompression';
 
@@ -48,6 +49,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const { toast } = useToast();
+  const { effectiveUserId } = useEffectiveUserId();
 
   const [formData, setFormData] = useState({
     maintenance_date: new Date(),
@@ -197,12 +199,13 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
       const originalFile = uploadedFiles[i];
       
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('User not authenticated');
+      if (!user || !effectiveUserId) throw new Error('User not authenticated');
 
+      // Use effectiveUserId (operator's ID) so staff data syncs with operator
       const { data, error } = await supabase
         .from('documents')
         .insert([{
-          user_id: user.id,
+          user_id: effectiveUserId,
           ride_id: ride.id,
           document_name: originalFile.name,
           document_type: 'maintenance',
@@ -241,7 +244,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
 
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      if (!user || !effectiveUserId) {
         toast({
           title: "Error",
           description: "You must be logged in to log maintenance",
@@ -250,6 +253,9 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         return;
       }
 
+      // Use effectiveUserId (operator's ID) so staff data syncs with operator
+      const storageUserId = effectiveUserId;
+
       // Upload files if any
       let documentIds: string[] = [];
       if (uploadedFiles.length > 0) {
@@ -257,9 +263,9 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         documentIds = await saveDocuments(filePaths);
       }
 
-      // Save maintenance record
+      // Save maintenance record - use effectiveUserId so staff data syncs with operator
       const maintenanceData = {
-        user_id: user.id,
+        user_id: storageUserId,
         ride_id: ride.id,
         maintenance_date: formData.maintenance_date.toISOString().split('T')[0],
         maintenance_type: formData.maintenance_type,

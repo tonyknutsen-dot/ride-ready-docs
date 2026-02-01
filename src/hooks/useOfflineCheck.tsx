@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffectiveUserId } from './useEffectiveUserId';
 import { useOnlineStatus } from './useOnlineStatus';
 import { useToast } from './use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -38,15 +39,17 @@ interface CheckSubmission {
 
 export function useOfflineCheck() {
   const { user } = useAuth();
+  const { effectiveUserId } = useEffectiveUserId();
   const { isOnline } = useOnlineStatus();
   const { toast } = useToast();
 
   const submitCheck = useCallback(async (check: CheckSubmission): Promise<{ success: boolean; isOffline: boolean }> => {
-    if (!user) return { success: false, isOffline: false };
+    if (!user || !effectiveUserId) return { success: false, isOffline: false };
 
     // If online, submit directly to Supabase
     if (isOnline) {
       try {
+        // Use effectiveUserId (operator's ID) so staff data syncs with operator
         const { data: checkData, error: checkError } = await supabase
           .from('checks')
           .insert({
@@ -62,7 +65,7 @@ export function useOfflineCheck() {
             signature_data: check.signatureData,
             compliance_officer: check.complianceOfficer,
             environment_notes: check.environmentNotes,
-            user_id: user.id,
+            user_id: effectiveUserId,
           })
           .select()
           .single();
@@ -142,7 +145,7 @@ export function useOfflineCheck() {
       });
       return { success: false, isOffline: false };
     }
-  }, [user, isOnline, toast]);
+  }, [user, effectiveUserId, isOnline, toast]);
 
   return { submitCheck, isOnline };
 }
