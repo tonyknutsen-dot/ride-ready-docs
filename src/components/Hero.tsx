@@ -2,19 +2,21 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useSubscription } from "@/hooks/useSubscription";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
-import { PlanSelection } from "./PlanSelection";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import heroImage from "@/assets/hero-fairground.jpg";
 import { FileText, Settings, ArrowRight, Check, Globe } from "lucide-react";
-import { useDetectedTerminology } from "@/hooks/useTerminology";
-import DeviceHintBanner from "./DeviceHintBanner";
-import TrustBadges from "./TrustBadges";
+
+// Lazy load non-critical components to improve LCP
+const Dialog = lazy(() => import("@/components/ui/dialog").then(m => ({ default: m.Dialog })));
+const DialogContent = lazy(() => import("@/components/ui/dialog").then(m => ({ default: m.DialogContent })));
+const PlanSelection = lazy(() => import("./PlanSelection").then(m => ({ default: m.PlanSelection })));
+const DeviceHintBanner = lazy(() => import("./DeviceHintBanner"));
+const TrustBadges = lazy(() => import("./TrustBadges"));
+
 const Hero = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { subscription } = useSubscription();
-  const terminology = useDetectedTerminology();
   const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   const handleDocsApp = () => {
@@ -71,8 +73,8 @@ const Hero = () => {
             <span className="text-accent">Management</span>
           </h1>
           
-          {/* Subheadline */}
-          <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed animate-fade-up animate-delay-200">
+          {/* Subheadline - LCP element, no animation delay for faster paint */}
+          <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed">
             The all-in-one platform for ride and equipment operators. Manage documents for rides, food stalls, 
             games, inflatables, attractions, and more—track compliance, handle safety checks, and stay organized.
           </p>
@@ -122,12 +124,16 @@ const Hero = () => {
 
           {/* Trust Badges */}
           <div className="mt-10 animate-fade-up animate-delay-500">
-            <TrustBadges variant="hero" />
+            <Suspense fallback={null}>
+              <TrustBadges variant="hero" />
+            </Suspense>
           </div>
 
           {/* Device Hint for Mobile Users */}
           <div className="mt-6 max-w-lg mx-auto animate-fade-up animate-delay-600">
-            <DeviceHintBanner variant="hero" />
+            <Suspense fallback={null}>
+              <DeviceHintBanner variant="hero" />
+            </Suspense>
           </div>
         </div>
       </div>
@@ -141,12 +147,16 @@ const Hero = () => {
         </a>
       </div>
 
-      {/* Upgrade Dialog */}
-      <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
-        <DialogContent className="max-w-4xl">
-          <PlanSelection />
-        </DialogContent>
-      </Dialog>
+      {/* Upgrade Dialog - Lazy loaded */}
+      {showUpgradeDialog && (
+        <Suspense fallback={null}>
+          <Dialog open={showUpgradeDialog} onOpenChange={setShowUpgradeDialog}>
+            <DialogContent className="max-w-4xl">
+              <PlanSelection />
+            </DialogContent>
+          </Dialog>
+        </Suspense>
+      )}
     </section>
   );
 };
