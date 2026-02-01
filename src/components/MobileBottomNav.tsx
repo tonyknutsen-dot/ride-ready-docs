@@ -3,7 +3,6 @@ import {
   Home, FolderOpen, CheckSquare, MoreHorizontal,
   Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut, Send, Wrench, Shield, Lightbulb, Users, Download
 } from "lucide-react";
-import { useInstallPrompt } from "@/hooks/useInstallPrompt";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
@@ -36,13 +35,9 @@ export default function MobileBottomNav() {
     canManageStaff,
   } = useStaff();
   const { toast } = useToast();
-  const { isInstalled, isStandalone } = useInstallPrompt();
   const [open, setOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
-
-  // Show install link only if not already installed
-  const showInstallLink = !isInstalled && !isStandalone;
 
   // Don't show on public pages or if not logged in
   if (!user || PUBLIC_ROUTES.includes(loc.pathname)) return null;
@@ -303,15 +298,13 @@ export default function MobileBottomNav() {
                   onClick={() => go("/help")} 
                   active={isActive(["/help"])}
                 />
-                {showInstallLink && (
-                  <MenuItem 
-                    icon={Download} 
-                    label="Install App" 
-                    onClick={() => go("/install")} 
-                    active={isActive(["/install"])}
-                    variant="info"
-                  />
-                )}
+                <MenuItem 
+                  icon={Download} 
+                  label="Install App" 
+                  onClick={() => go("/install")} 
+                  active={isActive(["/install"])}
+                  variant="info"
+                />
                 <MenuItem 
                   icon={Lightbulb} 
                   label="Request Feature" 
