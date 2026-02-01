@@ -187,7 +187,7 @@ const Overview = () => {
             <div className="text-2xl md:text-3xl font-bold text-accent mb-1">
               {stats.activeRides}
             </div>
-            <div className="text-xs text-muted-foreground font-medium">Active Rides</div>
+            <div className="text-xs text-muted-foreground font-medium">Active Equipment</div>
           </CardContent>
         </Card>
 
