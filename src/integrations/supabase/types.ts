@@ -930,6 +930,30 @@ export type Database = {
           },
         ]
       }
+      early_access_signups: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          source: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          name?: string | null
+          source?: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          source?: string
+        }
+        Relationships: []
+      }
       email_campaigns: {
         Row: {
           created_at: string
