@@ -993,7 +993,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                 key={doc.id} 
                 className="flex flex-col gap-2 p-3 border-2 border-border/60 rounded-xl hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent active:scale-[0.99] transition-all min-w-0 bg-card"
               >
-                <div className="flex items-center gap-3">
+                {/* Row 1: Thumbnail + Name + Type badge */}
+                <div className="flex items-start gap-3 min-w-0">
                   {/* Thumbnail */}
                   <div 
                     className="shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-primary/10 to-info/10 border border-primary/20 flex items-center justify-center cursor-pointer"
@@ -1010,26 +1011,22 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                     )}
                   </div>
 
-                  {/* Content */}
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-sm font-medium truncate" title={doc.document_name}>
+                  {/* Content - takes remaining space */}
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <h4 className="text-sm font-medium break-words line-clamp-2" title={doc.document_name}>
                       {doc.document_name}
                     </h4>
-                    <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                      <span className="text-[11px] text-muted-foreground">
-                        {getDocumentTypeDisplay(doc.document_type)}
-                      </span>
-                      <span className="text-[11px] text-muted-foreground/50">•</span>
-                      <span className="text-[11px] text-muted-foreground">
-                        {formatFileSize(doc.file_size || 0)}
-                      </span>
+                    <div className="flex items-center gap-2 mt-0.5 flex-wrap text-[11px] text-muted-foreground">
+                      <span>{getDocumentTypeDisplay(doc.document_type)}</span>
+                      <span className="opacity-50">•</span>
+                      <span>{formatFileSize(doc.file_size || 0)}</span>
                       {doc.expires_at && (
                         <>
-                          <span className="text-[11px] text-muted-foreground/50">•</span>
-                          <span className={`text-[11px] flex items-center gap-0.5 ${
+                          <span className="opacity-50">•</span>
+                          <span className={`flex items-center gap-0.5 ${
                             isExpired(doc.expires_at) ? 'text-destructive' :
                             isExpiringSoon(doc.expires_at) ? 'text-yellow-600' :
-                            'text-muted-foreground'
+                            ''
                           }`}>
                             {isExpired(doc.expires_at) && <AlertTriangle className="h-3 w-3" />}
                             {new Date(doc.expires_at).toLocaleDateString('en-GB')}
@@ -1038,63 +1035,65 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                       )}
                     </div>
                   </div>
+                </div>
 
-                  {/* Actions - simplified to icon buttons */}
-                  <div className="flex items-center gap-1 shrink-0">
-                    {isGlobal && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => setAssignmentDialogDoc(doc)}
-                        title="Assign to items"
-                      >
-                        <Link2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                    {isViewable(doc) && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8"
-                        onClick={() => handleView(doc)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                    )}
+                {/* Row 2: Actions - on own line for mobile clarity */}
+                <div className="flex items-center justify-end gap-1 pt-1 border-t border-border/40">
+                  {isGlobal && (
                     <Button
-                      size="icon"
+                      size="sm"
                       variant="ghost"
-                      className="h-8 w-8"
-                      onClick={() => handleDownload(doc)}
+                      className="h-8 px-2 gap-1.5 text-xs"
+                      onClick={() => setAssignmentDialogDoc(doc)}
                     >
-                      <Download className="h-4 w-4" />
+                      <Link2 className="h-3.5 w-3.5" />
+                      <span className="hidden xs:inline">Link</span>
                     </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-muted-foreground hover:text-destructive">
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Document</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{doc.document_name}"? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={() => handleDelete(doc)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
+                  )}
+                  {isViewable(doc) && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-8 px-2 gap-1.5 text-xs"
+                      onClick={() => handleView(doc)}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                      <span className="hidden xs:inline">View</span>
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 px-2 gap-1.5 text-xs"
+                    onClick={() => handleDownload(doc)}
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                    <span className="hidden xs:inline">Download</span>
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button size="sm" variant="ghost" className="h-8 px-2 gap-1.5 text-xs text-muted-foreground hover:text-destructive">
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{doc.document_name}"? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={() => handleDelete(doc)}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
                 
                 {/* Show assigned items for global documents */}
