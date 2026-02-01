@@ -1,7 +1,8 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
-import { Loader2, FileText } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 import { useTester } from '@/contexts/TesterContext';
+import appLogo from '@/assets/app-logo.jpg';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -16,7 +17,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
-          <FileText className="mx-auto h-12 w-12 text-primary" />
+          <img src={appLogo} alt="Ride Ready Docs" className="mx-auto h-20 w-20 rounded-full shadow-lg" />
           <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
           <p className="text-muted-foreground">Loading...</p>
         </div>

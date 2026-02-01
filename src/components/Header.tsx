@@ -5,6 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
+import appLogo from "@/assets/app-logo.jpg";
 
 const Header = () => {
   const location = useLocation();
@@ -49,8 +50,9 @@ const Header = () => {
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex items-center group">
-            <span className="font-bold text-xl text-foreground group-hover:text-primary transition-colors">
+          <Link to="/" className="flex items-center gap-2 group">
+            <img src={appLogo} alt="Ride Ready Docs" className="h-9 w-9 rounded-full" />
+            <span className="font-bold text-xl text-foreground group-hover:text-primary transition-colors hidden sm:inline">
               Ride Ready Docs
             </span>
           </Link>
