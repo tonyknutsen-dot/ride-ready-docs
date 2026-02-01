@@ -4,10 +4,11 @@ import { X, MonitorSmartphone } from 'lucide-react';
 
 interface DeviceHintBannerProps {
   variant?: 'default' | 'hero';
+  storageKey?: string;
 }
 
 const MOBILE_BREAKPOINT = 768;
-const STORAGE_KEY = 'device-hint-banner';
+const DEFAULT_STORAGE_KEY = 'device-hint-banner';
 
 const TIPS = [
   "Works great on mobile! For the full experience with lots of documents and forms, try us on a tablet or laptop.",
@@ -15,7 +16,7 @@ const TIPS = [
   "Last tip: Pin this app to your home screen for instant access. For heavy admin work, try desktop!"
 ];
 
-export default function DeviceHintBanner({ variant = 'default' }: DeviceHintBannerProps) {
+export default function DeviceHintBanner({ variant = 'default', storageKey = DEFAULT_STORAGE_KEY }: DeviceHintBannerProps) {
   const [showBanner, setShowBanner] = useState(false);
   const [tipIndex, setTipIndex] = useState(0);
 
@@ -24,7 +25,7 @@ export default function DeviceHintBanner({ variant = 'default' }: DeviceHintBann
     if (!isMobile) return;
 
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = localStorage.getItem(storageKey);
       const data = stored ? JSON.parse(stored) : { dismissed: false, showCount: 0 };
 
       // Don't show if permanently dismissed or shown enough times
@@ -37,7 +38,7 @@ export default function DeviceHintBanner({ variant = 'default' }: DeviceHintBann
       setShowBanner(true);
       
       // Increment count for next time
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      localStorage.setItem(storageKey, JSON.stringify({
         ...data,
         showCount: data.showCount + 1
       }));
@@ -51,7 +52,7 @@ export default function DeviceHintBanner({ variant = 'default' }: DeviceHintBann
     setShowBanner(false);
     try {
       // Mark as permanently dismissed
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ dismissed: true, showCount: TIPS.length }));
+      localStorage.setItem(storageKey, JSON.stringify({ dismissed: true, showCount: TIPS.length }));
     } catch {
       // Ignore storage errors
     }
