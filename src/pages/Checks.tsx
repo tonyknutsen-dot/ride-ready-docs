@@ -3,6 +3,7 @@ import { CheckSquare } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import RideSelector from '@/components/RideSelector';
 import PageHeader from '@/components/PageHeader';
+import { ChecksOnboardingModal } from '@/components/ChecksOnboardingModal';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -21,6 +22,7 @@ const Checks = () => {
 
   return (
     <div className="min-h-screen bg-background pb-28 md:pb-8">
+      <ChecksOnboardingModal />
       <header className="border-b-2 border-success/30 bg-gradient-to-r from-success/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
         <div className="container mx-auto px-4 py-4">
           <PageHeader
