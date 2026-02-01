@@ -13,15 +13,13 @@ export const useTesterSessionTracking = () => {
   const isStartingRef = useRef(false);
 
   const startSession = useCallback(async () => {
-    if (!user || !isTester || sessionIdRef.current || isStartingRef.current) {
-      return;
+    if (!user || !isTester || isStartingRef.current) {
+      return null;
     }
 
     isStartingRef.current = true;
 
     try {
-      console.log('[TesterSession] Starting session for user:', user.id);
-      
       // Use the RPC function which handles duplicates and stale sessions
       const { data, error } = await supabase.rpc('start_tester_session', {
         p_user_id: user.id
@@ -29,13 +27,15 @@ export const useTesterSessionTracking = () => {
 
       if (error) {
         console.error('[TesterSession] Failed to start session:', error);
-        return;
+        return null;
       }
 
       sessionIdRef.current = data;
-      console.log('[TesterSession] Session started:', data);
+      console.log('[TesterSession] Session started/resumed:', data);
+      return data;
     } catch (err) {
       console.error('[TesterSession] Error starting session:', err);
+      return null;
     } finally {
       isStartingRef.current = false;
     }
@@ -65,7 +65,9 @@ export const useTesterSessionTracking = () => {
   }, []);
 
   const updateHeartbeat = useCallback(async () => {
+    // If no session, try to start one (handles resuming after idle timeout)
     if (!sessionIdRef.current) {
+      await startSession();
       return;
     }
 
@@ -79,11 +81,14 @@ export const useTesterSessionTracking = () => {
 
       if (error) {
         console.error('[TesterSession] Heartbeat update error:', error);
+        // Session might have been closed, try to start a new one
+        sessionIdRef.current = null;
+        await startSession();
       }
     } catch (err) {
       console.error('[TesterSession] Error updating heartbeat:', err);
     }
-  }, []);
+  }, [startSession]);
 
   useEffect(() => {
     if (isTester && user) {
@@ -95,10 +100,15 @@ export const useTesterSessionTracking = () => {
         heartbeatRef.current = setInterval(updateHeartbeat, HEARTBEAT_INTERVAL);
       }, 10000);
 
-      // Handle visibility change (tab switch, minimize)
+      // Handle visibility change - resume session when tab becomes visible
       const handleVisibilityChange = () => {
         if (document.hidden) {
+          // Tab hidden - update heartbeat one last time
           updateHeartbeat();
+        } else {
+          // Tab visible again - ensure we have an active session
+          // This handles the case where session was closed due to inactivity
+          startSession();
         }
       };
 
