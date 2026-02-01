@@ -19,7 +19,6 @@ const DOCUMENT_CATEGORIES = {
     { id: 'declaration_of_compliance', name: '📜 Annual Inspection Certificate', description: 'Annual safety certificate to operate', featured: true },
     { id: 'electrical_inspection', name: 'Electrical Inspection Report', description: 'Electrical safety inspection reports' },
     { id: 'inservice_inspection', name: 'In-Service Inspection Report', description: 'Regular in-service inspection reports' },
-    { id: 'initial_test_report', name: 'Initial Test Report', description: 'Initial testing and commissioning reports' },
   ],
   'Checks': [
     { id: 'daily_check', name: 'Daily Check Record', description: 'Daily pre-opening check documentation' },
@@ -33,6 +32,7 @@ const DOCUMENT_CATEGORIES = {
   'Design & Review': [
     { id: 'design_review', name: 'Design Review Report', description: 'Design review documents' },
     { id: 'conformity_design', name: 'Conformity to Design', description: 'Design conformity certificates' },
+    { id: 'initial_test_report', name: 'Initial Test Report', description: 'Initial testing and commissioning reports' },
   ],
   'Risk Assessments': [
     { id: 'risk_assessment', name: 'Risk Assessment', description: 'General, fire, confined space, working at height assessments' },
