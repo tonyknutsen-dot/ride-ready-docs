@@ -21,6 +21,7 @@ import { compressImage } from '@/utils/imageCompression';
 import { EmptyState } from '@/components/EmptyState';
 import { LoadingState } from '@/components/LoadingState';
 import { PullToRefresh } from '@/components/PullToRefresh';
+import StaffAccountBanner from '@/components/StaffAccountBanner';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -360,6 +361,7 @@ const Rides = () => {
 
   return (
     <PullToRefresh onRefresh={handleRefresh} disabled={loading}>
+    <StaffAccountBanner />
     <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5">
       {/* Item Limit Warning */}
       <ItemLimitWarning />
