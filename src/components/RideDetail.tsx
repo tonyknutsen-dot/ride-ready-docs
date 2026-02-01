@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, FileText, CheckSquare, Upload, Settings, Mail, Wrench, Pencil, ImageIcon, Trash2 } from 'lucide-react';
+import { ArrowLeft, FileText, CheckSquare, Upload, Settings, Mail, Wrench, Pencil, ImageIcon, Trash2, HelpCircle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -18,6 +18,7 @@ import RideForm from './RideForm';
 import SafetyCertificateCard from './SafetyCertificateCard';
 import ImageViewer from './ImageViewer';
 import { DeleteRideDialog } from './DeleteRideDialog';
+import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -47,6 +48,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   };
   
   const [isEditing, setIsEditing] = useState(false);
+  const [showChecksGuide, setShowChecksGuide] = useState(false);
   const [rideStats, setRideStats] = useState({
     docCount: 0,
     todayChecks: 0,
@@ -151,6 +153,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
   return (
     <div className="space-y-5">
+      <ChecksOnboardingModal forceOpen={showChecksGuide} onClose={() => setShowChecksGuide(false)} />
       {/* Sticky Header */}
       <div className="sticky top-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center justify-between gap-3">
@@ -171,6 +174,17 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           </div>
           
           <div className="flex gap-1.5">
+            {activeTab === 'inspections' && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowChecksGuide(true)}
+                className="h-10 w-10 shrink-0 active:scale-95 transition-transform"
+                aria-label="How checks work"
+              >
+                <HelpCircle className="h-4 w-4" />
+              </Button>
+            )}
             <Button 
               variant="ghost" 
               size="icon"
