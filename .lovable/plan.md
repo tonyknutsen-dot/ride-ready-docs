@@ -1,62 +1,118 @@
-# Improving Document Email Delivery for Large Files
 
-## ✅ IMPLEMENTED
+# Early Access Email Signup for Coming Soon Page
 
-### Summary
+## Overview
+Add an email signup form to the Coming Soon landing page so potential users can join a waitlist for early access. When someone signs up, they'll receive a confirmation email, and you'll be notified of the new signup.
 
-Implemented a **hybrid approach** for document sharing that automatically uses secure download links for large files while keeping traditional attachments for smaller packages.
+---
 
-### What Was Built
+## What Users Will See
 
-#### 1. Database Schema
-- `document_shares` table - tracks shared document packages with tokens, expiry, and access counts
-- `document_share_items` table - individual documents within a share package
-- Full RLS policies for security
+### Before
+- Coming Soon page with feature preview and sign-in button only
 
-#### 2. Edge Functions
-- `create-document-share` - Creates secure share records and sends email with download link
-- `get-shared-documents` - Public endpoint that validates tokens and generates signed URLs
+### After
+- **Email signup section** with:
+  - Clear "Get Early Access" heading
+  - Email input with validation and typo detection
+  - Optional name field
+  - Submit button with loading state
+  - Success confirmation message
+  - Privacy-friendly text (e.g., "We'll only email you about launch updates")
 
-#### 3. Public Download Page
-- `/shared/:token` - Beautiful, branded download page for recipients
-- Shows sender info, message, and all documents grouped by ride
-- Individual download buttons + "Download All" option
-- Displays expiry countdown
-- Mobile responsive
+---
 
-#### 4. Hybrid Logic in BatchSendDocuments
-- **< 10MB**: Uses traditional email attachments (current behavior)
-- **≥ 10MB**: Automatically suggests secure download links
-- User can override and choose their preferred method
-- Visual toggle between "Download Link" and "Attachments" options
+## Visual Design
 
-### How It Works
+The signup form will appear prominently above the existing "Already have an account?" section, styled as an attractive card with:
+- Accent-coloured border to draw attention
+- Mail icon for visual clarity
+- Matches existing card styling from the page
 
+---
+
+## How It Works
+
+```text
+User Flow:
++-------------------+     +-----------------+     +------------------+
+| User enters email | --> | Validate & save | --> | Show success msg |
++-------------------+     +-----------------+     +------------------+
+                                  |
+                                  v
+                          +---------------+
+                          | Send emails:  |
+                          | - Confirm to  |
+                          |   user        |
+                          | - Notify you  |
+                          +---------------+
 ```
-User selects documents → System calculates size
-         ↓
-    Under 10MB? → Send as email attachments
-         ↓
-    Over 10MB? → Show method selector
-         ↓
-    [Download Link] recommended | [Attachments] multiple emails
-         ↓
-    Send → Recipient gets email
-         ↓
-    Click link → /shared/:token page → Download files
-```
 
-### Security Features
-- Cryptographically secure share tokens (UUID + random suffix)
-- Configurable expiry (default 7 days)
-- Access tracking (first access time, total count)
-- Revoke capability for share owners
-- Rate limiting on public endpoint
-- IP blocking integration
+---
 
-### Files Modified
-- `src/pages/BatchSendDocuments.tsx` - Hybrid send logic and UI
-- `src/pages/SharedDocuments.tsx` - NEW public download page
-- `src/App.tsx` - Route for `/shared/:token`
-- `supabase/functions/create-document-share/index.ts` - NEW edge function
-- `supabase/functions/get-shared-documents/index.ts` - NEW edge function
+## Technical Details
+
+### 1. Database Table (New)
+Create a dedicated `early_access_signups` table:
+- `id` (UUID, primary key)
+- `email` (text, required, unique)
+- `name` (text, optional)
+- `created_at` (timestamp)
+- `source` (text, default "coming_soon")
+
+**Why a separate table?** The existing `marketing_contacts` table requires a `user_id`, which unauthenticated visitors don't have.
+
+### 2. Edge Function (New): `early-access-signup`
+- Accepts email and optional name
+- Validates email format
+- Checks for duplicates (friendly message if already signed up)
+- Stores in database
+- Sends confirmation email to user
+- Sends notification email to you (info@ridereadydocs.com)
+- Rate-limited to prevent abuse
+- Honeypot field for bot detection
+
+### 3. Frontend Component
+- Simple inline form (not a dialog)
+- Uses existing Input, Button, Label components
+- Email typo detection using existing `getEmailSuggestion` utility
+- Loading and success states
+- Mobile-responsive design
+
+### 4. Security Measures
+- Rate limiting (using existing shared rate-limiter)
+- Email validation (both client and server)
+- Honeypot field for bots
+- RLS policy allowing public inserts only (no reads/updates)
+
+---
+
+## Files to Create/Modify
+
+| File | Action | Purpose |
+|------|--------|---------|
+| `src/pages/ComingSoon.tsx` | Modify | Add email signup form |
+| `supabase/functions/early-access-signup/index.ts` | Create | Handle signups and send emails |
+| Database migration | Create | Add `early_access_signups` table with RLS |
+
+---
+
+## Confirmation Email Design
+
+The confirmation email will match your existing brand style:
+- Branded header with gradient
+- Thank you message
+- Expectation setting ("We'll notify you when we launch")
+- Professional footer
+
+---
+
+## Admin Notification
+
+You'll receive an email at info@ridereadydocs.com whenever someone signs up, including:
+- Their email address
+- Their name (if provided)
+- Timestamp
+- Total signup count
+
+This lets you monitor interest without needing to check the database.
