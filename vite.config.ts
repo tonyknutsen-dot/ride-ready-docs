@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.png", "favicon.ico", "logo-icon.png"],
+      includeAssets: ["favicon.png", "favicon.ico", "app-logo.jpg"],
       manifest: {
         name: "Ride Ready Docs",
         short_name: "RideReady",
