@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Link2, Loader2, Check, X } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -34,6 +36,8 @@ const DocumentRideAssignmentDialog = ({
   onAssignmentsChanged 
 }: DocumentRideAssignmentDialogProps) => {
   const { user } = useAuth();
+  const { isStaff } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -51,12 +55,17 @@ const DocumentRideAssignmentDialog = ({
     
     setLoading(true);
     try {
-      // Fetch all user's rides
-      const { data: ridesData, error: ridesError } = await supabase
+      // Fetch all rides (for owners, filter by user_id; for staff, RLS handles it)
+      let ridesQuery = supabase
         .from('rides')
         .select('id, ride_name, ride_categories(name)')
-        .eq('user_id', user.id)
         .order('ride_name');
+
+      if (!isStaff) {
+        ridesQuery = ridesQuery.eq('user_id', effectiveUserId);
+      }
+
+      const { data: ridesData, error: ridesError } = await ridesQuery;
 
       if (ridesError) throw ridesError;
 

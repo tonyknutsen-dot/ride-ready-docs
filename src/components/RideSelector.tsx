@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,6 +39,8 @@ const RideSelector = ({
   onAddRide
 }: RideSelectorProps) => {
   const { user } = useAuth();
+  const { isStaff } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [openRequest, setOpenRequest] = useState(false);
@@ -57,7 +61,7 @@ const RideSelector = ({
 
   const loadRides = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('rides')
         .select(`
           *,
@@ -67,8 +71,15 @@ const RideSelector = ({
             category_group
           )
         `)
-        .eq('user_id', user?.id)
         .order('ride_name');
+
+      // For owners, filter by their user_id
+      // For staff, skip user_id filter - RLS handles access via staff_can_access_ride()
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setRides(data as Ride[]);

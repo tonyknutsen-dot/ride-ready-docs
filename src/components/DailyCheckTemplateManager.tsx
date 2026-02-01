@@ -8,6 +8,8 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Plus, Settings, Trash2, Edit, Copy, CheckSquare, Wrench, Archive, ArchiveRestore, MoreVertical } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -31,6 +33,8 @@ interface DailyCheckTemplateManagerProps {
 
 const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemplateManagerProps) => {
   const { user } = useAuth();
+  const { isStaff } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,10 +58,14 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
           *,
           daily_check_template_items (*)
         `)
-        .eq('user_id', user?.id)
         .eq('ride_id', ride.id)
         .eq('check_frequency', frequency)
         .order('created_at', { ascending: false });
+
+      // For owners, filter by their user_id; for staff, RLS handles access
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
 
       if (!showArchived) {
         query = query.eq('is_archived', false);
@@ -85,11 +93,16 @@ const DailyCheckTemplateManager = ({ ride, frequency = 'daily' }: DailyCheckTemp
   const handleSetActive = async (templateId: string) => {
     try {
       // Set all templates inactive first
-      await supabase
+      let deactivateQuery = supabase
         .from('daily_check_templates')
         .update({ is_active: false })
-        .eq('user_id', user?.id)
         .eq('ride_id', ride.id);
+
+      if (!isStaff) {
+        deactivateQuery = deactivateQuery.eq('user_id', effectiveUserId);
+      }
+
+      await deactivateQuery;
 
       // Set selected template active
       const { error } = await supabase

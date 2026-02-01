@@ -4,6 +4,8 @@ import { Wrench, ArrowLeft, HelpCircle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import RideSelector from '@/components/RideSelector';
 import PageHeader from '@/components/PageHeader';
 import MaintenanceManager from '@/components/MaintenanceManager';
@@ -22,6 +24,8 @@ type Ride = Tables<'rides'> & {
 const Maintenance = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isStaff } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
   const [searchParams, setSearchParams] = useSearchParams();
   const rideIdFromUrl = searchParams.get('rideId');
   
@@ -38,12 +42,18 @@ const Maintenance = () => {
       }
 
       try {
-        const { data, error } = await supabase
+        let query = supabase
           .from('rides')
           .select('*, ride_categories(name, description, category_group)')
-          .eq('id', rideIdFromUrl)
-          .eq('user_id', user.id)
-          .single();
+          .eq('id', rideIdFromUrl);
+
+        // For owners, verify they own the ride
+        // For staff, skip user_id filter - RLS handles access via staff_can_access_ride()
+        if (!isStaff) {
+          query = query.eq('user_id', effectiveUserId);
+        }
+
+        const { data, error } = await query.single();
 
         if (error) throw error;
         setSelectedRide(data as Ride);
@@ -57,7 +67,7 @@ const Maintenance = () => {
     };
 
     loadRide();
-  }, [rideIdFromUrl, user, setSearchParams]);
+  }, [rideIdFromUrl, user, isStaff, effectiveUserId, setSearchParams]);
 
   const handleRideSelect = (ride: Ride) => {
     setSelectedRide(ride);

@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { Loader2, Mail, UserPlus, FolderOpen, Calendar, FileText, CheckSquare, Wrench, ShieldCheck, Send, AlertTriangle } from 'lucide-react';
+import { Loader2, Mail, UserPlus, FolderOpen, Calendar, FileText, CheckSquare, Wrench, ShieldCheck, Send, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface Ride {
   id: string;
@@ -63,6 +64,7 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(false);
   const [fetchingRides, setFetchingRides] = useState(false);
+  const [showFullAccessConfirm, setShowFullAccessConfirm] = useState(false);
 
   useEffect(() => {
     if (open && user) {
@@ -115,6 +117,18 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
       return;
     }
 
+    // If no rides selected and there are rides available, show confirmation
+    if (selectedRides.length === 0 && rides.length > 0) {
+      setShowFullAccessConfirm(true);
+      return;
+    }
+
+    await sendInvite();
+  };
+
+  const sendInvite = async () => {
+    if (!user || !email.trim()) return;
+
     setLoading(true);
     try {
       const { data: sessionData } = await supabase.auth.getSession();
@@ -160,6 +174,7 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
       });
     } finally {
       setLoading(false);
+      setShowFullAccessConfirm(false);
     }
   };
 
@@ -298,14 +313,32 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
               <Separator />
 
               {/* Equipment Assignment */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label className="flex items-center gap-2">
                   <FolderOpen className="h-4 w-4" />
-                  Assign Equipment (Optional)
+                  Restrict Equipment Access
                 </Label>
-                <p className="text-xs text-muted-foreground mb-2">
-                  Leave empty to allow access to all your equipment
-                </p>
+                
+                {/* Full access warning when no equipment selected */}
+                {selectedRides.length === 0 && rides.length > 0 && (
+                  <Alert className="border-amber-400 bg-amber-50 dark:bg-amber-950/30">
+                    <ShieldAlert className="h-4 w-4 text-amber-600" />
+                    <AlertTitle className="text-amber-800 dark:text-amber-200 text-sm font-semibold">
+                      Full Access
+                    </AlertTitle>
+                    <AlertDescription className="text-xs text-amber-700 dark:text-amber-300">
+                      No equipment selected — this staff member will be able to see and interact with <strong>ALL {rides.length} items</strong> in your equipment list.
+                      <br />
+                      <span className="mt-1 inline-block">Select specific items below to restrict their access.</span>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {selectedRides.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Access restricted to {selectedRides.length} selected item{selectedRides.length !== 1 ? 's' : ''}
+                  </p>
+                )}
                 
                 {fetchingRides ? (
                   <div className="flex items-center justify-center py-4">
@@ -371,6 +404,44 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
             </Button>
           </DialogFooter>
         </form>
+
+        {/* Full Access Confirmation Dialog */}
+        <AlertDialog open={showFullAccessConfirm} onOpenChange={setShowFullAccessConfirm}>
+          <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <ShieldAlert className="h-5 w-5 text-amber-600" />
+                Confirm Full Equipment Access
+              </AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                <div className="space-y-3">
+                  <p>You haven't selected any specific equipment.</p>
+                  <p>
+                    This means <strong>{email}</strong> will have access to <strong>ALL {rides.length} items</strong> in your equipment list.
+                  </p>
+                  <p className="text-muted-foreground">Is this what you want?</p>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="gap-2 sm:gap-0">
+              <AlertDialogCancel disabled={loading}>Go Back</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={sendInvite} 
+                disabled={loading}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Sending...
+                  </>
+                ) : (
+                  'Yes, Grant Full Access'
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </DialogContent>
     </Dialog>
   );

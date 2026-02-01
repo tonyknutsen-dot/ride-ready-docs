@@ -24,6 +24,8 @@ import {
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
 import { format, parseISO, isSameDay, addDays, startOfMonth, endOfMonth } from 'date-fns';
@@ -83,6 +85,8 @@ const inspectionSchema = z.object({
 
 const CalendarView = () => {
   const { user } = useAuth();
+  const { isStaff } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const { subscription } = useSubscription();
   const navigate = useNavigate();
@@ -129,11 +133,18 @@ const CalendarView = () => {
     if (!user?.id) return;
     
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('rides')
         .select('*')
-        .eq('user_id', user.id)
         .order('ride_name');
+
+      // For owners, filter by their user_id
+      // For staff, skip user_id filter - RLS handles access
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setRides(data || []);
@@ -150,12 +161,18 @@ const CalendarView = () => {
     
     setLoadingDocuments(true);
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('documents')
         .select('id, document_name, expires_at')
-        .eq('user_id', user.id)
         .eq('ride_id', rideId)
         .order('document_name');
+
+      // For owners, filter by user_id; staff rely on RLS
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setRideDocuments(data || []);
@@ -183,13 +200,23 @@ const CalendarView = () => {
       const allEvents: CalendarEvent[] = [];
       const rideIds = new Set<string>();
 
+      // Build queries based on staff status
+      // For staff, skip user_id filter - RLS handles access via staff_can_access_ride()
+      const buildQuery = (baseQuery: any) => {
+        if (!isStaff) {
+          return baseQuery.eq('user_id', effectiveUserId);
+        }
+        return baseQuery;
+      };
+
       // Load inspection checks
-      const { data: checks } = await supabase
+      let checksQuery = supabase
         .from('checks')
         .select('id, check_date, status, ride_id')
-        .eq('user_id', user?.id)
         .gte('check_date', format(monthStart, 'yyyy-MM-dd'))
         .lte('check_date', format(monthEnd, 'yyyy-MM-dd'));
+      
+      const { data: checks } = await buildQuery(checksQuery);
 
       checks?.forEach(check => {
         if (check.ride_id) rideIds.add(check.ride_id);
@@ -204,13 +231,14 @@ const CalendarView = () => {
       });
 
       // Load maintenance records (upcoming)
-      const { data: maintenance } = await supabase
+      let maintenanceQuery = supabase
         .from('maintenance_records')
         .select('id, next_maintenance_due, maintenance_type, ride_id')
-        .eq('user_id', user?.id)
         .not('next_maintenance_due', 'is', null)
         .gte('next_maintenance_due', format(monthStart, 'yyyy-MM-dd'))
         .lte('next_maintenance_due', format(monthEnd, 'yyyy-MM-dd'));
+
+      const { data: maintenance } = await buildQuery(maintenanceQuery);
 
       maintenance?.forEach(record => {
         if (record.next_maintenance_due) {
@@ -227,13 +255,14 @@ const CalendarView = () => {
       });
 
       // Load document expiry dates
-      const { data: documents } = await supabase
+      let documentsQuery = supabase
         .from('documents')
         .select('id, document_name, expires_at, ride_id')
-        .eq('user_id', user?.id)
         .not('expires_at', 'is', null)
         .gte('expires_at', format(monthStart, 'yyyy-MM-dd'))
         .lte('expires_at', format(monthEnd, 'yyyy-MM-dd'));
+
+      const { data: documents } = await buildQuery(documentsQuery);
 
       documents?.forEach(doc => {
         if (doc.expires_at) {
@@ -250,14 +279,15 @@ const CalendarView = () => {
       });
 
       // Load NDT schedules
-      const { data: ndt } = await supabase
+      let ndtQuery = supabase
         .from('ndt_schedules')
         .select('id, schedule_name, next_inspection_due, ride_id')
-        .eq('user_id', user?.id)
         .eq('is_active', true)
         .not('next_inspection_due', 'is', null)
         .gte('next_inspection_due', format(monthStart, 'yyyy-MM-dd'))
         .lte('next_inspection_due', format(monthEnd, 'yyyy-MM-dd'));
+
+      const { data: ndt } = await buildQuery(ndtQuery);
 
       ndt?.forEach(schedule => {
         if (schedule.next_inspection_due) {
@@ -274,13 +304,14 @@ const CalendarView = () => {
       });
 
       // Load inspection schedules
-      const { data: inspectionSchedules, error: schedulesError } = await supabase
+      let schedulesQuery = supabase
         .from('inspection_schedules')
         .select('id, inspection_name, due_date, ride_id, advance_notice_days')
-        .eq('user_id', user?.id)
         .eq('is_active', true)
         .gte('due_date', format(monthStart, 'yyyy-MM-dd'))
         .lte('due_date', format(monthEnd, 'yyyy-MM-dd'));
+
+      const { data: inspectionSchedules, error: schedulesError } = await buildQuery(schedulesQuery);
 
       if (schedulesError) {
         console.error('Error fetching inspection schedules:', schedulesError);
