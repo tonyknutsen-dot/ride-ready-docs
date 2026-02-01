@@ -390,7 +390,7 @@ const Overview = () => {
                 }}
               >
                 <Wrench className="w-4 h-4" />
-                {userPlan === 'advanced' ? 'Operations & Maintenance' : 'Upgrade for Advanced'}
+                {userPlan === 'advanced' ? 'Ops & Maintenance' : 'Upgrade for Advanced'}
               </Button>
               {userPlan === 'advanced' && (
                 <Button 
