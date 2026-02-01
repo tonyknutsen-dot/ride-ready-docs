@@ -23,6 +23,7 @@ interface InstallPromptState {
 
 const DISMISS_KEY = 'install-prompt-dismissed';
 const DISMISS_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const INSTALLED_FLAG_KEY = 'pwa-was-installed';
 
 export function useInstallPrompt(): InstallPromptState {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -43,8 +44,9 @@ export function useInstallPrompt(): InstallPromptState {
   // Only truly standalone if not in iframe and detected as standalone
   const isStandalone = !isInIframe && (mediaQueryStandalone || navigatorStandalone);
 
-  // Check localStorage for dismissed state
+  // Check localStorage for dismissed state and previous installation
   useEffect(() => {
+    // Check if dismissed
     const stored = localStorage.getItem(DISMISS_KEY);
     if (stored) {
       const dismissTime = new Date(stored).getTime();
@@ -57,7 +59,23 @@ export function useInstallPrompt(): InstallPromptState {
         setDismissedAt(null);
       }
     }
+
+    // Check if we've previously detected the app was installed
+    // This helps when user opens a link in browser but has the PWA installed
+    const wasInstalled = localStorage.getItem(INSTALLED_FLAG_KEY);
+    if (wasInstalled === 'true') {
+      setIsInstalled(true);
+    }
   }, []);
+
+  // When running in standalone mode, remember that the app was installed
+  // This flag persists so even if user opens a link in browser, we know they have the PWA
+  useEffect(() => {
+    if (isStandalone) {
+      localStorage.setItem(INSTALLED_FLAG_KEY, 'true');
+      setIsInstalled(true);
+    }
+  }, [isStandalone]);
 
   // Listen for beforeinstallprompt event
   useEffect(() => {
@@ -69,22 +87,18 @@ export function useInstallPrompt(): InstallPromptState {
     window.addEventListener('beforeinstallprompt', handler);
 
     // Check if already installed
-    window.addEventListener('appinstalled', () => {
+    const installedHandler = () => {
+      localStorage.setItem(INSTALLED_FLAG_KEY, 'true');
       setIsInstalled(true);
       setDeferredPrompt(null);
-    });
+    };
+    window.addEventListener('appinstalled', installedHandler);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handler);
+      window.removeEventListener('appinstalled', installedHandler);
     };
   }, []);
-
-  // Update installed state based on display mode
-  useEffect(() => {
-    if (isStandalone) {
-      setIsInstalled(true);
-    }
-  }, [isStandalone]);
 
   const promptInstall = useCallback(async (): Promise<boolean> => {
     if (!deferredPrompt) {
