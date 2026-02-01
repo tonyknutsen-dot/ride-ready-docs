@@ -138,7 +138,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -175,9 +175,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return { error };
-  };
+  }, []);
 
-  const signUp = async (email: string, password: string, country?: string) => {
+  const signUp = useCallback(async (email: string, password: string, country?: string) => {
     const redirectUrl = `${window.location.origin}/profile-setup`;
     
     const { error } = await supabase.auth.signUp({
@@ -205,9 +205,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     return { error };
-  };
+  }, []);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     // Log logout event before signing out
     try {
       await supabase.rpc('log_audit_event', {
@@ -224,16 +224,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setSuspensionReason(null);
     const { error } = await supabase.auth.signOut();
     return { error };
-  };
+  }, []);
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = useCallback(async (email: string) => {
     const redirectUrl = `${window.location.origin}/auth`;
     
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl
     });
     return { error };
-  };
+  }, []);
 
   // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
@@ -246,7 +246,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     resetPassword,
-  }), [user, session, loading, isSuspended, suspensionReason]);
+  }), [user, session, loading, isSuspended, suspensionReason, signIn, signUp, signOut, resetPassword]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
