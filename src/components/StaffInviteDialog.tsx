@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Loader2, Mail, UserPlus, FolderOpen, Calendar, FileText, CheckSquare, Wrench, ShieldCheck, Send, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -218,7 +217,7 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col">
-          <ScrollArea className="flex-1 pr-4">
+          <div className="flex-1 overflow-y-auto pr-2">
             <div className="space-y-5 pb-4">
               {/* Email */}
               <div className="space-y-2">
@@ -351,7 +350,7 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
                 )}
               </div>
             </div>
-          </ScrollArea>
+          </div>
 
           <DialogFooter className="gap-2 sm:gap-0 pt-4 border-t">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
