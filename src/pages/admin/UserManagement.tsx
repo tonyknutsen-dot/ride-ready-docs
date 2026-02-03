@@ -75,6 +75,18 @@ interface TesterTimeData {
   has_active_session: boolean;
 }
 
+interface TesterAllTimeData {
+  user_id: string;
+  company_name: string | null;
+  email: string | null;
+  name: string | null;
+  total_minutes: number;
+  total_sessions: number;
+  first_session: string | null;
+  last_session: string | null;
+  has_active_session: boolean;
+}
+
 export default function UserManagement() {
   const [users, setUsers] = useState<UserWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -91,8 +103,11 @@ export default function UserManagement() {
   const [auditLoading, setAuditLoading] = useState(false);
   const [showAuditLog, setShowAuditLog] = useState(false);
   const [testerTimeData, setTesterTimeData] = useState<TesterTimeData[]>([]);
+  const [testerAllTimeData, setTesterAllTimeData] = useState<TesterAllTimeData[]>([]);
   const [timeTrackingLoading, setTimeTrackingLoading] = useState(false);
+  const [allTimeLoading, setAllTimeLoading] = useState(false);
   const [showTimeTracking, setShowTimeTracking] = useState(false);
+  const [timeViewMode, setTimeViewMode] = useState<'monthly' | 'alltime'>('alltime');
   const [selectedMonth, setSelectedMonth] = useState<string>(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -110,9 +125,13 @@ export default function UserManagement() {
 
   useEffect(() => {
     if (showTimeTracking) {
-      fetchTesterTimeData();
+      if (timeViewMode === 'monthly') {
+        fetchTesterTimeData();
+      } else {
+        fetchAllTimeData();
+      }
     }
-  }, [showTimeTracking, selectedMonth]);
+  }, [showTimeTracking, selectedMonth, timeViewMode]);
 
   const getMonthDateRange = (monthStr: string) => {
     const [year, month] = monthStr.split('-').map(Number);
@@ -226,6 +245,65 @@ export default function UserManagement() {
       setTimeTrackingLoading(false);
     }
   };
+
+  const fetchAllTimeData = async () => {
+    setAllTimeLoading(true);
+    try {
+      // Use the new RPC function to get all-time summary
+      const { data: summaryData, error } = await supabase.rpc('get_tester_usage_summary');
+
+      if (error) throw error;
+
+      console.log('[TesterTimeTracking] All-time summary data:', summaryData);
+
+      if (!summaryData || summaryData.length === 0) {
+        setTesterAllTimeData([]);
+        return;
+      }
+
+      // Get unique user IDs
+      const userIds = summaryData.map((s: any) => s.user_id);
+
+      // Get profiles for these users
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('user_id, company_name')
+        .in('user_id', userIds);
+
+      // Get auth data for email/name
+      const { data: authData } = await supabase.functions.invoke('get-users-admin');
+      const userEmailMap = new Map<string, { email: string; name: string | null }>();
+      authData?.users?.forEach((u: any) => {
+        userEmailMap.set(u.id, { email: u.email, name: u.name });
+      });
+
+      const profileMap = new Map(profiles?.map(p => [p.user_id, p.company_name]) || []);
+
+      const allTimeData: TesterAllTimeData[] = summaryData.map((row: any) => ({
+        user_id: row.user_id,
+        company_name: profileMap.get(row.user_id) || null,
+        email: userEmailMap.get(row.user_id)?.email || null,
+        name: userEmailMap.get(row.user_id)?.name || null,
+        total_minutes: Math.round(row.total_minutes || 0),
+        total_sessions: row.total_sessions || 0,
+        first_session: row.first_session_at,
+        last_session: row.last_session_at,
+        has_active_session: row.active_session || false,
+      }));
+
+      // Sort by total time descending
+      allTimeData.sort((a, b) => b.total_minutes - a.total_minutes);
+
+      console.log('[TesterTimeTracking] Processed all-time data:', allTimeData);
+      setTesterAllTimeData(allTimeData);
+    } catch (error: any) {
+      console.error('Error fetching all-time data:', error);
+      toast.error('Failed to load all-time tracking data');
+    } finally {
+      setAllTimeLoading(false);
+    }
+  };
+
 
   const formatDuration = (minutes: number): string => {
     if (minutes < 60) return `${minutes}m`;
@@ -1144,106 +1222,239 @@ export default function UserManagement() {
           </CardHeader>
           {showTimeTracking && (
             <CardContent>
-              {/* Month Selector */}
-              <div className="flex items-center gap-4 mb-4">
-                <Label htmlFor="month-select" className="text-sm font-medium">Billing Period:</Label>
-                <select
-                  id="month-select"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  className="px-3 py-2 border border-input rounded-md bg-background text-sm"
-                >
-                  {getAvailableMonths().map((month) => (
-                    <option key={month} value={month}>
-                      {formatMonthLabel(month)}
-                    </option>
-                  ))}
-                </select>
+              {/* View Mode Toggle */}
+              <div className="flex items-center gap-4 mb-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-medium">View:</Label>
+                  <div className="flex rounded-md border border-input overflow-hidden">
+                    <button
+                      onClick={() => setTimeViewMode('alltime')}
+                      className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                        timeViewMode === 'alltime'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-background hover:bg-muted'
+                      }`}
+                    >
+                      All Time
+                    </button>
+                    <button
+                      onClick={() => setTimeViewMode('monthly')}
+                      className={`px-3 py-1.5 text-sm font-medium transition-colors border-l border-input ${
+                        timeViewMode === 'monthly'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-background hover:bg-muted'
+                      }`}
+                    >
+                      Monthly
+                    </button>
+                  </div>
+                </div>
+                
+                {/* Month Selector - only show in monthly mode */}
+                {timeViewMode === 'monthly' && (
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="month-select" className="text-sm font-medium">Period:</Label>
+                    <select
+                      id="month-select"
+                      value={selectedMonth}
+                      onChange={(e) => setSelectedMonth(e.target.value)}
+                      className="px-3 py-2 border border-input rounded-md bg-background text-sm"
+                    >
+                      {getAvailableMonths().map((month) => (
+                        <option key={month} value={month}>
+                          {formatMonthLabel(month)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
-              {timeTrackingLoading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-                </div>
-              ) : testerTimeData.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No tester sessions recorded for {formatMonthLabel(selectedMonth)}.
-                </div>
-              ) : (
+              {/* All Time View */}
+              {timeViewMode === 'alltime' && (
                 <>
-                  <div className="mb-4 p-4 bg-muted rounded-lg">
-                    <div className="text-center mb-2">
-                      <Badge variant="outline" className="text-base px-3 py-1">
-                        {formatMonthLabel(selectedMonth)}
-                      </Badge>
+                  {allTimeLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
-                    <div className="grid grid-cols-3 gap-4 text-center">
-                      <div>
-                        <div className="text-2xl font-bold">
-                          {formatDuration(testerTimeData.reduce((sum, t) => sum + t.total_minutes, 0))}
-                        </div>
-                        <div className="text-sm text-muted-foreground">Total Time</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold">{testerTimeData.length}</div>
-                        <div className="text-sm text-muted-foreground">Testers</div>
-                      </div>
-                      <div>
-                        <div className="text-2xl font-bold">
-                          {testerTimeData.reduce((sum, t) => sum + t.session_count, 0)}
-                        </div>
-                        <div className="text-sm text-muted-foreground">Sessions</div>
-                      </div>
+                  ) : testerAllTimeData.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No tester sessions recorded yet.
                     </div>
-                  </div>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Tester</TableHead>
-                        <TableHead>Total Time</TableHead>
-                        <TableHead>Sessions</TableHead>
-                        <TableHead>Last Active</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {testerTimeData.map((tester) => (
-                        <TableRow key={tester.user_id}>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              <div className="font-medium">
-                                {tester.name || tester.company_name || tester.email?.split('@')[0] || 'Unknown'}
-                              </div>
-                              {tester.has_active_session && (
-                                <Badge variant="default" className="bg-success text-success-foreground text-xs">
-                                  Active
+                  ) : (
+                    <>
+                      <div className="mb-4 p-4 bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-lg">
+                        <div className="text-center mb-2">
+                          <Badge className="bg-primary text-primary-foreground text-base px-3 py-1">
+                            All Time Total
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                          <div>
+                            <div className="text-2xl font-bold text-primary">
+                              {formatDuration(testerAllTimeData.reduce((sum, t) => sum + t.total_minutes, 0))}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Total Time</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold">{testerAllTimeData.length}</div>
+                            <div className="text-sm text-muted-foreground">Testers</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold">
+                              {testerAllTimeData.reduce((sum, t) => sum + t.total_sessions, 0)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">Sessions</div>
+                          </div>
+                        </div>
+                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Tester</TableHead>
+                            <TableHead>Total Time</TableHead>
+                            <TableHead>Sessions</TableHead>
+                            <TableHead className="hidden sm:table-cell">First Session</TableHead>
+                            <TableHead>Last Active</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {testerAllTimeData.map((tester) => (
+                            <TableRow key={tester.user_id}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <div className="font-medium">
+                                    {tester.name || tester.company_name || tester.email?.split('@')[0] || 'Unknown'}
+                                  </div>
+                                  {tester.has_active_session && (
+                                    <Badge variant="default" className="bg-success text-success-foreground text-xs">
+                                      Active
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {tester.email || tester.user_id.slice(0, 8) + '...'}
+                                </div>
+                                {tester.company_name && tester.name && (
+                                  <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                    <Building className="h-3 w-3" />
+                                    {tester.company_name}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="font-mono font-bold">
+                                  {formatDuration(tester.total_minutes)}
                                 </Badge>
-                              )}
+                              </TableCell>
+                              <TableCell>{tester.total_sessions}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
+                                {tester.first_session 
+                                  ? format(new Date(tester.first_session), 'MMM d, yyyy')
+                                  : '-'}
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {tester.last_session 
+                                  ? format(new Date(tester.last_session), 'MMM d, yyyy h:mm a')
+                                  : '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </>
+                  )}
+                </>
+              )}
+
+              {/* Monthly View */}
+              {timeViewMode === 'monthly' && (
+                <>
+                  {timeTrackingLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : testerTimeData.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      No tester sessions recorded for {formatMonthLabel(selectedMonth)}.
+                    </div>
+                  ) : (
+                    <>
+                      <div className="mb-4 p-4 bg-muted rounded-lg">
+                        <div className="text-center mb-2">
+                          <Badge variant="outline" className="text-base px-3 py-1">
+                            {formatMonthLabel(selectedMonth)}
+                          </Badge>
+                        </div>
+                        <div className="grid grid-cols-3 gap-4 text-center">
+                          <div>
+                            <div className="text-2xl font-bold">
+                              {formatDuration(testerTimeData.reduce((sum, t) => sum + t.total_minutes, 0))}
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {tester.email || tester.user_id.slice(0, 8) + '...'}
+                            <div className="text-sm text-muted-foreground">Total Time</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold">{testerTimeData.length}</div>
+                            <div className="text-sm text-muted-foreground">Testers</div>
+                          </div>
+                          <div>
+                            <div className="text-2xl font-bold">
+                              {testerTimeData.reduce((sum, t) => sum + t.session_count, 0)}
                             </div>
-                            {tester.company_name && tester.name && (
-                              <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
-                                <Building className="h-3 w-3" />
-                                {tester.company_name}
-                              </div>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className="font-mono">
-                              {formatDuration(tester.total_minutes)}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>{tester.session_count}</TableCell>
-                          <TableCell className="text-sm text-muted-foreground">
-                            {tester.last_session 
-                              ? format(new Date(tester.last_session), 'MMM d, yyyy h:mm a')
-                              : '-'}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                            <div className="text-sm text-muted-foreground">Sessions</div>
+                          </div>
+                        </div>
+                      </div>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Tester</TableHead>
+                            <TableHead>Total Time</TableHead>
+                            <TableHead>Sessions</TableHead>
+                            <TableHead>Last Active</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {testerTimeData.map((tester) => (
+                            <TableRow key={tester.user_id}>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <div className="font-medium">
+                                    {tester.name || tester.company_name || tester.email?.split('@')[0] || 'Unknown'}
+                                  </div>
+                                  {tester.has_active_session && (
+                                    <Badge variant="default" className="bg-success text-success-foreground text-xs">
+                                      Active
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  {tester.email || tester.user_id.slice(0, 8) + '...'}
+                                </div>
+                                {tester.company_name && tester.name && (
+                                  <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                                    <Building className="h-3 w-3" />
+                                    {tester.company_name}
+                                  </div>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="font-mono">
+                                  {formatDuration(tester.total_minutes)}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>{tester.session_count}</TableCell>
+                              <TableCell className="text-sm text-muted-foreground">
+                                {tester.last_session 
+                                  ? format(new Date(tester.last_session), 'MMM d, yyyy h:mm a')
+                                  : '-'}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </>
+                  )}
                 </>
               )}
             </CardContent>
