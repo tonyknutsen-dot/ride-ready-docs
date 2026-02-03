@@ -53,6 +53,9 @@ const DOCUMENT_CATEGORIES = {
     { id: 'insurance', name: '🛡️ Insurance Documents', description: 'Liability, employers, equipment insurance', suggestGlobal: true },
     { id: 'safety_certificate', name: '🏅 Safety Certificate', description: 'Safety certificates from inspecting bodies' },
     { id: 'doc_certificate', name: '📋 Declaration of Conformity (DOC)', description: 'EU Declaration of Conformity certificate' },
+    { id: 'pssr_certificate', name: '⚙️ PSSR Certificate', description: 'Pressure Systems Safety Regulations certificate' },
+    { id: 'loler_certificate', name: '🏗️ LOLER Certificate', description: 'Lifting Operations and Lifting Equipment Regulations certificate' },
+    { id: 'puwer_certificate', name: '🔧 PUWER Certificate', description: 'Provision and Use of Work Equipment Regulations certificate' },
     { id: 'certificate', name: 'Certificate', description: 'Other certificates' },
   ],
   'Other': [
