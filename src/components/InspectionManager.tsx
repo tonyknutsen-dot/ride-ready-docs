@@ -75,7 +75,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
             >
               <Building className="h-5 w-5" />
-              <span>Annual</span>
+              <span>Annual Inspections</span>
             </TabsTrigger>
             <TabsTrigger 
               value="ndt" 
