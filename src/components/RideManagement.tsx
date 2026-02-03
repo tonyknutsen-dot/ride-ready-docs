@@ -12,6 +12,7 @@ import RideForm from './RideForm';
 import RideDetail from './RideDetail';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
 import { RequestRideTypeDialog } from './RequestRideTypeDialog';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -23,6 +24,7 @@ type Ride = Tables<'rides'> & {
 
 const RideManagement = () => {
   const { user } = useAuth();
+  const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const [rides, setRides] = useState<Ride[]>([]);
   const [rideStats, setRideStats] = useState<Record<string, { docCount: number; checkCount: number; nextDue: string | null }>>({});
@@ -32,10 +34,10 @@ const RideManagement = () => {
   const [showRequestDialog, setShowRequestDialog] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (effectiveUserId) {
       loadRides();
     }
-  }, [user]);
+  }, [effectiveUserId]);
 
   const loadRides = async () => {
     try {
@@ -49,7 +51,7 @@ const RideManagement = () => {
             category_group
           )
         `)
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -76,26 +78,26 @@ const RideManagement = () => {
     
     for (const ride of ridesData) {
       try {
-        // Get document count for this ride
+        // Get document count for this ride - use effectiveUserId
         const { count: docCount } = await supabase
           .from('documents')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user?.id)
+          .eq('user_id', effectiveUserId)
           .eq('ride_id', ride.id);
 
-        // Get daily check count for this ride
+        // Get daily check count for this ride - use effectiveUserId
         const { count: checkCount } = await supabase
           .from('checks')
           .select('*', { count: 'exact', head: true })
-          .eq('user_id', user?.id)
+          .eq('user_id', effectiveUserId)
           .eq('ride_id', ride.id);
 
-        // Get next due date from various sources
+        // Get next due date from various sources - use effectiveUserId
         const [maintenanceQuery, inspectionQuery, ndtQuery] = await Promise.all([
           supabase
             .from('maintenance_records')
             .select('next_maintenance_due')
-            .eq('user_id', user?.id)
+            .eq('user_id', effectiveUserId)
             .eq('ride_id', ride.id)
             .not('next_maintenance_due', 'is', null)
             .order('next_maintenance_due', { ascending: true })
@@ -104,7 +106,7 @@ const RideManagement = () => {
           supabase
             .from('annual_inspection_reports')
             .select('next_inspection_due')
-            .eq('user_id', user?.id)
+            .eq('user_id', effectiveUserId)
             .eq('ride_id', ride.id)
             .not('next_inspection_due', 'is', null)
             .order('next_inspection_due', { ascending: true })
@@ -113,7 +115,7 @@ const RideManagement = () => {
           supabase
             .from('ndt_reports')
             .select('next_inspection_due')
-            .eq('user_id', user?.id)
+            .eq('user_id', effectiveUserId)
             .eq('ride_id', ride.id)
             .not('next_inspection_due', 'is', null)
             .order('next_inspection_due', { ascending: true })
