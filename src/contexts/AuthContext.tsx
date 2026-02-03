@@ -95,11 +95,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    // Set up auth state listener FIRST - this handles ALL auth state changes
-    // including the initial session check via INITIAL_SESSION event
+    let isMounted = true;
+    let initialLoadDone = false;
+
+    // Listener for ONGOING auth changes (does NOT control loading after initial load)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        // Synchronously update session and user state
+        if (!isMounted) return;
+        
+        // Always update session and user state synchronously
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -107,7 +111,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // to avoid Supabase deadlock issues
         if (session?.user) {
           setTimeout(async () => {
+            if (!isMounted) return;
             const { suspended, reason } = await checkSuspensionStatus(session.user.id);
+            if (!isMounted) return;
             setIsSuspended(suspended);
             setSuspensionReason(reason);
             
@@ -126,16 +132,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSuspensionReason(null);
         }
         
-        setLoading(false);
+        // Only set loading false from the listener if initial load hasn't completed yet
+        // This handles the INITIAL_SESSION event
+        if (!initialLoadDone) {
+          initialLoadDone = true;
+          setLoading(false);
+        }
       }
     );
 
-    // Explicitly get session to ensure we have initial state
-    // The INITIAL_SESSION event from onAuthStateChange should handle this,
-    // but we call getSession as a fallback for edge cases
-    supabase.auth.getSession();
+    // INITIAL load - explicit getSession as fallback
+    // If onAuthStateChange fires INITIAL_SESSION first, that will set loading=false
+    // If not, this will handle it
+    const initializeAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!isMounted) return;
+        
+        // Only update if we haven't already via onAuthStateChange
+        if (!initialLoadDone) {
+          setSession(session);
+          setUser(session?.user ?? null);
+          
+          if (session?.user) {
+            const { suspended, reason } = await checkSuspensionStatus(session.user.id);
+            if (!isMounted) return;
+            setIsSuspended(suspended);
+            setSuspensionReason(reason);
+          }
+        }
+      } finally {
+        if (isMounted && !initialLoadDone) {
+          initialLoadDone = true;
+          setLoading(false);
+        }
+      }
+    };
 
-    return () => subscription.unsubscribe();
+    initializeAuth();
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = useCallback(async (email: string, password: string) => {
