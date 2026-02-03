@@ -388,7 +388,7 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
       </SheetTrigger>
       <SheetContent 
         ref={sheetRef}
-        className="w-full sm:max-w-lg p-0 overflow-hidden"
+        className="w-full sm:max-w-lg p-0 flex flex-col h-full"
         side="right"
       >
         
@@ -416,7 +416,7 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
           </div>
         ) : (
           <>
-            <SheetHeader className="p-6 pb-0">
+            <SheetHeader className="p-6 pb-0 flex-shrink-0">
               <SheetTitle className="flex items-center gap-2">
                 <Bug className="h-5 w-5 text-destructive" />
                 Report an Issue
@@ -426,7 +426,7 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
               </SheetDescription>
             </SheetHeader>
             
-            <ScrollArea className="max-h-[calc(90vh-120px)]">
+            <ScrollArea className="flex-1 min-h-0">
               <form onSubmit={handleSubmit} className="p-6 pt-4 space-y-4">
                 {/* Auto-captured context display */}
                 {context && (
