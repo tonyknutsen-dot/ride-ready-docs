@@ -83,6 +83,11 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
   // Ref for the sheet content
   const sheetRef = useRef<HTMLDivElement>(null);
   
+  // Drag state for the panel
+  const [panelPosition, setPanelPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const dragRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number } | null>(null);
+  
   // Form fields
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -101,7 +106,12 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
   // Auto-captured context
   const [context, setContext] = useState<AutoCapturedContext | null>(null);
 
-  // Reset position when dialog opens
+  // Reset panel position when dialog opens
+  useEffect(() => {
+    if (open) {
+      setPanelPosition({ x: 0, y: 0 });
+    }
+  }, [open]);
 
   // Capture context on dialog open
   useEffect(() => {
@@ -376,6 +386,40 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
     setTimeout(resetForm, 300);
   };
 
+  // Drag handlers for the panel
+  const handleDragStart = (e: React.PointerEvent) => {
+    setIsDragging(true);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: panelPosition.x,
+      initialY: panelPosition.y,
+    };
+    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+  };
+
+  const handleDragMove = (e: React.PointerEvent) => {
+    if (!isDragging || !dragRef.current) return;
+    
+    const deltaX = e.clientX - dragRef.current.startX;
+    const deltaY = e.clientY - dragRef.current.startY;
+    
+    // Clamp to reasonable bounds
+    const maxX = window.innerWidth - 100;
+    const maxY = window.innerHeight - 100;
+    
+    setPanelPosition({
+      x: Math.max(-maxX, Math.min(maxX, dragRef.current.initialX + deltaX)),
+      y: Math.max(-maxY, Math.min(maxY, dragRef.current.initialY + deltaY)),
+    });
+  };
+
+  const handleDragEnd = (e: React.PointerEvent) => {
+    setIsDragging(false);
+    dragRef.current = null;
+    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+  };
+
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -390,6 +434,9 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
         ref={sheetRef}
         className="w-full sm:max-w-lg p-0 flex flex-col h-full"
         side="right"
+        style={{
+          transform: `translate(${panelPosition.x}px, ${panelPosition.y}px)`,
+        }}
       >
         
         {submitted ? (
@@ -416,15 +463,24 @@ export const BugReportDialog = ({ trigger }: BugReportDialogProps) => {
           </div>
         ) : (
           <>
-            <SheetHeader className="p-6 pb-0 flex-shrink-0">
-              <SheetTitle className="flex items-center gap-2">
-                <Bug className="h-5 w-5 text-destructive" />
-                Report an Issue
-              </SheetTitle>
-              <SheetDescription>
-                You don't need to be technical - just tell us what happened!
-              </SheetDescription>
-            </SheetHeader>
+            {/* Draggable header */}
+            <div 
+              className="p-6 pb-0 flex-shrink-0 cursor-grab active:cursor-grabbing touch-none select-none"
+              onPointerDown={handleDragStart}
+              onPointerMove={handleDragMove}
+              onPointerUp={handleDragEnd}
+            >
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <Bug className="h-5 w-5 text-destructive" />
+                  Report an Issue
+                  <span className="text-xs text-muted-foreground font-normal ml-auto">(drag to move)</span>
+                </SheetTitle>
+                <SheetDescription>
+                  You don't need to be technical - just tell us what happened!
+                </SheetDescription>
+              </SheetHeader>
+            </div>
             
             <ScrollArea className="flex-1 min-h-0">
               <form onSubmit={handleSubmit} className="p-6 pt-4 space-y-4">
