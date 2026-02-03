@@ -2512,6 +2512,17 @@ export type Database = {
           trial_started_at: string
         }[]
       }
+      get_tester_usage_summary: {
+        Args: never
+        Returns: {
+          active_session: boolean
+          first_session_at: string
+          last_session_at: string
+          total_minutes: number
+          total_sessions: number
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
