@@ -51,6 +51,8 @@ const DOCUMENT_CATEGORIES = {
   ],
   'Insurance & Certificates': [
     { id: 'insurance', name: '🛡️ Insurance Documents', description: 'Liability, employers, equipment insurance', suggestGlobal: true },
+    { id: 'safety_certificate', name: '🏅 Safety Certificate', description: 'Safety certificates from inspecting bodies' },
+    { id: 'doc_certificate', name: '📋 Declaration of Conformity (DOC)', description: 'EU Declaration of Conformity certificate' },
     { id: 'certificate', name: 'Certificate', description: 'Other certificates' },
   ],
   'Other': [
