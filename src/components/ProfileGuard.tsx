@@ -15,13 +15,18 @@ export function ProfileGuard({ children }: ProfileGuardProps) {
   useEffect(() => {
     // Don't redirect if we're already on the setup page or auth pages
     if (loading || 
-        location.pathname === '/profile-setup' || 
         location.pathname === '/auth' ||
         location.pathname === '/') {
       return;
     }
 
-    // Redirect to profile setup if profile is incomplete
+    // Staff members should never be on profile-setup - redirect them away
+    if (location.pathname === '/profile-setup' && isProfileComplete) {
+      navigate('/overview', { replace: true });
+      return;
+    }
+
+    // Redirect to profile setup if profile is incomplete (only for non-staff)
     if (isProfileComplete === false) {
       navigate('/profile-setup', { replace: true });
     }
