@@ -61,7 +61,6 @@ const featureNavItems = [
 
 const accountNavItems = [
   { title: 'Plan & Billing', url: '/billing', icon: CreditCard, ownerOnly: true },
-  { title: 'Settings', url: '/settings', icon: Settings, ownerOnly: true },
   { title: 'Help & Support', url: '/help', icon: HelpCircle },
 ];
 

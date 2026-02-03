@@ -279,14 +279,6 @@ export default function MobileBottomNav() {
                     active={isActive(["/billing"])}
                   />
                 )}
-                {canAccessSettings && (
-                  <MenuItem 
-                    icon={Settings} 
-                    label="Settings" 
-                    onClick={() => go("/settings")} 
-                    active={isActive(["/settings"])}
-                  />
-                )}
                 {canManageStaff && (
                   <MenuItem 
                     icon={Users} 
