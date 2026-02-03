@@ -7,7 +7,7 @@
  * This is the SINGLE source of truth for the app version.
  */
 
-export const APP_VERSION = "v0.12";
+export const APP_VERSION = "v0.13";
 
 export const APP_NAME = "Ride Ready Docs";
 
@@ -24,6 +24,11 @@ export interface ChangeLogEntry {
 }
 
 export const CHANGE_LOG: ChangeLogEntry[] = [
+  {
+    version: "v0.13",
+    date: "2026-02-03",
+    description: "Bug fixes: Timeline Report now works correctly for testers/staff by using effectiveUserId. Ride list now shows newly added rides for testers/staff. Fixed data visibility issues across RideManagement and EquipmentTimelineReport components."
+  },
   {
     version: "v0.12",
     date: "2026-02-01",

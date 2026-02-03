@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { FileText, Globe, ChevronDown, FolderOpen } from 'lucide-react';
+import { FileText, Globe, ChevronDown, FolderOpen, Upload, ArrowRight } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import PageHeader from '@/components/PageHeader';
 import DocumentList from '@/components/DocumentList';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +11,7 @@ import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { supabase } from '@/integrations/supabase/client';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
+import { Link } from 'react-router-dom';
 
 interface RideWithDocs {
   id: string;
@@ -135,6 +137,19 @@ const Documents = () => {
       </header>
       
       <main className="container mx-auto px-4 py-5 space-y-4">
+        {/* Upload hint */}
+        <Alert className="border-info/30 bg-info/5">
+          <Upload className="h-4 w-4 text-info" />
+          <AlertDescription className="flex items-center justify-between gap-2 flex-wrap">
+            <span className="text-sm">To upload documents, go to a specific ride or equipment page.</span>
+            <Button variant="link" size="sm" asChild className="p-0 h-auto text-info">
+              <Link to="/rides" className="flex items-center gap-1">
+                Go to Rides <ArrowRight className="h-3 w-3" />
+              </Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+
         {loading ? (
           <div className="py-8 text-center">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-info to-primary mx-auto flex items-center justify-center mb-3">
