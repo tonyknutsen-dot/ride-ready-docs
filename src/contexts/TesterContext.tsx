@@ -35,9 +35,9 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    // Don't block - set loading false early, then update if needed
-    // This allows the UI to render faster
-    setIsLoading(false);
+    // Keep loading true until we complete the check
+    // This prevents race conditions with useSubscription
+    setIsLoading(true);
 
     try {
       const { data, error } = await supabase
@@ -50,6 +50,7 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error('[TesterContext] Error checking tester status:', error);
         setIsTester(false);
+        setIsLoading(false);
         return;
       }
 
@@ -63,6 +64,9 @@ export const TesterProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('[TesterContext] Error checking tester status:', error);
       setIsTester(false);
+    } finally {
+      // Only set loading false after check is complete
+      setIsLoading(false);
     }
   }, [user]);
 
