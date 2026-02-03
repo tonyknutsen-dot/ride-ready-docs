@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Mail, FileText, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { toast } from 'sonner';
 import { useTerminology } from '@/hooks/useTerminology';
 interface SendDocumentsDialogProps {
@@ -34,6 +35,7 @@ interface Document {
 
 export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, trigger }) => {
   const { user } = useAuth();
+  const { effectiveUserId, isStaff } = useEffectiveUserId();
   const { terminology } = useTerminology();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -54,11 +56,11 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
 
   const loadDocuments = async () => {
     try {
-      // Load user profile
+      // Load operator's profile (uses effectiveUserId for staff)
       const { data: profileData } = await supabase
         .from('profiles')
         .select('company_name, controller_name, showmen_name, address')
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .single();
 
       setProfile(profileData);
@@ -67,7 +69,7 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
       const { data: rideDocuments, error: rideError } = await supabase
         .from('documents')
         .select('id, document_name, document_type, expires_at, file_size, is_global')
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .eq('ride_id', ride.id)
         .order('document_name');
 
@@ -77,7 +79,7 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
       const { data: insuranceDocs, error: insuranceError } = await supabase
         .from('documents')
         .select('id, document_name, document_type, expires_at, file_size, is_global')
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .eq('is_global', true)
         .ilike('document_type', '%insurance%')
         .order('document_name');
@@ -216,7 +218,7 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
               {user?.email && (
                 <p><span className="font-medium">Email:</span> {user.email}</p>
               )}
-              {!profile?.company_name && !profile?.controller_name && (
+              {!isStaff && !profile?.company_name && !profile?.controller_name && (
                 <p className="text-destructive italic">⚠️ Please complete your profile in Settings</p>
               )}
             </div>

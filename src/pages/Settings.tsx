@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
 import { supabase } from '@/integrations/supabase/client';
 import ProfileEdit from '@/components/ProfileEdit';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Settings as SettingsIcon, User, FileText, Globe, ArrowRight, Mail, ArrowLeft, Info, Bug, Calendar } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Settings as SettingsIcon, User, FileText, Globe, ArrowRight, Mail, ArrowLeft, Info, Bug, Calendar, Building2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateTimeSettings, COUNTRY_TIMEZONES, COUNTRY_DATE_FORMATS } from '@/components/DateTimeSettings';
 import {
@@ -33,6 +35,7 @@ import SupportAccessManager from '@/components/SupportAccessManager';
 
 const Settings = () => {
   const { user } = useAuth();
+  const { isStaff, staffMembership } = useStaff();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
@@ -282,31 +285,53 @@ const Settings = () => {
           </div>
         </div>
 
-        {/* Profile Card */}
-        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent shadow-elegant">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <User className="h-4 w-4 text-primary" />
+        {/* Profile Card - Only show for account owners, not staff */}
+        {isStaff ? (
+          <Card className="border-2 border-muted bg-gradient-to-br from-muted/30 to-transparent">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                  <Building2 className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <CardTitle className="text-base">Staff Account</CardTitle>
               </div>
-              <CardTitle className="text-base">Profile Information</CardTitle>
-            </div>
-            <CardDescription className="text-sm">
-              Update your company and contact details
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
+            </CardHeader>
+            <CardContent>
+              <Alert className="bg-muted/50 border-muted">
+                <Info className="h-4 w-4" />
+                <AlertDescription className="text-sm">
+                  You're logged in as a staff member for <strong>{staffMembership?.organisationName}</strong>. 
+                  Profile settings are managed by the account owner.
+                </AlertDescription>
+              </Alert>
+            </CardContent>
+          </Card>
+        ) : (
+          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent shadow-elegant">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                  <User className="h-4 w-4 text-primary" />
+                </div>
+                <CardTitle className="text-base">Profile Information</CardTitle>
               </div>
-            ) : (
-              <ProfileEdit profile={profile} onComplete={handleComplete} />
-            )}
-          </CardContent>
-        </Card>
+              <CardDescription className="text-sm">
+                Update your company and contact details
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ) : (
+                <ProfileEdit profile={profile} onComplete={handleComplete} />
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         {/* Document Management Card */}
         <Card className="border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-transparent shadow-elegant">

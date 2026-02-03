@@ -98,7 +98,7 @@ interface EmailTemplate {
 
 const BatchSendDocuments = () => {
   const { user } = useAuth();
-  const { effectiveUserId, actualUserId } = useEffectiveUserId();
+  const { effectiveUserId, actualUserId, isStaff } = useEffectiveUserId();
   const { terminology } = useTerminology();
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -980,7 +980,7 @@ const BatchSendDocuments = () => {
                 {user?.email && (
                   <p className="break-words"><span className="font-medium text-foreground">Email:</span> {user.email}</p>
                 )}
-                {!profile?.company_name && !profile?.controller_name && (
+                {!isStaff && !profile?.company_name && !profile?.controller_name && (
                   <p className="text-destructive italic text-xs">Please complete your profile in Settings</p>
                 )}
               </div>
