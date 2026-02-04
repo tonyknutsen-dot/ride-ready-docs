@@ -3,9 +3,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Settings2, Info, RotateCcw, Scale, AlertTriangle } from 'lucide-react';
+import { Settings2, Info, RotateCcw, Scale } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 export interface RiskSettings {
   existingControlsReduction: number;
@@ -111,14 +111,16 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 <Label className="text-sm font-medium truncate">Existing Controls</Label>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="p-0.5 -m-0.5 rounded hover:bg-muted">
+                      <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" align="start" className="max-w-[calc(100vw-3rem)] text-sm p-3">
                     <p>Reduction applied when existing control measures are documented.</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
               <span className="text-lg font-bold font-mono text-primary shrink-0">
                 {localSettings.existingControlsReduction}%
@@ -143,14 +145,16 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
                 <Label className="text-sm font-medium truncate">Additional Actions</Label>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-xs">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="p-0.5 -m-0.5 rounded hover:bg-muted">
+                      <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent side="top" align="start" className="max-w-[calc(100vw-3rem)] text-sm p-3">
                     <p>Reduction applied when additional control actions are planned.</p>
-                  </TooltipContent>
-                </Tooltip>
+                  </PopoverContent>
+                </Popover>
               </div>
               <span className="text-lg font-bold font-mono text-primary shrink-0">
                 {localSettings.additionalActionsReduction}%
