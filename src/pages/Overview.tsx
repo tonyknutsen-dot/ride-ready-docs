@@ -377,11 +377,11 @@ const Overview = () => {
                 className="w-full justify-start gap-3 h-11" 
                 onClick={() => setShowDocumentUpload(true)}
               >
-                <Upload className="w-4 h-4" />
-                Upload Document
+                <Upload className="w-4 h-4 shrink-0" />
+                <span className="truncate text-left">Upload Document</span>
               </Button>
               <Button 
-                className="w-full justify-start gap-3 h-11 min-w-0" 
+                className="w-full justify-start gap-3 h-11" 
                 variant="outline"
                 onClick={() => {
                   if (userPlan === 'advanced') {
@@ -391,8 +391,8 @@ const Overview = () => {
                   }
                 }}
               >
-                <Wrench className="w-4 h-4" />
-                <span className="min-w-0 flex-1 truncate">
+                <Wrench className="w-4 h-4 shrink-0" />
+                <span className="truncate text-left">
                   {userPlan === 'advanced' ? 'Ops & Maintenance' : 'Upgrade for Advanced'}
                 </span>
               </Button>
@@ -402,8 +402,8 @@ const Overview = () => {
                   variant="outline"
                   onClick={() => navigate('/calendar')}
                 >
-                  <Calendar className="w-4 h-4" />
-                  View Calendar
+                  <Calendar className="w-4 h-4 shrink-0" />
+                  <span className="truncate text-left">View Calendar</span>
                 </Button>
               )}
             </CardContent>
