@@ -172,11 +172,11 @@ export function RiskEvaluationPanel({
         )}
 
         {/* Score Breakdown */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 text-sm">
-          <div className="bg-background rounded-lg p-3 border">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-sm">
+          <div className="bg-background rounded-lg p-2.5 sm:p-3 border">
             <div className="text-xs text-muted-foreground mb-1">Inherent Risk</div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold font-mono">{calculation.inherentScore}</span>
+              <span className="text-base sm:text-lg font-bold font-mono">{calculation.inherentScore}</span>
               <Badge className={cn("text-xs", getRiskColor(calculation.inherentLevel))}>
                 {calculation.inherentLevel.toUpperCase()}
               </Badge>
@@ -184,19 +184,19 @@ export function RiskEvaluationPanel({
           </div>
           
           {calculation.reductionPercent > 0 && (
-            <div className="bg-background rounded-lg p-3 border">
+            <div className="bg-background rounded-lg p-2.5 sm:p-3 border">
               <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
                 <TrendingDown className="h-3 w-3" />
                 Control Reduction
               </div>
-              <div className="text-lg font-bold font-mono text-green-600">
+              <div className="text-base sm:text-lg font-bold font-mono text-green-600 dark:text-green-500">
                 -{calculation.reductionPercent}%
               </div>
             </div>
           )}
           
           <div className={cn(
-            "bg-background rounded-lg p-3 border",
+            "bg-background rounded-lg p-2.5 sm:p-3 border",
             isOverridden ? "border-warning/50" : "border-primary/30"
           )}>
             <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
@@ -204,7 +204,7 @@ export function RiskEvaluationPanel({
               {isOverridden && <UserCheck className="h-3 w-3 text-warning" />}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-lg font-bold font-mono">
+              <span className="text-base sm:text-lg font-bold font-mono">
                 {isOverridden ? '—' : calculation.residualScore}
               </span>
               <Badge className={cn("text-xs", getRiskColor(isOverridden ? riskLevel as any : calculation.residualLevel))}>
@@ -216,8 +216,8 @@ export function RiskEvaluationPanel({
 
         {/* Control Impact Info */}
         {calculation.reductionPercent > 0 && !isOverridden && (
-          <div className="text-xs text-muted-foreground bg-green-50 border border-green-200 rounded p-2">
-            <span className="font-medium text-green-700">Controls applied:</span>{' '}
+          <div className="text-xs text-muted-foreground bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded p-2">
+            <span className="font-medium text-green-700 dark:text-green-400">Controls applied:</span>{' '}
             {existingControls && `Existing controls (-${existingControlsPercent}%)`}
             {existingControls && additionalActions && ', '}
             {additionalActions && `Additional actions (-${additionalActionsPercent}%)`}
@@ -226,10 +226,10 @@ export function RiskEvaluationPanel({
 
         {/* Risk Level Guide */}
         <div className="text-xs text-muted-foreground">
-          <div className="flex items-center gap-4 flex-wrap">
-            <span><strong>1-6:</strong> Low (acceptable)</span>
-            <span><strong>7-12:</strong> Medium (action needed)</span>
-            <span><strong>13-25:</strong> High (immediate action)</span>
+          <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-3 sm:gap-4 flex-wrap">
+            <span><strong>1-6:</strong> Low</span>
+            <span><strong>7-12:</strong> Medium</span>
+            <span><strong>13-25:</strong> High</span>
           </div>
         </div>
       </div>
