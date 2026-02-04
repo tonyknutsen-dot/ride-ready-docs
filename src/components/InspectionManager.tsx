@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CheckSquare } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import DailyCheckTemplateManager from './DailyCheckTemplateManager';
 import MonthlyCheckTemplateManager from './MonthlyCheckTemplateManager';
@@ -13,18 +14,99 @@ import InspectionScheduleManager from './InspectionScheduleManager';
 import ChecksHistory from './ChecksHistory';
 import EquipmentTimelineReport from './EquipmentTimelineReport';
 import { ChecksOnboardingModal } from './ChecksOnboardingModal';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 
 interface InspectionManagerProps {
   ride: Ride;
 }
 
+interface CheckCounts {
+  preopening: number;
+  daily: number;
+  monthly: number;
+  yearly: number;
+  total: number;
+}
+
 const InspectionManager = ({ ride }: InspectionManagerProps) => {
+  const { user } = useAuth();
+  const { effectiveUserId } = useEffectiveUserId();
   const [activeTab, setActiveTab] = useState('preopening');
   const [showGuide, setShowGuide] = useState(false);
+  const [checkCounts, setCheckCounts] = useState<CheckCounts>({ preopening: 0, daily: 0, monthly: 0, yearly: 0, total: 0 });
+
+  useEffect(() => {
+    if (effectiveUserId && ride.id) {
+      loadCheckCounts();
+    }
+  }, [effectiveUserId, ride.id]);
+
+  const loadCheckCounts = async () => {
+    try {
+      const frequencies = ['preopening', 'daily', 'monthly', 'yearly'] as const;
+      const counts = await Promise.all(
+        frequencies.map(async (freq) => {
+          const { count } = await supabase
+            .from('checks')
+            .select('*', { count: 'exact', head: true })
+            .eq('ride_id', ride.id)
+            .eq('user_id', effectiveUserId)
+            .eq('check_frequency', freq);
+          return { freq, count: count || 0 };
+        })
+      );
+      
+      const result: CheckCounts = { preopening: 0, daily: 0, monthly: 0, yearly: 0, total: 0 };
+      counts.forEach(({ freq, count }) => {
+        result[freq] = count;
+        result.total += count;
+      });
+      setCheckCounts(result);
+    } catch (error) {
+      console.error('Error loading check counts:', error);
+    }
+  };
 
   return (
     <div className="space-y-6">
       <ChecksOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
+      
+      {/* Summary Card */}
+      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
+        <CardContent className="py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-primary/10 rounded-lg">
+                <CheckSquare className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-lg">{checkCounts.total} Total Checks</p>
+                <p className="text-xs text-muted-foreground">All recorded safety checks for this equipment</p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Badge variant="outline" className="text-xs bg-background">
+                <PlayCircle className="h-3 w-3 mr-1" />
+                {checkCounts.preopening} Pre-Opening
+              </Badge>
+              <Badge variant="outline" className="text-xs bg-background">
+                <Clock className="h-3 w-3 mr-1" />
+                {checkCounts.daily} Daily
+              </Badge>
+              <Badge variant="outline" className="text-xs bg-background">
+                <Calendar className="h-3 w-3 mr-1" />
+                {checkCounts.monthly} Monthly
+              </Badge>
+              <Badge variant="outline" className="text-xs bg-background">
+                <CalendarDays className="h-3 w-3 mr-1" />
+                {checkCounts.yearly} Yearly
+              </Badge>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
       
       {/* Help button */}
       <div className="flex justify-end">
