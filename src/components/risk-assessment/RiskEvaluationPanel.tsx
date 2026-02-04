@@ -226,10 +226,10 @@ export function RiskEvaluationPanel({
 
         {/* Risk Level Guide */}
         <div className="text-xs text-muted-foreground">
-          <div className="flex flex-col xs:flex-row xs:items-center gap-1 xs:gap-3 sm:gap-4 flex-wrap">
-            <span><strong>1-6:</strong> Low</span>
-            <span><strong>7-12:</strong> Medium</span>
-            <span><strong>13-25:</strong> High</span>
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+            <span className="whitespace-nowrap"><strong>1-6:</strong> Low</span>
+            <span className="whitespace-nowrap"><strong>7-12:</strong> Medium</span>
+            <span className="whitespace-nowrap"><strong>13-25:</strong> High</span>
           </div>
         </div>
       </div>
