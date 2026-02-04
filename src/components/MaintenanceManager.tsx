@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Wrench, History, FileText, Plus } from 'lucide-react';
+import { History, FileText, Plus } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import MaintenanceLogger from './MaintenanceLogger';
 import MaintenanceHistory from './MaintenanceHistory';
@@ -23,18 +21,6 @@ const MaintenanceManager = ({ ride }: MaintenanceManagerProps) => {
 
   return (
     <div className="space-y-6">
-      <Alert>
-        <AlertDescription>
-          Log maintenance activities including repairs, part replacements, and servicing. Track maintenance history and generate compliance reports.
-        </AlertDescription>
-      </Alert>
-      <div className="space-y-2">
-        <h3 className="text-xl font-semibold">Maintenance Management</h3>
-        <p className="text-muted-foreground">
-          Log maintenance activities, track history, and generate compliance reports for {ride.ride_name}
-        </p>
-      </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="log" className="flex items-center space-x-2">
@@ -52,37 +38,11 @@ const MaintenanceManager = ({ ride }: MaintenanceManagerProps) => {
         </TabsList>
 
         <TabsContent value="log">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <Wrench className="h-5 w-5" />
-                  <span>Maintenance Logging</span>
-                </CardTitle>
-                <CardDescription>
-                  Record maintenance work with photos, documents, and detailed information for regulatory compliance
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            <MaintenanceLogger ride={ride} onMaintenanceLogged={handleMaintenanceLogged} />
-          </div>
+          <MaintenanceLogger ride={ride} onMaintenanceLogged={handleMaintenanceLogged} />
         </TabsContent>
 
         <TabsContent value="history">
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center space-x-2">
-                  <History className="h-5 w-5" />
-                  <span>Maintenance History</span>
-                </CardTitle>
-                <CardDescription>
-                  View and manage maintenance records with supporting documentation
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            <MaintenanceHistory ride={ride} refreshTrigger={refreshTrigger} />
-          </div>
+          <MaintenanceHistory ride={ride} refreshTrigger={refreshTrigger} />
         </TabsContent>
 
         <TabsContent value="reports">
