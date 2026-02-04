@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useStaff } from '@/contexts/StaffContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Plus, ImagePlus, AlertTriangle, Camera, FolderOpen, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Save, Plus, ImagePlus, AlertTriangle, Camera, FolderOpen, Trash2, Loader2, ShieldAlert } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { z } from 'zod';
@@ -41,6 +42,7 @@ const rideSchema = z.object({
 const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const isEditMode = !!ride;
   const { user } = useAuth();
+  const { isStaff } = useStaff();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { subscription, loading: subscriptionLoading } = useSubscription();
@@ -188,6 +190,16 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Staff members cannot add/edit equipment
+    if (isStaff && !isEditMode) {
+      toast({
+        title: "Permission denied",
+        description: "Staff members cannot add new equipment. Please contact your operator.",
+        variant: "destructive",
+      });
+      return;
+    }
     
     // If this will incur extra charges and user hasn't confirmed, show dialog
     if (willIncurExtraCharge && !pendingSubmit) {
@@ -422,6 +434,29 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       setLoading(false);
     }
   };
+
+  // Staff members cannot add new equipment - show a blocking message
+  if (isStaff && !isEditMode) {
+    return (
+      <div className="max-w-3xl mx-auto p-4 md:p-6">
+        <Button 
+          variant="ghost" 
+          onClick={onCancel} 
+          className="mb-4 -ml-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+        <Alert variant="destructive" className="mt-4">
+          <ShieldAlert className="h-4 w-4" />
+          <AlertTitle>Access Restricted</AlertTitle>
+          <AlertDescription>
+            Staff members cannot add new equipment. Only the account owner can add rides, stalls, and equipment. Please contact your operator if you need new items added.
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-6">
