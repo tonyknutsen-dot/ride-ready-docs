@@ -63,17 +63,17 @@ export const FloatingBugButton = () => {
       setHasMoved(true);
     }
     
-    // Calculate new position (we move left/up from default position)
-    const newX = dragRef.current.initialX - deltaX;
-    const newY = dragRef.current.initialY - deltaY;
+    // Calculate new position (add delta to move in same direction as drag)
+    const newX = dragRef.current.initialX + deltaX;
+    const newY = dragRef.current.initialY + deltaY;
     
-    // Clamp to screen bounds
+    // Clamp to screen bounds (button is bottom-right positioned)
     const maxX = window.innerWidth - 60;
     const maxY = window.innerHeight - 100;
     
     setPosition({
-      x: Math.max(-maxX + 60, Math.min(0, newX)),
-      y: Math.max(-maxY + 100, Math.min(0, newY)),
+      x: Math.max(-maxX + 60, Math.min(maxX - 60, newX)),
+      y: Math.max(-maxY + 100, Math.min(maxY - 100, newY)),
     });
   };
 
