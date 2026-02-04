@@ -527,7 +527,7 @@ const Rides = () => {
                     >
                       <CheckSquare className="h-5 w-5 mx-auto text-accent mb-1" />
                       <p className="text-xl font-bold text-accent">{rideStats[ride.id]?.checkCount ?? 0}</p>
-                      <p className="text-xs text-muted-foreground font-medium">Checks</p>
+                      <p className="text-xs text-muted-foreground font-medium">Total Checks</p>
                     </div>
                   ) : (
                     <div 
