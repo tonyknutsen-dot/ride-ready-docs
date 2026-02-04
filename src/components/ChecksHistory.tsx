@@ -594,7 +594,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         <Card>
           <CardContent className="pt-6 text-center">
             <div className="text-2xl font-bold text-primary">{overallStats.total}</div>
-            <div className="text-xs text-muted-foreground">Total Checks</div>
+            <div className="text-xs text-muted-foreground capitalize">{frequency} Checks</div>
           </CardContent>
         </Card>
         <Card>
