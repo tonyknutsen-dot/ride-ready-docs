@@ -5,7 +5,7 @@ import { FeatureGate } from '@/components/FeatureGate';
 import { RiskAssessmentManager } from '@/components/RiskAssessmentManager';
 import RideSelector from '@/components/RideSelector';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ShieldCheck, HelpCircle } from 'lucide-react';
+import { ShieldCheck, HelpCircle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import PageBreadcrumb from '@/components/PageBreadcrumb';
 import PageHeader from '@/components/PageHeader';
@@ -47,58 +47,27 @@ const RiskAssessments = () => {
         <RiskAssessmentOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
         
         <header className="border-b-2 border-warning/30 bg-gradient-to-r from-warning/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
-          <div className="container mx-auto px-4 py-4">
-            {selectedRide ? (
-              <div className="flex items-center gap-3">
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={handleBack}
-                  className="h-10 w-10 shrink-0"
+          <div className="container mx-auto px-4 py-3 sm:py-4">
+            <PageHeader
+              icon={<ShieldCheck className="h-5 w-5 text-warning" />}
+              iconBgClass="from-warning/20 to-destructive/10"
+              title={selectedRide ? selectedRide.ride_name : "Risk Assessments"}
+              subtitle={selectedRide ? "Risk Assessment" : "Identify hazards and implement controls"}
+              showBackButton
+              backTo={selectedRide ? undefined : "/overview"}
+              onBack={selectedRide ? handleBack : undefined}
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowGuide(true)}
+                  className="text-muted-foreground hover:text-foreground h-9 px-2 sm:px-3"
                 >
-                  <ArrowLeft className="h-5 w-5" />
+                  <HelpCircle className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-1">How does it work?</span>
                 </Button>
-                <div className="flex-1">
-                  <PageHeader
-                    icon={<ShieldCheck className="h-5 w-5 text-warning" />}
-                    iconBgClass="from-warning/20 to-destructive/10"
-                    title={selectedRide.ride_name}
-                    subtitle="Risk Assessment"
-                    actions={
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowGuide(true)}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <HelpCircle className="h-4 w-4" />
-                        <span className="hidden sm:inline ml-1">How does it work?</span>
-                      </Button>
-                    }
-                  />
-                </div>
-              </div>
-            ) : (
-              <PageHeader
-                icon={<ShieldCheck className="h-5 w-5 text-warning" />}
-                iconBgClass="from-warning/20 to-destructive/10"
-                title="Risk Assessments"
-                subtitle="Identify hazards and implement controls"
-                showBackButton
-                backTo="/overview"
-                actions={
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowGuide(true)}
-                    className="text-muted-foreground hover:text-foreground"
-                  >
-                    <HelpCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline ml-1">How does it work?</span>
-                  </Button>
-                }
-              />
-            )}
+              }
+            />
           </div>
         </header>
 
