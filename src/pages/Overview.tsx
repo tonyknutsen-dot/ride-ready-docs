@@ -375,6 +375,7 @@ const Overview = () => {
             <CardContent className="space-y-2">
               <Button 
                 className="w-full justify-start gap-3 h-11" 
+                variant="outline"
                 onClick={() => setShowDocumentUpload(true)}
               >
                 <Upload className="w-4 h-4 shrink-0" />
