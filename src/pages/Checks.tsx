@@ -29,7 +29,7 @@ const Checks = () => {
       <StaffAccountBanner />
       <ChecksOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
       <header className="border-b-2 border-success/30 bg-gradient-to-r from-success/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3 sm:py-4">
           <PageHeader
             icon={<CheckSquare className="h-5 w-5 text-success" />}
             iconBgClass="from-success/20 to-success/10"
@@ -42,7 +42,7 @@ const Checks = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowGuide(true)}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground h-9 px-2 sm:px-3"
               >
                 <HelpCircle className="h-4 w-4" />
                 <span className="hidden sm:inline ml-1">How does it work?</span>

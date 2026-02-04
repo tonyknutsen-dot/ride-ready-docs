@@ -13,6 +13,7 @@ interface PageHeaderProps {
   className?: string;
   showBackButton?: boolean;
   backTo?: string;
+  onBack?: () => void;
 }
 
 const PageHeader = ({ 
@@ -23,12 +24,15 @@ const PageHeader = ({
   actions,
   className,
   showBackButton = false,
-  backTo
+  backTo,
+  onBack
 }: PageHeaderProps) => {
   const navigate = useNavigate();
 
   const handleBack = () => {
-    if (backTo) {
+    if (onBack) {
+      onBack();
+    } else if (backTo) {
       navigate(backTo);
     } else {
       // Always navigate to overview as fallback instead of relying on history

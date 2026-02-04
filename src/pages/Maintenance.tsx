@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Wrench, ArrowLeft, HelpCircle } from 'lucide-react';
+import { Wrench, HelpCircle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -99,36 +99,26 @@ const Maintenance = () => {
         <StaffAccountBanner />
         <MaintenanceOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
         <header className="border-b-2 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
-          <div className="container mx-auto px-4 py-4">
-            <div className="flex items-center gap-3">
-              <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={handleBack}
-                className="h-10 w-10 shrink-0"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <div className="flex-1">
-                <PageHeader
-                  icon={<Wrench className="h-5 w-5 text-amber-600" />}
-                  iconBgClass="from-amber-500/20 to-amber-500/10"
-                  title={selectedRide.ride_name}
-                  subtitle="Maintenance Management"
-                  actions={
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowGuide(true)}
-                      className="text-muted-foreground hover:text-foreground"
-                    >
-                      <HelpCircle className="h-4 w-4" />
-                      <span className="hidden sm:inline ml-1">How does it work?</span>
-                    </Button>
-                  }
-                />
-              </div>
-            </div>
+          <div className="container mx-auto px-4 py-3 sm:py-4">
+            <PageHeader
+              icon={<Wrench className="h-5 w-5 text-amber-600" />}
+              iconBgClass="from-amber-500/20 to-amber-500/10"
+              title={selectedRide.ride_name}
+              subtitle="Maintenance Management"
+              showBackButton
+              onBack={handleBack}
+              actions={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowGuide(true)}
+                  className="text-muted-foreground hover:text-foreground h-9 px-2 sm:px-3"
+                >
+                  <HelpCircle className="h-4 w-4" />
+                  <span className="hidden sm:inline ml-1">How does it work?</span>
+                </Button>
+              }
+            />
           </div>
         </header>
         
@@ -145,7 +135,7 @@ const Maintenance = () => {
       <StaffAccountBanner />
       <MaintenanceOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
       <header className="border-b-2 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
+        <div className="container mx-auto px-4 py-3 sm:py-4">
           <PageHeader
             icon={<Wrench className="h-5 w-5 text-amber-600" />}
             iconBgClass="from-amber-500/20 to-amber-500/10"
@@ -158,7 +148,7 @@ const Maintenance = () => {
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowGuide(true)}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-muted-foreground hover:text-foreground h-9 px-2 sm:px-3"
               >
                 <HelpCircle className="h-4 w-4" />
                 <span className="hidden sm:inline ml-1">How does it work?</span>
