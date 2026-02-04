@@ -1,7 +1,6 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { useStaff } from '@/contexts/StaffContext';
 import {
   cacheRidesForOffline,
   cacheTemplatesForOffline,
@@ -11,10 +10,11 @@ import {
 
 export function useOfflineDataCache() {
   const { user } = useAuth();
-  const { isStaff } = useStaff();
+  const userId = user?.id;
+  const hasCachedRef = useRef(false);
 
   const cacheData = useCallback(async () => {
-    if (!user) return;
+    if (!userId) return;
 
     try {
       // Fetch rides the user has access to
@@ -85,14 +85,20 @@ export function useOfflineDataCache() {
     } catch (error) {
       console.error('Failed to cache data for offline use:', error);
     }
-  }, [user]);
+  }, [userId]);
 
-  // Cache data when component mounts (user logs in)
+  // Cache data once when user logs in - use ref to prevent duplicate calls
   useEffect(() => {
-    if (user) {
+    if (userId && !hasCachedRef.current) {
+      hasCachedRef.current = true;
       cacheData();
     }
-  }, [user, cacheData]);
+    
+    // Reset when user changes
+    if (!userId) {
+      hasCachedRef.current = false;
+    }
+  }, [userId, cacheData]);
 
   return { cacheData };
 }

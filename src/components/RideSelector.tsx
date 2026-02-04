@@ -81,52 +81,81 @@ const RideSelector = ({
 
       if (error) throw error;
       setRides(data as Ride[]);
+      setLoading(false);
 
+      // Load thumbnails in background (non-blocking)
       if (Array.isArray(data) && data.length) {
-        try {
-          const next: Record<string, string> = {};
-          await Promise.all(
-            data.map(async (ride: Ride) => {
-              const { data: docs, error } = await supabase
-                .from('documents')
-                .select('id,file_path,document_type')
-                .eq('ride_id', ride.id)
-                .eq('user_id', effectiveUserId)
-                .eq('document_type', 'photo')
-                .order('uploaded_at', { ascending: false })
-                .limit(1);
-
-              if (!error && docs && docs[0]?.file_path) {
-                const { data: urlData, error: urlErr } = await supabase
-                  .storage
-                  .from('ride-documents')
-                  .createSignedUrl(docs[0].file_path, 3600);
-                if (!urlErr && urlData?.signedUrl) {
-                  next[ride.id] = urlData.signedUrl;
-                }
-              }
-            })
-          );
-          setThumbs(next);
-        } catch (e) {
-          console.warn('Thumb load skipped:', e);
-        }
+        loadThumbnails(data as Ride[]);
       }
     } catch (error) {
       console.error('Error loading rides:', error);
-    } finally {
       setLoading(false);
+    }
+  };
+
+  const loadThumbnails = async (ridesList: Ride[]) => {
+    try {
+      // Batch fetch all photo documents in a single query
+      const { data: docs, error } = await supabase
+        .from('documents')
+        .select('id, file_path, ride_id')
+        .in('ride_id', ridesList.map(r => r.id))
+        .eq('user_id', effectiveUserId)
+        .eq('document_type', 'photo')
+        .order('uploaded_at', { ascending: false });
+
+      if (error || !docs?.length) return;
+
+      // Get one photo per ride (first one is latest due to ordering)
+      const photosByRide = new Map<string, string>();
+      for (const doc of docs) {
+        if (doc.ride_id && !photosByRide.has(doc.ride_id)) {
+          photosByRide.set(doc.ride_id, doc.file_path);
+        }
+      }
+
+      if (photosByRide.size === 0) return;
+
+      // Batch create signed URLs
+      const urlPromises = Array.from(photosByRide.entries()).map(async ([rideId, filePath]) => {
+        const { data: urlData } = await supabase.storage
+          .from('ride-documents')
+          .createSignedUrl(filePath, 3600);
+        return { rideId, url: urlData?.signedUrl };
+      });
+
+      const results = await Promise.all(urlPromises);
+      const next: Record<string, string> = {};
+      for (const { rideId, url } of results) {
+        if (url) next[rideId] = url;
+      }
+      setThumbs(next);
+    } catch (e) {
+      console.warn('Thumb load skipped:', e);
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center space-y-4">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center mx-auto animate-pulse">
-            <Settings className="h-7 w-7 text-primary animate-spin" />
-          </div>
-          <p className="text-sm text-muted-foreground">Loading your equipment...</p>
+      <div className="space-y-5">
+        {/* Header skeleton */}
+        <div className="text-center space-y-2">
+          <div className="w-14 h-14 rounded-full bg-muted animate-pulse mx-auto" />
+          <div className="h-6 w-40 bg-muted rounded animate-pulse mx-auto" />
+          <div className="h-4 w-64 bg-muted rounded animate-pulse mx-auto" />
+        </div>
+        {/* Cards skeleton */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="border-2 border-muted rounded-xl animate-pulse">
+              <div className="w-full h-24 bg-muted rounded-t-xl" />
+              <div className="p-4 space-y-3">
+                <div className="h-5 w-3/4 bg-muted rounded" />
+                <div className="h-4 w-20 bg-muted rounded" />
+                <div className="h-11 w-full bg-muted rounded" />
+              </div>
+            </div>
+          ))}
         </div>
       </div>
     );
