@@ -64,26 +64,29 @@ const EquipmentTimelineReport = ({ ride }: EquipmentTimelineReportProps) => {
         return isWithinInterval(d, { start: reportDateFrom, end: reportDateTo });
       };
 
-      // Load checks - use effectiveUserId for staff/testers
+      // Load checks - use effectiveUserId for staff/testers, exclude test data
       const { data: checks } = await supabase
         .from('checks')
         .select('check_date')
         .eq('ride_id', ride.id)
-        .eq('user_id', effectiveUserId);
+        .eq('user_id', effectiveUserId)
+        .eq('is_test_data', false);
       
-      // Load maintenance
+      // Load maintenance - exclude test data
       const { data: maintenance } = await supabase
         .from('maintenance_records')
         .select('maintenance_date')
         .eq('ride_id', ride.id)
-        .eq('user_id', effectiveUserId);
+        .eq('user_id', effectiveUserId)
+        .eq('is_test_data', false);
 
-      // Load defects
+      // Load defects - exclude test data
       const { data: defects } = await supabase
         .from('defects')
         .select('reported_at')
         .eq('ride_id', ride.id)
-        .eq('user_id', effectiveUserId);
+        .eq('user_id', effectiveUserId)
+        .eq('is_test_data', false);
 
       // Load annual inspections
       const { data: inspections } = await supabase
@@ -125,13 +128,13 @@ const EquipmentTimelineReport = ({ ride }: EquipmentTimelineReportProps) => {
         .eq('user_id', effectiveUserId)
         .single();
 
-      // Load all data - use effectiveUserId for staff/testers
+      // Load all data - use effectiveUserId for staff/testers, exclude test data
       const [checksResult, maintenanceResult, defectsResult, inspectionsResult, ndtDocsResult] = await Promise.all([
-        supabase.from('checks').select('*').eq('ride_id', ride.id).eq('user_id', effectiveUserId),
-        supabase.from('maintenance_records').select('*').eq('ride_id', ride.id).eq('user_id', effectiveUserId),
-        supabase.from('defects').select('*').eq('ride_id', ride.id).eq('user_id', effectiveUserId),
+        supabase.from('checks').select('*').eq('ride_id', ride.id).eq('user_id', effectiveUserId).eq('is_test_data', false),
+        supabase.from('maintenance_records').select('*').eq('ride_id', ride.id).eq('user_id', effectiveUserId).eq('is_test_data', false),
+        supabase.from('defects').select('*').eq('ride_id', ride.id).eq('user_id', effectiveUserId).eq('is_test_data', false),
         supabase.from('annual_inspection_reports').select('*').eq('ride_id', ride.id).eq('user_id', effectiveUserId),
-        supabase.from('documents').select('*').eq('ride_id', ride.id).eq('user_id', effectiveUserId).in('document_type', ['ndt_schedule', 'ndt_report']),
+        supabase.from('documents').select('*').eq('ride_id', ride.id).eq('user_id', effectiveUserId).eq('is_test_data', false).in('document_type', ['ndt_schedule', 'ndt_report']),
       ]);
 
       const dateFilter = (date: string) => {

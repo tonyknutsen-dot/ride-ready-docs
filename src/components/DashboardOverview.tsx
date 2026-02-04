@@ -109,11 +109,12 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
         if (ridesError) throw ridesError;
         ridesDataForStats = rides;
 
-        // Load inspection checks
+        // Load inspection checks - exclude test data
         const { data: checks, error: checksError } = await supabase
           .from('checks')
           .select('id, check_date, status')
-          .eq('user_id', user?.id);
+          .eq('user_id', user?.id)
+          .eq('is_test_data', false);
 
         if (checksError) throw checksError;
         inspectionsData = checks;

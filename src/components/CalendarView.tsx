@@ -201,12 +201,13 @@ const CalendarView = () => {
         return baseQuery.eq('user_id', effectiveUserId);
       };
 
-      // Load inspection checks
+      // Load inspection checks - exclude test data
       let checksQuery = supabase
         .from('checks')
         .select('id, check_date, status, ride_id')
         .gte('check_date', format(monthStart, 'yyyy-MM-dd'))
-        .lte('check_date', format(monthEnd, 'yyyy-MM-dd'));
+        .lte('check_date', format(monthEnd, 'yyyy-MM-dd'))
+        .eq('is_test_data', false);
       
       const { data: checks } = await buildQuery(checksQuery);
 

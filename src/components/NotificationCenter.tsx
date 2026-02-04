@@ -86,13 +86,14 @@ const NotificationCenter = () => {
 
   const generateSystemNotifications = async () => {
     try {
-      // Check for overdue inspections
+      // Check for overdue inspections - exclude test data
       const today = new Date().toISOString().split('T')[0];
       const { data: overdueChecks } = await supabase
         .from('checks')
         .select('id, rides(ride_name)')
         .eq('user_id', user?.id)
         .eq('status', 'pending')
+        .eq('is_test_data', false)
         .lt('check_date', today);
 
       if (overdueChecks && overdueChecks.length > 0) {
