@@ -42,7 +42,7 @@ const rideSchema = z.object({
 const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const isEditMode = !!ride;
   const { user } = useAuth();
-  const { isStaff } = useStaff();
+  const { isStaff, permissionLevel } = useStaff();
   const { toast } = useToast();
   const navigate = useNavigate();
   const { subscription, loading: subscriptionLoading } = useSubscription();
@@ -188,14 +188,17 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     }
   };
 
+  // Staff with full_access can add rides, others cannot
+  const canAddRides = !isStaff || permissionLevel === 'full_access';
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Staff members cannot add/edit equipment
-    if (isStaff && !isEditMode) {
+    // Only staff without full_access are blocked from adding equipment
+    if (!canAddRides && !isEditMode) {
       toast({
         title: "Permission denied",
-        description: "Staff members cannot add new equipment. Please contact your operator.",
+        description: "Only staff with full access can add new equipment. Please contact your operator.",
         variant: "destructive",
       });
       return;
@@ -435,8 +438,8 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     }
   };
 
-  // Staff members cannot add new equipment - show a blocking message
-  if (isStaff && !isEditMode) {
+  // Staff members without full_access cannot add new equipment - show a blocking message
+  if (!canAddRides && !isEditMode) {
     return (
       <div className="max-w-3xl mx-auto p-4 md:p-6">
         <Button 
@@ -451,7 +454,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           <ShieldAlert className="h-4 w-4" />
           <AlertTitle>Access Restricted</AlertTitle>
           <AlertDescription>
-            Staff members cannot add new equipment. Only the account owner can add rides, stalls, and equipment. Please contact your operator if you need new items added.
+            Only staff with full access permission can add new equipment. Please contact your operator if you need new items added.
           </AlertDescription>
         </Alert>
       </div>

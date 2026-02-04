@@ -38,7 +38,7 @@ const Rides = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { subscription } = useSubscription();
   const { isTester } = useTester();
-  const { isStaff } = useStaff();
+  const { isStaff, permissionLevel } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
   const [rides, setRides] = useState<Ride[]>([]);
   const [ridePhotos, setRidePhotos] = useState<Record<string, string | null>>({});
@@ -52,15 +52,18 @@ const Rides = () => {
   const [activeGroup, setActiveGroup] = useState<string>('All');
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   
-  // Check for action parameter to auto-open add form (only for non-staff)
+  // Staff with full_access can add rides, others cannot
+  const canAddRides = !isStaff || permissionLevel === 'full_access';
+  
+  // Check for action parameter to auto-open add form (only for users who can add)
   useEffect(() => {
-    if (searchParams.get('action') === 'add' && !isStaff) {
+    if (searchParams.get('action') === 'add' && canAddRides) {
       setShowAddForm(true);
       // Clear the param so refreshing doesn't re-open
       searchParams.delete('action');
       setSearchParams(searchParams, { replace: true });
     }
-  }, [searchParams, setSearchParams, isStaff]);
+  }, [searchParams, setSearchParams, canAddRides]);
   
   // Determine if user has advanced access (subscriber or tester)
   const hasAdvancedAccess = subscription?.subscriptionStatus === 'advanced' || isTester;
@@ -373,8 +376,8 @@ const Rides = () => {
           <p className="text-sm text-muted-foreground">Manage your rides, stalls, and equipment</p>
         </div>
         
-        {/* Only show Add button for owners, not staff members */}
-        {!isStaff && (
+        {/* Only show Add button for owners or staff with full_access */}
+        {canAddRides && (
           <Button 
             onClick={() => setShowAddForm(true)} 
             className="w-full sm:w-auto flex items-center justify-center gap-2 h-12 sm:h-10"

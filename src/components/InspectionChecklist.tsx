@@ -1537,47 +1537,47 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                         </div>
                       </div>
                       
-                      {/* Pass/Fail/N/A Radio buttons */}
+                      {/* Pass/Fail/N/A Radio buttons - optimized for mobile */}
                       <RadioGroup 
                         value={currentResult || ''} 
                         onValueChange={(value) => handleResultChange(item.id, value as CheckItemResult)}
-                        className="flex gap-2"
+                        className="flex gap-1.5 sm:gap-2"
                       >
                         <label 
                           htmlFor={`${item.id}-pass`}
-                          className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                          className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg border-2 cursor-pointer transition-all ${
                             currentResult === 'pass' 
                               ? 'border-success bg-success/10 text-success' 
                               : 'border-border hover:border-success/50'
                           }`}
                         >
                           <RadioGroupItem value="pass" id={`${item.id}-pass`} className="sr-only" />
-                          <CheckCircle className="h-5 w-5" />
-                          <span className="font-medium text-sm">Pass</span>
+                          <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                          <span className="font-medium text-xs sm:text-sm">Pass</span>
                         </label>
                         <label 
                           htmlFor={`${item.id}-fail`}
-                          className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                          className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg border-2 cursor-pointer transition-all ${
                             currentResult === 'fail' 
                               ? 'border-destructive bg-destructive/10 text-destructive' 
                               : 'border-border hover:border-destructive/50'
                           }`}
                         >
                           <RadioGroupItem value="fail" id={`${item.id}-fail`} className="sr-only" />
-                          <XCircle className="h-5 w-5" />
-                          <span className="font-medium text-sm">Fail</span>
+                          <XCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                          <span className="font-medium text-xs sm:text-sm">Fail</span>
                         </label>
                         <label 
                           htmlFor={`${item.id}-na`}
-                          className={`flex-1 flex items-center justify-center gap-2 p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                          className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg border-2 cursor-pointer transition-all ${
                             currentResult === 'na' 
                               ? 'border-muted-foreground bg-muted text-muted-foreground' 
                               : 'border-border hover:border-muted-foreground/50'
                           }`}
                         >
                           <RadioGroupItem value="na" id={`${item.id}-na`} className="sr-only" />
-                          <MinusCircle className="h-5 w-5" />
-                          <span className="font-medium text-sm">N/A</span>
+                          <MinusCircle className="h-4 w-4 sm:h-5 sm:w-5" />
+                          <span className="font-medium text-xs sm:text-sm">N/A</span>
                         </label>
                       </RadioGroup>
                       
