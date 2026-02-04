@@ -53,7 +53,8 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
             .select('*', { count: 'exact', head: true })
             .eq('ride_id', ride.id)
             .eq('user_id', effectiveUserId)
-            .eq('check_frequency', freq);
+            .eq('check_frequency', freq)
+            .eq('is_test_data', false); // Exclude test data
           return { freq, count: count || 0 };
         })
       );

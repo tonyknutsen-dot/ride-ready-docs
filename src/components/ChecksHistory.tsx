@@ -29,6 +29,7 @@ import { format, startOfMonth, endOfMonth, startOfYear, subDays, parseISO } from
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { EmptyState } from '@/components/EmptyState';
@@ -62,6 +63,7 @@ interface MonthGroup {
 
 const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryProps) => {
   const { user } = useAuth();
+  const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const [checks, setChecks] = useState<CheckWithResults[]>([]);
   const [filteredChecks, setFilteredChecks] = useState<CheckWithResults[]>([]);
@@ -80,10 +82,10 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const itemsPerPage = 20;
 
   useEffect(() => {
-    if (user) {
+    if (effectiveUserId) {
       loadChecks();
     }
-  }, [user, rideId, dateRange, customStartDate, customEndDate]);
+  }, [effectiveUserId, rideId, dateRange, customStartDate, customEndDate]);
 
   useEffect(() => {
     applyFilters();
@@ -129,9 +131,10 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
             template_item_id
           )
         `)
-        .eq('user_id', user?.id)
+        .eq('user_id', effectiveUserId)
         .eq('ride_id', rideId)
         .eq('check_frequency', frequency)
+        .eq('is_test_data', false) // Exclude test data
         .gte('check_date', startDate)
         .lte('check_date', endDate)
         .order('check_date', { ascending: false });
