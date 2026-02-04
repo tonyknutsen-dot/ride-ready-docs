@@ -138,7 +138,7 @@ const ReportGenerator = () => {
       const startDate = formatDate(start, 'yyyy-MM-dd');
       const endDate = formatDate(end, 'yyyy-MM-dd');
 
-      // Load check data
+      // Load check data - exclude test data
       const { data: checks, error: checksError } = await supabase
         .from('checks')
         .select(`
@@ -149,6 +149,7 @@ const ReportGenerator = () => {
           rides(ride_name)
         `)
         .eq('user_id', user?.id)
+        .eq('is_test_data', false)
         .in('ride_id', filters.includeRides)
         .gte('check_date', startDate)
         .lte('check_date', endDate);

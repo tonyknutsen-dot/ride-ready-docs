@@ -137,7 +137,8 @@ const Rides = () => {
         let checkQuery = supabase
           .from('checks')
           .select('*', { count: 'exact', head: true })
-          .eq('ride_id', ride.id);
+          .eq('ride_id', ride.id)
+          .eq('is_test_data', false);
         checkQuery = checkQuery.eq('user_id', effectiveUserId);
         const { count: checkCount } = await checkQuery;
         

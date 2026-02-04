@@ -85,12 +85,13 @@ const RideManagement = () => {
           .eq('user_id', effectiveUserId)
           .eq('ride_id', ride.id);
 
-        // Get daily check count for this ride - use effectiveUserId
+        // Get daily check count for this ride - use effectiveUserId, exclude test data
         const { count: checkCount } = await supabase
           .from('checks')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', effectiveUserId)
-          .eq('ride_id', ride.id);
+          .eq('ride_id', ride.id)
+          .eq('is_test_data', false);
 
         // Get next due date from various sources - use effectiveUserId
         const [maintenanceQuery, inspectionQuery, ndtQuery] = await Promise.all([
