@@ -386,7 +386,7 @@ const Overview = () => {
                 variant="outline"
                 onClick={() => {
                   if (userPlan === 'advanced') {
-                    navigate('/checks');
+                    navigate('/maintenance');
                   } else {
                     navigate('/billing');
                   }
