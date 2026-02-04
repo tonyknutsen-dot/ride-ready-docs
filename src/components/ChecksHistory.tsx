@@ -820,52 +820,52 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
                     {group.checks.map((check) => (
                       <div 
                         key={check.id} 
-                        className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
+                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
                         onClick={() => {
                           setSelectedCheck(check);
                           setShowCheckDetail(true);
                         }}
                       >
-                        <div className="flex items-center gap-4">
+                        <div className="shrink-0 mt-1">
                           {getStatusIcon(check.status)}
-                          <div className="flex flex-col gap-1">
-                            <div className="flex items-center gap-3">
-                              <div className="flex items-center gap-2">
-                                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                                <span className="font-medium">{format(parseISO(check.check_date), 'PP')}</span>
+                        </div>
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-1.5">
+                              <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <span className="font-medium text-sm">{format(parseISO(check.check_date), 'PP')}</span>
+                            </div>
+                            <Badge variant="outline" className="text-xs shrink-0">
+                              {check.check_frequency}
+                            </Badge>
+                          </div>
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <User className="h-3 w-3 shrink-0" />
+                              <span className="truncate max-w-[120px] sm:max-w-none">{check.inspector_name}</span>
+                            </div>
+                            {(check as any).weather_conditions && (
+                              <div className="flex items-center gap-1">
+                                <Cloud className="h-3 w-3 shrink-0" />
+                                <span className="truncate max-w-[80px] sm:max-w-none">{(check as any).weather_conditions}</span>
                               </div>
-                              <Badge variant="outline" className="text-xs">
-                                {check.check_frequency}
-                              </Badge>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                              <User className="h-3 w-3" />
-                              <span>{check.inspector_name}</span>
-                              {(check as any).weather_conditions && (
-                                <>
-                                  <span>•</span>
-                                  <Cloud className="h-3 w-3" />
-                                  <span>{(check as any).weather_conditions}</span>
-                                </>
-                              )}
-                              {(check as any).location && (
-                                <>
-                                  <span>•</span>
-                                  <MapPin className="h-3 w-3" />
-                                  <span className="truncate max-w-[200px]">{(check as any).location}</span>
-                                </>
-                              )}
-                            </div>
-                            {check.notes && (
-                              <p className="text-xs text-muted-foreground italic mt-1">
-                                {check.notes.substring(0, 80)}{check.notes.length > 80 ? '...' : ''}
-                              </p>
+                            )}
+                            {(check as any).location && (
+                              <div className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3 shrink-0" />
+                                <span className="truncate max-w-[100px] sm:max-w-[200px]">{(check as any).location}</span>
+                              </div>
                             )}
                           </div>
+                          {check.notes && (
+                            <p className="text-xs text-muted-foreground italic line-clamp-2">
+                              {check.notes}
+                            </p>
+                          )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 shrink-0">
                           {getStatusBadge(check.status)}
-                          <Eye className="h-4 w-4 text-muted-foreground" />
+                          <Eye className="h-4 w-4 text-muted-foreground hidden sm:block" />
                         </div>
                       </div>
                     ))}
