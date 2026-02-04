@@ -52,15 +52,15 @@ const Rides = () => {
   const [activeGroup, setActiveGroup] = useState<string>('All');
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   
-  // Check for action parameter to auto-open add form
+  // Check for action parameter to auto-open add form (only for non-staff)
   useEffect(() => {
-    if (searchParams.get('action') === 'add') {
+    if (searchParams.get('action') === 'add' && !isStaff) {
       setShowAddForm(true);
       // Clear the param so refreshing doesn't re-open
       searchParams.delete('action');
       setSearchParams(searchParams, { replace: true });
     }
-  }, [searchParams, setSearchParams]);
+  }, [searchParams, setSearchParams, isStaff]);
   
   // Determine if user has advanced access (subscriber or tester)
   const hasAdvancedAccess = subscription?.subscriptionStatus === 'advanced' || isTester;
@@ -373,13 +373,16 @@ const Rides = () => {
           <p className="text-sm text-muted-foreground">Manage your rides, stalls, and equipment</p>
         </div>
         
-        <Button 
-          onClick={() => setShowAddForm(true)} 
-          className="w-full sm:w-auto flex items-center justify-center gap-2 h-12 sm:h-10"
-        >
-          <Plus className="h-5 w-5" />
-          <span>Add Ride or Stall</span>
-        </Button>
+        {/* Only show Add button for owners, not staff members */}
+        {!isStaff && (
+          <Button 
+            onClick={() => setShowAddForm(true)} 
+            className="w-full sm:w-auto flex items-center justify-center gap-2 h-12 sm:h-10"
+          >
+            <Plus className="h-5 w-5" />
+            <span>Add Ride or Stall</span>
+          </Button>
+        )}
       </div>
 
       {/* Category Filter Tabs */}
