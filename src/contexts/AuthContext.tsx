@@ -98,14 +98,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let isMounted = true;
     let initialLoadDone = false;
     
-    // Detect if we're returning from an OAuth callback (hash contains tokens)
-    const hash = window.location.hash;
-    const isOAuthCallback = hash.includes('access_token') || hash.includes('error_description');
-    
     console.log('[AUTH] Initializing auth', { 
-      isOAuthCallback, 
       pathname: window.location.pathname,
-      hasHash: !!hash,
+      hasHash: !!window.location.hash,
       origin: window.location.origin 
     });
 
@@ -151,31 +146,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // INITIAL load - explicit getSession as fallback
-    // If onAuthStateChange fires INITIAL_SESSION first, that will set loading=false
-    // If not, this will handle it
+    // INITIAL load - process hash tokens manually then get session
+    // detectSessionInUrl is disabled in client to prevent race conditions on custom domains
     const initializeAuth = async () => {
       try {
+        // Process auth tokens from URL hash (OAuth callbacks, email confirmations, password resets)
+        const hash = window.location.hash;
+        if (hash && (hash.includes('access_token') || hash.includes('error_description'))) {
+          const params = new URLSearchParams(hash.substring(1));
+          const access_token = params.get('access_token');
+          const refresh_token = params.get('refresh_token');
+          const error_description = params.get('error_description');
+          
+          // Clear hash immediately to prevent re-processing
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          
+          if (error_description) {
+            console.error('[AUTH] Auth callback error:', error_description);
+          } else if (access_token && refresh_token) {
+            console.log('[AUTH] Setting session from URL hash tokens');
+            const { error } = await supabase.auth.setSession({ access_token, refresh_token });
+            if (error) {
+              console.error('[AUTH] Failed to set session from hash:', error.message);
+            }
+            // onAuthStateChange listener will handle state updates from setSession
+          }
+        }
+        
         const { data: { session } } = await supabase.auth.getSession();
         if (!isMounted) return;
         
-        // Only update if we haven't already via onAuthStateChange
+        // Only update if the onAuthStateChange listener hasn't already handled it
         if (!initialLoadDone) {
-          // If this is an OAuth callback and getSession returned null,
-          // DON'T set loading=false yet - wait for onAuthStateChange to process the hash
-          if (isOAuthCallback && !session) {
-            console.log('[AUTH] OAuth callback detected, waiting for session from hash...');
-            // Set a safety timeout so we don't wait forever
-            setTimeout(() => {
-              if (isMounted && !initialLoadDone) {
-                console.log('[AUTH] OAuth callback timeout - setting loading false');
-                initialLoadDone = true;
-                setLoading(false);
-              }
-            }, 5000);
-            return;
-          }
-          
           setSession(session);
           setUser(session?.user ?? null);
           
