@@ -99,8 +99,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let initialLoadDone = false;
     
     // Detect if we're returning from an OAuth callback (hash contains tokens)
-    const isOAuthCallback = window.location.hash.includes('access_token') || 
-                            window.location.hash.includes('error_description');
+    const hash = window.location.hash;
+    const isOAuthCallback = hash.includes('access_token') || hash.includes('error_description');
+    
+    console.log('[AUTH] Initializing auth', { 
+      isOAuthCallback, 
+      pathname: window.location.pathname,
+      hasHash: !!hash,
+      origin: window.location.origin 
+    });
 
     // Listener for ONGOING auth changes (does NOT control loading after initial load)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
