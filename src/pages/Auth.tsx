@@ -62,6 +62,12 @@ const Auth = () => {
   const [emailSuggestion, setEmailSuggestion] = useState<EmailSuggestion | null>(null);
   const [passwordValidation, setPasswordValidation] = useState<ReturnType<typeof validatePasswordStrength> | null>(null);
   
+  // Detect if we're returning from an OAuth callback (hash contains access_token)
+  const [isOAuthCallback, setIsOAuthCallback] = useState(() => {
+    const hash = window.location.hash;
+    return hash.includes('access_token') || hash.includes('error_description');
+  });
+  
   const { signIn, signUp, resetPassword, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -76,7 +82,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/overview`
+          redirectTo: `${window.location.origin}/auth`
         }
       });
       
@@ -136,8 +142,13 @@ const Auth = () => {
     // Only redirect if user exists AND we're not in a loading state
     // This prevents false redirects from stale session data
     if (user && !authLoading) {
+      setIsOAuthCallback(false);
       const from = (location.state as any)?.from?.pathname || '/overview';
       navigate(from, { replace: true });
+    }
+    // Clear OAuth callback state if auth finished loading with no user (failed callback)
+    if (!authLoading && !user) {
+      setIsOAuthCallback(false);
     }
   }, [user, authLoading, navigate, location]);
 
@@ -382,6 +393,19 @@ const Auth = () => {
       localStorage.removeItem(REMEMBER_EMAIL_KEY);
     }
   };
+
+  // Show loading state while processing OAuth callback
+  if (isOAuthCallback || authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
+        <div className="text-center space-y-4">
+          <img src={appLogo} alt="Ride Ready Docs" className="mx-auto h-20 w-20 rounded-full shadow-lg" />
+          <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+          <p className="text-muted-foreground">Signing you in...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (showResetForm) {
     return (
