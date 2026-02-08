@@ -79,19 +79,56 @@ const Auth = () => {
     setFormNotice(null);
     
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/auth`
-        }
-      });
-      
-      if (error) {
-        setFormNotice({
-          type: 'error',
-          title: 'Google Sign In Failed',
-          message: error.message || 'Failed to sign in with Google. Please try again.'
+      // Detect if we're on a custom domain (not lovable.app preview)
+      const isCustomDomain = 
+        !window.location.hostname.includes('lovable.app') && 
+        !window.location.hostname.includes('lovableproject.com') &&
+        !window.location.hostname.includes('localhost');
+
+      if (isCustomDomain) {
+        // Bypass auth-bridge by getting OAuth URL directly
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/auth`,
+            skipBrowserRedirect: true,
+          },
         });
+
+        if (error) {
+          setFormNotice({
+            type: 'error',
+            title: 'Google Sign In Failed',
+            message: error.message || 'Failed to sign in with Google. Please try again.'
+          });
+          return;
+        }
+
+        // Validate OAuth URL before redirect (security: prevent open redirect)
+        if (data?.url) {
+          const oauthUrl = new URL(data.url);
+          const allowedHosts = ['accounts.google.com'];
+          if (!allowedHosts.some(host => oauthUrl.hostname === host)) {
+            throw new Error('Invalid OAuth redirect URL');
+          }
+          window.location.href = data.url;
+        }
+      } else {
+        // For Lovable domains, use normal flow (auth-bridge handles it)
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/auth`
+          }
+        });
+        
+        if (error) {
+          setFormNotice({
+            type: 'error',
+            title: 'Google Sign In Failed',
+            message: error.message || 'Failed to sign in with Google. Please try again.'
+          });
+        }
       }
     } catch (err) {
       setFormNotice({
