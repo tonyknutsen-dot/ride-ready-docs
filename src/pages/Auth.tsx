@@ -68,48 +68,8 @@ const Auth = () => {
     return hash.includes('access_token') || hash.includes('error_description');
   });
   
-  // On custom domains, manually extract OAuth tokens from hash and set session
-  // This is needed because Supabase's automatic hash detection can fail after sign-out
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash.includes('access_token')) return;
-    
-    const isCustomDomain = 
-      !window.location.hostname.includes('lovable.app') && 
-      !window.location.hostname.includes('lovableproject.com') &&
-      !window.location.hostname.includes('localhost');
-    
-    if (!isCustomDomain) return;
-    
-    console.log('[AUTH] Custom domain OAuth callback detected, manually setting session');
-    
-    const params = new URLSearchParams(hash.substring(1));
-    const access_token = params.get('access_token');
-    const refresh_token = params.get('refresh_token');
-    
-    if (access_token && refresh_token) {
-      // Clear hash immediately to prevent re-processing
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
-      
-      supabase.auth.setSession({ access_token, refresh_token })
-        .then(({ error }) => {
-          if (error) {
-            console.error('[AUTH] Failed to set session from hash tokens:', error.message);
-            setIsOAuthCallback(false);
-            setFormNotice({
-              type: 'error',
-              title: 'Sign in failed',
-              message: 'Failed to complete Google sign-in. Please try again.'
-            });
-          }
-          // Success case: onAuthStateChange will fire and handle redirect
-        })
-        .catch((err) => {
-          console.error('[AUTH] Error setting session:', err);
-          setIsOAuthCallback(false);
-        });
-    }
-  }, []);
+  // Hash token processing is now handled centrally in AuthContext
+  // (detectSessionInUrl is disabled, AuthContext processes tokens before getSession)
   
   const { signIn, signUp, resetPassword, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
