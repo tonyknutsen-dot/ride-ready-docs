@@ -43,13 +43,19 @@ export function ProfileGuard({ children }: ProfileGuardProps) {
     );
   }
 
-  // If profile is incomplete and we're not on an exempt page, don't render children
-  // (they'll be redirected in the effect above)
+  // If profile is incomplete and we're not on an exempt page, show loading
+  // while the redirect effect above navigates to profile-setup
   if (isProfileComplete === false && 
       location.pathname !== '/profile-setup' && 
       location.pathname !== '/auth' &&
       location.pathname !== '/') {
-    return null;
+    return (
+      <div className="container mx-auto py-6 space-y-4">
+        <Skeleton className="h-10 w-48" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    );
   }
 
   return <>{children}</>;
