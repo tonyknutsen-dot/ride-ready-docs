@@ -97,6 +97,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
     let initialLoadDone = false;
+    
+    // Detect if we're returning from an OAuth callback (hash contains tokens)
+    const isOAuthCallback = window.location.hash.includes('access_token') || 
+                            window.location.hash.includes('error_description');
 
     // Listener for ONGOING auth changes (does NOT control loading after initial load)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -132,8 +136,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setSuspensionReason(null);
         }
         
-        // Only set loading false from the listener if initial load hasn't completed yet
-        // This handles the INITIAL_SESSION event
+        // Set loading false from the listener
         if (!initialLoadDone) {
           initialLoadDone = true;
           setLoading(false);
@@ -151,6 +154,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Only update if we haven't already via onAuthStateChange
         if (!initialLoadDone) {
+          // If this is an OAuth callback and getSession returned null,
+          // DON'T set loading=false yet - wait for onAuthStateChange to process the hash
+          if (isOAuthCallback && !session) {
+            console.log('[AUTH] OAuth callback detected, waiting for session from hash...');
+            // Set a safety timeout so we don't wait forever
+            setTimeout(() => {
+              if (isMounted && !initialLoadDone) {
+                console.log('[AUTH] OAuth callback timeout - setting loading false');
+                initialLoadDone = true;
+                setLoading(false);
+              }
+            }, 5000);
+            return;
+          }
+          
           setSession(session);
           setUser(session?.user ?? null);
           
