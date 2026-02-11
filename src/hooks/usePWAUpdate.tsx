@@ -10,8 +10,12 @@ interface UpdateState {
 // Store the service worker registration globally
 let swRegistration: ServiceWorkerRegistration | null = null;
 
-// Check if app is installed as PWA
+// Check if app is installed as PWA (exclude preview/dev environments)
 const isInstalledPWA = () => {
+  const hostname = window.location.hostname;
+  if (hostname === 'localhost' || hostname.includes('lovableproject.com') || hostname.includes('lovable.app')) {
+    return false;
+  }
   return window.matchMedia('(display-mode: standalone)').matches ||
          (window.navigator as any).standalone === true;
 };
