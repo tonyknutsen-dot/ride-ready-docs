@@ -13,6 +13,17 @@ const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(req.headers.get("origin"));
 
   try {
+    // Only send reminders during daytime hours (8am-8pm UK time)
+    const ukHour = new Date().toLocaleString("en-GB", { timeZone: "Europe/London", hour: "numeric", hour12: false });
+    const currentHour = parseInt(ukHour, 10);
+    if (currentHour < 8 || currentHour >= 20) {
+      console.log(`Outside daytime hours (current UK hour: ${currentHour}). Skipping reminders.`);
+      return new Response(
+        JSON.stringify({ success: true, skipped: true, reason: "Outside daytime hours (8am-8pm UK)" }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     console.log("Starting tester expiry reminder check...");
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
