@@ -703,7 +703,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           )}
         </div>
         <div className="text-xs text-muted-foreground break-words">
-          {doc.expires_at && <span>Expires {new Date(doc.expires_at).toLocaleDateString('en-GB')}</span>}
+          {!isOlderVersion && <span className="font-medium text-primary/80">{getDocumentTypeDisplay(doc.document_type)}</span>}
+          {doc.expires_at && <span> • Expires {new Date(doc.expires_at).toLocaleDateString('en-GB')}</span>}
           {!isOlderVersion && <span> • Uploaded {new Date(doc.uploaded_at).toLocaleDateString('en-GB')}</span>}
         </div>
         {doc.notes && !isOlderVersion && (
