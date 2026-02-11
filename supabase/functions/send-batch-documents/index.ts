@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { Resend } from "https://esm.sh/resend@4.0.0";
+import JSZip from "https://esm.sh/jszip@3.10.1";
 import { brandColors, emailStyles, logoSvg, escapeHtml } from "../_shared/email-template.ts";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getSecureHeaders, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
@@ -12,14 +13,10 @@ interface SendBatchDocumentsRequest {
   documentIds: string[];
 }
 
-interface EmailBatch {
-  attachments: any[];
-  totalSize: number;
-  documentNames: string[];
-}
+const MAX_DIRECT_ATTACH_SIZE = 10 * 1024 * 1024; // 10MB
+const MAX_ZIP_ATTACH_SIZE = 25 * 1024 * 1024; // 25MB
 
 const handler = async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
   const preflightResponse = handleCorsPreflightRequest(req);
   if (preflightResponse) return preflightResponse;
 
@@ -27,7 +24,6 @@ const handler = async (req: Request): Promise<Response> => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    // Check if IP is blocked
     const clientIp = getClientIp(req);
     const blockResult = await checkIpBlocked(clientIp);
     if (blockResult.isBlocked) {
@@ -43,19 +39,13 @@ const handler = async (req: Request): Promise<Response> => {
     const resend = new Resend(resendApiKey);
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("No authorization header");
-    }
+    if (!authHeader) throw new Error("No authorization header");
 
     const { data: { user }, error: authError } = await supabase.auth.getUser(
       authHeader.replace("Bearer ", "")
     );
+    if (authError || !user) throw new Error("Unauthorized");
 
-    if (authError || !user) {
-      throw new Error("Unauthorized");
-    }
-
-    // Rate limiting - batch operations get stricter limits
     const rateLimitKey = getClientIdentifier(req, "send-batch-documents", user.id);
     const rateLimitResult = await checkRateLimit(rateLimitKey, "batch");
     if (!rateLimitResult.allowed) {
@@ -72,7 +62,6 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log(`Processing batch send for ${documentIds.length} documents to ${recipientEmail}`);
 
-    // Get user profile for sender information
     const { data: profile } = await supabase
       .from("profiles")
       .select("company_name, controller_name, showmen_name, address, operator_type")
@@ -81,76 +70,48 @@ const handler = async (req: Request): Promise<Response> => {
 
     const operatorLabel = profile?.operator_type === 'showman' ? 'Showmen' : 'Operator';
 
-    // Get all selected documents with ride info
     const { data: documents, error: docsError } = await supabase
       .from("documents")
       .select(`*, rides:ride_id (ride_name, manufacturer)`)
       .eq("user_id", user.id)
       .in("id", documentIds);
-
-    if (docsError) {
-      console.error("Error fetching documents:", docsError);
-      throw new Error("Failed to fetch documents");
-    }
+    if (docsError) throw new Error("Failed to fetch documents");
 
     console.log(`Found ${documents?.length || 0} documents to send`);
 
-    // Download documents and prepare attachments
+    // Download all documents
     const attachments = [];
     for (const doc of documents || []) {
       try {
         const { data: fileData, error: downloadError } = await supabase.storage
           .from("ride-documents")
           .download(doc.file_path);
-
         if (!downloadError && fileData) {
           const arrayBuffer = await fileData.arrayBuffer();
-          const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
-          
           const fileExtension = doc.file_path.split('.').pop();
           const rideName = doc.rides?.ride_name || 'Global';
           const fileName = `${rideName}_${doc.document_name}.${fileExtension}`;
-          
           attachments.push({
             filename: fileName,
-            content: base64,
+            arrayBuffer,
             type: doc.mime_type || "application/octet-stream",
             size: arrayBuffer.byteLength,
             documentName: doc.document_name,
             documentType: doc.document_type,
-            rideName: rideName,
+            rideName,
             expiresAt: doc.expires_at
           });
-          
-          console.log(`Prepared attachment: ${fileName} (${(arrayBuffer.byteLength / 1024).toFixed(1)}KB)`);
+          console.log(`Prepared: ${fileName} (${(arrayBuffer.byteLength / 1024).toFixed(1)}KB)`);
         }
       } catch (error) {
         console.error(`Failed to download document ${doc.document_name}:`, error);
       }
     }
 
-    // Split attachments into batches if total size exceeds 10MB
-    const maxEmailSize = 10 * 1024 * 1024;
-    const emailBatches: EmailBatch[] = [];
-    let currentBatch: EmailBatch = { attachments: [], totalSize: 0, documentNames: [] };
+    const totalSize = attachments.reduce((sum, a) => sum + a.size, 0);
+    console.log(`Total attachment size: ${(totalSize / 1024 / 1024).toFixed(2)}MB`);
 
-    for (const attachment of attachments) {
-      if (currentBatch.totalSize + attachment.size > maxEmailSize && currentBatch.attachments.length > 0) {
-        emailBatches.push(currentBatch);
-        currentBatch = { attachments: [], totalSize: 0, documentNames: [] };
-      }
-      
-      currentBatch.attachments.push(attachment);
-      currentBatch.totalSize += attachment.size;
-      currentBatch.documentNames.push(attachment.documentName);
-    }
-    
-    if (currentBatch.attachments.length > 0) {
-      emailBatches.push(currentBatch);
-    }
-
-    console.log(`Split into ${emailBatches.length} email batch(es)`);
-
+    // Shared template helpers
     const safeCompanyName = escapeHtml(profile?.company_name);
     const safeControllerName = escapeHtml(profile?.controller_name);
     const safeShowmenName = escapeHtml(profile?.showmen_name);
@@ -159,44 +120,8 @@ const handler = async (req: Request): Promise<Response> => {
     const safeMessage = escapeHtml(message);
     const senderName = safeCompanyName || safeControllerName || "Ride Operator";
     const currentYear = new Date().getFullYear();
-    
-    const emailResponses = [];
-    let totalEmailsSent = 0;
 
-    for (let i = 0; i < emailBatches.length; i++) {
-      const batch = emailBatches[i];
-      const batchNumber = i + 1;
-      const totalBatches = emailBatches.length;
-      
-      const subject = totalBatches > 1 
-        ? `Equipment Documentation Package (${batchNumber}/${totalBatches}) - ${senderName}`
-        : `Equipment Documentation Package - ${senderName}`;
-
-      // Group batch attachments by ride
-      const batchDocsByRide = batch.attachments.reduce((acc, att) => {
-        const key = att.rideName;
-        if (!acc[key]) acc[key] = [];
-        acc[key].push(att);
-        return acc;
-      }, {} as Record<string, typeof batch.attachments>);
-
-      const htmlContent = `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Equipment Documentation Package</title>
-</head>
-<body style="${emailStyles.body}">
-  <div style="${emailStyles.container}">
-    <div style="${emailStyles.header}">
-      <div style="margin-bottom: 16px;">${logoSvg}</div>
-      <h1 style="${emailStyles.headerTitle}">Equipment Documentation</h1>
-      <p style="${emailStyles.headerSubtitle}">Document Package${totalBatches > 1 ? ` (${batchNumber}/${totalBatches})` : ''}</p>
-    </div>
-    
-    <div style="${emailStyles.content}">
+    const buildSenderBlock = () => `
       <div style="${emailStyles.infoBox}">
         <p style="${emailStyles.label}">FROM</p>
         ${safeCompanyName ? `<p style="${emailStyles.value}"><strong>Company:</strong> ${safeCompanyName}</p>` : ''}
@@ -204,28 +129,23 @@ const handler = async (req: Request): Promise<Response> => {
         ${safeShowmenName ? `<p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>${operatorLabel}:</strong> ${safeShowmenName}</p>` : ''}
         ${safeAddress ? `<p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>Address:</strong> ${safeAddress}</p>` : ''}
         <p style="${emailStyles.value}; color: ${brandColors.textLight};"><strong>Email:</strong> ${safeUserEmail}</p>
-      </div>
+      </div>`;
 
-      ${totalBatches > 1 ? `
-        <div style="${emailStyles.warningBox}">
-          <p style="margin: 0; font-weight: 600; color: ${brandColors.text};">📬 Email ${batchNumber} of ${totalBatches}</p>
-          <p style="margin: 8px 0 0 0; color: ${brandColors.textLight}; font-size: 14px;">This documentation has been split into multiple emails due to size limitations.</p>
-        </div>
-      ` : ''}
+    // Group by ride for display
+    const docsByRide = attachments.reduce((acc, att) => {
+      const key = att.rideName;
+      if (!acc[key]) acc[key] = [];
+      acc[key].push(att);
+      return acc;
+    }, {} as Record<string, typeof attachments>);
 
-      ${safeMessage ? `
-        <div style="margin: 24px 0;">
-          <p style="${emailStyles.label}">MESSAGE</p>
-          <p style="${emailStyles.value}; line-height: 1.8;">${safeMessage}</p>
-        </div>
-      ` : ''}
-
+    const buildGroupedDocList = (docs: typeof attachments, label: string) => `
       <div style="margin: 24px 0;">
-        <p style="${emailStyles.label}">ATTACHED DOCUMENTS${totalBatches > 1 ? ` (BATCH ${batchNumber})` : ''}</p>
-        ${Object.entries(batchDocsByRide).map(([rideName, docs]) => `
+        <p style="${emailStyles.label}">${label}</p>
+        ${Object.entries(docsByRide).map(([rideName, rideDocs]) => `
           <div style="margin-top: 16px;">
             <p style="font-weight: 600; color: ${brandColors.primary}; margin: 0 0 8px 0;">🎪 ${escapeHtml(rideName)}</p>
-            ${(docs as any[]).map(att => `
+            ${(rideDocs as any[]).map(att => `
               <div style="padding: 12px; margin: 4px 0; background: ${brandColors.background}; border-radius: 6px; border-left: 3px solid ${brandColors.primary};">
                 <span style="font-weight: 500;">📄 ${escapeHtml(att.documentName)}</span>
                 <span style="color: ${brandColors.textLight}; font-size: 13px;"> (${escapeHtml(att.documentType)})</span>
@@ -234,18 +154,29 @@ const handler = async (req: Request): Promise<Response> => {
             `).join('')}
           </div>
         `).join('')}
-        <p style="color: ${brandColors.textLight}; font-size: 13px; margin-top: 16px;">
-          ${batch.attachments.length} documents in this email
-          ${totalBatches > 1 ? ` • ${attachments.length} total documents across ${totalBatches} emails` : ''}
-        </p>
-      </div>
+        <p style="color: ${brandColors.textLight}; font-size: 13px; margin-top: 16px;">${docs.length} document(s)</p>
+      </div>`;
 
+    const buildEmailWrapper = (subtitle: string, innerContent: string) => `
+<!DOCTYPE html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Equipment Documentation Package</title></head>
+<body style="${emailStyles.body}">
+  <div style="${emailStyles.container}">
+    <div style="${emailStyles.header}">
+      <div style="margin-bottom: 16px;">${logoSvg}</div>
+      <h1 style="${emailStyles.headerTitle}">Equipment Documentation</h1>
+      <p style="${emailStyles.headerSubtitle}">${subtitle}</p>
+    </div>
+    <div style="${emailStyles.content}">
+      ${buildSenderBlock()}
+      ${safeMessage ? `<div style="margin: 24px 0;"><p style="${emailStyles.label}">MESSAGE</p><p style="${emailStyles.value}; line-height: 1.8;">${safeMessage}</p></div>` : ''}
+      ${innerContent}
       <hr style="${emailStyles.divider}">
       <p style="color: ${brandColors.textLight}; font-size: 14px;">
         This documentation package was sent via Ride Ready Docs. If you have any questions, please contact ${safeControllerName || 'the sender'} directly.
       </p>
     </div>
-    
     <div style="${emailStyles.footer}">
       <p style="${emailStyles.footerText}">
         © ${currentYear} Ride Ready Docs. All rights reserved.<br>
@@ -258,42 +189,157 @@ const handler = async (req: Request): Promise<Response> => {
 </body>
 </html>`;
 
-      const cleanAttachments = batch.attachments.map(({ size, documentName, documentType, rideName, expiresAt, ...attachment }) => attachment);
+    let sendMethod: 'direct' | 'zip' | 'share-link' = 'direct';
+    let emailResponse: any;
+    let shareData: any = null;
 
-      const emailResponse = await resend.emails.send({
+    if (totalSize <= MAX_DIRECT_ATTACH_SIZE) {
+      // ---- STRATEGY 1: Direct attachments ----
+      sendMethod = 'direct';
+      console.log('Sending documents as direct attachments');
+
+      const emailAttachments = attachments.map(({ arrayBuffer, size, documentName, documentType, rideName, expiresAt, ...rest }) => ({
+        ...rest,
+        content: btoa(String.fromCharCode(...new Uint8Array(arrayBuffer))),
+      }));
+
+      const htmlContent = buildEmailWrapper('Document Package', 
+        buildGroupedDocList(attachments, 'ATTACHED DOCUMENTS')
+      );
+
+      emailResponse = await resend.emails.send({
         from: "Ride Ready Docs <info@ridereadydocs.com>",
         to: [recipientEmail],
-        subject,
+        subject: `Equipment Documentation Package - ${senderName}`,
         html: htmlContent,
-        attachments: cleanAttachments.length > 0 ? cleanAttachments : undefined,
+        attachments: emailAttachments,
       });
 
-      emailResponses.push(emailResponse);
-      totalEmailsSent++;
-      
-      console.log(`Email batch ${batchNumber}/${totalBatches} sent successfully:`, emailResponse);
+    } else {
+      // ---- Try zipping ----
+      console.log('Total size exceeds 10MB, creating ZIP...');
+      const zip = new JSZip();
+      for (const att of attachments) {
+        zip.file(att.filename, att.arrayBuffer);
+      }
+      const zipBlob = await zip.generateAsync({ type: 'uint8array', compression: 'DEFLATE', compressionOptions: { level: 6 } });
+      const zipSize = zipBlob.byteLength;
+      console.log(`ZIP size: ${(zipSize / 1024 / 1024).toFixed(2)}MB`);
+
+      if (zipSize <= MAX_ZIP_ATTACH_SIZE) {
+        // ---- STRATEGY 2: ZIP attachment ----
+        sendMethod = 'zip';
+        console.log('Sending documents as ZIP attachment');
+
+        const zipBase64 = btoa(String.fromCharCode(...zipBlob));
+        const zipFilename = `${senderName.replace(/[^a-z0-9]/gi, '_')}_documents.zip`;
+
+        const innerContent = `
+          <div style="${emailStyles.warningBox}">
+            <p style="margin: 0; font-weight: 600; color: ${brandColors.text};">📦 Documents sent as ZIP</p>
+            <p style="margin: 8px 0 0 0; color: ${brandColors.textLight}; font-size: 14px;">The documents are attached as a single ZIP file because the total size exceeds 10MB.</p>
+          </div>
+          ${buildGroupedDocList(attachments, 'DOCUMENTS IN ZIP')}`;
+
+        const htmlContent = buildEmailWrapper('Document Package', innerContent);
+
+        emailResponse = await resend.emails.send({
+          from: "Ride Ready Docs <info@ridereadydocs.com>",
+          to: [recipientEmail],
+          subject: `Equipment Documentation Package - ${senderName}`,
+          html: htmlContent,
+          attachments: [{
+            filename: zipFilename,
+            content: zipBase64,
+            type: 'application/zip',
+          }],
+        });
+
+      } else {
+        // ---- STRATEGY 3: Share link fallback ----
+        sendMethod = 'share-link';
+        console.log('ZIP too large, falling back to share link');
+
+        const shareToken = crypto.randomUUID() + '-' + crypto.randomUUID().slice(0, 8);
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + 7);
+
+        const { data: share, error: shareError } = await supabase
+          .from("document_shares")
+          .insert({
+            user_id: user.id,
+            share_token: shareToken,
+            recipient_email: recipientEmail,
+            recipient_name: recipientName,
+            message: message,
+            expires_at: expiresAt.toISOString()
+          })
+          .select()
+          .single();
+        if (shareError) throw new Error("Failed to create document share");
+
+        const shareItems = (documents || []).map(doc => ({
+          share_id: share.id,
+          document_id: doc.id,
+          file_path: doc.file_path,
+          document_name: doc.document_name,
+          document_type: doc.document_type,
+          ride_name: doc.rides?.ride_name || 'Global'
+        }));
+        const { error: itemsError } = await supabase.from("document_share_items").insert(shareItems);
+        if (itemsError) {
+          await supabase.from("document_shares").delete().eq("id", share.id);
+          throw new Error("Failed to create document share items");
+        }
+
+        const downloadPageUrl = `https://ride-ready-docs.lovable.app/shared/${shareToken}`;
+        const expiryDateFormatted = expiresAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+        shareData = { shareId: share.id, shareToken, downloadUrl: downloadPageUrl };
+
+        const innerContent = `
+          <div style="margin: 24px 0; text-align: center;">
+            <a href="${downloadPageUrl}" style="display: inline-block; padding: 14px 32px; background: ${brandColors.primary}; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+              📥 Download ${attachments.length} Document${attachments.length !== 1 ? 's' : ''}
+            </a>
+          </div>
+          <div style="${emailStyles.warningBox}">
+            <p style="margin: 0; font-weight: 600; color: ${brandColors.text};">⏰ Link expires: ${expiryDateFormatted}</p>
+            <p style="margin: 8px 0 0 0; color: ${brandColors.textLight}; font-size: 14px;">The documents are too large to attach. Please use the download link above (expires in 7 days).</p>
+          </div>
+          ${buildGroupedDocList(attachments, 'INCLUDED DOCUMENTS')}`;
+
+        const htmlContent = buildEmailWrapper('Secure Download Link', innerContent);
+
+        emailResponse = await resend.emails.send({
+          from: "Ride Ready Docs <info@ridereadydocs.com>",
+          to: [recipientEmail],
+          subject: `Equipment Documentation Package - ${senderName}`,
+          html: htmlContent,
+        });
+      }
     }
 
-    // Log the email send for audit trail
-    const notificationMessage = totalEmailsSent > 1 
-      ? `Sent ${attachments.length} documents to ${recipientEmail} across ${totalEmailsSent} emails`
-      : `Sent ${attachments.length} documents to ${recipientEmail}`;
+    console.log(`Email sent via ${sendMethod}:`, emailResponse);
 
-    await supabase
-      .from("notifications")
-      .insert({
-        user_id: user.id,
-        title: "Documents Sent",
-        message: notificationMessage,
-        type: "info"
-      });
+    // Audit notification
+    const notificationMessage = sendMethod === 'share-link'
+      ? `Sent download link for ${attachments.length} documents to ${recipientEmail}`
+      : `Sent ${attachments.length} documents to ${recipientEmail}${sendMethod === 'zip' ? ' (as ZIP)' : ''}`;
+
+    await supabase.from("notifications").insert({
+      user_id: user.id,
+      title: "Documents Sent",
+      message: notificationMessage,
+      type: "info"
+    });
 
     return new Response(JSON.stringify({ 
       success: true, 
-      emailIds: emailResponses.map(r => r.data?.id).filter(Boolean),
+      emailId: emailResponse?.data?.id,
       documentsCount: attachments.length,
-      emailsSent: totalEmailsSent,
-      wasSplit: totalEmailsSent > 1
+      sendMethod,
+      ...(shareData || {}),
     }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
