@@ -13,6 +13,17 @@ interface SendBatchDocumentsRequest {
   documentIds: string[];
 }
 
+function arrayBufferToBase64(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  const CHUNK_SIZE = 8192;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    const chunk = bytes.subarray(i, i + CHUNK_SIZE);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+}
+
 const MAX_DIRECT_ATTACH_SIZE = 10 * 1024 * 1024; // 10MB
 const MAX_ZIP_ATTACH_SIZE = 25 * 1024 * 1024; // 25MB
 
@@ -200,7 +211,7 @@ const handler = async (req: Request): Promise<Response> => {
 
       const emailAttachments = attachments.map(({ arrayBuffer, size, documentName, documentType, rideName, expiresAt, ...rest }) => ({
         ...rest,
-        content: btoa(String.fromCharCode(...new Uint8Array(arrayBuffer))),
+        content: arrayBufferToBase64(arrayBuffer),
       }));
 
       const htmlContent = buildEmailWrapper('Document Package', 
@@ -231,7 +242,7 @@ const handler = async (req: Request): Promise<Response> => {
         sendMethod = 'zip';
         console.log('Sending documents as ZIP attachment');
 
-        const zipBase64 = btoa(String.fromCharCode(...zipBlob));
+        const zipBase64 = arrayBufferToBase64(zipBlob.buffer);
         const zipFilename = `${senderName.replace(/[^a-z0-9]/gi, '_')}_documents.zip`;
 
         const innerContent = `
