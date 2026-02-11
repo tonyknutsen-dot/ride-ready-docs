@@ -166,6 +166,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         .from('documents')
         .select('*')
         .neq('document_type', 'maintenance') // Exclude maintenance attachments - they belong to maintenance section only
+        .neq('document_type', 'photo') // Exclude device photos - shown on ride detail only
         .order('uploaded_at', { ascending: false });
       
       if (!isStaff) {
