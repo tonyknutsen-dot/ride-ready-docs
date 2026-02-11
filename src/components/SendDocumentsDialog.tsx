@@ -131,9 +131,8 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
 
       if (error) throw error;
 
-      const successMessage = data.wasSplit 
-        ? `Successfully sent ${data.documentsCount} documents to ${recipientEmail} across ${data.emailsSent} separate emails due to size limits`
-        : `Successfully sent ${data.documentsCount} documents to ${recipientEmail}`;
+      const methodLabel = data.sendMethod === 'share-link' ? ' via secure download link' : data.sendMethod === 'zip' ? ' as ZIP' : '';
+      const successMessage = `Successfully sent ${data.documentsCount} documents to ${recipientEmail}${methodLabel}`;
         
       toast.success(successMessage);
       setOpen(false);
@@ -280,12 +279,16 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
             </div>
 
             {exceedsEmailLimit && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                <div className="flex gap-2 text-destructive">
+              <div className="bg-warning/10 border border-warning/30 rounded-lg p-3">
+                <div className="flex gap-2 text-warning-foreground">
                   <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                   <div className="text-xs">
                     <p className="font-medium">Large file size ({totalSizeMB.toFixed(1)}MB)</p>
-                    <p className="text-muted-foreground mt-0.5">Will be split into multiple emails if needed</p>
+                    <p className="text-muted-foreground mt-0.5">
+                      {totalSizeMB > 25 
+                        ? "Documents will be sent via a secure 7-day download link" 
+                        : "Documents will be compressed into a ZIP attachment"}
+                    </p>
                   </div>
                 </div>
               </div>
