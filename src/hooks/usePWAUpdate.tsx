@@ -29,18 +29,17 @@ export const usePWAUpdate = () => {
       return;
     }
 
-    // Listen for service worker updates
+    // Listen for service worker controller changes (only reload on production after user-initiated update)
     const handleControllerChange = () => {
-      // In development/preview, don't auto-reload — it interrupts user actions like file uploads
-      const isDevOrPreview = window.location.hostname.includes('lovableproject.com') || 
-                             window.location.hostname.includes('lovable.app') ||
-                             window.location.hostname === 'localhost';
-      if (isDevOrPreview) {
-        console.log('[PWA] Controller changed in dev/preview, skipping auto-reload');
-        return;
+      // Only reload if the user explicitly triggered an update via applyUpdate()
+      const userInitiatedUpdate = sessionStorage.getItem('pwa-user-update');
+      if (userInitiatedUpdate) {
+        sessionStorage.removeItem('pwa-user-update');
+        console.log('[PWA] User-initiated update, reloading...');
+        window.location.reload();
+      } else {
+        console.log('[PWA] Controller changed (background), skipping auto-reload');
       }
-      console.log('[PWA] Controller changed, reloading...');
-      window.location.reload();
     };
 
     navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
@@ -138,6 +137,8 @@ export const usePWAUpdate = () => {
       const registration = swRegistration || await navigator.serviceWorker.getRegistration();
       
       if (registration?.waiting) {
+        // Mark as user-initiated so controllerchange handler knows to reload
+        sessionStorage.setItem('pwa-user-update', 'true');
         // Tell the waiting service worker to activate
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
         // The controllerchange event will trigger a reload
