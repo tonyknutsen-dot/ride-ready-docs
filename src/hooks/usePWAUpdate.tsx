@@ -31,6 +31,14 @@ export const usePWAUpdate = () => {
 
     // Listen for service worker updates
     const handleControllerChange = () => {
+      // In development/preview, don't auto-reload — it interrupts user actions like file uploads
+      const isDevOrPreview = window.location.hostname.includes('lovableproject.com') || 
+                             window.location.hostname.includes('lovable.app') ||
+                             window.location.hostname === 'localhost';
+      if (isDevOrPreview) {
+        console.log('[PWA] Controller changed in dev/preview, skipping auto-reload');
+        return;
+      }
       console.log('[PWA] Controller changed, reloading...');
       window.location.reload();
     };
