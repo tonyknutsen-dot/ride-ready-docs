@@ -223,14 +223,3 @@ export function escapeHtml(text: string | null | undefined): string {
   return text.replace(/[&<>"']/g, (m) => map[m]);
 }
 
-export function escapeHtml(text: string | null | undefined): string {
-  if (!text) return '';
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-  return text.replace(/[&<>"']/g, (m) => map[m]);
-}
