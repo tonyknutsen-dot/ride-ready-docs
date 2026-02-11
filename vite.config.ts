@@ -10,14 +10,13 @@ export default defineConfig(({ mode }) => ({
     host: "::",
     port: 8080,
     hmr: {
-      // Increase timeout to prevent disconnects during file picker usage
       timeout: 60000,
     },
   },
   plugins: [
     react(),
     mode === "development" && componentTagger(),
-    VitePWA({
+    mode !== "development" && VitePWA({
       registerType: "prompt",
       includeAssets: ["favicon.png", "favicon.ico", "app-logo.jpg"],
       manifest: {
