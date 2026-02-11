@@ -14,6 +14,12 @@ export const StartupUpdateCheck: React.FC<StartupUpdateCheckProps> = ({ children
     // Check for service worker updates in the background (non-blocking)
     const checkForUpdates = async () => {
       try {
+        // Skip update checks in dev/preview environments
+        const hostname = window.location.hostname;
+        if (hostname === 'localhost' || hostname.includes('lovableproject.com') || hostname.includes('lovable.app')) {
+          return;
+        }
+        
         if ('serviceWorker' in navigator && navigator.onLine) {
           const registration = await navigator.serviceWorker.getRegistration();
           

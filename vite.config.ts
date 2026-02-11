@@ -9,6 +9,10 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
+    hmr: {
+      // Increase timeout to prevent disconnects during file picker usage
+      timeout: 60000,
+    },
   },
   plugins: [
     react(),
