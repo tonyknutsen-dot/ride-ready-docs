@@ -10,14 +10,9 @@ import {
   createBlockedIpResponse,
   getClientIp
 } from "../_shared/rate-limit.ts";
+import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
 
 interface FeaturePermissions {
   calendar: boolean;
@@ -38,9 +33,10 @@ interface StaffInviteRequest {
 const msPerDay = 24 * 60 * 60 * 1000;
 
 const handler = async (req: Request): Promise<Response> => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
+  const preflightResponse = handleCorsPreflightRequest(req);
+  if (preflightResponse) return preflightResponse;
+
+  const corsHeaders = getCorsHeaders(req.headers.get("origin"));
 
   try {
     // Check IP blocking first
