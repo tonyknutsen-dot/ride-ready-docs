@@ -2573,7 +2573,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "user" | "tester"
-      check_frequency: "daily" | "monthly" | "yearly" | "preopening"
+      check_frequency: "daily" | "monthly" | "yearly" | "preopening" | "weekly"
       defect_severity: "non_urgent" | "urgent" | "stop_operation"
       defect_status: "open" | "acknowledged" | "in_progress" | "resolved"
       staff_permission: "checks_only" | "checks_maintenance" | "full_access"
@@ -2705,7 +2705,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "user", "tester"],
-      check_frequency: ["daily", "monthly", "yearly", "preopening"],
+      check_frequency: ["daily", "monthly", "yearly", "preopening", "weekly"],
       defect_severity: ["non_urgent", "urgent", "stop_operation"],
       defect_status: ["open", "acknowledged", "in_progress", "resolved"],
       staff_permission: ["checks_only", "checks_maintenance", "full_access"],

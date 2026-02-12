@@ -342,7 +342,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-base text-success">Start Safety Check</p>
-                    <p className="text-sm text-muted-foreground">Daily, monthly or yearly inspections</p>
+                    <p className="text-sm text-muted-foreground">Pre-opening, daily, weekly, monthly & yearly</p>
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-2xl font-bold text-success">

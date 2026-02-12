@@ -47,7 +47,8 @@ interface BuilderItem {
 const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCancel }: TemplateBuilderProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const defaultTemplateName = `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Safety Check`;
+  const freqLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
+  const defaultTemplateName = `${freqLabel} Safety Check`;
 
   // Background spell-check function - runs without blocking UI
   const spellcheckItems = async (items: Array<{ id: string; check_item_text: string }>) => {
@@ -267,8 +268,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       if (itemsError) throw itemsError;
 
       toast({
-        title: template ? "Template updated" : "Template created",
-        description: `Your ${frequency} check template is ready to use`,
+        title: "Checklist saved",
+        description: `Your ${frequency === 'preopening' ? 'pre-opening' : frequency} checklist is ready to use`,
       });
 
       // Trigger background spell-check for custom items (non-blocking)
@@ -307,7 +308,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         </Button>
         <div>
           <h3 className="font-semibold">
-            {template ? 'Edit' : 'Build'} {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check Template
+            {template ? 'Edit' : 'Build'} {frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1)} Checklist
           </h3>
           <p className="text-sm text-muted-foreground">{ride.ride_name}</p>
         </div>
@@ -317,16 +318,16 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       <Alert>
         <Info className="h-4 w-4" />
         <AlertDescription>
-          Add check items that you want to verify {frequency === 'preopening' ? 'before opening to the public' : frequency === 'daily' ? 'each day' : frequency === 'monthly' ? 'each month' : 'each year'}. 
+          Add check items that you want to verify {frequency === 'preopening' ? 'before opening to the public' : frequency === 'daily' ? 'each day' : frequency === 'weekly' ? 'each week' : frequency === 'monthly' ? 'each month' : 'each year'}. 
           You can pick from our library or add your own custom checks specific to your equipment.
         </AlertDescription>
       </Alert>
 
-      {/* Template Name */}
+      {/* Checklist Name */}
       <Card>
         <CardContent className="pt-4">
           <div className="space-y-2">
-            <Label htmlFor="name">Template Name</Label>
+            <Label htmlFor="name">Checklist Name</Label>
             <Input
               id="name"
               value={templateName}

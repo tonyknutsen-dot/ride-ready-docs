@@ -106,6 +106,7 @@ const CheckDetailDialog = ({ check, open, onOpenChange }: CheckDetailDialogProps
     switch (freq) {
       case 'preopening': return 'Pre-Opening';
       case 'daily': return 'Daily';
+      case 'weekly': return 'Weekly';
       case 'monthly': return 'Monthly';
       case 'yearly': return 'Yearly';
       default: return freq.charAt(0).toUpperCase() + freq.slice(1);
