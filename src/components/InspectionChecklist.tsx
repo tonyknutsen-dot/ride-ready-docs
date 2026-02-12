@@ -1232,9 +1232,9 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
     return (
       <EmptyState
         icon={FileText}
-        title="No Active Template Found"
-        description={`First, build your ${frequency} safety check template. Then you can start recording checks.`}
-        actionLabel="Build Template"
+        title="No Checklist Found"
+        description={`Build your ${frequency === 'preopening' ? 'pre-opening' : frequency} safety checklist to start recording checks.`}
+        actionLabel="Build Checklist"
         onAction={() => setShowTemplateBuilder(true)}
       />
     );
@@ -1304,7 +1304,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setShowTemplateBuilder(true)} className="flex-1 sm:flex-none">
                 <Settings className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Edit Template</span>
+                <span className="hidden sm:inline">Edit Checklist</span>
               </Button>
               <Button variant="outline" size="sm" onClick={generatePDF} className="flex-1 sm:flex-none">
                 <Download className="h-4 w-4 sm:mr-2" />

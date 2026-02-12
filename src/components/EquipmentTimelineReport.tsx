@@ -151,6 +151,7 @@ const EquipmentTimelineReport = ({ ride }: EquipmentTimelineReportProps) => {
         const frequencyLabel = {
           'preopening': 'Pre-Opening',
           'daily': 'Daily',
+          'weekly': 'Weekly',
           'monthly': 'Monthly',
           'yearly': 'Yearly'
         }[check.check_frequency] || check.check_frequency;

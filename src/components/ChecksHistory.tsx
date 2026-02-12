@@ -677,7 +677,9 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
                   <SelectItem value="all">All Frequencies</SelectItem>
+                  <SelectItem value="preopening">Pre-Opening</SelectItem>
                   <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
                   <SelectItem value="monthly">Monthly</SelectItem>
                   <SelectItem value="yearly">Yearly</SelectItem>
                 </SelectContent>

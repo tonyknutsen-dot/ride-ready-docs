@@ -3,11 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CheckSquare } from 'lucide-react';
+import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CheckSquare, CalendarRange } from 'lucide-react';
 import { Ride } from '@/types/ride';
-import DailyCheckTemplateManager from './DailyCheckTemplateManager';
-import MonthlyCheckTemplateManager from './MonthlyCheckTemplateManager';
-import YearlyCheckTemplateManager from './YearlyCheckTemplateManager';
 import InspectionChecklist from './InspectionChecklist';
 import NDTScheduleManager from './NDTScheduleManager';
 import InspectionScheduleManager from './InspectionScheduleManager';
@@ -25,6 +22,7 @@ interface InspectionManagerProps {
 interface CheckCounts {
   preopening: number;
   daily: number;
+  weekly: number;
   monthly: number;
   yearly: number;
   total: number;
@@ -35,7 +33,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const { effectiveUserId } = useEffectiveUserId();
   const [activeTab, setActiveTab] = useState('preopening');
   const [showGuide, setShowGuide] = useState(false);
-  const [checkCounts, setCheckCounts] = useState<CheckCounts>({ preopening: 0, daily: 0, monthly: 0, yearly: 0, total: 0 });
+  const [checkCounts, setCheckCounts] = useState<CheckCounts>({ preopening: 0, daily: 0, weekly: 0, monthly: 0, yearly: 0, total: 0 });
 
   useEffect(() => {
     if (effectiveUserId && ride.id) {
@@ -45,7 +43,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
   const loadCheckCounts = async () => {
     try {
-      const frequencies = ['preopening', 'daily', 'monthly', 'yearly'] as const;
+      const frequencies = ['preopening', 'daily', 'weekly', 'monthly', 'yearly'] as const;
       const counts = await Promise.all(
         frequencies.map(async (freq) => {
           const { count } = await supabase
@@ -54,12 +52,12 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
             .eq('ride_id', ride.id)
             .eq('user_id', effectiveUserId)
             .eq('check_frequency', freq)
-            .eq('is_test_data', false); // Exclude test data
+            .eq('is_test_data', false);
           return { freq, count: count || 0 };
         })
       );
       
-      const result: CheckCounts = { preopening: 0, daily: 0, monthly: 0, yearly: 0, total: 0 };
+      const result: CheckCounts = { preopening: 0, daily: 0, weekly: 0, monthly: 0, yearly: 0, total: 0 };
       counts.forEach(({ freq, count }) => {
         result[freq] = count;
         result.total += count;
@@ -69,6 +67,27 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
       console.error('Error loading check counts:', error);
     }
   };
+
+  const renderFrequencyContent = (frequency: string, label: string) => (
+    <div className="space-y-6">
+      <Tabs defaultValue="perform" className="space-y-4 relative z-10">
+        <TabsList className="grid grid-cols-2 w-full h-auto p-1 gap-1">
+          <TabsTrigger value="perform" className="py-3 px-2 text-sm font-medium">
+            Perform
+          </TabsTrigger>
+          <TabsTrigger value="history" className="py-3 px-2 text-sm font-medium">
+            History
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="perform">
+          <InspectionChecklist ride={ride} frequency={frequency} />
+        </TabsContent>
+        <TabsContent value="history">
+          <ChecksHistory rideId={ride.id} rideName={ride.ride_name} frequency={frequency} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -95,6 +114,10 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               <Badge variant="outline" className="text-xs bg-background">
                 <Clock className="h-3 w-3 mr-1" />
                 {checkCounts.daily} Daily
+              </Badge>
+              <Badge variant="outline" className="text-xs bg-background">
+                <CalendarRange className="h-3 w-3 mr-1" />
+                {checkCounts.weekly} Weekly
               </Badge>
               <Badge variant="outline" className="text-xs bg-background">
                 <Calendar className="h-3 w-3 mr-1" />
@@ -129,7 +152,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
               value="preopening" 
               className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
             >
-            <PlayCircle className="h-5 w-5" />
+              <PlayCircle className="h-5 w-5" />
               <span>Pre-Opening</span>
             </TabsTrigger>
             <TabsTrigger 
@@ -138,6 +161,13 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
             >
               <Clock className="h-5 w-5" />
               <span>Daily</span>
+            </TabsTrigger>
+            <TabsTrigger 
+              value="weekly" 
+              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
+            >
+              <CalendarRange className="h-5 w-5" />
+              <span>Weekly</span>
             </TabsTrigger>
             <TabsTrigger 
               value="monthly" 
@@ -177,7 +207,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
           </TabsList>
         </div>
 
-        {/* Pre-Opening Check - Function test before opening */}
+        {/* Pre-Opening Check */}
         <TabsContent value="preopening" className="relative">
           <div className="space-y-6 relative z-0">
             <Card className="border-primary/20 bg-primary/5">
@@ -191,110 +221,24 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 </CardDescription>
               </CardHeader>
             </Card>
-            <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList className="grid grid-cols-3 w-full h-auto p-1 gap-1">
-                <TabsTrigger value="perform" className="py-3 px-2 text-sm font-medium">
-                  Perform
-                </TabsTrigger>
-                <TabsTrigger value="history" className="py-3 px-2 text-sm font-medium">
-                  History
-                </TabsTrigger>
-                <TabsTrigger value="templates" className="py-3 px-2 text-sm font-medium">
-                  Templates
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="perform">
-                <InspectionChecklist ride={ride} frequency="preopening" />
-              </TabsContent>
-              <TabsContent value="history">
-                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} frequency="preopening" />
-              </TabsContent>
-              <TabsContent value="templates">
-                <DailyCheckTemplateManager ride={ride} frequency="preopening" />
-              </TabsContent>
-            </Tabs>
+            {renderFrequencyContent('preopening', 'Pre-Opening')}
           </div>
         </TabsContent>
 
         <TabsContent value="daily" className="relative">
-          <div className="space-y-6 relative z-0">
-            <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList className="grid grid-cols-3 w-full h-auto p-1 gap-1">
-                <TabsTrigger value="perform" className="py-3 px-2 text-sm font-medium">
-                  Perform
-                </TabsTrigger>
-                <TabsTrigger value="history" className="py-3 px-2 text-sm font-medium">
-                  History
-                </TabsTrigger>
-                <TabsTrigger value="templates" className="py-3 px-2 text-sm font-medium">
-                  Templates
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="perform">
-                <InspectionChecklist ride={ride} frequency="daily" />
-              </TabsContent>
-              <TabsContent value="history">
-                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} frequency="daily" />
-              </TabsContent>
-              <TabsContent value="templates">
-                <DailyCheckTemplateManager ride={ride} />
-              </TabsContent>
-            </Tabs>
-          </div>
+          {renderFrequencyContent('daily', 'Daily')}
+        </TabsContent>
+
+        <TabsContent value="weekly" className="relative">
+          {renderFrequencyContent('weekly', 'Weekly')}
         </TabsContent>
 
         <TabsContent value="monthly">
-          <div className="space-y-6">
-            <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList className="grid grid-cols-3 w-full h-auto p-1 gap-1">
-                <TabsTrigger value="perform" className="py-3 px-2 text-sm font-medium">
-                  Perform
-                </TabsTrigger>
-                <TabsTrigger value="history" className="py-3 px-2 text-sm font-medium">
-                  History
-                </TabsTrigger>
-                <TabsTrigger value="templates" className="py-3 px-2 text-sm font-medium">
-                  Templates
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="perform">
-                <InspectionChecklist ride={ride} frequency="monthly" />
-              </TabsContent>
-              <TabsContent value="history">
-                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} frequency="monthly" />
-              </TabsContent>
-              <TabsContent value="templates">
-                <MonthlyCheckTemplateManager ride={ride} />
-              </TabsContent>
-            </Tabs>
-          </div>
+          {renderFrequencyContent('monthly', 'Monthly')}
         </TabsContent>
 
         <TabsContent value="yearly">
-          <div className="space-y-6">
-            <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-              <TabsList className="grid grid-cols-3 w-full h-auto p-1 gap-1">
-                <TabsTrigger value="perform" className="py-3 px-2 text-sm font-medium">
-                  Perform
-                </TabsTrigger>
-                <TabsTrigger value="history" className="py-3 px-2 text-sm font-medium">
-                  History
-                </TabsTrigger>
-                <TabsTrigger value="templates" className="py-3 px-2 text-sm font-medium">
-                  Templates
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="perform">
-                <InspectionChecklist ride={ride} frequency="yearly" />
-              </TabsContent>
-              <TabsContent value="history">
-                <ChecksHistory rideId={ride.id} rideName={ride.ride_name} frequency="yearly" />
-              </TabsContent>
-              <TabsContent value="templates">
-                <YearlyCheckTemplateManager ride={ride} />
-              </TabsContent>
-            </Tabs>
-          </div>
+          {renderFrequencyContent('yearly', 'Yearly')}
         </TabsContent>
 
         <TabsContent value="annual">

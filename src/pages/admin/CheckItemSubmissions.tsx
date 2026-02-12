@@ -293,6 +293,7 @@ export default function CheckItemSubmissions() {
     switch (freq) {
       case 'preopening': return 'Pre-Opening';
       case 'daily': return 'Daily';
+      case 'weekly': return 'Weekly';
       case 'monthly': return 'Monthly';
       case 'yearly': return 'Yearly';
       default: return freq;
