@@ -131,7 +131,7 @@ const Pricing = () => {
             {user ? "Go to Dashboard" : "Start Free Trial"}
           </Button>
           <p className="mt-4 text-xs text-muted-foreground">
-            ✓ No credit card required • ✓ Full access during trial • ✓ Cancel anytime
+            ✓ 14-day free trial • ✓ No credit card required • ✓ Full access • ✓ Cancel anytime
           </p>
         </div>
 
@@ -166,7 +166,7 @@ const Pricing = () => {
                 What's included in the free trial?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
-                Your free trial gives you full access to every feature — document storage, checks, maintenance, risk assessments, and more. No credit card required. When your trial ends, simply choose a plan to continue.
+                Your 14-day free trial gives you full access to every feature — document storage, checks, maintenance, risk assessments, and more. No credit card required. When your trial ends, simply choose a plan to continue.
               </AccordionContent>
             </AccordionItem>
 
