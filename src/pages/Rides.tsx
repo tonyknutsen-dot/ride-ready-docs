@@ -65,8 +65,8 @@ const Rides = () => {
     }
   }, [searchParams, setSearchParams, canAddRides]);
   
-  // Determine if user has advanced access (subscriber or tester)
-  const hasAdvancedAccess = subscription?.subscriptionStatus === 'advanced' || isTester;
+  // Determine if user has active access (subscriber or tester)
+  const hasAdvancedAccess = subscription?.subscriptionStatus === 'active' || isTester;
 
   useEffect(() => {
     if (effectiveUserId) {

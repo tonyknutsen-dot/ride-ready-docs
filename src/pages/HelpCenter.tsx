@@ -19,7 +19,7 @@ const HelpCenter = () => {
   const location = useLocation();
   const { terminology } = useTerminology();
   const [selectedGuide, setSelectedGuide] = useState<number | null>(null);
-  const isAdvanced = subscription?.subscriptionStatus === 'advanced';
+  const isAdvanced = subscription?.subscriptionStatus === 'active';
   
   const quickLinks = [
     {

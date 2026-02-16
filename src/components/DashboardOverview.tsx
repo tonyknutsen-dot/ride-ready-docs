@@ -96,10 +96,12 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
 
       if (documentsError) throw documentsError;
 
-      // Only load advanced features data for advanced plan users
+      // Load all features for all paying users (no plan-based restriction)
+      const isActiveUser = subscription?.subscriptionStatus === 'active' || subscription?.subscriptionStatus === 'trial' || subscription?.isTesterAccount;
+      
       let ridesDataForStats, inspectionsData, maintenanceData, activityData;
       
-      if (subscription?.subscriptionStatus === 'advanced') {
+      if (isActiveUser) {
         // Load rides count
         const { data: rides, error: ridesError } = await supabase
           .from('rides')
@@ -241,8 +243,8 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
     );
   }
 
-  const isAdvancedUser = subscription?.subscriptionStatus === 'advanced';
-  const isBasicOrTrial = subscription?.subscriptionStatus === 'basic' || subscription?.subscriptionStatus === 'trial' || subscription?.isTrialActive;
+  const isActiveUser = subscription?.subscriptionStatus === 'active' || subscription?.isTesterAccount;
+  const isTrialOrActive = isActiveUser || subscription?.subscriptionStatus === 'trial' || subscription?.isTrialActive;
 
   return (
     <div className="space-y-6">
@@ -268,84 +270,49 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
           ))}
         </div>
       )}
-      {/* Stats Cards */}
+      {/* Stats Cards - All features available to all users */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {isAdvancedUser ? (
-          <Card className="hover:shadow-elegant transition-smooth cursor-pointer border-border/60" onClick={() => onNavigate('rides')}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Total Rides</CardTitle>
-                <Wrench className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="text-2xl font-bold">{stats.totalRides}</div>
-              <p className="text-xs text-muted-foreground">
-                Registered rides in system
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <RestrictedFeatureCard
-            title="Total Rides"
-            description="Track all your registered rides"
-            icon={<Wrench className="h-4 w-4" />}
-            requiredPlan="advanced"
-          />
-        )}
+        <Card className="hover:shadow-elegant transition-smooth cursor-pointer border-border/60" onClick={() => onNavigate('rides')}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Rides</CardTitle>
+              <Wrench className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="text-2xl font-bold">{stats.totalRides}</div>
+            <p className="text-xs text-muted-foreground">Registered rides in system</p>
+          </CardContent>
+        </Card>
 
-        {isAdvancedUser ? (
-          <Card className="hover:shadow-elegant transition-smooth cursor-pointer border-border/60" onClick={() => onNavigate('inspections')}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Active Inspections</CardTitle>
-                <CheckCircle className="h-4 w-4 text-emerald-600" />
-              </div>
-              <div className="text-2xl font-bold text-emerald-600">{stats.activeInspections}</div>
-              <p className="text-xs text-muted-foreground">
-                Currently in progress
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <RestrictedFeatureCard
-            title="Active Inspections"
-            description="Monitor ongoing inspection checks"
-            icon={<CheckCircle className="h-4 w-4" />}
-            requiredPlan="advanced"
-          />
-        )}
+        <Card className="hover:shadow-elegant transition-smooth cursor-pointer border-border/60" onClick={() => onNavigate('inspections')}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Active Inspections</CardTitle>
+              <CheckCircle className="h-4 w-4 text-success" />
+            </div>
+            <div className="text-2xl font-bold text-success">{stats.activeInspections}</div>
+            <p className="text-xs text-muted-foreground">Currently in progress</p>
+          </CardContent>
+        </Card>
 
-        {isAdvancedUser ? (
-          <Card className="hover:shadow-elegant transition-smooth cursor-pointer border-border/60" onClick={() => onNavigate('calendar')}>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-                <AlertTriangle className="h-4 w-4 text-destructive" />
-              </div>
-              <div className="text-2xl font-bold text-destructive">{stats.overdueInspections}</div>
-              <p className="text-xs text-muted-foreground">
-                Require immediate attention
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
-          <RestrictedFeatureCard
-            title="Overdue Items"
-            description="Track overdue inspections and maintenance"
-            icon={<AlertTriangle className="h-4 w-4" />}
-            requiredPlan="advanced"
-          />
-        )}
+        <Card className="hover:shadow-elegant transition-smooth cursor-pointer border-border/60" onClick={() => onNavigate('calendar')}>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Overdue</CardTitle>
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+            </div>
+            <div className="text-2xl font-bold text-destructive">{stats.overdueInspections}</div>
+            <p className="text-xs text-muted-foreground">Require immediate attention</p>
+          </CardContent>
+        </Card>
 
         <Card className="hover:shadow-elegant transition-smooth cursor-pointer border-border/60" onClick={() => onNavigate('documents')}>
           <CardContent className="p-6">
             <div className="flex items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Documents Expiring</CardTitle>
-              <Clock className="h-4 w-4 text-amber-600" />
+              <Clock className="h-4 w-4 text-warning" />
             </div>
-            <div className="text-2xl font-bold text-amber-600">{stats.documentsExpiringSoon}</div>
-            <p className="text-xs text-muted-foreground">
-              Within 30 days
-            </p>
+            <div className="text-2xl font-bold text-warning">{stats.documentsExpiringSoon}</div>
+            <p className="text-xs text-muted-foreground">Within 30 days</p>
           </CardContent>
         </Card>
       </div>
@@ -357,58 +324,21 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
             <TrendingUp className="h-5 w-5" />
             Quick Actions
           </CardTitle>
-          <CardDescription>
-            Common tasks to keep your rides compliant
-          </CardDescription>
+          <CardDescription>Common tasks to keep your rides compliant</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            {isAdvancedUser ? (
-              <Button 
-                variant="outline" 
-                className="justify-start h-auto p-4"
-                onClick={() => onNavigate('inspections')}
-              >
-                <div className="flex flex-col items-start space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="font-medium">New Inspection</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">Perform daily checks</span>
+            <Button variant="outline" className="justify-start h-auto p-4" onClick={() => onNavigate('inspections')}>
+              <div className="flex flex-col items-start space-y-1">
+                <div className="flex items-center space-x-2">
+                  <CheckCircle className="h-4 w-4" />
+                  <span className="font-medium">New Inspection</span>
                 </div>
-              </Button>
-            ) : (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start h-auto p-4 relative opacity-60 hover:opacity-100"
-                  >
-                    <div className="flex flex-col items-start space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <CheckCircle className="h-4 w-4" />
-                        <span className="font-medium">New Inspection</span>
-                        <Badge variant="secondary" className="text-[10px] px-1 py-0">Advanced</Badge>
-                      </div>
-                      <span className="text-xs text-muted-foreground">Perform daily checks</span>
-                    </div>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogTitle>Upgrade to Operations & Maintenance</DialogTitle>
-                  <DialogDescription>
-                    Unlock inspection tracking and all advanced operational features
-                  </DialogDescription>
-                  <PlanSelection />
-                </DialogContent>
-              </Dialog>
-            )}
+                <span className="text-xs text-muted-foreground">Perform daily checks</span>
+              </div>
+            </Button>
             
-            <Button 
-              variant="outline" 
-              className="justify-start h-auto p-4"
-              onClick={handleUploadDocument}
-            >
+            <Button variant="outline" className="justify-start h-auto p-4" onClick={handleUploadDocument}>
               <div className="flex flex-col items-start space-y-1">
                 <div className="flex items-center space-x-2">
                   <FileText className="h-4 w-4" />
@@ -418,87 +348,25 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
               </div>
             </Button>
 
-            {isAdvancedUser ? (
-              <Button 
-                variant="outline" 
-                className="justify-start h-auto p-4"
-                onClick={() => onNavigate('maintenance')}
-              >
-                <div className="flex flex-col items-start space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <Wrench className="h-4 w-4" />
-                    <span className="font-medium">Log Maintenance</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">Record repairs</span>
+            <Button variant="outline" className="justify-start h-auto p-4" onClick={() => onNavigate('maintenance')}>
+              <div className="flex flex-col items-start space-y-1">
+                <div className="flex items-center space-x-2">
+                  <Wrench className="h-4 w-4" />
+                  <span className="font-medium">Log Maintenance</span>
                 </div>
-              </Button>
-            ) : (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start h-auto p-4 relative opacity-60 hover:opacity-100"
-                  >
-                    <div className="flex flex-col items-start space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <Wrench className="h-4 w-4" />
-                        <span className="font-medium">Log Maintenance</span>
-                        <Badge variant="secondary" className="text-[10px] px-1 py-0">Advanced</Badge>
-                      </div>
-                      <span className="text-xs text-muted-foreground">Record repairs</span>
-                    </div>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogTitle>Upgrade to Operations & Maintenance</DialogTitle>
-                  <DialogDescription>
-                    Unlock maintenance tracking and all advanced operational features
-                  </DialogDescription>
-                  <PlanSelection />
-                </DialogContent>
-              </Dialog>
-            )}
+                <span className="text-xs text-muted-foreground">Record repairs</span>
+              </div>
+            </Button>
 
-            {isAdvancedUser ? (
-              <Button 
-                variant="outline" 
-                className="justify-start h-auto p-4"
-                onClick={() => onNavigate('calendar')}
-              >
-                <div className="flex flex-col items-start space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <Calendar className="h-4 w-4" />
-                    <span className="font-medium">View Calendar</span>
-                  </div>
-                  <span className="text-xs text-muted-foreground">See schedule</span>
+            <Button variant="outline" className="justify-start h-auto p-4" onClick={() => onNavigate('calendar')}>
+              <div className="flex flex-col items-start space-y-1">
+                <div className="flex items-center space-x-2">
+                  <Calendar className="h-4 w-4" />
+                  <span className="font-medium">View Calendar</span>
                 </div>
-              </Button>
-            ) : (
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button 
-                    variant="outline" 
-                    className="justify-start h-auto p-4 relative opacity-60 hover:opacity-100"
-                  >
-                    <div className="flex flex-col items-start space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <Calendar className="h-4 w-4" />
-                        <span className="font-medium">View Calendar</span>
-                        <Badge variant="secondary" className="text-[10px] px-1 py-0">Advanced</Badge>
-                      </div>
-                      <span className="text-xs text-muted-foreground">See schedule</span>
-                    </div>
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogTitle>Upgrade to Operations & Maintenance</DialogTitle>
-                  <DialogDescription>
-                    Unlock calendar scheduling and all advanced operational features
-                  </DialogDescription>
-                  <PlanSelection />
-                </DialogContent>
-              </Dialog>
-            )}
+                <span className="text-xs text-muted-foreground">See schedule</span>
+              </div>
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -511,31 +379,20 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
               <Shield className="h-5 w-5" />
               Recent Activity
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={loadDashboardData}
-              disabled={loading}
-              className="h-8 px-2"
-            >
+            <Button variant="ghost" size="sm" onClick={loadDashboardData} disabled={loading} className="h-8 px-2">
               <TrendingUp className="h-4 w-4" />
             </Button>
           </CardTitle>
-          <CardDescription>
-            {isAdvancedUser ? 'Latest inspection checks and updates' : 'Document uploads and updates'}
-          </CardDescription>
+          <CardDescription>Latest inspection checks and updates</CardDescription>
         </CardHeader>
         <CardContent>
-          {!isAdvancedUser ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>Advanced activity tracking</p>
-              <p className="text-sm">Upgrade to Operations & Maintenance to see inspection activity</p>
-            </div>
-          ) : recentActivity.length === 0 ? (
+          {recentActivity.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
               <p>No recent activity</p>
+              <p className="text-sm">Complete your first inspection to see activity here</p>
+            </div>
+          ) : (
               <p className="text-sm">Complete your first inspection to see activity here</p>
             </div>
           ) : (
