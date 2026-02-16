@@ -35,4 +35,22 @@ Disallow: /global-documents
 Disallow: /send-documents
 Disallow: /marketing
 Disallow: /checks
+Disallow: /maintenance
+Disallow: /documents
+Disallow: /notifications
+Disallow: /staff
+Disallow: /diagnostics
+Disallow: /shared/
+
+# Allow public pages
 Allow: /
+Allow: /auth
+Allow: /how-it-works
+Allow: /install
+Allow: /help
+Allow: /security
+Allow: /privacy
+Allow: /terms
+Allow: /cookies
+Allow: /data-independence
+Allow: /data-processing-agreement

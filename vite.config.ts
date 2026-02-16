@@ -18,29 +18,36 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     mode !== "development" && VitePWA({
       registerType: "prompt",
-      includeAssets: ["favicon.png", "favicon.ico", "app-logo.jpg"],
+      includeAssets: ["pwa-icon.jpg", "favicon.ico", "app-logo.jpg"],
       manifest: {
         name: "Ride Ready Docs",
         short_name: "RideReady",
-        description: "Operations management for amusement professionals",
+        description: "Complete operations management for amusement ride operators. Manage documents, safety checks, maintenance, and compliance.",
         theme_color: "#1a1a2e",
         background_color: "#0a0a0f",
         display: "standalone",
         orientation: "portrait",
         scope: "/",
         start_url: "/overview",
+        categories: ["business", "productivity", "utilities"],
         icons: [
           {
-            src: "/favicon.png",
+            src: "/pwa-icon.jpg",
             sizes: "192x192",
-            type: "image/png",
-            purpose: "any maskable"
+            type: "image/jpeg",
+            purpose: "any"
           },
           {
-            src: "/favicon.png",
+            src: "/pwa-icon.jpg",
             sizes: "512x512",
-            type: "image/png",
-            purpose: "any maskable"
+            type: "image/jpeg",
+            purpose: "any"
+          },
+          {
+            src: "/pwa-icon.jpg",
+            sizes: "180x180",
+            type: "image/jpeg",
+            purpose: "any"
           }
         ]
       },
