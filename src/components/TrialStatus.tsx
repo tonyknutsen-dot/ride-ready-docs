@@ -2,7 +2,7 @@ import { AlertTriangle, Clock, FlaskConical } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useSubscription, getTierLabel } from '@/hooks/useSubscription';
 
 interface TrialStatusProps {
   onUpgrade?: () => void;
@@ -13,9 +13,9 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
 
   if (loading || !subscription) return null;
 
-  const { isTrialActive, isExpired, daysRemaining, subscriptionStatus, subscriptionPlan, isTesterAccount } = subscription;
+  const { isTrialActive, isExpired, daysRemaining, subscriptionStatus, isTesterAccount, currentTier, billableRideCount } = subscription;
 
-  // TESTER BYPASS: Show tester status instead of subscription info
+  // TESTER BYPASS
   if (isTesterAccount) {
     return (
       <Card className="mb-4 md:mb-6 border-warning/50 bg-warning/5">
@@ -27,7 +27,7 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
                 Tester Account
               </Badge>
               <span className="text-sm text-muted-foreground ml-2">
-                All paid features unlocked
+                All features unlocked
               </span>
             </div>
           </div>
@@ -36,16 +36,16 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
     );
   }
 
-  if (subscriptionStatus === 'basic' || subscriptionStatus === 'advanced') {
+  if (subscriptionStatus === 'active') {
     return (
       <Card className="mb-4 md:mb-6 border-primary/20">
         <CardContent className="p-3 md:p-4">
           <div className="flex items-center gap-3">
             <Badge variant="secondary" className="capitalize flex-shrink-0">
-              {subscriptionPlan} Plan
+              {getTierLabel(currentTier)} Plan
             </Badge>
             <span className="text-sm text-muted-foreground truncate">
-              Active subscription
+              Managing {billableRideCount} {billableRideCount === 1 ? 'ride' : 'rides'}
             </span>
           </div>
         </CardContent>
@@ -63,12 +63,12 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-destructive">Trial Expired</p>
                 <p className="text-sm text-muted-foreground">
-                  Your free trial has ended. Upgrade to continue using all features.
+                  Your free trial has ended. Subscribe to continue using all features.
                 </p>
               </div>
             </div>
             <Button onClick={onUpgrade} variant="destructive" size="sm" className="flex-shrink-0 self-start sm:self-center">
-              Upgrade Now
+              Subscribe Now
             </Button>
           </div>
         </CardContent>
@@ -87,10 +87,10 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
               <Clock className={`h-5 w-5 ${isLowTime ? 'text-yellow-600' : 'text-primary'} flex-shrink-0 mt-0.5`} />
               <div className="min-w-0 flex-1">
                 <p className="font-semibold">
-                  Free Trial - {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} remaining
+                  Free Trial — {daysRemaining} day{daysRemaining !== 1 ? 's' : ''} remaining
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  You have access to basic file storage during your trial period.
+                  Full access to all compliance and operations features.
                 </p>
               </div>
             </div>

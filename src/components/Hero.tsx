@@ -30,7 +30,7 @@ const Hero = () => {
       return;
     }
 
-    const hasAdvancedAccess = subscription?.subscriptionStatus === 'advanced';
+    const hasAdvancedAccess = subscription?.subscriptionStatus === 'active';
     
     if (hasAdvancedAccess) {
       navigate('/checks');

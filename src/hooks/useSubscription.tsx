@@ -3,64 +3,89 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useTester } from '@/contexts/TesterContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { supabase } from '@/integrations/supabase/client';
-// Item limits per plan (rides, stalls, games, equipment)
+
+// Ride-based pricing tiers
+export const RIDE_TIERS = {
+  starter: { min: 1, max: 5, monthly: 9.99, label: 'Starter' },
+  operator: { min: 6, max: 12, monthly: 19.99, label: 'Operator' },
+  professional: { min: 13, max: 25, monthly: 34.99, label: 'Professional' },
+  enterprise: { min: 26, max: Infinity, monthly: 49.99, label: 'Enterprise' },
+} as const;
+
+export type RideTier = keyof typeof RIDE_TIERS;
+
+// Legacy PRICING export for backward compat during migration
+export const PRICING = {
+  basic: { monthly: 9.99, yearly: 99.90, includedItems: 5, additionalItemCost: 0 },
+  advanced: { monthly: 19.99, yearly: 199.90, includedItems: 12, additionalItemCost: 0 },
+  annualDiscount: 2,
+  annualBillingMonths: 10,
+} as const;
+
+// Legacy RIDE_LIMITS export for backward compat
 export const RIDE_LIMITS = {
   trial: 5,
-  basic: 5,
-  advanced: 10,
-  tester: 999, // Unlimited for testers
-  // Additional items cost 75p/month each
-  extended_basic: 50,
-  extended_advanced: 50,
+  active: 999,
+  basic: 999,
+  advanced: 999,
+  tester: 999,
+  extended_basic: 999,
+  extended_advanced: 999,
 } as const;
 
-// Pricing constants
-export const PRICING = {
-  basic: {
-    monthly: 6.99,
-    yearly: 69.90,
-    includedItems: 5,
-    additionalItemCost: 0.75,
-  },
-  advanced: {
-    monthly: 18.99,
-    yearly: 189.90,
-    includedItems: 10,
-    additionalItemCost: 0.75,
-  },
-  annualDiscount: 2, // months free
-  annualBillingMonths: 10, // 12 months - 2 months free = 10 months charged
-} as const;
-
-// Stripe price IDs - Documents & Compliance = Basic, Operations & Maintenance = Advanced
+// Stripe price IDs - will need to be updated when new products are created
 export const STRIPE_PRICE_IDS = {
-  basic_monthly: "price_1SnzrIAG8uIRefcZWHRZs14k",    // Documents & Compliance Monthly - £6.99
-  basic_yearly: "price_1SnzrMAG8uIRefcZ6bfyMMyR",     // Documents & Compliance Yearly - £69.90
-  advanced_monthly: "price_1SnzrOAG8uIRefcZHBSrVObC", // Operations & Maintenance Monthly - £18.99
-  advanced_yearly: "price_1SnzrQAG8uIRefcZq3oC3vso",  // Operations & Maintenance Yearly - £189.90
-  extra_item: "price_1SnzrRAG8uIRefcZRHXJlDuy",       // Extra Item - £0.75/mo
+  starter_monthly: "price_1SnzrIAG8uIRefcZWHRZs14k",    // Starter £9.99/mo (temporary)
+  operator_monthly: "price_1SnzrOAG8uIRefcZHBSrVObC",   // Operator £19.99/mo (temporary)
+  // These will be updated when proper Stripe products are set up
 } as const;
+
+export const getRideTier = (billableRideCount: number): RideTier => {
+  if (billableRideCount <= 5) return 'starter';
+  if (billableRideCount <= 12) return 'operator';
+  if (billableRideCount <= 25) return 'professional';
+  return 'enterprise';
+};
+
+export const getTierPrice = (tier: RideTier): number => {
+  return RIDE_TIERS[tier].monthly;
+};
+
+export const getTierLabel = (tier: RideTier): string => {
+  return RIDE_TIERS[tier].label;
+};
+
+export const getTierForRideCount = (count: number) => {
+  const tier = getRideTier(count);
+  return {
+    tier,
+    ...RIDE_TIERS[tier],
+  };
+};
 
 export interface SubscriptionData {
   trialStartedAt: string | null;
   trialEndsAt: string | null;
-  subscriptionStatus: 'trial' | 'basic' | 'advanced' | 'expired' | 'tester';
-  subscriptionPlan: 'basic' | 'advanced' | null;
+  subscriptionStatus: 'trial' | 'active' | 'expired' | 'tester';
+  subscriptionPlan: string | null; // No longer used for feature gating
   billingCycle: 'monthly' | 'yearly' | null;
   daysRemaining: number;
   isTrialActive: boolean;
   isExpired: boolean;
-  rideCount: number;
+  rideCount: number; // Total equipment count
+  billableRideCount: number; // Only rides/inflatables that count toward pricing
+  freeAssetCount: number; // Stalls, generators etc
   rideLimit: number;
   canAddRide: boolean;
   extraItemsCount: number;
   currentPeriodEnd: string | null;
-  // NOTE: Stripe IDs are intentionally NOT exposed to client code for security
-  // All payment operations use edge functions with service role access
   hasStripeCustomer: boolean;
   hasStripeSubscription: boolean;
   isTesterAccount: boolean;
-  isStaffMember: boolean; // Staff inherit owner's subscription
+  isStaffMember: boolean;
+  currentTier: RideTier;
+  tierLabel: string;
+  tierPrice: number;
 }
 
 export const useSubscription = () => {
@@ -77,34 +102,31 @@ export const useSubscription = () => {
       return;
     }
 
-    // Wait for tester and staff status to be determined
     if (testerLoading || staffLoading) {
       return;
     }
 
     try {
-      // Determine which user's profile to fetch:
-      // - If staff member, fetch the organization owner's profile
-      // - Otherwise, fetch the current user's profile
       const profileUserId = isStaff && staffMembership?.ownerId 
         ? staffMembership.ownerId 
         : user.id;
 
-      // Fetch profile and ride count in parallel
-      // Note: ride count is always for the owner's rides (staff access owner's data)
-      const [profileResult, rideCountResult] = await Promise.all([
+      // Fetch profile, total ride count, and billable ride count in parallel
+      const [profileResult, totalRideResult, billableRideResult] = await Promise.all([
         supabase
           .from('profiles')
-          // NOTE: Intentionally NOT querying stripe_customer_id or stripe_subscription_id
-          // These sensitive payment IDs should never be exposed to client-side code
-          // All Stripe operations are handled by edge functions with service role
           .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, extra_items_count, current_period_end')
           .eq('user_id', profileUserId)
           .maybeSingle(),
         supabase
           .from('rides')
           .select('id', { count: 'exact', head: true })
+          .eq('user_id', profileUserId),
+        supabase
+          .from('rides')
+          .select('id, ride_categories!inner(is_billable)', { count: 'exact' })
           .eq('user_id', profileUserId)
+          .eq('ride_categories.is_billable', true),
       ]);
 
       if (profileResult.error) {
@@ -113,7 +135,9 @@ export const useSubscription = () => {
       }
 
       const data = profileResult.data;
-      const rideCount = rideCountResult.count || 0;
+      const totalRideCount = totalRideResult.count || 0;
+      const billableRideCount = billableRideResult.count || 0;
+      const freeAssetCount = totalRideCount - billableRideCount;
 
       if (data) {
         const now = new Date();
@@ -122,56 +146,74 @@ export const useSubscription = () => {
           ? Math.max(0, Math.ceil((trialEndsAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
           : 0;
 
-        // TESTER BYPASS: Override subscription status for testers
+        // TESTER BYPASS
         if (isTester) {
+          const currentTier = getRideTier(billableRideCount);
           const testerSubscription: SubscriptionData = {
             trialStartedAt: data.trial_started_at,
             trialEndsAt: data.trial_ends_at,
             subscriptionStatus: 'tester',
-            subscriptionPlan: 'advanced', // Full access
+            subscriptionPlan: null,
             billingCycle: null,
             daysRemaining: 999,
             isTrialActive: false,
             isExpired: false,
-            rideCount,
-            rideLimit: RIDE_LIMITS.tester,
-            canAddRide: true, // Always can add
+            rideCount: totalRideCount,
+            billableRideCount,
+            freeAssetCount,
+            rideLimit: 999,
+            canAddRide: true,
             extraItemsCount: 0,
             currentPeriodEnd: null,
-            hasStripeCustomer: false, // No Stripe for testers
+            hasStripeCustomer: false,
             hasStripeSubscription: false,
             isTesterAccount: true,
             isStaffMember: false,
+            currentTier,
+            tierLabel: getTierLabel(currentTier),
+            tierPrice: getTierPrice(currentTier),
           };
           setSubscription(testerSubscription);
           setLoading(false);
           return;
         }
 
-        const status = data.subscription_status as SubscriptionData['subscriptionStatus'];
-        const extraItemsCount = data.extra_items_count || 0;
-        const baseLimit = RIDE_LIMITS[status] || RIDE_LIMITS.basic;
-        const rideLimit = baseLimit + extraItemsCount;
+        // Map old basic/advanced status to new 'active' status
+        let status = data.subscription_status as string;
+        let mappedStatus: SubscriptionData['subscriptionStatus'];
+        if (status === 'basic' || status === 'advanced' || status === 'active') {
+          mappedStatus = 'active';
+        } else if (status === 'trial') {
+          mappedStatus = daysRemaining > 0 ? 'trial' : 'expired';
+        } else {
+          mappedStatus = 'expired';
+        }
+
+        const currentTier = getRideTier(billableRideCount);
 
         const subscriptionData: SubscriptionData = {
           trialStartedAt: data.trial_started_at,
           trialEndsAt: data.trial_ends_at,
-          subscriptionStatus: status,
-          subscriptionPlan: data.subscription_plan as SubscriptionData['subscriptionPlan'],
+          subscriptionStatus: mappedStatus,
+          subscriptionPlan: data.subscription_plan,
           billingCycle: data.billing_cycle as SubscriptionData['billingCycle'],
           daysRemaining,
-          isTrialActive: data.subscription_status === 'trial' && daysRemaining > 0,
-          isExpired: data.subscription_status === 'expired' || (data.subscription_status === 'trial' && daysRemaining === 0),
-          rideCount,
-          rideLimit,
-          canAddRide: rideCount < rideLimit,
-          extraItemsCount,
+          isTrialActive: mappedStatus === 'trial' && daysRemaining > 0,
+          isExpired: mappedStatus === 'expired',
+          rideCount: totalRideCount,
+          billableRideCount,
+          freeAssetCount,
+          rideLimit: 999, // No hard limit - pricing scales with ride count
+          canAddRide: mappedStatus !== 'expired', // Can always add during trial or active
+          extraItemsCount: data.extra_items_count || 0,
           currentPeriodEnd: data.current_period_end,
-          // Stripe presence is determined by subscription status, not by exposing IDs
-          hasStripeCustomer: status !== 'trial' && status !== 'expired',
-          hasStripeSubscription: status === 'basic' || status === 'advanced',
+          hasStripeCustomer: mappedStatus === 'active',
+          hasStripeSubscription: mappedStatus === 'active',
           isTesterAccount: false,
           isStaffMember: isStaff,
+          currentTier,
+          tierLabel: getTierLabel(currentTier),
+          tierPrice: getTierPrice(currentTier),
         };
 
         setSubscription(subscriptionData);
@@ -187,19 +229,15 @@ export const useSubscription = () => {
     fetchSubscriptionData();
   }, [fetchSubscriptionData]);
 
-  // Check subscription status with Stripe (syncs database)
   const checkSubscriptionStatus = useCallback(async () => {
     if (!user) return null;
     
     try {
       const { data, error } = await supabase.functions.invoke('check-subscription');
-      
       if (error) {
         console.error('Error checking subscription:', error);
         return null;
       }
-      
-      // Refresh local data after sync
       await fetchSubscriptionData();
       return data;
     } catch (error) {
@@ -210,32 +248,18 @@ export const useSubscription = () => {
 
   const refreshRideCount = async () => {
     if (!user || !subscription) return;
-    
-    const { count } = await supabase
-      .from('rides')
-      .select('id', { count: 'exact', head: true })
-      .eq('user_id', user.id);
-    
-    const rideCount = count || 0;
-    setSubscription(prev => prev ? {
-      ...prev,
-      rideCount,
-      canAddRide: rideCount < prev.rideLimit,
-    } : null);
+    await fetchSubscriptionData();
   };
 
   // Create Stripe checkout session
-  // TESTER BYPASS: Prevent testers from triggering billing
-  const createCheckout = async (plan: 'basic' | 'advanced', billingCycle: 'monthly' | 'yearly', extraItems: number = 0) => {
+  const createCheckout = async (plan: string = 'active', billingCycle: 'monthly' | 'yearly' = 'monthly', extraItems: number = 0) => {
     if (!user) throw new Error('User not authenticated');
     
-    // Block billing for testers
     if (isTester) {
-      console.log('[TESTER] Checkout blocked - testers have full access without billing');
+      console.log('[TESTER] Checkout blocked');
       return { blocked: true, reason: 'tester_account' };
     }
 
-    // Use the published URL for Stripe return, not preview/localhost URLs
     const currentOrigin = window.location.origin;
     const returnUrl = currentOrigin.includes('localhost') || currentOrigin.includes('lovableproject.com')
       ? 'https://ride-ready-docs.lovable.app'
@@ -248,26 +272,20 @@ export const useSubscription = () => {
     if (error) throw error;
     
     if (data?.url) {
-      // Open in new tab - Stripe blocks iframe embedding for security
-      // User will be redirected back to /billing after completing checkout
       window.open(data.url, '_blank');
     }
     
     return data;
   };
 
-  // Open customer portal for subscription management
-  // TESTER BYPASS: Prevent testers from accessing billing portal
   const openCustomerPortal = async () => {
     if (!user) throw new Error('User not authenticated');
     
-    // Block billing portal for testers
     if (isTester) {
-      console.log('[TESTER] Customer portal blocked - testers do not have billing');
+      console.log('[TESTER] Customer portal blocked');
       return { blocked: true, reason: 'tester_account' };
     }
 
-    // Use the published URL for Stripe return, not preview/localhost URLs
     const currentOrigin = window.location.origin;
     const returnUrl = currentOrigin.includes('localhost') || currentOrigin.includes('lovableproject.com')
       ? 'https://ride-ready-docs.lovable.app'
@@ -280,21 +298,17 @@ export const useSubscription = () => {
     if (error) throw error;
     
     if (data?.url) {
-      // Open in new tab - Stripe blocks iframe embedding for security
       window.open(data.url, '_blank');
     }
 
     return data;
   };
 
-  // Legacy upgrade function (for backward compatibility during trial)
-  // TESTER BYPASS: Block upgrade for testers
-  const upgradeSubscription = async (plan: 'basic' | 'advanced') => {
+  const upgradeSubscription = async (plan: string = 'active') => {
     if (isTester) {
-      console.log('[TESTER] Upgrade blocked - testers have full access');
+      console.log('[TESTER] Upgrade blocked');
       return;
     }
-    // Now redirects to Stripe checkout
     await createCheckout(plan, 'monthly');
   };
 

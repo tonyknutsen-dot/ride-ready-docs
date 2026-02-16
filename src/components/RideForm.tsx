@@ -763,7 +763,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           onConfirm={handleConfirmExtraCharge}
           currentCount={subscription.rideCount}
           limit={subscription.rideLimit}
-          plan={subscription.subscriptionStatus}
+          plan={subscription.subscriptionStatus as any}
           billingCycle={subscription.billingCycle || 'monthly'}
         />
       )}

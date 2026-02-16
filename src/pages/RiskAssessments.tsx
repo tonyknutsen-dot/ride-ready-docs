@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { FeatureGate } from '@/components/FeatureGate';
+
 import { RiskAssessmentManager } from '@/components/RiskAssessmentManager';
 import RideSelector from '@/components/RideSelector';
 import { Button } from '@/components/ui/button';

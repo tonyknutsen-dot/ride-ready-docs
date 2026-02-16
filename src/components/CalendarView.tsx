@@ -118,7 +118,7 @@ const CalendarView = () => {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const isBasicPlan = subscription?.subscriptionStatus === 'trial' || subscription?.subscriptionStatus === 'basic';
+  const isBasicPlan = subscription?.subscriptionStatus === 'trial';
 
   useEffect(() => {
     if (user && subscription && effectiveUserId) {

@@ -1,38 +1,46 @@
+import { getRideTier, getTierLabel, RIDE_TIERS, type RideTier } from '@/hooks/useSubscription';
+
 export const formatPlanName = (plan: string | null | undefined): string => {
   switch (plan) {
     case 'trial':
-      return 'Trial';
+      return 'Free Trial';
+    case 'active':
     case 'basic':
-      return 'Documents & Compliance';
     case 'advanced':
-      return 'Operations & Maintenance';
+      return 'Ride Ready Docs';
+    case 'expired':
+      return 'Expired';
     default:
-      return 'Trial';
+      return 'Free Trial';
   }
 };
 
 export const formatPlanWithDescription = (plan: string | null | undefined): string => {
   switch (plan) {
     case 'trial':
-      return 'Trial';
+      return 'Free Trial';
+    case 'active':
     case 'basic':
-      return 'Documents & Compliance';
     case 'advanced':
-      return 'Operations & Maintenance';
+      return 'Active Plan';
+    case 'expired':
+      return 'Expired';
     default:
-      return 'Trial';
+      return 'Free Trial';
   }
 };
 
 export const getPlanDescription = (plan: string | null | undefined): string => {
-  switch (plan) {
-    case 'trial':
-      return 'Documents & Compliance';
-    case 'basic':
-      return 'Documents & Compliance';
-    case 'advanced':
-      return 'Operations & Maintenance';
-    default:
-      return 'Documents & Compliance';
-  }
+  return 'All-in-One Compliance & Operations';
+};
+
+export const formatTierName = (rideCount: number): string => {
+  const tier = getRideTier(rideCount);
+  return getTierLabel(tier);
+};
+
+export const getTierDescription = (tier: RideTier): string => {
+  const t = RIDE_TIERS[tier];
+  if (tier === 'enterprise') return `${t.min}+ rides`;
+  return `${t.min}–${t.max} rides`;
 };
