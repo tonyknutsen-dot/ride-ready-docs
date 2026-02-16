@@ -44,34 +44,32 @@ interface CalendarEvent {
 
 type Ride = Tables<'rides'>;
 
-// Event types with plan requirements
-// Basic plan: Document expiry alerts only (as per pricing - "Expiry alerts 30 & 7 days")
-// Advanced plan: Full inspection scheduling, maintenance, NDT, checks
+// All event types available to all subscribers
 const EVENT_TYPES = [
-  // Basic plan - document expiry reminders
-  { value: 'insurance-expiry', label: 'Insurance Expiry', plan: 'basic', category: 'Document Expiry' },
-  { value: 'doc-expiry', label: 'Inspection Certificate Expiry', plan: 'basic', category: 'Document Expiry' },
-  { value: 'safety-cert-expiry', label: 'Safety Certificate Expiry', plan: 'basic', category: 'Document Expiry' },
-  { value: 'other-document-expiry', label: 'Other Document Expiry', plan: 'basic', category: 'Document Expiry' },
+  // Document expiry reminders
+  { value: 'insurance-expiry', label: 'Insurance Expiry', category: 'Document Expiry' },
+  { value: 'doc-expiry', label: 'Inspection Certificate Expiry', category: 'Document Expiry' },
+  { value: 'safety-cert-expiry', label: 'Safety Certificate Expiry', category: 'Document Expiry' },
+  { value: 'other-document-expiry', label: 'Other Document Expiry', category: 'Document Expiry' },
   
-  // Advanced plan - inspections
-  { value: 'in-service', label: 'In-Service Inspection', plan: 'advanced', category: 'Inspections' },
-  { value: 'electrical', label: 'Electrical Inspection', plan: 'advanced', category: 'Inspections' },
-  { value: 'ndt', label: 'NDT Inspection', plan: 'advanced', category: 'Inspections' },
-  { value: 'structural', label: 'Structural Inspection', plan: 'advanced', category: 'Inspections' },
-  { value: 'hydraulic', label: 'Hydraulic Inspection', plan: 'advanced', category: 'Inspections' },
-  { value: 'mechanical', label: 'Mechanical Inspection', plan: 'advanced', category: 'Inspections' },
-  { value: 'safety', label: 'Safety Inspection', plan: 'advanced', category: 'Inspections' },
+  // Inspections
+  { value: 'in-service', label: 'In-Service Inspection', category: 'Inspections' },
+  { value: 'electrical', label: 'Electrical Inspection', category: 'Inspections' },
+  { value: 'ndt', label: 'NDT Inspection', category: 'Inspections' },
+  { value: 'structural', label: 'Structural Inspection', category: 'Inspections' },
+  { value: 'hydraulic', label: 'Hydraulic Inspection', category: 'Inspections' },
+  { value: 'mechanical', label: 'Mechanical Inspection', category: 'Inspections' },
+  { value: 'safety', label: 'Safety Inspection', category: 'Inspections' },
   
-  // Advanced plan - checks
-  { value: 'daily-check', label: 'Daily Check', plan: 'advanced', category: 'Checks' },
-  { value: 'monthly-check', label: 'Monthly Check', plan: 'advanced', category: 'Checks' },
-  { value: 'yearly-check', label: 'Yearly Check', plan: 'advanced', category: 'Checks' },
+  // Checks
+  { value: 'daily-check', label: 'Daily Check', category: 'Checks' },
+  { value: 'monthly-check', label: 'Monthly Check', category: 'Checks' },
+  { value: 'yearly-check', label: 'Yearly Check', category: 'Checks' },
   
-  // Advanced plan - maintenance
-  { value: 'maintenance', label: 'Scheduled Maintenance', plan: 'advanced', category: 'Maintenance' },
-  { value: 'preventive', label: 'Preventive Maintenance', plan: 'advanced', category: 'Maintenance' },
-  { value: 'repair', label: 'Repair Follow-up', plan: 'advanced', category: 'Maintenance' },
+  // Maintenance
+  { value: 'maintenance', label: 'Scheduled Maintenance', category: 'Maintenance' },
+  { value: 'preventive', label: 'Preventive Maintenance', category: 'Maintenance' },
+  { value: 'repair', label: 'Repair Follow-up', category: 'Maintenance' },
 ];
 
 const inspectionSchema = z.object({
@@ -118,7 +116,7 @@ const CalendarView = () => {
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const isBasicPlan = subscription?.subscriptionStatus === 'trial';
+  const isTrialOrExpired = subscription?.subscriptionStatus === 'expired';
 
   useEffect(() => {
     if (user && subscription && effectiveUserId) {
@@ -570,26 +568,17 @@ const CalendarView = () => {
               <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-destructive shadow-sm shrink-0" />
               <span className="truncate">Doc Expiry</span>
             </div>
-            <div className={cn("flex items-center gap-1.5", isBasicPlan && "opacity-50")}>
+            <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-primary shadow-sm shrink-0" />
               <span className="truncate">Inspections</span>
-              {isBasicPlan && (
-                <span className="text-[8px] sm:text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium shrink-0">Pro</span>
-              )}
             </div>
-            <div className={cn("flex items-center gap-1.5", isBasicPlan && "opacity-50")}>
+            <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-accent shadow-sm shrink-0" />
               <span className="truncate">Maintenance</span>
-              {isBasicPlan && (
-                <span className="text-[8px] sm:text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium shrink-0">Pro</span>
-              )}
             </div>
-            <div className={cn("flex items-center gap-1.5", isBasicPlan && "opacity-50")}>
+            <div className="flex items-center gap-1.5">
               <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-info shadow-sm shrink-0" />
               <span className="truncate">NDT</span>
-              {isBasicPlan && (
-                <span className="text-[8px] sm:text-[9px] px-1 py-0.5 rounded bg-primary/10 text-primary font-medium shrink-0">Pro</span>
-              )}
             </div>
             <div className="flex items-center gap-1.5 sm:ml-auto">
               <Clock className="h-3 w-3 sm:h-3.5 sm:w-3.5 text-amber-600 shrink-0" />
@@ -629,9 +618,7 @@ const CalendarView = () => {
           <div className="space-y-1">
             <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
             <p className="text-sm text-muted-foreground">
-              {isBasicPlan 
-                ? 'Track document expiry dates and reminders' 
-                : 'Track inspections, maintenance, and document expiry dates'}
+              Track inspections, maintenance, and document expiry dates
             </p>
           </div>
           
@@ -682,7 +669,7 @@ const CalendarView = () => {
                       value={formData.inspection_type}
                       onValueChange={(value) => {
                         const eventType = EVENT_TYPES.find(t => t.value === value);
-                        if (eventType && (eventType.plan === 'basic' || !isBasicPlan)) {
+                        if (eventType) {
                           setFormData({ ...formData, inspection_type: value });
                         }
                       }}
@@ -702,24 +689,12 @@ const CalendarView = () => {
                                 {category}
                               </div>
                               {categoryTypes.map((type) => {
-                                const isLocked = type.plan === 'advanced' && isBasicPlan;
                                 return (
                                   <SelectItem 
                                     key={type.value} 
                                     value={type.value}
-                                    disabled={isLocked}
-                                    className={cn(
-                                      isLocked && "opacity-50 cursor-not-allowed"
-                                    )}
                                   >
-                                    <div className="flex items-center justify-between w-full gap-2">
-                                      <span>{type.label}</span>
-                                      {isLocked && (
-                                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-primary/10 text-primary font-medium">
-                                          Upgrade
-                                        </span>
-                                      )}
-                                    </div>
+                                    {type.label}
                                   </SelectItem>
                                 );
                               })}
@@ -728,21 +703,6 @@ const CalendarView = () => {
                         })}
                       </SelectContent>
                     </Select>
-                    {isBasicPlan && (
-                      <div className="text-xs text-muted-foreground space-y-1">
-                        <p className="flex items-center gap-1">
-                          <Lock className="h-3 w-3" />
-                          Some event types require the Operations & Maintenance plan
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => navigate('/plan-billing')}
-                          className="text-primary hover:underline font-medium inline-flex items-center gap-1"
-                        >
-                          Upgrade your plan →
-                        </button>
-                      </div>
-                    )}
                     {formErrors.inspection_type && <p className="text-xs text-destructive">{formErrors.inspection_type}</p>}
                   </div>
 
@@ -1027,13 +987,9 @@ const CalendarView = () => {
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
                   <SelectItem value="all">All Events</SelectItem>
-                  {!isBasicPlan && (
-                    <>
-                      <SelectItem value="inspection">Inspections</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
-                      <SelectItem value="ndt">NDT Tests</SelectItem>
-                    </>
-                  )}
+                  <SelectItem value="inspection">Inspections</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="ndt">NDT Tests</SelectItem>
                   <SelectItem value="document_expiry">Document Expiry</SelectItem>
                 </SelectContent>
               </Select>
