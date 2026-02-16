@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useAuth } from "@/contexts/AuthContext";
 import { useTester } from "@/contexts/TesterContext";
 import { useStaff } from "@/contexts/StaffContext";
-import { useSubscription, PRICING } from "@/hooks/useSubscription";
+import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock, RefreshCw, X, ShieldAlert } from "lucide-react";
 import { Separator } from "@/components/ui/separator";

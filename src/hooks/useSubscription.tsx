@@ -14,23 +14,11 @@ export const RIDE_TIERS = {
 
 export type RideTier = keyof typeof RIDE_TIERS;
 
-// Legacy PRICING export for backward compat during migration
-export const PRICING = {
-  basic: { monthly: 9.99, yearly: 99.90, includedItems: 5, additionalItemCost: 0 },
-  advanced: { monthly: 19.99, yearly: 199.90, includedItems: 12, additionalItemCost: 0 },
-  annualDiscount: 2,
-  annualBillingMonths: 10,
-} as const;
-
 // Legacy RIDE_LIMITS export for backward compat
 export const RIDE_LIMITS = {
   trial: 5,
   active: 999,
-  basic: 999,
-  advanced: 999,
   tester: 999,
-  extended_basic: 999,
-  extended_advanced: 999,
 } as const;
 
 // Stripe price IDs for ride-based tiers

@@ -290,32 +290,28 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
-              {/* Checks route - requires advanced plan */}
+              {/* Checks route */}
               <Route 
                 path="/checks" 
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <FeatureGate requiredPlan="advanced" feature="Operations & Maintenance">
-                        <AppLayout>
-                          <Checks />
-                        </AppLayout>
-                      </FeatureGate>
+                      <AppLayout>
+                        <Checks />
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
               />
-              {/* Maintenance route - requires advanced plan */}
+              {/* Maintenance route */}
               <Route 
                 path="/maintenance" 
                 element={
                   <ProtectedRoute>
                     <ProfileGuard>
-                      <FeatureGate requiredPlan="advanced" feature="Maintenance">
-                        <AppLayout>
-                          <Maintenance />
-                        </AppLayout>
-                      </FeatureGate>
+                      <AppLayout>
+                        <Maintenance />
+                      </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 

@@ -63,7 +63,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
 
   // All paying users and testers have full access
-  const isAdvanced = subscription?.subscriptionStatus === 'active' || subscription?.isTesterAccount;
+  const isActiveUser = subscription?.subscriptionStatus === 'active' || subscription?.isTesterAccount;
 
   useEffect(() => {
     loadRideStatistics();
@@ -320,18 +320,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
           <div className="grid grid-cols-1 gap-3">
             {/* CHECKS - Main Priority Action */}
-            <FeatureGate
-              requiredPlan="advanced" 
-              feature="Inspections"
-              fallback={
-                <RestrictedFeatureCard
-                  title="Safety Checks"
-                  description="Perform daily, monthly & yearly checks"
-                  icon={<CheckSquare className="h-5 w-5" />}
-                  requiredPlan="advanced"
-                />
-              }
-            >
+            <FeatureGate feature="Inspections">
               <Card 
                 className="active:scale-[0.98] transition-all cursor-pointer border-2 border-success/50 bg-gradient-to-r from-success/10 via-success/15 to-success/20 hover:shadow-elegant"
                 onClick={() => setActiveTab("checks")}
@@ -389,18 +378,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             </Card>
 
             {/* Maintenance Quick Action - Navigate to dedicated Maintenance page */}
-            <FeatureGate 
-              requiredPlan="advanced" 
-              feature="Maintenance Logging"
-              fallback={
-                <RestrictedFeatureCard
-                  title="Maintenance"
-                  description="Log maintenance activities"
-                  icon={<Wrench className="h-5 w-5" />}
-                  requiredPlan="advanced"
-                />
-              }
-            >
+            <FeatureGate feature="Maintenance Logging">
               <Card 
                 className="active:scale-[0.98] transition-all cursor-pointer border-accent/30 bg-gradient-to-r from-accent/5 to-accent/10 hover:shadow-elegant"
                 onClick={() => navigate(`/maintenance?rideId=${ride.id}`)}
@@ -430,7 +408,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         </TabsContent>
 
         <TabsContent value="checks" className="animate-fade-in">
-          <FeatureGate requiredPlan="advanced" feature="Safety Checks">
+          <FeatureGate feature="Safety Checks">
             <InspectionManager ride={ride} />
           </FeatureGate>
         </TabsContent>

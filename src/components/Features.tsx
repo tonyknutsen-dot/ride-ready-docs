@@ -80,15 +80,15 @@ const Features = () => {
             Features
           </Badge>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 tracking-tight">
-            Two Powerful Apps,{" "}
-            <span className="text-primary">One Complete Solution</span>
+            Everything You Need,{" "}
+            <span className="text-primary">One Complete Platform</span>
           </h2>
           <p className="text-lg text-muted-foreground">
-            Choose the tool you need or use both together. Perfect for rides, stalls, games, inflatables, attractions, and equipment.
+            All features included with every plan. Perfect for rides, stalls, games, inflatables, attractions, and equipment.
           </p>
         </div>
 
-        {/* Documents & Compliance App */}
+        {/* Documents & Compliance */}
         <div className="mb-10">
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-8">
             <div className="flex items-center gap-3">
@@ -98,7 +98,7 @@ const Features = () => {
               <h3 className="text-xl md:text-2xl font-bold">Documents & Compliance</h3>
             </div>
             <Badge className="bg-accent/10 text-accent border-accent/20 hover:bg-accent/20">
-              Essential Plan
+              Included
             </Badge>
           </div>
           
@@ -126,7 +126,7 @@ const Features = () => {
           </div>
         </div>
 
-        {/* Operations & Maintenance App */}
+        {/* Operations & Maintenance */}
         <div>
           <div className="flex flex-col md:flex-row items-start md:items-center gap-4 mb-8">
             <div className="flex items-center gap-3">
@@ -136,7 +136,7 @@ const Features = () => {
               <h3 className="text-xl md:text-2xl font-bold">Operations & Maintenance</h3>
             </div>
             <Badge className="bg-primary/10 text-primary border-primary/20 hover:bg-primary/20">
-              Advanced Plan
+              Included
             </Badge>
           </div>
           

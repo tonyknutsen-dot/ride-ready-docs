@@ -87,7 +87,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
       if (ridesError) throw ridesError;
       setRides(ridesData || []);
 
-      // Only load documents for trial/basic users
+      // Load documents with expiry dates
       const { data: documents, error: documentsError } = await supabase
         .from('documents')
         .select('id, expires_at')
