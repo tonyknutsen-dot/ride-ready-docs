@@ -3,7 +3,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 
 interface FeatureGateProps {
   children: ReactNode;
-  requiredPlan?: string; // Kept for backward compat but ignored - all features available
+  requiredPlan?: string; // Deprecated - ignored, kept for backward compat
   feature?: string;
   fallback?: ReactNode;
 }
