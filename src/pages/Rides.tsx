@@ -116,73 +116,93 @@ const Rides = () => {
   };
 
   const loadRideStatistics = async (ridesData: Ride[]) => {
-    const stats: Record<string, {
-      docCount: number;
-      checkCount: number;
-      nextDue: string | null;
-    }> = {};
+    if (ridesData.length === 0) return;
     
-    for (const ride of ridesData) {
-      try {
-        // Count ride-specific documents only (exclude global and maintenance docs for display)
-        let docQuery = supabase
+    const rideIds = ridesData.map(r => r.id);
+    const stats: Record<string, { docCount: number; checkCount: number; nextDue: string | null }> = {};
+    
+    // Initialize all rides
+    rideIds.forEach(id => { stats[id] = { docCount: 0, checkCount: 0, nextDue: null }; });
+
+    try {
+      // Batch queries: get all docs & checks counts in parallel
+      const [docsResult, checksResult, maintenanceResult, inspectionResult, ndtResult] = await Promise.all([
+        supabase
           .from('documents')
-          .select('*', { count: 'exact', head: true })
-          .eq('ride_id', ride.id)
+          .select('ride_id')
+          .in('ride_id', rideIds)
+          .eq('user_id', effectiveUserId)
           .neq('document_type', 'maintenance')
-          .neq('document_type', 'photo');
-        docQuery = docQuery.eq('user_id', effectiveUserId);
-        const { count: docCount } = await docQuery;
-        
-        let checkQuery = supabase
+          .neq('document_type', 'photo')
+          .eq('is_latest_version', true),
+        supabase
           .from('checks')
-          .select('*', { count: 'exact', head: true })
-          .eq('ride_id', ride.id)
-          .eq('is_test_data', false);
-        checkQuery = checkQuery.eq('user_id', effectiveUserId);
-        const { count: checkCount } = await checkQuery;
-        
-        // For maintenance/inspection queries, staff rely on RLS
-        const userId = effectiveUserId;
-        const [maintenanceQuery, inspectionQuery, ndtQuery] = await Promise.all([
-          isStaff 
-            ? supabase.from('maintenance_records').select('next_maintenance_due').eq('ride_id', ride.id).not('next_maintenance_due', 'is', null).order('next_maintenance_due', { ascending: true }).limit(1).maybeSingle()
-            : supabase.from('maintenance_records').select('next_maintenance_due').eq('user_id', userId).eq('ride_id', ride.id).not('next_maintenance_due', 'is', null).order('next_maintenance_due', { ascending: true }).limit(1).maybeSingle(),
-          isStaff
-            ? supabase.from('annual_inspection_reports').select('next_inspection_due').eq('ride_id', ride.id).not('next_inspection_due', 'is', null).order('next_inspection_due', { ascending: true }).limit(1).maybeSingle()
-            : supabase.from('annual_inspection_reports').select('next_inspection_due').eq('user_id', userId).eq('ride_id', ride.id).not('next_inspection_due', 'is', null).order('next_inspection_due', { ascending: true }).limit(1).maybeSingle(),
-          isStaff
-            ? supabase.from('ndt_reports').select('next_inspection_due').eq('ride_id', ride.id).not('next_inspection_due', 'is', null).order('next_inspection_due', { ascending: true }).limit(1).maybeSingle()
-            : supabase.from('ndt_reports').select('next_inspection_due').eq('user_id', userId).eq('ride_id', ride.id).not('next_inspection_due', 'is', null).order('next_inspection_due', { ascending: true }).limit(1).maybeSingle()
-        ]);
-        
-        const dueDates = [
-          maintenanceQuery.data?.next_maintenance_due,
-          inspectionQuery.data?.next_inspection_due,
-          ndtQuery.data?.next_inspection_due
-        ].filter(Boolean).sort();
-        
-        stats[ride.id] = {
-          docCount: docCount || 0,
-          checkCount: checkCount || 0,
-          nextDue: dueDates[0] || null
-        };
-      } catch (error) {
-        console.error(`Error loading stats for ride ${ride.id}:`, error);
-        stats[ride.id] = { docCount: 0, checkCount: 0, nextDue: null };
-      }
+          .select('ride_id')
+          .in('ride_id', rideIds)
+          .eq('user_id', effectiveUserId)
+          .eq('is_test_data', false),
+        supabase
+          .from('maintenance_records')
+          .select('ride_id, next_maintenance_due')
+          .in('ride_id', rideIds)
+          .eq('user_id', effectiveUserId)
+          .not('next_maintenance_due', 'is', null),
+        supabase
+          .from('annual_inspection_reports')
+          .select('ride_id, next_inspection_due')
+          .in('ride_id', rideIds)
+          .eq('user_id', effectiveUserId)
+          .not('next_inspection_due', 'is', null),
+        supabase
+          .from('ndt_reports')
+          .select('ride_id, next_inspection_due')
+          .in('ride_id', rideIds)
+          .eq('user_id', effectiveUserId)
+          .not('next_inspection_due', 'is', null),
+      ]);
+
+      // Count docs per ride
+      docsResult.data?.forEach(d => {
+        if (d.ride_id && stats[d.ride_id]) stats[d.ride_id].docCount++;
+      });
+
+      // Count checks per ride
+      checksResult.data?.forEach(c => {
+        if (c.ride_id && stats[c.ride_id]) stats[c.ride_id].checkCount++;
+      });
+
+      // Find earliest due date per ride
+      const allDueDates: Record<string, string[]> = {};
+      rideIds.forEach(id => { allDueDates[id] = []; });
+      
+      maintenanceResult.data?.forEach(m => {
+        if (m.ride_id && m.next_maintenance_due) allDueDates[m.ride_id]?.push(m.next_maintenance_due);
+      });
+      inspectionResult.data?.forEach(i => {
+        if (i.ride_id && i.next_inspection_due) allDueDates[i.ride_id]?.push(i.next_inspection_due);
+      });
+      ndtResult.data?.forEach(n => {
+        if (n.ride_id && n.next_inspection_due) allDueDates[n.ride_id]?.push(n.next_inspection_due);
+      });
+
+      rideIds.forEach(id => {
+        const dates = allDueDates[id]?.sort();
+        stats[id].nextDue = dates?.[0] || null;
+      });
+    } catch (error) {
+      console.error('Error loading ride statistics:', error);
     }
+    
     setRideStats(stats);
   };
 
   const loadRidePhotos = async (ridesData: Ride[]) => {
     if (ridesData.length === 0) return;
     
-    const photos: Record<string, string | null> = {};
     const rideIds = ridesData.map(r => r.id);
     
     try {
-       // Batch query: Get all photo documents for all rides in ONE query
+      // Batch query: Get all photo documents for all rides in ONE query
       let photoQuery = supabase
         .from('documents')
         .select('ride_id, file_path')
@@ -190,7 +210,7 @@ const Rides = () => {
         .eq('document_type', 'photo')
         .eq('is_latest_version', true)
         .order('uploaded_at', { ascending: false });
-       photoQuery = photoQuery.eq('user_id', effectiveUserId);
+      photoQuery = photoQuery.eq('user_id', effectiveUserId);
       const { data: photoDocs } = await photoQuery;
 
       // Group by ride_id (take first/latest for each)
@@ -201,37 +221,30 @@ const Rides = () => {
         }
       });
 
-      // Initialize all rides with null (no photo) first for immediate UI update
+      // Rides without photos get null immediately
+      const photos: Record<string, string | null> = {};
       rideIds.forEach(id => {
-        photos[id] = photoByRide[id] ? undefined : null; // undefined = loading, null = no photo
+        if (!photoByRide[id]) photos[id] = null;
       });
-      setRidePhotos({ ...photos });
+      setRidePhotos(prev => ({ ...prev, ...photos }));
 
-      // Now generate signed URLs in batches of 5 for rides that have photos
+      // Generate ALL signed URLs in parallel (single batch)
       const ridesWithPhotos = Object.entries(photoByRide);
-      const batchSize = 5;
-      
-      for (let i = 0; i < ridesWithPhotos.length; i += batchSize) {
-        const batch = ridesWithPhotos.slice(i, i + batchSize);
-        
-        await Promise.all(batch.map(async ([rideId, filePath]) => {
-          try {
-            const { data } = await supabase.storage
-              .from('ride-documents')
-              .createSignedUrl(filePath, 3600);
-            
-            photos[rideId] = data?.signedUrl || null;
-          } catch {
-            photos[rideId] = null;
-          }
-        }));
-        
-        // Update state after each batch for progressive loading
-        setRidePhotos(prev => ({ ...prev, ...photos }));
+      if (ridesWithPhotos.length > 0) {
+        const filePaths = ridesWithPhotos.map(([, path]) => path);
+        const { data: signedUrls } = await supabase.storage
+          .from('ride-documents')
+          .createSignedUrls(filePaths, 3600);
+
+        const urlPhotos: Record<string, string | null> = {};
+        ridesWithPhotos.forEach(([rideId], index) => {
+          urlPhotos[rideId] = signedUrls?.[index]?.signedUrl || null;
+        });
+        setRidePhotos(prev => ({ ...prev, ...urlPhotos }));
       }
     } catch (error) {
       console.error('Error loading ride photos:', error);
-      // Mark all as no photo on error
+      const photos: Record<string, string | null> = {};
       rideIds.forEach(id => { photos[id] = null; });
       setRidePhotos(photos);
     }
@@ -452,9 +465,9 @@ const Rides = () => {
                     alt={ride.ride_name}
                     loading="lazy"
                     decoding="async"
-                    className="max-w-full max-h-full object-contain transition-opacity duration-300"
+                    className="w-full h-full object-cover transition-opacity duration-300"
                     onLoad={(e) => (e.target as HTMLImageElement).style.opacity = '1'}
-                    style={{ opacity: 0.7 }}
+                    style={{ opacity: 0 }}
                   />
                 ) : ridePhotos[ride.id] === undefined ? (
                   <div className="flex flex-col items-center gap-2 text-primary/40">
