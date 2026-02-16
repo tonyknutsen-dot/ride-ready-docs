@@ -5,7 +5,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
-import appLogo from "@/assets/app-logo.jpg";
+import appLogo from "@/assets/pwa-icon.jpg";
 
 const Header = () => {
   const location = useLocation();
