@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, Eye, MoreVertical, ChevronDown, ChevronUp } from 'lucide-react';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, Eye, MoreVertical, ChevronDown, ChevronUp, PlayCircle, Wrench } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +28,7 @@ import { useOfflineCheck } from '@/hooks/useOfflineCheck';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { getCachedTemplatesForRide, findCachedAddress, cacheLocationAddress, type CachedTemplate, type CheckItemResult } from '@/lib/offlineDb';
 import CheckDetailDialog from './CheckDetailDialog';
+import QuickMaintenanceLog from './QuickMaintenanceLog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -69,6 +70,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
   const [selectedCheck, setSelectedCheck] = useState<Check | null>(null);
   const [showCheckDetail, setShowCheckDetail] = useState(false);
   const [detailsExpanded, setDetailsExpanded] = useState(true);
+  const [checkStarted, setCheckStarted] = useState(false);
+  const [checkStartedAt, setCheckStartedAt] = useState<Date | null>(null);
+  const [showMaintenanceForItem, setShowMaintenanceForItem] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const { effectiveUserId, isStaff } = useEffectiveUserId();
@@ -1099,6 +1103,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
       setComplianceOfficer('');
       setSignatureData('');
       setLocation('');
+      setCheckStarted(false);
+      setCheckStartedAt(null);
+      setShowMaintenanceForItem(null);
 
       // Reload recent checks (will be empty if offline but that's expected)
       if (!isOffline) {
@@ -1243,8 +1250,140 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
     );
   }
 
+  // Start Check gate — show a start button before revealing the full checklist
+  if (!checkStarted && activeTemplate) {
+    return (
+      <div id="inspection-checklist-form" className="space-y-6">
+        {/* Checklist Header */}
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="font-semibold text-base truncate">{activeTemplate.template_name}</h3>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="icon" className="shrink-0 h-9 w-9">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
+                <Settings className="h-4 w-4 mr-2" />
+                Edit Checklist
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={generatePDF}>
+                <Download className="h-4 w-4 mr-2" />
+                Export PDF
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Start Check Card */}
+        <Card className="rounded-2xl border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
+          <CardContent className="py-8 flex flex-col items-center gap-4">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              <PlayCircle className="h-8 w-8 text-primary" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-lg">Ready to Start?</p>
+              <p className="text-sm text-muted-foreground max-w-sm mt-1">
+                {activeTemplate.daily_check_template_items.length} items to check. 
+                A PDF record will be saved automatically when you complete.
+              </p>
+            </div>
+            <Button
+              size="lg"
+              className="h-14 px-8 text-base font-semibold shadow-lg rounded-2xl gap-2"
+              onClick={() => {
+                setCheckStarted(true);
+                setCheckStartedAt(new Date());
+              }}
+            >
+              <PlayCircle className="h-5 w-5" />
+              Start Check
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Open Defects */}
+        <Card className="rounded-2xl border-warning/30 bg-warning/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2 text-warning">
+              <AlertTriangle className="h-5 w-5" />
+              Open Defects
+            </CardTitle>
+            <CardDescription>
+              Any unresolved defects reported for this equipment
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <DefectsList 
+              key={defectRefreshKey}
+              rideId={ride.id} 
+              rideName={ride.ride_name}
+              showResolved={false}
+              onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Recent Checks */}
+        {recentChecks.length > 0 && (
+          <Card className="border-muted">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                Recent {frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1)} Checks
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="divide-y divide-border">
+                {recentChecks.map((check) => (
+                  <div 
+                    key={check.id} 
+                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-muted/50 -mx-4 px-4 rounded-md transition-colors"
+                    onClick={() => {
+                      setSelectedCheck(check);
+                      setShowCheckDetail(true);
+                    }}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="font-medium text-sm truncate">{check.inspector_name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(check.check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={check.status === 'completed' ? 'default' : 'secondary'} className="text-xs shrink-0">
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Done
+                      </Badge>
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        <CheckDetailDialog
+          check={selectedCheck}
+          open={showCheckDetail}
+          onOpenChange={setShowCheckDetail}
+        />
+      </div>
+    );
+  }
+
   return (
     <div id="inspection-checklist-form" className="space-y-6">
+      {/* Started indicator */}
+      {checkStartedAt && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Clock className="h-3.5 w-3.5" />
+          Check started at {checkStartedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+        </div>
+      )}
+
       {/* Offline Mode Indicator */}
       {(!isOnline || usingCachedTemplate || pendingCount > 0) && (
         <Alert className={`border-2 ${!isOnline ? 'border-warning bg-warning/10' : pendingCount > 0 ? 'border-info bg-info/10' : 'border-muted'}`}>
@@ -1601,6 +1740,45 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
                     rows={2}
                   />
                 )}
+
+                {/* Per-item fail actions */}
+                {currentResult === 'fail' && (
+                  <div className="mt-2 space-y-2">
+                    <div className="flex gap-2">
+                      <DefectReportDialog
+                        rideId={ride.id}
+                        rideName={ride.ride_name}
+                        onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
+                        trigger={
+                          <Button type="button" variant="outline" size="sm" className="text-xs gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
+                            <AlertTriangle className="h-3 w-3" />
+                            Report Defect
+                          </Button>
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs gap-1.5 text-primary border-primary/30 hover:bg-primary/10"
+                        onClick={() => setShowMaintenanceForItem(showMaintenanceForItem === item.id ? null : item.id)}
+                      >
+                        <Wrench className="h-3 w-3" />
+                        Log Repair
+                      </Button>
+                    </div>
+
+                    {showMaintenanceForItem === item.id && (
+                      <QuickMaintenanceLog
+                        rideId={ride.id}
+                        rideName={ride.ride_name}
+                        checkItemText={item.check_item_text}
+                        onLogged={() => setShowMaintenanceForItem(null)}
+                        onCancel={() => setShowMaintenanceForItem(null)}
+                      />
+                    )}
+                  </div>
+                )}
               </div>
               );
             })}
@@ -1629,7 +1807,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
         </CardContent>
       </Card>
 
-      {/* Submit */}
+      {/* Complete Check */}
       <Button
         onClick={handleSubmitChecks} 
         disabled={submitting || !inspectorName.trim()}
@@ -1639,12 +1817,12 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
         {submitting ? (
           <>
             <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            Submitting...
+            Completing...
           </>
         ) : (
           <>
             <CheckCircle className="h-5 w-5 mr-2" />
-            Complete {frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check
+            Complete Check
           </>
         )}
       </Button>
