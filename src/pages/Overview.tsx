@@ -84,7 +84,7 @@ const Overview = () => {
     { icon: Wrench, label: "Maintenance", path: "/maintenance", color: "text-accent", bg: "bg-accent/10 border-accent/20" },
     { icon: Calendar, label: "Calendar", path: "/calendar", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
     { icon: Shield, label: "Risk", path: "/risk-assessments", color: "text-destructive", bg: "bg-destructive/10 border-destructive/20" },
-    { icon: Bell, label: "Notifications", path: "/settings", color: "text-warning", bg: "bg-warning/10 border-warning/20", badge: unreadCount },
+    { icon: Bell, label: "Notifications", path: "/notifications", color: "text-warning", bg: "bg-warning/10 border-warning/20", badge: unreadCount },
     { icon: Settings, label: "Settings", path: "/settings", color: "text-muted-foreground", bg: "bg-muted border-border" },
   ];
 

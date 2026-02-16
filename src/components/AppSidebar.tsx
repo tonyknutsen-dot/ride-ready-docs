@@ -62,7 +62,7 @@ const featureNavItems = [
 ];
 
 const accountNavItems = [
-  { title: 'Notifications', url: '/settings', icon: Bell, ownerOnly: true, isNotification: true },
+  { title: 'Notifications', url: '/notifications', icon: Bell, ownerOnly: true, isNotification: true },
   { title: 'Plan & Billing', url: '/billing', icon: CreditCard, ownerOnly: true },
   { title: 'Help & Support', url: '/help', icon: HelpCircle },
 ];

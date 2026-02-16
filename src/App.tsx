@@ -69,6 +69,7 @@ const MyBugReports = lazy(() => import("./pages/MyBugReports"));
 const Install = lazy(() => import("./pages/Install"));
 const DataIndependence = lazy(() => import("./pages/DataIndependence"));
 const SharedDocuments = lazy(() => import("./pages/SharedDocuments"));
+const Notifications = lazy(() => import("./pages/Notifications"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -488,6 +489,18 @@ const App = () => (
               />
               {/* Public shared documents download page - no auth required */}
               <Route path="/shared/:token" element={<SharedDocuments />} />
+              <Route 
+                path="/notifications"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <AppLayout>
+                        <Notifications />
+                      </AppLayout>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
               </Routes>
