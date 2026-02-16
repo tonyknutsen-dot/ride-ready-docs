@@ -220,7 +220,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
   const getProgress = () => {
     if (!activeTemplate?.daily_check_template_items) return 0;
     const totalItems = activeTemplate.daily_check_template_items.length;
-    const answeredCount = Object.values(itemResults).filter(r => r === 'pass' || r === 'fail').length;
+    const answeredCount = Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length;
     return totalItems > 0 ? (answeredCount / totalItems) * 100 : 0;
   };
 

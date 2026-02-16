@@ -10,6 +10,7 @@ import { AlertTriangle, Camera, X, Upload, Loader2, AlertOctagon, Clock, Wrench 
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
 
 const MAX_PHOTOS_PER_DEFECT = 5;
@@ -41,6 +42,7 @@ const DefectReportDialog = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { effectiveUserId } = useEffectiveUserId();
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -142,13 +144,13 @@ const DefectReportDialog = ({
       // Upload photos first
       const photoPaths = await uploadPhotos();
 
-      // Insert defect record
+      // Insert defect record - use effectiveUserId so staff data syncs with operator
       const { error } = await supabase
         .from('defects')
         .insert({
           ride_id: rideId,
           check_id: checkId || null,
-          user_id: user.id,
+          user_id: effectiveUserId,
           description: description.trim(),
           severity: severity,
           location_on_ride: locationOnRide.trim() || null,

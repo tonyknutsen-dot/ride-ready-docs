@@ -39,7 +39,7 @@ const FREQUENCY_LABELS: Record<string, string> = {
 
 const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const { user } = useAuth();
-  const { effectiveUserId } = useEffectiveUserId();
+  const { effectiveUserId, isStaff } = useEffectiveUserId();
   const [activeTab, setActiveTab] = useState('preopening');
   const [showGuide, setShowGuide] = useState(false);
   const [checkCounts, setCheckCounts] = useState<CheckCounts>({ preopening: 0, daily: 0, weekly: 0, monthly: 0, yearly: 0, total: 0 });
@@ -57,13 +57,18 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
     try {
       const counts = await Promise.all(
         FREQUENCY_ORDER.map(async (freq) => {
-          const { count } = await supabase
+          let query = supabase
             .from('checks')
             .select('*', { count: 'exact', head: true })
             .eq('ride_id', ride.id)
-            .eq('user_id', effectiveUserId)
             .eq('check_frequency', freq)
             .eq('is_test_data', false);
+
+          if (!isStaff) {
+            query = query.eq('user_id', effectiveUserId);
+          }
+
+          const { count } = await query;
           return { freq, count: count || 0 };
         })
       );
@@ -81,13 +86,18 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
   const loadTemplateStatus = async () => {
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('daily_check_templates')
         .select('check_frequency')
         .eq('ride_id', ride.id)
-        .eq('user_id', effectiveUserId)
         .eq('is_active', true)
         .eq('is_archived', false);
+
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       
