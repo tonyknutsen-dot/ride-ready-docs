@@ -10,14 +10,14 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store, Sparkles } from 'lucide-react';
+import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store, Sparkles, ImageIcon, Camera, Loader2 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import RideForm from '@/components/RideForm';
 import { SendDocumentsDialog } from '@/components/SendDocumentsDialog';
 import { ItemLimitWarning } from '@/components/ItemLimitWarning';
-
+import { compressImage } from '@/utils/imageCompression';
 import { EmptyState } from '@/components/EmptyState';
 import { LoadingState } from '@/components/LoadingState';
 import { PullToRefresh } from '@/components/PullToRefresh';
@@ -41,7 +41,7 @@ const Rides = () => {
   const { isStaff, permissionLevel } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
   const [rides, setRides] = useState<Ride[]>([]);
-  
+  const [ridePhotos, setRidePhotos] = useState<Record<string, string | null>>({});
   const [rideStats, setRideStats] = useState<Record<string, {
     docCount: number;
     checkCount: number;
@@ -50,7 +50,7 @@ const Rides = () => {
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
   const [activeGroup, setActiveGroup] = useState<string>('All');
-  
+  const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   
   // Staff with full_access can add rides, others cannot
   const canAddRides = !isStaff || permissionLevel === 'full_access';
@@ -103,7 +103,10 @@ const Rides = () => {
         });
       } else {
         setRides(data as Ride[]);
-        await loadRideStatistics(data as Ride[]);
+        await Promise.all([
+          loadRideStatistics(data as Ride[]),
+          loadRidePhotos(data as Ride[])
+        ]);
       }
     } catch (error) {
       console.error('Error loading rides:', error);
@@ -172,6 +175,68 @@ const Rides = () => {
     setRideStats(stats);
   };
 
+  const loadRidePhotos = async (ridesData: Ride[]) => {
+    if (ridesData.length === 0) return;
+    
+    const photos: Record<string, string | null> = {};
+    const rideIds = ridesData.map(r => r.id);
+    
+    try {
+       // Batch query: Get all photo documents for all rides in ONE query
+      let photoQuery = supabase
+        .from('documents')
+        .select('ride_id, file_path')
+        .in('ride_id', rideIds)
+        .eq('document_type', 'photo')
+        .eq('is_latest_version', true)
+        .order('uploaded_at', { ascending: false });
+       photoQuery = photoQuery.eq('user_id', effectiveUserId);
+      const { data: photoDocs } = await photoQuery;
+
+      // Group by ride_id (take first/latest for each)
+      const photoByRide: Record<string, string> = {};
+      photoDocs?.forEach(doc => {
+        if (doc.ride_id && !photoByRide[doc.ride_id]) {
+          photoByRide[doc.ride_id] = doc.file_path;
+        }
+      });
+
+      // Initialize all rides with null (no photo) first for immediate UI update
+      rideIds.forEach(id => {
+        photos[id] = photoByRide[id] ? undefined : null; // undefined = loading, null = no photo
+      });
+      setRidePhotos({ ...photos });
+
+      // Now generate signed URLs in batches of 5 for rides that have photos
+      const ridesWithPhotos = Object.entries(photoByRide);
+      const batchSize = 5;
+      
+      for (let i = 0; i < ridesWithPhotos.length; i += batchSize) {
+        const batch = ridesWithPhotos.slice(i, i + batchSize);
+        
+        await Promise.all(batch.map(async ([rideId, filePath]) => {
+          try {
+            const { data } = await supabase.storage
+              .from('ride-documents')
+              .createSignedUrl(filePath, 3600);
+            
+            photos[rideId] = data?.signedUrl || null;
+          } catch {
+            photos[rideId] = null;
+          }
+        }));
+        
+        // Update state after each batch for progressive loading
+        setRidePhotos(prev => ({ ...prev, ...photos }));
+      }
+    } catch (error) {
+      console.error('Error loading ride photos:', error);
+      // Mark all as no photo on error
+      rideIds.forEach(id => { photos[id] = null; });
+      setRidePhotos(photos);
+    }
+  };
+
   const handleRideAdded = () => {
     setShowAddForm(false);
     loadRides();
@@ -186,6 +251,71 @@ const Rides = () => {
     await loadRides();
   }, [effectiveUserId]);
 
+  const handleQuickPhotoUpload = async (rideId: string, file: File) => {
+    if (!user) return;
+    
+    setUploadingPhotoFor(rideId);
+    
+    try {
+      // Compress the image
+      const compressedFile = await compressImage(file, 1920, 1920, 0.8);
+      
+      const ts = Date.now();
+      const safeName = file.name.replace(/\s+/g, '-');
+      const fileName = `device-photo-${ts}-${safeName}`;
+      const filePath = `${user.id}/${rideId}/${fileName}`;
+
+      // Upload to storage
+      const { error: upErr } = await supabase
+        .storage
+        .from('ride-documents')
+        .upload(filePath, compressedFile, {
+          cacheControl: '3600',
+          upsert: true,
+          contentType: compressedFile.type || 'image/jpeg',
+        });
+      if (upErr) throw upErr;
+
+      // Insert document record
+      const { error: docErr } = await supabase
+        .from('documents')
+        .insert({
+          user_id: user.id,
+          ride_id: rideId,
+          document_name: 'Device Photo',
+          document_type: 'photo',
+          file_path: filePath,
+          file_size: compressedFile.size,
+          mime_type: compressedFile.type || 'image/jpeg',
+          notes: 'Primary device photo',
+          is_latest_version: true,
+        });
+      if (docErr) throw docErr;
+
+      // Get the signed URL for the new photo
+      const { data: signedData } = await supabase.storage
+        .from('ride-documents')
+        .createSignedUrl(filePath, 3600);
+      
+      if (signedData?.signedUrl) {
+        setRidePhotos(prev => ({ ...prev, [rideId]: signedData.signedUrl }));
+      }
+
+      toast({
+        title: "Photo added",
+        description: "The equipment photo has been uploaded successfully."
+      });
+    } catch (error: any) {
+      console.error('Quick photo upload failed:', error);
+      toast({
+        title: "Upload failed",
+        description: error?.message || "Failed to upload photo. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setUploadingPhotoFor(null);
+    }
+  };
 
   if (showAddForm) {
     return (
@@ -314,9 +444,52 @@ const Rides = () => {
               className="group border-border hover:shadow-elegant hover:border-primary/30 transition-all active:scale-[0.98] cursor-pointer flex flex-col overflow-hidden"
               onClick={() => navigate(`/rides/${ride.id}`)}
             >
-              {/* Category Icon Header */}
-              <div className="h-16 bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center">
-                <FerrisWheel className="h-8 w-8 text-primary/30" />
+              {/* Photo Thumbnail */}
+              <div className="h-40 bg-gradient-to-br from-primary/5 to-accent/5 flex items-center justify-center overflow-hidden relative">
+                {ridePhotos[ride.id] ? (
+                  <img 
+                    src={ridePhotos[ride.id]!} 
+                    alt={ride.ride_name}
+                    loading="lazy"
+                    decoding="async"
+                    className="max-w-full max-h-full object-contain transition-opacity duration-300"
+                    onLoad={(e) => (e.target as HTMLImageElement).style.opacity = '1'}
+                    style={{ opacity: 0.7 }}
+                  />
+                ) : ridePhotos[ride.id] === undefined ? (
+                  <div className="flex flex-col items-center gap-2 text-primary/40">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 animate-pulse" />
+                    <span className="text-xs">Loading...</span>
+                  </div>
+                ) : uploadingPhotoFor === ride.id ? (
+                  <div className="flex flex-col items-center gap-2 text-primary">
+                    <Loader2 className="h-6 w-6 animate-spin" />
+                    <span className="text-xs font-medium">Uploading...</span>
+                  </div>
+                ) : (
+                  <label 
+                    className="flex flex-col items-center gap-2 cursor-pointer hover:bg-primary/5 transition-colors w-full h-full justify-center"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleQuickPhotoUpload(ride.id, file);
+                        }
+                        e.target.value = '';
+                      }}
+                    />
+                    <div className="w-14 h-14 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <Camera className="h-7 w-7 text-primary" />
+                    </div>
+                    <span className="text-xs text-primary font-medium">Add Photo</span>
+                  </label>
+                )}
               </div>
 
               <CardHeader className="pb-3 space-y-2 pt-3">

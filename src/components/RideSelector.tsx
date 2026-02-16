@@ -44,12 +44,20 @@ const RideSelector = ({
   const [rides, setRides] = useState<Ride[]>([]);
   const [loading, setLoading] = useState(true);
   const [openRequest, setOpenRequest] = useState(false);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
+
   const getTileClasses = (categoryName: string) => {
     if (/generator/i.test(categoryName)) return "border-2 border-warning/50 bg-gradient-to-br from-warning/10 to-warning/5";
     if (/inflatable/i.test(categoryName)) return "border-2 border-info/50 bg-gradient-to-br from-info/10 to-info/5";
     if (/food|stall/i.test(categoryName)) return "border-2 border-accent/50 bg-gradient-to-br from-accent/10 to-accent/5";
     return "border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent";
   };
+
+  useEffect(() => {
+    if (user && effectiveUserId) {
+      loadRides();
+    }
+  }, [user, effectiveUserId]);
 
   const loadRides = async () => {
     try {
@@ -65,6 +73,8 @@ const RideSelector = ({
         `)
         .order('ride_name');
 
+      // Always scope to the *current operator* (effectiveUserId).
+      // RLS will further restrict staff to assigned rides when applicable.
       query = query.eq('user_id', effectiveUserId);
 
       const { data, error } = await query;
@@ -72,9 +82,56 @@ const RideSelector = ({
       if (error) throw error;
       setRides(data as Ride[]);
       setLoading(false);
+
+      // Load thumbnails in background (non-blocking)
+      if (Array.isArray(data) && data.length) {
+        loadThumbnails(data as Ride[]);
+      }
     } catch (error) {
       console.error('Error loading rides:', error);
       setLoading(false);
+    }
+  };
+
+  const loadThumbnails = async (ridesList: Ride[]) => {
+    try {
+      // Batch fetch all photo documents in a single query
+      const { data: docs, error } = await supabase
+        .from('documents')
+        .select('id, file_path, ride_id')
+        .in('ride_id', ridesList.map(r => r.id))
+        .eq('user_id', effectiveUserId)
+        .eq('document_type', 'photo')
+        .order('uploaded_at', { ascending: false });
+
+      if (error || !docs?.length) return;
+
+      // Get one photo per ride (first one is latest due to ordering)
+      const photosByRide = new Map<string, string>();
+      for (const doc of docs) {
+        if (doc.ride_id && !photosByRide.has(doc.ride_id)) {
+          photosByRide.set(doc.ride_id, doc.file_path);
+        }
+      }
+
+      if (photosByRide.size === 0) return;
+
+      // Batch create signed URLs
+      const urlPromises = Array.from(photosByRide.entries()).map(async ([rideId, filePath]) => {
+        const { data: urlData } = await supabase.storage
+          .from('ride-documents')
+          .createSignedUrl(filePath, 3600);
+        return { rideId, url: urlData?.signedUrl };
+      });
+
+      const results = await Promise.all(urlPromises);
+      const next: Record<string, string> = {};
+      for (const { rideId, url } of results) {
+        if (url) next[rideId] = url;
+      }
+      setThumbs(next);
+    } catch (e) {
+      console.warn('Thumb load skipped:', e);
     }
   };
 
@@ -134,9 +191,17 @@ const RideSelector = ({
               className={`shadow-card hover:shadow-elegant active:scale-[0.98] transition-all cursor-pointer ${getTileClasses(ride.ride_categories.name)}`}
               onClick={() => onRideSelect(ride)}
             >
-              <div className="w-full h-16 rounded-t-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
-                <Icon className="h-8 w-8 text-primary/30" />
-              </div>
+              {thumbs[ride.id] ? (
+                <img
+                  src={thumbs[ride.id]}
+                  alt={`${ride.ride_name} photo`}
+                  className="w-full h-32 rounded-t-xl object-cover"
+                />
+              ) : (
+                <div className="w-full h-24 rounded-t-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
+                  <Icon className="h-10 w-10 text-primary/40" />
+                </div>
+              )}
               <CardHeader className="pb-2">
                 <div className="flex flex-col gap-1.5">
                   <CardTitle className="text-base leading-tight min-w-0 break-words line-clamp-2">
