@@ -1291,12 +1291,13 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         </Alert>
       )}
 
-      <Alert className="bg-primary/5 border-primary/20">
-        <FileText className="h-4 w-4 text-primary" />
-        <AlertDescription>
-          Complete all required items and submit. A PDF record will be automatically saved to your Documents under "Check Records".
-        </AlertDescription>
-      </Alert>
+      {/* Safety Notice — inspired by Mubaro's safety-first cards */}
+      <div className="p-4 rounded-2xl bg-card border-l-4 border-l-success border border-border/50 shadow-sm">
+        <p className="font-bold text-sm mb-1">Safety First</p>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          Before commencing checks, ensure it is safe to do so. Complete all required items and submit — a PDF record will be automatically saved.
+        </p>
+      </div>
       <Card>
         <CardHeader className="space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -1513,86 +1514,83 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                   return (
                   <Card 
                     key={item.id} 
-                    className={`transition-all duration-200 ${
+                    className={`transition-all duration-200 rounded-2xl ${
                       currentResult === 'pass'
-                        ? 'bg-success/5 border-success/30' 
+                        ? 'bg-success/5 border-l-4 border-l-success border-success/20' 
                         : currentResult === 'fail'
-                        ? 'bg-destructive/5 border-destructive/30'
-                        : 'hover:border-primary/30'
+                        ? 'bg-destructive/5 border-l-4 border-l-destructive border-destructive/20'
+                        : currentResult === 'na'
+                        ? 'bg-muted/50 border-l-4 border-l-muted-foreground/30 border-border/40'
+                        : 'border-l-4 border-l-transparent hover:border-l-primary/20'
                     }`}
                   >
-                    <div className="p-4 space-y-4">
-                      {/* Check item text */}
-                      <div className="flex-1 min-w-0">
-                        <span className="text-sm font-medium leading-relaxed block">
-                          {item.check_item_text}
-                        </span>
-                        <div className="flex items-center gap-2 mt-1.5">
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5">
-                            {item.category}
-                          </Badge>
-                          <span className="text-[10px] text-muted-foreground">
-                            #{index + 1}
+                    <div className="p-4 space-y-3">
+                      {/* Check item header */}
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <span className="text-sm font-semibold leading-relaxed block">
+                            {item.check_item_text}
                           </span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium">
+                              {item.category}
+                            </Badge>
+                          </div>
                         </div>
+                        <span className="text-xs text-muted-foreground font-mono shrink-0">
+                          #{index + 1}
+                        </span>
                       </div>
                       
-                      {/* Pass/Fail/N/A Radio buttons - optimized for mobile */}
-                      <RadioGroup 
-                        value={currentResult || ''} 
-                        onValueChange={(value) => handleResultChange(item.id, value as CheckItemResult)}
-                        className="flex gap-1.5 sm:gap-2"
-                      >
-                        <label 
-                          htmlFor={`${item.id}-pass`}
-                          className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                      {/* Pass/Fail/N/A — cleaner button row like Mubaro's OK/NOT OK */}
+                      <div className="flex gap-2">
+                        <button 
+                          type="button"
+                          onClick={() => handleResultChange(item.id, 'pass')}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 font-semibold text-sm transition-all active:scale-[0.97] ${
                             currentResult === 'pass' 
-                              ? 'border-success bg-success/10 text-success' 
-                              : 'border-border hover:border-success/50'
+                              ? 'border-success bg-success text-success-foreground shadow-sm' 
+                              : 'border-border hover:border-success/50 text-muted-foreground hover:text-success'
                           }`}
                         >
-                          <RadioGroupItem value="pass" id={`${item.id}-pass`} className="sr-only" />
-                          <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                          <span className="font-medium text-xs sm:text-sm">Pass</span>
-                        </label>
-                        <label 
-                          htmlFor={`${item.id}-fail`}
-                          className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                          <CheckCircle className="h-4 w-4" />
+                          Pass
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => handleResultChange(item.id, 'fail')}
+                          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 font-semibold text-sm transition-all active:scale-[0.97] ${
                             currentResult === 'fail' 
-                              ? 'border-destructive bg-destructive/10 text-destructive' 
-                              : 'border-border hover:border-destructive/50'
+                              ? 'border-destructive bg-destructive text-destructive-foreground shadow-sm' 
+                              : 'border-border hover:border-destructive/50 text-muted-foreground hover:text-destructive'
                           }`}
                         >
-                          <RadioGroupItem value="fail" id={`${item.id}-fail`} className="sr-only" />
-                          <XCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                          <span className="font-medium text-xs sm:text-sm">Fail</span>
-                        </label>
-                        <label 
-                          htmlFor={`${item.id}-na`}
-                          className={`flex-1 flex items-center justify-center gap-1 sm:gap-2 p-2 sm:p-3 rounded-lg border-2 cursor-pointer transition-all ${
+                          <XCircle className="h-4 w-4" />
+                          Fail
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={() => handleResultChange(item.id, 'na')}
+                          className={`w-16 flex items-center justify-center gap-1 py-2.5 rounded-xl border-2 font-medium text-xs transition-all active:scale-[0.97] ${
                             currentResult === 'na' 
-                              ? 'border-muted-foreground bg-muted text-muted-foreground' 
-                              : 'border-border hover:border-muted-foreground/50'
+                              ? 'border-muted-foreground bg-muted text-muted-foreground shadow-sm' 
+                              : 'border-border hover:border-muted-foreground/50 text-muted-foreground'
                           }`}
                         >
-                          <RadioGroupItem value="na" id={`${item.id}-na`} className="sr-only" />
-                          <MinusCircle className="h-4 w-4 sm:h-5 sm:w-5" />
-                          <span className="font-medium text-xs sm:text-sm">N/A</span>
-                        </label>
-                      </RadioGroup>
+                          N/A
+                        </button>
+                      </div>
                       
-                      {/* Notes - always visible for fail, otherwise toggleable */}
-                      <div className={`transition-all duration-200 ${
-                        notes[item.id] || currentResult === 'fail' ? 'opacity-100' : 'opacity-70'
-                      }`}>
+                      {/* Notes — only show on fail or when notes exist */}
+                      {(currentResult === 'fail' || notes[item.id]) && (
                         <Textarea
-                          placeholder={currentResult === 'fail' ? "Add notes about the failure (required)" : "Add notes (optional)"}
+                          placeholder={currentResult === 'fail' ? "Describe the failure..." : "Add notes (optional)"}
                           value={notes[item.id] || ''}
                           onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                          className={`min-h-[60px] text-sm resize-none ${currentResult === 'fail' && !notes[item.id] ? 'border-destructive' : ''}`}
+                          className={`min-h-[60px] text-sm resize-none rounded-xl ${currentResult === 'fail' && !notes[item.id] ? 'border-destructive' : ''}`}
                           rows={2}
                         />
-                      </div>
+                      )}
                     </div>
                   </Card>
                   );
