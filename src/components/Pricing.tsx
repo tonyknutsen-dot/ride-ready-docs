@@ -128,10 +128,10 @@ const Pricing = () => {
             className="px-8 py-5 text-base font-semibold shadow-elegant"
             onClick={() => navigate(user ? "/overview" : "/auth")}
           >
-            {user ? "Go to Dashboard" : "Start Free Trial"}
+            {user ? "Go to Dashboard" : "Get Full Access Free for 14 Days"}
           </Button>
           <p className="mt-4 text-xs text-muted-foreground">
-            ✓ 14-day free trial • ✓ No credit card required • ✓ Full access • ✓ Cancel anytime
+            ✓ No payment details required • ✓ Every feature included • ✓ Cancel anytime
           </p>
         </div>
 

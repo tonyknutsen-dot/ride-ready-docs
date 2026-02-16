@@ -2491,6 +2491,7 @@ export type Database = {
         Args: { p_key: string; p_max_requests: number; p_window_ms: number }
         Returns: Json
       }
+      check_trial_engagement_extension: { Args: never; Returns: Json }
       cleanup_expired_blocks: { Args: never; Returns: number }
       cleanup_old_blocked_ips: { Args: never; Returns: number }
       close_stale_tester_sessions: { Args: never; Returns: number }
