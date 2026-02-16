@@ -7,7 +7,7 @@
  * fail open to maintain availability.
  */
 
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 
 interface RateLimitResult {
   allowed: boolean;
