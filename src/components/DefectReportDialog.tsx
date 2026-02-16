@@ -42,7 +42,7 @@ const DefectReportDialog = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { user } = useAuth();
-  const { effectiveUserId } = useEffectiveUserId();
+  const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -159,6 +159,20 @@ const DefectReportDialog = ({
         });
 
       if (error) throw error;
+
+      // Notify the controller (org owner) when a staff member reports a defect
+      if (isStaff && effectiveUserId && actualUserId !== effectiveUserId) {
+        const severityLabel = severity === 'stop_operation' ? '🛑 STOP OPERATION' : severity === 'urgent' ? '⚠️ Urgent' : 'Non-urgent';
+        await supabase.from('notifications').insert({
+          user_id: effectiveUserId,
+          title: `Staff defect report: ${rideName}`,
+          message: `${severityLabel} defect reported on ${rideName}: ${description.trim().substring(0, 100)}${description.trim().length > 100 ? '...' : ''}`,
+          type: severity === 'stop_operation' ? 'alert' : 'warning',
+          related_table: 'defects',
+        }).then(({ error: notifError }) => {
+          if (notifError) console.error('Failed to notify controller:', notifError);
+        });
+      }
 
       toast({
         title: "Defect reported",

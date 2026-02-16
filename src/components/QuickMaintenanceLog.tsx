@@ -35,7 +35,7 @@ const QuickMaintenanceLog = ({ rideId, rideName, checkItemText, onLogged, onCanc
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const { toast } = useToast();
-  const { effectiveUserId } = useEffectiveUserId();
+  const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
   const queryClient = useQueryClient();
 
   const handleSubmit = async () => {
@@ -56,6 +56,19 @@ const QuickMaintenanceLog = ({ rideId, rideName, checkItemText, onLogged, onCanc
         });
 
       if (error) throw error;
+
+      // Notify the controller (org owner) when a staff member logs maintenance
+      if (isStaff && effectiveUserId && actualUserId !== effectiveUserId) {
+        await supabase.from('notifications').insert({
+          user_id: effectiveUserId,
+          title: `Staff maintenance log: ${rideName}`,
+          message: `Maintenance recorded on ${rideName}: ${description.trim().substring(0, 100)}${description.trim().length > 100 ? '...' : ''}`,
+          type: 'info',
+          related_table: 'maintenance_records',
+        }).then(({ error: notifError }) => {
+          if (notifError) console.error('Failed to notify controller:', notifError);
+        });
+      }
 
       setSubmitted(true);
       queryClient.invalidateQueries({ queryKey: ['maintenance'] });
