@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
-  Home, FolderOpen, CheckSquare, MoreHorizontal,
+  Home, FolderOpen, CheckSquare, MoreHorizontal, Bell,
   Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut, Send, Wrench, Shield, Lightbulb, Users, Download
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -14,6 +14,7 @@ import { useAdmin } from "@/contexts/AdminContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
 // Routes where the mobile nav should NOT appear (public pages - landing/marketing only)
 const PUBLIC_ROUTES = ['/', '/auth', '/how-it-works', '/privacy', '/terms', '/security'];
@@ -39,6 +40,7 @@ export default function MobileBottomNav() {
   const [open, setOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
+  const unreadCount = useUnreadNotifications();
 
   // Don't show on public pages or if not logged in
   if (!user || PUBLIC_ROUTES.includes(loc.pathname)) return null;
@@ -271,6 +273,26 @@ export default function MobileBottomNav() {
               {/* Account Section - filtered by permission */}
               <div className="space-y-1">
                 <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Account</p>
+                {!isStaff && (
+                  <button
+                    onClick={() => go("/settings")}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all active:scale-[0.98] ${
+                      isActive(["/settings"])
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <span className="relative flex-shrink-0">
+                      <Bell className="h-5 w-5" />
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground px-1">
+                          {unreadCount > 9 ? '9+' : unreadCount}
+                        </span>
+                      )}
+                    </span>
+                    <span>Notifications</span>
+                  </button>
+                )}
                 {canAccessBilling && (
                   <MenuItem 
                     icon={CreditCard} 

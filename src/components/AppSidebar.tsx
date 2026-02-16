@@ -20,6 +20,7 @@ import {
   Wrench,
   Users,
   Download,
+  Bell,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -43,6 +44,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
 import { OfflineSyncIndicator } from '@/components/OfflineSyncIndicator';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import appLogo from '@/assets/app-logo.jpg';
 
 const mainNavItems = [
@@ -60,6 +62,7 @@ const featureNavItems = [
 ];
 
 const accountNavItems = [
+  { title: 'Notifications', url: '/settings', icon: Bell, ownerOnly: true, isNotification: true },
   { title: 'Plan & Billing', url: '/billing', icon: CreditCard, ownerOnly: true },
   { title: 'Help & Support', url: '/help', icon: HelpCircle },
 ];
@@ -86,6 +89,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const unreadCount = useUnreadNotifications();
 
   // Feature permission check helper
   const hasFeatureAccess = (feature?: 'calendar' | 'documents' | 'checks' | 'maintenance' | 'risk_assessments' | 'send_documents') => {
@@ -125,7 +129,7 @@ export function AppSidebar() {
   };
 
   // Filter nav items based on permissions
-  type NavItem = { title: string; url: string; icon: any; feature?: 'calendar' | 'documents' | 'checks' | 'maintenance' | 'risk_assessments' | 'send_documents'; ownerOnly?: boolean };
+  type NavItem = { title: string; url: string; icon: any; feature?: 'calendar' | 'documents' | 'checks' | 'maintenance' | 'risk_assessments' | 'send_documents'; ownerOnly?: boolean; isNotification?: boolean };
   
   const filterNavItems = (items: NavItem[]) => {
     return items.filter(item => {
@@ -142,6 +146,7 @@ export function AppSidebar() {
   const NavItem = ({ item }: { item: NavItem }) => {
     const active = isActive(item.url);
     const Icon = item.icon;
+    const showBadge = item.isNotification && unreadCount > 0;
 
     return (
       <SidebarMenuItem>
@@ -154,8 +159,17 @@ export function AppSidebar() {
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             }`}
           >
-            <Icon className="h-5 w-5 flex-shrink-0" />
-            {!collapsed && <span>{item.title}</span>}
+            <span className="relative flex-shrink-0">
+              <Icon className="h-5 w-5" />
+              {showBadge && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground px-1">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </span>
+            {!collapsed && (
+              <span className="flex-1">{item.title}</span>
+            )}
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
