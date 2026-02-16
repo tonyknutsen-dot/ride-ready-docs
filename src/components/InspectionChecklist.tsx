@@ -9,7 +9,7 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, Eye } from 'lucide-react';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, Eye, MoreVertical, ChevronDown, ChevronUp } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
@@ -67,6 +67,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
   const [usingCachedTemplate, setUsingCachedTemplate] = useState(false);
   const [selectedCheck, setSelectedCheck] = useState<Check | null>(null);
   const [showCheckDetail, setShowCheckDetail] = useState(false);
+  const [detailsExpanded, setDetailsExpanded] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
   const { effectiveUserId, isStaff } = useEffectiveUserId();
@@ -1291,136 +1292,153 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
         </Alert>
       )}
 
-      {/* Safety Notice — inspired by Mubaro's safety-first cards */}
+      {/* Safety Notice */}
       <div className="p-4 rounded-2xl bg-card border-l-4 border-l-success border border-border/50 shadow-sm">
         <p className="font-bold text-sm mb-1">Safety First</p>
         <p className="text-xs text-muted-foreground leading-relaxed">
           Before commencing checks, ensure it is safe to do so. Complete all required items and submit — a PDF record will be automatically saved.
         </p>
       </div>
-      <Card>
-        <CardHeader className="space-y-3">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <CardTitle className="text-base sm:text-lg">{activeTemplate.template_name}</CardTitle>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowTemplateBuilder(true)} className="flex-1 sm:flex-none">
-                <Settings className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Edit Checklist</span>
-              </Button>
-              <Button variant="outline" size="sm" onClick={generatePDF} className="flex-1 sm:flex-none">
-                <Download className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Export PDF</span>
-              </Button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="flex-1 sm:flex-none">
-                    <Settings className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">More</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <AlertDialog onOpenChange={(open) => open && checkLinkedRecords()}>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        <Archive className="h-4 w-4 mr-2" />
-                        Archive Template
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Archive Template</AlertDialogTitle>
-                        <AlertDialogDescription asChild>
-                          <div>
-                            <span>Archive "{activeTemplate.template_name}"? It will be hidden from active use but preserved for historical records.</span>
-                            {checkingLinked ? (
-                              <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
-                            ) : linkedChecksInfo && linkedChecksInfo.count > 0 ? (
-                              <div className="mt-3 p-3 bg-muted border rounded-md">
-                                <span className="block font-medium">This template has linked check records:</span>
-                                <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
-                                  <li>• Total records: <strong className="text-foreground">{linkedChecksInfo.count}</strong></li>
-                                  <li>• Date range: <strong className="text-foreground">
-                                    {new Date(linkedChecksInfo.earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo.latest!).toLocaleDateString('en-GB')}
-                                  </strong></li>
-                                </ul>
-                                <span className="block mt-2 text-xs text-muted-foreground">
-                                  Archiving preserves all historical data.
-                                </span>
-                              </div>
-                            ) : null}
-                          </div>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleArchiveTemplate}>
-                          Archive
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                  <DropdownMenuSeparator />
-                  <AlertDialog onOpenChange={(open) => open && checkLinkedRecords()}>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete Permanently
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Template</AlertDialogTitle>
-                        <AlertDialogDescription asChild>
-                          <div>
-                            <span>Are you sure you want to permanently delete "{activeTemplate.template_name}"?</span>
-                            {checkingLinked ? (
-                              <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
-                            ) : linkedChecksInfo && linkedChecksInfo.count > 0 ? (
-                              <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                                <span className="block text-destructive font-medium">
-                                  ⚠️ Warning: This template has linked check records
-                                </span>
-                                <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
-                                  <li>• Total records: <strong className="text-foreground">{linkedChecksInfo.count}</strong></li>
-                                  <li>• Date range: <strong className="text-foreground">
-                                    {new Date(linkedChecksInfo.earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo.latest!).toLocaleDateString('en-GB')}
-                                  </strong></li>
-                                </ul>
-                                <span className="block mt-2 text-xs text-destructive">
-                                  Consider archiving instead to preserve historical data.
-                                </span>
-                              </div>
-                            ) : (
-                              <span className="block mt-2 text-muted-foreground">This action cannot be undone.</span>
-                            )}
-                          </div>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleDeleteTemplate}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete Permanently
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </DropdownMenuContent>
-              </DropdownMenu>
+
+      {/* Checklist Header — clean single row, no duplicate cogs */}
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-semibold text-base truncate">{activeTemplate.template_name}</h3>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon" className="shrink-0 h-9 w-9">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
+              <Settings className="h-4 w-4 mr-2" />
+              Edit Checklist
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={generatePDF}>
+              <Download className="h-4 w-4 mr-2" />
+              Export PDF
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <AlertDialog onOpenChange={(open) => open && checkLinkedRecords()}>
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <Archive className="h-4 w-4 mr-2" />
+                  Archive Template
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Archive Template</AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div>
+                      <span>Archive "{activeTemplate.template_name}"? It will be hidden from active use but preserved for historical records.</span>
+                      {checkingLinked ? (
+                        <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
+                      ) : linkedChecksInfo && linkedChecksInfo.count > 0 ? (
+                        <div className="mt-3 p-3 bg-muted border rounded-md">
+                          <span className="block font-medium">This template has linked check records:</span>
+                          <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
+                            <li>• Total records: <strong className="text-foreground">{linkedChecksInfo.count}</strong></li>
+                            <li>• Date range: <strong className="text-foreground">
+                              {new Date(linkedChecksInfo.earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo.latest!).toLocaleDateString('en-GB')}
+                            </strong></li>
+                          </ul>
+                          <span className="block mt-2 text-xs text-muted-foreground">
+                            Archiving preserves all historical data.
+                          </span>
+                        </div>
+                      ) : null}
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleArchiveTemplate}>
+                    Archive
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+            <DropdownMenuSeparator />
+            <AlertDialog onOpenChange={(open) => open && checkLinkedRecords()}>
+              <AlertDialogTrigger asChild>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Permanently
+                </DropdownMenuItem>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                  <AlertDialogDescription asChild>
+                    <div>
+                      <span>Are you sure you want to permanently delete "{activeTemplate.template_name}"?</span>
+                      {checkingLinked ? (
+                        <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
+                      ) : linkedChecksInfo && linkedChecksInfo.count > 0 ? (
+                        <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                          <span className="block text-destructive font-medium">
+                            ⚠️ Warning: This template has linked check records
+                          </span>
+                          <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
+                            <li>• Total records: <strong className="text-foreground">{linkedChecksInfo.count}</strong></li>
+                            <li>• Date range: <strong className="text-foreground">
+                              {new Date(linkedChecksInfo.earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo.latest!).toLocaleDateString('en-GB')}
+                            </strong></li>
+                          </ul>
+                          <span className="block mt-2 text-xs text-destructive">
+                            Consider archiving instead to preserve historical data.
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="block mt-2 text-muted-foreground">This action cannot be undone.</span>
+                      )}
+                    </div>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteTemplate}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    Delete Permanently
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Step 1: Inspector Details — collapsible card */}
+      <Card className="rounded-2xl overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setDetailsExpanded(!detailsExpanded)}
+          className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+              inspectorName.trim() ? 'bg-success text-success-foreground' : 'bg-primary/15 text-primary'
+            }`}>
+              1
+            </div>
+            <div>
+              <p className="font-semibold text-sm">Inspector Details</p>
+              <p className="text-xs text-muted-foreground">
+                {inspectorName.trim() ? `${inspectorName}${location ? ` • ${location}` : ''}` : 'Name, location & conditions'}
+              </p>
             </div>
           </div>
-          <CardDescription>
-            {activeTemplate.description}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-6">
-            {/* Staff Information */}
+          {detailsExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        </button>
+        {detailsExpanded && (
+          <CardContent className="pt-0 pb-4 space-y-4">
+            <Separator />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-              <Label htmlFor="checkedBy">Checked By *</Label>
+                <Label htmlFor="checkedBy">Checked By *</Label>
                 <Input
                   id="checkedBy"
                   value={inspectorName}
@@ -1438,8 +1456,6 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                 />
               </div>
             </div>
-
-            {/* Location Field with GPS */}
             <div className="space-y-2">
               <Label htmlFor="location" className="flex items-center gap-2">
                 <MapPin className="h-4 w-4" />
@@ -1468,183 +1484,173 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
                   )}
                 </Button>
               </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Step 2: Inspection Items */}
+      <Card className="rounded-2xl overflow-hidden">
+        <div className="p-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+              getProgress() === 100 ? 'bg-success text-success-foreground' : 'bg-primary/15 text-primary'
+            }`}>
+              2
+            </div>
+            <div>
+              <p className="font-semibold text-sm">Inspection Items</p>
               <p className="text-xs text-muted-foreground">
-                Tap the GPS button to auto-detect your location, or type it manually
+                {Object.values(itemResults).filter(r => r === 'pass' || r === 'fail').length} of {activeTemplate.daily_check_template_items.length} completed
               </p>
             </div>
+          </div>
+          <div className="flex items-center gap-2">
+            {getProgress() === 100 && (
+              <Badge className="bg-success text-success-foreground">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                Done
+              </Badge>
+            )}
+            <DefectReportDialog 
+              rideId={ride.id} 
+              rideName={ride.ride_name}
+              onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
+            />
+          </div>
+        </div>
+        
+        {/* Progress bar */}
+        <div className="px-4 pb-3">
+          <Progress value={getProgress()} className="h-2" />
+        </div>
 
-            {/* Progress - Enhanced for mobile */}
-            <div className="space-y-3 p-4 rounded-xl bg-gradient-to-r from-primary/5 to-accent/5 border-2 border-primary/20">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center">
-                    <span className="text-sm font-bold text-primary">{Math.round(getProgress())}%</span>
-                  </div>
-                  <div>
-                    <span className="font-medium text-sm">Progress</span>
-                    <p className="text-xs text-muted-foreground">
-                      {Object.values(itemResults).filter(r => r === 'pass' || r === 'fail').length} of {activeTemplate.daily_check_template_items.length} items
-                    </p>
-                  </div>
+        <CardContent className="pt-0 space-y-3">
+          {activeTemplate.daily_check_template_items
+            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+            .map((item, index) => {
+              const currentResult = itemResults[item.id];
+              return (
+              <div 
+                key={item.id} 
+                className={`p-3 rounded-xl border-2 transition-all duration-200 ${
+                  currentResult === 'pass'
+                    ? 'bg-success/5 border-success/30' 
+                    : currentResult === 'fail'
+                    ? 'bg-destructive/5 border-destructive/30'
+                    : currentResult === 'na'
+                    ? 'bg-muted/50 border-muted-foreground/20'
+                    : 'border-border hover:border-primary/20'
+                }`}
+              >
+                <div className="flex items-start justify-between gap-2 mb-2">
+                  <span className="text-sm font-medium leading-snug">
+                    {item.check_item_text}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-mono shrink-0 mt-0.5">
+                    #{index + 1}
+                  </span>
                 </div>
-                {getProgress() === 100 && (
-                  <Badge className="bg-success text-success-foreground">
-                    <CheckCircle className="h-3 w-3 mr-1" />
-                    Ready
-                  </Badge>
-                )}
-              </div>
-              <Progress value={getProgress()} className="h-3" />
-            </div>
-
-            {/* Check Items - Enhanced for touch */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between gap-3 sticky top-0 z-10 bg-background py-2 -mx-1 px-1">
-                <h4 className="font-semibold text-base">Inspection Items</h4>
-                <DefectReportDialog 
-                  rideId={ride.id} 
-                  rideName={ride.ride_name}
-                  onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
-                />
-              </div>
-              {activeTemplate.daily_check_template_items
-                .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-                .map((item, index) => {
-                  const currentResult = itemResults[item.id];
-                  return (
-                  <Card 
-                    key={item.id} 
-                    className={`transition-all duration-200 rounded-2xl ${
-                      currentResult === 'pass'
-                        ? 'bg-success/5 border-l-4 border-l-success border-success/20' 
-                        : currentResult === 'fail'
-                        ? 'bg-destructive/5 border-l-4 border-l-destructive border-destructive/20'
-                        : currentResult === 'na'
-                        ? 'bg-muted/50 border-l-4 border-l-muted-foreground/30 border-border/40'
-                        : 'border-l-4 border-l-transparent hover:border-l-primary/20'
+                
+                <div className="flex gap-2">
+                  <button 
+                    type="button"
+                    onClick={() => handleResultChange(item.id, 'pass')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border-2 font-semibold text-sm transition-all active:scale-[0.97] ${
+                      currentResult === 'pass' 
+                        ? 'border-success bg-success text-success-foreground shadow-sm' 
+                        : 'border-border hover:border-success/50 text-muted-foreground hover:text-success'
                     }`}
                   >
-                    <div className="p-4 space-y-3">
-                      {/* Check item header */}
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex-1 min-w-0">
-                          <span className="text-sm font-semibold leading-relaxed block">
-                            {item.check_item_text}
-                          </span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium">
-                              {item.category}
-                            </Badge>
-                          </div>
-                        </div>
-                        <span className="text-xs text-muted-foreground font-mono shrink-0">
-                          #{index + 1}
-                        </span>
-                      </div>
-                      
-                      {/* Pass/Fail/N/A — cleaner button row like Mubaro's OK/NOT OK */}
-                      <div className="flex gap-2">
-                        <button 
-                          type="button"
-                          onClick={() => handleResultChange(item.id, 'pass')}
-                          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 font-semibold text-sm transition-all active:scale-[0.97] ${
-                            currentResult === 'pass' 
-                              ? 'border-success bg-success text-success-foreground shadow-sm' 
-                              : 'border-border hover:border-success/50 text-muted-foreground hover:text-success'
-                          }`}
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                          Pass
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => handleResultChange(item.id, 'fail')}
-                          className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 font-semibold text-sm transition-all active:scale-[0.97] ${
-                            currentResult === 'fail' 
-                              ? 'border-destructive bg-destructive text-destructive-foreground shadow-sm' 
-                              : 'border-border hover:border-destructive/50 text-muted-foreground hover:text-destructive'
-                          }`}
-                        >
-                          <XCircle className="h-4 w-4" />
-                          Fail
-                        </button>
-                        <button 
-                          type="button"
-                          onClick={() => handleResultChange(item.id, 'na')}
-                          className={`w-16 flex items-center justify-center gap-1 py-2.5 rounded-xl border-2 font-medium text-xs transition-all active:scale-[0.97] ${
-                            currentResult === 'na' 
-                              ? 'border-muted-foreground bg-muted text-muted-foreground shadow-sm' 
-                              : 'border-border hover:border-muted-foreground/50 text-muted-foreground'
-                          }`}
-                        >
-                          N/A
-                        </button>
-                      </div>
-                      
-                      {/* Notes — only show on fail or when notes exist */}
-                      {(currentResult === 'fail' || notes[item.id]) && (
-                        <Textarea
-                          placeholder={currentResult === 'fail' ? "Describe the failure..." : "Add notes (optional)"}
-                          value={notes[item.id] || ''}
-                          onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                          className={`min-h-[60px] text-sm resize-none rounded-xl ${currentResult === 'fail' && !notes[item.id] ? 'border-destructive' : ''}`}
-                          rows={2}
-                        />
-                      )}
-                    </div>
-                  </Card>
-                  );
-                })}
-            </div>
-
-            {/* Open Defects Warning */}
-            <Card className="border-orange-200 dark:border-orange-800 bg-orange-50/50 dark:bg-orange-950/20">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-base flex items-center gap-2 text-orange-700 dark:text-orange-400">
-                  <AlertTriangle className="h-5 w-5" />
-                  Open Defects
-                </CardTitle>
-                <CardDescription>
-                  Any unresolved defects reported for this equipment
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DefectsList 
-                  key={defectRefreshKey}
-                  rideId={ride.id} 
-                  rideName={ride.ride_name}
-                  showResolved={false}
-                  onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
-                />
-              </CardContent>
-            </Card>
-
-            <Button
-              onClick={handleSubmitChecks} 
-              disabled={submitting || !inspectorName.trim()}
-              size="lg"
-              className="w-full h-14 text-base font-semibold shadow-lg"
-            >
-              {submitting ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Submitting...
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  Complete {frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check
-                </>
-              )}
-            </Button>
-            {!inspectorName.trim() && (
-              <p className="text-xs text-center text-muted-foreground">
-                Enter your name in "Checked By" to submit
-              </p>
-            )}
-          </div>
+                    <CheckCircle className="h-4 w-4" />
+                    Pass
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => handleResultChange(item.id, 'fail')}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border-2 font-semibold text-sm transition-all active:scale-[0.97] ${
+                      currentResult === 'fail' 
+                        ? 'border-destructive bg-destructive text-destructive-foreground shadow-sm' 
+                        : 'border-border hover:border-destructive/50 text-muted-foreground hover:text-destructive'
+                    }`}
+                  >
+                    <XCircle className="h-4 w-4" />
+                    Fail
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => handleResultChange(item.id, 'na')}
+                    className={`w-14 flex items-center justify-center py-2 rounded-lg border-2 font-medium text-xs transition-all active:scale-[0.97] ${
+                      currentResult === 'na' 
+                        ? 'border-muted-foreground bg-muted text-muted-foreground shadow-sm' 
+                        : 'border-border hover:border-muted-foreground/50 text-muted-foreground'
+                    }`}
+                  >
+                    N/A
+                  </button>
+                </div>
+                
+                {(currentResult === 'fail' || notes[item.id]) && (
+                  <Textarea
+                    placeholder={currentResult === 'fail' ? "Describe the failure..." : "Add notes (optional)"}
+                    value={notes[item.id] || ''}
+                    onChange={(e) => handleNoteChange(item.id, e.target.value)}
+                    className={`mt-2 min-h-[60px] text-sm resize-none rounded-lg ${currentResult === 'fail' && !notes[item.id] ? 'border-destructive' : ''}`}
+                    rows={2}
+                  />
+                )}
+              </div>
+              );
+            })}
         </CardContent>
       </Card>
+
+      {/* Open Defects */}
+      <Card className="rounded-2xl border-warning/30 bg-warning/5">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base flex items-center gap-2 text-warning">
+            <AlertTriangle className="h-5 w-5" />
+            Open Defects
+          </CardTitle>
+          <CardDescription>
+            Any unresolved defects reported for this equipment
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <DefectsList 
+            key={defectRefreshKey}
+            rideId={ride.id} 
+            rideName={ride.ride_name}
+            showResolved={false}
+            onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Submit */}
+      <Button
+        onClick={handleSubmitChecks} 
+        disabled={submitting || !inspectorName.trim()}
+        size="lg"
+        className="w-full h-14 text-base font-semibold shadow-lg rounded-2xl"
+      >
+        {submitting ? (
+          <>
+            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+            Submitting...
+          </>
+        ) : (
+          <>
+            <CheckCircle className="h-5 w-5 mr-2" />
+            Complete {frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check
+          </>
+        )}
+      </Button>
+      {!inspectorName.trim() && (
+        <p className="text-xs text-center text-muted-foreground">
+          Enter your name in "Checked By" to submit
+        </p>
+      )}
 
       {/* Recent Checks - Compact mobile-friendly */}
       {recentChecks.length > 0 && (
