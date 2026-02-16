@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { FileText, Shield, Calendar, Upload, BarChart3, CheckCircle, AlertCircle, Clock, Wrench, ArrowRight, TrendingUp, FerrisWheel, ClipboardCheck, Mail, Settings } from "lucide-react";
+import { FileText, Shield, Calendar, Upload, BarChart3, CheckCircle, AlertCircle, Clock, Wrench, ArrowRight, TrendingUp, FerrisWheel, ClipboardCheck, Mail, Settings, Bell } from "lucide-react";
 import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { formatPlanWithDescription } from "@/utils/planFormatter";
 import { ItemLimitWarning } from "@/components/ItemLimitWarning";
@@ -16,6 +16,7 @@ import StaffAccountBanner from "@/components/StaffAccountBanner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 
 const Overview = () => {
   const navigate = useNavigate();
@@ -75,6 +76,8 @@ const Overview = () => {
   }
 
   // Quick navigation items — inspired by Mubaro's icon grid but more modern
+  const unreadCount = useUnreadNotifications();
+
   const quickNavItems = [
     { icon: FerrisWheel, label: "Equipment", path: "/rides", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
     { icon: ClipboardCheck, label: "Checks", path: "/checks", color: "text-success", bg: "bg-success/10 border-success/20" },
@@ -82,7 +85,7 @@ const Overview = () => {
     { icon: Wrench, label: "Maintenance", path: "/maintenance", color: "text-accent", bg: "bg-accent/10 border-accent/20" },
     { icon: Calendar, label: "Calendar", path: "/calendar", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
     { icon: Shield, label: "Risk", path: "/risk-assessments", color: "text-destructive", bg: "bg-destructive/10 border-destructive/20" },
-    { icon: Mail, label: "Send Docs", path: "/batch-send", color: "text-info", bg: "bg-info/10 border-info/20" },
+    { icon: Bell, label: "Notifications", path: "/settings", color: "text-warning", bg: "bg-warning/10 border-warning/20", badge: unreadCount },
     { icon: Settings, label: "Settings", path: "/settings", color: "text-muted-foreground", bg: "bg-muted border-border" },
   ];
 
@@ -144,12 +147,17 @@ const Overview = () => {
       <div className="grid grid-cols-4 gap-3">
         {quickNavItems.map(item => (
           <button
-            key={item.path}
+            key={item.label}
             onClick={() => navigate(item.path)}
-            className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-2xl border bg-card hover:shadow-card-hover active:scale-[0.96] transition-all group"
+            className="flex flex-col items-center gap-2 p-3 sm:p-4 rounded-2xl border bg-card hover:shadow-card-hover active:scale-[0.96] transition-all group relative"
           >
-            <div className={`p-2.5 sm:p-3 rounded-xl border ${item.bg} group-hover:scale-110 transition-transform`}>
+            <div className={`p-2.5 sm:p-3 rounded-xl border ${item.bg} group-hover:scale-110 transition-transform relative`}>
               <item.icon className={`h-5 w-5 sm:h-6 sm:w-6 ${item.color}`} />
+              {'badge' in item && item.badge > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
+                  {item.badge > 9 ? '9+' : item.badge}
+                </span>
+              )}
             </div>
             <span className="text-[11px] sm:text-xs font-semibold text-foreground/80 text-center leading-tight">{item.label}</span>
           </button>
