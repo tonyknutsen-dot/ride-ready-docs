@@ -91,7 +91,6 @@ export function DowngradeConfirmationDialog({
     setExporting(true);
 
     try {
-      // Fetch all data
       const [checks, checkResults, riskAssessments, riskItems, maintenance, ndt, annual, schedules, templates] = await Promise.all([
         supabase.from("checks").select("*").eq("user_id", user.id),
         supabase.from("check_results").select("*, checks!inner(user_id)").eq("checks.user_id", user.id),
@@ -120,12 +119,11 @@ export function DowngradeConfirmationDialog({
         },
       };
 
-      // Create and download JSON file
       const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `operations-data-export-${new Date().toISOString().split("T")[0]}.json`;
+      a.download = `ride-ready-data-export-${new Date().toISOString().split("T")[0]}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
@@ -134,7 +132,7 @@ export function DowngradeConfirmationDialog({
       setHasExported(true);
       toast({
         title: "Data exported successfully",
-        description: "Your operations data has been downloaded. Please keep this file safe.",
+        description: "Your data has been downloaded. Please keep this file safe.",
       });
     } catch (error) {
       console.error("Error exporting data:", error);
@@ -153,7 +151,6 @@ export function DowngradeConfirmationDialog({
     setDowngrading(true);
 
     try {
-      // Delete all operations data
       if (user) {
         await Promise.all([
           supabase.from("check_results").delete().in(
@@ -181,10 +178,10 @@ export function DowngradeConfirmationDialog({
       await onConfirmDowngrade();
       onOpenChange(false);
     } catch (error) {
-      console.error("Error during downgrade:", error);
+      console.error("Error during cancellation:", error);
       toast({
-        title: "Downgrade failed",
-        description: "There was an error processing your downgrade. Please try again.",
+        title: "Error",
+        description: "There was an error processing your request. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -198,25 +195,23 @@ export function DowngradeConfirmationDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-destructive">
             <AlertTriangle className="h-5 w-5" />
-            Downgrade to Documents Plan
+            Cancel Subscription
           </DialogTitle>
           <DialogDescription>
-            This action will permanently delete your Operations & Maintenance data.
+            This action will remove your access and permanently delete your data.
           </DialogDescription>
         </DialogHeader>
 
         <ScrollArea className="max-h-[60vh]">
           <div className="space-y-4 pr-4">
-            {/* Critical Warning */}
             <Alert variant="destructive">
               <FileWarning className="h-4 w-4" />
               <AlertTitle>Data will be permanently deleted</AlertTitle>
               <AlertDescription>
-                When you downgrade, all Operations & Maintenance data will be permanently removed from your account. This cannot be undone.
+                When you cancel, all your compliance data will be permanently removed after your billing period ends. This cannot be undone.
               </AlertDescription>
             </Alert>
 
-            {/* Data Summary */}
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -283,13 +278,12 @@ export function DowngradeConfirmationDialog({
               </div>
             ) : (
               <div className="text-sm text-muted-foreground text-center py-4">
-                You have no Operations & Maintenance data to delete.
+                No records to delete.
               </div>
             )}
 
             <Separator />
 
-            {/* Export Button */}
             {totalRecords > 0 && (
               <div className="space-y-3">
                 <div className="text-sm font-medium">Step 1: Download your data</div>
@@ -304,7 +298,7 @@ export function DowngradeConfirmationDialog({
                   ) : (
                     <Download className="h-4 w-4 mr-2" />
                   )}
-                  {hasExported ? "Download Again" : "Download All Operations Data"}
+                  {hasExported ? "Download Again" : "Download All Data"}
                 </Button>
                 {hasExported && (
                   <div className="flex items-center gap-2 text-sm text-green-600">
@@ -317,10 +311,9 @@ export function DowngradeConfirmationDialog({
 
             <Separator />
 
-            {/* Acknowledgment */}
             <div className="space-y-3">
               <div className="text-sm font-medium">
-                {totalRecords > 0 ? "Step 2: Confirm deletion" : "Confirm downgrade"}
+                {totalRecords > 0 ? "Step 2: Confirm deletion" : "Confirm cancellation"}
               </div>
               <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
                 <Checkbox
@@ -330,8 +323,8 @@ export function DowngradeConfirmationDialog({
                 />
                 <label htmlFor="acknowledge" className="text-sm leading-relaxed cursor-pointer">
                   {totalRecords > 0
-                    ? "I understand that all my Operations & Maintenance data will be permanently deleted and cannot be recovered."
-                    : "I understand that I will lose access to Operations & Maintenance features."}
+                    ? "I understand that all my data will be permanently deleted and cannot be recovered."
+                    : "I understand that I will lose access to all features."}
                 </label>
               </div>
             </div>
@@ -352,7 +345,7 @@ export function DowngradeConfirmationDialog({
             ) : (
               <Trash2 className="h-4 w-4 mr-2" />
             )}
-            {totalRecords > 0 ? "Delete Data & Downgrade" : "Confirm Downgrade"}
+            {totalRecords > 0 ? "Delete Data & Cancel" : "Confirm Cancellation"}
           </Button>
         </DialogFooter>
       </DialogContent>

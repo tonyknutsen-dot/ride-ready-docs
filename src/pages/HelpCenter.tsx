@@ -3,10 +3,9 @@ import Footer from "@/components/Footer";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { FileText, Calendar, Bell, Upload, CheckCircle, Shield, Mail, Crown, ArrowRight, ArrowLeft } from "lucide-react";
-import { useSubscription, PRICING, RIDE_LIMITS } from "@/hooks/useSubscription";
+import { FileText, Calendar, Bell, Upload, CheckCircle, Shield, Mail, ArrowRight, ArrowLeft } from "lucide-react";
+import { useSubscription } from "@/hooks/useSubscription";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
 import { HelpChatWidget } from "@/components/HelpChatWidget";
 import { useState } from "react";
@@ -19,14 +18,12 @@ const HelpCenter = () => {
   const location = useLocation();
   const { terminology } = useTerminology();
   const [selectedGuide, setSelectedGuide] = useState<number | null>(null);
-  const isAdvanced = subscription?.subscriptionStatus === 'active';
   
   const quickLinks = [
     {
       icon: Upload,
       title: "Adding Your First Ride",
       description: "Learn how to add rides and upload documents",
-      planRequired: "basic",
       route: "/rides",
       steps: [
         "Navigate to the Rides page from the main menu",
@@ -41,7 +38,6 @@ const HelpCenter = () => {
       icon: Calendar,
       title: "Setting Up Inspections",
       description: "Schedule annual inspections and NDT testing",
-      planRequired: "advanced",
       route: "/calendar",
       steps: [
         "Go to your ride's detail page",
@@ -56,7 +52,6 @@ const HelpCenter = () => {
       icon: CheckCircle,
       title: "Daily Checks",
       description: "Create and complete safety check templates",
-      planRequired: "advanced",
       route: "/checks",
       steps: [
         "Navigate to the Checks page",
@@ -71,7 +66,6 @@ const HelpCenter = () => {
       icon: Bell,
       title: "Notifications",
       description: "Configure reminders and alerts",
-      planRequired: "advanced",
       route: "/overview",
       steps: [
         "Notifications are automatically set up for your account",
@@ -85,7 +79,6 @@ const HelpCenter = () => {
       icon: FileText,
       title: "Managing Documents",
       description: "Upload, organize, and track document expiry",
-      planRequired: "basic",
       route: "/rides",
       steps: [
         "Open your ride's detail page",
@@ -101,7 +94,6 @@ const HelpCenter = () => {
       icon: Shield,
       title: "Compliance Reports",
       description: "Generate inspection and maintenance reports",
-      planRequired: "advanced",
       route: "/overview",
       steps: [
         "Access the Reports section from your dashboard",
@@ -117,215 +109,174 @@ const HelpCenter = () => {
   const faqs = [
     {
       category: "Getting Started",
-      planRequired: "basic",
       questions: [
         {
           q: "How do I start using Ride Ready Docs?",
           a: `After signing up, start by completing your profile with your company and ${terminology.isUK ? 'showman' : 'operator'} details. Then add your first ride with its details (manufacturer, serial number, etc.). Once added, you can upload documents.`,
-          planRequired: "basic"
         },
         {
           q: "What's included in the free trial?",
-          a: `The 30-day free trial gives you full access to the Operations & Maintenance plan features with up to ${RIDE_LIMITS.trial} items. No credit card required to start. After the trial, choose a plan that fits your needs.`,
-          planRequired: "basic"
+          a: "The free trial gives you full access to all features. No credit card required to start. After the trial, choose a plan based on your number of rides.",
         },
         {
           q: "Can I import existing documents?",
           a: "Yes! You can upload documents in PDF, JPG, PNG, and other common formats. There's no limit to the number of documents you can upload per ride.",
-          planRequired: "basic"
         }
       ]
     },
     {
       category: "Rides and Equipment",
-      planRequired: "basic",
       questions: [
         {
           q: "How many rides can I add?",
-          a: `Documents & Compliance includes up to ${RIDE_LIMITS.basic} items. Operations & Maintenance includes up to ${RIDE_LIMITS.advanced} items. Need more? Additional items cost just £${PRICING.basic.additionalItemCost.toFixed(2)}/month each on either plan.`,
-          planRequired: "basic"
+          a: "Your plan tier is based on the number of billable rides (rides and inflatables). Starter covers 1–5 rides (£9.99/mo), Operator covers 6–12 (£19.99/mo), Professional covers 13–25 (£34.99/mo), and Enterprise covers 25+ (£49.99/mo). Stalls, generators, and trailers are included free with any active plan.",
         },
         {
           q: "Can I manage different types of equipment?",
           a: "Yes! The system supports all types of fairground equipment - rides, food stalls, stalls, games, inflatables, generators, and any other equipment requiring documentation.",
-          planRequired: "basic"
         },
         {
           q: "What information should I include for each ride?",
           a: "Include the ride name, manufacturer, year manufactured, serial number, and select the appropriate category. You can also add owner name if managing rides for multiple owners.",
-          planRequired: "basic"
         }
       ]
     },
     {
       category: "Documents",
-      planRequired: "basic",
       questions: [
         {
           q: "What types of documents can I upload?",
-          a: `You can upload any document related to your equipment: annual inspection certificates, insurance documents, test certificates, manuals, risk assessments, electrical certificates, NDT reports, and more.`,
-          planRequired: "basic"
+          a: "You can upload any document related to your equipment: annual inspection certificates, insurance documents, test certificates, manuals, risk assessments, electrical certificates, NDT reports, and more.",
         },
         {
           q: "How does document expiry tracking work?",
-          a: "When uploading documents, set an expiry date. The system automatically tracks expiry dates and sends email notifications 30 days and 7 days before expiry on all plans.",
-          planRequired: "basic"
+          a: "When uploading documents, set an expiry date. The system automatically tracks expiry dates and sends email notifications 30 days and 7 days before expiry.",
         },
         {
           q: "Can I replace an expired document?",
           a: "Yes! When uploading a new version, you can link it to the old document. The system maintains version history so you can track document updates over time.",
-          planRequired: "basic"
         },
         {
           q: "What are Global Documents?",
           a: "Global Documents are documents that apply across all your rides (like insurance policies, operator licenses, business certificates). Upload them once and access from anywhere without duplicating.",
-          planRequired: "basic"
         },
         {
           q: "How do I send documents to councils or inspectors?",
           a: `Use the 'Send Documents' feature on any ride. Select which documents to include, add recipient email addresses, include a message, and send. Perfect for safety compliance inspections or ${terminology.isUK ? 'council' : 'authority'} submissions.`,
-          planRequired: "basic"
         }
       ]
     },
     {
-      category: "Inspections (Operations & Maintenance)",
-      planRequired: "advanced",
+      category: "Inspections",
       questions: [
         {
           q: "How do I set up annual inspections?",
           a: "Go to the Inspections tab for your ride, click 'Schedule Inspection', select the inspection type (Annual, Safety Compliance, etc.), and set the due date. The system will send automatic reminders.",
-          planRequired: "advanced"
         },
         {
           q: "What is NDT testing?",
           a: "NDT (Non-Destructive Testing) includes methods like ultrasonic testing, magnetic particle inspection, and dye penetrant testing to check structural integrity of ride components without damaging them.",
-          planRequired: "advanced"
         },
         {
           q: "Can I record inspection results?",
           a: "Yes! After inspections, you can log results, upload the inspection report, record the certificate number, note any conditions or recommendations, and set the next inspection due date.",
-          planRequired: "advanced"
         }
       ]
     },
     {
-      category: "Safety Checks (Operations & Maintenance)",
-      planRequired: "advanced",
+      category: "Safety Checks",
       questions: [
         {
           q: "What are check templates?",
           a: "Templates are customizable checklists for routine safety inspections. Create daily, monthly, or yearly templates with specific items to check before operating your rides.",
-          planRequired: "advanced"
         },
         {
           q: "What's the difference between daily, monthly, and yearly checks?",
           a: "Daily checks are pre-operational safety checks required before public use. Monthly checks cover routine maintenance items. Yearly checks are comprehensive annual safety reviews. Each serves different compliance requirements.",
-          planRequired: "advanced"
         },
         {
           q: "How do I create a daily check template?",
           a: "Go to your ride, select 'Daily Checks', click 'Manage Templates', then 'Create New Template'. Add check items like 'Check emergency stops', 'Inspect restraints', etc. Save and start using daily.",
-          planRequired: "advanced"
         },
         {
           q: "Can I create multiple check templates for one ride?",
           a: "Yes! You can create different templates for different scenarios - setup checks, breakdown checks, weather-related checks, or checks for different operating modes.",
-          planRequired: "advanced"
         },
         {
           q: "Do I need to complete checks every day?",
-          a: `Industry guidelines require pre-operational safety checks each day before public use. Our daily check system helps you document compliance with these requirements.`,
-          planRequired: "advanced"
+          a: "Industry guidelines require pre-operational safety checks each day before public use. Our daily check system helps you document compliance with these requirements.",
         },
         {
           q: "How are check records stored?",
           a: "All completed checks are automatically saved with date, time, operator name, and results. You can view check history and export as PDF for inspections or audits.",
-          planRequired: "advanced"
         }
       ]
     },
     {
-      category: "Maintenance Tracking (Operations & Maintenance)",
-      planRequired: "advanced",
+      category: "Maintenance Tracking",
       questions: [
         {
           q: "How do I log maintenance activities?",
           a: "In the Maintenance tab, click 'Log Maintenance', describe the work performed, list parts replaced, record costs, and attach any related documents like invoices or parts receipts.",
-          planRequired: "advanced"
         },
         {
           q: "Can I track maintenance costs?",
           a: "Yes! Each maintenance entry can include costs for parts and labor. The system tracks total maintenance spending per ride, helping you budget and plan for replacements.",
-          planRequired: "advanced"
         },
         {
           q: "How do I schedule preventive maintenance?",
           a: "Log regular maintenance activities with their frequency. The system will remind you when maintenance is due based on your schedule (e.g., lubrication every 3 months).",
-          planRequired: "advanced"
         }
       ]
     },
     {
-      category: "Risk Assessments (Operations & Maintenance)",
-      planRequired: "advanced",
+      category: "Risk Assessments",
       questions: [
         {
           q: "What is the Risk Assessment Builder?",
           a: "The Risk Assessment Builder helps you create comprehensive risk assessments for your rides. Identify hazards, assess risks, document control measures, and generate professional reports.",
-          planRequired: "advanced"
         },
         {
           q: "How do I create a risk assessment?",
           a: "Go to your ride's Risk Assessment tab, click 'New Assessment', add hazard items (e.g., 'Rider ejection', 'Mechanical failure'), rate severity and likelihood, document control measures, and save.",
-          planRequired: "advanced"
         },
         {
           q: "Can I export risk assessments?",
-          a: `Yes! Generate PDF reports that are downloadable, printable, and emailable. Perfect for regulatory submissions, inspections, or sharing with your team.`,
-          planRequired: "advanced"
+          a: "Yes! Generate PDF reports that are downloadable, printable, and emailable. Perfect for regulatory submissions, inspections, or sharing with your team.",
         },
         {
           q: "Do I need separate assessments for each ride?",
           a: "Yes, each ride should have its own risk assessment as hazards vary by ride type. However, you can use previous assessments as templates to speed up the process for similar rides.",
-          planRequired: "advanced"
         },
         {
           q: "How often should risk assessments be reviewed?",
           a: "Review annually, or whenever there are significant changes to the ride, operating procedures, or after any incidents. Keep dated records of all reviews for compliance.",
-          planRequired: "advanced"
         }
       ]
     },
     {
-      category: "Notifications (Operations & Maintenance)",
-      planRequired: "advanced",
+      category: "Notifications",
       questions: [
         {
           q: "What notifications will I receive?",
           a: "You'll receive reminders for: upcoming inspections, expiring documents (30 days and 7 days before), overdue maintenance, and NDT testing due dates.",
-          planRequired: "advanced"
         },
         {
           q: "How are notifications delivered?",
           a: "Notifications appear in the app's Notification Center (bell icon) and are also sent via email to your registered email address.",
-          planRequired: "advanced"
         }
       ]
     },
     {
-      category: "Reports (Operations & Maintenance)",
-      planRequired: "advanced",
+      category: "Reports",
       questions: [
         {
           q: "What reports can I generate?",
           a: "Generate inspection reports, maintenance history reports, daily check logs, risk assessments, and compliance summaries. Reports can be exported as PDFs for regulatory submissions.",
-          planRequired: "advanced"
         },
         {
-          q: `How do I prepare for an annual inspection?`,
-          a: `Use the calendar view to ensure all inspections and documents are current. Generate a compliance report showing all active certificates, recent inspection reports, and maintenance history.`,
-          planRequired: "advanced"
+          q: "How do I prepare for an annual inspection?",
+          a: "Use the calendar view to ensure all inspections and documents are current. Generate a compliance report showing all active certificates, recent inspection reports, and maintenance history.",
         }
       ]
     },
@@ -333,24 +284,20 @@ const HelpCenter = () => {
       category: "Account and Billing",
       questions: [
         {
-          q: "How do I upgrade from Documents & Compliance to Operations & Maintenance?",
-          a: "Go to Settings > Plan & Billing and select 'Upgrade'. You'll be taken to our secure billing portal where any unused time from your current plan will be credited to your new plan."
+          q: "How does pricing work?",
+          a: "Ride Ready Docs is priced by the number of billable rides you manage. Starter (1–5 rides) is £9.99/mo, Operator (6–12) is £19.99/mo, Professional (13–25) is £34.99/mo, and Enterprise (25+) is £49.99/mo. All plans include full access to every feature. Stalls, generators, and trailers are included free."
         },
         {
-          q: "What happens if I don't upgrade after the trial?",
-          a: "Your account will be downgraded to read-only access. You can view your data but won't be able to add new rides or documents until you subscribe to a paid plan."
+          q: "What happens if I don't subscribe after the trial?",
+          a: "Your account will be restricted to read-only access. You can view your data but won't be able to add new rides or documents until you subscribe to a paid plan."
         },
         {
           q: "Can I cancel my subscription?",
           a: "Yes, cancel anytime from Settings > Plan & Billing. You'll retain access until the end of your paid period. Your data remains accessible for 90 days after cancellation."
         },
         {
-          q: "What if I need more than the included items?",
-          a: `Both plans allow you to add extra items beyond the included limit. Each additional item costs just £${PRICING.basic.additionalItemCost.toFixed(2)}/month. This allows you to scale as your business grows.`
-        },
-        {
-          q: "Do you offer discounts for annual billing?",
-          a: `Yes! Pay annually and get 2 months free. Documents & Compliance is £${PRICING.basic.yearly.toFixed(2)}/year (instead of £${(PRICING.basic.monthly * 12).toFixed(2)}). Operations & Maintenance is £${PRICING.advanced.yearly.toFixed(2)}/year (instead of £${(PRICING.advanced.monthly * 12).toFixed(2)}).`
+          q: "What happens when I add more rides?",
+          a: "Your plan automatically adjusts to the correct tier when your ride count changes. For example, going from 5 to 6 rides moves you from Starter (£9.99/mo) to Operator (£19.99/mo)."
         },
         {
           q: "Do you offer discounts for multiple accounts?",
@@ -360,32 +307,26 @@ const HelpCenter = () => {
     },
     {
       category: "Staff Management",
-      planRequired: "advanced",
       questions: [
         {
           q: "How do I invite staff members?",
           a: "Go to the Staff page from the main menu, click 'Invite Staff', enter their email address, and select which features they can access. They'll receive an email invitation to join your organisation.",
-          planRequired: "advanced"
         },
         {
           q: "What permissions can I give staff members?",
           a: "You can grant access to specific features: Calendar, Documents, Checks, Maintenance, Risk Assessments, and Send Documents. Staff never have access to billing, settings, or staff management.",
-          planRequired: "advanced"
         },
         {
           q: "Can staff members see all my equipment?",
-          a: "Yes, staff can view equipment you've added, but only access the features you've enabled for them. For example, if you only enable 'Checks', they can perform safety checks but won't see documents or maintenance records.",
-          planRequired: "advanced"
+          a: "By default, staff can see all your equipment. You can restrict access to specific rides when inviting them. Staff can only access the features you've enabled for them.",
         },
         {
           q: "How do I remove a staff member?",
           a: "Go to the Staff page, find the staff member, and click 'Remove'. Their access is revoked immediately. They can no longer log in to your organisation's data.",
-          planRequired: "advanced"
         },
         {
           q: "Can I change staff permissions after inviting them?",
           a: "Yes, go to the Staff page, click on the staff member, and update their feature access. Changes take effect immediately.",
-          planRequired: "advanced"
         }
       ]
     },
@@ -423,7 +364,6 @@ const HelpCenter = () => {
             variant="ghost"
             size="sm"
             onClick={() => {
-              // react-router sets location.key to "default" for the initial entry
               if (location.key === 'default') {
                 navigate('/');
                 return;
@@ -481,22 +421,12 @@ const HelpCenter = () => {
               return (
                 <Card 
                   key={index} 
-                  className={`border-2 ${variant.border} bg-gradient-to-br ${variant.bg} ${variant.hoverBorder} transition-all cursor-pointer hover:shadow-elegant group ${
-                    link.planRequired === 'advanced' && !isAdvanced ? 'opacity-60' : ''
-                  }`}
+                  className={`border-2 ${variant.border} bg-gradient-to-br ${variant.bg} ${variant.hoverBorder} transition-all cursor-pointer hover:shadow-elegant group`}
                   onClick={() => setSelectedGuide(index)}
                 >
                   <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className={`w-12 h-12 rounded-xl ${variant.iconBg} flex items-center justify-center mb-3 shadow-lg group-hover:scale-105 transition-transform`}>
-                        <link.icon className="h-6 w-6 text-white" />
-                      </div>
-                      {link.planRequired === 'advanced' && (
-                        <Badge className="bg-gradient-to-r from-primary to-info text-white border-0 flex items-center gap-1 shadow-sm">
-                          <Crown className="h-3 w-3" />
-                          Advanced
-                        </Badge>
-                      )}
+                    <div className={`w-12 h-12 rounded-xl ${variant.iconBg} flex items-center justify-center mb-3 shadow-lg group-hover:scale-105 transition-transform`}>
+                      <link.icon className="h-6 w-6 text-white" />
                     </div>
                     <CardTitle className="text-lg">{link.title}</CardTitle>
                     <CardDescription>{link.description}</CardDescription>
@@ -590,15 +520,7 @@ const HelpCenter = () => {
               
               return (
                 <div key={catIndex} className={`p-6 rounded-2xl border-2 ${catColor.border} ${catColor.bg}`}>
-                  <div className="flex items-center gap-2 mb-4">
-                    <h3 className="text-2xl font-bold">{category.category}</h3>
-                    {category.planRequired === 'advanced' && (
-                      <Badge className="bg-gradient-to-r from-primary to-info text-white border-0 flex items-center gap-1">
-                        <Crown className="h-3 w-3" />
-                        Advanced
-                      </Badge>
-                    )}
-                  </div>
+                  <h3 className="text-2xl font-bold mb-4">{category.category}</h3>
                   <Accordion type="single" collapsible className="w-full space-y-2">
                     {category.questions.map((item, qIndex) => (
                       <AccordionItem 
