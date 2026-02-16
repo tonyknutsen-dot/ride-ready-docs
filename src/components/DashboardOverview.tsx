@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTrialEngagement } from '@/hooks/useTrialEngagement';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -49,6 +50,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const { subscription } = useSubscription();
+  const { checkEngagementExtension } = useTrialEngagement();
   const [stats, setStats] = useState<DashboardStats>({
     totalRides: 0,
     activeInspections: 0,
@@ -62,6 +64,13 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
   const [rides, setRides] = useState<Ride[]>([]);
   const [showUploadDialog, setShowUploadDialog] = useState(false);
   const [selectedRideForUpload, setSelectedRideForUpload] = useState<string>('');
+
+  // Check engagement milestones for trial extension on dashboard load
+  useEffect(() => {
+    if (user && subscription?.isTrialActive) {
+      checkEngagementExtension();
+    }
+  }, [user, subscription?.isTrialActive, checkEngagementExtension]);
 
   useEffect(() => {
     if (user && subscription) {

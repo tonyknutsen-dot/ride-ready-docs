@@ -106,11 +106,11 @@ const Hero = () => {
           <div className="mt-12 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-white/70 animate-fade-up animate-delay-500">
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-accent" />
-              <span>14-day free trial</span>
+              <span>Full access free for 14 days</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-accent" />
-              <span>No setup fees</span>
+              <span>No payment details required</span>
             </div>
             <div className="flex items-center gap-2">
               <Check className="h-4 w-4 text-accent" />
