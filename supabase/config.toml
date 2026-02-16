@@ -199,6 +199,9 @@ verify_jwt = false
 [functions.import-early-access-to-marketing]
 verify_jwt = false
 
+[functions.send-trial-extension]
+verify_jwt = false
+
 [analytics]
 enabled = false
 port = 54327

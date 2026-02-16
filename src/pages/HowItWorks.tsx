@@ -160,7 +160,7 @@ const HowItWorks = () => {
             onClick={() => navigate('/auth')}
             className="bg-primary hover:bg-primary/90"
           >
-            Start Your Free 30-Day Trial
+            Start Your Free 14-Day Trial
           </Button>
         </section>
       </main>

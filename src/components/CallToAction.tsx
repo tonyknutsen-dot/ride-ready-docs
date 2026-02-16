@@ -71,7 +71,7 @@ const CallToAction = () => {
               className="w-full sm:w-auto bg-accent hover:bg-accent/90 text-accent-foreground px-8 py-6 text-base font-semibold shadow-glow transition-smooth group"
               onClick={handleStartTrial}
             >
-              Start Free 30-Day Trial
+              Start Free 14-Day Trial
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>
             
