@@ -10,15 +10,21 @@ interface UpdateState {
 // Store the service worker registration globally
 let swRegistration: ServiceWorkerRegistration | null = null;
 
-// Check if app is installed as PWA (exclude preview/dev environments)
-const isInstalledPWA = () => {
+// Check if we're in a dev/preview environment (not production)
+const isDevEnvironment = () => {
   const hostname = window.location.hostname;
-  if (hostname === 'localhost' || hostname.includes('lovableproject.com') || hostname.includes('lovable.app')) {
-    return false;
-  }
+  return hostname === 'localhost' || hostname.includes('lovableproject.com');
+};
+
+// Check if app is installed as PWA (standalone mode)
+const isInstalledPWA = () => {
+  if (isDevEnvironment()) return false;
   return window.matchMedia('(display-mode: standalone)').matches ||
          (window.navigator as any).standalone === true;
 };
+
+// Check if we're on a production site (including lovable.app published sites)
+const isProductionSite = () => !isDevEnvironment();
 
 export const usePWAUpdate = () => {
   const [state, setState] = useState<UpdateState>({
@@ -50,8 +56,8 @@ export const usePWAUpdate = () => {
 
     // Initial update check for installed PWA users
     const performInitialCheck = async () => {
-      // Only show checking indicator for installed PWA users
-      if (isInstalledPWA() && navigator.onLine) {
+      // Show checking indicator for production users (installed or browser)
+      if (isProductionSite() && navigator.onLine) {
         setState(prev => ({ ...prev, isChecking: true }));
         console.log('[PWA] Checking for updates...');
       }
@@ -84,8 +90,8 @@ export const usePWAUpdate = () => {
           });
         });
 
-        // Trigger update check if installed PWA
-        if (isInstalledPWA() && navigator.onLine) {
+        // Trigger update check on production sites
+        if (isProductionSite() && navigator.onLine) {
           await registration.update();
           setState(prev => ({ ...prev, lastChecked: new Date(), isChecking: false }));
         }
@@ -109,7 +115,7 @@ export const usePWAUpdate = () => {
     if (!('serviceWorker' in navigator)) return;
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isInstalledPWA()) {
+      if (document.visibilityState === 'visible' && isProductionSite()) {
         // Only check if we haven't checked in the last 5 minutes
         const now = new Date();
         const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
