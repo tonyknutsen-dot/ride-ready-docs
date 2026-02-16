@@ -45,9 +45,10 @@ type Check = Tables<'checks'>;
 interface InspectionChecklistProps {
   ride: Ride;
   frequency: string;
+  onChecklistSaved?: () => void;
 }
 
-const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
+const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionChecklistProps) => {
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
   const [recentChecks, setRecentChecks] = useState<Check[]>([]);
   const [itemResults, setItemResults] = useState<{ [key: string]: CheckItemResult }>({});
@@ -1223,6 +1224,7 @@ const InspectionChecklist = ({ ride, frequency }: InspectionChecklistProps) => {
             title: "Template saved",
             description: "Your checklist template is ready to use.",
           });
+          onChecklistSaved?.();
         }}
         onCancel={() => setShowTemplateBuilder(false)}
       />
