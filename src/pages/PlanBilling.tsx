@@ -181,23 +181,12 @@ export default function PlanBilling() {
     );
   }
 
-  const plan = subscription?.subscriptionPlan ?? subscription?.subscriptionStatus ?? "trial";
-  const isTrialOrExpired = plan === "trial" || plan === "expired" || !subscription?.hasStripeSubscription;
-  const billingCycle = subscription?.billingCycle ?? "monthly";
-
-  const getPlanPrice = () => {
-    if (plan === "basic") {
-      return billingCycle === "yearly" ? PRICING.basic.yearly : PRICING.basic.monthly;
-    } else if (plan === "advanced") {
-      return billingCycle === "yearly" ? PRICING.advanced.yearly : PRICING.advanced.monthly;
-    }
-    return 0;
-  };
+  const status = subscription?.subscriptionStatus ?? "trial";
+  const isTrialOrExpired = status === "trial" || status === "expired" || !subscription?.hasStripeSubscription;
 
   const getPlanName = () => {
-    if (plan === "advanced") return "Operations & Maintenance";
-    if (plan === "basic") return "Documents & Compliance";
-    if (plan === "trial") return "Free Trial";
+    if (status === 'active') return `${subscription?.tierLabel || 'Starter'} Plan`;
+    if (status === "trial") return "Free Trial";
     return "Expired";
   };
 
@@ -232,77 +221,66 @@ export default function PlanBilling() {
       <Card className="border-2 border-accent/50 bg-gradient-to-br from-accent/10 to-transparent shadow-elegant">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            {plan === "advanced" && <Crown className="w-5 h-5 text-accent" />}
+            <Crown className="w-5 h-5 text-accent" />
             Plan & Billing
           </CardTitle>
-          <CardDescription>Manage your subscription plan and billing.</CardDescription>
+          <CardDescription>Manage your ride-based subscription.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Current Plan Display */}
           <div className="rounded-lg border-2 border-primary/20 p-4 space-y-3 bg-gradient-to-br from-primary/5 to-transparent">
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-start gap-3 min-w-0 flex-1">
-                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <CheckCircle2 className="w-5 h-5 text-primary" />
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-primary" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold flex flex-wrap items-center gap-2">
+                  <span>{getPlanName()}</span>
+                  {!isTrialOrExpired && (
+                    <Badge variant="outline" className="text-xs bg-accent/20 border-accent/50 text-accent-foreground">
+                      Active
+                    </Badge>
+                  )}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <div className="font-semibold flex flex-wrap items-center gap-2">
-                    <span className="break-words">{getPlanName()}</span>
-                    {!isTrialOrExpired && (
-                      <Badge variant="outline" className="text-xs bg-accent/20 border-accent/50 text-accent-foreground flex-shrink-0">
-                        {billingCycle === "yearly" ? "Annual" : "Monthly"}
-                      </Badge>
-                    )}
-                  </div>
-                  <div className="text-sm text-muted-foreground mt-1">
-                    {plan === "advanced" 
-                      ? "Document storage + operations & maintenance features" 
-                      : plan === "basic"
-                      ? "Essential document storage for compliance"
-                      : plan === "trial"
-                      ? `${subscription?.daysRemaining} days remaining in trial`
-                      : "Your trial has expired"}
-                  </div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {status === 'active'
+                    ? `All-in-one compliance & operations system`
+                    : status === "trial"
+                    ? `${subscription?.daysRemaining} days remaining in trial`
+                    : "Your trial has expired — subscribe to continue"}
                 </div>
               </div>
-              {plan === "advanced" && <Crown className="w-6 h-6 text-accent flex-shrink-0" />}
             </div>
 
-            {/* Subscription Details */}
+            {/* Active subscription details */}
             {!isTrialOrExpired && (
               <>
                 <Separator className="bg-primary/20" />
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/50 border border-success/20 min-w-0">
+                  <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/50 border border-success/20">
                     <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
                       <CreditCard className="w-4 h-4 text-success" />
                     </div>
-                    <div className="min-w-0">
+                    <div>
                       <div className="text-muted-foreground text-xs">Price</div>
-                      <div className="font-semibold truncate">
-                        £{getPlanPrice().toFixed(2)}/{billingCycle === "yearly" ? "yr" : "mo"}
+                      <div className="font-semibold">
+                        £{subscription?.tierPrice?.toFixed(2)}/mo
                       </div>
                     </div>
                   </div>
                   {subscription?.currentPeriodEnd && (
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/50 border border-info/20 min-w-0">
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/50 border border-info/20">
                       <div className="w-8 h-8 rounded-full bg-info/10 flex items-center justify-center flex-shrink-0">
                         <Calendar className="w-4 h-4 text-info" />
                       </div>
-                      <div className="min-w-0">
+                      <div>
                         <div className="text-muted-foreground text-xs">Renews</div>
-                        <div className="font-semibold truncate">
+                        <div className="font-semibold">
                           {format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
-                {subscription?.extraItemsCount > 0 && (
-                  <div className="text-sm text-muted-foreground p-2 rounded bg-accent/10 border border-accent/20">
-                    +{subscription.extraItemsCount} extra items (£{(subscription.extraItemsCount * 0.75).toFixed(2)}/month)
-                  </div>
-                )}
               </>
             )}
           </div>
@@ -316,7 +294,7 @@ export default function PlanBilling() {
                 <DialogTrigger asChild>
                   <Button className="w-full bg-gradient-to-r from-accent to-primary hover:opacity-90 text-white shadow-md">
                     <Crown className="w-4 h-4 mr-2" />
-                    {plan === "expired" ? "Reactivate Subscription" : "Upgrade Now"}
+                    {status === "expired" ? "Reactivate Subscription" : "Subscribe Now"}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
@@ -343,38 +321,37 @@ export default function PlanBilling() {
         </CardContent>
       </Card>
 
-      {/* Item Usage Card */}
+      {/* Ride Usage Card */}
       <Card className="border-2 border-info/30 bg-gradient-to-br from-info/5 to-transparent shadow-elegant">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-info/10 flex items-center justify-center">
               <Receipt className="w-4 h-4 text-info" />
             </div>
-            Item Usage
+            Ride Usage
           </CardTitle>
-          <CardDescription>Track your item usage against your plan limits.</CardDescription>
+          <CardDescription>Your pricing is based on the number of billable rides.</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
             <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Items used</span>
+              <span className="text-sm text-muted-foreground">Billable rides</span>
               <span className="font-semibold text-lg">
-                {subscription?.rideCount ?? 0} / {subscription?.rideLimit ?? 5}
+                {subscription?.billableRideCount ?? 0}
               </span>
             </div>
-            <div className="w-full bg-secondary rounded-full h-3 border border-info/20 overflow-hidden">
-              <div 
-                className="bg-gradient-to-r from-info to-primary h-3 rounded-full transition-all shadow-sm"
-                style={{ 
-                  width: `${Math.min(100, ((subscription?.rideCount ?? 0) / (subscription?.rideLimit ?? 5)) * 100)}%` 
-                }}
-              />
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-muted-foreground">Free assets (stalls, generators, etc.)</span>
+              <span className="font-semibold text-lg">
+                {subscription?.freeAssetCount ?? 0}
+              </span>
             </div>
-            {subscription && subscription.rideCount >= subscription.rideLimit && (
-              <p className="text-xs text-warning font-medium p-2 rounded bg-warning/10 border border-warning/20">
-                ⚠️ You've reached your item limit. Extra items cost £0.75/month each.
-              </p>
-            )}
+            <div className="flex justify-between items-center p-2 rounded bg-accent/10 border border-accent/20">
+              <span className="text-sm font-medium">Current tier</span>
+              <Badge variant="outline" className="bg-accent/20 border-accent/50">
+                {subscription?.tierLabel} ({subscription?.billableRideCount ?? 0} rides)
+              </Badge>
+            </div>
           </div>
         </CardContent>
       </Card>

@@ -41,7 +41,7 @@ const RiskAssessments = () => {
   };
 
   return (
-    <FeatureGate requiredPlan="advanced" feature="Risk Assessments">
+    <>
       <div className="min-h-screen bg-background pb-28 md:pb-8">
         <StaffAccountBanner />
         <RiskAssessmentOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
@@ -89,7 +89,7 @@ const RiskAssessments = () => {
           )}
         </main>
       </div>
-    </FeatureGate>
+    </>
   );
 };
 

@@ -33,11 +33,19 @@ export const RIDE_LIMITS = {
   extended_advanced: 999,
 } as const;
 
-// Stripe price IDs - will need to be updated when new products are created
+// Stripe price IDs for ride-based tiers
 export const STRIPE_PRICE_IDS = {
-  starter_monthly: "price_1SnzrIAG8uIRefcZWHRZs14k",    // Starter £9.99/mo (temporary)
-  operator_monthly: "price_1SnzrOAG8uIRefcZHBSrVObC",   // Operator £19.99/mo (temporary)
-  // These will be updated when proper Stripe products are set up
+  starter_monthly: "price_1T1TVLAG8uIRefcZ1nMRWRVV",      // Starter £9.99/mo (1-5 rides)
+  operator_monthly: "price_1T1TVMAG8uIRefcZKyL8XcLz",     // Operator £19.99/mo (6-12 rides)
+  professional_monthly: "price_1T1TVNAG8uIRefcZviQXUgrA",  // Professional £34.99/mo (13-25 rides)
+  enterprise_monthly: "price_1T1TVOAG8uIRefcZKAcqeqNw",    // Enterprise £49.99/mo (25+ rides)
+} as const;
+
+export const STRIPE_PRODUCT_IDS = {
+  starter: "prod_TzSQ7dF4G0dKJD",
+  operator: "prod_TzSQDJ4tk7rqMD",
+  professional: "prod_TzSQRtud9y5adH",
+  enterprise: "prod_TzSQUajo9gq5iY",
 } as const;
 
 export const getRideTier = (billableRideCount: number): RideTier => {
@@ -251,8 +259,8 @@ export const useSubscription = () => {
     await fetchSubscriptionData();
   };
 
-  // Create Stripe checkout session
-  const createCheckout = async (plan: string = 'active', billingCycle: 'monthly' | 'yearly' = 'monthly', extraItems: number = 0) => {
+  // Create Stripe checkout session based on ride tier
+  const createCheckout = async (tier: RideTier = 'starter') => {
     if (!user) throw new Error('User not authenticated');
     
     if (isTester) {
@@ -266,7 +274,7 @@ export const useSubscription = () => {
       : currentOrigin;
     
     const { data, error } = await supabase.functions.invoke('create-checkout', {
-      body: { plan, billingCycle, extraItems, returnUrl },
+      body: { tier, returnUrl },
     });
 
     if (error) throw error;
@@ -304,12 +312,12 @@ export const useSubscription = () => {
     return data;
   };
 
-  const upgradeSubscription = async (plan: string = 'active') => {
+  const upgradeSubscription = async (tier: RideTier = 'starter') => {
     if (isTester) {
       console.log('[TESTER] Upgrade blocked');
       return;
     }
-    await createCheckout(plan, 'monthly');
+    await createCheckout(tier);
   };
 
   return {

@@ -3,16 +3,22 @@ import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-// Product ID to plan mapping
-const PRODUCT_TO_PLAN: Record<string, 'basic' | 'advanced'> = {
-  "prod_TlWvelEK6GafPH": "basic",   // Documents & Compliance - Monthly
-  "prod_TlWvGM8f7f2mRa": "basic",   // Documents & Compliance - Yearly
-  "prod_TlWvaItiHUq1PZ": "advanced", // Operations & Maintenance - Monthly
-  "prod_TlWv8lD3Q4BCIX": "advanced", // Operations & Maintenance - Yearly
+// Product ID to tier mapping (ride-based pricing)
+const PRODUCT_TO_TIER: Record<string, string> = {
+  "prod_TzSQ7dF4G0dKJD": "starter",
+  "prod_TzSQDJ4tk7rqMD": "operator",
+  "prod_TzSQRtud9y5adH": "professional",
+  "prod_TzSQUajo9gq5iY": "enterprise",
+  // Legacy products
+  "prod_TlWvelEK6GafPH": "starter",
+  "prod_TlWvGM8f7f2mRa": "starter",
+  "prod_TlWvaItiHUq1PZ": "operator",
+  "prod_TlWv8lD3Q4BCIX": "operator",
+  "prod_SXfMmvFhJCpgPz": "starter",
+  "prod_SXfOT7Wm2qkLzI": "starter",
+  "prod_SXfOIqB5fXfmOi": "operator",
+  "prod_SXfPx1nMO9nxbA": "operator",
 };
-
-// Extra item price ID for counting
-const EXTRA_ITEM_PRICE_ID = "price_1SnzrRAG8uIRefcZRHXJlDuy";
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -20,7 +26,6 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight
   const preflightResponse = handleCorsPreflightRequest(req);
   if (preflightResponse) return preflightResponse;
 
@@ -55,8 +60,7 @@ serve(async (req) => {
       const message = err instanceof Error ? err.message : "Unknown error";
       logStep("Webhook signature verification failed", { error: message });
       return new Response(JSON.stringify({ error: `Webhook Error: ${message}` }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -72,30 +76,18 @@ serve(async (req) => {
         const subscriptionId = session.subscription as string;
         
         if (userId && customerId && subscriptionId) {
-          // Fetch subscription details
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
           const productId = subscription.items.data[0]?.price.product as string;
-          const plan = PRODUCT_TO_PLAN[productId] || 'basic';
-          const billingCycle = session.metadata?.billing_cycle || 'monthly';
-          
-          // Count extra items
-          let extraItemsCount = 0;
-          for (const item of subscription.items.data) {
-            const price = item.price;
-            if (price.id === EXTRA_ITEM_PRICE_ID) {
-              extraItemsCount = item.quantity || 0;
-            }
-          }
+          const tier = PRODUCT_TO_TIER[productId] || 'starter';
           
           const { error } = await supabaseAdmin
             .from("profiles")
             .update({
               stripe_customer_id: customerId,
               stripe_subscription_id: subscriptionId,
-              subscription_status: plan,
-              subscription_plan: plan,
-              billing_cycle: billingCycle,
-              extra_items_count: extraItemsCount,
+              subscription_status: 'active',
+              subscription_plan: tier,
+              billing_cycle: 'monthly',
               current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
             })
             .eq("user_id", userId);
@@ -103,7 +95,7 @@ serve(async (req) => {
           if (error) {
             logStep("Error updating profile", { error: error.message });
           } else {
-            logStep("Profile updated successfully", { userId, plan, customerId });
+            logStep("Profile updated successfully", { userId, tier, customerId });
           }
         }
         break;
@@ -114,23 +106,13 @@ serve(async (req) => {
         logStep("Subscription updated", { subscriptionId: subscription.id });
         
         const productId = subscription.items.data[0]?.price.product as string;
-        const plan = PRODUCT_TO_PLAN[productId] || 'basic';
-        
-        // Count extra items
-        let extraItemsCount = 0;
-        for (const item of subscription.items.data) {
-          const price = item.price;
-          if (price.id === EXTRA_ITEM_PRICE_ID) {
-            extraItemsCount = item.quantity || 0;
-          }
-        }
+        const tier = PRODUCT_TO_TIER[productId] || 'starter';
         
         const { error } = await supabaseAdmin
           .from("profiles")
           .update({
-            subscription_status: subscription.status === 'active' ? plan : 'expired',
-            subscription_plan: plan,
-            extra_items_count: extraItemsCount,
+            subscription_status: subscription.status === 'active' ? 'active' : 'expired',
+            subscription_plan: tier,
             current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
           })
           .eq("stripe_subscription_id", subscription.id);
@@ -138,7 +120,7 @@ serve(async (req) => {
         if (error) {
           logStep("Error updating subscription", { error: error.message });
         } else {
-          logStep("Subscription updated in database");
+          logStep("Subscription updated in database", { tier });
         }
         break;
       }
@@ -152,7 +134,6 @@ serve(async (req) => {
           .update({
             subscription_status: 'expired',
             subscription_plan: null,
-            extra_items_count: 0,
           })
           .eq("stripe_subscription_id", subscription.id);
 
@@ -170,17 +151,12 @@ serve(async (req) => {
         
         if (invoice.subscription) {
           const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
-          
-          const { error } = await supabaseAdmin
+          await supabaseAdmin
             .from("profiles")
             .update({
               current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
             })
             .eq("stripe_subscription_id", invoice.subscription);
-
-          if (error) {
-            logStep("Error updating period end", { error: error.message });
-          }
         }
         break;
       }
@@ -188,7 +164,6 @@ serve(async (req) => {
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
         logStep("Invoice payment failed", { invoiceId: invoice.id });
-        // Could send notification to user here
         break;
       }
 
@@ -197,15 +172,13 @@ serve(async (req) => {
     }
 
     return new Response(JSON.stringify({ received: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in stripe-webhook", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500,
     });
   }
 });

@@ -3,18 +3,22 @@ import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 
-// Product ID to plan mapping
-const PRODUCT_TO_PLAN: Record<string, 'basic' | 'advanced'> = {
-  // Current active products
-  "prod_TlWvelEK6GafPH": "basic",   // Documents & Compliance - Monthly
-  "prod_TlWvGM8f7f2mRa": "basic",   // Documents & Compliance - Yearly  
-  "prod_TlWvaItiHUq1PZ": "advanced", // Operations & Maintenance - Monthly
-  "prod_TlWv8lD3Q4BCIX": "advanced", // Operations & Maintenance - Yearly
-  // Legacy product IDs (keep for any existing subscriptions)
-  "prod_SXfMmvFhJCpgPz": "basic",   // Legacy: Documents & Compliance - Monthly
-  "prod_SXfOT7Wm2qkLzI": "basic",   // Legacy: Documents & Compliance - Yearly  
-  "prod_SXfOIqB5fXfmOi": "advanced", // Legacy: Operations & Maintenance - Monthly
-  "prod_SXfPx1nMO9nxbA": "advanced", // Legacy: Operations & Maintenance - Yearly
+// Product ID to tier mapping (ride-based pricing)
+const PRODUCT_TO_TIER: Record<string, string> = {
+  // New ride-based tier products
+  "prod_TzSQ7dF4G0dKJD": "starter",
+  "prod_TzSQDJ4tk7rqMD": "operator",
+  "prod_TzSQRtud9y5adH": "professional",
+  "prod_TzSQUajo9gq5iY": "enterprise",
+  // Legacy products - map to active status
+  "prod_TlWvelEK6GafPH": "starter",
+  "prod_TlWvGM8f7f2mRa": "starter",
+  "prod_TlWvaItiHUq1PZ": "operator",
+  "prod_TlWv8lD3Q4BCIX": "operator",
+  "prod_SXfMmvFhJCpgPz": "starter",
+  "prod_SXfOT7Wm2qkLzI": "starter",
+  "prod_SXfOIqB5fXfmOi": "operator",
+  "prod_SXfPx1nMO9nxbA": "operator",
 };
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
@@ -23,7 +27,6 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight
   const preflightResponse = handleCorsPreflightRequest(req);
   if (preflightResponse) return preflightResponse;
 
@@ -41,57 +44,29 @@ serve(async (req) => {
 
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
-    logStep("Authorization header found");
 
     const token = authHeader.replace("Bearer ", "").trim();
     if (!token || token === "undefined" || token === "null") {
-      logStep("No valid token provided - returning safe unsubscribed state");
       return new Response(
-        JSON.stringify({
-          subscribed: false,
-          plan: null,
-          subscription_end: null,
-          extra_items: 0,
-          billing_cycle: null,
-        }),
-        {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        }
+        JSON.stringify({ subscribed: false, tier: null, subscription_end: null }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
       );
     }
 
-    // NOTE: Supabase can sometimes return errors if the session referenced
-    // by the JWT's session_id claim no longer exists (e.g. after logout, revoked session, etc.).
-    // This should NOT crash the app. Treat it as unauthenticated and return a safe unsubscribed state.
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) {
       const msg = userError.message || "Unknown auth error";
-      // Handle various auth errors gracefully
-      if (msg.includes("Auth session missing") || 
-          msg.includes("missing sub claim") || 
-          msg.includes("invalid claim") ||
-          msg.includes("invalid token")) {
+      if (msg.includes("Auth session missing") || msg.includes("missing sub claim") || 
+          msg.includes("invalid claim") || msg.includes("invalid token")) {
         logStep("Auth error - returning safe unsubscribed state", { message: msg });
         return new Response(
-          JSON.stringify({
-            subscribed: false,
-            plan: null,
-            subscription_end: null,
-            extra_items: 0,
-            billing_cycle: null,
-          }),
-          {
-            headers: { ...corsHeaders, "Content-Type": "application/json" },
-            status: 200,
-          }
+          JSON.stringify({ subscribed: false, tier: null, subscription_end: null }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 }
         );
       }
-
       throw new Error(`Authentication error: ${msg}`);
     }
 
@@ -104,64 +79,35 @@ serve(async (req) => {
     
     if (customers.data.length === 0) {
       logStep("No customer found, returning unsubscribed state");
-      return new Response(JSON.stringify({ 
-        subscribed: false,
-        plan: null,
-        subscription_end: null,
-        extra_items: 0,
-        billing_cycle: null,
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
+      return new Response(JSON.stringify({ subscribed: false, tier: null, subscription_end: null }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
       });
     }
 
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 1,
-    });
-
+    const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
     const hasActiveSub = subscriptions.data.length > 0;
-    let plan: 'basic' | 'advanced' | null = null;
+    let tier: string | null = null;
     let subscriptionEnd: string | null = null;
-    let extraItems = 0;
-    let billingCycle: 'monthly' | 'yearly' | null = null;
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
-      logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
-      
-      // Determine plan from product
       const productId = subscription.items.data[0]?.price.product as string;
-      plan = PRODUCT_TO_PLAN[productId] || 'basic';
-      logStep("Determined subscription plan", { productId, plan });
+      tier = PRODUCT_TO_TIER[productId] || 'starter';
+      logStep("Active subscription found", { subscriptionId: subscription.id, tier, productId });
 
-      // Check billing interval
-      const interval = subscription.items.data[0]?.price.recurring?.interval;
-      billingCycle = interval === 'year' ? 'yearly' : 'monthly';
-
-      // Count extra items
-      for (const item of subscription.items.data) {
-        if (item.price.id === "price_1RXcIzRsp1KGo6dTTFGhIcDr") {
-          extraItems = item.quantity || 0;
-        }
-      }
-      
-      // Update database with latest subscription info
+      // Update database - use 'active' as the unified status
       const { error: updateError } = await supabaseClient
         .from("profiles")
         .update({
           stripe_customer_id: customerId,
           stripe_subscription_id: subscription.id,
-          subscription_status: plan,
-          subscription_plan: plan,
-          billing_cycle: billingCycle,
-          extra_items_count: extraItems,
+          subscription_status: 'active',
+          subscription_plan: tier,
+          billing_cycle: 'monthly',
           current_period_end: subscriptionEnd,
         })
         .eq("user_id", user.id);
@@ -175,20 +121,16 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
-      plan,
+      tier,
       subscription_end: subscriptionEnd,
-      extra_items: extraItems,
-      billing_cycle: billingCycle,
     }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200,
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in check-subscription", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 500,
     });
   }
 });

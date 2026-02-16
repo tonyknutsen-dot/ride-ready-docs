@@ -393,9 +393,6 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
               <p className="text-sm">Complete your first inspection to see activity here</p>
             </div>
           ) : (
-              <p className="text-sm">Complete your first inspection to see activity here</p>
-            </div>
-          ) : (
             <div className="space-y-3">
               {recentActivity.map((activity) => (
                 <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg border bg-card-hover hover:bg-accent/50 transition-smooth">
