@@ -275,7 +275,7 @@ export default function MobileBottomNav() {
                 <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Account</p>
                 {!isStaff && (
                   <button
-                    onClick={() => go("/settings")}
+                    onClick={() => go("/notifications")}
                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all active:scale-[0.98] ${
                       isActive(["/settings"])
                         ? "bg-primary text-primary-foreground"
