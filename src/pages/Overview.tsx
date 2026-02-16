@@ -26,6 +26,7 @@ const Overview = () => {
   const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
   
   const { data, isLoading, error, refetch } = useOverviewData();
+  const unreadCount = useUnreadNotifications();
   
   // Load company logo
   useEffect(() => {
@@ -76,8 +77,6 @@ const Overview = () => {
   }
 
   // Quick navigation items — inspired by Mubaro's icon grid but more modern
-  const unreadCount = useUnreadNotifications();
-
   const quickNavItems = [
     { icon: FerrisWheel, label: "Equipment", path: "/rides", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
     { icon: ClipboardCheck, label: "Checks", path: "/checks", color: "text-success", bg: "bg-success/10 border-success/20" },
