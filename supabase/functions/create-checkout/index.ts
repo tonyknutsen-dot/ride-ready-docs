@@ -4,13 +4,12 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getSecureHeaders, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
 
-// Stripe price IDs - Documents & Compliance = Basic, Operations & Maintenance = Advanced
-const PRICE_IDS = {
-  basic_monthly: "price_1SnzrIAG8uIRefcZWHRZs14k",    // Documents & Compliance Monthly - £6.99
-  basic_yearly: "price_1SnzrMAG8uIRefcZ6bfyMMyR",     // Documents & Compliance Yearly - £69.90
-  advanced_monthly: "price_1SnzrOAG8uIRefcZHBSrVObC", // Operations & Maintenance Monthly - £18.99
-  advanced_yearly: "price_1SnzrQAG8uIRefcZq3oC3vso",  // Operations & Maintenance Yearly - £189.90
-  extra_item: "price_1SnzrRAG8uIRefcZRHXJlDuy",       // Extra Item - £0.75/mo
+// Ride-based pricing tiers - single product, priced by ride count
+const TIER_PRICE_IDS: Record<string, string> = {
+  starter: "price_1T1TVLAG8uIRefcZ1nMRWRVV",      // £9.99/mo (1-5 rides)
+  operator: "price_1T1TVMAG8uIRefcZKyL8XcLz",     // £19.99/mo (6-12 rides)
+  professional: "price_1T1TVNAG8uIRefcZviQXUgrA",  // £34.99/mo (13-25 rides)
+  enterprise: "price_1T1TVOAG8uIRefcZKAcqeqNw",    // £49.99/mo (25+ rides)
 };
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
@@ -55,7 +54,6 @@ serve(async (req) => {
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) {
       const msg = userError.message || "Unknown auth error";
-      // Return 401 with clear message for session issues
       if (msg.includes("session")) {
         logStep("Session expired or invalid", { message: msg });
         return new Response(
@@ -70,7 +68,7 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Rate limiting - payment endpoints get moderate limits
+    // Rate limiting
     const rateLimitKey = getClientIdentifier(req, "create-checkout", user.id);
     const rateLimitResult = await checkRateLimit(rateLimitKey, "payment");
     if (!rateLimitResult.allowed) {
@@ -78,21 +76,20 @@ serve(async (req) => {
       return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
-    // Parse request body
-    const { plan, billingCycle, extraItems = 0, returnUrl } = await req.json();
-    logStep("Request params", { plan, billingCycle, extraItems, returnUrl });
+    // Parse request body - now expects tier instead of plan/billingCycle
+    const { tier, returnUrl } = await req.json();
+    logStep("Request params", { tier, returnUrl });
 
-    if (!plan || !billingCycle) {
-      throw new Error("Missing required parameters: plan and billingCycle");
+    if (!tier) {
+      throw new Error("Missing required parameter: tier");
     }
 
-    // Determine price ID
-    const priceKey = `${plan}_${billingCycle}` as keyof typeof PRICE_IDS;
-    const priceId = PRICE_IDS[priceKey];
+    // Determine price ID from tier
+    const priceId = TIER_PRICE_IDS[tier];
     if (!priceId) {
-      throw new Error(`Invalid plan/billing cycle combination: ${plan}/${billingCycle}`);
+      throw new Error(`Invalid tier: ${tier}. Valid tiers: starter, operator, professional, enterprise`);
     }
-    logStep("Price ID determined", { priceKey, priceId });
+    logStep("Price ID determined", { tier, priceId });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
@@ -104,18 +101,12 @@ serve(async (req) => {
       logStep("Existing customer found", { customerId });
     }
 
-    // Build line items
+    // Build line items - single tier price
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       { price: priceId, quantity: 1 }
     ];
 
-    // Add extra items if specified
-    if (extraItems > 0) {
-      lineItems.push({ price: PRICE_IDS.extra_item, quantity: extraItems });
-      logStep("Extra items added", { extraItems });
-    }
-
-    // Use returnUrl from request body, fallback to origin header, then referer
+    // Use returnUrl from request body, fallback to origin header
     const baseUrl = returnUrl || req.headers.get("origin") || req.headers.get("referer")?.split('/').slice(0, 3).join('/') || "https://ride-ready-docs.lovable.app";
     logStep("Using base URL for redirects", { baseUrl });
     
@@ -128,14 +119,12 @@ serve(async (req) => {
       cancel_url: `${baseUrl}/billing?canceled=true`,
       metadata: {
         user_id: user.id,
-        plan,
-        billing_cycle: billingCycle,
+        tier,
       },
       subscription_data: {
         metadata: {
           user_id: user.id,
-          plan,
-          billing_cycle: billingCycle,
+          tier,
         },
       },
     });

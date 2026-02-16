@@ -79,7 +79,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
       if (hasActiveSubscription) {
         await openCustomerPortal();
       } else {
-        await createCheckout('active', 'monthly');
+        await createCheckout(currentTier || 'starter');
       }
       setShowStripeModal(false);
       onClose?.();
