@@ -12,11 +12,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { z } from 'zod';
 import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
-import { useSubscription, RIDE_LIMITS } from '@/hooks/useSubscription';
+import { useSubscription, getRideTier, getTierLabel, RIDE_TIERS } from '@/hooks/useSubscription';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
 import { compressImage } from '@/utils/imageCompression';
-import { ExtraItemChargeDialog } from '@/components/ExtraItemChargeDialog';
+
 type RideCategory = Tables<'ride_categories'>;
 
 interface RideFormProps {
@@ -63,11 +63,10 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
   const [existingPhotoPath, setExistingPhotoPath] = useState<string | null>(null);
   const [deletingPhoto, setDeletingPhoto] = useState(false);
-  const [showChargeDialog, setShowChargeDialog] = useState(false);
-  const [pendingSubmit, setPendingSubmit] = useState(false);
-
-  // Check if adding this item will incur extra charges (only for new items, not edits)
-  const willIncurExtraCharge = !isEditMode && subscription && subscription.rideCount >= subscription.rideLimit;
+  // Check if adding a billable ride would exceed the current tier
+  const selectedCategory = categories.find(c => c.id === formData.category_id);
+  const isSelectedCategoryBillable = selectedCategory?.is_billable !== false; // Default to billable if unknown
+  const wouldExceedTier = !isEditMode && subscription && isSelectedCategoryBillable && !subscription.canAddRide && subscription.subscriptionStatus === 'active';
 
   useEffect(() => {
     loadCategories();
@@ -204,14 +203,16 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       return;
     }
     
-    // If this will incur extra charges and user hasn't confirmed, show dialog
-    if (willIncurExtraCharge && !pendingSubmit) {
-      setShowChargeDialog(true);
+    // If adding a billable ride would exceed tier, block and redirect
+    if (wouldExceedTier) {
+      const nextTierKey = subscription!.currentTier === 'starter' ? 'operator' : subscription!.currentTier === 'operator' ? 'professional' : 'enterprise';
+      toast({
+        title: "Upgrade required",
+        description: `You've reached ${subscription!.rideLimit} rides on the ${subscription!.tierLabel} tier. Upgrade to ${getTierLabel(nextTierKey)} to add more.`,
+      });
+      navigate('/billing');
       return;
     }
-    
-    // Reset pending submit flag
-    setPendingSubmit(false);
     
     setErrors({});
 
@@ -396,47 +397,6 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     }
   };
 
-  // Handle confirmation of extra charge
-  const handleConfirmExtraCharge = async () => {
-    setShowChargeDialog(false);
-    setLoading(true);
-    
-    try {
-      // Call the edge function to add extra item to Stripe subscription
-      const { data, error } = await supabase.functions.invoke('add-extra-item');
-      
-      if (error) {
-        throw new Error(error.message);
-      }
-      
-      if (!data?.success) {
-        throw new Error(data?.error || 'Failed to add extra item');
-      }
-      
-      toast({
-        title: "Extra item added to subscription",
-        description: data.billingCycle === 'yearly' 
-          ? "A prorated charge has been applied for the remaining subscription period."
-          : "£0.75/month has been added to your subscription.",
-      });
-      
-      // Now proceed with adding the ride
-      setPendingSubmit(true);
-      // Trigger form submit programmatically
-      const form = document.getElementById('ride-form-root') as HTMLFormElement;
-      if (form) {
-        form.requestSubmit();
-      }
-    } catch (error) {
-      console.error('Error adding extra item:', error);
-      toast({
-        title: "Failed to process extra item charge",
-        description: error instanceof Error ? error.message : "Please try again or contact support.",
-        variant: "destructive",
-      });
-      setLoading(false);
-    }
-  };
 
   // Staff members without full_access cannot add new equipment - show a blocking message
   if (!canAddRides && !isEditMode) {
@@ -478,10 +438,20 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           <p className="text-sm text-muted-foreground mt-1">
             {isEditMode ? 'Update the details for your ride or generator' : 'Enter the details for your new ride or generator'}
           </p>
-          {subscription && !isEditMode && (
+          {subscription && !isEditMode && subscription.subscriptionStatus === 'active' && (
             <p className="text-xs text-muted-foreground mt-2">
-              {subscription.rideCount} of {subscription.rideLimit} equipment slots used
+              {subscription.billableRideCount} of {subscription.rideLimit} billable rides on {subscription.tierLabel} tier
             </p>
+          )}
+          {wouldExceedTier && (
+            <Alert className="mt-3 border-warning/30 bg-warning/10">
+              <AlertTriangle className="h-4 w-4 text-warning" />
+              <AlertTitle className="text-warning">Tier limit reached</AlertTitle>
+              <AlertDescription>
+                You have {subscription!.billableRideCount} of {subscription!.rideLimit} billable rides on the {subscription!.tierLabel} tier. 
+                To add more, <button type="button" className="underline font-medium" onClick={() => navigate('/billing')}>upgrade your plan</button>.
+              </AlertDescription>
+            </Alert>
           )}
         </div>
       </div>
@@ -755,17 +725,6 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       {/* Request Category dialog */}
       <RequestRideTypeDialog open={openRequest} onOpenChange={setOpenRequest} />
 
-      {/* Extra item charge confirmation dialog */}
-      {subscription && (
-        <ExtraItemChargeDialog
-          open={showChargeDialog}
-          onOpenChange={setShowChargeDialog}
-          onConfirm={handleConfirmExtraCharge}
-          currentCount={subscription.billableRideCount}
-          limit={subscription.rideLimit}
-          billingCycle={subscription.billingCycle || 'monthly'}
-        />
-      )}
     </div>
   );
 };

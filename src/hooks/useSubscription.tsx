@@ -199,8 +199,8 @@ export const useSubscription = () => {
           rideCount: totalRideCount,
           billableRideCount,
           freeAssetCount,
-          rideLimit: 999, // No hard limit - pricing scales with ride count
-          canAddRide: mappedStatus !== 'expired', // Can always add during trial or active
+          rideLimit: RIDE_TIERS[currentTier].max === Infinity ? 999 : RIDE_TIERS[currentTier].max,
+          canAddRide: mappedStatus === 'trial' || (mappedStatus === 'active' && billableRideCount < (RIDE_TIERS[currentTier].max === Infinity ? 999 : RIDE_TIERS[currentTier].max)),
           extraItemsCount: data.extra_items_count || 0,
           currentPeriodEnd: data.current_period_end,
           hasStripeCustomer: mappedStatus === 'active',
