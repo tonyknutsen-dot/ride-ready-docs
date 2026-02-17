@@ -102,7 +102,7 @@ const Overview = () => {
                 </span>
               )}
             </div>
-            <span className="text-[10px] font-semibold text-muted-foreground text-center leading-tight tracking-wide uppercase">{item.label}</span>
+            <span className="text-[9px] font-semibold text-muted-foreground text-center leading-tight tracking-wider uppercase">{item.label}</span>
           </button>
         ))}
       </div>
@@ -128,7 +128,7 @@ const Overview = () => {
                 <ArrowRight className={`h-3.5 w-3.5 ${color} opacity-0 group-hover:opacity-60 transition-opacity`} />
               </div>
               <div className={`text-3xl font-bold ${color} leading-none mb-1`}>{value}</div>
-              <div className="text-[11px] text-muted-foreground font-semibold tracking-wide uppercase">{label}</div>
+              <div className="text-[10px] text-muted-foreground font-medium tracking-wide uppercase">{label}</div>
             </CardContent>
           </Card>
         ))}
