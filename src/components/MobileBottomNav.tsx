@@ -140,7 +140,7 @@ export default function MobileBottomNav() {
           }}
           active={isActive(["/overview"])}
           icon={Home}
-          label="Home"
+          label="Overview"
         />
 
         {/* Rides/Equipment */}
@@ -226,45 +226,6 @@ export default function MobileBottomNav() {
                     </div>
                     <span className="text-xs">Risk Assessment</span>
                   </button>
-                )}
-              </div>
-
-              <Separator />
-
-              {/* Features Section - filtered by permission */}
-              <div className="space-y-1">
-                <p className="text-xs font-medium text-muted-foreground px-2 mb-2">Features</p>
-                {canAccessDocuments && (
-                  <MenuItem 
-                    icon={FileText} 
-                    label="Documents" 
-                    onClick={() => go("/documents")} 
-                    active={isActive(["/documents"])}
-                  />
-                )}
-                {canAccessMaintenance && (
-                  <MenuItem 
-                    icon={Wrench} 
-                    label="Maintenance" 
-                    onClick={() => go("/maintenance")} 
-                    active={isActive(["/maintenance"])}
-                  />
-                )}
-                {canAccessRiskAssessments && (
-                  <MenuItem 
-                    icon={ShieldCheck} 
-                    label="Risk Assessments" 
-                    onClick={() => go("/risk-assessments")} 
-                    active={isActive(["/risk-assessments"])}
-                  />
-                )}
-                {canAccessDocuments && (
-                  <MenuItem 
-                    icon={FileText} 
-                    label="Global Documents" 
-                    onClick={() => go("/global-documents")} 
-                    active={isActive(["/global-documents"])}
-                  />
                 )}
               </div>
 
