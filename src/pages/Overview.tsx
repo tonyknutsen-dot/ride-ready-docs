@@ -1,7 +1,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { FileText, Shield, Calendar, Wrench, ArrowRight, FerrisWheel, ClipboardCheck, Settings, Bell } from "lucide-react";
+import { FileText, ShieldCheck, Calendar, Wrench, ArrowRight, Cog, CheckSquare, Settings, Bell } from "lucide-react";
 import { formatPlanWithDescription } from "@/utils/planFormatter";
 import { ItemLimitWarning } from "@/components/ItemLimitWarning";
 import DeviceHintBanner from "@/components/DeviceHintBanner";
@@ -47,12 +47,12 @@ const Overview = () => {
   }
 
   const quickNavItems = [
-    { icon: FerrisWheel, label: "Equipment", path: "/rides", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
-    { icon: ClipboardCheck, label: "Checks", path: "/checks", color: "text-success", bg: "bg-success/10 border-success/20" },
+    { icon: Cog, label: "Equipment", path: "/rides", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
+    { icon: CheckSquare, label: "Checks", path: "/checks", color: "text-success", bg: "bg-success/10 border-success/20" },
     { icon: FileText, label: "Documents", path: "/documents", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
     { icon: Wrench, label: "Maintenance", path: "/maintenance", color: "text-warning", bg: "bg-warning/10 border-warning/20" },
     { icon: Calendar, label: "Calendar", path: "/calendar", color: "text-info", bg: "bg-info/10 border-info/20" },
-    { icon: Shield, label: "Assessments", path: "/risk-assessments", color: "text-destructive", bg: "bg-destructive/10 border-destructive/20" },
+    { icon: ShieldCheck, label: "Assessments", path: "/risk-assessments", color: "text-destructive", bg: "bg-destructive/10 border-destructive/20" },
     { icon: Bell, label: "Notifications", path: "/notifications", color: "text-success", bg: "bg-success/10 border-success/20", badge: unreadCount },
     { icon: Settings, label: "Settings", path: "/settings", color: "text-muted-foreground", bg: "bg-muted border-border" },
   ];
@@ -110,7 +110,7 @@ const Overview = () => {
       {/* Stats Grid — 2×2 */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: 'Equipment', value: stats.activeRides, icon: FerrisWheel, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', path: '/rides' },
+          { label: 'Equipment', value: stats.activeRides, icon: Cog, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', path: '/rides' },
           { label: 'Documents', value: stats.totalDocuments, icon: FileText, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', path: '/documents' },
           { label: 'Maintenance', value: stats.maintenanceRecords, icon: Wrench, color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/20', path: '/maintenance' },
           { label: 'Due Soon', value: stats.upcomingInspections, icon: Calendar, color: 'text-destructive', bg: 'bg-destructive/10', border: 'border-destructive/20', path: '/calendar' },
