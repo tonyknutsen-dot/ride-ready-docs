@@ -77,16 +77,14 @@ export default function MobileBottomNav() {
   }) => (
     <button
       onClick={onClick}
-      className={`flex flex-col items-center justify-center min-h-[56px] min-w-[56px] rounded-xl text-[11px] font-medium transition-all active:scale-95 ${
+      className={`flex flex-col items-center justify-center min-h-[56px] min-w-[56px] rounded-none text-[11px] font-medium transition-all active:scale-95 border-t-2 ${
         active 
-          ? "text-primary bg-primary/10" 
-          : highlight
-          ? "text-[#64748B]"
-          : "text-[#64748B] hover:text-foreground"
+          ? "text-[#1E3A5F] border-t-[#1E3A5F]" 
+          : "text-[#64748B] border-t-transparent hover:text-foreground"
       }`}
       aria-label={label}
     >
-      <Icon className={`h-6 w-6 ${active ? '' : 'text-[#64748B]'} ${highlight && !active ? '!text-[#64748B]' : ''}`} strokeWidth={2} />
+      <Icon className={`h-6 w-6 ${active ? 'text-[#1E3A5F]' : 'text-[#64748B]'}`} strokeWidth={2} />
       <span className="mt-0.5">{label}</span>
     </button>
   );
@@ -176,7 +174,7 @@ export default function MobileBottomNav() {
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <button 
-              className="flex flex-col items-center justify-center min-h-[56px] min-w-[56px] rounded-xl text-[11px] font-medium text-[#64748B] hover:text-foreground transition-all active:scale-95" 
+              className="flex flex-col items-center justify-center min-h-[56px] min-w-[56px] rounded-none text-[11px] font-medium text-[#64748B] hover:text-foreground border-t-2 border-t-transparent transition-all active:scale-95" 
               aria-label="More"
             >
               <MoreHorizontal className="h-6 w-6 text-[#64748B]" strokeWidth={2} />
