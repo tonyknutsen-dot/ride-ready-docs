@@ -5,23 +5,23 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg text-sm font-medium ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:transition-transform [&_svg]:duration-200 active:scale-[0.97] hover:-translate-y-0.5",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm ring-offset-background transition-all duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 [&_svg]:transition-transform [&_svg]:duration-200 active:scale-[0.97] hover:-translate-y-0.5",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md shadow-sm",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-md shadow-sm",
-        outline: "border border-input bg-background hover:bg-primary/5 hover:text-primary hover:border-primary/40 hover:shadow-sm",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-sm",
-        ghost: "hover:bg-primary/10 hover:text-primary",
-        link: "text-primary underline-offset-4 hover:underline hover:translate-y-0",
-        success: "bg-success text-success-foreground hover:bg-success/90 hover:shadow-md shadow-sm",
+        default: "bg-primary text-primary-foreground font-semibold hover:bg-[#163047] hover:shadow-md shadow-sm rounded-xl px-[18px] py-3",
+        destructive: "bg-destructive text-destructive-foreground font-semibold hover:bg-destructive/90 hover:shadow-md shadow-sm rounded-xl px-[18px] py-3",
+        outline: "border border-input bg-background font-medium hover:bg-primary/5 hover:text-primary hover:border-primary/40 hover:shadow-sm rounded-xl px-[18px] py-3",
+        secondary: "bg-secondary text-secondary-foreground font-medium hover:bg-secondary/80 hover:shadow-sm rounded-xl px-[18px] py-3",
+        ghost: "hover:bg-primary/10 hover:text-primary font-medium rounded-xl px-[18px] py-3",
+        link: "text-primary underline-offset-4 hover:underline hover:translate-y-0 font-medium",
+        success: "bg-success text-success-foreground font-semibold hover:bg-success/90 hover:shadow-md shadow-sm rounded-xl px-[18px] py-3",
       },
       size: {
-        default: "h-11 min-h-[44px] px-5 py-2.5",
-        sm: "h-9 min-h-[36px] rounded-md px-3.5",
-        lg: "h-12 min-h-[48px] rounded-lg px-8 text-base",
-        icon: "h-11 w-11 min-h-[44px] min-w-[44px]",
+        default: "h-11 min-h-[44px]",
+        sm: "h-9 min-h-[36px] rounded-lg px-3.5 py-2 text-xs",
+        lg: "h-12 min-h-[48px] px-8 text-base",
+        icon: "h-11 w-11 min-h-[44px] min-w-[44px] rounded-xl",
       },
     },
     defaultVariants: {
