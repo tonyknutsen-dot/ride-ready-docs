@@ -865,19 +865,19 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-16 flex flex-col items-center justify-center gap-1 border-2 border-dashed hover:border-primary/50"
+                    className="h-16 flex flex-col items-center justify-center gap-1 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#1E3A5F] hover:bg-[#F1F5F9] rounded-2xl transition-all group"
                     onClick={() => document.getElementById('edit-camera-upload')?.click()}
                   >
-                    <Camera className="h-5 w-5 text-muted-foreground" />
+                    <Camera className="h-5 w-5 text-[#475569] group-hover:text-primary transition-colors" strokeWidth={2} />
                     <span className="text-xs font-medium">Take Photo</span>
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-16 flex flex-col items-center justify-center gap-1 border-2 border-dashed hover:border-primary/50"
+                    className="h-16 flex flex-col items-center justify-center gap-1 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#1E3A5F] hover:bg-[#F1F5F9] rounded-2xl transition-all group"
                     onClick={() => document.getElementById('edit-file-upload')?.click()}
                   >
-                    <FolderOpen className="h-5 w-5 text-muted-foreground" />
+                    <FolderOpen className="h-5 w-5 text-[#475569] group-hover:text-primary transition-colors" strokeWidth={2} />
                     <span className="text-xs font-medium">Choose File</span>
                   </Button>
                 </div>
