@@ -274,26 +274,26 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
           <Button
             type="button"
             variant="outline"
-            className="h-28 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-info/40 hover:border-info hover:bg-gradient-to-br hover:from-info/10 hover:to-primary/5 transition-all group"
+            className="h-28 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#1E3A5F] hover:bg-[#F1F5F9] rounded-2xl transition-all group"
             onClick={() => cameraInputRef.current?.click()}
             disabled={uploading}
           >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-info/20 to-primary/10 group-hover:from-info group-hover:to-info/80 flex items-center justify-center transition-all">
-              <Camera className="h-6 w-6 text-info group-hover:text-white transition-colors" />
+            <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center transition-all group-hover:bg-primary/10">
+              <Camera className="h-6 w-6 text-[#475569] group-hover:text-primary transition-colors" strokeWidth={2} />
             </div>
-            <span className="text-sm font-medium">Take Photo</span>
+            <span className="text-sm font-medium text-foreground">Take Photo</span>
           </Button>
           <Button
             type="button"
             variant="outline"
-            className="h-28 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-primary/40 hover:border-primary hover:bg-gradient-to-br hover:from-primary/10 hover:to-info/5 transition-all group"
+            className="h-28 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#1E3A5F] hover:bg-[#F1F5F9] rounded-2xl transition-all group"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-info/10 group-hover:from-primary group-hover:to-primary/80 flex items-center justify-center transition-all">
-              <FolderOpen className="h-6 w-6 text-primary group-hover:text-white transition-colors" />
+            <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center transition-all group-hover:bg-primary/10">
+              <FolderOpen className="h-6 w-6 text-[#475569] group-hover:text-primary transition-colors" strokeWidth={2} />
             </div>
-            <span className="text-sm font-medium">Choose File</span>
+            <span className="text-sm font-medium text-foreground">Choose File</span>
           </Button>
         </div>
       ) : (

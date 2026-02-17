@@ -478,19 +478,19 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             <Button
               type="button"
               variant="outline"
-              className="h-20 flex flex-col items-center justify-center gap-2 border-2 border-dashed hover:border-primary/50 hover:bg-muted/30"
+              className="h-20 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#1E3A5F] hover:bg-[#F1F5F9] rounded-2xl transition-all group"
               onClick={() => document.getElementById('camera-upload')?.click()}
             >
-              <Camera className="h-6 w-6 text-muted-foreground" />
+              <Camera className="h-6 w-6 text-[#475569] group-hover:text-primary transition-colors" strokeWidth={2} />
               <span className="text-sm font-medium">Take Photo</span>
             </Button>
             <Button
               type="button"
               variant="outline"
-              className="h-20 flex flex-col items-center justify-center gap-2 border-2 border-dashed hover:border-primary/50 hover:bg-muted/30"
+              className="h-20 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#1E3A5F] hover:bg-[#F1F5F9] rounded-2xl transition-all group"
               onClick={() => document.getElementById('file-upload')?.click()}
             >
-              <FolderOpen className="h-6 w-6 text-muted-foreground" />
+              <FolderOpen className="h-6 w-6 text-[#475569] group-hover:text-primary transition-colors" strokeWidth={2} />
               <span className="text-sm font-medium">Choose File</span>
             </Button>
           </div>
