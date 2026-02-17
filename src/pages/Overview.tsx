@@ -49,11 +49,11 @@ const Overview = () => {
   const quickNavItems = [
     { icon: FerrisWheel, label: "Equipment", path: "/rides", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
     { icon: ClipboardCheck, label: "Checks", path: "/checks", color: "text-success", bg: "bg-success/10 border-success/20" },
-    { icon: FileText, label: "Documents", path: "/documents", color: "text-info", bg: "bg-info/10 border-info/20" },
-    { icon: Wrench, label: "Maintenance", path: "/maintenance", color: "text-accent", bg: "bg-accent/10 border-accent/20" },
-    { icon: Calendar, label: "Calendar", path: "/calendar", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
+    { icon: FileText, label: "Documents", path: "/documents", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
+    { icon: Wrench, label: "Maintenance", path: "/maintenance", color: "text-warning", bg: "bg-warning/10 border-warning/20" },
+    { icon: Calendar, label: "Calendar", path: "/calendar", color: "text-info", bg: "bg-info/10 border-info/20" },
     { icon: Shield, label: "Assessments", path: "/risk-assessments", color: "text-destructive", bg: "bg-destructive/10 border-destructive/20" },
-    { icon: Bell, label: "Notifications", path: "/notifications", color: "text-warning", bg: "bg-warning/10 border-warning/20", badge: unreadCount },
+    { icon: Bell, label: "Notifications", path: "/notifications", color: "text-success", bg: "bg-success/10 border-success/20", badge: unreadCount },
     { icon: Settings, label: "Settings", path: "/settings", color: "text-muted-foreground", bg: "bg-muted border-border" },
   ];
 
@@ -87,12 +87,12 @@ const Overview = () => {
 
 
       {/* Quick Navigation Grid */}
-      <div className="grid grid-cols-4 gap-2.5">
+      <div className="grid grid-cols-4 gap-2">
         {quickNavItems.map(item => (
           <button
             key={item.label}
             onClick={() => navigate(item.path)}
-            className="flex flex-col items-center gap-2 p-3 rounded-2xl border bg-card hover:bg-accent/5 hover:shadow-card-hover active:scale-[0.96] transition-all group relative"
+            className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border border-border/60 bg-card hover:bg-secondary/60 active:scale-[0.96] transition-all group relative shadow-sm"
           >
             <div className={`p-2.5 rounded-xl border ${item.bg} group-hover:scale-105 transition-transform relative`}>
               <item.icon className={`h-5 w-5 ${item.color}`} />
@@ -102,7 +102,7 @@ const Overview = () => {
                 </span>
               )}
             </div>
-            <span className="text-[11px] font-semibold text-muted-foreground text-center leading-tight tracking-wide">{item.label}</span>
+            <span className="text-[11px] font-medium text-foreground/70 text-center leading-tight">{item.label}</span>
           </button>
         ))}
       </div>
@@ -110,14 +110,14 @@ const Overview = () => {
       {/* Stats Grid — 2×2 */}
       <div className="grid grid-cols-2 gap-3">
         {[
-          { label: 'Equipment', value: stats.activeRides, icon: FerrisWheel, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/10', path: '/rides' },
-          { label: 'Documents', value: stats.totalDocuments, icon: FileText, color: 'text-info', bg: 'bg-info/10', border: 'border-info/10', path: '/documents' },
-          { label: 'Maintenance', value: stats.maintenanceRecords, icon: Wrench, color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/10', path: '/maintenance' },
-          { label: 'Due Soon', value: stats.upcomingInspections, icon: Calendar, color: 'text-destructive', bg: 'bg-destructive/10', border: 'border-destructive/10', path: '/calendar' },
+          { label: 'Equipment', value: stats.activeRides, icon: FerrisWheel, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', path: '/rides' },
+          { label: 'Documents', value: stats.totalDocuments, icon: FileText, color: 'text-primary', bg: 'bg-primary/10', border: 'border-primary/20', path: '/documents' },
+          { label: 'Maintenance', value: stats.maintenanceRecords, icon: Wrench, color: 'text-warning', bg: 'bg-warning/10', border: 'border-warning/20', path: '/maintenance' },
+          { label: 'Due Soon', value: stats.upcomingInspections, icon: Calendar, color: 'text-destructive', bg: 'bg-destructive/10', border: 'border-destructive/20', path: '/calendar' },
         ].map(({ label, value, icon: Icon, color, bg, border, path }) => (
           <Card
             key={label}
-            className={`group cursor-pointer hover:shadow-card-hover transition-all rounded-2xl border ${border} overflow-hidden`}
+            className={`group cursor-pointer transition-all rounded-2xl border ${border} bg-card shadow-sm hover:shadow-md overflow-hidden`}
             onClick={() => navigate(path)}
           >
             <CardContent className="p-4 relative">
@@ -125,10 +125,10 @@ const Overview = () => {
                 <div className={`p-2 ${bg} rounded-xl`}>
                   <Icon className={`h-4 w-4 ${color}`} />
                 </div>
-                <ArrowRight className={`h-3.5 w-3.5 ${color} opacity-0 group-hover:opacity-60 transition-opacity`} />
+                <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-60 transition-opacity" />
               </div>
               <div className={`text-3xl font-bold ${color} leading-none mb-1`}>{value}</div>
-              <div className="text-xs text-muted-foreground font-medium tracking-wide">{label}</div>
+              <div className="text-xs text-muted-foreground font-medium">{label}</div>
             </CardContent>
           </Card>
         ))}
