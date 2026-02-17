@@ -1,57 +1,32 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { FileText, Shield, Calendar, Upload, BarChart3, CheckCircle, AlertCircle, Clock, Wrench, ArrowRight, TrendingUp, FerrisWheel, ClipboardCheck, Mail, Settings, Bell } from "lucide-react";
+import { FileText, Shield, Calendar, Upload, CheckCircle, Wrench, ArrowRight, FerrisWheel, ClipboardCheck, Settings, Bell } from "lucide-react";
 import { QuickDocumentUpload } from "@/components/QuickDocumentUpload";
 import { formatPlanWithDescription } from "@/utils/planFormatter";
 import { ItemLimitWarning } from "@/components/ItemLimitWarning";
 import DeviceHintBanner from "@/components/DeviceHintBanner";
 import { StatSkeleton, GridSkeleton } from "@/components/Skeletons";
 import { useOverviewData } from "@/hooks/useOverviewData";
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { WelcomeModal } from "@/components/WelcomeModal";
 import StaffAccountBanner from "@/components/StaffAccountBanner";
-import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
-import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import appLogo from "@/assets/app-logo.jpg";
 
 const Overview = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
-  const { effectiveUserId } = useEffectiveUserId();
   const [showDocumentUpload, setShowDocumentUpload] = useState(false);
-  const [companyLogoUrl, setCompanyLogoUrl] = useState<string | null>(null);
-  
-  const { data, isLoading, error, refetch } = useOverviewData();
+
+  const { data, isLoading, refetch } = useOverviewData();
   const unreadCount = useUnreadNotifications();
-  
-  // Load company logo
-  useEffect(() => {
-    const loadLogo = async () => {
-      if (!effectiveUserId) return;
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('company_logo_path, company_name')
-        .eq('user_id', effectiveUserId)
-        .single();
-      
-      if (profile?.company_logo_path) {
-        const { data: signedUrl } = await supabase.storage
-          .from('ride-documents')
-          .createSignedUrl(profile.company_logo_path, 3600);
-        if (signedUrl?.signedUrl) setCompanyLogoUrl(signedUrl.signedUrl);
-      }
-    };
-    loadLogo();
-  }, [effectiveUserId]);
-  
+
   const handleRefresh = useCallback(async () => {
     await refetch();
   }, [refetch]);
-  
+
   const stats = data?.stats ?? {
     totalDocuments: 0,
     activeRides: 0,
@@ -59,8 +34,6 @@ const Overview = () => {
     recentChecks: 0,
     maintenanceRecords: 0
   };
-  const recentDocs = data?.recentDocs ?? [];
-  const recentActivity = data?.recentActivity ?? [];
   const userPlan = data?.userPlan ?? 'trial';
 
   if (isLoading) {
@@ -76,7 +49,6 @@ const Overview = () => {
     );
   }
 
-  // Quick navigation items — inspired by Mubaro's icon grid but more modern
   const quickNavItems = [
     { icon: FerrisWheel, label: "Equipment", path: "/rides", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
     { icon: ClipboardCheck, label: "Checks", path: "/checks", color: "text-success", bg: "bg-success/10 border-success/20" },
@@ -95,35 +67,29 @@ const Overview = () => {
     <PullToRefresh onRefresh={handleRefresh} disabled={isLoading}>
     <div className="container mx-auto py-6 pb-24 md:pb-8 space-y-6">
       <DeviceHintBanner />
-      
-      {/* Company Logo + Welcome Section */}
-      <div className="flex items-center gap-4">
-        {companyLogoUrl ? (
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-primary/20 shadow-card shrink-0 bg-card">
-            <img src={companyLogoUrl} alt="Company" className="w-full h-full object-cover" />
-          </div>
-        ) : (
-          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shrink-0 shadow-card">
-            <FerrisWheel className="h-8 w-8 sm:h-10 sm:w-10 text-primary-foreground" />
-          </div>
-        )}
+
+      {/* Header — App logo + title + plan badge */}
+      <div className="flex items-center gap-4 py-2">
+        <img
+          src={appLogo}
+          alt="Ride Ready Docs"
+          className="h-12 w-12 rounded-2xl object-cover shadow-card shrink-0 border border-border/30"
+        />
         <div className="min-w-0">
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight truncate">Dashboard</h1>
-          <div className="flex items-center gap-2 mt-0.5">
-            <Badge 
-              variant={userPlan === 'trial' ? 'secondary' : 'default'}
-              className={`text-[11px] ${userPlan !== 'trial' ? 'bg-primary/10 text-primary border-primary/20' : ''}`}
-            >
-              {formatPlanWithDescription(userPlan)}
-            </Badge>
-          </div>
+          <h1 className="text-xl font-bold tracking-tight">Dashboard</h1>
+          <Badge
+            variant={userPlan === 'trial' ? 'secondary' : 'default'}
+            className={`text-[11px] mt-0.5 ${userPlan !== 'trial' ? 'bg-primary/10 text-primary border-primary/20' : ''}`}
+          >
+            {formatPlanWithDescription(userPlan)}
+          </Badge>
         </div>
       </div>
 
       <ItemLimitWarning />
 
       {/* PRIMARY ACTION — Start a Check */}
-      <Card 
+      <Card
         className="group cursor-pointer border-2 border-success/40 bg-gradient-to-r from-success/5 to-success/15 hover:shadow-elegant transition-all active:scale-[0.98] rounded-2xl"
         onClick={() => navigate('/checks')}
       >
@@ -142,7 +108,7 @@ const Overview = () => {
         </CardContent>
       </Card>
 
-      {/* Quick Navigation Grid — icon tiles */}
+      {/* Quick Navigation Grid */}
       <div className="grid grid-cols-4 gap-3">
         {quickNavItems.map(item => (
           <button
@@ -163,7 +129,7 @@ const Overview = () => {
         ))}
       </div>
 
-      {/* Stats Overview — 2x2 grid */}
+      {/* Stats Grid — 2×2 */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="group hover:shadow-card-hover transition-all cursor-pointer rounded-2xl border-primary/15" onClick={() => navigate('/rides')}>
           <CardContent className="p-4">
@@ -218,71 +184,9 @@ const Overview = () => {
         </Card>
       </div>
 
-      {/* Recent Activity */}
-      {recentActivity.length > 0 && (
-        <Card className="rounded-2xl border-border/50">
-          <CardHeader className="pb-3 pt-5 px-5">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-primary/10 rounded-lg">
-                <Clock className="w-4 h-4 text-primary" />
-              </div>
-              <h2 className="text-base font-bold">Recent Activity</h2>
-            </div>
-          </CardHeader>
-          <CardContent className="px-5 pb-5 space-y-2">
-            {recentActivity.map((activity, index) => (
-              <div key={index} className="flex items-start gap-3 py-2">
-                <div className="w-2 h-2 bg-primary rounded-full mt-2 shrink-0" />
-                <div className="min-w-0">
-                  <div className="font-medium text-sm">{activity.title}</div>
-                  <div className="text-xs text-muted-foreground">{activity.time}</div>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Recent Documents */}
-      {recentDocs.length > 0 && (
-        <Card className="rounded-2xl border-border/50">
-          <CardHeader className="pb-3 pt-5 px-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 bg-info/10 rounded-lg">
-                  <FileText className="w-4 h-4 text-info" />
-                </div>
-                <h2 className="text-base font-bold">Recent Documents</h2>
-              </div>
-              <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-8" onClick={() => navigate('/documents')}>
-                View all <ArrowRight className="ml-1 h-3 w-3" />
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="px-5 pb-5">
-            <div className="space-y-2">
-              {recentDocs.map((doc, index) => (
-                <div key={index} className="flex items-center justify-between p-3 border border-border/50 rounded-xl hover:bg-muted/30 transition-colors">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <div className="p-1.5 bg-muted rounded-lg">
-                      <FileText className="w-3.5 h-3.5 text-muted-foreground" />
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-medium text-sm truncate">{doc.name}</div>
-                      <div className="text-xs text-muted-foreground">{doc.date}</div>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className="shrink-0 text-xs font-normal">{doc.type}</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Quick Upload */}
-      <Button 
-        variant="outline" 
+      <Button
+        variant="outline"
         className="w-full h-12 rounded-2xl border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary/30 transition-colors"
         onClick={() => setShowDocumentUpload(true)}
       >
