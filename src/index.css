@@ -96,12 +96,17 @@
     --card-hover: 210 40% 97%;
 
     /* Status colors */
-    --success: 134 58% 44%;
+    /* Compliant / Pass: #16A34A */
+    --success: 142 76% 36%;
     --success-foreground: 0 0% 100%;
-    --warning: 45 100% 50%;
+    /* Due Soon / Warning: #F59E0B */
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 10%;
-    /* Info: #3B82F6 */
-    --info: 217 91% 60%;
+    /* Overdue / Defect: #DC2626 */
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    /* Info: #2563EB */
+    --info: 221 83% 53%;
     --info-foreground: 0 0% 100%;
 
     /* Gradients - brand colors */
