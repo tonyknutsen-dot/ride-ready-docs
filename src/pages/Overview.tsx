@@ -47,14 +47,14 @@ const Overview = () => {
   }
 
   const quickNavItems = [
-    { icon: FerrisWheel, label: "Equipment", path: "/rides", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
-    { icon: ClipboardCheck, label: "Checks", path: "/checks", color: "text-success", bg: "bg-success/10 border-success/20" },
-    { icon: FileText, label: "Documents", path: "/documents", color: "text-primary", bg: "bg-primary/10 border-primary/20" },
-    { icon: Wrench, label: "Maintenance", path: "/maintenance", color: "text-warning", bg: "bg-warning/10 border-warning/20" },
-    { icon: Calendar, label: "Calendar", path: "/calendar", color: "text-info", bg: "bg-info/10 border-info/20" },
-    { icon: Shield, label: "Assessments", path: "/risk-assessments", color: "text-destructive", bg: "bg-destructive/10 border-destructive/20" },
-    { icon: Bell, label: "Notifications", path: "/notifications", color: "text-success", bg: "bg-success/10 border-success/20", badge: unreadCount },
-    { icon: Settings, label: "Settings", path: "/settings", color: "text-muted-foreground", bg: "bg-muted border-border" },
+    { icon: FerrisWheel, label: "Equipment", path: "/rides" },
+    { icon: ClipboardCheck, label: "Checks", path: "/checks" },
+    { icon: FileText, label: "Documents", path: "/documents" },
+    { icon: Wrench, label: "Maintenance", path: "/maintenance" },
+    { icon: Calendar, label: "Calendar", path: "/calendar" },
+    { icon: Shield, label: "Assessments", path: "/risk-assessments" },
+    { icon: Bell, label: "Notifications", path: "/notifications", badge: unreadCount },
+    { icon: Settings, label: "Settings", path: "/settings" },
   ];
 
   return (
@@ -92,11 +92,11 @@ const Overview = () => {
           <button
             key={item.label}
             onClick={() => navigate(item.path)}
-            className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-border bg-card active:scale-[0.96] transition-all group relative shadow-card hover:shadow-card-hover hover:-translate-y-0.5"
+            className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-primary bg-card active:scale-[0.96] transition-all group relative shadow-card hover:shadow-card-hover hover:-translate-y-0.5"
           >
-            <div className={`p-2 rounded-xl border ${item.bg} group-hover:scale-105 transition-transform relative`}>
-              <item.icon className={`h-6 w-6 ${item.color}`} />
-              {'badge' in item && item.badge > 0 && (
+            <div className="p-2 rounded-xl border border-primary bg-[#F1F5F9] group-hover:scale-105 transition-transform relative">
+              <item.icon className="h-6 w-6 text-primary" />
+              {'badge' in item && item.badge && item.badge > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
                   {item.badge > 9 ? '9+' : item.badge}
                 </span>
