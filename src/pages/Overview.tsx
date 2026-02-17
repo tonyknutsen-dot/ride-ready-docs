@@ -95,7 +95,7 @@ const Overview = () => {
             className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-border bg-card active:scale-[0.96] transition-all group relative shadow-card hover:shadow-card-hover hover:border-primary hover:bg-[#F1F5F9]"
           >
               <div className={`p-2 rounded-xl border ${item.bg} group-hover:border-primary/30 group-hover:bg-primary/10 group-hover:scale-105 transition-all relative`}>
-              <item.icon className={`h-6 w-6 ${item.color} group-hover:text-primary transition-colors`} />
+              <item.icon className={`h-6 w-6 ${item.color} group-hover:text-primary transition-colors`} strokeWidth={2} />
               {'badge' in item && item.badge > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
                   {item.badge > 9 ? '9+' : item.badge}
@@ -123,7 +123,7 @@ const Overview = () => {
             <CardContent className="p-4 relative">
               <div className="flex items-start justify-between mb-3">
                 <div className={`p-2 ${bg} rounded-xl`}>
-                  <Icon className={`h-4 w-4 ${color}`} />
+                  <Icon className={`h-4 w-4 ${color}`} strokeWidth={2} />
                 </div>
                 <ArrowRight className="h-3.5 w-3.5 text-muted-foreground opacity-0 group-hover:opacity-60 transition-opacity" />
               </div>
