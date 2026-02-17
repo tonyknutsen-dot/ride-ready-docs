@@ -87,22 +87,22 @@ const Overview = () => {
 
 
       {/* Quick Navigation Grid */}
-      <div className="grid grid-cols-4 gap-2">
+      <div className="grid grid-cols-4 gap-3">
         {quickNavItems.map(item => (
           <button
             key={item.label}
             onClick={() => navigate(item.path)}
-            className="flex flex-col items-center gap-1.5 p-2.5 rounded-2xl border border-border/60 bg-card hover:bg-secondary/60 active:scale-[0.96] transition-all group relative shadow-sm"
+            className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-border bg-card active:scale-[0.96] transition-all group relative shadow-card hover:shadow-card-hover hover:-translate-y-0.5"
           >
-            <div className={`p-2.5 rounded-xl border ${item.bg} group-hover:scale-105 transition-transform relative`}>
-              <item.icon className={`h-5 w-5 ${item.color}`} />
+            <div className={`p-2 rounded-xl border ${item.bg} group-hover:scale-105 transition-transform relative`}>
+              <item.icon className={`h-6 w-6 ${item.color}`} />
               {'badge' in item && item.badge > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
                   {item.badge > 9 ? '9+' : item.badge}
                 </span>
               )}
             </div>
-            <span className="text-[11px] font-medium text-foreground/70 text-center leading-tight">{item.label}</span>
+            <span className="text-[11px] font-medium text-foreground text-center leading-tight">{item.label}</span>
           </button>
         ))}
       </div>

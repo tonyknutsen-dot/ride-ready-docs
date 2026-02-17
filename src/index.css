@@ -118,13 +118,15 @@
     /* Shadows */
     --shadow-elegant: 0 10px 40px -10px hsl(213 52% 24% / 0.25), 0 4px 12px -4px hsl(213 30% 30% / 0.12);
     --shadow-glow: 0 0 35px -5px hsl(217 91% 60% / 0.4);
-    --shadow-card: 0 2px 8px -2px hsl(213 40% 30% / 0.08), 0 1px 3px -1px hsl(213 30% 20% / 0.05);
-    --shadow-card-hover: 0 8px 25px -5px hsl(213 52% 24% / 0.18), 0 4px 10px -3px hsl(213 30% 20% / 0.1);
+    /* Tile Shadow: 0 4px 12px rgba(0,0,0,0.06) */
+    --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.06);
+    --shadow-card-hover: 0 8px 20px rgba(0, 0, 0, 0.1);
 
     /* Transitions */
     --transition-smooth: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 
-    --radius: 0.625rem;
+    /* Tile Radius: 16px */
+    --radius: 1rem;
   }
 
   .dark {
