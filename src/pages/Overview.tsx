@@ -92,10 +92,10 @@ const Overview = () => {
           <button
             key={item.label}
             onClick={() => navigate(item.path)}
-            className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-border bg-card active:scale-[0.96] transition-all group relative shadow-card hover:shadow-card-hover hover:-translate-y-0.5"
+            className="flex flex-col items-center gap-2 p-4 rounded-2xl border border-border bg-card active:scale-[0.96] transition-all group relative shadow-card hover:shadow-card-hover hover:border-primary hover:bg-[#F1F5F9]"
           >
-            <div className={`p-2 rounded-xl border ${item.bg} group-hover:scale-105 transition-transform relative`}>
-              <item.icon className={`h-6 w-6 ${item.color}`} />
+              <div className={`p-2 rounded-xl border ${item.bg} group-hover:border-primary/30 group-hover:bg-primary/10 group-hover:scale-105 transition-all relative`}>
+              <item.icon className={`h-6 w-6 ${item.color} group-hover:text-primary transition-colors`} />
               {'badge' in item && item.badge > 0 && (
                 <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
                   {item.badge > 9 ? '9+' : item.badge}
