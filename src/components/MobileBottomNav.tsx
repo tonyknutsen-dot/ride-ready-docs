@@ -140,7 +140,7 @@ export default function MobileBottomNav() {
           }}
           active={isActive(["/overview"])}
           icon={Home}
-          label="Overview"
+          label="Dashboard"
         />
 
         {/* Rides/Equipment */}
