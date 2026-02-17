@@ -254,21 +254,21 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           
           {/* Details Grid */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl bg-gradient-to-br from-primary/5 to-primary/10 border border-primary/10 space-y-1">
-              <span className="text-[10px] text-primary/70 uppercase tracking-wide font-semibold">Category</span>
-              <p className="text-sm font-semibold text-foreground">{ride.ride_categories.name}</p>
+            <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] space-y-1">
+              <span className="text-xs text-[#475569] font-medium">Category</span>
+              <p className="text-sm font-semibold text-[#0F172A]">{ride.ride_categories.name}</p>
             </div>
-            <div className="p-3 rounded-xl bg-gradient-to-br from-accent/5 to-accent/10 border border-accent/10 space-y-1">
-              <span className="text-[10px] text-accent/80 uppercase tracking-wide font-semibold">Manufacturer</span>
-              <p className="text-sm font-semibold text-foreground truncate">{ride.manufacturer || '—'}</p>
+            <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] space-y-1">
+              <span className="text-xs text-[#475569] font-medium">Manufacturer</span>
+              <p className="text-sm font-semibold text-[#0F172A] truncate">{ride.manufacturer || '—'}</p>
             </div>
-            <div className="p-3 rounded-xl bg-gradient-to-br from-info/5 to-info/10 border border-info/10 space-y-1">
-              <span className="text-[10px] text-info/80 uppercase tracking-wide font-semibold">Year</span>
-              <p className="text-sm font-semibold text-foreground">{ride.year_manufactured || '—'}</p>
+            <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] space-y-1">
+              <span className="text-xs text-[#475569] font-medium">Year</span>
+              <p className="text-sm font-semibold text-[#0F172A]">{ride.year_manufactured || '—'}</p>
             </div>
-            <div className="p-3 rounded-xl bg-gradient-to-br from-success/5 to-success/10 border border-success/10 space-y-1">
-              <span className="text-[10px] text-success/80 uppercase tracking-wide font-semibold">Serial</span>
-              <p className="text-sm font-semibold text-foreground truncate">{ride.serial_number || '—'}</p>
+            <div className={`p-3 rounded-xl bg-white border space-y-1 ${!ride.serial_number ? 'border-[#F59E0B]' : 'border-[#E2E8F0]'}`}>
+              <span className="text-xs text-[#475569] font-medium">Serial</span>
+              <p className="text-sm font-semibold text-[#0F172A] truncate">{ride.serial_number || '—'}</p>
             </div>
           </div>
         </CardContent>
@@ -322,22 +322,22 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             {/* CHECKS - Main Priority Action */}
             <FeatureGate feature="Inspections">
               <Card 
-                className="active:scale-[0.98] transition-all cursor-pointer border-2 border-success/50 bg-gradient-to-r from-success/10 via-success/15 to-success/20 hover:shadow-elegant"
+                className="active:scale-[0.98] transition-all cursor-pointer border border-[#E2E8F0] bg-white hover:border-[#1E3A5F] hover:shadow-card"
                 onClick={() => setActiveTab("checks")}
               >
                 <CardContent className="p-5 flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-success/25 flex items-center justify-center shrink-0 shadow-sm">
-                    <CheckSquare className="h-8 w-8 text-success" />
+                  <div className="w-14 h-14 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center shrink-0">
+                    <CheckSquare className="h-7 w-7 text-[#475569]" strokeWidth={2} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-bold text-base text-success">Start Safety Check</p>
-                    <p className="text-sm text-muted-foreground">Pre-opening, daily, weekly, monthly & yearly</p>
+                    <p className="font-semibold text-base text-[#0F172A]">Start Safety Check</p>
+                    <p className="text-sm text-[#475569]">Pre-opening, daily, weekly, monthly & yearly</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-2xl font-bold text-success">
+                    <p className="text-2xl font-semibold text-[#0F172A]">
                       {rideStats.loading ? '...' : rideStats.todayChecks}
                     </p>
-                    <p className="text-[10px] text-muted-foreground uppercase font-semibold">Today</p>
+                    <p className="text-[10px] text-[#475569] uppercase font-medium">Today</p>
                   </div>
                   <Button
                     variant="ghost"
@@ -346,10 +346,10 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                       e.stopPropagation();
                       setShowChecksGuide(true);
                     }}
-                    className="h-10 w-10 shrink-0 text-success/70 hover:text-success hover:bg-success/10"
+                    className="h-10 w-10 shrink-0 text-[#475569] hover:text-primary hover:bg-primary/10"
                     aria-label="How checks work"
                   >
-                    <HelpCircle className="h-5 w-5" />
+                    <HelpCircle className="h-5 w-5" strokeWidth={2} />
                   </Button>
                 </CardContent>
               </Card>
@@ -357,45 +357,45 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
             {/* Documents Quick Action */}
             <Card 
-              className="active:scale-[0.98] transition-all cursor-pointer border-primary/30 bg-gradient-to-r from-primary/5 to-primary/10 hover:shadow-elegant"
+              className="active:scale-[0.98] transition-all cursor-pointer border border-[#E2E8F0] bg-white hover:border-[#1E3A5F] hover:shadow-card"
               onClick={() => setActiveTab("documents")}
             >
               <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center shrink-0 shadow-sm">
-                  <FileText className="h-7 w-7 text-primary" />
+                <div className="w-12 h-12 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center shrink-0">
+                  <FileText className="h-6 w-6 text-[#475569]" strokeWidth={2} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-foreground">Documents</p>
-                  <p className="text-xs text-muted-foreground">Upload and manage files</p>
+                  <p className="font-semibold text-sm text-[#0F172A]">Documents</p>
+                  <p className="text-xs text-[#475569]">Upload and manage files</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-2xl font-bold text-primary">
+                  <p className="text-2xl font-semibold text-[#0F172A]">
                     {rideStats.loading ? '...' : rideStats.docCount}
                   </p>
-                  <p className="text-[10px] text-muted-foreground uppercase font-semibold">Files</p>
+                  <p className="text-[10px] text-[#475569] uppercase font-medium">Files</p>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Maintenance Quick Action - Navigate to dedicated Maintenance page */}
+            {/* Maintenance Quick Action */}
             <FeatureGate feature="Maintenance Logging">
               <Card 
-                className="active:scale-[0.98] transition-all cursor-pointer border-accent/30 bg-gradient-to-r from-accent/5 to-accent/10 hover:shadow-elegant"
+                className="active:scale-[0.98] transition-all cursor-pointer border border-[#E2E8F0] bg-white hover:border-[#1E3A5F] hover:shadow-card"
                 onClick={() => navigate(`/maintenance?rideId=${ride.id}`)}
               >
                 <CardContent className="p-4 flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-accent/20 flex items-center justify-center shrink-0 shadow-sm">
-                    <Wrench className="h-7 w-7 text-accent" />
+                  <div className="w-12 h-12 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center shrink-0">
+                    <Wrench className="h-6 w-6 text-[#475569]" strokeWidth={2} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-foreground">Maintenance</p>
-                    <p className="text-xs text-muted-foreground">Log repairs and service</p>
+                    <p className="font-semibold text-sm text-[#0F172A]">Maintenance</p>
+                    <p className="text-xs text-[#475569]">Log repairs and service</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-2xl font-bold text-accent">
+                    <p className="text-2xl font-semibold text-[#0F172A]">
                       {rideStats.loading ? '...' : rideStats.maintenanceCount}
                     </p>
-                    <p className="text-[10px] text-muted-foreground uppercase font-semibold">Records</p>
+                    <p className="text-[10px] text-[#475569] uppercase font-medium">Records</p>
                   </div>
                 </CardContent>
               </Card>
