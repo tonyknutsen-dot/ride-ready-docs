@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -50,10 +49,17 @@ const MAINTENANCE_TYPES = [
 
 // Section label component for visual grouping
 const SectionLabel = ({ icon: Icon, label }: { icon: React.ElementType; label: string }) => (
-  <div className="flex items-center gap-2 pt-2">
-    <Icon className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
-    <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{label}</span>
+  <div className="flex items-center gap-2 mb-4">
+    <Icon className="h-3.5 w-3.5 text-muted-foreground" strokeWidth={2} />
+    <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">{label}</span>
     <div className="flex-1 h-px bg-border" />
+  </div>
+);
+
+// Section card wrapper
+const SectionCard = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <div className={`bg-card rounded-xl border border-border p-4 shadow-[0_2px_6px_rgba(0,0,0,0.04)] space-y-4 ${className}`}>
+    {children}
   </div>
 );
 
@@ -280,18 +286,18 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
   };
 
   return (
-    <Card>
-      <CardContent className="pt-6 space-y-6">
+    <div className="space-y-3">
 
-        {/* Info banner */}
-        <div className="flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-3">
-          <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            All attachments are stored in the equipment document register under "Maintenance". Generated reports will also appear there.
-          </p>
-        </div>
+      {/* Info banner */}
+      <div className="flex items-start gap-3 rounded-xl border border-info/20 bg-info/5 p-3">
+        <Info className="h-4 w-4 text-info mt-0.5 shrink-0" />
+        <p className="text-xs text-info/80 leading-relaxed">
+          All attachments are stored in the equipment document register under "Maintenance". Generated reports will also appear there.
+        </p>
+      </div>
 
-        {/* ── SECTION 1: Maintenance Details ── */}
+      {/* ── SECTION 1: Maintenance Details ── */}
+      <SectionCard>
         <SectionLabel icon={CalendarIcon} label="Maintenance Details" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -300,7 +306,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             <Label>Maintenance Date <span className="text-destructive">*</span></Label>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.maintenance_date && "text-muted-foreground")}>
+                <Button variant="outline" className={cn("w-full justify-start text-left font-normal bg-muted/40", !formData.maintenance_date && "text-muted-foreground")}>
                   <CalendarIcon className="mr-2 h-4 w-4" />
                   {formData.maintenance_date ? format(formData.maintenance_date, "d MMM yyyy") : "Select date"}
                 </Button>
@@ -317,7 +323,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           <div className="space-y-2">
             <Label>Maintenance Type <span className="text-destructive">*</span></Label>
             <Select value={formData.maintenance_type} onValueChange={(v) => setFormData({ ...formData, maintenance_type: v })}>
-              <SelectTrigger><SelectValue placeholder="Select maintenance type" /></SelectTrigger>
+              <SelectTrigger className="bg-muted/40"><SelectValue placeholder="Select maintenance type" /></SelectTrigger>
               <SelectContent>
                 {MAINTENANCE_TYPES.map((type) => (
                   <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
@@ -331,7 +337,8 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             <Label htmlFor="performed_by">Performed By <span className="text-destructive">*</span></Label>
             <Input id="performed_by" value={formData.performed_by}
               onChange={(e) => setFormData({ ...formData, performed_by: e.target.value })}
-              placeholder="Name of person who performed maintenance" />
+              placeholder="Name of person who performed maintenance"
+              className="bg-muted/40" />
           </div>
 
           {/* Cost */}
@@ -340,7 +347,8 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
               Cost (£) <span className="text-xs text-muted-foreground font-normal">(optional)</span>
             </Label>
             <Input id="cost" type="number" step="0.01" min="0" value={formData.cost}
-              onChange={(e) => setFormData({ ...formData, cost: e.target.value })} placeholder="0.00" />
+              onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+              placeholder="0.00" className="bg-muted/40" />
           </div>
         </div>
 
@@ -353,7 +361,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
               <span className="text-xs text-muted-foreground font-normal">(optional)</span>
             </Label>
             <Select value={formData.linked_defect_id} onValueChange={(v) => setFormData({ ...formData, linked_defect_id: v })}>
-              <SelectTrigger>
+              <SelectTrigger className="bg-muted/40">
                 <SelectValue placeholder="Link to an open defect…" />
               </SelectTrigger>
               <SelectContent>
@@ -373,7 +381,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         )}
 
         {/* Out of Service toggle */}
-        <div className="flex items-center justify-between rounded-lg border border-border p-3">
+        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-3">
           <div>
             <p className="text-sm font-medium">Equipment Out of Service</p>
             <p className="text-xs text-muted-foreground">Was equipment taken offline for this work?</p>
@@ -390,11 +398,14 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             </Label>
             <Input id="downtime" value={formData.downtime_duration}
               onChange={(e) => setFormData({ ...formData, downtime_duration: e.target.value })}
-              placeholder="e.g. 2 hours, half day, 3 days" />
+              placeholder="e.g. 2 hours, half day, 3 days"
+              className="bg-muted/40" />
           </div>
         )}
+      </SectionCard>
 
-        {/* ── SECTION 2: Work Performed ── */}
+      {/* ── SECTION 2: Work Performed ── */}
+      <SectionCard>
         <SectionLabel icon={FileText} label="Work Performed" />
 
         {/* Description */}
@@ -402,7 +413,8 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           <Label htmlFor="description">Work Description <span className="text-destructive">*</span></Label>
           <Textarea id="description" value={formData.description}
             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Describe the maintenance work performed…" rows={3} />
+            placeholder="Describe the maintenance work performed…" rows={3}
+            className="bg-muted/40" />
         </div>
 
         {/* Parts Replaced */}
@@ -413,7 +425,8 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           </Label>
           <Textarea id="parts_replaced" value={formData.parts_replaced}
             onChange={(e) => setFormData({ ...formData, parts_replaced: e.target.value })}
-            placeholder="List any parts replaced, e.g. bearings, bolts, seals…" rows={2} />
+            placeholder="List any parts replaced, e.g. bearings, bolts, seals…" rows={2}
+            className="bg-muted/40" />
         </div>
 
         {/* Additional Notes */}
@@ -424,17 +437,20 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           </Label>
           <Textarea id="notes" value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-            placeholder="Any additional observations, recommendations or follow-up actions…" rows={2} />
+            placeholder="Any additional observations, recommendations or follow-up actions…" rows={2}
+            className="bg-muted/40" />
         </div>
+      </SectionCard>
 
-        {/* ── SECTION 3: Service Provider ── */}
+      {/* ── SECTION 3: Service Provider ── */}
+      <SectionCard>
         <SectionLabel icon={Building2} label="Service Provider" />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Provider Type <span className="text-xs text-muted-foreground font-normal">(optional)</span></Label>
             <Select value={formData.service_provider_type} onValueChange={(v) => setFormData({ ...formData, service_provider_type: v })}>
-              <SelectTrigger><SelectValue placeholder="Internal or external?" /></SelectTrigger>
+              <SelectTrigger className="bg-muted/40"><SelectValue placeholder="Internal or external?" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="internal">Internal — Own team</SelectItem>
                 <SelectItem value="external">External — Contractor</SelectItem>
@@ -447,7 +463,8 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
               <Label htmlFor="service_company">Company Name</Label>
               <Input id="service_company" value={formData.service_company}
                 onChange={(e) => setFormData({ ...formData, service_company: e.target.value })}
-                placeholder="Contractor / service company name" />
+                placeholder="Contractor / service company name"
+                className="bg-muted/40" />
             </div>
           )}
 
@@ -455,14 +472,17 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             <Label htmlFor="engineer_name">Engineer / Technician Name</Label>
             <Input id="engineer_name" value={formData.engineer_name}
               onChange={(e) => setFormData({ ...formData, engineer_name: e.target.value })}
-              placeholder="Name of engineer or technician" />
+              placeholder="Name of engineer or technician"
+              className="bg-muted/40" />
           </div>
         </div>
+      </SectionCard>
 
-        {/* ── SECTION 4: Verification ── */}
+      {/* ── SECTION 4: Verification ── */}
+      <SectionCard>
         <SectionLabel icon={ShieldCheck} label="Verification" />
 
-        <div className="flex items-center justify-between rounded-lg border border-border p-3">
+        <div className="flex items-center justify-between rounded-lg border border-border bg-muted/20 p-3">
           <div>
             <p className="text-sm font-medium">Supervisor Sign-off Required</p>
             <p className="text-xs text-muted-foreground">Record verification of this work by a competent person</p>
@@ -477,13 +497,14 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
               <Label htmlFor="verified_by">Verified By</Label>
               <Input id="verified_by" value={formData.verified_by}
                 onChange={(e) => setFormData({ ...formData, verified_by: e.target.value })}
-                placeholder="Name of verifying person" />
+                placeholder="Name of verifying person"
+                className="bg-muted/40" />
             </div>
             <div className="space-y-2">
               <Label>Verification Date</Label>
               <Popover open={verificationCalendarOpen} onOpenChange={setVerificationCalendarOpen}>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.verification_date && "text-muted-foreground")}>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal bg-muted/40", !formData.verification_date && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {formData.verification_date ? format(formData.verification_date, "d MMM yyyy") : "Select date"}
                   </Button>
@@ -497,8 +518,10 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             </div>
           </div>
         )}
+      </SectionCard>
 
-        {/* ── SECTION 5: Evidence & Attachments ── */}
+      {/* ── SECTION 5: Evidence & Attachments ── */}
+      <SectionCard>
         <SectionLabel icon={FolderOpen} label="Evidence & Attachments" />
 
         <input type="file" multiple
@@ -508,18 +531,18 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           onChange={handleFileUpload} className="hidden" id="camera-upload" />
 
         <div className="grid grid-cols-2 gap-3">
-          <Button type="button" variant="outline"
-            className="h-20 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border bg-muted/20 hover:border-primary hover:bg-muted/40 rounded-xl transition-all group"
+          <button type="button"
+            className="h-20 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 hover:border-primary hover:bg-muted/50 transition-all group cursor-pointer"
             onClick={() => document.getElementById('camera-upload')?.click()}>
             <Camera className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={2} />
-            <span className="text-sm font-medium">Take Photo</span>
-          </Button>
-          <Button type="button" variant="outline"
-            className="h-20 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border bg-muted/20 hover:border-primary hover:bg-muted/40 rounded-xl transition-all group"
+            <span className="text-sm font-medium text-foreground">Take Photo</span>
+          </button>
+          <button type="button"
+            className="h-20 flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 hover:border-primary hover:bg-muted/50 transition-all group cursor-pointer"
             onClick={() => document.getElementById('file-upload')?.click()}>
             <FolderOpen className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={2} />
-            <span className="text-sm font-medium">Choose File</span>
-          </Button>
+            <span className="text-sm font-medium text-foreground">Choose File</span>
+          </button>
         </div>
 
         <p className="text-xs text-muted-foreground">
@@ -536,7 +559,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             <Label>Attached Files ({uploadedFiles.length})</Label>
             <div className="flex flex-wrap gap-2">
               {uploadedFiles.map((file, index) => (
-                <div key={index} className="relative group border rounded-lg overflow-hidden bg-muted/30 w-16 h-16">
+                <div key={index} className="relative group border border-border rounded-lg overflow-hidden bg-muted/40 w-16 h-16">
                   {file.type.startsWith('image/') ? (
                     <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-full object-cover" />
                   ) : (
@@ -555,33 +578,33 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             </div>
           </div>
         )}
+      </SectionCard>
 
-        {/* ── CTAs ── */}
-        <div className="flex flex-col sm:flex-row gap-3 pt-2 border-t border-border">
-          <Button onClick={handleSubmit} disabled={loading} className="flex-1 sm:flex-none">
-            {loading ? (
-              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
-            {loading ? 'Saving…' : 'Log Maintenance Record'}
-          </Button>
-          <Button type="button" variant="ghost" size="sm" className="text-muted-foreground"
-            onClick={() => {
-              setFormData({
-                maintenance_date: new Date(), maintenance_type: '', description: '', performed_by: '',
-                parts_replaced: '', cost: '', notes: '', linked_defect_id: '', service_provider_type: '',
-                service_company: '', engineer_name: '', equipment_out_of_service: false, downtime_duration: '',
-                requires_verification: false, verified_by: '', verification_date: null,
-              });
-              setUploadedFiles([]);
-            }}>
-            Reset Form
-          </Button>
-        </div>
+      {/* ── CTAs ── */}
+      <div className="flex flex-col sm:flex-row gap-3 pt-1">
+        <Button onClick={handleSubmit} disabled={loading} className="flex-1 sm:flex-none">
+          {loading ? (
+            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
+          {loading ? 'Saving…' : 'Log Maintenance Record'}
+        </Button>
+        <Button type="button" variant="ghost" size="sm" className="text-muted-foreground"
+          onClick={() => {
+            setFormData({
+              maintenance_date: new Date(), maintenance_type: '', description: '', performed_by: '',
+              parts_replaced: '', cost: '', notes: '', linked_defect_id: '', service_provider_type: '',
+              service_company: '', engineer_name: '', equipment_out_of_service: false, downtime_duration: '',
+              requires_verification: false, verified_by: '', verification_date: null,
+            });
+            setUploadedFiles([]);
+          }}>
+          Reset Form
+        </Button>
+      </div>
 
-      </CardContent>
-    </Card>
+    </div>
   );
 };
 
