@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Calendar, Edit, Trash2, FileText, Camera, Download, Eye, Filter, Save, Clock, X, FolderOpen } from 'lucide-react';
@@ -429,18 +428,35 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   };
 
   const getMaintenanceTypeBadge = (type: string) => {
-    const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-      'preventive': 'default',
-      'corrective': 'secondary',
-      'emergency': 'destructive',
-      'inspection': 'outline',
+    const styles: Record<string, string> = {
+      emergency:   'bg-destructive/10 text-destructive border border-destructive/30',
+      preventive:  'bg-primary/10 text-primary border border-primary/20',
+      corrective:  'bg-warning/10 text-warning border border-warning/30',
+      reactive:    'bg-destructive/10 text-destructive border border-destructive/20',
+      inspection:  'bg-muted text-muted-foreground border border-border',
+      modification:'bg-info/10 text-info border border-info/20',
+      inspection_linked: 'bg-info/10 text-info border border-info/20',
     };
-    
+    const cls = styles[type] || 'bg-muted text-muted-foreground border border-border';
     return (
-      <Badge variant={variants[type] || 'outline'}>
+      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold tracking-wide ${cls}`}>
         {getMaintenanceTypeLabel(type)}
-      </Badge>
+      </span>
     );
+  };
+
+  // Left stripe colour per type
+  const getStripeClass = (type: string) => {
+    const stripes: Record<string, string> = {
+      emergency: 'bg-destructive',
+      reactive:  'bg-destructive',
+      corrective:'bg-warning',
+      preventive:'bg-primary',
+      inspection:'bg-muted-foreground',
+      modification: 'bg-info',
+      inspection_linked: 'bg-info',
+    };
+    return stripes[type] || 'bg-muted-foreground';
   };
 
   const filteredRecords = records.filter(record => 
@@ -458,17 +474,17 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
 
   return (
     <div className="space-y-4">
-      {/* Header with filter - mobile responsive */}
+      {/* Header with filter */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <h3 className="text-lg font-semibold">Maintenance History</h3>
+          <h3 className="text-lg font-semibold text-foreground">Maintenance History</h3>
           <p className="text-sm text-muted-foreground">
             {filteredRecords.length} record{filteredRecords.length !== 1 ? 's' : ''}
           </p>
         </div>
         <Select value={filterType} onValueChange={setFilterType}>
-          <SelectTrigger className="w-full sm:w-48">
-            <Filter className="h-4 w-4 mr-2" />
+          <SelectTrigger className="w-full sm:w-48 bg-card border-border rounded-xl">
+            <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
             <SelectValue placeholder="Filter by type" />
           </SelectTrigger>
           <SelectContent>
@@ -492,183 +508,172 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       ) : (
         <div className="space-y-3">
           {filteredRecords.map((record) => (
-            <Card key={record.id} className="overflow-hidden">
-              <CardContent className="p-0">
-                {/* Mobile-first card layout */}
-                <div className="p-4 space-y-3">
-                  {/* Top row: Badge + Actions */}
-                  <div className="flex items-center justify-between gap-2">
-                    {getMaintenanceTypeBadge(record.maintenance_type)}
-                    <div className="flex gap-1">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => openEditDialog(record)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() => setSelectedRecord(record)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Maintenance Record Details</DialogTitle>
-                            <DialogDescription>
-                              {format(parseISO(record.maintenance_date), 'PPP')}
-                            </DialogDescription>
-                          </DialogHeader>
-                          {selectedRecord && (
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                  <strong>Type:</strong> {getMaintenanceTypeLabel(selectedRecord.maintenance_type)}
-                                </div>
-                                <div>
-                                  <strong>Date:</strong> {format(parseISO(selectedRecord.maintenance_date), 'd MMM yyyy')}
-                                </div>
-                                <div>
-                                  <strong>Performed by:</strong> {selectedRecord.performed_by}
-                                </div>
-                                {selectedRecord.cost && (
-                                  <div>
-                                    <strong>Cost:</strong> £{selectedRecord.cost}
-                                  </div>
-                                )}
-                              </div>
-                              <div>
-                                <strong>Description:</strong>
-                                <p className="mt-1">{selectedRecord.description}</p>
-                              </div>
-                              {selectedRecord.parts_replaced && (
-                                <div>
-                                  <strong>Parts Replaced:</strong>
-                                  <p className="mt-1">{selectedRecord.parts_replaced}</p>
-                                </div>
-                              )}
-                              {selectedRecord.notes && (
-                                <div>
-                                  <strong>Notes:</strong>
-                                  <p className="mt-1">{selectedRecord.notes}</p>
-                                </div>
-                              )}
+            <div key={record.id}
+              className="relative flex overflow-hidden rounded-xl border border-border bg-card shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
+              {/* Left status stripe */}
+              <div className={`w-1 shrink-0 rounded-l-xl ${getStripeClass(record.maintenance_type)}`} />
+
+              <div className="flex-1 p-4 space-y-3">
+                {/* Top row: Badge + Actions */}
+                <div className="flex items-center justify-between gap-2">
+                  {getMaintenanceTypeBadge(record.maintenance_type)}
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                      onClick={() => openEditDialog(record)}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                          onClick={() => setSelectedRecord(record)}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle>Maintenance Record Details</DialogTitle>
+                          <DialogDescription>
+                            {format(parseISO(record.maintenance_date), 'PPP')}
+                          </DialogDescription>
+                        </DialogHeader>
+                        {selectedRecord && (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div><strong>Type:</strong> {getMaintenanceTypeLabel(selectedRecord.maintenance_type)}</div>
+                              <div><strong>Date:</strong> {format(parseISO(selectedRecord.maintenance_date), 'd MMM yyyy')}</div>
+                              <div><strong>Performed by:</strong> {selectedRecord.performed_by}</div>
+                              {selectedRecord.cost && <div><strong>Cost:</strong> £{selectedRecord.cost}</div>}
                             </div>
-                          )}
-                        </DialogContent>
-                      </Dialog>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Record?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will permanently delete this maintenance record and all attached files.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(record.id)}>
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-
-                  {/* Description */}
-                  <h4 className="font-medium text-sm leading-snug">{record.description}</h4>
-                  
-                  {/* Meta info - compact grid */}
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3 shrink-0" />
-                      <span>{format(parseISO(record.maintenance_date), 'd MMM yyyy')}</span>
-                    </div>
-                    <div className="truncate">
-                      <span className="font-medium">By:</span> {record.performed_by}
-                    </div>
-                    {record.cost && (
-                      <div>
-                        <span className="font-medium">Cost:</span> £{record.cost}
-                      </div>
-                    )}
-                    {record.parts_replaced && (
-                      <div className="truncate col-span-2">
-                        <span className="font-medium">Parts:</span> {record.parts_replaced}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Notes preview */}
-                  {record.notes && (
-                    <p className="text-xs text-muted-foreground line-clamp-2 italic">
-                      {record.notes}
-                    </p>
-                  )}
-
-                  {/* Attachments */}
-                  {documents[record.id] && documents[record.id].length > 0 && (
-                    <div className="flex items-center gap-2 pt-2 border-t">
-                      <FileText className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                      <span className="text-xs text-muted-foreground">
-                        {documents[record.id].length} attachment{documents[record.id].length !== 1 ? 's' : ''}
-                      </span>
-                      <div className="flex gap-1 overflow-x-auto">
-                        {documents[record.id].slice(0, 4).map((doc) => (
-                          <div 
-                            key={doc.id} 
-                            className="relative shrink-0 border rounded overflow-hidden bg-muted/50 cursor-pointer hover:ring-2 hover:ring-primary/50"
-                            onClick={() => downloadFile(doc)}
-                          >
-                            {doc.mime_type?.startsWith('image/') && documentUrls[doc.id] ? (
-                              <img
-                                src={documentUrls[doc.id]}
-                                alt={doc.document_name}
-                                className="w-10 h-10 object-cover"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 flex items-center justify-center">
-                                <FileText className="h-4 w-4 text-muted-foreground" />
+                            <div>
+                              <strong>Description:</strong>
+                              <p className="mt-1">{selectedRecord.description}</p>
+                            </div>
+                            {selectedRecord.parts_replaced && (
+                              <div>
+                                <strong>Parts Replaced:</strong>
+                                <p className="mt-1">{selectedRecord.parts_replaced}</p>
+                              </div>
+                            )}
+                            {selectedRecord.notes && (
+                              <div>
+                                <strong>Notes:</strong>
+                                <p className="mt-1">{selectedRecord.notes}</p>
                               </div>
                             )}
                           </div>
-                        ))}
-                        {documents[record.id].length > 4 && (
-                          <div className="w-10 h-10 flex items-center justify-center border rounded bg-muted/50 text-xs text-muted-foreground">
-                            +{documents[record.id].length - 4}
-                          </div>
                         )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Timestamps - subtle footer */}
-                  <div className="flex flex-wrap gap-x-3 text-[10px] text-muted-foreground/70 pt-2 border-t">
-                    <span>Created {format(parseISO(record.created_at), 'dd/MM/yy')}</span>
-                    {record.updated_at !== record.created_at && (
-                      <span>• Edited {format(parseISO(record.updated_at), 'dd/MM/yy')}</span>
-                    )}
+                      </DialogContent>
+                    </Dialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Record?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will permanently delete this maintenance record and all attached files.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleDelete(record.id)}>Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+
+                {/* Description — anchor title */}
+                <h4 className="text-base font-semibold text-foreground leading-snug">{record.description}</h4>
+
+                {/* Metadata 2-column grid */}
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
+                    <span className="text-foreground font-medium">{format(parseISO(record.maintenance_date), 'd MMM yyyy')}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 truncate">
+                    <span className="text-muted-foreground shrink-0">By</span>
+                    <span className="text-foreground font-medium truncate">{record.performed_by}</span>
+                  </div>
+                  {record.cost && (
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-muted-foreground">Cost</span>
+                      <span className="text-foreground font-medium">£{record.cost}</span>
+                    </div>
+                  )}
+                  {record.parts_replaced && (
+                    <div className="flex items-center gap-1.5 col-span-2 truncate">
+                      <span className="text-muted-foreground shrink-0">Parts</span>
+                      <span className="text-foreground truncate">{record.parts_replaced}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Notes preview */}
+                {record.notes && (
+                  <p className="text-xs text-muted-foreground line-clamp-2 italic">{record.notes}</p>
+                )}
+
+                {/* Attachments sub-container */}
+                {documents[record.id] && documents[record.id].length > 0 && (
+                  <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+                    <div className="flex items-center gap-1.5">
+                      <FileText className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-medium text-muted-foreground">
+                        {documents[record.id].length} attachment{documents[record.id].length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div className="flex gap-2 flex-wrap">
+                      {documents[record.id].slice(0, 4).map((doc) => (
+                        <div
+                          key={doc.id}
+                          className="relative shrink-0 rounded-lg border border-border overflow-hidden bg-card cursor-pointer hover:ring-2 hover:ring-primary/40 transition-all"
+                          onClick={() => downloadFile(doc)}
+                          title={doc.document_name}
+                        >
+                          {doc.mime_type?.startsWith('image/') && documentUrls[doc.id] ? (
+                            <img src={documentUrls[doc.id]} alt={doc.document_name} className="w-10 h-10 object-cover" />
+                          ) : (
+                            <div className="w-10 h-10 flex items-center justify-center">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                      {documents[record.id].length > 4 && (
+                        <div className="w-10 h-10 flex items-center justify-center rounded-lg border border-border bg-muted text-xs text-muted-foreground font-medium">
+                          +{documents[record.id].length - 4}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Timestamps footer */}
+                <div className="flex flex-wrap gap-x-3 text-[10px] text-muted-foreground/60 pt-1 border-t border-border">
+                  <span>Created {format(parseISO(record.created_at), 'dd/MM/yy')}</span>
+                  {record.updated_at !== record.created_at && (
+                    <span>• Edited {format(parseISO(record.updated_at), 'dd/MM/yy')}</span>
+                  )}
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       )}
