@@ -35,7 +35,22 @@ import { Tables } from '@/integrations/supabase/types';
 import { EmptyState } from '@/components/EmptyState';
 import CheckDetailDialog from './CheckDetailDialog';
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
+import {
+  PDF_COLORS,
+  generateDocId,
+  buildFileName,
+  blobToDataUrl,
+  drawPDFHeader,
+  drawSectionTitle,
+  drawEquipmentDetails,
+  drawSummaryBox,
+  PDF_TABLE_HEAD_STYLES,
+  PDF_TABLE_BODY_STYLES,
+  PDF_TABLE_ALT_ROW,
+  drawAllPageFooters,
+  drawComplianceStatement,
+} from '@/utils/pdfUtils';
 
 type Check = Tables<'checks'>;
 
@@ -304,15 +319,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       }
     }
 
-    // Helper function to add footer
-    const addFooter = (pageNum: number, totalPages: number) => {
-      doc.setFontSize(8);
-      doc.setTextColor(128);
-      doc.text('tarmacbuddy.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
-      doc.text(`Page ${pageNum} of ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
-      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, pageHeight - 10, { align: 'left' });
-      doc.setTextColor(0);
-    };
+    // Footer handled by drawAllPageFooters
 
     let currentY = margin;
 
@@ -516,14 +523,10 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       }
     }
 
-    // Add footers to all pages
-    const totalPages = doc.getNumberOfPages();
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      addFooter(i, totalPages);
-    }
+    // Add standardised footers to all pages
+    drawAllPageFooters(doc);
 
-    doc.save(`checks-report-${rideName}-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+    doc.save(buildFileName([rideName, frequency, 'SafetyChecks', format(new Date(), 'yyyyMMdd')]));
 
     toast({
       title: "Export Complete",

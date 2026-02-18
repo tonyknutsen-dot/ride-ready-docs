@@ -13,6 +13,20 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import {
+  PDF_COLORS,
+  generateDocId,
+  buildFileName,
+  blobToDataUrl,
+  drawPDFHeader,
+  drawSectionTitle,
+  drawEquipmentDetails,
+  drawSummaryBox,
+  PDF_TABLE_HEAD_STYLES,
+  PDF_TABLE_BODY_STYLES,
+  PDF_TABLE_ALT_ROW,
+  drawAllPageFooters,
+} from '@/utils/pdfUtils';
 import { Ride } from '@/types/ride';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 
@@ -245,18 +259,7 @@ const EquipmentTimelineReport = ({ ride }: EquipmentTimelineReportProps) => {
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
 
-      const addFooter = () => {
-        const totalPages = doc.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-          doc.setPage(i);
-          doc.setFontSize(8);
-          doc.setTextColor(128);
-          doc.text('ridereadydocs.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
-          doc.text(`Page ${i} of ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
-          doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, pageHeight - 10, { align: 'left' });
-          doc.setTextColor(0);
-        }
-      };
+      // Footer handled by drawAllPageFooters from pdfUtils
 
       let yPos = 20;
 
@@ -411,7 +414,7 @@ const EquipmentTimelineReport = ({ ride }: EquipmentTimelineReportProps) => {
         margin: { left: 20, right: 20 },
       });
 
-      addFooter();
+      drawAllPageFooters(doc);
 
       // Save PDF
       const fileName = `${ride.ride_name.replace(/[^a-z0-9]/gi, '_')}_Timeline_${format(new Date(), 'yyyyMMdd')}.pdf`;

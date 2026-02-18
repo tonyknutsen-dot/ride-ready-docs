@@ -20,6 +20,18 @@ import { Tables } from '@/integrations/supabase/types';
 import { useQueryClient } from '@tanstack/react-query';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import {
+  PDF_COLORS,
+  generateDocId,
+  buildFileName,
+  blobToDataUrl,
+  drawPDFHeader,
+  drawSectionTitle,
+  drawSummaryBox,
+  PDF_TABLE_HEAD_STYLES,
+  drawAllPageFooters,
+  drawComplianceStatement,
+} from '@/utils/pdfUtils';
 import TemplateBuilder from './TemplateBuilder';
 import { EmptyState } from '@/components/EmptyState';
 import DefectReportDialog from './DefectReportDialog';
@@ -494,19 +506,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
         }
       };
 
-      // Helper function to add footer to each page
-      const addFooter = () => {
-        const totalPages = pdf.getNumberOfPages();
-        for (let i = 1; i <= totalPages; i++) {
-          pdf.setPage(i);
-          pdf.setFontSize(8);
-          pdf.setTextColor(128);
-          pdf.text('tarmacbuddy.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
-          pdf.text(`Page ${i} of ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
-          pdf.text(`Generated: ${new Date().toLocaleDateString('en-GB')} ${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`, 20, pageHeight - 10, { align: 'left' });
-          pdf.setTextColor(0);
-        }
-      };
+      // Footer handled by drawAllPageFooters from pdfUtils
 
       // === HEADER SECTION ===
       // Logo on left, company info centered
@@ -939,8 +939,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
         }
       }
 
-      // Add footer to all pages
-      addFooter();
+      // Add standardised footers to all pages
+      drawAllPageFooters(pdf);
 
       return pdf.output('blob');
     } catch (error) {
