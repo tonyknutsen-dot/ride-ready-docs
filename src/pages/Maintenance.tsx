@@ -48,8 +48,10 @@ const Maintenance = () => {
           .select('*, ride_categories(name, description, category_group)')
           .eq('id', rideIdFromUrl);
 
-        // Always scope to the *current operator* (effectiveUserId).
-        query = query.eq('user_id', effectiveUserId);
+        // For owners, scope to their rides. For staff, RLS handles access.
+        if (!isStaff) {
+          query = query.eq('user_id', effectiveUserId);
+        }
 
         const { data, error } = await query.single();
 

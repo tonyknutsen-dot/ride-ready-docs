@@ -73,9 +73,11 @@ const RideSelector = ({
         `)
         .order('ride_name');
 
-      // Always scope to the *current operator* (effectiveUserId).
-      // RLS will further restrict staff to assigned rides when applicable.
-      query = query.eq('user_id', effectiveUserId);
+      // For owners, scope to their own rides.
+      // For staff, skip the filter — RLS (staff_can_access_ride) handles access.
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
 
       const { data, error } = await query;
 

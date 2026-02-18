@@ -61,8 +61,10 @@ const DocumentRideAssignmentDialog = ({
         .select('id, ride_name, ride_categories(name)')
         .order('ride_name');
 
-      // Always scope to the current operator.
-      ridesQuery = ridesQuery.eq('user_id', effectiveUserId);
+      // For owners, scope to their rides. For staff, RLS handles access.
+      if (!isStaff) {
+        ridesQuery = ridesQuery.eq('user_id', effectiveUserId);
+      }
 
       const { data: ridesData, error: ridesError } = await ridesQuery;
 
