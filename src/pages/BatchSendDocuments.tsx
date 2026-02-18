@@ -575,27 +575,32 @@ const BatchSendDocuments = () => {
     : [];
 
   return (
-    <div className="container mx-auto py-8 px-4 pb-24 md:pb-8">
+    <div className="container mx-auto py-8 px-4 pb-24 md:pb-8" style={{ backgroundColor: 'hsl(210 40% 95%)' }}>
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1 flex items-center gap-2">
-          <Send className="h-6 w-6 text-primary" />
-          Send Documents
+        <h1 className="text-[20px] font-semibold mb-1 flex items-center gap-2.5" style={{ color: 'hsl(222 84% 5%)' }}>
+          <span className="flex items-center justify-center w-9 h-9 rounded-xl" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+            <Send className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+          </span>
+          Send Compliance Documents
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Select documents from multiple rides and send them to {terminology.isUK ? 'councils, guilds' : 'authorities'}, or other recipients
+        <p className="text-sm ml-11" style={{ color: 'hsl(215 19% 40%)' }}>
+          Submit compliance documents to councils, insurers, and auditors.
         </p>
       </div>
 
       {/* Step 1: Ride Selection (if no ride selected) */}
       {!selectedRide ? (
-        <Card className="border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <FileText className="h-5 w-5 text-primary" />
-              Select Item to Send Documents
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
+          <div className="px-5 py-4 border-b border-border flex items-center gap-3">
+            <span className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+              <ClipboardCheck className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+            </span>
+            <div>
+              <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Select Equipment</p>
+              <p className="text-xs" style={{ color: 'hsl(215 19% 40%)' }}>Choose the asset to submit documentation for</p>
+            </div>
+          </div>
+          <div className="p-5">
             {rides.length === 0 ? (
               <div className="text-center py-8">
                 <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
@@ -613,15 +618,16 @@ const BatchSendDocuments = () => {
                     <button
                       key={ride.id}
                       onClick={() => setSelectedRide(ride)}
-                      className="p-4 border-2 border-border rounded-xl text-left hover:border-primary/50 hover:bg-primary/5 transition-all group"
+                      className="p-4 border border-border rounded-xl text-left hover:border-primary active:scale-[0.98] transition-all group bg-white"
+                      style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm truncate group-hover:text-primary transition-colors">
+                          <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors" style={{ color: 'hsl(222 84% 5%)' }}>
                             {ride.ride_name}
                           </p>
                           {ride.manufacturer && (
-                            <p className="text-xs text-muted-foreground truncate mt-0.5">
+                            <p className="text-xs truncate mt-0.5" style={{ color: 'hsl(215 19% 40%)' }}>
                               {ride.manufacturer}
                             </p>
                           )}
@@ -630,8 +636,8 @@ const BatchSendDocuments = () => {
                           {totalDocs} {totalDocs === 1 ? 'doc' : 'docs'}
                         </Badge>
                       </div>
-                      <div className="flex items-center gap-1.5 mt-2">
-                        <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                      <div className="flex items-center gap-1.5 mt-3">
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
                         <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
                           Select documents
                         </span>
@@ -641,45 +647,65 @@ const BatchSendDocuments = () => {
                 })}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : (
         <>
-          {/* Back to ride selection */}
-          <div className="mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setSelectedRide(null);
-                setSelectedDocuments([]);
-              }}
-              className="gap-1.5 text-muted-foreground hover:text-foreground"
-            >
-              <ChevronRight className="h-4 w-4 rotate-180" />
-              <span>Back to item selection</span>
-            </Button>
-            <div className="flex items-center gap-2 mt-2">
-              <Badge variant="outline" className="text-sm font-medium">
-                {selectedRide.ride_name}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                {currentRideDocuments.length + currentRideCheckRecords.length} documents available
-              </span>
+          {/* Asset context strip */}
+          <div className="mb-4 bg-white border border-border rounded-2xl p-4" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <span className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+                  <ClipboardCheck className="h-4.5 w-4.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                </span>
+                <div className="min-w-0">
+                  <p className="text-xs font-medium" style={{ color: 'hsl(215 19% 40%)' }}>Asset</p>
+                  <p className="text-sm font-semibold truncate" style={{ color: 'hsl(222 84% 5%)' }}>{selectedRide.ride_name}</p>
+                </div>
+                <div className="hidden sm:block h-8 w-px bg-border mx-1" />
+                <div className="hidden sm:block">
+                  <p className="text-xs font-medium" style={{ color: 'hsl(215 19% 40%)' }}>Available</p>
+                  <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>
+                    {currentRideDocuments.length + currentRideCheckRecords.length} documents
+                  </p>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setSelectedRide(null);
+                  setSelectedDocuments([]);
+                }}
+                className="gap-1.5 text-muted-foreground hover:text-foreground shrink-0 text-xs"
+              >
+                <ChevronRight className="h-3.5 w-3.5 rotate-180" />
+                Change
+              </Button>
             </div>
+
+            {/* Selection summary bar */}
+            {selectedDocuments.length > 0 && (
+              <div className="mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium" style={{ backgroundColor: 'hsl(217 91% 97%)', color: 'hsl(213 52% 24%)' }}>
+                <FileText className="h-4 w-4 shrink-0" strokeWidth={2} />
+                <span>{selectedDocuments.length} document{selectedDocuments.length !== 1 ? 's' : ''} selected</span>
+                <span className="text-xs opacity-70">·</span>
+                <span className="text-xs opacity-70">{formatFileSize(totalFileSize)}</span>
+              </div>
+            )}
           </div>
 
           <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
             {/* Left Column - Document Selection */}
             <div className="space-y-4">
-              <Card className="border-2 border-primary/20 bg-gradient-to-b from-card to-primary/[0.02]">
-                <CardHeader className="pb-3 px-3 sm:px-6">
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-sm sm:text-base">Select Documents</CardTitle>
+              <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
+                <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-2">
+                  <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Select Documents</p>
+                  {selectedDocuments.length > 0 && (
                     <Badge variant="secondary" className="text-xs shrink-0">{selectedDocuments.length} selected</Badge>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3 px-3 sm:px-6">
+                  )}
+                </div>
+                <div className="space-y-3 p-4">
                   {/* File size indicator */}
                   {selectedDocuments.length > 0 && (
                     <div className="flex items-center justify-between text-xs bg-secondary/50 border border-primary/20 rounded-lg px-2 sm:px-3 py-2">
@@ -793,21 +819,25 @@ const BatchSendDocuments = () => {
                             {currentRideCheckRecords.map(doc => (
                               <label 
                                 key={doc.id} 
-                                className="flex items-start gap-2 p-2 border rounded cursor-pointer hover:bg-accent/50 transition-colors"
+                                className="flex items-start gap-3 p-3 border border-border rounded-xl cursor-pointer hover:border-primary/50 hover:bg-secondary/50 transition-all bg-white"
+                                style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
                               >
                                 <Checkbox
                                   checked={selectedDocuments.includes(doc.id)}
                                   onCheckedChange={() => handleDocumentToggle(doc.id)}
                                   className="mt-0.5 shrink-0"
                                 />
+                                <div className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(142 76% 96%)' }}>
+                                  <FileText className="h-3.5 w-3.5" style={{ color: 'hsl(142 76% 36%)' }} strokeWidth={2} />
+                                </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium break-words leading-tight">{doc.document_name}</p>
-                                  <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                                    <span className="text-xs text-muted-foreground">
+                                  <p className="text-xs font-semibold break-words leading-tight" style={{ color: 'hsl(222 84% 5%)' }}>{doc.document_name}</p>
+                                  <div className="flex items-center gap-2 flex-wrap mt-1">
+                                    <span className="text-[11px]" style={{ color: 'hsl(215 19% 50%)' }}>
                                       {doc.uploaded_at && format(new Date(doc.uploaded_at), 'dd MMM yyyy')}
                                     </span>
                                     {doc.file_size && (
-                                      <span className="text-xs text-muted-foreground">• {formatFileSize(doc.file_size)}</span>
+                                      <span className="text-[11px]" style={{ color: 'hsl(215 19% 50%)' }}>· {formatFileSize(doc.file_size)}</span>
                                     )}
                                   </div>
                                 </div>
@@ -822,18 +852,20 @@ const BatchSendDocuments = () => {
                   {/* Ride Documents */}
                   {currentRideDocuments.length > 0 && (
                     <Collapsible defaultOpen>
-                      <div className="border-2 border-accent/20 rounded-lg">
-                        <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-accent/5 transition-colors gap-2">
-                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                            <FileText className="h-4 w-4 text-accent-foreground shrink-0" />
-                            <span className="font-medium text-xs sm:text-sm truncate">Documents</span>
+                      <div className="border border-border rounded-xl overflow-hidden">
+                        <CollapsibleTrigger className="w-full px-4 py-3 flex items-center justify-between hover:bg-secondary/50 transition-colors gap-2 bg-white">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="flex items-center justify-center w-6 h-6 rounded-lg" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+                              <FileText className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                            </span>
+                            <span className="font-semibold text-xs" style={{ color: 'hsl(222 84% 5%)' }}>Documents</span>
                             <Badge variant="outline" className="text-xs shrink-0">{currentRideDocuments.length}</Badge>
                           </div>
-                          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                          <div className="flex items-center gap-1 shrink-0">
                             <span 
                               role="button"
                               tabIndex={0}
-                              className="h-6 sm:h-7 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                              className="h-6 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-secondary text-muted-foreground cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSelectAllRide(selectedRide.id, currentRideDocuments);
@@ -852,26 +884,30 @@ const BatchSendDocuments = () => {
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <div className="px-2 sm:px-4 pb-3 space-y-2">
+                          <div className="p-3 pt-0 space-y-2">
                             {currentRideDocuments.map(doc => (
                               <label 
                                 key={doc.id} 
-                                className="flex items-start gap-2 sm:gap-3 p-2 border rounded cursor-pointer hover:bg-accent/50 transition-colors"
+                                className="flex items-start gap-3 p-3 border border-border rounded-xl cursor-pointer hover:border-primary/50 hover:bg-secondary/50 transition-all bg-white"
+                                style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
                               >
                                 <Checkbox
                                   checked={selectedDocuments.includes(doc.id)}
                                   onCheckedChange={() => handleDocumentToggle(doc.id)}
                                   className="mt-0.5 shrink-0"
                                 />
+                                <div className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+                                  <FileText className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                                </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs sm:text-sm font-medium break-words leading-tight">{doc.document_name}</p>
-                                  <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                                    <Badge variant="outline" className="text-xs">{doc.document_type}</Badge>
+                                  <p className="text-xs font-semibold break-words leading-tight" style={{ color: 'hsl(222 84% 5%)' }}>{doc.document_name}</p>
+                                  <div className="flex items-center gap-2 flex-wrap mt-1">
+                                    <Badge variant="outline" className="text-[10px]">{doc.document_type}</Badge>
                                     {doc.expires_at && isExpiringSoon(doc.expires_at) && (
-                                      <Badge variant="destructive" className="text-xs">Expiring</Badge>
+                                      <Badge variant="destructive" className="text-[10px]">Expiring</Badge>
                                     )}
                                     {doc.file_size && (
-                                      <span className="text-xs text-muted-foreground">{formatFileSize(doc.file_size)}</span>
+                                      <span className="text-[11px]" style={{ color: 'hsl(215 19% 50%)' }}>{formatFileSize(doc.file_size)}</span>
                                     )}
                                   </div>
                                 </div>
@@ -886,18 +922,20 @@ const BatchSendDocuments = () => {
                   {/* Global Documents - always available */}
                   {globalDocuments.length > 0 && (
                     <Collapsible defaultOpen={currentRideDocuments.length === 0}>
-                      <div className="border-2 border-primary/20 rounded-lg">
-                        <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-primary/5 transition-colors gap-2">
-                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                            <Building2 className="h-4 w-4 text-primary shrink-0" />
-                            <span className="font-medium text-xs sm:text-sm truncate">Global Docs</span>
+                      <div className="border border-border rounded-xl overflow-hidden" style={{ backgroundColor: 'hsl(210 40% 98%)' }}>
+                        <CollapsibleTrigger className="w-full px-4 py-3 flex items-center justify-between hover:bg-secondary/50 transition-colors gap-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="flex items-center justify-center w-6 h-6 rounded-lg" style={{ backgroundColor: 'hsl(213 52% 24% / 0.1)' }}>
+                              <Building2 className="h-3.5 w-3.5 shrink-0" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                            </span>
+                            <span className="font-semibold text-xs" style={{ color: 'hsl(222 84% 5%)' }}>Global Compliance Documents</span>
                             <Badge variant="outline" className="text-xs shrink-0">{globalDocuments.length}</Badge>
                           </div>
-                          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                          <div className="flex items-center gap-1 shrink-0">
                             <span 
                               role="button"
                               tabIndex={0}
-                              className="h-6 sm:h-7 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                              className="h-6 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-secondary text-muted-foreground cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSelectAllGlobal();
@@ -916,26 +954,30 @@ const BatchSendDocuments = () => {
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <div className="px-2 sm:px-4 pb-3 space-y-2">
+                          <div className="p-3 space-y-2">
                             {globalDocuments.map(doc => (
                               <label 
                                 key={doc.id} 
-                                className="flex items-start gap-2 sm:gap-3 p-2 border rounded cursor-pointer hover:bg-accent/50 transition-colors"
+                                className="flex items-start gap-3 p-3 border border-border rounded-xl cursor-pointer hover:border-primary/50 hover:bg-secondary/50 transition-all bg-white"
+                                style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
                               >
                                 <Checkbox
                                   checked={selectedDocuments.includes(doc.id)}
                                   onCheckedChange={() => handleDocumentToggle(doc.id)}
                                   className="mt-0.5 shrink-0"
                                 />
+                                <div className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.08)' }}>
+                                  <Building2 className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                                </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs sm:text-sm font-medium break-words leading-tight">{doc.document_name}</p>
-                                  <div className="flex items-center gap-1.5 flex-wrap mt-1">
-                                    <Badge variant="outline" className="text-xs">{doc.document_type}</Badge>
+                                  <p className="text-xs font-semibold break-words leading-tight" style={{ color: 'hsl(222 84% 5%)' }}>{doc.document_name}</p>
+                                  <div className="flex items-center gap-2 flex-wrap mt-1">
+                                    <Badge variant="outline" className="text-[10px]">{doc.document_type}</Badge>
                                     {doc.expires_at && isExpiringSoon(doc.expires_at) && (
-                                      <Badge variant="destructive" className="text-xs">Expiring</Badge>
+                                      <Badge variant="destructive" className="text-[10px]">Expiring</Badge>
                                     )}
                                     {doc.file_size && (
-                                      <span className="text-xs text-muted-foreground">{formatFileSize(doc.file_size)}</span>
+                                      <span className="text-[11px]" style={{ color: 'hsl(215 19% 50%)' }}>{formatFileSize(doc.file_size)}</span>
                                     )}
                                   </div>
                                 </div>
@@ -955,95 +997,96 @@ const BatchSendDocuments = () => {
                       <p className="text-xs text-muted-foreground mt-1">Upload documents to this item first</p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
 
             {/* Right Column - Recipient & Send */}
             <div className="space-y-4">
-          {/* Sender Info */}
-          <Card>
-            <CardHeader className="pb-3 px-3 sm:px-6">
-              <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
-                Your Information
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-3 sm:px-6">
-              <div className="text-xs sm:text-sm space-y-1 text-muted-foreground">
-                {profile?.company_name && (
-                  <p className="break-words"><span className="font-medium text-foreground">Company:</span> {profile.company_name}</p>
-                )}
-                {profile?.controller_name && (
-                  <p className="break-words"><span className="font-medium text-foreground">Controller:</span> {profile.controller_name}</p>
-                )}
-                {user?.email && (
-                  <p className="break-words"><span className="font-medium text-foreground">Email:</span> {user.email}</p>
-                )}
-                {!isStaff && !profile?.company_name && !profile?.controller_name && (
-                  <p className="text-destructive italic text-xs">Please complete your profile in Settings</p>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Saved Recipients */}
-          {savedRecipients.length > 0 && (
-            <Card>
-              <CardHeader className="pb-3 px-3 sm:px-6">
-                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                  <BookUser className="h-4 w-4 text-primary" />
-                  Saved Recipients
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-3 sm:px-6">
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {savedRecipients.map(recipient => (
-                    <div 
-                      key={recipient.id}
-                      className="flex items-center gap-2 p-2 border rounded-lg hover:bg-accent/50 cursor-pointer group"
-                      onClick={() => handleSelectRecipient(recipient.id)}
-                    >
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleToggleFavorite(recipient.id, recipient.is_favorite);
-                        }}
-                        className="shrink-0"
-                      >
-                        <Star className={`h-4 w-4 ${recipient.is_favorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs sm:text-sm font-medium truncate">{recipient.name}</p>
-                        <p className="text-xs text-muted-foreground truncate">{recipient.email}</p>
-                      </div>
-                      {recipient.organization_type && (
-                        <Badge variant="outline" className="text-xs hidden sm:inline-flex">{recipient.organization_type}</Badge>
-                      )}
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteRecipient(recipient.id);
-                        }}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </button>
-                    </div>
-                  ))}
+              {/* Sender Info */}
+              <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
+                <div className="px-5 py-4 border-b border-border flex items-center gap-3">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+                    <Users className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                  </span>
+                  <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Your Information</p>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                <div className="px-5 py-4">
+                  <div className="text-xs space-y-1.5" style={{ color: 'hsl(215 19% 40%)' }}>
+                    {profile?.company_name && (
+                      <p className="break-words"><span className="font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Company:</span> {profile.company_name}</p>
+                    )}
+                    {profile?.controller_name && (
+                      <p className="break-words"><span className="font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Controller:</span> {profile.controller_name}</p>
+                    )}
+                    {user?.email && (
+                      <p className="break-words"><span className="font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Email:</span> {user.email}</p>
+                    )}
+                    {!isStaff && !profile?.company_name && !profile?.controller_name && (
+                      <p className="text-destructive italic">Please complete your profile in Settings</p>
+                    )}
+                  </div>
+                </div>
+              </div>
 
-          {/* Recipient Form */}
-          <Card>
-            <CardHeader className="pb-3 px-3 sm:px-6">
-              <div className="flex items-center justify-between gap-2">
-                <CardTitle className="text-sm sm:text-base flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-primary" />
-                  Recipient Details
-                </CardTitle>
+              {/* Saved Recipients */}
+              {savedRecipients.length > 0 && (
+                <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
+                  <div className="px-5 py-4 border-b border-border flex items-center gap-3">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+                      <BookUser className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                    </span>
+                    <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Saved Recipients</p>
+                  </div>
+                  <div className="px-5 py-4">
+                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                      {savedRecipients.map(recipient => (
+                        <div 
+                          key={recipient.id}
+                          className="flex items-center gap-2 p-3 border border-border rounded-xl hover:border-primary/50 hover:bg-secondary/50 cursor-pointer group transition-all"
+                          onClick={() => handleSelectRecipient(recipient.id)}
+                        >
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleFavorite(recipient.id, recipient.is_favorite);
+                            }}
+                            className="shrink-0"
+                          >
+                            <Star className={`h-4 w-4 ${recipient.is_favorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold truncate" style={{ color: 'hsl(222 84% 5%)' }}>{recipient.name}</p>
+                            <p className="text-xs truncate" style={{ color: 'hsl(215 19% 50%)' }}>{recipient.email}</p>
+                          </div>
+                          {recipient.organization_type && (
+                            <Badge variant="outline" className="text-xs hidden sm:inline-flex">{recipient.organization_type}</Badge>
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteRecipient(recipient.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Recipient Form */}
+              <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
+                <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+                      <Mail className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                    </span>
+                    <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Recipient Details</p>
+                  </div>
                 <Dialog open={showSaveRecipientDialog} onOpenChange={setShowSaveRecipientDialog}>
                   <DialogTrigger asChild>
                     <Button 
@@ -1092,9 +1135,8 @@ const BatchSendDocuments = () => {
                     </div>
                   </DialogContent>
                 </Dialog>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4 px-3 sm:px-6">
+                </div>
+                <div className="space-y-4 px-5 py-4">
               <div>
                 <Label htmlFor="recipientEmail" className="text-xs sm:text-sm">Email Address *</Label>
                 <Input
@@ -1251,7 +1293,7 @@ const BatchSendDocuments = () => {
                 </Collapsible>
               )}
 
-              <Separator />
+              <div className="h-px bg-border" />
 
               <Button 
                 onClick={handleSend} 
@@ -1267,12 +1309,25 @@ const BatchSendDocuments = () => {
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />
-                    Send {selectedDocuments.length} Document{selectedDocuments.length !== 1 ? 's' : ''}
+                    Send Compliance Pack{selectedDocuments.length > 0 ? ` (${selectedDocuments.length})` : ''}
                   </>
                 )}
               </Button>
-            </CardContent>
-          </Card>
+
+              {/* Compliance reassurance footer */}
+              <div className="flex items-center justify-center gap-4 pt-1">
+                <span className="text-[11px] flex items-center gap-1" style={{ color: 'hsl(215 19% 50%)' }}>
+                  <span className="text-success">✓</span> Secure transmission
+                </span>
+                <span className="text-[11px] flex items-center gap-1" style={{ color: 'hsl(215 19% 50%)' }}>
+                  <span className="text-success">✓</span> PDF bundle generated
+                </span>
+                <span className="text-[11px] flex items-center gap-1" style={{ color: 'hsl(215 19% 50%)' }}>
+                  <span className="text-success">✓</span> Audit log recorded
+                </span>
+              </div>
+                </div>
+              </div>
             </div>
           </div>
         </>
