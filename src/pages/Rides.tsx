@@ -10,7 +10,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store, Sparkles, ImageIcon, Camera, Loader2, Clock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store, Sparkles, ImageIcon, Camera, Loader2, Clock, AlertTriangle, CheckCircle, Share2 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -46,6 +47,9 @@ const Rides = () => {
     docCount: number;
     checkCount: number;
     nextDue: string | null;
+    overdueCount: number;
+    expiredDocCount: number;
+    dueSoonCount: number;
   }>>({});
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -118,15 +122,19 @@ const Rides = () => {
   const loadRideStatistics = async (ridesData: Ride[]) => {
     if (ridesData.length === 0) return;
     
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const thirtyDaysStr = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
     const rideIds = ridesData.map(r => r.id);
-    const stats: Record<string, { docCount: number; checkCount: number; nextDue: string | null }> = {};
+    const stats: Record<string, { docCount: number; checkCount: number; nextDue: string | null; overdueCount: number; expiredDocCount: number; dueSoonCount: number; }> = {};
     
     // Initialize all rides
-    rideIds.forEach(id => { stats[id] = { docCount: 0, checkCount: 0, nextDue: null }; });
+    rideIds.forEach(id => { stats[id] = { docCount: 0, checkCount: 0, nextDue: null, overdueCount: 0, expiredDocCount: 0, dueSoonCount: 0 }; });
 
     try {
       // Batch queries: get all docs & checks counts in parallel
-      const [docsResult, checksResult, maintenanceResult, inspectionResult, ndtResult] = await Promise.all([
+      const [docsResult, checksResult, maintenanceResult, inspectionResult, ndtResult, expiredDocsResult, dueSoonDocsResult, overdueInspResult, dueSoonInspResult] = await Promise.all([
         supabase
           .from('documents')
           .select('ride_id')
@@ -159,6 +167,42 @@ const Rides = () => {
           .in('ride_id', rideIds)
           .eq('user_id', effectiveUserId)
           .not('next_inspection_due', 'is', null),
+        // Expired documents per ride
+        supabase
+          .from('documents')
+          .select('ride_id')
+          .in('ride_id', rideIds)
+          .eq('user_id', effectiveUserId)
+          .not('expires_at', 'is', null)
+          .eq('is_latest_version', true)
+          .lt('expires_at', todayStr),
+        // Due soon documents per ride (within 30 days)
+        supabase
+          .from('documents')
+          .select('ride_id')
+          .in('ride_id', rideIds)
+          .eq('user_id', effectiveUserId)
+          .not('expires_at', 'is', null)
+          .eq('is_latest_version', true)
+          .gte('expires_at', todayStr)
+          .lte('expires_at', thirtyDaysStr),
+        // Overdue inspections per ride
+        supabase
+          .from('inspection_schedules')
+          .select('ride_id')
+          .in('ride_id', rideIds)
+          .eq('user_id', effectiveUserId)
+          .lt('due_date', todayStr)
+          .eq('is_active', true),
+        // Due soon inspections per ride
+        supabase
+          .from('inspection_schedules')
+          .select('ride_id')
+          .in('ride_id', rideIds)
+          .eq('user_id', effectiveUserId)
+          .gte('due_date', todayStr)
+          .lte('due_date', thirtyDaysStr)
+          .eq('is_active', true),
       ]);
 
       // Count docs per ride
@@ -169,6 +213,26 @@ const Rides = () => {
       // Count checks per ride
       checksResult.data?.forEach(c => {
         if (c.ride_id && stats[c.ride_id]) stats[c.ride_id].checkCount++;
+      });
+
+      // Expired docs count per ride
+      expiredDocsResult.data?.forEach(d => {
+        if (d.ride_id && stats[d.ride_id]) stats[d.ride_id].expiredDocCount++;
+      });
+
+      // Due soon docs count per ride
+      dueSoonDocsResult.data?.forEach(d => {
+        if (d.ride_id && stats[d.ride_id]) stats[d.ride_id].dueSoonCount++;
+      });
+
+      // Overdue inspections count per ride
+      overdueInspResult.data?.forEach(i => {
+        if (i.ride_id && stats[i.ride_id]) stats[i.ride_id].overdueCount++;
+      });
+
+      // Due soon inspections count
+      dueSoonInspResult.data?.forEach(i => {
+        if (i.ride_id && stats[i.ride_id]) stats[i.ride_id].dueSoonCount++;
       });
 
       // Find earliest due date per ride
@@ -347,6 +411,16 @@ const Rides = () => {
   }
 
   const categoryGroups = ['All', 'Rides', 'Food Stalls', 'Stalls', 'Games', 'Inflatables', 'Attractions', 'Equipment'] as const;
+  const complianceGroups = ['Overdue', 'Due Soon', 'Compliant'] as const;
+
+  const getComplianceStatus = (rideId: string): 'overdue' | 'due_soon' | 'compliant' | 'no_docs' => {
+    const s = rideStats[rideId];
+    if (!s) return 'compliant';
+    if (s.overdueCount > 0 || s.expiredDocCount > 0) return 'overdue';
+    if (s.dueSoonCount > 0) return 'due_soon';
+    if (s.docCount === 0) return 'no_docs';
+    return 'compliant';
+  };
 
   const getCategoryIcon = (group: string) => {
     switch (group) {
@@ -361,11 +435,25 @@ const Rides = () => {
     }
   };
 
-  const filteredRides = activeGroup === 'All' 
-    ? rides 
-    : rides.filter(r => r.ride_categories.category_group === activeGroup);
+  const filteredRides = (() => {
+    let base = activeGroup === 'All' ? rides : 
+      complianceGroups.includes(activeGroup as any)
+        ? rides.filter(r => {
+            const s = getComplianceStatus(r.id);
+            if (activeGroup === 'Overdue') return s === 'overdue';
+            if (activeGroup === 'Due Soon') return s === 'due_soon';
+            if (activeGroup === 'Compliant') return s === 'compliant' || s === 'no_docs';
+            return true;
+          })
+        : rides.filter(r => r.ride_categories.category_group === activeGroup);
+    return base;
+  })();
 
-  const groupCounts = {
+  const overdueTotal = rides.filter(r => getComplianceStatus(r.id) === 'overdue').length;
+  const dueSoonTotal = rides.filter(r => getComplianceStatus(r.id) === 'due_soon').length;
+  const compliantTotal = rides.filter(r => ['compliant', 'no_docs'].includes(getComplianceStatus(r.id))).length;
+
+  const groupCounts: Record<string, number> = {
     All: rides.length,
     Rides: rides.filter(r => r.ride_categories.category_group === 'Rides').length,
     'Food Stalls': rides.filter(r => r.ride_categories.category_group === 'Food Stalls').length,
@@ -374,33 +462,63 @@ const Rides = () => {
     Inflatables: rides.filter(r => r.ride_categories.category_group === 'Inflatables').length,
     Attractions: rides.filter(r => r.ride_categories.category_group === 'Attractions').length,
     Equipment: rides.filter(r => r.ride_categories.category_group === 'Equipment').length,
+    Overdue: overdueTotal,
+    'Due Soon': dueSoonTotal,
+    Compliant: compliantTotal,
   };
 
   return (
     <PullToRefresh onRefresh={handleRefresh} disabled={loading}>
     <StaffAccountBanner />
+    <TooltipProvider>
     <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5">
       {/* Item Limit Warning */}
       <ItemLimitWarning />
 
       {/* Header */}
-      <div className="flex flex-col gap-4">
-        <div className="space-y-1">
+      <div className="flex items-center justify-between gap-4">
+        <div className="space-y-0.5">
           <h1 className="text-xl font-bold tracking-tight">My Equipment</h1>
           <p className="text-sm text-muted-foreground">Manage your rides, stalls, and equipment</p>
         </div>
-        
-        {/* Only show Add button for owners or staff with full_access */}
         {canAddRides && (
           <Button 
             onClick={() => setShowAddForm(true)} 
-            className="w-full sm:w-auto flex items-center justify-center gap-2 h-12 sm:h-10"
+            className="flex items-center justify-center gap-2 h-10 shrink-0"
           >
-            <Plus className="h-5 w-5" />
-            <span>Add Ride or Stall</span>
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Add Ride or Stall</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         )}
       </div>
+
+      {/* Compliance KPI Strip */}
+      {rides.length > 0 && (
+        <div className="grid grid-cols-3 gap-2">
+          <button
+            onClick={() => setActiveGroup('Overdue')}
+            className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'Overdue' ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-card hover:border-destructive/30'}`}
+          >
+            <span className="text-xl font-bold text-destructive">{overdueTotal}</span>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Overdue</span>
+          </button>
+          <button
+            onClick={() => setActiveGroup('Due Soon')}
+            className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'Due Soon' ? 'border-warning/50 bg-warning/5' : 'border-border bg-card hover:border-warning/30'}`}
+          >
+            <span className="text-xl font-bold text-warning">{dueSoonTotal}</span>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Due Soon</span>
+          </button>
+          <button
+            onClick={() => setActiveGroup('Compliant')}
+            className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'Compliant' ? 'border-success/50 bg-success/5' : 'border-border bg-card hover:border-success/30'}`}
+          >
+            <span className="text-xl font-bold text-success">{compliantTotal}</span>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Compliant</span>
+          </button>
+        </div>
+      )}
 
       {/* Category Filter Tabs */}
       {rides.length > 0 && (
@@ -417,7 +535,7 @@ const Rides = () => {
                 {getCategoryIcon(group)}
                 <span>{group}</span>
                 <Badge variant="secondary" className="ml-1 px-1.5 py-0 text-[10px] bg-background/20">
-                  {groupCounts[group as keyof typeof groupCounts]}
+                  {groupCounts[group] ?? 0}
                 </Badge>
               </Button>
             ))}
@@ -457,7 +575,7 @@ const Rides = () => {
               className="group border-border/60 hover:shadow-elegant hover:border-primary/40 transition-all active:scale-[0.98] cursor-pointer flex flex-col overflow-hidden rounded-2xl"
               onClick={() => navigate(`/rides/${ride.id}`)}
             >
-              {/* Photo Thumbnail — taller, with gradient overlay for text */}
+              {/* Photo Thumbnail — taller, with compliance badge overlay */}
               <div className="h-44 sm:h-48 bg-gradient-to-br from-primary/8 to-primary/3 flex items-center justify-center overflow-hidden relative">
                 {ridePhotos[ride.id] ? (
                   <>
@@ -470,7 +588,6 @@ const Rides = () => {
                       onLoad={(e) => (e.target as HTMLImageElement).style.opacity = '1'}
                       style={{ opacity: 0 }}
                     />
-                    {/* Gradient overlay for category badge */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                     <Badge className="absolute top-3 right-3 bg-background/90 text-foreground border-0 backdrop-blur-sm text-[11px] font-semibold px-2.5 py-1 shadow-sm">
                       {ride.ride_categories.name}
@@ -515,6 +632,26 @@ const Rides = () => {
                     {ride.ride_categories.name}
                   </Badge>
                 )}
+                {/* Compliance status badge — bottom left */}
+                {(() => {
+                  const s = getComplianceStatus(ride.id);
+                  if (s === 'overdue') return (
+                    <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow">
+                      <AlertTriangle className="h-2.5 w-2.5" /> Overdue
+                    </span>
+                  );
+                  if (s === 'due_soon') return (
+                    <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-warning text-warning-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow">
+                      <Clock className="h-2.5 w-2.5" /> Due Soon
+                    </span>
+                  );
+                  if (s === 'compliant') return (
+                    <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-success text-success-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow">
+                      <CheckCircle className="h-2.5 w-2.5" /> Compliant
+                    </span>
+                  );
+                  return null;
+                })()}
               </div>
 
               {/* Content section */}
@@ -590,19 +727,24 @@ const Rides = () => {
                   >
                     View Details
                   </Button>
-                  <SendDocumentsDialog 
-                    ride={ride} 
-                    trigger={
-                      <Button 
-                        variant="outline" 
-                        size="icon"
-                        className="h-10 w-10 shrink-0 rounded-xl"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        <Mail className="h-4 w-4" />
-                      </Button>
-                    } 
-                  />
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <SendDocumentsDialog 
+                        ride={ride} 
+                        trigger={
+                          <Button 
+                            variant="outline" 
+                            size="icon"
+                            className="h-10 w-10 shrink-0 rounded-xl"
+                            onClick={e => e.stopPropagation()}
+                          >
+                            <Share2 className="h-4 w-4" />
+                          </Button>
+                        } 
+                      />
+                    </TooltipTrigger>
+                    <TooltipContent>Share Documents</TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </Card>
@@ -610,6 +752,7 @@ const Rides = () => {
         </div>
       )}
     </div>
+    </TooltipProvider>
     </PullToRefresh>
   );
 };
