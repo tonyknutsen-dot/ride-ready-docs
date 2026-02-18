@@ -2299,89 +2299,93 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                       )}
                     </div>
                     
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="action_owner">
-                          Action Owner
-                          {itemFormData.additional_actions?.trim() && (
-                            <span className="text-destructive ml-1">*</span>
-                          )}
-                        </Label>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p>The person accountable for implementing this action. They are responsible for ensuring it gets done.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Input
-                        id="action_owner"
-                        placeholder="Name of person responsible for this action"
-                        value={itemFormData.action_owner}
-                        onChange={(e) => setItemFormData({ ...itemFormData, action_owner: e.target.value })}
-                        className={cn(
-                          "placeholder:text-muted-foreground/60",
-                          itemFormData.additional_actions?.trim() && !itemFormData.action_owner?.trim() && "border-destructive"
-                        )}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {itemFormData.additional_actions?.trim() 
-                          ? "Required: Enter who will implement and verify this control"
-                          : "Enter the name/role of who will implement and verify this control"
-                        }
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="target_date">
-                          Action Due Date
-                          {itemFormData.additional_actions?.trim() && (
-                            <span className="text-destructive ml-1">*</span>
-                          )}
-                        </Label>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p>The deadline for completing the additional control measure or action. Set this to ensure timely risk mitigation.</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal h-10",
-                              !itemFormData.target_date && "text-muted-foreground",
-                              itemFormData.additional_actions?.trim() && !itemFormData.target_date && "border-destructive"
+                    {/* Action Owner + Due Date — always side-by-side, collapses to 1-col on very small screens */}
+                    <div className="grid grid-cols-2 gap-3" style={{ gridTemplateColumns: '1fr 1fr' }}>
+                      {/* Action Owner */}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Label htmlFor="action_owner" className="text-[13px] font-semibold text-[#0F172A]">
+                            Action Owner
+                            {itemFormData.additional_actions?.trim() && (
+                              <span className="text-destructive ml-1">*</span>
                             )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                            <span className="truncate">
-                              {itemFormData.target_date ? format(new Date(itemFormData.target_date), 'dd MMM yyyy') : 'Pick a date'}
-                            </span>
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={itemFormData.target_date ? new Date(itemFormData.target_date) : undefined}
-                            onSelect={(date) => setItemFormData({ ...itemFormData, target_date: date ? format(date, 'yyyy-MM-dd') : '' })}
-                            initialFocus
-                            className={cn("p-3 pointer-events-auto")}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      {itemFormData.additional_actions?.trim() && !itemFormData.target_date && (
-                        <p className="text-xs text-destructive mt-1">
-                          Required when additional actions are specified
+                          </Label>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p>The person accountable for implementing this action.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <Input
+                          id="action_owner"
+                          placeholder="Person responsible"
+                          value={itemFormData.action_owner}
+                          onChange={(e) => setItemFormData({ ...itemFormData, action_owner: e.target.value })}
+                          className={cn(
+                            "h-11 rounded-[10px] border-[#CBD5E1] bg-white text-[14px] px-3 placeholder:text-muted-foreground/60",
+                            itemFormData.additional_actions?.trim() && !itemFormData.action_owner?.trim() && "border-destructive bg-[#FEF2F2]"
+                          )}
+                        />
+                        <p className="text-[12px] text-muted-foreground mt-1 leading-snug">
+                          {itemFormData.additional_actions?.trim()
+                            ? "Required — who will action this?"
+                            : "Name or role of implementer"}
                         </p>
-                      )}
+                      </div>
+
+                      {/* Action Due Date */}
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <Label htmlFor="target_date" className="text-[13px] font-semibold text-[#0F172A]">
+                            Due Date
+                            {itemFormData.additional_actions?.trim() && (
+                              <span className="text-destructive ml-1">*</span>
+                            )}
+                          </Label>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <p>Deadline for completing this control measure.</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </div>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal h-11 rounded-[10px] border-[#CBD5E1] bg-white text-[14px] px-3",
+                                !itemFormData.target_date && "text-muted-foreground",
+                                itemFormData.additional_actions?.trim() && !itemFormData.target_date && "border-destructive bg-[#FEF2F2]"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                              <span className="truncate">
+                                {itemFormData.target_date ? format(new Date(itemFormData.target_date), 'dd MMM yyyy') : 'Pick a date'}
+                              </span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={itemFormData.target_date ? new Date(itemFormData.target_date) : undefined}
+                              onSelect={(date) => setItemFormData({ ...itemFormData, target_date: date ? format(date, 'yyyy-MM-dd') : '' })}
+                              initialFocus
+                              className={cn("p-3 pointer-events-auto")}
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        {itemFormData.additional_actions?.trim() && !itemFormData.target_date && (
+                          <p className="text-[12px] text-destructive mt-1 leading-snug">
+                            Required when actions are set
+                          </p>
+                        )}
+                      </div>
                     </div>
                     
                     <div className="col-span-2">

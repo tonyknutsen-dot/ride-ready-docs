@@ -88,33 +88,32 @@ export function RiskEvaluationPanel({
       {/* ── Likelihood & Severity selects ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Likelihood */}
-        <div className="bg-white border border-[#CBD5E1] rounded-xl p-3 space-y-2">
-          <div className="flex items-center gap-2">
+        <div className="bg-white border border-[#CBD5E1] rounded-xl overflow-hidden" style={{ padding: '12px' }}>
+          <div className="flex items-center gap-2 mb-1">
             <Label className="text-[13px] font-semibold text-[#0F172A]">Likelihood</Label>
-            <span className="inline-flex items-center font-bold rounded-lg bg-[#EEF2FF] text-[#3730A3] text-[12px]" style={{ padding: '6px 10px' }}>
+            <span className="inline-flex items-center font-bold rounded-lg bg-[#EEF2FF] text-[#3730A3] text-[12px]" style={{ padding: '2px 8px' }}>
               Score: {likelihoodInfo.score}
             </span>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-3.5 w-3.5 text-slate-400 cursor-help ml-auto" />
+                <Info className="h-3.5 w-3.5 text-slate-400 cursor-help ml-auto shrink-0" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p>How likely is this hazard to cause harm?</p>
               </TooltipContent>
             </Tooltip>
           </div>
-          <p className="text-[12px] text-slate-500 mt-1">How likely is this hazard to cause harm?</p>
+          <p className="text-[12px] text-slate-500 mb-2" style={{ lineHeight: '1.4', marginTop: '4px' }}>How likely is this hazard to cause harm?</p>
           <Select value={likelihood} onValueChange={onLikelihoodChange}>
-            <SelectTrigger className="h-11 bg-[#F8FAFC] border-[#E2E8F0] focus:border-[#1E3A5F] rounded-[10px] text-[14px] px-3">
+            <SelectTrigger className="h-11 bg-[#F8FAFC] border-[#CBD5E1] focus:border-[#1E3A5F] rounded-[10px] text-[14px] px-3">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(LIKELIHOOD_SCORES).map(([key, info]) => (
                 <SelectItem key={key} value={key}>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs bg-[#EEF2FF] text-[#3730A3] px-1.5 py-0.5 rounded font-bold">{info.score}</span>
-                    <span>{info.label}</span>
-                    <span className="text-xs text-slate-400">— {info.description}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-mono text-xs bg-[#EEF2FF] text-[#3730A3] px-1.5 py-0.5 rounded font-bold shrink-0">{info.score}</span>
+                    <span className="truncate">{info.label}</span>
                   </div>
                 </SelectItem>
               ))}
@@ -123,33 +122,32 @@ export function RiskEvaluationPanel({
         </div>
 
         {/* Severity */}
-        <div className="bg-white border border-[#CBD5E1] rounded-xl p-3 space-y-2">
-          <div className="flex items-center gap-2">
+        <div className="bg-white border border-[#CBD5E1] rounded-xl overflow-hidden" style={{ padding: '12px' }}>
+          <div className="flex items-center gap-2 mb-1">
             <Label className="text-[13px] font-semibold text-[#0F172A]">Severity</Label>
-            <span className="inline-flex items-center font-bold rounded-lg bg-[#EEF2FF] text-[#3730A3] text-[12px]" style={{ padding: '6px 10px' }}>
+            <span className="inline-flex items-center font-bold rounded-lg bg-[#EEF2FF] text-[#3730A3] text-[12px]" style={{ padding: '2px 8px' }}>
               Score: {severityInfo.score}
             </span>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-3.5 w-3.5 text-slate-400 cursor-help ml-auto" />
+                <Info className="h-3.5 w-3.5 text-slate-400 cursor-help ml-auto shrink-0" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p>How serious would the injury or harm be?</p>
               </TooltipContent>
             </Tooltip>
           </div>
-          <p className="text-[12px] text-slate-500 mt-1">How serious would the injury or harm be?</p>
+          <p className="text-[12px] text-slate-500 mb-2" style={{ lineHeight: '1.4', marginTop: '4px' }}>How serious would the injury or harm be?</p>
           <Select value={severity} onValueChange={onSeverityChange}>
-            <SelectTrigger className="h-11 bg-[#F8FAFC] border-[#E2E8F0] focus:border-[#1E3A5F] rounded-[10px] text-[14px] px-3">
+            <SelectTrigger className="h-11 bg-[#F8FAFC] border-[#CBD5E1] focus:border-[#1E3A5F] rounded-[10px] text-[14px] px-3">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(SEVERITY_SCORES).map(([key, info]) => (
                 <SelectItem key={key} value={key}>
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs bg-[#EEF2FF] text-[#3730A3] px-1.5 py-0.5 rounded font-bold">{info.score}</span>
-                    <span>{info.label}</span>
-                    <span className="text-xs text-slate-400">— {info.description}</span>
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="font-mono text-xs bg-[#EEF2FF] text-[#3730A3] px-1.5 py-0.5 rounded font-bold shrink-0">{info.score}</span>
+                    <span className="truncate">{info.label}</span>
                   </div>
                 </SelectItem>
               ))}
