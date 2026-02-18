@@ -88,7 +88,7 @@ export function RiskEvaluationPanel({
       {/* ── Likelihood & Severity selects ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Likelihood */}
-        <div className="space-y-2">
+        <div className="bg-white border border-[#CBD5E1] rounded-xl p-3 space-y-2">
           <div className="flex items-center gap-2">
             <Label className="text-[13px] font-semibold text-[#0F172A]">Likelihood</Label>
             <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-[#EEF2FF] text-[#3730A3] text-[11px] font-bold">
@@ -96,16 +96,16 @@ export function RiskEvaluationPanel({
             </span>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+                <Info className="h-3.5 w-3.5 text-slate-400 cursor-help ml-auto" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p>How likely is this hazard to cause harm?</p>
               </TooltipContent>
             </Tooltip>
           </div>
-          <p className="text-[12px] text-slate-500 italic">How likely is this hazard to cause harm?</p>
+          <p className="text-[12px] text-slate-500">How likely is this hazard to cause harm?</p>
           <Select value={likelihood} onValueChange={onLikelihoodChange}>
-            <SelectTrigger className="h-10 bg-white border-[#CBD5E1] focus:border-[#1E3A5F] rounded-xl">
+            <SelectTrigger className="h-10 bg-[#F8FAFC] border-[#E2E8F0] focus:border-[#1E3A5F] rounded-lg">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -123,7 +123,7 @@ export function RiskEvaluationPanel({
         </div>
 
         {/* Severity */}
-        <div className="space-y-2">
+        <div className="bg-white border border-[#CBD5E1] rounded-xl p-3 space-y-2">
           <div className="flex items-center gap-2">
             <Label className="text-[13px] font-semibold text-[#0F172A]">Severity</Label>
             <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-[#EEF2FF] text-[#3730A3] text-[11px] font-bold">
@@ -131,16 +131,16 @@ export function RiskEvaluationPanel({
             </span>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Info className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+                <Info className="h-3.5 w-3.5 text-slate-400 cursor-help ml-auto" />
               </TooltipTrigger>
               <TooltipContent className="max-w-xs">
                 <p>How serious would the injury or harm be?</p>
               </TooltipContent>
             </Tooltip>
           </div>
-          <p className="text-[12px] text-slate-500 italic">How serious would the injury or harm be?</p>
+          <p className="text-[12px] text-slate-500">How serious would the injury or harm be?</p>
           <Select value={severity} onValueChange={onSeverityChange}>
-            <SelectTrigger className="h-10 bg-white border-[#CBD5E1] focus:border-[#1E3A5F] rounded-xl">
+            <SelectTrigger className="h-10 bg-[#F8FAFC] border-[#E2E8F0] focus:border-[#1E3A5F] rounded-lg">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -183,8 +183,8 @@ export function RiskEvaluationPanel({
           </span>
         </div>
 
-        {/* Score breakdown: Inherent → Reduction → Residual */}
-        <div className="grid grid-cols-3 gap-2">
+        {/* Score breakdown: Inherent → (Reduction →) Residual */}
+        <div className={`grid gap-2 ${calculation.reductionPercent > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
           {/* Inherent */}
           <div className="bg-white rounded-xl border p-3" style={{ borderColor: levelStyle.border }}>
             <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Inherent Risk</p>
@@ -196,15 +196,17 @@ export function RiskEvaluationPanel({
             </div>
           </div>
 
-          {/* Reduction */}
-          <div className="bg-white rounded-xl border border-green-200 p-3">
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-              <TrendingDown className="h-3 w-3" /> Reduction
-            </p>
-            <span className="text-xl font-bold font-mono text-green-600">
-              {calculation.reductionPercent > 0 ? `-${calculation.reductionPercent}%` : '—'}
-            </span>
-          </div>
+          {/* Reduction — only show when controls exist */}
+          {calculation.reductionPercent > 0 && (
+            <div className="bg-white rounded-xl border border-green-200 p-3">
+              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+                <TrendingDown className="h-3 w-3" /> Reduction
+              </p>
+              <span className="text-xl font-bold font-mono text-green-600">
+                -{calculation.reductionPercent}%
+              </span>
+            </div>
+          )}
 
           {/* Residual */}
           <div className="bg-white rounded-xl border p-3" style={{ borderColor: levelStyle.border }}>

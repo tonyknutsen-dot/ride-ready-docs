@@ -75,14 +75,13 @@ export function WhoAtRiskSelector({ value, onChange }: WhoAtRiskSelectorProps) {
         </div>
       </button>
 
-      {/* Divider */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-[#E2E8F0]" />
-        </div>
-        <div className="relative flex justify-center text-[11px] uppercase">
-          <span className="bg-white px-2 text-slate-400 font-medium tracking-wider">or select specific groups</span>
-        </div>
+      {/* Divider with pill label */}
+      <div className="relative flex items-center">
+        <div className="flex-1 border-t border-[#E2E8F0]" />
+        <span className="mx-2 px-3 py-1 rounded-full bg-[#F1F5F9] text-[11px] font-medium text-[#64748B] whitespace-nowrap">
+          or select specific groups
+        </span>
+        <div className="flex-1 border-t border-[#E2E8F0]" />
       </div>
 
       {/* Group pill toggles */}
