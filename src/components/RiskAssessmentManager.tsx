@@ -20,6 +20,21 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import {
+  PDF_COLORS,
+  generateDocId,
+  buildFileName,
+  blobToDataUrl,
+  drawPDFHeader,
+  drawSectionTitle,
+  drawEquipmentDetails,
+  drawSummaryBox,
+  PDF_TABLE_HEAD_STYLES,
+  PDF_TABLE_BODY_STYLES,
+  PDF_TABLE_ALT_ROW,
+  drawAllPageFooters,
+  drawComplianceStatement,
+} from '@/utils/pdfUtils';
 import { cn } from '@/lib/utils';
 import { useTerminology } from '@/hooks/useTerminology';
 import { WhoAtRiskSelector } from './risk-assessment/WhoAtRiskSelector';
@@ -617,22 +632,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     return null;
   };
 
-  // Add footer to all pages
-  const addPDFFooter = (doc: jsPDF) => {
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const totalPages = doc.getNumberOfPages();
-    
-    for (let i = 1; i <= totalPages; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(128);
-      doc.text('ridereadydocs.com', pageWidth / 2, pageHeight - 8, { align: 'center' });
-      doc.text(`Page ${i} of ${totalPages}`, pageWidth - 14, pageHeight - 8, { align: 'right' });
-      doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 14, pageHeight - 8, { align: 'left' });
-      doc.setTextColor(0);
-    }
-  };
+  // Footer is now handled by drawAllPageFooters from pdfUtils
 
   const generatePDFBlob = async (): Promise<{ blob: Blob; fileName: string }> => {
     if (!selectedAssessment) throw new Error('No assessment selected');
@@ -955,10 +955,10 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       doc.text(format(new Date(), 'dd/MM/yyyy'), rightCol + 15, currentY);
     }
 
-    // Add footer to all pages
-    addPDFFooter(doc);
+    // Add standardised footers to all pages
+    drawAllPageFooters(doc);
 
-    const fileName = `risk-assessment-${ride.ride_name}-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+    const fileName = buildFileName([ride.ride_name, 'RiskAssessment', format(new Date(), 'yyyyMMdd')]);
     return { blob: doc.output('blob'), fileName };
   };
 
