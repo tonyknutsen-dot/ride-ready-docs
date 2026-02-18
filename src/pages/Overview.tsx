@@ -99,7 +99,7 @@ const Overview = () => {
       <WelcomeModal />
       <StaffAccountBanner />
       <PullToRefresh onRefresh={handleRefresh} disabled={isLoading}>
-        <div className="container mx-auto py-6 pb-24 md:pb-8 space-y-5">
+        <div className="container mx-auto py-6 pb-24 md:pb-8 space-y-5" style={{ backgroundColor: 'hsl(210 40% 95%)' }}>
           <DeviceHintBanner />
 
           {/* ── HEADER ─────────────────────────────── */}
@@ -160,7 +160,8 @@ const Overview = () => {
 
           {/* ── COMPLIANCE OVERVIEW SECTION ────────── */}
           <div>
-            <h2 className="text-xs font-semibold text-muted-foreground mb-3 tracking-widest uppercase">Compliance Overview</h2>
+            <h2 className="text-[13px] font-bold text-foreground mb-2 tracking-[1px] uppercase">Compliance Overview</h2>
+            <div className="h-px bg-border mb-4" />
 
             {/* KPI STRIP */}
             <div className="grid grid-cols-2 gap-3">
@@ -172,6 +173,7 @@ const Overview = () => {
                   path: '/rides',
                   dot: null,
                   accentColor: 'hsl(213 52% 24%)',
+                  iconBg: 'hsl(217 91% 97%)',
                 },
                 {
                   label: 'Documents',
@@ -180,6 +182,7 @@ const Overview = () => {
                   path: '/documents',
                   dot: (data?.expiredDocsCount ?? 0) > 0 ? 'red' : (data?.complianceAlerts?.some(a => a.type === 'due_soon') ? 'amber' : 'green'),
                   accentColor: (data?.expiredDocsCount ?? 0) > 0 ? 'hsl(0 72% 51%)' : (data?.complianceAlerts?.some(a => a.type === 'due_soon') ? 'hsl(38 92% 50%)' : 'hsl(142 76% 36%)'),
+                  iconBg: (data?.expiredDocsCount ?? 0) > 0 ? 'hsl(0 72% 96%)' : (data?.complianceAlerts?.some(a => a.type === 'due_soon') ? 'hsl(38 92% 96%)' : 'hsl(142 76% 96%)'),
                 },
                 {
                   label: 'Checks (7d)',
@@ -188,6 +191,7 @@ const Overview = () => {
                   path: '/checks',
                   dot: null,
                   accentColor: 'hsl(213 52% 24%)',
+                  iconBg: 'hsl(217 91% 97%)',
                 },
                 {
                   label: 'Maintenance',
@@ -196,20 +200,21 @@ const Overview = () => {
                   path: '/maintenance',
                   dot: null,
                   accentColor: 'hsl(213 52% 24%)',
+                  iconBg: 'hsl(217 91% 97%)',
                 },
-              ].map(({ label, value, icon: Icon, path, dot, accentColor }) => (
+              ].map(({ label, value, icon: Icon, path, dot, accentColor, iconBg }) => (
                 <button
                   key={label}
                   onClick={() => navigate(path)}
-                  className="flex flex-col gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary hover:bg-secondary active:scale-[0.97] transition-all text-left overflow-hidden relative"
-                  style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}
+                  className="flex flex-col gap-3 p-4 rounded-2xl border border-border bg-white hover:border-primary active:scale-[0.97] transition-all text-left overflow-hidden relative"
+                  style={{ boxShadow: '0 8px 20px rgba(0,0,0,0.08)' }}
                 >
-                  {/* Coloured top accent bar */}
-                  <span className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl" style={{ backgroundColor: accentColor }} />
+                  {/* Coloured top accent bar — 4px thick */}
+                  <span className="absolute top-0 left-0 right-0 h-[4px] rounded-t-2xl" style={{ backgroundColor: accentColor }} />
                   <div className="flex items-center justify-between w-full mt-1">
-                    {/* Icon with tinted chip background */}
-                    <span className="flex items-center justify-center w-9 h-9 rounded-xl" style={{ backgroundColor: `${accentColor}18` }}>
-                      <Icon className="h-[18px] w-[18px]" strokeWidth={2} style={{ color: accentColor }} />
+                    {/* Icon chip */}
+                    <span className="flex items-center justify-center w-10 h-10 rounded-xl" style={{ backgroundColor: iconBg }}>
+                      <Icon className="h-[22px] w-[22px]" strokeWidth={2} style={{ color: accentColor }} />
                     </span>
                     {dot && (
                       <span className={`w-2.5 h-2.5 rounded-full ${
@@ -218,8 +223,8 @@ const Overview = () => {
                     )}
                   </div>
                   <div>
-                    <div className="text-[2rem] font-bold text-foreground leading-none">{value}</div>
-                    <div className="text-xs text-muted-foreground font-medium mt-1">{label}</div>
+                    <div className="text-[34px] font-bold leading-none" style={{ color: 'hsl(222 84% 4%)' }}>{value}</div>
+                    <div className="text-xs font-medium mt-1.5" style={{ color: 'hsl(215 19% 40%)' }}>{label}</div>
                   </div>
                 </button>
               ))}
@@ -269,14 +274,15 @@ const Overview = () => {
 
           {/* ── MANAGE MODULES SECTION ─────────────── */}
           <div>
-            <h2 className="text-sm font-semibold text-foreground mb-3 tracking-wide uppercase opacity-60">Manage Modules</h2>
+            <h2 className="text-[13px] font-bold text-foreground mb-2 tracking-[1px] uppercase">Manage Modules</h2>
+            <div className="h-px bg-border mb-4" />
 
             <div className="grid grid-cols-4 gap-3">
               {quickNavItems.map(item => (
                 <button
                   key={item.label}
                   onClick={() => navigate(item.path)}
-                  className="flex flex-col items-center gap-2 py-4 px-2 rounded-2xl border border-border bg-card active:scale-[0.96] transition-all hover:border-primary/50 hover:bg-secondary group relative"
+                  className="flex flex-col items-center gap-2 py-4 px-2 rounded-2xl border border-border bg-white active:scale-[0.96] transition-all hover:border-primary/50 hover:bg-secondary group relative"
                   style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
                 >
                   <div className="relative">
