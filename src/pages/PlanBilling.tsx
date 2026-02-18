@@ -7,7 +7,7 @@ import { useTester } from "@/contexts/TesterContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock, RefreshCw, X, ShieldAlert } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock, RefreshCw, X, ShieldAlert, Lock, Gauge, TrendingUp, FileText, Users, Bell, Shield, Wrench } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -15,6 +15,23 @@ import { PlanSelection } from "@/components/PlanSelection";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { StripeInstructionModal } from "@/components/StripeInstructionModal";
 import { format } from "date-fns";
+
+const PLAN_FEATURES = [
+  { icon: Shield, label: "Equipment Register & Compliance" },
+  { icon: CheckCircle2, label: "Safety Checks & Audit Logs" },
+  { icon: FileText, label: "Document Storage & Expiry Alerts" },
+  { icon: Shield, label: "Risk Assessments" },
+  { icon: Users, label: "Staff Management & Permissions" },
+  { icon: Bell, label: "Inspection Scheduling & Reminders" },
+];
+
+// Tier ride limits
+const TIER_LIMITS: Record<string, number> = {
+  starter: 5,
+  operator: 12,
+  professional: 25,
+  enterprise: Infinity,
+};
 
 export default function PlanBilling() {
   const { user } = useAuth();
@@ -29,37 +46,7 @@ export default function PlanBilling() {
   const [showReturnBanner, setShowReturnBanner] = useState(false);
   const [showStripeModal, setShowStripeModal] = useState(false);
 
-  // Block staff members from accessing billing
-  if (isStaff && !isOwner) {
-    return (
-      <div className="p-4 max-w-2xl mx-auto space-y-4 pb-20 md:pb-4">
-        <Button variant="ghost" onClick={() => nav('/overview')} className="hover:bg-primary/10">
-          <ArrowLeft className="w-4 h-4 mr-2" />Back to Overview
-        </Button>
-
-        <Card className="border-2 border-destructive/30 bg-gradient-to-br from-destructive/5 to-transparent shadow-elegant">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldAlert className="w-5 h-5 text-destructive" />
-              Access Restricted
-            </CardTitle>
-            <CardDescription>Staff members cannot access billing settings.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Alert className="border-destructive/30">
-              <ShieldAlert className="h-4 w-4" />
-              <AlertTitle>Staff Account</AlertTitle>
-              <AlertDescription>
-                Billing and subscription management is only available to the account owner. 
-                Please contact your organisation administrator if you need to discuss billing matters.
-              </AlertDescription>
-            </Alert>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-  // Handle success/cancel from Stripe checkout
+  // Handle success/cancel from Stripe checkout — must be before any early returns
   useEffect(() => {
     const success = searchParams.get('success');
     const canceled = searchParams.get('canceled');
@@ -112,6 +99,36 @@ export default function PlanBilling() {
     setShowReturnBanner(false);
     toast({ title: "Subscription status updated", description: "Your billing information is now current." });
   };
+
+  // Block staff members from accessing billing
+  if (isStaff && !isOwner) {
+    return (
+      <div className="p-4 max-w-2xl mx-auto space-y-4 pb-20 md:pb-4">
+        <Button variant="ghost" onClick={() => nav('/overview')} className="hover:bg-primary/10">
+          <ArrowLeft className="w-4 h-4 mr-2" />Back to Overview
+        </Button>
+        <Card className="border-2 border-destructive/30 bg-gradient-to-br from-destructive/5 to-transparent shadow-elegant">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldAlert className="w-5 h-5 text-destructive" />
+              Access Restricted
+            </CardTitle>
+            <CardDescription>Staff members cannot access billing settings.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Alert className="border-destructive/30">
+              <ShieldAlert className="h-4 w-4" />
+              <AlertTitle>Staff Account</AlertTitle>
+              <AlertDescription>
+                Billing and subscription management is only available to the account owner.
+                Please contact your organisation administrator if you need to discuss billing matters.
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -218,71 +235,83 @@ export default function PlanBilling() {
       )}
 
       {/* Current Plan Card */}
-      <Card className="border-2 border-accent/50 bg-gradient-to-br from-accent/10 to-transparent shadow-elegant">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Crown className="w-5 h-5 text-accent" />
-            Plan & Billing
-          </CardTitle>
-          <CardDescription>Manage your ride-based subscription.</CardDescription>
+      <Card className="border border-[#BFDBFE] bg-card shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#DBEAFE] flex items-center justify-center">
+              <Crown className="w-4 h-4 text-[#1D4ED8]" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Plan & Billing</CardTitle>
+              <CardDescription className="text-xs">Manage your ride-based subscription.</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="rounded-lg border-2 border-primary/20 p-4 space-y-3 bg-gradient-to-br from-primary/5 to-transparent">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-primary" />
+          {/* Plan identity row */}
+          <div className="flex items-start justify-between gap-3 p-4 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0]">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-foreground">{getPlanName()}</span>
+                {!isTrialOrExpired && (
+                  <Badge className="text-[10px] px-2 py-0 bg-[#DBEAFE] text-[#1D4ED8] border-[#BFDBFE] hover:bg-[#DBEAFE]">
+                    Active
+                  </Badge>
+                )}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="font-semibold flex flex-wrap items-center gap-2">
-                  <span>{getPlanName()}</span>
-                  {!isTrialOrExpired && (
-                    <Badge variant="outline" className="text-xs bg-accent/20 border-accent/50 text-accent-foreground">
-                      Active
-                    </Badge>
-                  )}
-                </div>
-                <div className="text-sm text-muted-foreground mt-1">
-                  {status === 'active'
-                    ? `All-in-one compliance & operations system`
-                    : status === "trial"
-                    ? `${subscription?.daysRemaining} days remaining in trial`
-                    : "Your trial has expired — subscribe to continue"}
-                </div>
-              </div>
+              <p className="text-xs text-muted-foreground">
+                {status === 'active'
+                  ? `All-in-one compliance & operations platform`
+                  : status === "trial"
+                  ? `${subscription?.daysRemaining} days remaining in trial`
+                  : "Your trial has expired — subscribe to continue"}
+              </p>
             </div>
+            {!isTrialOrExpired && subscription?.tierPrice && (
+              <div className="text-right shrink-0">
+                <div className="text-2xl font-bold text-foreground leading-none">
+                  £{subscription.tierPrice.toFixed(2)}
+                </div>
+                <div className="text-[11px] text-muted-foreground">/month</div>
+              </div>
+            )}
+          </div>
 
-            {/* Active subscription details */}
-            {!isTrialOrExpired && (
-              <>
-                <Separator className="bg-primary/20" />
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/50 border border-success/20">
-                    <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center flex-shrink-0">
-                      <CreditCard className="w-4 h-4 text-success" />
-                    </div>
-                    <div>
-                      <div className="text-muted-foreground text-xs">Price</div>
-                      <div className="font-semibold">
-                        £{subscription?.tierPrice?.toFixed(2)}/mo
-                      </div>
+          {/* Price + renewal tiles (active only) */}
+          {!isTrialOrExpired && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0]">
+                <CreditCard className="w-4 h-4 text-[#16A34A] shrink-0" />
+                <div>
+                  <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Price</div>
+                  <div className="text-sm font-semibold">£{subscription?.tierPrice?.toFixed(2)}/mo</div>
+                </div>
+              </div>
+              {subscription?.currentPeriodEnd && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE]">
+                  <Calendar className="w-4 h-4 text-[#1D4ED8] shrink-0" />
+                  <div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Renews</div>
+                    <div className="text-sm font-semibold">
+                      {format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}
                     </div>
                   </div>
-                  {subscription?.currentPeriodEnd && (
-                    <div className="flex items-center gap-2 p-3 rounded-lg bg-secondary/50 border border-info/20">
-                      <div className="w-8 h-8 rounded-full bg-info/10 flex items-center justify-center flex-shrink-0">
-                        <Calendar className="w-4 h-4 text-info" />
-                      </div>
-                      <div>
-                        <div className="text-muted-foreground text-xs">Renews</div>
-                        <div className="font-semibold">
-                          {format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
-              </>
-            )}
+              )}
+            </div>
+          )}
+
+          {/* What's included */}
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Includes</p>
+            <div className="grid grid-cols-1 gap-1.5">
+              {PLAN_FEATURES.map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-2">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-[#16A34A] shrink-0" />
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                </div>
+              ))}
+            </div>
           </div>
 
           <Separator />
@@ -302,8 +331,8 @@ export default function PlanBilling() {
                 </DialogContent>
               </Dialog>
             ) : (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="w-full border-2 hover:bg-primary/10 hover:border-primary"
                 onClick={handleManageSubscriptionClick}
                 disabled={portalLoading}
@@ -322,50 +351,100 @@ export default function PlanBilling() {
       </Card>
 
       {/* Ride Usage Card */}
-      <Card className="border-2 border-info/30 bg-gradient-to-br from-info/5 to-transparent shadow-elegant">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-info/10 flex items-center justify-center">
-              <Receipt className="w-4 h-4 text-info" />
-            </div>
-            Ride Usage
-          </CardTitle>
-          <CardDescription>Your pricing is based on the number of billable rides.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Billable rides</span>
-              <span className="font-semibold text-lg">
-                {subscription?.billableRideCount ?? 0}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-muted-foreground">Free assets (stalls, generators, etc.)</span>
-              <span className="font-semibold text-lg">
-                {subscription?.freeAssetCount ?? 0}
-              </span>
-            </div>
-            <div className="flex justify-between items-center p-2 rounded bg-accent/10 border border-accent/20">
-              <span className="text-sm font-medium">Current tier</span>
-              <Badge variant="outline" className="bg-accent/20 border-accent/50">
-                {subscription?.tierLabel} ({subscription?.billableRideCount ?? 0} rides)
-              </Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {(() => {
+        const billable = subscription?.billableRideCount ?? 0;
+        const planKey = (subscription?.subscriptionPlan ?? 'starter').toLowerCase();
+        const limit = TIER_LIMITS[planKey] ?? 5;
+        const isNearLimit = limit !== Infinity && billable >= limit * 0.8;
+        const isAtLimit = limit !== Infinity && billable >= limit;
+        const pct = limit === Infinity ? 0 : Math.min(100, Math.round((billable / limit) * 100));
+        const barColor = isAtLimit ? '#DC2626' : isNearLimit ? '#F59E0B' : '#1D4ED8';
+
+        return (
+          <Card className="border border-[#C7D2FE] bg-card shadow-sm">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-[#EEF2FF] flex items-center justify-center">
+                  <Gauge className="w-4 h-4 text-[#4F46E5]" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Equipment Usage</CardTitle>
+                  <CardDescription className="text-xs">Your pricing is based on billable rides.</CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Usage meter */}
+              {limit !== Infinity && (
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted-foreground">Billable rides used</span>
+                    <span className="text-sm font-bold text-foreground">{billable} of {limit}</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-[#E2E8F0] overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%`, backgroundColor: barColor }}
+                    />
+                  </div>
+                  {(isNearLimit || isAtLimit) && (
+                    <p className="text-[11px] font-medium" style={{ color: barColor }}>
+                      {isAtLimit ? "Plan limit reached — upgrade to add more rides." : "Approaching plan limit."}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Stats row */}
+              <div className="space-y-2">
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Billable rides</span>
+                  <span className="font-semibold">{billable}</span>
+                </div>
+                <div className="flex justify-between items-center py-2 border-b border-border">
+                  <span className="text-sm text-muted-foreground">Free assets (stalls, generators, etc.)</span>
+                  <span className="font-semibold">{subscription?.freeAssetCount ?? 0}</span>
+                </div>
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm font-medium">Current tier</span>
+                  <Badge variant="outline" className="bg-[#EEF2FF] border-[#C7D2FE] text-[#4F46E5] text-[11px]">
+                    {subscription?.tierLabel} — up to {limit === Infinity ? 'unlimited' : limit} rides
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Upgrade nudge */}
+              {(isNearLimit || isAtLimit) && !isTrialOrExpired && (
+                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button size="sm" className="w-full bg-[#1D4ED8] hover:bg-[#1E40AF] text-white">
+                      <TrendingUp className="w-3.5 h-3.5 mr-1.5" />
+                      Upgrade Plan
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+                    <PlanSelection onClose={() => setDialogOpen(false)} />
+                  </DialogContent>
+                </Dialog>
+              )}
+            </CardContent>
+          </Card>
+        );
+      })()}
+
 
       {/* Billing History Card */}
-      <Card className="border-2 border-success/30 bg-gradient-to-br from-success/5 to-transparent shadow-elegant">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-success/10 flex items-center justify-center">
-              <Receipt className="w-4 h-4 text-success" />
+      <Card className="border border-[#BBF7D0] bg-card shadow-sm">
+        <CardHeader className="pb-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-[#F0FDF4] flex items-center justify-center">
+              <Receipt className="w-4 h-4 text-[#16A34A]" />
             </div>
-            Billing History
-          </CardTitle>
-          <CardDescription>View your invoices and payment history.</CardDescription>
+            <div>
+              <CardTitle className="text-base">Billing History</CardTitle>
+              <CardDescription className="text-xs">Access your invoices, receipts, and payment confirmations.</CardDescription>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           {!isTrialOrExpired ? (
@@ -373,23 +452,23 @@ export default function PlanBilling() {
               <p className="text-sm text-muted-foreground">
                 View and download your invoices in the Stripe billing portal.
               </p>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 size="sm"
                 onClick={handleManageSubscriptionClick}
                 disabled={portalLoading}
-                className="border-2 border-success/50 hover:bg-success/10 hover:border-success"
+                className="border border-[#BBF7D0] hover:bg-[#F0FDF4] text-[#16A34A] hover:border-[#16A34A]"
               >
                 {portalLoading ? (
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
-                  <ExternalLink className="w-4 h-4 mr-2 text-success" />
+                  <ExternalLink className="w-4 h-4 mr-2" />
                 )}
-                View Invoices
+                Open Billing Portal
               </Button>
             </div>
           ) : (
-            <div className="rounded-lg border-2 border-dashed border-muted p-8 text-center bg-secondary/30">
+            <div className="rounded-lg border border-dashed border-muted p-8 text-center bg-muted/20">
               <div className="w-12 h-12 rounded-full bg-muted/50 flex items-center justify-center mx-auto mb-3">
                 <Receipt className="w-6 h-6 text-muted-foreground" />
               </div>
@@ -400,6 +479,11 @@ export default function PlanBilling() {
           )}
         </CardContent>
       </Card>
+
+      {/* Trust footer */}
+      <p className="text-center text-[11px] text-muted-foreground pb-2">
+        🔒 Payments processed securely via Stripe. Your card details are never stored on our servers.
+      </p>
 
       {/* Stripe Instruction Modal */}
       <StripeInstructionModal
