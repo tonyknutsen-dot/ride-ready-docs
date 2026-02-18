@@ -1625,24 +1625,32 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           resetItemForm();
         }
       }}>
-        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{editingItem ? 'Edit' : 'Add'} Risk Item</DialogTitle>
-            <DialogDescription>
+        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto bg-[#F8FAFC] p-0 gap-0">
+          {/* Dialog header */}
+          <div className="bg-white border-b border-[#E2E8F0] px-5 py-4 rounded-t-2xl">
+            <DialogTitle className="text-[17px] font-semibold text-[#0F172A]">
+              {editingItem ? 'Edit' : 'Add'} Risk Item
+            </DialogTitle>
+            <DialogDescription className="text-[13px] text-slate-500 mt-0.5">
               A risk assessment helps identify hazards and controls to keep everyone safe. Answer each question as accurately as possible.
             </DialogDescription>
-          </DialogHeader>
-          
+          </div>
+
           <TooltipProvider>
-            <div className="space-y-6">
-              {/* Section 1: Risk Identification */}
-              <Card className="border-l-4 border-l-primary/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <span className="text-primary">1.</span> Risk Identification
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+            <div className="space-y-4 px-4 py-4 pb-0">
+              {/* ── SECTION 1: Risk Identification ── */}
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+                {/* Section header */}
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F1F5F9]">
+                  <div className="w-8 h-8 rounded-xl bg-[#EEF2FF] flex items-center justify-center shrink-0">
+                    <span className="text-[13px] font-bold text-[#1E3A8A]">1</span>
+                  </div>
+                  <div>
+                    <p className="text-[15px] font-semibold text-[#0F172A]">Risk Identification</p>
+                    <p className="text-[12px] text-slate-500">Describe the hazard and who could be harmed</p>
+                  </div>
+                </div>
+                <div className="px-4 py-4 space-y-4">
                   <div>
                     <div className="flex items-center gap-2 mb-2">
                       <Label htmlFor="hazard_description">Hazard Description *</Label>
@@ -1656,33 +1664,31 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                       </Tooltip>
                     </div>
                     
-                    {/* Custom Hazard Button - Prominent placement */}
+                    {/* Custom Hazard Button */}
                     <div className="flex gap-2 mb-3">
-                      <Button
+                      <button
                         type="button"
-                        variant={useCustomHazard ? "default" : "outline"}
-                        size="sm"
                         onClick={() => {
                           setUseCustomHazard(true);
                           setItemFormData({ ...itemFormData, hazard_description: '' });
                         }}
-                        className="flex items-center gap-1.5"
+                        className="flex items-center gap-1.5 h-10 px-4 rounded-xl text-[13px] font-semibold transition-colors"
+                        style={{ background: '#1E3A5F', color: '#FFFFFF' }}
                       >
                         <Plus className="h-3.5 w-3.5" />
                         Enter Custom Hazard
-                      </Button>
+                      </button>
                       {useCustomHazard && (
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="sm"
                           onClick={() => {
                             setUseCustomHazard(false);
                             setItemFormData({ ...itemFormData, hazard_description: '' });
                           }}
+                          className="flex items-center gap-1.5 h-10 px-4 rounded-xl text-[13px] font-semibold border border-[#CBD5E1] bg-[#F1F5F9] text-[#334155] transition-colors hover:bg-slate-200"
                         >
                           Browse Library
-                        </Button>
+                        </button>
                       )}
                     </div>
                     
@@ -1909,31 +1915,29 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     
                     {/* Custom Controls Button - Prominent placement */}
                     <div className="flex gap-2 mb-3">
-                      <Button
+                      <button
                         type="button"
-                        variant={useCustomControls ? "default" : "outline"}
-                        size="sm"
                         onClick={() => {
                           setUseCustomControls(true);
                           setItemFormData({ ...itemFormData, existing_controls: '' });
                         }}
-                        className="flex items-center gap-1.5"
+                        className="flex items-center gap-1.5 h-10 px-4 rounded-xl text-[13px] font-semibold transition-colors"
+                        style={{ background: '#1E3A5F', color: '#FFFFFF' }}
                       >
                         <Plus className="h-3.5 w-3.5" />
                         Enter Custom Control
-                      </Button>
+                      </button>
                       {useCustomControls && (
-                        <Button
+                        <button
                           type="button"
-                          variant="ghost"
-                          size="sm"
                           onClick={() => {
                             setUseCustomControls(false);
                             setItemFormData({ ...itemFormData, existing_controls: '' });
                           }}
+                          className="flex items-center gap-1.5 h-10 px-4 rounded-xl text-[13px] font-semibold border border-[#CBD5E1] bg-[#F1F5F9] text-[#334155] transition-colors hover:bg-slate-200"
                         >
                           Browse Library
-                        </Button>
+                        </button>
                       )}
                     </div>
                     
@@ -2084,20 +2088,21 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                       </>
                     )}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              {/* Section 2: Risk Evaluation */}
-              <Card className="border-l-4 border-l-orange-500/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <span className="text-orange-600">2.</span> Risk Evaluation
-                  </CardTitle>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Risk is calculated as Likelihood × Severity. Controls reduce the residual risk.
-                  </p>
-                </CardHeader>
-                <CardContent>
+              {/* ── SECTION 2: Risk Evaluation ── */}
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F1F5F9]">
+                  <div className="w-8 h-8 rounded-xl bg-[#FFF7ED] flex items-center justify-center shrink-0">
+                    <span className="text-[13px] font-bold text-[#C2410C]">2</span>
+                  </div>
+                  <div>
+                    <p className="text-[15px] font-semibold text-[#0F172A]">Risk Evaluation</p>
+                    <p className="text-[12px] text-slate-500">Risk is calculated as Likelihood × Severity. Controls reduce the residual risk.</p>
+                  </div>
+                </div>
+                <div className="px-4 py-4">
                   <RiskEvaluationPanel
                     likelihood={itemFormData.likelihood}
                     severity={itemFormData.severity}
@@ -2112,17 +2117,21 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     riskSettings={riskSettings}
                     showDisclaimerLink={true}
                   />
-                </CardContent>
-              </Card>
+                </div>
+              </div>
 
-              {/* Section 3: Risk Controls & Actions */}
-              <Card className="border-l-4 border-l-green-500/30">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base flex items-center gap-2">
-                    <span className="text-green-600">3.</span> Risk Controls & Actions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+              {/* ── SECTION 3: Risk Controls & Actions ── */}
+              <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+                <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F1F5F9]">
+                  <div className="w-8 h-8 rounded-xl bg-[#F0FDF4] flex items-center justify-center shrink-0">
+                    <span className="text-[13px] font-bold text-[#166534]">3</span>
+                  </div>
+                  <div>
+                    <p className="text-[15px] font-semibold text-[#0F172A]">Risk Controls &amp; Actions</p>
+                    <p className="text-[12px] text-slate-500">Define controls in place and any additional actions required</p>
+                  </div>
+                </div>
+                <div className="px-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="col-span-2">
                       <div className="flex items-center gap-2 mb-2">
@@ -2313,10 +2322,10 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     
                     <div className="col-span-2">
                       <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="status">Status</Label>
+                        <Label htmlFor="status" className="text-[13px] font-semibold text-[#0F172A]">Status</Label>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                            <Info className="h-3.5 w-3.5 text-slate-400 cursor-help" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
                             <p>Track the progress of actions for this risk item</p>
@@ -2324,58 +2333,83 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                         </Tooltip>
                       </div>
                       <Select value={itemFormData.status} onValueChange={(value) => setItemFormData({ ...itemFormData, status: value })}>
-                        <SelectTrigger>
+                        <SelectTrigger className="bg-white border-[#CBD5E1] rounded-xl h-10">
                           <SelectValue>
-                            {itemFormData.status === 'open' && 'Open'}
-                            {itemFormData.status === 'in_progress' && 'In Progress'}
-                            {itemFormData.status === 'completed' && 'Completed'}
+                            {itemFormData.status === 'open' && (
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-blue-500" /> Open
+                              </span>
+                            )}
+                            {itemFormData.status === 'in_progress' && (
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-amber-500" /> In Progress
+                              </span>
+                            )}
+                            {itemFormData.status === 'completed' && (
+                              <span className="inline-flex items-center gap-1.5">
+                                <span className="w-2 h-2 rounded-full bg-green-500" /> Completed
+                              </span>
+                            )}
                           </SelectValue>
                         </SelectTrigger>
                         <SelectContent className="bg-background z-50">
                           <SelectItem value="open">
-                            <div className="flex flex-col">
-                              <span className="font-medium">Open</span>
-                              <span className="text-xs text-muted-foreground">Not yet started - This risk needs attention</span>
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#DBEAFE] text-[#1E3A8A]">Open</span>
+                              <span className="text-xs text-slate-500">Not yet started</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="in_progress">
-                            <div className="flex flex-col">
-                              <span className="font-medium">In Progress</span>
-                              <span className="text-xs text-muted-foreground">Currently being addressed - Actions are underway</span>
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FEF3C7] text-[#92400E]">In Progress</span>
+                              <span className="text-xs text-slate-500">Actions underway</span>
                             </div>
                           </SelectItem>
                           <SelectItem value="completed">
-                            <div className="flex flex-col">
-                              <span className="font-medium">Completed</span>
-                              <span className="text-xs text-muted-foreground">Fully addressed - Controls implemented and verified</span>
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#DCFCE7] text-[#166534]">Completed</span>
+                              <span className="text-xs text-slate-500">Controls verified</span>
                             </div>
                           </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </div>
           </TooltipProvider>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setShowItemDialog(false);
-              setEditingItem(null);
-              resetItemForm();
-            }} disabled={savingItem}>Cancel</Button>
-            <Button onClick={handleSaveItem} disabled={savingItem}>
+
+          {/* ── Sticky footer action bar ── */}
+          <div className="sticky bottom-0 bg-white border-t border-[#E2E8F0] px-5 py-3 rounded-b-2xl flex gap-3">
+            <Button
+              onClick={handleSaveItem}
+              disabled={savingItem}
+              className="flex-1 h-12 rounded-xl text-[14px] font-semibold"
+              style={{ background: '#1E3A5F', color: '#FFFFFF' }}
+            >
               {savingItem ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Saving...
                 </>
               ) : (
-                'Save'
+                editingItem ? 'Save Changes' : 'Save'
               )}
             </Button>
-          </DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setShowItemDialog(false);
+                setEditingItem(null);
+                resetItemForm();
+              }}
+              disabled={savingItem}
+              className="flex-1 h-12 rounded-xl text-[14px] font-semibold bg-[#F1F5F9] text-[#334155] border-0"
+            >
+              Cancel
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
 

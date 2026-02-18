@@ -2,20 +2,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info, TrendingDown, AlertTriangle, CheckCircle2, XCircle, UserCheck } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
-import { 
-  LIKELIHOOD_SCORES, 
-  SEVERITY_SCORES, 
-  useRiskCalculation, 
-  getRiskColor,
-  getRiskBgColor,
+import {
+  LIKELIHOOD_SCORES,
+  SEVERITY_SCORES,
+  useRiskCalculation,
   LikelihoodKey,
   SeverityKey
 } from './RiskScoring';
 import { RiskDisclaimer } from './RiskDisclaimer';
-import { cn } from '@/lib/utils';
 
 export interface RiskSettings {
   existingControlsReduction: number;
@@ -37,6 +32,25 @@ interface RiskEvaluationPanelProps {
   showDisclaimerLink?: boolean;
 }
 
+// ── Severity colour mapping ──────────────────────────────────────────────────
+const LEVEL_STYLE: Record<string, { bg: string; border: string; text: string; badge: string; badgeText: string }> = {
+  low:    { bg: '#ECFDF5', border: '#6EE7B7', text: '#065F46', badge: '#D1FAE5', badgeText: '#065F46' },
+  medium: { bg: '#FFFBEB', border: '#FCD34D', text: '#92400E', badge: '#FEF3C7', badgeText: '#92400E' },
+  high:   { bg: '#FEF2F2', border: '#FCA5A5', text: '#991B1B', badge: '#FEE2E2', badgeText: '#991B1B' },
+};
+
+function RiskBadge({ level }: { level: string }) {
+  const s = LEVEL_STYLE[level] || LEVEL_STYLE.medium;
+  return (
+    <span
+      className="inline-flex items-center px-2.5 py-1 rounded-full text-[12px] font-bold"
+      style={{ background: s.badge, color: s.badgeText }}
+    >
+      {level.toUpperCase()}
+    </span>
+  );
+}
+
 export function RiskEvaluationPanel({
   likelihood,
   severity,
@@ -53,46 +67,54 @@ export function RiskEvaluationPanel({
 }: RiskEvaluationPanelProps) {
   const existingControlsPercent = riskSettings?.existingControlsReduction ?? 20;
   const additionalActionsPercent = riskSettings?.additionalActionsReduction ?? 15;
-  
+
   const calculation = useRiskCalculation(
-    likelihood, 
-    severity, 
-    existingControls, 
+    likelihood,
+    severity,
+    existingControls,
     additionalActions,
     existingControlsPercent,
     additionalActionsPercent
   );
-  
-  const likelihoodInfo = LIKELIHOOD_SCORES[likelihood as LikelihoodKey] || LIKELIHOOD_SCORES.possible;
-  const severityInfo = SEVERITY_SCORES[severity as SeverityKey] || SEVERITY_SCORES.moderate;
 
-  // Check if manual override differs from calculation
-  const isOverridden = useManualOverride && riskLevel !== calculation.residualLevel;
+  const likelihoodInfo = LIKELIHOOD_SCORES[likelihood as LikelihoodKey] || LIKELIHOOD_SCORES.possible;
+  const severityInfo   = SEVERITY_SCORES[severity as SeverityKey]       || SEVERITY_SCORES.moderate;
+  const isOverridden   = useManualOverride && riskLevel !== calculation.residualLevel;
+  const displayLevel   = isOverridden ? riskLevel : calculation.residualLevel;
+  const levelStyle     = LEVEL_STYLE[displayLevel] || LEVEL_STYLE.medium;
 
   return (
     <div className="space-y-4">
-      {/* Likelihood & Severity Grid */}
+      {/* ── Likelihood & Severity selects ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Likelihood */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium">Likelihood</Label>
-            <Badge variant="outline" className="text-xs font-mono">
+            <Label className="text-[13px] font-semibold text-[#0F172A]">Likelihood</Label>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-[#EEF2FF] text-[#3730A3] text-[11px] font-bold">
               Score: {likelihoodInfo.score}
-            </Badge>
+            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>How likely is this hazard to cause harm?</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
-          <p className="text-xs text-muted-foreground italic">How likely is this hazard to cause harm?</p>
+          <p className="text-[12px] text-slate-500 italic">How likely is this hazard to cause harm?</p>
           <Select value={likelihood} onValueChange={onLikelihoodChange}>
-            <SelectTrigger className="h-10">
+            <SelectTrigger className="h-10 bg-white border-[#CBD5E1] focus:border-[#1E3A5F] rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(LIKELIHOOD_SCORES).map(([key, info]) => (
                 <SelectItem key={key} value={key}>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{info.score}</span>
+                    <span className="font-mono text-xs bg-[#EEF2FF] text-[#3730A3] px-1.5 py-0.5 rounded font-bold">{info.score}</span>
                     <span>{info.label}</span>
-                    <span className="text-xs text-muted-foreground">- {info.description}</span>
+                    <span className="text-xs text-slate-400">— {info.description}</span>
                   </div>
                 </SelectItem>
               ))}
@@ -103,23 +125,31 @@ export function RiskEvaluationPanel({
         {/* Severity */}
         <div className="space-y-2">
           <div className="flex items-center gap-2">
-            <Label className="text-sm font-medium">Severity</Label>
-            <Badge variant="outline" className="text-xs font-mono">
+            <Label className="text-[13px] font-semibold text-[#0F172A]">Severity</Label>
+            <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-[#EEF2FF] text-[#3730A3] text-[11px] font-bold">
               Score: {severityInfo.score}
-            </Badge>
+            </span>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Info className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+              </TooltipTrigger>
+              <TooltipContent className="max-w-xs">
+                <p>How serious would the injury or harm be?</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
-          <p className="text-xs text-muted-foreground italic">How serious would the injury or harm be?</p>
+          <p className="text-[12px] text-slate-500 italic">How serious would the injury or harm be?</p>
           <Select value={severity} onValueChange={onSeverityChange}>
-            <SelectTrigger className="h-10">
+            <SelectTrigger className="h-10 bg-white border-[#CBD5E1] focus:border-[#1E3A5F] rounded-xl">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {Object.entries(SEVERITY_SCORES).map(([key, info]) => (
                 <SelectItem key={key} value={key}>
                   <div className="flex items-center gap-2">
-                    <span className="font-mono text-xs bg-muted px-1.5 py-0.5 rounded">{info.score}</span>
+                    <span className="font-mono text-xs bg-[#EEF2FF] text-[#3730A3] px-1.5 py-0.5 rounded font-bold">{info.score}</span>
                     <span>{info.label}</span>
-                    <span className="text-xs text-muted-foreground">- {info.description}</span>
+                    <span className="text-xs text-slate-400">— {info.description}</span>
                   </div>
                 </SelectItem>
               ))}
@@ -128,159 +158,132 @@ export function RiskEvaluationPanel({
         </div>
       </div>
 
-      {/* Risk Score Calculation Display */}
-      <div className={cn(
-        "rounded-lg border-2 p-4 space-y-3", 
-        isOverridden ? "border-warning/50 bg-warning/5" : getRiskBgColor(calculation.residualLevel)
-      )}>
+      {/* ── Risk Calculation panel ── */}
+      <div
+        className="rounded-xl border p-4 space-y-3"
+        style={{ background: levelStyle.bg, borderColor: levelStyle.border }}
+      >
+        {/* Header row */}
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2">
-            {isOverridden ? (
-              <>
-                <UserCheck className="h-5 w-5 text-warning" />
-                <span className="font-semibold">Professional Override Applied</span>
-              </>
-            ) : (
-              <>
-                {calculation.residualLevel === 'high' && <XCircle className="h-5 w-5 text-red-600" />}
-                {calculation.residualLevel === 'medium' && <AlertTriangle className="h-5 w-5 text-orange-600" />}
-                {calculation.residualLevel === 'low' && <CheckCircle2 className="h-5 w-5 text-green-600" />}
-                <span className="font-semibold">Risk Calculation</span>
-              </>
-            )}
-          </div>
-          <div className="flex items-center gap-2 text-sm">
-            <span className="font-mono bg-background px-2 py-1 rounded border">
-              {likelihoodInfo.score} × {severityInfo.score} = {calculation.inherentScore}
+            {isOverridden
+              ? <UserCheck className="h-4 w-4" style={{ color: levelStyle.text }} />
+              : displayLevel === 'high'
+              ? <XCircle className="h-4 w-4 text-red-600" />
+              : displayLevel === 'medium'
+              ? <AlertTriangle className="h-4 w-4 text-amber-600" />
+              : <CheckCircle2 className="h-4 w-4 text-green-600" />
+            }
+            <span className="text-[13px] font-bold" style={{ color: levelStyle.text }}>
+              Risk Calculation
             </span>
           </div>
+          <span className="font-mono text-[13px] font-bold px-2.5 py-1 rounded-lg bg-white/70 border" style={{ color: levelStyle.text, borderColor: levelStyle.border }}>
+            {likelihoodInfo.score} × {severityInfo.score} = {calculation.inherentScore}
+          </span>
         </div>
 
-        {/* Override Indicator */}
-        {isOverridden && (
-          <Alert className="border-warning/50 bg-warning/10">
-            <UserCheck className="h-4 w-4 text-warning" />
-            <AlertDescription className="text-xs">
-              <strong>Calculated: {calculation.residualLevel.toUpperCase()}</strong> → 
-              <strong className="ml-1">Overridden to: {riskLevel.toUpperCase()}</strong>
-              <p className="mt-1 text-muted-foreground">
-                This risk level has been manually set based on the assessor's professional judgement, 
-                overriding the calculated value.
-              </p>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Score Breakdown */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 text-sm">
-          <div className="bg-background rounded-lg p-2.5 sm:p-3 border">
-            <div className="text-xs text-muted-foreground mb-1">Inherent Risk</div>
-            <div className="flex items-center gap-2">
-              <span className="text-base sm:text-lg font-bold font-mono">{calculation.inherentScore}</span>
-              <Badge className={cn("text-xs", getRiskColor(calculation.inherentLevel))}>
-                {calculation.inherentLevel.toUpperCase()}
-              </Badge>
+        {/* Score breakdown: Inherent → Reduction → Residual */}
+        <div className="grid grid-cols-3 gap-2">
+          {/* Inherent */}
+          <div className="bg-white rounded-xl border p-3" style={{ borderColor: levelStyle.border }}>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Inherent Risk</p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xl font-bold font-mono" style={{ color: levelStyle.text }}>
+                {calculation.inherentScore}
+              </span>
+              <RiskBadge level={calculation.inherentLevel} />
             </div>
           </div>
-          
-          {calculation.reductionPercent > 0 && (
-            <div className="bg-background rounded-lg p-2.5 sm:p-3 border">
-              <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                <TrendingDown className="h-3 w-3" />
-                Control Reduction
-              </div>
-              <div className="text-base sm:text-lg font-bold font-mono text-green-600 dark:text-green-500">
-                -{calculation.reductionPercent}%
-              </div>
-            </div>
-          )}
-          
-          <div className={cn(
-            "bg-background rounded-lg p-2.5 sm:p-3 border",
-            isOverridden ? "border-warning/50" : "border-primary/30"
-          )}>
-            <div className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+
+          {/* Reduction */}
+          <div className="bg-white rounded-xl border border-green-200 p-3">
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1">
+              <TrendingDown className="h-3 w-3" /> Reduction
+            </p>
+            <span className="text-xl font-bold font-mono text-green-600">
+              {calculation.reductionPercent > 0 ? `-${calculation.reductionPercent}%` : '—'}
+            </span>
+          </div>
+
+          {/* Residual */}
+          <div className="bg-white rounded-xl border p-3" style={{ borderColor: levelStyle.border }}>
+            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
               {isOverridden ? 'Override' : 'Residual'} Risk
-              {isOverridden && <UserCheck className="h-3 w-3 text-warning" />}
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-base sm:text-lg font-bold font-mono">
+            </p>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xl font-bold font-mono" style={{ color: levelStyle.text }}>
                 {isOverridden ? '—' : calculation.residualScore}
               </span>
-              <Badge className={cn("text-xs", getRiskColor(isOverridden ? riskLevel as any : calculation.residualLevel))}>
-                {(isOverridden ? riskLevel : calculation.residualLevel).toUpperCase()}
-              </Badge>
+              <RiskBadge level={isOverridden ? riskLevel : calculation.residualLevel} />
             </div>
           </div>
         </div>
 
-        {/* Control Impact Info */}
+        {/* Control impact note */}
         {calculation.reductionPercent > 0 && !isOverridden && (
-          <div className="text-xs text-muted-foreground bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800 rounded p-2">
-            <span className="font-medium text-green-700 dark:text-green-400">Controls applied:</span>{' '}
-            {existingControls && `Existing controls (-${existingControlsPercent}%)`}
+          <p className="text-[12px] text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+            <span className="font-semibold">Controls applied: </span>
+            {existingControls && `Existing controls (−${existingControlsPercent}%)`}
             {existingControls && additionalActions && ', '}
-            {additionalActions && `Additional actions (-${additionalActionsPercent}%)`}
-          </div>
+            {additionalActions && `Additional actions (−${additionalActionsPercent}%)`}
+          </p>
         )}
 
-        {/* Risk Level Guide */}
-        <div className="text-xs text-muted-foreground">
-          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-            <span className="whitespace-nowrap"><strong>1-6:</strong> Low</span>
-            <span className="whitespace-nowrap"><strong>7-12:</strong> Medium</span>
-            <span className="whitespace-nowrap"><strong>13-25:</strong> High</span>
-          </div>
-        </div>
+        {/* Scale guide */}
+        <p className="text-[11px] text-slate-500">
+          <strong>1–6:</strong> Low &nbsp;·&nbsp; <strong>7–12:</strong> Medium &nbsp;·&nbsp; <strong>13–25:</strong> High
+        </p>
       </div>
 
-      {/* Manual Override Option */}
-      <div className="border rounded-lg p-3 bg-muted/30">
+      {/* ── Override toggle ── */}
+      <div className="rounded-xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-4">
         <div className="flex items-start gap-3">
           <Checkbox
             id="manual-override"
             checked={useManualOverride}
-            onCheckedChange={(checked) => onUseManualOverrideChange(!!checked)}
+            onCheckedChange={(c) => onUseManualOverrideChange(!!c)}
+            className="mt-0.5"
+            style={{ accentColor: '#1E3A5F' }}
           />
           <div className="flex-1">
-            <Label htmlFor="manual-override" className="text-sm font-medium cursor-pointer">
+            <Label htmlFor="manual-override" className="text-[13px] font-semibold text-[#0F172A] cursor-pointer">
               Override calculated risk level
             </Label>
-            <p className="text-xs text-muted-foreground mt-0.5">
+            <p className="text-[12px] text-slate-500 mt-0.5">
               Use your professional judgement to set a different risk level. Your assessment of site-specific conditions is paramount.
             </p>
           </div>
         </div>
-        
+
         {useManualOverride && (
-          <div className="mt-3 ml-6">
-            <Alert className="border-warning/50 bg-warning/10">
-              <AlertTriangle className="h-4 w-4 text-warning" />
-              <AlertDescription className="text-xs">
-                <strong>Your professional opinion matters most.</strong> If you believe the calculated risk doesn't reflect the true situation based on your site knowledge and experience, override it accordingly.
-              </AlertDescription>
-            </Alert>
+          <div className="mt-3 ml-6 space-y-3">
+            <div className="rounded-xl border border-[#BFDBFE] bg-[#EFF6FF] px-3 py-2.5">
+              <p className="text-[12px] text-[#1E40AF]">
+                <span className="font-bold">Your professional opinion matters most.</span> If the calculated risk doesn't reflect the true situation based on your site knowledge, override it accordingly.
+              </p>
+            </div>
             <Select value={riskLevel} onValueChange={onRiskLevelChange}>
-              <SelectTrigger className="mt-2">
+              <SelectTrigger className="bg-white border-[#CBD5E1] rounded-xl">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="low">
                   <div className="flex items-center gap-2">
                     <CheckCircle2 className="h-4 w-4 text-green-600" />
-                    <span>Low - Acceptable risk with controls in place</span>
+                    <span>Low — Acceptable risk with controls in place</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="medium">
                   <div className="flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-orange-600" />
-                    <span>Medium - Risk requires additional controls</span>
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <span>Medium — Risk requires additional controls</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="high">
                   <div className="flex items-center gap-2">
                     <XCircle className="h-4 w-4 text-red-600" />
-                    <span>High - Unacceptable risk, immediate action required</span>
+                    <span>High — Unacceptable risk, immediate action required</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -289,7 +292,7 @@ export function RiskEvaluationPanel({
         )}
       </div>
 
-      {/* Disclaimer */}
+      {/* ── Professional judgement banner ── */}
       <RiskDisclaimer variant="compact" showLink={showDisclaimerLink} />
     </div>
   );

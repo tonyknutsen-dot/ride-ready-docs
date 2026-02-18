@@ -1,16 +1,14 @@
-import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Info, Users } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 
 const RISK_GROUPS = [
-  { id: 'Public', label: 'Public', description: 'Members of the public using the equipment' },
-  { id: 'Staff', label: 'Staff', description: 'Employees and workers' },
-  { id: 'Contractors', label: 'Contractors', description: 'External contractors and service personnel' },
-  { id: 'Spectators', label: 'Spectators', description: 'People watching but not using equipment' },
-  { id: 'Operators', label: 'Operators', description: 'Staff operating the equipment' },
-  { id: 'Maintenance personnel', label: 'Maintenance', description: 'Those maintaining the equipment' },
+  { id: 'Public',                label: 'Public' },
+  { id: 'Staff',                 label: 'Staff' },
+  { id: 'Contractors',           label: 'Contractors' },
+  { id: 'Spectators',            label: 'Spectators' },
+  { id: 'Operators',             label: 'Operators' },
+  { id: 'Maintenance personnel', label: 'Maintenance' },
 ] as const;
 
 interface WhoAtRiskSelectorProps {
@@ -22,124 +20,99 @@ export function WhoAtRiskSelector({ value, onChange }: WhoAtRiskSelectorProps) {
   const selectedGroups = value ? value.split(', ').filter(Boolean) : [];
   const isAllPersonsSelected = selectedGroups.includes('All persons');
 
-  const handleCheckChange = (option: string, checked: boolean) => {
-    let newGroups = [...selectedGroups];
-    
+  const handleCheckChange = (option: string, selected: boolean) => {
+    let next = [...selectedGroups];
     if (option === 'All persons') {
-      if (checked) {
-        // Clear all others and set only "All persons"
-        newGroups = ['All persons'];
-      } else {
-        newGroups = newGroups.filter(g => g !== 'All persons');
-      }
+      next = selected ? ['All persons'] : [];
     } else {
-      // If All persons is selected, don't allow individual selections
       if (isAllPersonsSelected) return;
-      
-      if (checked) {
-        if (!newGroups.includes(option)) {
-          newGroups.push(option);
-        }
-      } else {
-        newGroups = newGroups.filter(g => g !== option);
-      }
+      next = selected
+        ? [...next.filter(g => g !== option), option]
+        : next.filter(g => g !== option);
     }
-    
-    onChange(newGroups.join(', '));
+    onChange(next.join(', '));
   };
 
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Label className="text-sm font-medium">Who is at Risk? *</Label>
+        <Label className="text-sm font-semibold text-[#0F172A]">Who is at Risk? *</Label>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+            <Info className="h-3.5 w-3.5 text-slate-400 cursor-help" />
           </TooltipTrigger>
           <TooltipContent className="max-w-xs">
-            <p>Identify all groups who could be harmed by this hazard. Select "All persons" if the risk applies to everyone.</p>
+            <p>Identify all groups who could be harmed by this hazard.</p>
           </TooltipContent>
         </Tooltip>
       </div>
-      
-      {/* All Persons Toggle - Prominent */}
-      <div 
-        className={`p-3 rounded-lg border-2 transition-all cursor-pointer ${
-          isAllPersonsSelected 
-            ? 'border-primary bg-primary/10' 
-            : 'border-border hover:border-primary/50 bg-muted/30'
-        }`}
+
+      {/* All Persons pill toggle */}
+      <button
+        type="button"
         onClick={() => handleCheckChange('All persons', !isAllPersonsSelected)}
+        className={`w-full text-left rounded-xl border px-4 py-3 transition-all ${
+          isAllPersonsSelected
+            ? 'bg-[#DBEAFE] border-[#93C5FD]'
+            : 'bg-[#F8FAFC] border-dashed border-[#CBD5E1] hover:border-[#93C5FD]'
+        }`}
       >
         <div className="flex items-center gap-3">
-          <Checkbox
-            id="risk-all-persons"
-            checked={isAllPersonsSelected}
-            onCheckedChange={(checked) => handleCheckChange('All persons', !!checked)}
-          />
-          <div className="flex items-center gap-2 flex-1">
-            <Users className="h-4 w-4 text-primary" />
-            <Label htmlFor="risk-all-persons" className="text-sm font-medium cursor-pointer">
+          <Users className={`h-4 w-4 shrink-0 ${isAllPersonsSelected ? 'text-[#1E3A8A]' : 'text-slate-400'}`} />
+          <div className="flex-1">
+            <p className={`text-sm font-semibold ${isAllPersonsSelected ? 'text-[#1E3A8A]' : 'text-[#334155]'}`}>
               All Persons
-            </Label>
+            </p>
+            <p className="text-[12px] text-slate-500 mt-0.5">
+              This hazard affects everyone — public, staff, contractors, and all other groups
+            </p>
           </div>
           {isAllPersonsSelected && (
-            <Badge variant="secondary" className="text-xs">Selected</Badge>
+            <span className="shrink-0 text-[11px] font-bold text-[#1E3A8A] bg-white/60 px-2 py-0.5 rounded-full border border-[#93C5FD]">
+              Selected
+            </span>
           )}
         </div>
-        <p className="text-xs text-muted-foreground mt-1.5 ml-7">
-          This hazard affects everyone - public, staff, contractors, and all other groups
-        </p>
-      </div>
-      
+      </button>
+
       {/* Divider */}
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
+          <span className="w-full border-t border-[#E2E8F0]" />
         </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">or select specific groups</span>
+        <div className="relative flex justify-center text-[11px] uppercase">
+          <span className="bg-white px-2 text-slate-400 font-medium tracking-wider">or select specific groups</span>
         </div>
       </div>
-      
-      {/* Individual Groups */}
-      <div className={`grid grid-cols-2 sm:grid-cols-3 gap-2 ${isAllPersonsSelected ? 'opacity-50 pointer-events-none' : ''}`}>
+
+      {/* Group pill toggles */}
+      <div className={`grid grid-cols-2 gap-2 ${isAllPersonsSelected ? 'opacity-40 pointer-events-none' : ''}`}>
         {RISK_GROUPS.map((group) => {
           const isChecked = selectedGroups.includes(group.id);
-          
           return (
-            <div
+            <button
               key={group.id}
-              className={`flex items-center gap-2 p-2.5 rounded-lg border transition-all cursor-pointer ${
-                isChecked 
-                  ? 'border-primary/50 bg-primary/5' 
-                  : 'border-border hover:border-primary/30 bg-background'
-              } ${isAllPersonsSelected ? 'cursor-not-allowed' : ''}`}
-              onClick={() => !isAllPersonsSelected && handleCheckChange(group.id, !isChecked)}
+              type="button"
+              disabled={isAllPersonsSelected}
+              onClick={() => handleCheckChange(group.id, !isChecked)}
+              className={`rounded-xl px-3 py-2.5 text-[13px] font-medium text-left transition-all border ${
+                isChecked
+                  ? 'bg-[#DBEAFE] border-[#93C5FD] text-[#1E3A8A]'
+                  : 'bg-[#F1F5F9] border-[#E2E8F0] text-[#334155] hover:border-[#93C5FD]'
+              }`}
             >
-              <Checkbox
-                id={`risk-${group.id}`}
-                checked={isChecked}
-                disabled={isAllPersonsSelected}
-                onCheckedChange={(checked) => handleCheckChange(group.id, !!checked)}
-              />
-              <Label 
-                htmlFor={`risk-${group.id}`} 
-                className={`text-sm cursor-pointer ${isAllPersonsSelected ? 'cursor-not-allowed' : ''}`}
-              >
-                {group.label}
-              </Label>
-            </div>
+              {group.label}
+            </button>
           );
         })}
       </div>
-      
-      {/* Selection Summary */}
+
+      {/* Selection summary */}
       {selectedGroups.length > 0 && (
-        <div className="text-xs text-muted-foreground bg-muted/50 rounded-md p-2">
-          <span className="font-medium">Selected: </span>
+        <p className="text-[12px] text-slate-500 bg-slate-50 rounded-lg px-3 py-2 border border-[#E2E8F0]">
+          <span className="font-semibold text-slate-700">Selected: </span>
           {selectedGroups.join(', ')}
-        </div>
+        </p>
       )}
     </div>
   );
