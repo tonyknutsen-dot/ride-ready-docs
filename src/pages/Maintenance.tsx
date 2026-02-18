@@ -6,9 +6,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
-import RideSelector from '@/components/RideSelector';
 import PageHeader from '@/components/PageHeader';
 import MaintenanceManager from '@/components/MaintenanceManager';
+import MaintenanceRideSelector from '@/components/MaintenanceRideSelector';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MaintenanceOnboardingModal } from '@/components/MaintenanceOnboardingModal';
@@ -159,14 +159,7 @@ const Maintenance = () => {
       </header>
       
       <main className="container mx-auto px-4 py-5">
-        <RideSelector
-          title="Select Equipment"
-          description="Choose which ride, stall, or equipment you want to log and track maintenance activities."
-          actionLabel="Open Maintenance"
-          icon={({ className }) => <Wrench className={className} />}
-          onRideSelect={handleRideSelect}
-          showAddRide={false}
-        />
+        <MaintenanceRideSelector onRideSelect={handleRideSelect} />
       </main>
     </div>
   );
