@@ -815,29 +815,29 @@ const BatchSendDocuments = () => {
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <div className="px-2 sm:px-4 pb-3 space-y-2">
+                          <div className="px-3 pb-3 space-y-2">
                             {currentRideCheckRecords.map(doc => (
                               <label 
                                 key={doc.id} 
-                                className="flex items-start gap-3 p-3 border border-border rounded-xl cursor-pointer hover:border-primary/50 hover:bg-secondary/50 transition-all bg-white"
-                                style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+                                className={`flex items-center gap-3 p-3.5 border-2 rounded-xl cursor-pointer transition-all bg-white ${selectedDocuments.includes(doc.id) ? 'border-green-500 bg-green-50/50' : 'border-border hover:border-green-400/50'}`}
+                                style={{ boxShadow: selectedDocuments.includes(doc.id) ? '0 0 0 3px rgba(22,163,74,0.08)' : '0 2px 6px rgba(0,0,0,0.05)' }}
                               >
                                 <Checkbox
                                   checked={selectedDocuments.includes(doc.id)}
                                   onCheckedChange={() => handleDocumentToggle(doc.id)}
-                                  className="mt-0.5 shrink-0"
+                                  className="shrink-0"
                                 />
-                                <div className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(142 76% 96%)' }}>
-                                  <FileText className="h-3.5 w-3.5" style={{ color: 'hsl(142 76% 36%)' }} strokeWidth={2} />
+                                <div className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0" style={{ backgroundColor: 'hsl(142 76% 96%)' }}>
+                                  <FileText className="h-4 w-4" style={{ color: 'hsl(142 76% 36%)' }} strokeWidth={2} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-semibold break-words leading-tight" style={{ color: 'hsl(222 84% 5%)' }}>{doc.document_name}</p>
-                                  <div className="flex items-center gap-2 flex-wrap mt-1">
-                                    <span className="text-[11px]" style={{ color: 'hsl(215 19% 50%)' }}>
+                                  <p className="text-sm font-semibold break-words leading-tight" style={{ color: 'hsl(222 84% 5%)' }}>{doc.document_name}</p>
+                                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                                    <span className="text-[11px]" style={{ color: 'hsl(215 19% 55%)' }}>
                                       {doc.uploaded_at && format(new Date(doc.uploaded_at), 'dd MMM yyyy')}
                                     </span>
                                     {doc.file_size && (
-                                      <span className="text-[11px]" style={{ color: 'hsl(215 19% 50%)' }}>· {formatFileSize(doc.file_size)}</span>
+                                      <span className="text-[11px]" style={{ color: 'hsl(215 19% 55%)' }}>· {formatFileSize(doc.file_size)}</span>
                                     )}
                                   </div>
                                 </div>
@@ -884,30 +884,30 @@ const BatchSendDocuments = () => {
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <div className="p-3 pt-0 space-y-2">
+                         <div className="p-3 pt-2 space-y-2">
                             {currentRideDocuments.map(doc => (
                               <label 
                                 key={doc.id} 
-                                className="flex items-start gap-3 p-3 border border-border rounded-xl cursor-pointer hover:border-primary/50 hover:bg-secondary/50 transition-all bg-white"
-                                style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+                                className={`flex items-center gap-3 p-3.5 border-2 rounded-xl cursor-pointer transition-all bg-white ${selectedDocuments.includes(doc.id) ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
+                                style={{ boxShadow: selectedDocuments.includes(doc.id) ? '0 0 0 3px rgba(30,58,95,0.08)' : '0 2px 6px rgba(0,0,0,0.05)' }}
                               >
                                 <Checkbox
                                   checked={selectedDocuments.includes(doc.id)}
                                   onCheckedChange={() => handleDocumentToggle(doc.id)}
-                                  className="mt-0.5 shrink-0"
+                                  className="shrink-0"
                                 />
-                                <div className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
-                                  <FileText className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                                <div className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0" style={{ backgroundColor: selectedDocuments.includes(doc.id) ? 'hsl(213 52% 24% / 0.12)' : 'hsl(217 91% 97%)' }}>
+                                  <FileText className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-semibold break-words leading-tight" style={{ color: 'hsl(222 84% 5%)' }}>{doc.document_name}</p>
-                                  <div className="flex items-center gap-2 flex-wrap mt-1">
-                                    <Badge variant="outline" className="text-[10px]">{doc.document_type}</Badge>
+                                  <p className="text-sm font-semibold break-words leading-tight" style={{ color: 'hsl(222 84% 5%)' }}>{doc.document_name}</p>
+                                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
+                                    <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-md" style={{ backgroundColor: 'hsl(215 19% 95%)', color: 'hsl(215 19% 40%)' }}>{doc.document_type}</span>
                                     {doc.expires_at && isExpiringSoon(doc.expires_at) && (
                                       <Badge variant="destructive" className="text-[10px]">Expiring</Badge>
                                     )}
                                     {doc.file_size && (
-                                      <span className="text-[11px]" style={{ color: 'hsl(215 19% 50%)' }}>{formatFileSize(doc.file_size)}</span>
+                                      <span className="text-[11px]" style={{ color: 'hsl(215 19% 55%)' }}>{formatFileSize(doc.file_size)}</span>
                                     )}
                                   </div>
                                 </div>
