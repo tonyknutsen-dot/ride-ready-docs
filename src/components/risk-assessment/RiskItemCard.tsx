@@ -65,13 +65,19 @@ export function RiskItemCard({
 
   return (
     <div
-      className="relative bg-white rounded-2xl border border-[#E6EAF0] overflow-hidden"
-      style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+      className="relative rounded-2xl border overflow-hidden"
+      style={{
+        background: isOverdue ? '#FEF2F2' : '#FFFFFF',
+        borderColor: isOverdue ? '#FCA5A5' : '#E6EAF0',
+        borderLeftWidth: isOverdue ? '4px' : '1px',
+        borderLeftColor: isOverdue ? '#EF4444' : '#E6EAF0',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+      }}
     >
-      {/* Left risk colour rail */}
-      <div className={`absolute inset-y-0 left-0 w-1 rounded-l-2xl ${strip.rail}`} />
+      {/* Left risk colour rail — only when not overdue (overdue uses red left border) */}
+      {!isOverdue && <div className={`absolute inset-y-0 left-0 w-1 rounded-l-2xl ${strip.rail}`} />}
 
-      <div className="pl-4 pr-4 pt-4 pb-3 ml-1">
+      <div className={`pr-4 pt-4 pb-3 ${isOverdue ? 'pl-4' : 'pl-4 ml-1'}`}>
 
         {/* ── HEADER ROW: title + action icons ── */}
         <div className="flex items-start justify-between gap-3 mb-2">
