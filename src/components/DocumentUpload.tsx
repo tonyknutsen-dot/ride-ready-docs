@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Upload, FileText, Camera, FolderOpen } from 'lucide-react';
+import { ShieldCheck, FileText, Camera, FolderOpen, CalendarClock, Globe2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -94,11 +94,13 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   const [expiryDate, setExpiryDate] = useState('');
   const [notes, setNotes] = useState('');
   const [uploading, setUploading] = useState(false);
-  // Version tracking is now automatic - we just track existing docs for audit trail
   const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
   const [isGlobal, setIsGlobal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  // Get document types based on user's country
+  const documentTypes = getDocumentTypes(terminology.isUK);
 
   // Auto-detect existing documents with same name for automatic versioning
   useEffect(() => {
@@ -107,17 +109,13 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
     }
   }, [documentName, documentType, rideId, user]);
 
-  // Early return: require ride unless it's a global document
-  if (!rideId && !isGlobal) {
-    return (
-      <EmptyState
-        icon={FolderOpen}
-        title="Pick a ride first to add a document"
-        description="or check 'Global Document' below"
-        variant="compact"
-      />
-    );
-  }
+  // Auto-suggest global for insurance documents
+  useEffect(() => {
+    const selectedType = documentTypes.find(t => t.id === documentType);
+    if (selectedType && (selectedType as any).suggestGlobal && !rideId) {
+      setIsGlobal(true);
+    }
+  }, [documentType, rideId]);
 
   const loadExistingDocuments = async () => {
     if (!user || !documentName || !documentType) return;
@@ -131,7 +129,6 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
         .eq('document_type', documentType)
         .order('uploaded_at', { ascending: false });
 
-      // For ride-specific docs, filter by ride
       if (rideId && !isGlobal) {
         query = query.eq('ride_id', rideId);
       } else if (isGlobal) {
@@ -139,7 +136,6 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
       }
 
       const { data, error } = await query;
-
       if (!error && data) {
         setExistingDocuments(data);
       }
@@ -148,21 +144,9 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
     }
   };
 
-  // Get document types based on user's country
-  const documentTypes = getDocumentTypes(terminology.isUK);
-
-  // Auto-suggest global for insurance documents
-  useEffect(() => {
-    const selectedType = documentTypes.find(t => t.id === documentType);
-    if (selectedType && (selectedType as any).suggestGlobal && !rideId) {
-      setIsGlobal(true);
-    }
-  }, [documentType, rideId, documentTypes]);
-
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Compress image if it's from camera (large image file)
       let processedFile = file;
       if (file.type.startsWith('image/') && file.size > 500000) {
         try {
@@ -196,12 +180,10 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
 
     setUploading(true);
 
-    // Auto-generate version number based on existing documents
     const autoVersionNumber = existingDocuments.length > 0 
       ? `${existingDocuments.length + 1}.0` 
       : '1.0';
 
-    // Use optimistic mutation
     uploadMutation.mutate(
       {
         file: selectedFile,
@@ -213,12 +195,11 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
         expiryDate: expiryDate || undefined,
         notes: notes || undefined,
         versionNumber: autoVersionNumber,
-        versionNotes: undefined, // Automatic versioning - no manual notes needed
-        replacingDocumentId: null, // We keep all versions now
+        versionNotes: undefined,
+        replacingDocumentId: null,
       },
       {
         onSuccess: () => {
-          // Reset form completely
           setSelectedFile(null);
           setDocumentType('');
           setDocumentName('');
@@ -226,15 +207,8 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
           setNotes('');
           setIsGlobal(false);
           setExistingDocuments([]);
-          
-          // Clear the file input elements
-          if (fileInputRef.current) {
-            fileInputRef.current.value = '';
-          }
-          if (cameraInputRef.current) {
-            cameraInputRef.current.value = '';
-          }
-          
+          if (fileInputRef.current) fileInputRef.current.value = '';
+          if (cameraInputRef.current) cameraInputRef.current.value = '';
           setUploading(false);
           onUploadSuccess();
         },
@@ -244,6 +218,18 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
       }
     );
   };
+
+  // Early return after all hooks
+  if (!rideId && !isGlobal) {
+    return (
+      <EmptyState
+        icon={FolderOpen}
+        title="Pick a ride first to add a document"
+        description="or check 'Global Document' below"
+        variant="compact"
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -268,37 +254,57 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
         className="hidden"
       />
 
-      {/* Dual Upload Buttons */}
+      {/* Asset Context Strip */}
+      {rideName && (
+        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl" style={{ background: 'hsl(214 100% 97%)', border: '1px solid hsl(213 52% 85%)' }}>
+          <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'hsl(213 52% 24% / 0.12)' }}>
+            <ShieldCheck className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} />
+          </div>
+          <div className="min-w-0">
+            <p className="text-[10px] font-medium uppercase tracking-wide" style={{ color: 'hsl(213 52% 40%)' }}>Registering evidence for</p>
+            <p className="text-xs font-semibold truncate" style={{ color: 'hsl(213 52% 24%)' }}>{rideName}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Upload Method Cards */}
       {!selectedFile ? (
         <div className="grid grid-cols-2 gap-3">
-          <Button
+          <button
             type="button"
-            variant="outline"
-            className="h-28 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#1E3A5F] hover:bg-[#F1F5F9] rounded-2xl transition-all group"
+            className="h-28 flex flex-col items-center justify-center gap-3 rounded-2xl border transition-all group disabled:opacity-50"
+            style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}
             onClick={() => cameraInputRef.current?.click()}
             disabled={uploading}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'hsl(213 52% 24% / 0.5)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 16px rgba(30,58,95,0.1)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'hsl(var(--border))'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 10px rgba(0,0,0,0.05)'; }}
           >
-            <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center transition-all group-hover:bg-primary/10">
-              <Camera className="h-6 w-6 text-[#475569] group-hover:text-primary transition-colors" strokeWidth={2} />
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'hsl(214 100% 97%)' }}>
+              <Camera className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
             </div>
-            <span className="text-sm font-medium text-foreground">Take Photo</span>
-          </Button>
-          <Button
+            <span className="text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Capture Photo</span>
+            <span className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))' }}>Camera</span>
+          </button>
+          <button
             type="button"
-            variant="outline"
-            className="h-28 flex flex-col items-center justify-center gap-3 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#1E3A5F] hover:bg-[#F1F5F9] rounded-2xl transition-all group"
+            className="h-28 flex flex-col items-center justify-center gap-3 rounded-2xl border transition-all group disabled:opacity-50"
+            style={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', boxShadow: '0 4px 10px rgba(0,0,0,0.05)' }}
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
+            onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = 'hsl(213 52% 24% / 0.5)'; (e.currentTarget as HTMLElement).style.boxShadow = '0 6px 16px rgba(30,58,95,0.1)'; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'hsl(var(--border))'; (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 10px rgba(0,0,0,0.05)'; }}
           >
-            <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center transition-all group-hover:bg-primary/10">
-              <FolderOpen className="h-6 w-6 text-[#475569] group-hover:text-primary transition-colors" strokeWidth={2} />
+            <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: 'hsl(214 100% 97%)' }}>
+              <FolderOpen className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
             </div>
-            <span className="text-sm font-medium text-foreground">Choose File</span>
-          </Button>
+            <span className="text-sm font-semibold" style={{ color: 'hsl(var(--foreground))' }}>Upload File</span>
+            <span className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))' }}>PDF, Word, Image…</span>
+          </button>
         </div>
       ) : (
         <div 
-          className="relative border-2 border-success rounded-xl p-4 bg-gradient-to-r from-success/10 to-primary/5 cursor-pointer hover:from-success/15 hover:to-primary/10 transition-all shadow-sm"
+          className="relative rounded-xl p-4 cursor-pointer transition-all"
+          style={{ border: '2px solid hsl(142 72% 29%)', background: 'linear-gradient(135deg, hsl(142 72% 29% / 0.08), hsl(213 52% 24% / 0.05))', boxShadow: '0 2px 8px rgba(22,163,74,0.12)' }}
           onClick={() => {
             setSelectedFile(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -310,20 +316,19 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
               <img
                 src={URL.createObjectURL(selectedFile)}
                 alt="Preview"
-                className="h-16 w-16 rounded-xl object-cover border-2 border-success/30 shadow-md"
+                className="h-14 w-14 rounded-xl object-cover"
+                style={{ border: '2px solid hsl(142 72% 29% / 0.3)' }}
                 onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
               />
             ) : (
-              <div className="h-16 w-16 rounded-xl bg-gradient-to-br from-primary/20 to-info/20 border border-primary/20 flex items-center justify-center">
-                <FileText className="h-8 w-8 text-primary" />
+              <div className="h-14 w-14 rounded-xl flex items-center justify-center" style={{ background: 'hsl(213 52% 24% / 0.1)' }}>
+                <FileText className="h-7 w-7" style={{ color: 'hsl(213 52% 24%)' }} />
               </div>
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-semibold truncate">{selectedFile.name}</p>
-              <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-              <p className="text-xs text-success font-medium mt-1 flex items-center gap-1">
-                ✓ Ready to upload • Tap to change
-              </p>
+              <p className="text-xs" style={{ color: 'hsl(var(--muted-foreground))' }}>{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+              <p className="text-xs font-medium mt-1" style={{ color: 'hsl(142 72% 29%)' }}>✓ Evidence ready · Tap to change</p>
             </div>
           </div>
         </div>
@@ -331,12 +336,12 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
 
       {/* Form Fields */}
       <div className="space-y-3">
-        {/* Document Type with Category Headers */}
+        {/* Document Category */}
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-muted-foreground">Category</Label>
+          <Label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(var(--muted-foreground))' }}>Document Type</Label>
           <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
             <SelectTrigger className="h-11">
-              <SelectValue placeholder="Select document category..." />
+              <SelectValue placeholder="Select compliance document type..." />
             </SelectTrigger>
             <SelectContent className="max-h-80">
               {Object.entries(DOCUMENT_CATEGORIES).map(([category, items]) => (
@@ -353,48 +358,53 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
               ))}
             </SelectContent>
           </Select>
+          <p className="text-[11px]" style={{ color: 'hsl(var(--muted-foreground))' }}>Select the correct type for accurate compliance tracking.</p>
         </div>
 
         {/* Document Name */}
         <div className="space-y-1.5">
-          <Label className="text-xs font-medium text-muted-foreground">Name</Label>
+          <Label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(var(--muted-foreground))' }}>Document Name</Label>
           <Input
             value={documentName}
             onChange={(e) => setDocumentName(e.target.value)}
-            placeholder="e.g., Risk Assessment 2024"
+            placeholder="e.g., ADIPS Annual Inspection Certificate 2026"
+            disabled={uploading}
+            className="h-11"
+          />
+          <p className="text-[11px]" style={{ color: 'hsl(var(--muted-foreground))' }}>Use the official certificate or report title.</p>
+        </div>
+
+        {/* Expiry Section — elevated importance */}
+        <div className="space-y-2 rounded-xl p-3" style={{ background: 'hsl(var(--muted) / 0.4)', border: '1px solid hsl(var(--border))' }}>
+          <div className="flex items-center gap-2">
+            <CalendarClock className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} />
+            <Label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(213 52% 24%)' }}>Compliance Expiry Tracking</Label>
+          </div>
+          <Input
+            type="date"
+            value={expiryDate}
+            onChange={(e) => setExpiryDate(e.target.value)}
+            disabled={uploading}
+            className={`h-11 ${!expiryDate ? 'text-muted-foreground' : ''}`}
+          />
+          <p className="text-[11px]" style={{ color: 'hsl(var(--muted-foreground))' }}>Set expiry to receive automated alerts before the document lapses.</p>
+        </div>
+
+        {/* Notes */}
+        <div className="space-y-1.5">
+          <Label className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'hsl(var(--muted-foreground))' }}>Compliance Notes <span className="normal-case font-normal">(optional)</span></Label>
+          <Input
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="e.g., Issued by: ADIPS Inspector · Ref: 12345"
             disabled={uploading}
             className="h-11"
           />
         </div>
 
-        {/* Expiry & Notes Row */}
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Expires (Optional)</Label>
-            <Input
-              type="date"
-              value={expiryDate}
-              onChange={(e) => setExpiryDate(e.target.value)}
-              placeholder="Optional"
-              disabled={uploading}
-              className={`h-11 ${!expiryDate ? 'text-muted-foreground' : ''}`}
-            />
-          </div>
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">Notes</Label>
-            <Input
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Optional..."
-              disabled={uploading}
-              className="h-11"
-            />
-          </div>
-        </div>
-
         {/* Global Document Toggle */}
         <div 
-          className={`flex items-center gap-3 p-4 rounded-xl border-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer ${
             isGlobal 
               ? 'border-accent bg-gradient-to-r from-accent/10 to-info/5 shadow-sm' 
               : 'border-border hover:border-accent/40 hover:bg-accent/5'
@@ -408,15 +418,14 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
             disabled={uploading}
             className="border-accent data-[state=checked]:bg-accent data-[state=checked]:border-accent"
           />
+          <Globe2 className="h-4 w-4 flex-shrink-0" style={{ color: 'hsl(var(--muted-foreground))' }} />
           <div className="flex-1 min-w-0">
-            <Label htmlFor="is-global" className="text-sm font-medium cursor-pointer flex items-center gap-2">
-              🌐 Global Document
-            </Label>
-            <p className="text-[11px] text-muted-foreground">Applies to all rides</p>
+            <Label htmlFor="is-global" className="text-sm font-medium cursor-pointer">Global Document</Label>
+            <p className="text-[11px]" style={{ color: 'hsl(var(--muted-foreground))' }}>Applies to all equipment (e.g., company insurance)</p>
           </div>
         </div>
 
-        {/* Existing versions info - shown automatically when uploading same doc name */}
+        {/* Existing versions info */}
         {existingDocuments.length > 0 && (
           <div className="rounded-lg border border-info/30 bg-info/5 p-3">
             <p className="text-sm font-medium text-info flex items-center gap-2">
@@ -429,16 +438,27 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
         )}
       </div>
 
-      {/* Upload Button */}
+      {/* Register Button */}
       <Button 
         onClick={handleUpload} 
         disabled={uploading || !selectedFile || !documentName || !documentType} 
-        className="w-full h-12 text-base"
+        className="w-full h-12 text-sm font-semibold rounded-xl gap-2"
       >
-        <Upload className="mr-2 h-5 w-5" />
-        {uploading ? 'Uploading...' : 'Upload'}
+        <ShieldCheck className="h-4 w-4" />
+        {uploading ? 'Registering...' : 'Register Compliance Document'}
       </Button>
-      
+
+      {/* Trust footer */}
+      <div className="flex flex-col items-center gap-1 pt-1">
+        <div className="flex items-center gap-4 flex-wrap justify-center">
+          {['Expiry alerts enabled', 'Audit logged', 'Shareable with authorities'].map(item => (
+            <span key={item} className="flex items-center gap-1 text-[11px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
+              <span className="text-green-600">✓</span> {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
       {/* Privacy confirmation after successful upload */}
       {uploadMutation.isSuccess && (
         <div className="rounded-lg border border-success/30 bg-success/10 p-3 animate-fade-in">
