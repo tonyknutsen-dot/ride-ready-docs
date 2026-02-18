@@ -84,7 +84,7 @@ export function WhoAtRiskSelector({ value, onChange }: WhoAtRiskSelectorProps) {
         <div className="flex-1 border-t border-[#E2E8F0]" />
       </div>
 
-      {/* Group pill toggles */}
+      {/* Group pill toggles — always 2 columns, min-w-0 prevents overflow */}
       <div className={`grid grid-cols-2 gap-2 ${isAllPersonsSelected ? 'opacity-40 pointer-events-none' : ''}`}>
         {RISK_GROUPS.map((group) => {
           const isChecked = selectedGroups.includes(group.id);
@@ -94,13 +94,14 @@ export function WhoAtRiskSelector({ value, onChange }: WhoAtRiskSelectorProps) {
               type="button"
               disabled={isAllPersonsSelected}
               onClick={() => handleCheckChange(group.id, !isChecked)}
-              className={`rounded-xl px-3 py-2.5 text-[13px] font-medium text-left transition-all border ${
+              style={{ minHeight: '38px' }}
+              className={`min-w-0 rounded-xl px-3 py-2 text-[13px] font-medium text-left transition-all border overflow-hidden ${
                 isChecked
                   ? 'bg-[#DBEAFE] border-[#93C5FD] text-[#1E3A8A]'
                   : 'bg-[#F1F5F9] border-[#E2E8F0] text-[#334155] hover:border-[#93C5FD]'
               }`}
             >
-              {group.label}
+              <span className="block truncate">{group.label}</span>
             </button>
           );
         })}
