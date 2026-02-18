@@ -1625,7 +1625,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           resetItemForm();
         }
       }}>
-        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto bg-[#F6F8FB] p-0 gap-0 rounded-2xl">
+        <DialogContent className="max-w-2xl w-[95vw] max-h-[85vh] overflow-y-auto overflow-x-hidden bg-[#F6F8FB] p-0 gap-0 rounded-2xl">
           {/* ── Sticky modal header ── */}
           <div className="modal-header rounded-t-2xl">
             <DialogTitle className="text-[17px] font-semibold text-[#0F172A] leading-tight">
