@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Calendar, FileDown, FileText } from 'lucide-react';
 import { format, parseISO, isWithinInterval, subMonths } from 'date-fns';
@@ -713,76 +712,98 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Generate Maintenance Report
-          </CardTitle>
-          <CardDescription>
-            Create a professional PDF report of maintenance activities for {ride.ride_name}
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
+      {/* Main report card — elevated with top stripe */}
+      <div className="rounded-[18px] border border-border bg-card shadow-[0_6px_20px_rgba(0,0,0,0.06)] overflow-hidden">
+        {/* Brand top stripe */}
+        <div className="h-1 w-full bg-primary" />
+
+        <div className="p-5 space-y-5">
+          {/* Title */}
+          <div className="flex items-start gap-3">
+            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+              <FileText className="h-4 w-4 text-primary" strokeWidth={2} />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground leading-tight">Generate Maintenance Report</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Create a professional PDF report of maintenance activities for {ride.ride_name}
+              </p>
+            </div>
+          </div>
+
           {records.length === 0 ? (
             <div className="text-center py-8">
-              <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-              <p className="text-muted-foreground">No maintenance records to report</p>
+              <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
+              <p className="text-muted-foreground font-medium">No maintenance records to report</p>
               <p className="text-sm text-muted-foreground">Log some maintenance activities first to generate a report</p>
             </div>
           ) : (
             <>
-              {/* Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="bg-muted/50 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold">{records.length}</p>
-                  <p className="text-sm text-muted-foreground">Total Records</p>
+              {/* Report Summary label */}
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Report Summary</span>
+                <div className="flex-1 h-px bg-border" />
+              </div>
+
+              {/* Stats grid */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="bg-muted/40 rounded-[14px] border border-border p-4 text-center">
+                  <p className="text-[22px] font-bold text-foreground leading-tight">{records.length}</p>
+                  <p className="text-[13px] text-muted-foreground mt-0.5">Total Records</p>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold">
+                {/* Total cost — subtle brand tint */}
+                <div className="bg-primary/5 rounded-[14px] border border-primary/15 p-4 text-center">
+                  <p className="text-[22px] font-bold text-foreground leading-tight">
                     £{records.reduce((sum, r) => sum + (Number(r.cost) || 0), 0).toFixed(0)}
                   </p>
-                  <p className="text-sm text-muted-foreground">Total Cost</p>
+                  <p className="text-[13px] text-muted-foreground mt-0.5">Total Cost</p>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold">
+                <div className="bg-muted/40 rounded-[14px] border border-border p-4 text-center">
+                  <p className="text-[22px] font-bold text-foreground leading-tight">
                     {records.length > 0 ? format(parseISO(records[0].maintenance_date), 'MMM yyyy') : '-'}
                   </p>
-                  <p className="text-sm text-muted-foreground">Latest Record</p>
+                  <p className="text-[13px] text-muted-foreground mt-0.5">Latest Record</p>
                 </div>
-                <div className="bg-muted/50 rounded-lg p-4 text-center">
-                  <p className="text-2xl font-bold">
+                <div className="bg-muted/40 rounded-[14px] border border-border p-4 text-center">
+                  <p className="text-[22px] font-bold text-foreground leading-tight">
                     {records.length > 0 ? format(parseISO(records[records.length - 1].maintenance_date), 'MMM yyyy') : '-'}
                   </p>
-                  <p className="text-sm text-muted-foreground">Earliest Record</p>
+                  <p className="text-[13px] text-muted-foreground mt-0.5">Earliest Record</p>
                 </div>
               </div>
 
-              {/* Generate button */}
-              <Button 
-                onClick={() => setReportDialogOpen(true)} 
-                className="w-full md:w-auto"
+              {/* Generate button — dominant primary action */}
+              <Button
+                onClick={() => setReportDialogOpen(true)}
+                className="w-full h-13 rounded-[14px] shadow-[0_4px_12px_rgba(30,58,95,0.25)] text-base font-semibold"
                 size="lg"
               >
-                <FileDown className="h-4 w-4 mr-2" />
+                <FileDown className="h-5 w-5 mr-2" />
                 Generate PDF Report
               </Button>
 
-              {/* What's included */}
-              <div className="p-4 bg-muted/30 rounded-lg">
-                <p className="font-medium mb-2">Report includes:</p>
-                <ul className="text-sm text-muted-foreground space-y-1">
-                  <li>• Your company/showman details with logo</li>
-                  <li>• Equipment details and photo (if available)</li>
-                  <li>• Summary table of all maintenance records</li>
-                  <li>• Detailed breakdown with work descriptions</li>
-                  <li>• Costs, parts replaced, and timestamps</li>
+              {/* Report includes — supportive info container */}
+              <div className="rounded-[14px] border border-border bg-muted/30 p-4">
+                <p className="text-sm font-semibold text-foreground mb-3">Report includes:</p>
+                <ul className="space-y-1.5">
+                  {[
+                    'Your company/showman details with logo',
+                    'Equipment details and photo (if available)',
+                    'Summary table of all maintenance records',
+                    'Detailed breakdown with work descriptions',
+                    'Costs, parts replaced, and timestamps',
+                  ].map((item) => (
+                    <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
+                      <span className="text-primary mt-0.5 shrink-0">•</span>
+                      {item}
+                    </li>
+                  ))}
                 </ul>
               </div>
             </>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Report Options Dialog */}
       <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
