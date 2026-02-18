@@ -353,7 +353,7 @@ export default function PlanBilling() {
       {/* Ride Usage Card */}
       {(() => {
         const billable = subscription?.billableRideCount ?? 0;
-        const planKey = (subscription?.subscriptionPlan ?? 'starter').toLowerCase();
+        const planKey = (subscription?.currentTier ?? 'starter').toLowerCase();
         const limit = TIER_LIMITS[planKey] ?? 5;
         const isNearLimit = limit !== Infinity && billable >= limit * 0.8;
         const isAtLimit = limit !== Infinity && billable >= limit;
