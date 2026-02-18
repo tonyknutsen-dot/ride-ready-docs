@@ -157,84 +157,94 @@ export function RiskEvaluationPanel({
       </div>
 
       {/* ── Risk Calculation panel ── */}
-      <div
-        className="rounded-xl border p-4 space-y-3"
-        style={{ background: levelStyle.bg, borderColor: levelStyle.border }}
+      <section
+        className="rounded-2xl overflow-hidden shadow-sm"
+        style={{ background: levelStyle.bg, border: `1px solid ${levelStyle.border}` }}
       >
-        {/* Header row */}
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <div className="flex items-center gap-2">
+        {/* Header */}
+        <div className="px-4 py-3 border-b flex items-center justify-between gap-3 min-w-0" style={{ borderColor: levelStyle.border }}>
+          <div className="flex items-center gap-2 min-w-0">
             {isOverridden
-              ? <UserCheck className="h-4 w-4" style={{ color: levelStyle.text }} />
+              ? <UserCheck className="h-4 w-4 shrink-0" style={{ color: levelStyle.text }} />
               : displayLevel === 'high'
-              ? <XCircle className="h-4 w-4 text-red-600" />
+              ? <XCircle className="h-4 w-4 text-red-600 shrink-0" />
               : displayLevel === 'medium'
-              ? <AlertTriangle className="h-4 w-4 text-amber-600" />
-              : <CheckCircle2 className="h-4 w-4 text-green-600" />
+              ? <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0" />
+              : <CheckCircle2 className="h-4 w-4 text-green-600 shrink-0" />
             }
-            <span className="text-[13px] font-bold" style={{ color: levelStyle.text }}>
+            <span className="text-[13px] font-bold truncate" style={{ color: levelStyle.text }}>
               Risk Calculation
             </span>
           </div>
-          <span className="font-mono text-[13px] font-bold px-2.5 py-1 rounded-lg bg-white/70 border" style={{ color: levelStyle.text, borderColor: levelStyle.border }}>
-            {likelihoodInfo.score} × {severityInfo.score} = {calculation.inherentScore}
-          </span>
+          {/* Formula pill — clamped so it never causes overflow */}
+          <div className="max-w-[45%] min-w-0 shrink-0">
+            <span
+              className="inline-flex items-center justify-center rounded-lg px-2.5 py-1 text-[12px] font-bold whitespace-nowrap overflow-hidden text-ellipsis bg-white/70 border"
+              style={{ color: levelStyle.text, borderColor: levelStyle.border }}
+            >
+              {likelihoodInfo.score} × {severityInfo.score} = {calculation.inherentScore}
+            </span>
+          </div>
         </div>
 
-        {/* Score breakdown: Inherent → (Reduction →) Residual */}
-        <div className={`grid gap-2 ${calculation.reductionPercent > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-          {/* Inherent */}
-          <div className="bg-white rounded-xl border p-3" style={{ borderColor: levelStyle.border }}>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Inherent Risk</p>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[18px] font-bold font-mono" style={{ color: levelStyle.text, padding: '6px 10px', background: levelStyle.badge, borderRadius: '8px' }}>
+        {/* 3-col KPI grid — minmax(0,1fr) lets cells shrink safely */}
+        <div className="px-4 py-4 min-w-0">
+          <div className={`grid gap-2 min-w-0 ${calculation.reductionPercent > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}
+               style={{ gridTemplateColumns: calculation.reductionPercent > 0 ? 'repeat(3,minmax(0,1fr))' : 'repeat(2,minmax(0,1fr))' }}>
+            {/* Inherent */}
+            <div className="min-w-0 bg-white rounded-xl border p-3 overflow-hidden" style={{ borderColor: levelStyle.border }}>
+              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 truncate">Inherent Risk</p>
+              <div className="text-[18px] font-extrabold font-mono truncate" style={{ color: levelStyle.text }}>
                 {calculation.inherentScore}
-              </span>
-              <RiskBadge level={calculation.inherentLevel} />
+              </div>
+              <div className="mt-1.5">
+                <RiskBadge level={calculation.inherentLevel} />
+              </div>
+            </div>
+
+            {/* Reduction — only when controls exist */}
+            {calculation.reductionPercent > 0 && (
+              <div className="min-w-0 bg-white rounded-xl border border-green-200 p-3 overflow-hidden">
+                <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1 truncate">
+                  <TrendingDown className="h-3 w-3 shrink-0" /> Reduction
+                </p>
+                <div className="text-[18px] font-extrabold font-mono text-green-600 truncate">
+                  -{calculation.reductionPercent}%
+                </div>
+                <div className="mt-1.5 h-5" />
+              </div>
+            )}
+
+            {/* Residual */}
+            <div className="min-w-0 bg-white rounded-xl border p-3 overflow-hidden" style={{ borderColor: levelStyle.border }}>
+              <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 truncate">
+                {isOverridden ? 'Override' : 'Residual'} Risk
+              </p>
+              <div className="text-[18px] font-extrabold font-mono truncate" style={{ color: levelStyle.text }}>
+                {isOverridden ? '—' : calculation.residualScore}
+              </div>
+              <div className="mt-1.5">
+                <RiskBadge level={isOverridden ? riskLevel : calculation.residualLevel} />
+              </div>
             </div>
           </div>
 
-          {/* Reduction — only show when controls exist */}
-          {calculation.reductionPercent > 0 && (
-            <div className="bg-white rounded-xl border border-green-200 p-3">
-              <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1">
-                <TrendingDown className="h-3 w-3" /> Reduction
-              </p>
-              <span className="text-[18px] font-bold font-mono text-green-600" style={{ padding: '6px 10px', background: '#DCFCE7', borderRadius: '8px' }}>
-                -{calculation.reductionPercent}%
-              </span>
-            </div>
+          {/* Controls applied note */}
+          {calculation.reductionPercent > 0 && !isOverridden && (
+            <p className="mt-3 text-[12px] text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2 break-words">
+              <span className="font-semibold">Controls applied: </span>
+              {existingControls && `Existing controls (−${existingControlsPercent}%)`}
+              {existingControls && additionalActions && ', '}
+              {additionalActions && `Additional actions (−${additionalActionsPercent}%)`}
+            </p>
           )}
 
-          {/* Residual */}
-          <div className="bg-white rounded-xl border p-3" style={{ borderColor: levelStyle.border }}>
-            <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-              {isOverridden ? 'Override' : 'Residual'} Risk
-            </p>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[18px] font-bold font-mono" style={{ color: levelStyle.text, padding: '6px 10px', background: levelStyle.badge, borderRadius: '8px' }}>
-                {isOverridden ? '—' : calculation.residualScore}
-              </span>
-              <RiskBadge level={isOverridden ? riskLevel : calculation.residualLevel} />
-            </div>
-          </div>
-        </div>
-
-        {/* Control impact note */}
-        {calculation.reductionPercent > 0 && !isOverridden && (
-          <p className="text-[12px] text-green-700 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
-            <span className="font-semibold">Controls applied: </span>
-            {existingControls && `Existing controls (−${existingControlsPercent}%)`}
-            {existingControls && additionalActions && ', '}
-            {additionalActions && `Additional actions (−${additionalActionsPercent}%)`}
+          {/* Scale guide */}
+          <p className="mt-3 text-[11px] text-slate-500 break-words leading-snug">
+            <strong>1–6:</strong> Low &nbsp;·&nbsp; <strong>7–12:</strong> Medium &nbsp;·&nbsp; <strong>13–25:</strong> High
           </p>
-        )}
-
-        {/* Scale guide */}
-        <p className="text-[11px] text-slate-500">
-          <strong>1–6:</strong> Low &nbsp;·&nbsp; <strong>7–12:</strong> Medium &nbsp;·&nbsp; <strong>13–25:</strong> High
-        </p>
-      </div>
+        </div>
+      </section>
 
       {/* ── Override toggle ── */}
       <div className="rounded-xl border border-dashed border-[#CBD5E1] bg-[#F8FAFC] p-4">
