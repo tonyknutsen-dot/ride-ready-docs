@@ -30,7 +30,12 @@ import {
   ClipboardCheck,
   Link,
   Paperclip,
-  Info
+  Info,
+  Package,
+  Shield,
+  AlertTriangle,
+  CheckCircle2,
+  Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -565,12 +570,13 @@ const BatchSendDocuments = () => {
   }
 
   // Get current ride's documents (when a ride is selected)
-  const currentRideDocuments = selectedRide 
+  const isGlobalMode = selectedRide?.id === '__global__';
+  const currentRideDocuments = selectedRide && !isGlobalMode
     ? rides.find(r => r.id === selectedRide.id)?.documents || []
     : [];
 
   // Check records for selected ride
-  const currentRideCheckRecords = selectedRide
+  const currentRideCheckRecords = selectedRide && !isGlobalMode
     ? checkRecords.filter(doc => doc.ride_id === selectedRide.id)
     : [];
 
@@ -590,64 +596,145 @@ const BatchSendDocuments = () => {
 
       {/* Step 1: Ride Selection (if no ride selected) */}
       {!selectedRide ? (
-        <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
-          <div className="px-5 py-4 border-b border-border flex items-center gap-3">
-            <span className="flex items-center justify-center w-8 h-8 rounded-lg" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
-              <ClipboardCheck className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-            </span>
-            <div>
-              <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Select Equipment</p>
-              <p className="text-xs" style={{ color: 'hsl(215 19% 40%)' }}>Choose the asset to submit documentation for</p>
+        <div className="space-y-4">
+          {/* Submission Summary Strip */}
+          <div className="rounded-2xl px-4 py-3.5 flex items-center gap-4 flex-wrap" style={{ backgroundColor: 'hsl(217 91% 97%)', border: '1px solid hsl(213 52% 24% / 0.15)' }}>
+            <div className="flex items-center gap-2">
+              <Package className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+              <span className="text-sm font-semibold" style={{ color: 'hsl(213 52% 24%)' }}>{rides.length} {rides.length === 1 ? 'Asset' : 'Assets'}</span>
             </div>
-          </div>
-          <div className="p-5">
-            {rides.length === 0 ? (
-              <div className="text-center py-8">
-                <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground">No items found</p>
-                <p className="text-xs text-muted-foreground mt-1">Add an item to start sending documents</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                {rides.map(ride => {
-                  const docCount = ride.documents.length;
-                  const rideCheckRecords = checkRecords.filter(doc => doc.ride_id === ride.id);
-                  const totalDocs = docCount + rideCheckRecords.length;
-                  
-                  return (
-                    <button
-                      key={ride.id}
-                      onClick={() => setSelectedRide(ride)}
-                      className="p-4 border border-border rounded-xl text-left hover:border-primary active:scale-[0.98] transition-all group bg-white"
-                      style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-sm truncate group-hover:text-primary transition-colors" style={{ color: 'hsl(222 84% 5%)' }}>
-                            {ride.ride_name}
-                          </p>
-                          {ride.manufacturer && (
-                            <p className="text-xs truncate mt-0.5" style={{ color: 'hsl(215 19% 40%)' }}>
-                              {ride.manufacturer}
-                            </p>
-                          )}
-                        </div>
-                        <Badge variant="secondary" className="shrink-0 text-xs">
-                          {totalDocs} {totalDocs === 1 ? 'doc' : 'docs'}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-1.5 mt-3">
-                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                        <span className="text-xs text-muted-foreground group-hover:text-primary transition-colors">
-                          Select documents
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
+            <div className="h-4 w-px" style={{ backgroundColor: 'hsl(213 52% 24% / 0.2)' }} />
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+              <span className="text-sm font-semibold" style={{ color: 'hsl(213 52% 24%)' }}>
+                {rides.reduce((sum, r) => sum + r.documents.length, 0) + checkRecords.length} Documents
+              </span>
+            </div>
+            {globalDocuments.length > 0 && (
+              <>
+                <div className="h-4 w-px" style={{ backgroundColor: 'hsl(213 52% 24% / 0.2)' }} />
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                  <span className="text-sm font-semibold" style={{ color: 'hsl(213 52% 24%)' }}>{globalDocuments.length} Global</span>
+                </div>
+              </>
             )}
           </div>
+
+          {/* Asset Compliance Pack Selection */}
+          <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 6px 14px rgba(0,0,0,0.06)' }}>
+            <div className="px-5 py-4 border-b border-border flex items-center gap-3">
+              <span className="flex items-center justify-center w-9 h-9 rounded-xl" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+                <ClipboardCheck className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+              </span>
+              <div>
+                <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Select Asset Compliance Pack</p>
+                <p className="text-xs mt-0.5" style={{ color: 'hsl(215 19% 45%)' }}>Choose the asset to build a documentation submission for</p>
+              </div>
+            </div>
+            <div className="p-4">
+              {rides.length === 0 ? (
+                <div className="text-center py-10">
+                  <Package className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm font-medium text-muted-foreground">No assets found</p>
+                  <p className="text-xs text-muted-foreground mt-1">Add equipment to start building compliance packs</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {rides.map(ride => {
+                    const docCount = ride.documents.length;
+                    const rideCheckRecords = checkRecords.filter(doc => doc.ride_id === ride.id);
+                    const totalDocs = docCount + rideCheckRecords.length;
+                    
+                    // Compliance status based on expiring docs
+                    const hasExpired = ride.documents.some(d => d.expires_at && new Date(d.expires_at) < new Date());
+                    const hasExpiringSoon = ride.documents.some(d => d.expires_at && isExpiringSoon(d.expires_at));
+                    const complianceStatus = hasExpired ? 'overdue' : hasExpiringSoon ? 'expiring' : 'compliant';
+                    
+                    const statusConfig = {
+                      overdue: { label: 'Doc Expiring', color: '#DC2626', bg: '#FEF2F2', icon: AlertTriangle },
+                      expiring: { label: 'Expiring Soon', color: '#F59E0B', bg: '#FFFBEB', icon: Clock },
+                      compliant: { label: 'All Current', color: '#16A34A', bg: '#F0FDF4', icon: CheckCircle2 },
+                    }[complianceStatus];
+                    
+                    const StatusIcon = statusConfig.icon;
+
+                    return (
+                      <button
+                        key={ride.id}
+                        onClick={() => setSelectedRide(ride)}
+                        className="w-full text-left group active:scale-[0.99] transition-all"
+                      >
+                        <div 
+                          className="p-4 rounded-2xl border-2 transition-all group-hover:border-primary/40"
+                          style={{ backgroundColor: 'hsl(210 40% 98%)', borderColor: 'hsl(215 19% 90%)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
+                        >
+                          <div className="flex items-start gap-3">
+                            <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+                              <ClipboardCheck className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                            </span>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <p className="font-bold text-sm group-hover:text-primary transition-colors truncate" style={{ color: 'hsl(222 84% 5%)' }}>
+                                  {ride.ride_name}
+                                </p>
+                                <span 
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                                  style={{ backgroundColor: statusConfig.bg, color: statusConfig.color }}
+                                >
+                                  <StatusIcon className="h-3 w-3" strokeWidth={2} />
+                                  {statusConfig.label}
+                                </span>
+                              </div>
+                              {ride.manufacturer && (
+                                <p className="text-xs mt-0.5 truncate" style={{ color: 'hsl(215 19% 50%)' }}>{ride.manufacturer}</p>
+                              )}
+                              <div className="flex items-center gap-3 mt-2.5">
+                                <span className="inline-flex items-center gap-1 text-xs font-medium" style={{ color: 'hsl(215 19% 40%)' }}>
+                                  <FileText className="h-3.5 w-3.5" strokeWidth={2} />
+                                  {totalDocs} {totalDocs === 1 ? 'document' : 'documents'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: 'hsl(215 19% 92%)' }}>
+                            <span className="text-xs font-semibold flex items-center gap-1.5 group-hover:text-primary transition-colors" style={{ color: 'hsl(213 52% 24%)' }}>
+                              <Shield className="h-3.5 w-3.5" strokeWidth={2} />
+                              Build Compliance Pack
+                            </span>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Global Documents Panel */}
+          {globalDocuments.length > 0 && (
+            <div 
+              className="bg-white border border-border rounded-2xl p-4 flex items-center justify-between gap-3 cursor-pointer group hover:border-primary/40 transition-all"
+              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+              onClick={() => {
+                // Select all global docs and open send panel without a specific ride
+                setSelectedRide({ id: '__global__', ride_name: 'Global Documents' });
+              }}
+            >
+              <div className="flex items-center gap-3">
+                <span className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.08)' }}>
+                  <Building2 className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                </span>
+                <div>
+                  <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Global Compliance Documents</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'hsl(215 19% 50%)' }}>Insurance, policies &amp; company-wide documents · {globalDocuments.length} files</p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
+            </div>
+          )}
         </div>
       ) : (
         <>
