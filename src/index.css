@@ -709,3 +709,269 @@
 .animate-slide-in-right {
   animation: slide-in-from-right 0.3s ease-out;
 }
+
+/* =========================================================
+   RIDEREADYDOCS — UI FIX PACK (Forms, Cards, Modals, Chips)
+   ========================================================= */
+
+/* ---------- Layout helpers ---------- */
+.page { padding: var(--pad-lg, 16px); }
+.section { margin-bottom: 14px; }
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.divider {
+  height: 1px;
+  background: hsl(var(--border));
+  margin: 12px 0;
+}
+
+.field {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.row-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 360px) {
+  .row-2 { grid-template-columns: 1fr; }
+}
+
+/* ---------- Chip grid (Who is at risk) ---------- */
+.chip-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.chip, .pill {
+  min-height: 38px;
+  padding: 8px 10px;
+  border-radius: 999px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--secondary));
+  font-size: var(--fs-sm);
+  line-height: var(--lh);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pill-selected {
+  background: hsl(var(--primary) / 0.1);
+  border-color: hsl(var(--primary) / 0.35);
+}
+
+/* ---------- Risk list cards ---------- */
+.risk-card {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-card);
+  margin-bottom: 12px;
+}
+
+.risk-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.risk-title {
+  font-size: var(--fs-lg);
+  line-height: var(--lh-tight);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.risk-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: hsl(var(--muted-foreground));
+  font-size: var(--fs-sm);
+}
+
+.risk-actions { display: inline-flex; gap: 8px; }
+
+.risk-toggle {
+  margin-top: 10px;
+  font-size: var(--fs-sm);
+  color: hsl(var(--primary));
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---------- Risk calculation block ---------- */
+.risk-calc {
+  border-radius: 14px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--secondary));
+  padding: 12px;
+  overflow: hidden;
+}
+
+.risk-calc-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.risk-kpi {
+  border-radius: 12px;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  padding: 10px;
+  text-align: center;
+  overflow: hidden;
+}
+
+.risk-kpi .kpi-label {
+  font-size: var(--fs-xs);
+  color: hsl(var(--muted-foreground));
+  line-height: var(--lh);
+}
+
+.risk-kpi .kpi-value {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.1;
+  margin-top: 4px;
+}
+
+@media (max-width: 380px) {
+  .risk-calc-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- Modal / sheet ---------- */
+.modal-header {
+  position: sticky;
+  top: 0;
+  background: hsl(var(--card));
+  z-index: 10;
+  padding: 14px 16px;
+  border-bottom: 1px solid hsl(var(--border));
+}
+
+.modal-body { padding: 14px 16px; }
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 6px;
+}
+
+.step-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 1px solid hsl(var(--border));
+  background: hsl(var(--secondary));
+  font-weight: 800;
+  font-size: var(--fs-sm);
+  flex-shrink: 0;
+}
+
+.step-title {
+  font-weight: 800;
+  font-size: var(--fs-md);
+  line-height: var(--lh-tight);
+}
+
+/* ---------- Page contrast helpers ---------- */
+.page-contrast { background: hsl(var(--background)); }
+.page-contrast .card,
+.page-contrast .panel,
+.page-contrast .box { background: hsl(var(--card)); }
+
+.section-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--fs-sm);
+  font-weight: 800;
+  color: hsl(var(--primary));
+  margin: 6px 0 10px;
+}
+
+/* ---------- PDF pack tokens ---------- */
+.pdf {
+  font-family: Inter, Arial, sans-serif;
+  color: #111827;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.pdf .pdf-header {
+  border-bottom: 1px solid #E5E7EB;
+  padding-bottom: 10px;
+  margin-bottom: 14px;
+}
+
+.pdf .pdf-title {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.pdf .pdf-sub {
+  font-size: 11px;
+  color: #6B7280;
+  margin-top: 4px;
+}
+
+.pdf .pdf-card {
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  padding: 12px;
+  margin: 10px 0;
+}
+
+.pdf table { width: 100%; border-collapse: collapse; }
+
+.pdf th, .pdf td {
+  border-bottom: 1px solid #E5E7EB;
+  padding: 8px 6px;
+  vertical-align: top;
+}
+
+.pdf th {
+  text-align: left;
+  font-size: 10px;
+  letter-spacing: .02em;
+  color: #6B7280;
+}
+
+.pdf .badge {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.pdf .badge-low  { background: #ECFDF5; color: #065F46; }
+.pdf .badge-med  { background: #FFFBEB; color: #92400E; }
+.pdf .badge-high { background: #FEF2F2; color: #991B1B; }
