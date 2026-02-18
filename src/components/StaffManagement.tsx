@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Loader2, UserPlus, Users, Mail, Clock, Trash2, Settings2 } from 'lucide-react';
+import { Loader2, UserPlus, Users, Mail, Clock, Trash2, Settings2, Shield, Wrench, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,6 +33,40 @@ interface PendingInvite {
   status: string;
 }
 
+const PERMISSION_CONFIG: Record<StaffPermission, {
+  label: string;
+  shortLabel: string;
+  bg: string;
+  text: string;
+  border: string;
+  icon: typeof Shield;
+}> = {
+  checks_only: {
+    label: 'Checks Only',
+    shortLabel: 'Checks',
+    bg: 'hsl(214 100% 97%)',
+    text: 'hsl(213 52% 24%)',
+    border: 'hsl(213 52% 80%)',
+    icon: CheckCircle2,
+  },
+  checks_maintenance: {
+    label: 'Checks & Maintenance',
+    shortLabel: 'Checks & Maint.',
+    bg: 'hsl(38 100% 97%)',
+    text: 'hsl(32 95% 30%)',
+    border: 'hsl(38 92% 75%)',
+    icon: Wrench,
+  },
+  full_access: {
+    label: 'Full Access',
+    shortLabel: 'Full Access',
+    bg: 'hsl(142 76% 96%)',
+    text: 'hsl(142 72% 25%)',
+    border: 'hsl(142 69% 70%)',
+    icon: Shield,
+  },
+};
+
 export function StaffManagement() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -49,29 +82,21 @@ export function StaffManagement() {
   const [permissionWarning, setPermissionWarning] = useState<{ memberId: string; email: string } | null>(null);
 
   useEffect(() => {
-    if (user) {
-      fetchOrganisation();
-    }
+    if (user) fetchOrganisation();
   }, [user]);
 
   const fetchOrganisation = async () => {
     if (!user) return;
-
     try {
       const { data: org, error } = await supabase
         .from('organisations')
         .select('id')
         .eq('owner_id', user.id)
         .maybeSingle();
-
       if (error) throw error;
-      
       if (org) {
         setOrganisationId(org.id);
-        await Promise.all([
-          fetchStaff(org.id),
-          fetchInvites(org.id),
-        ]);
+        await Promise.all([fetchStaff(org.id), fetchInvites(org.id)]);
       }
     } catch (error) {
       console.error('Error fetching organisation:', error);
@@ -82,25 +107,15 @@ export function StaffManagement() {
 
   const fetchStaff = async (orgId: string) => {
     try {
-      // Fetch staff members
       const { data: members, error } = await supabase
         .from('organisation_members')
-        .select(`
-          id,
-          user_id,
-          permission_level,
-          joined_at,
-          is_active
-        `)
+        .select('id, user_id, permission_level, joined_at, is_active')
         .eq('organisation_id', orgId)
         .eq('is_active', true);
-
       if (error) throw error;
 
-      // For each member, get their email and assigned rides
       const staffWithDetails = await Promise.all(
         (members || []).map(async (member) => {
-          // Get user email via edge function
           let email = '';
           try {
             const { data } = await supabase.functions.invoke('get-user-email', {
@@ -111,7 +126,6 @@ export function StaffManagement() {
             console.error('Error fetching email:', e);
           }
 
-          // Get assigned rides
           const { data: assignments } = await supabase
             .from('staff_equipment_assignments')
             .select('ride_id, rides(id, ride_name)')
@@ -124,14 +138,9 @@ export function StaffManagement() {
               ride_name: (a.rides as any).ride_name,
             }));
 
-          return {
-            ...member,
-            email,
-            assigned_rides: assignedRides,
-          };
+          return { ...member, email, assigned_rides: assignedRides };
         })
       );
-
       setStaff(staffWithDetails);
     } catch (error) {
       console.error('Error fetching staff:', error);
@@ -146,7 +155,6 @@ export function StaffManagement() {
         .eq('organisation_id', orgId)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setInvites(data || []);
     } catch (error) {
@@ -160,49 +168,29 @@ export function StaffManagement() {
         .from('staff_invites')
         .update({ status: 'cancelled' })
         .eq('id', inviteId);
-
       if (error) throw error;
-
       toast({ title: 'Invitation cancelled' });
       if (organisationId) fetchInvites(organisationId);
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
     }
   };
 
   const removeStaff = async (memberId: string) => {
     try {
-      // Get the member's user_id before deactivating
       const memberToRemove = staff.find(s => s.id === memberId);
-      
       const { error } = await supabase
         .from('organisation_members')
         .update({ is_active: false })
         .eq('id', memberId);
-
       if (error) throw error;
-
-      // Also delete their profile so they can't sign in to a broken state
-      // This effectively removes their account from the system
       if (memberToRemove?.user_id) {
-        await supabase
-          .from('profiles')
-          .delete()
-          .eq('user_id', memberToRemove.user_id);
+        await supabase.from('profiles').delete().eq('user_id', memberToRemove.user_id);
       }
-
       toast({ title: 'Staff member removed' });
       if (organisationId) fetchStaff(organisationId);
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
     }
   };
 
@@ -220,29 +208,32 @@ export function StaffManagement() {
         .from('organisation_members')
         .update({ permission_level: newPermission })
         .eq('id', memberId);
-
       if (error) throw error;
-
       toast({ title: 'Permission updated' });
       if (organisationId) fetchStaff(organisationId);
     } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
     }
   };
 
-  const getPermissionBadge = (permission: StaffPermission) => {
-    const variants: Record<StaffPermission, { label: string; className: string }> = {
-      'checks_only': { label: 'Checks Only', className: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
-      'checks_maintenance': { label: 'Checks & Maint.', className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' },
-      'full_access': { label: 'Full Access', className: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-    };
-    const v = variants[permission];
-    return <Badge className={v.className}>{v.label}</Badge>;
+  const PermissionBadge = ({ permission }: { permission: StaffPermission }) => {
+    const cfg = PERMISSION_CONFIG[permission];
+    const Icon = cfg.icon;
+    return (
+      <span
+        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold"
+        style={{ background: cfg.bg, color: cfg.text, border: `1px solid ${cfg.border}` }}
+      >
+        <Icon className="h-3 w-3" strokeWidth={2} />
+        {cfg.shortLabel}
+      </span>
+    );
   };
+
+  // Counts for authority summary
+  const fullAccessCount = staff.filter(s => s.permission_level === 'full_access').length;
+  const checksMaintenanceCount = staff.filter(s => s.permission_level === 'checks_maintenance').length;
+  const checksOnlyCount = staff.filter(s => s.permission_level === 'checks_only').length;
 
   if (loading) {
     return (
@@ -253,295 +244,229 @@ export function StaffManagement() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Users className="h-6 w-6 text-primary" />
-            Staff Management
-          </h2>
-          <p className="text-muted-foreground">
-            Invite and manage your team members
-          </p>
+    <div className="space-y-5">
+
+      {/* Authority Summary Strip */}
+      {staff.length > 0 && (
+        <div
+          className="rounded-xl p-4 grid grid-cols-3 gap-3"
+          style={{ background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))' }}
+        >
+          {[
+            { label: 'Full Access', count: fullAccessCount, color: 'hsl(142 72% 25%)', bg: 'hsl(142 76% 96%)' },
+            { label: 'Checks & Maint.', count: checksMaintenanceCount, color: 'hsl(32 95% 30%)', bg: 'hsl(38 100% 97%)' },
+            { label: 'Checks Only', count: checksOnlyCount, color: 'hsl(213 52% 24%)', bg: 'hsl(214 100% 97%)' },
+          ].map(({ label, count, color, bg }) => (
+            <div key={label} className="text-center">
+              <div
+                className="text-xl font-bold"
+                style={{ color }}
+              >{count}</div>
+              <div className="text-[10px] font-medium" style={{ color: 'hsl(var(--muted-foreground))' }}>{label}</div>
+            </div>
+          ))}
         </div>
-        <Button onClick={() => setInviteDialogOpen(true)}>
-          <UserPlus className="h-4 w-4 mr-2" />
-          Invite Staff
-        </Button>
-      </div>
+      )}
 
-      {/* Current Staff */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Team Members</CardTitle>
-          <CardDescription>
-            {staff.length === 0 
-              ? 'No staff members yet. Invite someone to get started.'
-              : `${staff.length} active staff member${staff.length === 1 ? '' : 's'}`
-            }
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {staff.length === 0 ? (
-            <div className="text-center py-8">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground/50 mb-4" />
-              <p className="text-muted-foreground">No staff members yet</p>
-              <Button 
-                variant="outline" 
-                className="mt-4"
-                onClick={() => setInviteDialogOpen(true)}
+      {/* Invite CTA */}
+      <Button
+        onClick={() => setInviteDialogOpen(true)}
+        className="w-full h-12 text-sm font-semibold rounded-xl gap-2"
+      >
+        <UserPlus className="h-4 w-4" />
+        Invite Staff Member
+      </Button>
+
+      {/* Staff Cards */}
+      {staff.length === 0 ? (
+        <div
+          className="rounded-xl p-8 text-center"
+          style={{ background: 'hsl(var(--muted) / 0.3)', border: '1px dashed hsl(var(--border))' }}
+        >
+          <div
+            className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3"
+            style={{ background: 'hsl(var(--muted))' }}
+          >
+            <Users className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <p className="text-sm font-medium text-foreground mb-1">No staff members yet</p>
+          <p className="text-xs text-muted-foreground">Invite your first team member to get started.</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-0.5">
+            Active Staff — {staff.length} member{staff.length !== 1 ? 's' : ''}
+          </p>
+          {staff.map((member) => {
+            const cfg = PERMISSION_CONFIG[member.permission_level];
+            return (
+              <div
+                key={member.id}
+                className="rounded-xl p-4 space-y-3"
+                style={{
+                  background: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                }}
               >
-                <UserPlus className="h-4 w-4 mr-2" />
-                Invite Your First Staff Member
-              </Button>
-            </div>
-          ) : (
-            <>
-              {/* Desktop Table View */}
-              <div className="hidden md:block overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Permission</TableHead>
-                    <TableHead>Equipment</TableHead>
-                    <TableHead>Joined</TableHead>
-                    <TableHead className="w-[100px]">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {staff.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell className="font-medium">
-                        {member.email || 'Unknown'}
-                      </TableCell>
-                      <TableCell>
-                        <select
-                          value={member.permission_level}
-                          onChange={(e) =>
-                            handlePermissionChange(
-                              member.id,
-                              e.target.value as StaffPermission,
-                              member.email || 'this staff member',
-                            )
-                          }
-                          className="h-10 w-[140px] rounded-md border border-input bg-background px-3 py-2 text-sm"
-                        >
-                          <option value="checks_only">Checks Only</option>
-                          <option value="checks_maintenance">Checks & Maint.</option>
-                          <option value="full_access">Full Access</option>
-                        </select>
-                      </TableCell>
-                      <TableCell>
-                        {member.assigned_rides.length === 0 ? (
-                          <span className="text-muted-foreground text-sm">All equipment</span>
-                        ) : (
-                          <div className="flex flex-wrap gap-1">
-                            {member.assigned_rides.slice(0, 2).map(r => (
-                              <Badge key={r.id} variant="outline" className="text-xs">
-                                {r.ride_name}
-                              </Badge>
-                            ))}
-                            {member.assigned_rides.length > 2 && (
-                              <Badge variant="outline" className="text-xs">
-                                +{member.assigned_rides.length - 2}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {format(new Date(member.joined_at), 'MMM d, yyyy')}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => {
-                              setSelectedMember(member);
-                              setEquipmentDialogOpen(true);
-                            }}
-                            title="Manage equipment access"
-                          >
-                            <Settings2 className="h-4 w-4" />
-                          </Button>
-                           <Button
-                             variant="ghost"
-                             size="icon"
-                             className="text-destructive hover:text-destructive"
-                             onClick={() => {
-                               setDeleteTarget(member);
-                               setDeleteDialogOpen(true);
-                             }}
-                             title="Remove staff member"
-                           >
-                             <Trash2 className="h-4 w-4" />
-                           </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                {/* Top row: email + actions */}
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    {/* Avatar chip */}
+                    <div
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0"
+                      style={{ background: cfg.bg, color: cfg.text }}
+                    >
+                      {(member.email || '?')[0].toUpperCase()}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold truncate">{member.email || 'Unknown'}</p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Joined {format(new Date(member.joined_at), 'MMM d, yyyy')}
+                      </p>
+                    </div>
+                  </div>
 
-            {/* Mobile Card View */}
-            <div className="md:hidden space-y-3">
-              {staff.map((member) => (
-                <Card key={member.id} className="border-border/50">
-                  <CardContent className="p-4 space-y-3">
-                    {/* Email & Actions Row */}
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{member.email || 'Unknown'}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Joined {format(new Date(member.joined_at), 'MMM d, yyyy')}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 shrink-0">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => {
-                            setSelectedMember(member);
-                            setEquipmentDialogOpen(true);
-                          }}
-                          title="Manage equipment access"
-                        >
-                          <Settings2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-destructive hover:text-destructive"
-                          onClick={() => {
-                            setDeleteTarget(member);
-                            setDeleteDialogOpen(true);
-                          }}
-                          title="Remove staff member"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* Permission & Equipment */}
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs text-muted-foreground">Permission:</span>
-                        <select
-                          value={member.permission_level}
-                          onChange={(e) =>
-                            handlePermissionChange(
-                              member.id,
-                              e.target.value as StaffPermission,
-                              member.email || 'this staff member',
-                            )
-                          }
-                          className="h-8 w-[140px] rounded-md border border-input bg-background px-2 text-xs"
-                        >
-                          <option value="checks_only">Checks Only</option>
-                          <option value="checks_maintenance">Checks & Maint.</option>
-                          <option value="full_access">Full Access</option>
-                        </select>
-                      </div>
-                      <div className="flex items-center justify-between gap-2">
-                        <span className="text-xs text-muted-foreground">Equipment:</span>
-                        <div className="flex flex-wrap gap-1 justify-end">
-                          {member.assigned_rides.length === 0 ? (
-                            <span className="text-xs text-muted-foreground">All</span>
-                          ) : (
-                            <>
-                              {member.assigned_rides.slice(0, 1).map(r => (
-                                <Badge key={r.id} variant="outline" className="text-[10px] px-1.5 py-0 max-w-[100px] truncate">
-                                  {r.ride_name}
-                                </Badge>
-                              ))}
-                              {member.assigned_rides.length > 1 && (
-                                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                                  +{member.assigned_rides.length - 1}
-                                </Badge>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
+                  {/* Action icons */}
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    <button
+                      onClick={() => { setSelectedMember(member); setEquipmentDialogOpen(true); }}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                      style={{ background: 'hsl(var(--muted))' }}
+                      title="Manage equipment access"
+                    >
+                      <Settings2 className="h-3.5 w-3.5 text-muted-foreground" />
+                    </button>
+                    <button
+                      onClick={() => { setDeleteTarget(member); setDeleteDialogOpen(true); }}
+                      className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors"
+                      style={{ background: 'hsl(0 72% 97%)' }}
+                      title="Remove staff member"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" style={{ color: 'hsl(0 72% 51%)' }} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Permission control */}
+                <div
+                  className="rounded-xl p-3 space-y-2"
+                  style={{ background: 'hsl(var(--muted) / 0.4)', border: '1px solid hsl(var(--border))' }}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      System Permissions
+                    </span>
+                    <PermissionBadge permission={member.permission_level} />
+                  </div>
+                  <select
+                    value={member.permission_level}
+                    onChange={(e) =>
+                      handlePermissionChange(member.id, e.target.value as StaffPermission, member.email || 'this staff member')
+                    }
+                    className="w-full h-9 rounded-lg border text-xs px-2 bg-white"
+                    style={{ borderColor: 'hsl(var(--border))' }}
+                  >
+                    <option value="checks_only">Checks Only — Daily inspection sign-off</option>
+                    <option value="checks_maintenance">Checks & Maintenance — Logs and records</option>
+                    <option value="full_access">Full Access — All compliance modules</option>
+                  </select>
+                </div>
+
+                {/* Equipment row */}
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Wrench className="h-3 w-3" />
+                    Equipment Access
+                  </span>
+                  <div className="flex flex-wrap gap-1 justify-end">
+                    {member.assigned_rides.length === 0 ? (
+                      <span
+                        className="text-[11px] font-medium px-2 py-0.5 rounded-full"
+                        style={{ background: 'hsl(214 100% 97%)', color: 'hsl(213 52% 24%)' }}
+                      >
+                        All equipment
+                      </span>
+                    ) : (
+                      <>
+                        {member.assigned_rides.slice(0, 2).map(r => (
+                          <Badge key={r.id} variant="outline" className="text-[10px] px-1.5 py-0">
+                            {r.ride_name}
+                          </Badge>
+                        ))}
+                        {member.assigned_rides.length > 2 && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            +{member.assigned_rides.length - 2}
+                          </Badge>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Pending Invites */}
       {invites.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Pending Invitations
-            </CardTitle>
-            <CardDescription>
-              Invitations waiting to be accepted
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {invites.map((invite) => (
-                <div 
-                  key={invite.id}
-                  className="flex items-center justify-between p-3 bg-muted/50 rounded-lg"
+        <div className="space-y-2">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-0.5">
+            Pending Invitations — {invites.length}
+          </p>
+          {invites.map((invite) => (
+            <div
+              key={invite.id}
+              className="flex items-center justify-between p-3.5 rounded-xl"
+              style={{ background: 'hsl(38 100% 97%)', border: '1px solid hsl(38 92% 80%)' }}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'hsl(38 92% 90%)' }}
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Mail className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <p className="font-medium">{invite.email}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        {getPermissionBadge(invite.permission_level)}
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          Expires {format(new Date(invite.expires_at), 'MMM d')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:text-destructive"
-                    onClick={() => cancelInvite(invite.id)}
-                  >
-                    Cancel
-                  </Button>
+                  <Mail className="h-4 w-4" style={{ color: 'hsl(32 95% 30%)' }} />
                 </div>
-              ))}
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{invite.email}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <PermissionBadge permission={invite.permission_level} />
+                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      Expires {format(new Date(invite.expires_at), 'MMM d')}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-destructive hover:text-destructive text-xs flex-shrink-0"
+                onClick={() => cancelInvite(invite.id)}
+              >
+                Cancel
+              </Button>
             </div>
-          </CardContent>
-        </Card>
+          ))}
+        </div>
       )}
 
-      {/* Invite Dialog - only mount when open to prevent ref loops */}
+      {/* Compliance footer */}
+      <p className="text-center text-[11px] text-muted-foreground pt-1">
+        All user actions are audit logged and traceable for compliance purposes.
+      </p>
+
+      {/* Dialogs */}
       {inviteDialogOpen && (
         <StaffInviteDialog
           open={inviteDialogOpen}
           onOpenChange={setInviteDialogOpen}
-          onSuccess={() => {
-            if (organisationId) {
-              fetchInvites(organisationId);
-            }
-          }}
+          onSuccess={() => { if (organisationId) fetchInvites(organisationId); }}
         />
       )}
 
-      {/* Equipment Assignment Dialog */}
       {selectedMember && equipmentDialogOpen && (
         <StaffEquipmentDialog
           open={equipmentDialogOpen}
@@ -549,48 +474,34 @@ export function StaffManagement() {
           memberId={selectedMember.id}
           memberEmail={selectedMember.email || 'Staff member'}
           currentAssignments={selectedMember.assigned_rides.map(r => r.id)}
-          onSuccess={() => {
-            if (organisationId) {
-              fetchStaff(organisationId);
-            }
-          }}
+          onSuccess={() => { if (organisationId) fetchStaff(organisationId); }}
         />
       )}
 
-      {/* Full Access Warning Dialog - only mount when needed */}
       {permissionWarning && (
         <AlertDialog open onOpenChange={(open) => !open && setPermissionWarning(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
-                <Settings2 className="h-5 w-5" />
+                <ShieldAlert className="h-5 w-5" />
                 Grant Full Access?
               </AlertDialogTitle>
               <AlertDialogDescription className="space-y-2">
-                <p>
-                  You are about to grant <strong>Full Access</strong> to {permissionWarning.email}.
-                </p>
-                <p className="text-amber-600 font-medium">
-                  This will allow them to view and manage:
-                </p>
+                <p>You are about to grant <strong>Full Access</strong> to {permissionWarning.email}.</p>
+                <p className="text-amber-600 font-medium">This will allow them to view and manage:</p>
                 <ul className="list-disc list-inside text-sm space-y-1 ml-2">
                   <li>All checks and inspections</li>
                   <li>Maintenance records</li>
                   <li>Documents and certificates</li>
                   <li>Risk assessments</li>
                 </ul>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Only grant this level of access to trusted team members.
-                </p>
+                <p className="text-sm text-muted-foreground mt-2">Only grant this level of access to trusted team members.</p>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => {
-                  updatePermission(permissionWarning.memberId, 'full_access');
-                  setPermissionWarning(null);
-                }}
+                onClick={() => { updatePermission(permissionWarning.memberId, 'full_access'); setPermissionWarning(null); }}
                 className="bg-amber-600 hover:bg-amber-700"
               >
                 Yes, Grant Full Access
@@ -600,14 +511,10 @@ export function StaffManagement() {
         </AlertDialog>
       )}
 
-      {/* Remove Staff Dialog - single instance to avoid Radix ref loops */}
       {deleteTarget && (
         <AlertDialog
           open={deleteDialogOpen}
-          onOpenChange={(open) => {
-            setDeleteDialogOpen(open);
-            if (!open) setDeleteTarget(null);
-          }}
+          onOpenChange={(open) => { setDeleteDialogOpen(open); if (!open) setDeleteTarget(null); }}
         >
           <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
             <AlertDialogHeader>
