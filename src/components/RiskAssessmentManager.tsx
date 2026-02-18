@@ -1230,87 +1230,167 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   }
 
   if (!selectedAssessment) {
+    // Derived KPI stats from assessments list
+    const activeCount = assessments.filter(a => ['in_progress', 'active', 'completed'].includes(a.overall_status)).length;
+    const reviewDueCount = assessments.filter(a => {
+      if (!a.review_date) return false;
+      return new Date(a.review_date) <= new Date();
+    }).length;
+    const overdueCount = assessments.filter(a => {
+      if (!a.review_date) return false;
+      const due = new Date(a.review_date);
+      const now = new Date();
+      return due < now && a.overall_status !== 'completed';
+    }).length;
+
+    const STATUS_CONFIG: Record<string, { label: string; bg: string; text: string; accentColor: string }> = {
+      draft:        { label: 'Draft',        bg: 'bg-muted/60',           text: 'text-muted-foreground', accentColor: '#94A3B8' },
+      in_progress:  { label: 'In Progress',  bg: 'bg-blue-50',            text: 'text-blue-700',         accentColor: '#2563EB' },
+      active:       { label: 'Active',       bg: 'bg-[#DCFCE7]',          text: 'text-[#166534]',        accentColor: '#16A34A' },
+      completed:    { label: 'Completed',    bg: 'bg-[#DCFCE7]',          text: 'text-[#166534]',        accentColor: '#16A34A' },
+      review_due:   { label: 'Review Due',   bg: 'bg-[#FEF3C7]',          text: 'text-[#92400E]',        accentColor: '#F59E0B' },
+      overdue:      { label: 'Overdue',      bg: 'bg-[#FEE2E2]',          text: 'text-[#991B1B]',        accentColor: '#DC2626' },
+      archived:     { label: 'Archived',     bg: 'bg-muted/40',           text: 'text-muted-foreground', accentColor: '#CBD5E1' },
+    };
+
+    const RISK_LEVEL_BADGE: Record<string, { label: string; bg: string; text: string; dot: string }> = {
+      low:      { label: 'Low Risk',    bg: 'bg-[#F0FDF4]', text: 'text-[#166534]', dot: 'bg-[#16A34A]' },
+      medium:   { label: 'Medium Risk', bg: 'bg-[#FFFBEB]', text: 'text-[#92400E]', dot: 'bg-[#F59E0B]' },
+      high:     { label: 'High Risk',   bg: 'bg-[#FEF2F2]', text: 'text-[#991B1B]', dot: 'bg-[#DC2626]' },
+      critical: { label: 'Critical',    bg: 'bg-[#FFF1F2]', text: 'text-[#881337]', dot: 'bg-[#E11D48]' },
+    };
+
     return (
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-5">
+        {/* ── KPI STRIP ─────────────────────────── */}
+        <div className="grid grid-cols-4 gap-2">
+          {[
+            { label: 'Assessments', value: assessments.length,  color: '#2563EB' },
+            { label: 'Active',      value: activeCount,          color: '#16A34A' },
+            { label: 'Review Due',  value: reviewDueCount,       color: '#F59E0B' },
+            { label: 'Overdue',     value: overdueCount,         color: '#DC2626' },
+          ].map(({ label, value, color }) => (
+            <div
+              key={label}
+              className="rounded-2xl border border-border bg-card px-3 py-3 relative overflow-hidden"
+              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+            >
+              <span className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl" style={{ backgroundColor: color }} />
+              <div className="text-xl font-bold text-foreground leading-none mt-1">{value}</div>
+              <div className="text-[10px] text-muted-foreground font-medium mt-0.5 leading-tight">{label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── HEADER + CTA ──────────────────────── */}
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h3 className="text-lg font-semibold">{ride.ride_name}</h3>
-            <p className="text-sm text-muted-foreground">Risk Assessments</p>
+            <h3 className="text-sm font-semibold text-foreground">Risk Assessment Register</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">{ride.ride_name}</p>
           </div>
-          <Button onClick={() => setShowNewAssessment(true)} size="sm">
-            <Plus className="mr-1.5 h-4 w-4" /> New
+          <Button onClick={() => setShowNewAssessment(true)} size="sm" className="gap-1.5 shrink-0">
+            <Plus className="h-4 w-4" /> New Risk Assessment
           </Button>
         </div>
 
-        <div className="space-y-2">
-          {assessments.map((assessment) => (
-            <Card 
-              key={assessment.id} 
-              className="hover:bg-muted/50 transition-all group border-l-4"
-              style={{
-                borderLeftColor: 
-                  assessment.overall_status === 'completed' ? 'rgb(34, 197, 94)' :
-                  assessment.overall_status === 'in_progress' ? 'rgb(59, 130, 246)' :
-                  'rgb(156, 163, 175)'
-              }}
+        {/* ── ASSESSMENT LIST ───────────────────── */}
+        {assessments.length === 0 ? (
+          <div className="rounded-2xl border-2 border-dashed border-[#FCD34D] bg-[#FFFBEB] px-5 py-8 text-center">
+            <div className="w-10 h-10 rounded-full bg-[#FEF3C7] flex items-center justify-center mx-auto mb-3">
+              <FileText className="h-5 w-5 text-[#D97706]" strokeWidth={2} />
+            </div>
+            <p className="font-semibold text-sm text-[#92400E]">No Risk Assessments Yet</p>
+            <p className="text-xs text-[#92400E]/70 mt-1 max-w-xs mx-auto">
+              Risk assessments are required for operational compliance. Create your first assessment to identify hazards and implement controls.
+            </p>
+            <Button
+              className="mt-4 bg-[#D97706] hover:bg-[#B45309] text-white border-0"
+              size="sm"
+              onClick={() => setShowNewAssessment(true)}
             >
-              <CardContent className="p-4">
-                <div className="flex items-center justify-between gap-4">
-                  <div 
-                    className="flex-1 cursor-pointer"
+              <Plus className="h-4 w-4 mr-1.5" /> Create Assessment
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {assessments.map((assessment) => {
+              const statusKey = assessment.overall_status in STATUS_CONFIG ? assessment.overall_status : 'draft';
+              const statusCfg = STATUS_CONFIG[statusKey];
+              // Determine risk posture from review_date overdue logic  
+              const isOverdueReview = assessment.review_date && new Date(assessment.review_date) < new Date() && assessment.overall_status !== 'completed';
+              const accentColor = isOverdueReview ? '#DC2626' : statusCfg.accentColor;
+              return (
+                <div
+                  key={assessment.id}
+                  className="rounded-xl border border-border bg-card overflow-hidden hover:border-primary/40 transition-all group"
+                  style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)', borderLeft: `4px solid ${accentColor}` }}
+                >
+                  <div
+                    className="flex items-start gap-3 p-4 cursor-pointer"
                     onClick={() => setSelectedAssessment(assessment)}
                   >
-                    <div className="flex items-center gap-2 mb-1">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <p className="font-medium text-sm">Risk Assessment</p>
+                    {/* Icon */}
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 mt-0.5" style={{ backgroundColor: `${accentColor}15` }}>
+                      <FileText className="h-4 w-4" style={{ color: accentColor }} strokeWidth={2} />
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <span>{format(new Date(assessment.assessment_date), 'dd MMM yyyy')}</span>
-                      <span>•</span>
-                      <span>{assessment.assessor_name}</span>
+
+                    {/* Main content */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-semibold text-sm text-foreground">Risk Assessment</p>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold shrink-0 ${statusCfg.bg} ${statusCfg.text}`}>
+                          {isOverdueReview ? 'Overdue' : statusCfg.label}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1 text-xs text-muted-foreground">
+                        <span>Created {format(new Date(assessment.assessment_date), 'dd MMM yyyy')}</span>
+                        <span className="hidden sm:inline">·</span>
+                        <span className="font-medium text-foreground/80">{assessment.assessor_name}</span>
+                      </div>
+                      {/* Extra compliance metadata row */}
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-1.5 text-xs text-muted-foreground">
+                        <span>Last reviewed: <span className="text-foreground/70 font-medium">{assessment.last_modified_at ? format(new Date(assessment.last_modified_at), 'dd MMM yyyy') : '—'}</span></span>
+                        {assessment.review_date && (
+                          <span className={isOverdueReview ? 'text-[#DC2626] font-semibold' : ''}>
+                            Next review: <span className="font-medium">{format(new Date(assessment.review_date), 'dd MMM yyyy')}</span>
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className={`px-2 py-1 rounded-md text-xs font-medium ${
-                      assessment.overall_status === 'completed' ? 'bg-green-100 text-green-800' :
-                      assessment.overall_status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                      'bg-gray-100 text-gray-800'
-                    }`}>
-                      {assessment.overall_status.replace('_', ' ')}
-                    </span>
-                    {assessment.overall_status !== 'completed' && (
-                      <TooltipProvider delayDuration={0}>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-destructive/10"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setAssessmentToDelete(assessment);
-                                setShowDeleteConfirm(true);
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent side="left">
-                            <p className="text-xs">Delete this draft assessment</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    )}
-                    <ChevronDown 
-                      className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform rotate-[-90deg] cursor-pointer" 
-                      onClick={() => setSelectedAssessment(assessment)}
-                    />
+
+                    {/* Right actions */}
+                    <div className="flex items-center gap-1.5 shrink-0 ml-1">
+                      {assessment.overall_status !== 'completed' && (
+                        <TooltipProvider delayDuration={0}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-7 w-7 p-0 hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setAssessmentToDelete(assessment);
+                                  setShowDeleteConfirm(true);
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="left">
+                              <p className="text-xs">Delete draft</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                      <ChevronDown className="h-4 w-4 text-muted-foreground rotate-[-90deg]" />
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Delete Confirmation Dialog */}
         <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
