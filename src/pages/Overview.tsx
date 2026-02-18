@@ -160,7 +160,7 @@ const Overview = () => {
 
           {/* ── COMPLIANCE OVERVIEW SECTION ────────── */}
           <div>
-            <h2 className="text-sm font-semibold text-foreground mb-3 tracking-wide uppercase opacity-60">Compliance Overview</h2>
+            <h2 className="text-xs font-semibold text-muted-foreground mb-3 tracking-widest uppercase">Compliance Overview</h2>
 
             {/* KPI STRIP */}
             <div className="grid grid-cols-2 gap-3">
@@ -171,6 +171,7 @@ const Overview = () => {
                   icon: Cog,
                   path: '/rides',
                   dot: null,
+                  accentColor: 'hsl(213 52% 24%)',
                 },
                 {
                   label: 'Documents',
@@ -178,6 +179,7 @@ const Overview = () => {
                   icon: FileText,
                   path: '/documents',
                   dot: (data?.expiredDocsCount ?? 0) > 0 ? 'red' : (data?.complianceAlerts?.some(a => a.type === 'due_soon') ? 'amber' : 'green'),
+                  accentColor: (data?.expiredDocsCount ?? 0) > 0 ? 'hsl(0 72% 51%)' : (data?.complianceAlerts?.some(a => a.type === 'due_soon') ? 'hsl(38 92% 50%)' : 'hsl(142 76% 36%)'),
                 },
                 {
                   label: 'Checks (7d)',
@@ -185,6 +187,7 @@ const Overview = () => {
                   icon: CheckSquare,
                   path: '/checks',
                   dot: null,
+                  accentColor: 'hsl(213 52% 24%)',
                 },
                 {
                   label: 'Maintenance',
@@ -192,18 +195,21 @@ const Overview = () => {
                   icon: Wrench,
                   path: '/maintenance',
                   dot: null,
+                  accentColor: 'hsl(213 52% 24%)',
                 },
-              ].map(({ label, value, icon: Icon, path, dot }) => (
+              ].map(({ label, value, icon: Icon, path, dot, accentColor }) => (
                 <button
                   key={label}
                   onClick={() => navigate(path)}
-                  className="flex flex-col gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary hover:bg-secondary active:scale-[0.97] transition-all text-left"
+                  className="flex flex-col gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary hover:bg-secondary active:scale-[0.97] transition-all text-left overflow-hidden relative"
                   style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}
                 >
-                  <div className="flex items-center justify-between w-full">
+                  {/* Coloured top accent bar */}
+                  <span className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl" style={{ backgroundColor: accentColor }} />
+                  <div className="flex items-center justify-between w-full mt-1">
                     {/* Icon with tinted chip background */}
-                    <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-secondary">
-                      <Icon className="h-4.5 w-4.5 text-primary" strokeWidth={2} style={{ width: '18px', height: '18px' }} />
+                    <span className="flex items-center justify-center w-9 h-9 rounded-xl" style={{ backgroundColor: `${accentColor}18` }}>
+                      <Icon className="h-[18px] w-[18px]" strokeWidth={2} style={{ color: accentColor }} />
                     </span>
                     {dot && (
                       <span className={`w-2.5 h-2.5 rounded-full ${
@@ -225,7 +231,7 @@ const Overview = () => {
             <div className="bg-card border border-border rounded-2xl p-4 space-y-3" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-secondary">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-lg" style={{ backgroundColor: 'hsl(213 52% 24% / 0.1)' }}>
                     <Clock className="h-3.5 w-3.5 text-primary" strokeWidth={2} />
                   </span>
                   <span className="text-sm font-semibold text-foreground">Due Soon</span>
