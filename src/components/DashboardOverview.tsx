@@ -10,6 +10,8 @@ import { PlanSelection } from './PlanSelection';
 import { RestrictedFeatureCard } from '@/components/RestrictedFeatureCard';
 import { useSubscription } from '@/hooks/useSubscription';
 import DOCCertificateCard from '@/components/DOCCertificateCard';
+import { useNavigate } from 'react-router-dom';
+import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { 
   FileText, 
   Calendar, 
@@ -19,7 +21,9 @@ import {
   TrendingUp,
   Wrench,
   Shield,
-  Plus
+  Plus,
+  Bell,
+  ChevronRight
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -51,6 +55,8 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
   const { toast } = useToast();
   const { subscription } = useSubscription();
   const { checkEngagementExtension } = useTrialEngagement();
+  const navigate = useNavigate();
+  const unreadCount = useUnreadNotifications();
   const [stats, setStats] = useState<DashboardStats>({
     totalRides: 0,
     activeInspections: 0,
@@ -380,51 +386,29 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
         </CardContent>
       </Card>
 
-      {/* Recent Activity */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
+      {/* Notifications Widget */}
+      {unreadCount > 0 && (
+        <div
+          className="bg-white border border-[#E2E8F0] rounded-2xl p-4 shadow-[0_4px_12px_rgba(0,0,0,0.05)] cursor-pointer hover:border-[#1E3A5F] transition-all"
+          onClick={() => navigate('/notifications')}
+        >
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5" />
-              Recent Activity
+              <Bell className="h-5 w-5 text-[#0F172A]" strokeWidth={2} />
+              <span className="text-[15px] font-semibold text-[#0F172A]">Notifications</span>
+              <span className="inline-flex items-center justify-center h-5 min-w-[20px] px-1 rounded-full bg-[#DC2626] text-white text-[10px] font-bold">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
             </div>
-            <Button variant="ghost" size="sm" onClick={loadDashboardData} disabled={loading} className="h-8 px-2">
-              <TrendingUp className="h-4 w-4" />
-            </Button>
-          </CardTitle>
-          <CardDescription>Latest inspection checks and updates</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {recentActivity.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              <FileText className="mx-auto h-12 w-12 mb-4 opacity-50" />
-              <p>No recent activity</p>
-              <p className="text-sm">Complete your first inspection to see activity here</p>
+            <div className="flex items-center gap-1 text-xs text-[#1E3A5F] font-medium">
+              View all <ChevronRight className="h-3.5 w-3.5" />
             </div>
-          ) : (
-            <div className="space-y-3">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-center justify-between p-3 rounded-lg border bg-card-hover hover:bg-accent/50 transition-smooth">
-                  <div className="flex items-center space-x-3">
-                    <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium text-sm">
-                        {(activity.rides as any)?.ride_name || 'Unknown Ride'} Inspection
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        By {activity.inspector_name} on {activity.check_date}
-                      </p>
-                    </div>
-                  </div>
-                  <Badge variant="outline" className={getStatusColor(activity.status)}>
-                    {activity.status.replace('_', ' ')}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+          </div>
+          <p className="text-xs text-[#64748B]">
+            You have {unreadCount} unread compliance alert{unreadCount !== 1 ? 's' : ''} requiring attention.
+          </p>
+        </div>
+      )}
 
       {/* Upload Document Dialog */}
       <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>

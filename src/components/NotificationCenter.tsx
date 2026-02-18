@@ -1,59 +1,114 @@
-import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import { 
-  Bell,
-  BellRing,
-  Check,
-  X,
-  Mail,
-  AlertTriangle,
-  Info,
-  CheckCircle,
-  Settings,
-  Bug
+  Bell, BellRing, Check, X,
+  AlertTriangle, Info, CheckCircle,
+  FileText, Wrench, ClipboardCheck, Send, Bug
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, isToday, isThisWeek } from 'date-fns';
 
 interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
+  type: string;
   is_read: boolean;
   related_table?: string;
   related_id?: string;
   created_at: string;
 }
 
-interface NotificationSettings {
-  emailNotifications: boolean;
-  inspectionReminders: boolean;
-  documentExpiry: boolean;
-  maintenanceReminders: boolean;
-  systemUpdates: boolean;
-}
+type FilterTab = 'all' | 'compliance' | 'documents' | 'maintenance' | 'system';
+
+const FILTER_TABS: { id: FilterTab; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'compliance', label: 'Compliance' },
+  { id: 'documents', label: 'Documents' },
+  { id: 'maintenance', label: 'Maintenance' },
+  { id: 'system', label: 'System' },
+];
+
+// Map notification to a category for filtering
+const getCategory = (n: Notification): FilterTab => {
+  const t = n.type?.toLowerCase() ?? '';
+  const title = n.title?.toLowerCase() ?? '';
+  if (t === 'warning' && (title.includes('overdue') || title.includes('inspection') || title.includes('check') || title.includes('ndt'))) return 'compliance';
+  if (title.includes('document') || title.includes('expir') || n.related_table === 'documents') return 'documents';
+  if (title.includes('maintenance') || title.includes('repair') || n.related_table === 'maintenance_records') return 'maintenance';
+  if (t === 'bug_status' || title.includes('system') || title.includes('update')) return 'system';
+  if (t === 'warning' || t === 'error') return 'compliance';
+  return 'system';
+};
+
+// Priority sort: overdue > expired doc > upcoming expiry > maintenance > rest
+const getPriority = (n: Notification): number => {
+  const title = n.title?.toLowerCase() ?? '';
+  if (title.includes('overdue')) return 0;
+  if (title.includes('expir')) return 1;
+  if (title.includes('upcoming') || title.includes('due')) return 2;
+  if (title.includes('maintenance')) return 3;
+  return 4;
+};
+
+// Left bar colour by type
+const getBarColor = (n: Notification): string => {
+  const cat = getCategory(n);
+  switch (cat) {
+    case 'compliance': return 'bg-[#DC2626]';
+    case 'documents':  return 'bg-[#2563EB]';
+    case 'maintenance':return 'bg-[#F59E0B]';
+    default: {
+      if (n.type === 'success') return 'bg-[#16A34A]';
+      return 'bg-[#64748B]';
+    }
+  }
+};
+
+const getIcon = (n: Notification) => {
+  const cat = getCategory(n);
+  const cls = 'h-4 w-4';
+  switch (cat) {
+    case 'compliance':  return <AlertTriangle className={cn(cls, 'text-[#DC2626]')} />;
+    case 'documents':   return <FileText className={cn(cls, 'text-[#2563EB]')} />;
+    case 'maintenance': return <Wrench className={cn(cls, 'text-[#F59E0B]')} />;
+    default: {
+      if (n.type === 'success') return <CheckCircle className={cn(cls, 'text-[#16A34A]')} />;
+      if (n.type === 'bug_status') return <Bug className={cn(cls, 'text-purple-500')} />;
+      return <Info className={cn(cls, 'text-[#64748B]')} />;
+    }
+  }
+};
+
+const groupByDate = (items: Notification[]): { label: string; items: Notification[] }[] => {
+  const today: Notification[] = [];
+  const week: Notification[] = [];
+  const older: Notification[] = [];
+
+  items.forEach(n => {
+    const d = new Date(n.created_at);
+    if (isToday(d)) today.push(n);
+    else if (isThisWeek(d)) week.push(n);
+    else older.push(n);
+  });
+
+  return [
+    { label: 'Today', items: today },
+    { label: 'This Week', items: week },
+    { label: 'Older', items: older },
+  ].filter(g => g.items.length > 0);
+};
 
 const NotificationCenter = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
-  const [settings, setSettings] = useState<NotificationSettings>({
-    emailNotifications: true,
-    inspectionReminders: true,
-    documentExpiry: true,
-    maintenanceReminders: true,
-    systemUpdates: false,
-  });
-  const [activeTab, setActiveTab] = useState<'notifications' | 'settings'>('notifications');
+  const [activeTab, setActiveTab] = useState<FilterTab>('all');
 
   useEffect(() => {
     if (user) {
@@ -71,14 +126,10 @@ const NotificationCenter = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setNotifications(data as Notification[] || []);
+      setNotifications((data as Notification[]) || []);
     } catch (error) {
       console.error('Error loading notifications:', error);
-      toast({
-        title: "Error loading notifications",
-        description: "Failed to load notifications",
-        variant: "destructive",
-      });
+      toast({ title: 'Error loading notifications', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -86,50 +137,39 @@ const NotificationCenter = () => {
 
   const generateSystemNotifications = async () => {
     try {
-      // Check for overdue inspections - exclude test data
       const today = new Date().toISOString().split('T')[0];
       const { data: overdueChecks } = await supabase
         .from('checks')
-        .select('id, rides(ride_name)')
+        .select('id')
         .eq('user_id', user?.id)
         .eq('status', 'pending')
         .eq('is_test_data', false)
         .lt('check_date', today);
 
       if (overdueChecks && overdueChecks.length > 0) {
-        await createNotification(
-          'Overdue Checks',
-          `You have ${overdueChecks.length} overdue check(s) requiring immediate attention.`,
-          'warning'
-        );
+        await createNotification('Overdue Checks', `You have ${overdueChecks.length} overdue check(s) requiring immediate attention.`, 'warning');
       }
 
-      // Check for documents expiring soon
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 
       const { data: expiringDocs } = await supabase
         .from('documents')
-        .select('id, document_name')
+        .select('id')
         .eq('user_id', user?.id)
         .not('expires_at', 'is', null)
         .lte('expires_at', thirtyDaysFromNow.toISOString().split('T')[0]);
 
       if (expiringDocs && expiringDocs.length > 0) {
-        await createNotification(
-          'Documents Expiring Soon',
-          `${expiringDocs.length} document(s) will expire within 30 days. Please review and renew as needed.`,
-          'warning'
-        );
+        await createNotification('Documents Expiring Soon', `${expiringDocs.length} document(s) will expire within 30 days. Please review and renew as needed.`, 'warning');
       }
     } catch (error) {
       console.error('Error generating system notifications:', error);
     }
   };
 
-  const createNotification = async (title: string, message: string, type: 'info' | 'warning' | 'error' | 'success') => {
+  const createNotification = async (title: string, message: string, type: string) => {
     try {
-      // Check if similar notification exists in the last 24 hours
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
 
@@ -140,342 +180,166 @@ const NotificationCenter = () => {
         .eq('title', title)
         .gte('created_at', yesterday.toISOString());
 
-      if (existing && existing.length > 0) {
-        return; // Don't create duplicate notifications
-      }
+      if (existing && existing.length > 0) return;
 
-      const { error } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: user?.id,
-          title,
-          message,
-          type,
-        });
-
-      if (error) throw error;
+      await supabase.from('notifications').insert({ user_id: user?.id, title, message, type });
     } catch (error) {
       console.error('Error creating notification:', error);
     }
   };
 
-  const markAsRead = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', notificationId)
-        .eq('user_id', user?.id);
-
-      if (error) throw error;
-
-      setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
-      );
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
-    }
+  const markAsRead = async (id: string) => {
+    await supabase.from('notifications').update({ is_read: true }).eq('id', id).eq('user_id', user?.id);
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
   };
 
   const markAllAsRead = async () => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', user?.id)
-        .eq('is_read', false);
-
-      if (error) throw error;
-
-      setNotifications(prev => 
-        prev.map(n => ({ ...n, is_read: true }))
-      );
-
-      toast({
-        title: "All notifications marked as read",
-        description: "Your notification list has been cleared",
-      });
-    } catch (error) {
-      console.error('Error marking all as read:', error);
-    }
+    await supabase.from('notifications').update({ is_read: true }).eq('user_id', user?.id).eq('is_read', false);
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    toast({ title: 'All notifications marked as read' });
   };
 
-  const deleteNotification = async (notificationId: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .delete()
-        .eq('id', notificationId)
-        .eq('user_id', user?.id);
-
-      if (error) throw error;
-
-      setNotifications(prev => prev.filter(n => n.id !== notificationId));
-    } catch (error) {
-      console.error('Error deleting notification:', error);
-    }
+  const deleteNotification = async (id: string) => {
+    await supabase.from('notifications').delete().eq('id', id).eq('user_id', user?.id);
+    setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  const getNotificationIcon = (type: string) => {
-    switch (type) {
-      case 'warning': return <AlertTriangle className="h-4 w-4 text-amber-600" />;
-      case 'error': return <X className="h-4 w-4 text-destructive" />;
-      case 'success': return <CheckCircle className="h-4 w-4 text-emerald-600" />;
-      case 'bug_status': return <Bug className="h-4 w-4 text-purple-600" />;
-      default: return <Info className="h-4 w-4 text-blue-600" />;
-    }
-  };
+  // Filtered + priority-sorted list
+  const filtered = useMemo(() => {
+    const list = activeTab === 'all'
+      ? notifications
+      : notifications.filter(n => getCategory(n) === activeTab);
+    return [...list].sort((a, b) => getPriority(a) - getPriority(b));
+  }, [notifications, activeTab]);
 
-  const getNotificationStyle = (type: string) => {
-    switch (type) {
-      case 'warning': return 'border-l-amber-500 bg-amber-50/50 dark:bg-amber-950/20';
-      case 'error': return 'border-l-red-500 bg-red-50/50 dark:bg-red-950/20';
-      case 'success': return 'border-l-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/20';
-      case 'bug_status': return 'border-l-purple-500 bg-purple-50/50 dark:bg-purple-950/20';
-      default: return 'border-l-blue-500 bg-blue-50/50 dark:bg-blue-950/20';
-    }
-  };
-
+  const grouped = useMemo(() => groupByDate(filtered), [filtered]);
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-16 bg-muted rounded animate-pulse" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-3">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="h-20 rounded-[14px] bg-[#F1F5F9] animate-pulse" />
+        ))}
+      </div>
     );
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              {unreadCount > 0 ? (
-                <BellRing className="h-5 w-5 text-amber-600" />
-              ) : (
-                <Bell className="h-5 w-5" />
-              )}
-              Notifications
-              {unreadCount > 0 && (
-                <Badge variant="destructive" className="text-xs">
-                  {unreadCount}
-                </Badge>
-              )}
-            </CardTitle>
-            <CardDescription>
-              Stay updated with important alerts and reminders
-            </CardDescription>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant={activeTab === 'notifications' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setActiveTab('notifications')}
-            >
-              Notifications
-            </Button>
-            <Button
-              variant={activeTab === 'settings' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setActiveTab('settings')}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-      
-      <CardContent>
-        {activeTab === 'notifications' ? (
-          <div className="space-y-4">
-            {/* Actions */}
-            {notifications.length > 0 && unreadCount > 0 && (
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={markAllAsRead}
-                >
-                  <Check className="h-4 w-4 mr-2" />
-                  Mark All Read
-                </Button>
-              </div>
+    <div className="space-y-5">
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {FILTER_TABS.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={cn(
+              'px-3.5 py-1.5 rounded-full text-sm font-medium transition-all',
+              activeTab === tab.id
+                ? 'bg-[#1E3A5F] text-white'
+                : 'bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]'
             )}
+          >
+            {tab.label}
+            {tab.id === 'all' && unreadCount > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#DC2626] text-white text-[10px] font-bold">
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </button>
+        ))}
 
-            {/* Notifications List */}
-            {notifications.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
-                <Bell className="mx-auto h-12 w-12 mb-4 opacity-50" />
-                <p>No notifications</p>
-                <p className="text-sm">You're all caught up!</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {notifications.map((notification) => (
-                  <div 
-                    key={notification.id}
+        {unreadCount > 0 && (
+          <button
+            onClick={markAllAsRead}
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[#475569] bg-[#F1F5F9] hover:bg-[#E2E8F0] transition-all"
+          >
+            <Check className="h-3.5 w-3.5" />
+            Mark all read
+          </button>
+        )}
+      </div>
+
+      {/* Notification Feed */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-16 bg-white border border-[#E2E8F0] rounded-2xl">
+          <Bell className="mx-auto h-10 w-10 text-[#CBD5E1] mb-3" />
+          <p className="text-sm font-semibold text-[#0F172A]">No notifications</p>
+          <p className="text-xs text-[#64748B] mt-1">You're all caught up!</p>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {grouped.map(group => (
+            <div key={group.label}>
+              {/* Group heading */}
+              <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-3">
+                {group.label}
+              </p>
+              <div className="space-y-2">
+                {group.items.map(n => (
+                  <div
+                    key={n.id}
+                    onClick={() => { if (!n.is_read) markAsRead(n.id); }}
                     className={cn(
-                      "border-l-4 p-4 rounded-lg transition-smooth",
-                      getNotificationStyle(notification.type),
-                      !notification.is_read && "ring-1 ring-primary/20"
+                      'flex gap-0 bg-white border border-[#E2E8F0] rounded-[14px] overflow-hidden shadow-[0_2px_6px_rgba(0,0,0,0.05)] transition-all cursor-pointer',
+                      !n.is_read && 'ring-1 ring-[#1E3A5F]/10'
                     )}
                   >
-                    <div className="flex items-start justify-between space-x-4">
-                      <div className="flex items-start space-x-3 flex-1">
-                        {getNotificationIcon(notification.type)}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center space-x-2">
-                            <h4 className="font-medium text-sm">
-                              {notification.title}
-                            </h4>
-                            {!notification.is_read && (
-                              <div className="w-2 h-2 bg-primary rounded-full" />
-                            )}
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {notification.message}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
-                          </p>
-                        </div>
+                    {/* Left colour bar */}
+                    <div className={cn('w-1 flex-shrink-0', getBarColor(n))} />
+
+                    <div className="flex-1 flex items-start gap-3 p-3.5">
+                      {/* Icon */}
+                      <div className="flex-shrink-0 mt-0.5">
+                        {getIcon(n)}
                       </div>
-                      <div className="flex items-center space-x-2 shrink-0">
-                        {!notification.is_read && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => markAsRead(notification.id)}
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold text-[#0F172A] leading-tight">
+                            {n.title}
+                          </p>
+                          {!n.is_read && (
+                            <span className="flex-shrink-0 w-2 h-2 rounded-full bg-[#1E3A5F]" />
+                          )}
+                        </div>
+                        <p className="text-xs text-[#64748B] mt-0.5 leading-relaxed">
+                          {n.message}
+                        </p>
+                        <p className="text-[11px] text-[#94A3B8] mt-1.5">
+                          {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                        </p>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {!n.is_read && (
+                          <button
+                            onClick={e => { e.stopPropagation(); markAsRead(n.id); }}
+                            className="p-1 rounded-lg text-[#94A3B8] hover:text-[#475569] hover:bg-[#F1F5F9] transition-all"
+                            title="Mark as read"
                           >
-                            <Check className="h-4 w-4" />
-                          </Button>
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
                         )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteNotification(notification.id)}
+                        <button
+                          onClick={e => { e.stopPropagation(); deleteNotification(n.id); }}
+                          className="p-1 rounded-lg text-[#94A3B8] hover:text-[#DC2626] hover:bg-red-50 transition-all"
+                          title="Dismiss"
                         >
-                          <X className="h-4 w-4" />
-                        </Button>
+                          <X className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Notification Settings */}
-            <div className="space-y-4">
-              <h3 className="font-medium">Notification Preferences</h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="email-notifications">Email Notifications</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receive notifications via email
-                    </p>
-                  </div>
-                  <Switch
-                    id="email-notifications"
-                    checked={settings.emailNotifications}
-                    onCheckedChange={(checked) => 
-                      setSettings(prev => ({ ...prev, emailNotifications: checked }))
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="inspection-reminders">Inspection Reminders</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Get notified about upcoming and overdue inspections
-                    </p>
-                  </div>
-                  <Switch
-                    id="inspection-reminders"
-                    checked={settings.inspectionReminders}
-                    onCheckedChange={(checked) => 
-                      setSettings(prev => ({ ...prev, inspectionReminders: checked }))
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="document-expiry">Document Expiry Alerts</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Alerts when documents are approaching expiration
-                    </p>
-                  </div>
-                  <Switch
-                    id="document-expiry"
-                    checked={settings.documentExpiry}
-                    onCheckedChange={(checked) => 
-                      setSettings(prev => ({ ...prev, documentExpiry: checked }))
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="maintenance-reminders">Maintenance Reminders</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Notifications for scheduled maintenance
-                    </p>
-                  </div>
-                  <Switch
-                    id="maintenance-reminders"
-                    checked={settings.maintenanceReminders}
-                    onCheckedChange={(checked) => 
-                      setSettings(prev => ({ ...prev, maintenanceReminders: checked }))
-                    }
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label htmlFor="system-updates">System Updates</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Information about new features and updates
-                    </p>
-                  </div>
-                  <Switch
-                    id="system-updates"
-                    checked={settings.systemUpdates}
-                    onCheckedChange={(checked) => 
-                      setSettings(prev => ({ ...prev, systemUpdates: checked }))
-                    }
-                  />
-                </div>
-              </div>
-
-              <Button 
-                onClick={() => {
-                  toast({
-                    title: "Settings saved",
-                    description: "Your notification preferences have been updated",
-                  });
-                }}
-              >
-                Save Preferences
-              </Button>
             </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 
