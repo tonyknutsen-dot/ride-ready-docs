@@ -242,8 +242,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const exportToPDF = async () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 20;
+    const docId = generateDocId('CHECK');
 
     // Fetch profile for company branding
     const { data: profile } = await supabase
@@ -252,26 +251,18 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       .eq('user_id', user?.id)
       .single();
 
-    // Fetch company logo if available
+    // Fetch company logo
     let logoDataUrl: string | null = null;
     if (profile?.company_logo_path) {
       try {
         const { data: logoBlob } = await supabase.storage
           .from('ride-documents')
           .download(profile.company_logo_path);
-        if (logoBlob) {
-          logoDataUrl = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(logoBlob);
-          });
-        }
-      } catch (e) {
-        console.log('Could not load company logo');
-      }
+        if (logoBlob) logoDataUrl = await blobToDataUrl(logoBlob);
+      } catch (_) { /* skip */ }
     }
 
-    // Fetch ride image if available
+    // Fetch ride image
     const { data: rideImageDoc } = await supabase
       .from('documents')
       .select('file_path')
@@ -281,251 +272,102 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       .maybeSingle();
 
     let rideImageDataUrl: string | null = null;
-    let imageW = 40, imageH = 30;
     if (rideImageDoc) {
       try {
         const { data: imageBlob } = await supabase.storage
           .from('ride-documents')
           .download(rideImageDoc.file_path);
-        if (imageBlob) {
-          rideImageDataUrl = await new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve(reader.result as string);
-            reader.readAsDataURL(imageBlob);
-          });
-          
-          // Calculate aspect-ratio-preserving dimensions
-          const img = new Image();
-          await new Promise<void>((resolve) => {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-            img.src = rideImageDataUrl!;
-          });
-          
-          if (img.naturalWidth && img.naturalHeight) {
-            const aspectRatio = img.naturalWidth / img.naturalHeight;
-            const maxW = 40, maxH = 30;
-            if (aspectRatio > maxW / maxH) {
-              imageW = maxW;
-              imageH = maxW / aspectRatio;
-            } else {
-              imageH = maxH;
-              imageW = maxH * aspectRatio;
-            }
-          }
-        }
-      } catch (e) {
-        console.log('Could not load ride image');
-      }
+        if (imageBlob) rideImageDataUrl = await blobToDataUrl(imageBlob);
+      } catch (_) { /* skip */ }
     }
 
-    // Footer handled by drawAllPageFooters
-
-    let currentY = margin;
-
-    // === HEADER SECTION ===
-    // Logo on left, company info centered
-    if (logoDataUrl) {
-      try {
-        doc.addImage(logoDataUrl, 'AUTO', margin, currentY - 5, 18, 18);
-      } catch (e) {
-        console.log('Could not add logo to PDF');
-      }
-    }
-
-    // Company name - always centered on page
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(40, 40, 40);
+    const { startDate, endDate } = getDateRange();
     const companyName = profile?.company_name || profile?.showmen_name || 'Safety Checks Report';
-    doc.text(companyName, pageWidth / 2, currentY, { align: 'center' });
-    currentY += 6;
-
-    // Controller name below company
-    if (profile?.controller_name) {
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100);
-      doc.text(`Controller: ${profile.controller_name}`, pageWidth / 2, currentY, { align: 'center' });
-      currentY += 5;
-    }
-
-    currentY += 8;
-
-    // Report title with underline
-    doc.setFontSize(13);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(50, 50, 50);
     const frequencyLabel = frequency === 'daily' ? 'DAILY' : frequency === 'monthly' ? 'MONTHLY' : frequency === 'yearly' ? 'YEARLY' : frequency.toUpperCase();
-    doc.text(`${frequencyLabel} SAFETY CHECKS REPORT`, pageWidth / 2, currentY, { align: 'center' });
-    currentY += 6;
 
-    // Date range
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(80);
-    doc.text(`Period: ${getDateRange().startDate} to ${getDateRange().endDate}`, pageWidth / 2, currentY, { align: 'center' });
-    currentY += 8;
+    // Standard header
+    let currentY = drawPDFHeader({
+      doc,
+      logoDataUrl,
+      companyName,
+      controllerName: profile?.controller_name,
+      reportTitle: `${frequencyLabel} SAFETY CHECKS`,
+      period: `${startDate} – ${endDate}`,
+      generatedDate: format(new Date(), 'dd MMM yyyy'),
+      docId,
+    });
 
-    // Divider line
-    doc.setDrawColor(180);
-    doc.line(margin, currentY, pageWidth - margin, currentY);
-    currentY += 10;
+    // Equipment details + image
+    currentY = drawSectionTitle(doc, 'Equipment Details', currentY);
+    currentY = await drawEquipmentDetails({
+      doc,
+      y: currentY,
+      fields: [
+        { label: 'Equipment', value: rideName },
+        { label: 'Total Checks', value: String(filteredChecks.length) },
+        { label: 'Pass Rate', value: `${overallStats.passRate}%` },
+        { label: 'Period', value: `${startDate} – ${endDate}` },
+      ],
+      imageDataUrl: rideImageDataUrl,
+    });
 
-    // === EQUIPMENT DETAILS SECTION WITH IMAGE ===
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(50, 50, 50);
-    doc.text('Equipment Details', margin, currentY);
-    currentY += 8;
+    // Summary metrics box
+    currentY = drawSummaryBox(doc, [
+      { label: 'Total Checks', value: String(overallStats.total) },
+      { label: 'Passed', value: String(overallStats.passed), accent: true },
+      { label: 'Failed', value: String(overallStats.failed) },
+      { label: 'Pass Rate', value: `${overallStats.passRate}%`, accent: true },
+    ], currentY);
 
-    const imageX = pageWidth - margin - imageW;
-    const imageY = currentY;
-    const labelWidth = 32;
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(0);
-    doc.text('Name:', margin, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(rideName, margin + labelWidth, currentY);
-    currentY += 6;
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('Total Checks:', margin, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${filteredChecks.length}`, margin + labelWidth, currentY);
-    currentY += 6;
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('Pass Rate:', margin, currentY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`${overallStats.passRate}%`, margin + labelWidth, currentY);
-    currentY += 6;
-
-    // Add ride image on the right side if available - with proper aspect ratio
-    if (rideImageDataUrl) {
-      try {
-        doc.setDrawColor(200);
-        doc.setLineWidth(0.5);
-        doc.rect(imageX - 1, imageY - 1, imageW + 2, imageH + 2);
-        doc.addImage(rideImageDataUrl, 'JPEG', imageX, imageY, imageW, imageH);
-        currentY = Math.max(currentY, imageY + imageH + 5);
-      } catch (e) {
-        console.log('Could not add ride image to PDF');
-      }
-    }
-
-    currentY += 5;
-    doc.setDrawColor(200);
-    doc.line(margin, currentY, pageWidth - margin, currentY);
-    currentY += 10;
-
-    // Summary stats
-    doc.setFontSize(11);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Summary', margin, currentY);
-    currentY += 8;
-
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(34, 139, 34);
-    doc.text(`✓ Passed: ${overallStats.passed}`, margin, currentY);
-    doc.setTextColor(220, 53, 69);
-    doc.text(`✗ Failed: ${overallStats.failed}`, margin + 50, currentY);
-    doc.setTextColor(180, 130, 50);
-    doc.text(`◐ Partial: ${overallStats.partial}`, margin + 100, currentY);
-    doc.setTextColor(0);
-    currentY += 10;
-
-
-    // Each check on its own page
-    for (let i = 0; i < filteredChecks.length; i++) {
-      const check = filteredChecks[i];
+    // Each check record
+    for (const check of filteredChecks) {
       doc.addPage();
-      
-      let currentY = margin;
-      
-      // Header
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text(`Safety Check - ${format(parseISO(check.check_date), 'd MMM yyyy')}`, margin, currentY);
-      currentY += 10;
-      
-      doc.setDrawColor(180);
-      doc.line(margin, currentY, pageWidth - margin, currentY);
-      currentY += 10;
-      
-      // Details
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      
-      const details = [
-        ['Date:', format(parseISO(check.check_date), 'd MMM yyyy')],
-        ['Checked By:', check.inspector_name],
-        ['Frequency:', check.check_frequency],
-        ['Status:', check.status.toUpperCase()],
-      ];
-      
-      if ((check as any).weather_conditions) {
-        details.push(['Weather:', (check as any).weather_conditions]);
-      }
-      if ((check as any).location) {
-        details.push(['Location:', (check as any).location]);
-      }
-      if (check.notes) {
-        details.push(['Notes:', check.notes]);
-      }
-      
-      details.forEach(([label, value]) => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(label, margin, currentY);
-        doc.setFont('helvetica', 'normal');
-        const valueText = doc.splitTextToSize(value, pageWidth - margin - 50);
-        doc.text(valueText, margin + 35, currentY);
-        currentY += Math.max(valueText.length * 5, 7);
+      let y = 20;
+
+      y = drawSectionTitle(doc, `Safety Check — ${format(parseISO(check.check_date), 'd MMM yyyy')}`, y);
+
+      // Details table
+      autoTable(doc, {
+        startY: y,
+        body: [
+          ['Date', format(parseISO(check.check_date), 'd MMM yyyy'), 'Inspector', check.inspector_name],
+          ['Frequency', check.check_frequency, 'Status', check.status.toUpperCase()],
+          ...(((check as any).weather_conditions || (check as any).location) ? [
+            ['Weather', (check as any).weather_conditions || '-', 'Location', (check as any).location || '-'],
+          ] : []),
+        ],
+        styles: { ...PDF_TABLE_BODY_STYLES },
+        alternateRowStyles: PDF_TABLE_ALT_ROW,
+        columnStyles: { 0: { fontStyle: 'bold', cellWidth: 32 }, 2: { fontStyle: 'bold', cellWidth: 32 } },
+        margin: { left: 13, right: 13 },
       });
-      
-      currentY += 5;
-      
-      // Check results if available
+
+      y = (doc as any).lastAutoTable.finalY + 6;
+
       if (check.check_results && check.check_results.length > 0) {
-        doc.setDrawColor(200);
-        doc.line(margin, currentY, pageWidth - margin, currentY);
-        currentY += 8;
-        
-        doc.setFontSize(11);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Check Items', margin, currentY);
-        currentY += 8;
-        
         const passed = check.check_results.filter(r => r.result === 'pass' || (r.result === null && r.is_checked)).length;
         const failed = check.check_results.filter(r => r.result === 'fail').length;
         const total = check.check_results.length;
-        
-        doc.setFontSize(10);
+
+        y = drawSummaryBox(doc, [
+          { label: 'Items Checked', value: String(total) },
+          { label: 'Passed', value: String(passed), accent: true },
+          { label: 'Failed', value: String(failed) },
+          { label: 'Result', value: failed === 0 ? 'PASS' : 'FAIL', accent: failed === 0 },
+        ], y);
+      }
+
+      if (check.notes) {
+        y = drawSectionTitle(doc, 'Notes', y);
         doc.setFont('helvetica', 'normal');
-        doc.text(`${passed} pass, ${failed} fail, ${total - passed - failed} N/A`, margin, currentY);
-        currentY += 8;
-        
-        // Status indicator
-        if (failed === 0 && passed === total) {
-          doc.setTextColor(34, 139, 34);
-          doc.text('✓ ALL CHECKS PASSED', margin, currentY);
-        } else if (failed > 0) {
-          doc.setTextColor(220, 53, 69);
-          doc.text(`✗ ${failed} ITEM(S) FAILED`, margin, currentY);
-        } else {
-          doc.setTextColor(100);
-          doc.text(`${passed} of ${total} items checked`, margin, currentY);
-        }
-        doc.setTextColor(0);
+        doc.setFontSize(8.5);
+        doc.setTextColor(...PDF_COLORS.body);
+        const lines = doc.splitTextToSize(check.notes, pageWidth - 26);
+        doc.text(lines, 13, y);
       }
     }
 
-    // Add standardised footers to all pages
-    drawAllPageFooters(doc);
-
+    drawAllPageFooters(doc, docId);
     doc.save(buildFileName([rideName, frequency, 'SafetyChecks', format(new Date(), 'yyyyMMdd')]));
 
     toast({
