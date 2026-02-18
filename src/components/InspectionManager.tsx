@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CheckSquare, CalendarRange, ArrowRight, Sparkles } from 'lucide-react';
+import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import InspectionChecklist from './InspectionChecklist';
 import NDTScheduleManager from './NDTScheduleManager';
@@ -14,6 +12,7 @@ import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
+
 
 interface InspectionManagerProps {
   ride: Ride;
@@ -144,45 +143,39 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   };
 
   const renderFrequencyContent = (frequency: string, label: string) => (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Next frequency prompt */}
       {showNextPrompt && activeTab === getTabForPrompt(frequency) && (
-        <Card className="border-success/30 bg-gradient-to-r from-success/5 to-success/10">
-          <CardContent className="py-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <div className="flex items-center gap-2 flex-1 min-w-0">
-                <Sparkles className="h-5 w-5 text-success shrink-0" />
-                <div>
-                  <p className="font-medium text-sm">Checklist saved! Set up your {FREQUENCY_LABELS[showNextPrompt]} checklist next?</p>
-                  <p className="text-xs text-muted-foreground">Keep going to get all your checks ready.</p>
-                </div>
-              </div>
-              <div className="flex gap-2 shrink-0">
-                <Button size="sm" variant="outline" onClick={handleDismissPrompt}>
-                  Later
-                </Button>
-                <Button size="sm" onClick={() => handleGoToNext(showNextPrompt)} className="gap-1.5">
-                  Set up {FREQUENCY_LABELS[showNextPrompt]} <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-success/5 border border-success/30 rounded-xl px-4 py-3">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
+            <Sparkles className="h-4 w-4 text-success shrink-0" />
+            <div>
+              <p className="font-medium text-sm">Checklist saved! Set up your {FREQUENCY_LABELS[showNextPrompt]} checklist next?</p>
+              <p className="text-xs text-muted-foreground">Keep going to get all your checks ready.</p>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <Button size="sm" variant="outline" onClick={handleDismissPrompt}>Later</Button>
+            <Button size="sm" onClick={() => handleGoToNext(showNextPrompt)} className="gap-1.5">
+              Set up {FREQUENCY_LABELS[showNextPrompt]} <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
       )}
 
       <Tabs defaultValue="perform" className="space-y-4 relative z-10">
-        <TabsList className="grid grid-cols-2 w-full h-auto p-1 gap-1">
-          <TabsTrigger value="perform" className="py-3 px-2 text-sm font-medium">
+        <TabsList className="grid grid-cols-2 w-full h-10 p-1">
+          <TabsTrigger value="perform" className="text-sm font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground rounded-md">
             Perform
           </TabsTrigger>
-          <TabsTrigger value="history" className="py-3 px-2 text-sm font-medium">
+          <TabsTrigger value="history" className="text-sm font-medium rounded-md">
             History
           </TabsTrigger>
         </TabsList>
         <TabsContent value="perform">
-          <InspectionChecklist 
-            ride={ride} 
-            frequency={frequency} 
+          <InspectionChecklist
+            ride={ride}
+            frequency={frequency}
             onChecklistSaved={() => handleChecklistSaved(frequency)}
           />
         </TabsContent>
@@ -197,138 +190,107 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const getTabForPrompt = (frequency: string) => frequency;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <ChecksOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
-      
-      {/* Summary Card */}
-      <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-accent/5">
-        <CardContent className="py-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <CheckSquare className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <p className="font-semibold text-lg">{checkCounts.total} Total Checks</p>
-                <p className="text-xs text-muted-foreground">All recorded safety checks for this equipment</p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              {FREQUENCY_ORDER.map(freq => {
-                const icons: Record<string, any> = {
-                  preopening: PlayCircle, daily: Clock, weekly: CalendarRange, monthly: Calendar, yearly: CalendarDays,
-                };
-                const Icon = icons[freq];
-                const hasTemplate = templateStatus[freq];
-                return (
-                  <Badge 
-                    key={freq} 
-                    variant="outline" 
-                    className={`text-xs bg-background ${hasTemplate ? '' : 'opacity-50'}`}
-                  >
-                    <Icon className="h-3 w-3 mr-1" />
-                    {checkCounts[freq]} {FREQUENCY_LABELS[freq]}
-                    {hasTemplate && <CheckSquare className="h-2.5 w-2.5 ml-1 text-success" />}
-                  </Badge>
-                );
-              })}
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      {/* Help button */}
-      <div className="flex justify-end">
+
+      {/* Check Count Summary Strip — muted, informational */}
+      <div className="flex items-center justify-between gap-2 px-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          {FREQUENCY_ORDER.map(freq => {
+            const icons: Record<string, any> = {
+              preopening: PlayCircle, daily: Clock, weekly: CalendarRange, monthly: Calendar, yearly: CalendarDays,
+            };
+            const Icon = icons[freq];
+            const hasTemplate = templateStatus[freq];
+            return (
+              <button
+                key={freq}
+                onClick={() => { setActiveTab(freq); setShowNextPrompt(null); }}
+                className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                  hasTemplate
+                    ? 'border-border bg-card text-foreground hover:border-primary/40'
+                    : 'border-border/50 bg-muted/30 text-muted-foreground opacity-60'
+                }`}
+              >
+                <Icon className="h-3 w-3" />
+                <span>{checkCounts[freq]}</span>
+                <span className="hidden sm:inline">{FREQUENCY_LABELS[freq]}</span>
+              </button>
+            );
+          })}
+        </div>
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setShowGuide(true)}
-          className="text-muted-foreground hover:text-foreground"
+          className="text-muted-foreground hover:text-foreground h-7 px-2 flex-shrink-0"
         >
-          <HelpCircle className="h-4 w-4" />
-          <span className="ml-1">How does it work?</span>
+          <HelpCircle className="h-3.5 w-3.5" />
         </Button>
       </div>
-      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setShowNextPrompt(null); }} className="space-y-6 relative">
-        {/* Mobile-friendly scrollable tabs */}
-        <div className="overflow-x-auto -mx-4 px-4 pb-2">
-          <TabsList className="inline-flex gap-2 p-1.5 bg-muted/60 h-auto min-w-max">
-            <TabsTrigger 
-              value="preopening" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
-            >
-              <PlayCircle className="h-5 w-5" />
-              <span>Pre-Opening</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="daily" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
-            >
-              <Clock className="h-5 w-5" />
-              <span>Daily</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="weekly" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
-            >
-              <CalendarRange className="h-5 w-5" />
-              <span>Weekly</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="monthly" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
-            >
-              <Calendar className="h-5 w-5" />
-              <span>Monthly</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="yearly" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
-            >
-              <CalendarDays className="h-5 w-5" />
-              <span>Yearly</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="annual" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
-            >
-              <Building className="h-5 w-5" />
-              <span>Annual Inspections</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="ndt" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
-            >
-              <TestTube className="h-5 w-5" />
-              <span>NDT</span>
-            </TabsTrigger>
-            <TabsTrigger 
-              value="reports" 
-              className="flex flex-col items-center justify-center gap-1 py-3 px-4 text-xs font-medium text-muted-foreground data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm rounded-lg min-w-[70px] min-h-[56px]"
-            >
-              <FileText className="h-5 w-5" />
-              <span>Reports</span>
-            </TabsTrigger>
-          </TabsList>
+
+      <Tabs value={activeTab} onValueChange={(v) => { setActiveTab(v); setShowNextPrompt(null); }} className="space-y-5 relative">
+        {/* Frequency selector — check-type cards with strong active state */}
+        <div className="overflow-x-auto -mx-4 px-4 pb-1">
+          <div className="inline-flex gap-2 min-w-max">
+            {[
+              { value: 'preopening', label: 'Pre-Opening', Icon: PlayCircle },
+              { value: 'daily',      label: 'Daily',       Icon: Clock },
+              { value: 'weekly',     label: 'Weekly',      Icon: CalendarRange },
+              { value: 'monthly',    label: 'Monthly',     Icon: Calendar },
+              { value: 'yearly',     label: 'Yearly',      Icon: CalendarDays },
+            ].map(({ value, label, Icon }) => {
+              const isActive = activeTab === value;
+              const hasTemplate = templateStatus[value];
+              return (
+                <button
+                  key={value}
+                  onClick={() => { setActiveTab(value); setShowNextPrompt(null); }}
+                  className={`flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl border-2 transition-all min-w-[72px] font-medium text-xs ${
+                    isActive
+                      ? 'bg-primary border-primary text-primary-foreground shadow-md'
+                      : 'bg-card border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                  }`}
+                >
+                  <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
+                  <span>{label}</span>
+                  {hasTemplate && !isActive && (
+                    <span className="w-1.5 h-1.5 rounded-full bg-success" />
+                  )}
+                </button>
+              );
+            })}
+            {/* Separator before admin tabs */}
+            <div className="w-px bg-border self-stretch mx-1" />
+            {[
+              { value: 'annual',  label: 'Annual',   Icon: Building },
+              { value: 'ndt',     label: 'NDT',      Icon: TestTube },
+              { value: 'reports', label: 'Reports',  Icon: FileText },
+            ].map(({ value, label, Icon }) => {
+              const isActive = activeTab === value;
+              return (
+                <button
+                  key={value}
+                  onClick={() => { setActiveTab(value); setShowNextPrompt(null); }}
+                  className={`flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl border-2 transition-all min-w-[72px] font-medium text-xs ${
+                    isActive
+                      ? 'bg-primary border-primary text-primary-foreground shadow-md'
+                      : 'bg-card border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                  }`}
+                >
+                  <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
+                  <span>{label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {/* Pre-Opening Check */}
         <TabsContent value="preopening" className="relative">
-          <div className="space-y-6 relative z-0">
-            <Card className="border-primary/20 bg-primary/5">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <PlayCircle className="h-5 w-5 text-primary" />
-                  Pre-Opening Safety Check
-                </CardTitle>
-                <CardDescription>
-                  Complete this check before opening to the public each day. Ensures all safety systems are working.
-                </CardDescription>
-              </CardHeader>
-            </Card>
-            {renderFrequencyContent('preopening', 'Pre-Opening')}
-          </div>
+          {renderFrequencyContent('preopening', 'Pre-Opening')}
         </TabsContent>
+
 
         <TabsContent value="daily" className="relative">
           {renderFrequencyContent('daily', 'Daily')}
