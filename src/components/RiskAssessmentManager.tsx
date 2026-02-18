@@ -1122,8 +1122,17 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
       case 'low': return 'bg-green-100 text-green-800';
       case 'medium': return 'bg-yellow-100 text-yellow-800';
       case 'high': return 'bg-red-100 text-red-800';
+      case 'critical': return 'bg-red-900 text-white';
       default: return 'bg-gray-100 text-gray-800';
     }
+  };
+
+  // Full-width severity strip config
+  const SEVERITY_STRIP: Record<string, { bg: string; text: string; border: string; label: string }> = {
+    low:      { bg: 'bg-green-50',   text: 'text-green-800',   border: 'border-green-200', label: 'LOW RISK' },
+    medium:   { bg: 'bg-yellow-50',  text: 'text-amber-900',   border: 'border-yellow-200', label: 'MEDIUM RISK' },
+    high:     { bg: 'bg-red-50',     text: 'text-red-900',     border: 'border-red-200',    label: 'HIGH RISK' },
+    critical: { bg: 'bg-red-900',    text: 'text-white',       border: 'border-red-900',    label: 'CRITICAL RISK' },
   };
 
   const getDueDateStatus = (targetDate: string | null, status: string) => {
@@ -1157,6 +1166,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     }
     return null;
   };
+
 
   const exportToPDF = async () => {
     if (!selectedAssessment) return;
@@ -1648,99 +1658,131 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           <div className="flex items-center justify-between px-1">
             <h3 className="text-sm font-medium text-muted-foreground">Risk Items ({assessmentItems.length})</h3>
           </div>
-          {assessmentItems.map((item) => (
-            <Card key={item.id} className="hover:shadow-sm transition-shadow">
-              <CardContent className="p-4">
-                <div className="space-y-3">
-                  {/* Header Row */}
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2 flex-wrap">
-                        <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${getRiskColor(item.risk_level)}`}>
-                          {item.risk_level.toUpperCase()}
-                        </span>
-                        <span className="text-xs px-2 py-0.5 rounded-md bg-muted">
-                          {item.status === 'open' && 'Open'}
-                          {item.status === 'in_progress' && 'In Progress'}
-                          {item.status === 'completed' && 'Completed'}
-                        </span>
-                        {getDueDateStatus(item.target_date, item.status) && (
-                          <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getDueDateStatus(item.target_date, item.status)?.className}`}>
-                            {getDueDateStatus(item.target_date, item.status)?.label}
-                          </span>
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          L: {item.likelihood} • S: {item.severity}
-                        </span>
-                      </div>
-                      <h4 className="font-semibold text-sm leading-tight">{item.hazard_description}</h4>
-                    </div>
-                    <div className="flex gap-1 shrink-0">
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-8 w-8 p-0"
-                        onClick={() => {
-                          setEditingItem(item);
-                          setItemFormData(item);
-                          setShowItemDialog(true);
-                        }}
-                      >
-                        <FileText className="h-4 w-4" />
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-8 w-8 p-0 hover:bg-destructive/10"
-                        onClick={() => handleDeleteItem(item.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
+          {assessmentItems.map((item) => {
+            const strip = SEVERITY_STRIP[item.risk_level] || SEVERITY_STRIP.low;
+            const dueDateStatus = getDueDateStatus(item.target_date, item.status);
+            const isOverdue = dueDateStatus?.icon === 'overdue';
+            // Numeric risk score from L × S
+            const lScore = (LIKELIHOOD_SCORES[item.likelihood as LikelihoodKey] ?? 0) as number;
+            const sScore = (SEVERITY_SCORES[item.severity as SeverityKey] ?? 0) as number;
+            const riskScore = lScore * sScore;
 
-                  {/* Compact Details Grid */}
-                  <div className="grid grid-cols-2 gap-2 text-xs border-t pt-3">
-                    <div>
-                      <span className="text-muted-foreground">Who at Risk:</span>
-                      <p className="font-medium mt-0.5">{item.who_at_risk}</p>
-                    </div>
-                    {item.existing_controls && (
-                      <div className="col-span-2">
-                        <span className="text-muted-foreground">Controls:</span>
-                        <p className="font-medium mt-0.5 line-clamp-2">{item.existing_controls}</p>
-                      </div>
-                    )}
-                    {item.additional_actions && (
-                      <div className="col-span-2">
-                        <span className="text-muted-foreground">Actions:</span>
-                        <p className="font-medium mt-0.5">{item.additional_actions}</p>
-                      </div>
-                    )}
+            return (
+            <Card
+              key={item.id}
+              className={`overflow-hidden transition-shadow hover:shadow-md ${isOverdue ? 'border-l-4 border-l-red-500' : ''}`}
+            >
+              {/* Severity Banner */}
+              <div className={`flex items-center justify-between px-4 py-2 ${strip.bg} border-b ${strip.border}`}>
+                <span className={`text-xs font-bold tracking-widest uppercase ${strip.text}`}>
+                  {strip.label}
+                </span>
+                <div className="flex items-center gap-2">
+                  {/* Risk Score chip */}
+                  <span className="text-xs font-semibold bg-white/70 border border-black/10 px-2 py-0.5 rounded-full text-gray-700">
+                    Score: {riskScore}/25
+                  </span>
+                  {/* Item status */}
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
+                    item.status === 'completed' ? 'bg-green-100 text-green-800 border-green-200' :
+                    item.status === 'in_progress' ? 'bg-blue-100 text-blue-800 border-blue-200' :
+                    'bg-gray-100 text-gray-700 border-gray-200'
+                  }`}>
+                    {item.status === 'open' && 'Open'}
+                    {item.status === 'in_progress' && 'In Progress'}
+                    {item.status === 'completed' && 'Completed'}
+                  </span>
+                </div>
+              </div>
+
+              <CardContent className="p-4 space-y-3">
+                {/* Hazard title + actions */}
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs text-muted-foreground mb-0.5">
+                      L: {item.likelihood} · S: {item.severity}
+                      {item.is_manually_overridden && <span className="ml-1 text-amber-600">· Override*</span>}
+                    </p>
+                    <h4 className="font-semibold text-sm leading-snug">{item.hazard_description}</h4>
+                  </div>
+                  <div className="flex gap-1 shrink-0">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="h-8 w-8 p-0"
+                      onClick={() => {
+                        setEditingItem(item);
+                        setItemFormData(item);
+                        setShowItemDialog(true);
+                      }}
+                    >
+                      <FileText className="h-4 w-4" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      className="h-8 w-8 p-0 hover:bg-destructive/10"
+                      onClick={() => handleDeleteItem(item.id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Who at Risk */}
+                <div className="text-xs">
+                  <span className="text-muted-foreground font-medium">Who at Risk: </span>
+                  <span className="font-semibold">{item.who_at_risk}</span>
+                </div>
+
+                {/* Controls in Place — green section */}
+                {item.existing_controls && (
+                  <div className="rounded-lg bg-green-50 border border-green-100 px-3 py-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-green-700 mb-1">✓ Controls in Place</p>
+                    <p className="text-xs text-green-900 leading-snug">{item.existing_controls}</p>
+                  </div>
+                )}
+
+                {/* Further Actions — amber section */}
+                {item.additional_actions && (
+                  <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-1">⚡ Further Actions Required</p>
+                    <p className="text-xs text-amber-900 leading-snug">{item.additional_actions}</p>
+                  </div>
+                )}
+
+                {/* Owner + Due — accountability row */}
+                {(item.action_owner || item.target_date) && (
+                  <div className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 border ${isOverdue ? 'bg-red-50 border-red-100' : 'bg-muted/40 border-border'}`}>
                     {item.action_owner && (
-                      <div>
-                        <span className="text-muted-foreground">Owner:</span>
-                        <p className="font-medium mt-0.5">{item.action_owner}</p>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+                          <span className="text-[10px] font-bold text-primary">
+                            {item.action_owner.substring(0, 2).toUpperCase()}
+                          </span>
+                        </div>
+                        <span className="text-xs font-medium truncate">{item.action_owner}</span>
                       </div>
                     )}
                     {item.target_date && (
-                      <div>
-                        <span className="text-muted-foreground">Due:</span>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          <p className="font-medium">{format(new Date(item.target_date), 'dd MMM yyyy')}</p>
-                          {getDueDateStatus(item.target_date, item.status) && (
-                            <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${getDueDateStatus(item.target_date, item.status)?.className}`}>
-                              {getDueDateStatus(item.target_date, item.status)?.label}
-                            </span>
-                          )}
-                        </div>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        <span className={`text-xs ${isOverdue ? 'text-red-700 font-semibold' : 'text-muted-foreground'}`}>
+                          Due: {format(new Date(item.target_date), 'dd MMM yyyy')}
+                        </span>
+                        {dueDateStatus && (
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${dueDateStatus.className}`}>
+                            {dueDateStatus.label}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
-                </div>
+                )}
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
+
         </div>
       )}
 
