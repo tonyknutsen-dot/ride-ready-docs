@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 import { RiskAssessmentManager } from '@/components/RiskAssessmentManager';
-import RideSelector from '@/components/RideSelector';
+import RiskAssessmentSelector from '@/components/RiskAssessmentSelector';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, HelpCircle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
@@ -52,7 +52,7 @@ const RiskAssessments = () => {
               icon={<ShieldCheck className="h-5 w-5 text-warning" />}
               iconBgClass="from-warning/20 to-destructive/10"
               title={selectedRide ? selectedRide.ride_name : "Risk Assessments"}
-              subtitle={selectedRide ? "Risk Assessment" : "Identify hazards and implement controls"}
+              subtitle={selectedRide ? "Risk Assessment Register" : "Identify hazards, evaluate risks, and implement control measures"}
               showBackButton
               backTo={selectedRide ? undefined : "/overview"}
               onBack={selectedRide ? handleBack : undefined}
@@ -77,11 +77,7 @@ const RiskAssessments = () => {
           )}
           
           {!selectedRide ? (
-            <RideSelector
-              title="Select Equipment"
-              description="Choose a ride or stall to manage its risk assessments"
-              actionLabel="Manage Risk Assessments"
-              icon={ShieldCheck}
+            <RiskAssessmentSelector
               onRideSelect={handleRideSelect}
             />
           ) : (
