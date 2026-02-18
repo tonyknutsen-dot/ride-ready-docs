@@ -13,7 +13,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { toast } from '@/hooks/use-toast';
-import { Plus, Trash2, Download, Mail, CalendarIcon, Info, ChevronDown, Save, FileText, ArrowLeft, Pencil, History, Send, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Download, Mail, CalendarIcon, Info, ChevronDown, ChevronUp, Save, FileText, ArrowLeft, Pencil, History, Send, Loader2, User, AlertTriangle, CheckCircle2, Grid3x3, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -42,6 +42,7 @@ import { RiskEvaluationPanel, RiskSettings } from './risk-assessment/RiskEvaluat
 import { calculateRisk, LikelihoodKey, SeverityKey, LIKELIHOOD_SCORES, SEVERITY_SCORES } from './risk-assessment/RiskScoring';
 import { RiskSettingsDialog, DEFAULT_RISK_SETTINGS } from './risk-assessment/RiskSettingsDialog';
 import { RiskDisclaimer } from './risk-assessment/RiskDisclaimer';
+import { RiskItemCard } from './risk-assessment/RiskItemCard';
 
 interface RiskAssessmentManagerProps {
   ride: {
@@ -1050,12 +1051,14 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     }
   };
 
-  // Full-width severity strip config
-  const SEVERITY_STRIP: Record<string, { bg: string; text: string; border: string; label: string }> = {
-    low:      { bg: 'bg-green-50',   text: 'text-green-800',   border: 'border-green-200', label: 'LOW RISK' },
-    medium:   { bg: 'bg-yellow-50',  text: 'text-amber-900',   border: 'border-yellow-200', label: 'MEDIUM RISK' },
-    high:     { bg: 'bg-red-50',     text: 'text-red-900',     border: 'border-red-200',    label: 'HIGH RISK' },
-    critical: { bg: 'bg-red-900',    text: 'text-white',       border: 'border-red-900',    label: 'CRITICAL RISK' },
+  // Left-rail severity config — matches ISO colour convention
+  const SEVERITY_STRIP: Record<string, {
+    rail: string; badgeBg: string; badgeText: string; label: string; chipBg: string; chipText: string;
+  }> = {
+    low:      { rail: 'bg-green-500',  badgeBg: 'bg-green-50',  badgeText: 'text-green-800',  label: 'LOW RISK',     chipBg: 'bg-[#DCFCE7]', chipText: 'text-[#166534]' },
+    medium:   { rail: 'bg-amber-400',  badgeBg: 'bg-amber-50',  badgeText: 'text-amber-800',  label: 'MEDIUM RISK',  chipBg: 'bg-[#FEF3C7]', chipText: 'text-[#92400E]' },
+    high:     { rail: 'bg-red-500',    badgeBg: 'bg-red-50',    badgeText: 'text-red-800',    label: 'HIGH RISK',    chipBg: 'bg-[#FEE2E2]', chipText: 'text-[#991B1B]' },
+    critical: { rail: 'bg-[#7F1D1D]', badgeBg: 'bg-red-950',   badgeText: 'text-red-100',    label: 'EXTREME RISK', chipBg: 'bg-[#450a0a]', chipText: 'text-red-200' },
   };
 
   const getDueDateStatus = (targetDate: string | null, status: string) => {
@@ -1402,310 +1405,215 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Section */}
-      <div className="space-y-3">
-        <Button variant="ghost" onClick={() => setSelectedAssessment(null)} size="sm" className="px-2">
-          <ArrowLeft className="h-4 w-4 mr-1" /> Back
-        </Button>
-        
-        <Card>
-          <CardHeader className="pb-3 px-4 sm:px-6">
-            {/* Title & Meta */}
-            <div className="flex items-start gap-3 mb-3">
-              <div className="p-2 bg-primary/10 rounded-lg shrink-0">
-                <FileText className="h-5 w-5 text-primary" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <CardTitle className="text-base sm:text-lg">Risk Assessment</CardTitle>
-                  {selectedAssessment.revision_number && selectedAssessment.revision_number > 1 && (
-                    <span className="text-xs bg-muted px-2 py-0.5 rounded-full">
-                      Rev {selectedAssessment.revision_number}
-                    </span>
-                  )}
-                </div>
-                <CardDescription className="text-xs sm:text-sm mt-0.5">
-                  <span className="font-medium text-foreground">{ride.ride_name}</span>
-                  {' • '}
-                  {format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')} • {selectedAssessment.assessor_name}
-                </CardDescription>
-              </div>
-            </div>
-            
-            {/* Status & Edit Row */}
-            <div className="flex items-center gap-2 flex-wrap mb-3">
-              <Label className="text-xs text-muted-foreground">Status:</Label>
-              <Select value={selectedAssessment.overall_status} onValueChange={handleStatusChange}>
-                <SelectTrigger className="h-8 w-[130px] text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="in_progress">
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                      In Progress
-                    </span>
-                  </SelectItem>
-                  <SelectItem value="completed">
-                    <span className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                      Completed
-                    </span>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-xs"
-                onClick={() => {
-                  setFormData({
-                    assessor_name: selectedAssessment.assessor_name,
-                    assessment_date: selectedAssessment.assessment_date,
-                    review_date: selectedAssessment.review_date || '',
-                    overall_status: selectedAssessment.overall_status,
-                    notes: selectedAssessment.notes || ''
-                  });
-                  setShowEditAssessment(true);
-                }}
-              >
-                <Pencil className="h-3.5 w-3.5 sm:mr-1" /> 
-                <span className="hidden sm:inline">Edit</span>
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-xs"
-                onClick={() => {
-                  loadAuditLog();
-                  setShowAuditHistory(true);
-                }}
-              >
-                <History className="h-3.5 w-3.5 sm:mr-1" /> 
-                <span className="hidden sm:inline">History</span>
-              </Button>
-              <RiskSettingsDialog
-                settings={riskSettings}
-                onSave={handleSaveRiskSettings}
-                saving={savingRiskSettings}
-              />
-            </div>
+    <div className="space-y-4">
+      {/* ── Back nav ── */}
+      <button
+        onClick={() => setSelectedAssessment(null)}
+        className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ArrowLeft className="h-4 w-4" /> Back
+      </button>
 
-            {/* Primary Actions - Full width on mobile */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
-              <Button onClick={() => setShowItemDialog(true)} size="sm" className="bg-primary hover:bg-primary/90 h-9">
-                <Plus className="h-4 w-4 mr-1.5" /> Add Item
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={exportToPDF}
-                className="h-9"
-              >
-                <Download className="h-4 w-4 mr-1.5" /> PDF
-              </Button>
-              <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-block">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={saveToDocuments}
-                        disabled={selectedAssessment.overall_status !== 'completed' || assessmentItems.length === 0}
-                        className="h-9 w-full disabled:opacity-50"
-                      >
-                        <Save className="h-4 w-4 mr-1.5" /> Save
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p className="text-xs max-w-[200px]">
-                      {assessmentItems.length === 0 
-                        ? 'Add risk items before saving' 
-                        : selectedAssessment.overall_status !== 'completed'
-                        ? 'Mark as completed to save'
-                        : 'Save PDF to Documents'}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider delayDuration={0}>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span className="inline-block">
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        onClick={() => setShowEmailDialog(true)}
-                        disabled={assessmentItems.length === 0}
-                        className="h-9 w-full disabled:opacity-50"
-                      >
-                        <Mail className="h-4 w-4 mr-1.5" /> Email
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p className="text-xs max-w-[200px]">
-                      {assessmentItems.length === 0 
-                        ? 'Add risk items before emailing' 
-                        : 'Email as PDF'}
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+      {/* ── Assessment header card ── */}
+      <div
+        className="bg-white rounded-2xl border border-[#E2E8F0] px-4 py-4"
+        style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
+      >
+        {/* Title row */}
+        <div className="flex items-start gap-3 mb-3">
+          <div className="p-2 rounded-xl bg-primary/10 shrink-0">
+            <FileText className="h-5 w-5 text-primary" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-base font-semibold text-foreground">Risk Assessment</span>
+              {selectedAssessment.revision_number && selectedAssessment.revision_number > 1 && (
+                <span className="text-[11px] bg-muted text-muted-foreground px-2 py-0.5 rounded-full font-medium">
+                  Rev {selectedAssessment.revision_number}
+                </span>
+              )}
             </div>
-          </CardHeader>
-        </Card>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              <span className="font-medium text-foreground">{ride.ride_name}</span>
+              {' • '}
+              {format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')}
+              {' • '}
+              {selectedAssessment.assessor_name}
+            </p>
+          </div>
+        </div>
+
+        {/* Status row */}
+        <div className="flex items-center gap-2 flex-wrap mb-4">
+          <Label className="text-xs text-muted-foreground shrink-0">Status:</Label>
+          <Select value={selectedAssessment.overall_status} onValueChange={handleStatusChange}>
+            <SelectTrigger className="h-8 w-[130px] text-xs rounded-lg">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="in_progress">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-blue-500" />
+                  In Progress
+                </span>
+              </SelectItem>
+              <SelectItem value="completed">
+                <span className="flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-green-500" />
+                  Completed
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs"
+            onClick={() => {
+              setFormData({
+                assessor_name: selectedAssessment.assessor_name,
+                assessment_date: selectedAssessment.assessment_date,
+                review_date: selectedAssessment.review_date || '',
+                overall_status: selectedAssessment.overall_status,
+                notes: selectedAssessment.notes || ''
+              });
+              setShowEditAssessment(true);
+            }}
+          >
+            <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs"
+            onClick={() => { loadAuditLog(); setShowAuditHistory(true); }}
+          >
+            <History className="h-3.5 w-3.5 mr-1" /> History
+          </Button>
+          <RiskSettingsDialog
+            settings={riskSettings}
+            onSave={handleSaveRiskSettings}
+            saving={savingRiskSettings}
+          />
+        </div>
+
+        {/* ── Primary action bar ── */}
+        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+          {/* Add Risk — primary */}
+          <Button
+            onClick={() => setShowItemDialog(true)}
+            className="h-11 rounded-xl bg-primary hover:bg-primary/90 text-white font-semibold text-sm col-span-2 sm:col-span-1"
+          >
+            <Plus className="h-4 w-4 mr-1.5" /> Add Risk
+          </Button>
+
+          {/* PDF */}
+          <Button
+            variant="outline"
+            className="h-11 rounded-xl border border-[#CBD5E1] bg-white font-semibold text-sm"
+            onClick={exportToPDF}
+          >
+            <Download className="h-4 w-4 mr-1.5" /> PDF
+          </Button>
+
+          {/* Save to docs */}
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Button
+                    variant="outline"
+                    className="h-11 rounded-xl border border-[#CBD5E1] bg-white font-semibold text-sm w-full"
+                    onClick={saveToDocuments}
+                    disabled={selectedAssessment.overall_status !== 'completed' || assessmentItems.length === 0}
+                  >
+                    <Save className="h-4 w-4 mr-1.5" /> Save
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs max-w-[200px]">
+                  {assessmentItems.length === 0
+                    ? 'Add risk items before saving'
+                    : selectedAssessment.overall_status !== 'completed'
+                    ? 'Mark as completed to save'
+                    : 'Save PDF to Documents'}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+
+          {/* Email */}
+          <TooltipProvider delayDuration={0}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex">
+                  <Button
+                    variant="outline"
+                    className="h-11 rounded-xl border border-[#CBD5E1] bg-white font-semibold text-sm w-full"
+                    onClick={() => setShowEmailDialog(true)}
+                    disabled={assessmentItems.length === 0}
+                  >
+                    <Mail className="h-4 w-4 mr-1.5" /> Email
+                  </Button>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <p className="text-xs max-w-[200px]">
+                  {assessmentItems.length === 0 ? 'Add risk items before emailing' : 'Email as PDF'}
+                </p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
       </div>
 
       {/* Risk Items Section */}
       {assessmentItems.length === 0 ? (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <div className="mx-auto w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-4">
-              <Plus className="h-6 w-6 text-muted-foreground" />
-            </div>
-            <h3 className="text-lg font-semibold mb-2">No Risk Items Yet</h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              Start by adding hazards and risks to assess
-            </p>
-            <Button onClick={() => setShowItemDialog(true)} className="bg-primary hover:bg-primary/90">
-              <Plus className="h-4 w-4 mr-2" /> Add Your First Risk Item
-            </Button>
-          </CardContent>
-        </Card>
+        <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
+          <div className="mx-auto w-14 h-14 rounded-full bg-muted flex items-center justify-center mb-4">
+            <AlertTriangle className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h3 className="text-base font-semibold mb-1">No Risk Items Yet</h3>
+          <p className="text-sm text-muted-foreground mb-5">Start by adding hazards and risks to this assessment</p>
+          <Button onClick={() => setShowItemDialog(true)} className="bg-primary hover:bg-primary/90 rounded-xl h-11 px-5">
+            <Plus className="h-4 w-4 mr-2" /> Add First Risk Item
+          </Button>
+        </div>
       ) : (
         <div className="space-y-3">
+          {/* Section header */}
           <div className="flex items-center justify-between px-1">
-            <h3 className="text-sm font-medium text-muted-foreground">Risk Items ({assessmentItems.length})</h3>
+            <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+              Risk Items ({assessmentItems.length})
+            </p>
           </div>
+
           {assessmentItems.map((item) => {
             const strip = SEVERITY_STRIP[item.risk_level] || SEVERITY_STRIP.low;
             const dueDateStatus = getDueDateStatus(item.target_date, item.status);
             const isOverdue = dueDateStatus?.icon === 'overdue';
-            // Numeric risk score from L × S
             const lScore = (LIKELIHOOD_SCORES[item.likelihood as LikelihoodKey] ?? 0) as number;
             const sScore = (SEVERITY_SCORES[item.severity as SeverityKey] ?? 0) as number;
             const riskScore = lScore * sScore;
 
             return (
-            <Card
-              key={item.id}
-              className={`overflow-hidden transition-shadow hover:shadow-md ${isOverdue ? 'border-l-4 border-l-red-500' : ''}`}
-            >
-              {/* Severity Banner */}
-              <div className={`flex items-center justify-between px-4 py-2 ${strip.bg} border-b ${strip.border}`}>
-                <span className={`text-xs font-bold tracking-widest uppercase ${strip.text}`}>
-                  {strip.label}
-                </span>
-                <div className="flex items-center gap-2">
-                  {/* Risk Score chip */}
-                  <span className="text-xs font-semibold bg-white/70 border border-black/10 px-2 py-0.5 rounded-full text-gray-700">
-                    Score: {riskScore}/25
-                  </span>
-                  {/* Item status */}
-                  <span className={`text-xs px-2 py-0.5 rounded-full font-medium border ${
-                    item.status === 'completed' ? 'bg-green-100 text-green-800 border-green-200' :
-                    item.status === 'in_progress' ? 'bg-blue-100 text-blue-800 border-blue-200' :
-                    'bg-gray-100 text-gray-700 border-gray-200'
-                  }`}>
-                    {item.status === 'open' && 'Open'}
-                    {item.status === 'in_progress' && 'In Progress'}
-                    {item.status === 'completed' && 'Completed'}
-                  </span>
-                </div>
-              </div>
-
-              <CardContent className="p-4 space-y-3">
-                {/* Hazard title + actions */}
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs text-muted-foreground mb-0.5">
-                      L: {item.likelihood} · S: {item.severity}
-                      {item.is_manually_overridden && <span className="ml-1 text-amber-600">· Override*</span>}
-                    </p>
-                    <h4 className="font-semibold text-sm leading-snug">{item.hazard_description}</h4>
-                  </div>
-                  <div className="flex gap-1 shrink-0">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={() => {
-                        setEditingItem(item);
-                        setItemFormData(item);
-                        setShowItemDialog(true);
-                      }}
-                    >
-                      <FileText className="h-4 w-4" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="h-8 w-8 p-0 hover:bg-destructive/10"
-                      onClick={() => handleDeleteItem(item.id)}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Who at Risk */}
-                <div className="text-xs">
-                  <span className="text-muted-foreground font-medium">Who at Risk: </span>
-                  <span className="font-semibold">{item.who_at_risk}</span>
-                </div>
-
-                {/* Controls in Place — green section */}
-                {item.existing_controls && (
-                  <div className="rounded-lg bg-green-50 border border-green-100 px-3 py-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-green-700 mb-1">✓ Controls in Place</p>
-                    <p className="text-xs text-green-900 leading-snug">{item.existing_controls}</p>
-                  </div>
-                )}
-
-                {/* Further Actions — amber section */}
-                {item.additional_actions && (
-                  <div className="rounded-lg bg-amber-50 border border-amber-100 px-3 py-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-amber-700 mb-1">⚡ Further Actions Required</p>
-                    <p className="text-xs text-amber-900 leading-snug">{item.additional_actions}</p>
-                  </div>
-                )}
-
-                {/* Owner + Due — accountability row */}
-                {(item.action_owner || item.target_date) && (
-                  <div className={`flex items-center justify-between gap-3 rounded-lg px-3 py-2 border ${isOverdue ? 'bg-red-50 border-red-100' : 'bg-muted/40 border-border'}`}>
-                    {item.action_owner && (
-                      <div className="flex items-center gap-2 min-w-0">
-                        <div className="w-6 h-6 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
-                          <span className="text-[10px] font-bold text-primary">
-                            {item.action_owner.substring(0, 2).toUpperCase()}
-                          </span>
-                        </div>
-                        <span className="text-xs font-medium truncate">{item.action_owner}</span>
-                      </div>
-                    )}
-                    {item.target_date && (
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className={`text-xs ${isOverdue ? 'text-red-700 font-semibold' : 'text-muted-foreground'}`}>
-                          Due: {format(new Date(item.target_date), 'dd MMM yyyy')}
-                        </span>
-                        {dueDateStatus && (
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${dueDateStatus.className}`}>
-                            {dueDateStatus.label}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              <RiskItemCard
+                key={item.id}
+                item={item}
+                strip={strip}
+                isOverdue={isOverdue}
+                dueDateStatus={dueDateStatus}
+                riskScore={riskScore}
+                onEdit={() => {
+                  setEditingItem(item);
+                  setItemFormData(item);
+                  setShowItemDialog(true);
+                }}
+                onDelete={() => handleDeleteItem(item.id)}
+              />
             );
           })}
-
         </div>
       )}
 
