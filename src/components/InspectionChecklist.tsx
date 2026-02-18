@@ -73,6 +73,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
   const [checkStarted, setCheckStarted] = useState(false);
   const [checkStartedAt, setCheckStartedAt] = useState<Date | null>(null);
   const [showMaintenanceForItem, setShowMaintenanceForItem] = useState<string | null>(null);
+  const [declarationChecked, setDeclarationChecked] = useState(false);
+
   const { toast } = useToast();
   const { user } = useAuth();
   const { effectiveUserId, isStaff } = useEffectiveUserId();
@@ -1106,6 +1108,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
       setCheckStarted(false);
       setCheckStartedAt(null);
       setShowMaintenanceForItem(null);
+      setDeclarationChecked(false);
 
       // Reload recent checks (will be empty if offline but that's expected)
       if (!isOffline) {
@@ -1253,7 +1256,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
   // Start Check gate — show a start button before revealing the full checklist
   if (!checkStarted && activeTemplate) {
     return (
-      <div id="inspection-checklist-form" className="space-y-6">
+      <div id="inspection-checklist-form" className="space-y-5">
         {/* Checklist Header */}
         <div className="flex items-center justify-between gap-2">
           <h3 className="font-semibold text-base truncate">{activeTemplate.template_name}</h3>
@@ -1279,17 +1282,21 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
         {/* Start Inspection Card — dominant CTA */}
         <div
           className="rounded-2xl overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, hsl(213 52% 24%), hsl(213 52% 34%))', boxShadow: '0 8px 24px rgba(30,58,95,0.25)' }}
+          style={{ background: 'linear-gradient(135deg, hsl(213, 52%, 24%), hsl(213, 52%, 34%))', boxShadow: '0 8px 24px rgba(30,58,95,0.25)' }}
         >
           <div className="px-6 py-7 flex flex-col items-center gap-4">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+            <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
               <PlayCircle className="h-7 w-7 text-white" strokeWidth={2} />
             </div>
-            <div className="text-center">
+            <div className="text-center space-y-1">
               <p className="font-bold text-lg text-white">{activeTemplate.template_name}</p>
-              <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.75)' }}>
-                {activeTemplate.daily_check_template_items.length} inspection items · PDF generated automatically
-              </p>
+              <div className="flex items-center justify-center gap-3 text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
+                <span>{activeTemplate.daily_check_template_items.length} inspection items</span>
+                <span>·</span>
+                <span>PDF auto-saved</span>
+                <span>·</span>
+                <span>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+              </div>
             </div>
             <button
               className="w-full h-14 rounded-xl text-base font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
@@ -1376,74 +1383,46 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
     );
   }
 
+
+
   return (
-    <div id="inspection-checklist-form" className="space-y-6">
-      {/* Started indicator */}
-      {checkStartedAt && (
+    <div id="inspection-checklist-form" className="space-y-5">
+      {/* Inspection header strip — who / when */}
+      <div className="flex items-center justify-between gap-2 px-1">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Clock className="h-3.5 w-3.5" />
-          Check started at {checkStartedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+          <Clock className="h-3.5 w-3.5 shrink-0" />
+          {checkStartedAt ? (
+            <span>Started at <strong className="text-foreground">{checkStartedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</strong> · {checkStartedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+          ) : (
+            <span>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+          )}
+        </div>
+        {!isOnline && (
+          <Badge variant="outline" className="text-xs border-warning text-warning gap-1">
+            <CloudOff className="h-3 w-3" /> Offline
+          </Badge>
+        )}
+      </div>
+
+      {/* Offline / sync banner — compact */}
+      {(!isOnline || usingCachedTemplate || pendingCount > 0) && (
+        <div className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs border ${
+          !isOnline ? 'bg-warning/8 border-warning/30 text-warning' : pendingCount > 0 ? 'bg-info/8 border-info/30 text-info' : 'bg-muted border-muted-foreground/20 text-muted-foreground'
+        }`}>
+          <div className="flex items-center gap-1.5">
+            {!isOnline ? <CloudOff className="h-3.5 w-3.5 shrink-0" /> : pendingCount > 0 ? <RefreshCw className={`h-3.5 w-3.5 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} /> : <WifiOff className="h-3.5 w-3.5 shrink-0" />}
+            <span>
+              {!isOnline ? 'Offline — check saved locally and synced when online' : pendingCount > 0 ? `${pendingCount} check${pendingCount > 1 ? 's' : ''} pending sync` : 'Using cached template'}
+            </span>
+          </div>
+          {isOnline && pendingCount > 0 && !isSyncing && (
+            <button onClick={syncAll} className="font-semibold underline underline-offset-2 shrink-0">Sync</button>
+          )}
         </div>
       )}
 
-      {/* Offline Mode Indicator */}
-      {(!isOnline || usingCachedTemplate || pendingCount > 0) && (
-        <Alert className={`border-2 ${!isOnline ? 'border-warning bg-warning/10' : pendingCount > 0 ? 'border-info bg-info/10' : 'border-muted'}`}>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              {!isOnline ? (
-                <>
-                  <CloudOff className="h-5 w-5 text-warning" />
-                  <div>
-                    <p className="font-medium text-warning">Offline Mode</p>
-                    <p className="text-sm text-muted-foreground">
-                      Your check will be saved locally and synced when you're back online.
-                    </p>
-                  </div>
-                </>
-              ) : pendingCount > 0 ? (
-                <>
-                  <RefreshCw className={`h-5 w-5 text-info ${isSyncing ? 'animate-spin' : ''}`} />
-                  <div>
-                    <p className="font-medium text-info">
-                      {isSyncing ? 'Syncing...' : `${pendingCount} item${pendingCount > 1 ? 's' : ''} to sync`}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {isSyncing ? 'Uploading your saved checks' : 'Tap to sync your offline checks now'}
-                    </p>
-                  </div>
-                </>
-              ) : usingCachedTemplate ? (
-                <>
-                  <WifiOff className="h-5 w-5 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Using Cached Template</p>
-                    <p className="text-sm text-muted-foreground">
-                      Template loaded from offline cache
-                    </p>
-                  </div>
-                </>
-              ) : null}
-            </div>
-            {isOnline && pendingCount > 0 && !isSyncing && (
-              <Button size="sm" variant="outline" onClick={syncAll} className="shrink-0">
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Sync Now
-              </Button>
-            )}
-          </div>
-        </Alert>
-      )}
-
-      {/* Safety Notice */}
-      <div className="p-4 rounded-2xl bg-card border-l-4 border-l-success border border-border/50 shadow-sm">
-        <p className="font-bold text-sm mb-1">Safety First</p>
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Before commencing checks, ensure it is safe to do so. Complete all required items and submit — a PDF record will be automatically saved.
-        </p>
-      </div>
-
       {/* Checklist Header — clean single row, no duplicate cogs */}
+
       <div className="flex items-center justify-between gap-2">
         <h3 className="font-semibold text-base truncate">{activeTemplate.template_name}</h3>
         <DropdownMenu>
@@ -1644,7 +1623,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
             <div>
               <p className="font-semibold text-sm">Inspection Items</p>
               <p className="text-xs text-muted-foreground">
-                {Object.values(itemResults).filter(r => r === 'pass' || r === 'fail').length} of {activeTemplate.daily_check_template_items.length} completed
+                {Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} of {activeTemplate.daily_check_template_items.length} completed
               </p>
             </div>
           </div>
@@ -1663,9 +1642,13 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
           </div>
         </div>
         
-        {/* Progress bar */}
-        <div className="px-4 pb-3">
-          <Progress value={getProgress()} className="h-2" />
+        {/* Progress bar with percentage */}
+        <div className="px-4 pb-3 space-y-1">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>Progress</span>
+            <span className="font-semibold text-foreground">{Math.round(getProgress())}%</span>
+          </div>
+          <Progress value={getProgress()} className="h-2.5" />
         </div>
 
         <CardContent className="pt-0 space-y-3">
@@ -1809,28 +1792,49 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
         </CardContent>
       </Card>
 
-      {/* Complete Check */}
+      {/* Inspector Declaration */}
+      <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Inspector Declaration</p>
+        <p className="text-sm text-foreground leading-relaxed">
+          I confirm this inspection has been completed in accordance with operational procedures and the equipment is safe to operate at this time.
+        </p>
+        <label className="flex items-start gap-3 cursor-pointer group">
+          <div
+            className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+              declarationChecked ? 'bg-primary border-primary' : 'border-border group-hover:border-primary/50'
+            }`}
+            onClick={() => setDeclarationChecked(prev => !prev)}
+          >
+            {declarationChecked && <CheckCircle className="h-3.5 w-3.5 text-primary-foreground" />}
+          </div>
+          <span className="text-sm text-muted-foreground leading-snug select-none" onClick={() => setDeclarationChecked(prev => !prev)}>
+            I declare the above inspection is complete and accurate
+          </span>
+        </label>
+      </div>
+
+      {/* Complete & Save — dominant CTA */}
       <Button
         onClick={handleSubmitChecks} 
-        disabled={submitting || !inspectorName.trim()}
+        disabled={submitting || !inspectorName.trim() || !declarationChecked}
         size="lg"
-        className="w-full h-14 text-base font-semibold shadow-lg rounded-2xl"
+        className="w-full h-14 text-base font-bold shadow-lg rounded-2xl"
       >
         {submitting ? (
           <>
             <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            Completing...
+            Saving Record...
           </>
         ) : (
           <>
             <CheckCircle className="h-5 w-5 mr-2" />
-            Complete Check
+            Complete &amp; Save Inspection
           </>
         )}
       </Button>
-      {!inspectorName.trim() && (
-        <p className="text-xs text-center text-muted-foreground">
-          Enter your name in "Checked By" to submit
+      {(!inspectorName.trim() || !declarationChecked) && (
+        <p className="text-xs text-center text-muted-foreground -mt-2">
+          {!inspectorName.trim() ? 'Enter your name in "Checked By" to submit' : 'Check the declaration above to submit'}
         </p>
       )}
 
