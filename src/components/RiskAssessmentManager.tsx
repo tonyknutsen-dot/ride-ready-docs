@@ -1636,6 +1636,62 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             </DialogDescription>
           </div>
 
+          {/* ── Live Residual Risk Banner (edit mode) ── */}
+          {(() => {
+            const lScore = LIKELIHOOD_SCORES[itemFormData.likelihood as LikelihoodKey]?.score ?? 3;
+            const sScore = SEVERITY_SCORES[itemFormData.severity as SeverityKey]?.score ?? 3;
+            const inherentScore = lScore * sScore;
+            const hasControls = !!(itemFormData.existing_controls?.trim());
+            const hasActions = !!(itemFormData.additional_actions?.trim());
+            const ecPct = riskSettings?.existingControlsReduction ?? 20;
+            const aaPct = riskSettings?.additionalActionsReduction ?? 15;
+            let reductionPct = 0;
+            if (hasControls) reductionPct += ecPct;
+            if (hasActions) reductionPct += aaPct;
+            reductionPct = Math.min(reductionPct, 50);
+            const residualScore = Math.max(1, Math.round(inherentScore * (1 - reductionPct / 100)));
+            const getLevel = (s: number) => s <= 6 ? 'low' : s <= 12 ? 'medium' : 'high';
+            const inherentLevel = getLevel(inherentScore);
+            const residualLevel = getLevel(residualScore);
+            const LEVEL_BANNER = {
+              low:    { bg: '#ECFDF5', border: '#6EE7B7', text: '#065F46', badge: '#D1FAE5', badgeText: '#166534' },
+              medium: { bg: '#FFFBEB', border: '#FCD34D', text: '#92400E', badge: '#FEF3C7', badgeText: '#92400E' },
+              high:   { bg: '#FEF2F2', border: '#FCA5A5', text: '#991B1B', badge: '#FEE2E2', badgeText: '#991B1B' },
+            };
+            const rStyle = LEVEL_BANNER[residualLevel];
+            const iStyle = LEVEL_BANNER[inherentLevel];
+            return (
+              <div className="mx-4 mt-4 rounded-xl border p-3" style={{ background: rStyle.bg, borderColor: rStyle.border }}>
+                <div className="grid grid-cols-3 gap-2 text-center">
+                  {/* Inherent */}
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: iStyle.text }}>Inherent Risk</p>
+                    <p className="text-[22px] font-bold font-mono" style={{ color: iStyle.text }}>{inherentScore}</p>
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: iStyle.badge, color: iStyle.badgeText }}>
+                      {inherentLevel.toUpperCase()}
+                    </span>
+                  </div>
+                  {/* Reduction */}
+                  <div className="space-y-1 border-x" style={{ borderColor: rStyle.border }}>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Reduction</p>
+                    <p className="text-[22px] font-bold font-mono text-green-600">
+                      {reductionPct > 0 ? `-${reductionPct}%` : '—'}
+                    </p>
+                    <p className="text-[10px] text-slate-400">controls applied</p>
+                  </div>
+                  {/* Residual */}
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: rStyle.text }}>Residual Risk</p>
+                    <p className="text-[22px] font-bold font-mono" style={{ color: rStyle.text }}>{residualScore}</p>
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: rStyle.badge, color: rStyle.badgeText }}>
+                      {residualLevel.toUpperCase()}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
+
           <TooltipProvider>
             <div className="space-y-4 px-4 py-4 pb-0">
               {/* ── SECTION 1: Risk Identification ── */}
@@ -2151,11 +2207,13 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                       </div>
                       
                       <Collapsible>
-                        <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2">
-                          <ChevronDown className="h-3 w-3" />
-                          Need help choosing actions?
+                        <CollapsibleTrigger asChild>
+                          <button type="button" className="w-full flex items-center gap-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px] px-3 py-2.5 text-[13px] text-[#334155] font-medium hover:border-[#CBD5E1] transition-colors mb-2">
+                            <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                            <span>Need help choosing actions?</span>
+                          </button>
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="text-xs text-muted-foreground mb-2 ml-4">
+                        <CollapsibleContent className="text-[12px] text-slate-500 mb-2 px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px]">
                           Browse categories: Technical improvements, Documentation, Training, Inspection & testing, Communication, or Monitoring & review.
                         </CollapsibleContent>
                       </Collapsible>
