@@ -327,7 +327,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
   };
 
   return (
-    <div className="space-y-4 p-0.5" style={{ background: '#F8FAFC', minHeight: '100%' }}>
+    <div className="space-y-5" style={{ background: '#F1F5F9', minHeight: '100%', padding: '2px' }}>
 
       {/* Info banner */}
       <div
