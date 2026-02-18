@@ -166,48 +166,60 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
         const totalPages = doc.getNumberOfPages();
         for (let i = 1; i <= totalPages; i++) {
           doc.setPage(i);
-          doc.setFontSize(8);
-          doc.setTextColor(128);
-          doc.text('ridereadydocs.com', pageWidth / 2, pageHeight - 10, { align: 'center' });
-          doc.text(`Page ${i} of ${totalPages}`, pageWidth - 20, pageHeight - 10, { align: 'right' });
-          doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, 20, pageHeight - 10, { align: 'left' });
+          // Footer divider line
+          doc.setDrawColor(220, 220, 220);
+          doc.setLineWidth(0.5);
+          doc.line(15, pageHeight - 20, pageWidth - 15, pageHeight - 20);
+          // Legal disclaimer line
+          doc.setFontSize(6.5);
+          doc.setFont('helvetica', 'italic');
+          doc.setTextColor(150);
+          doc.text('This document forms part of the equipment maintenance history and should be retained for inspection and regulatory review.', pageWidth / 2, pageHeight - 15, { align: 'center', maxWidth: pageWidth - 30 });
+          // Meta line
+          doc.setFontSize(7.5);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(120);
+          doc.text(`Generated: ${format(new Date(), 'dd MMM yyyy – HH:mm')}`, 15, pageHeight - 9, { align: 'left' });
+          doc.text('ridereadydocs.com', pageWidth / 2, pageHeight - 9, { align: 'center' });
+          doc.text(`Page ${i} of ${totalPages}`, pageWidth - 15, pageHeight - 9, { align: 'right' });
           doc.setTextColor(0);
         }
       };
 
       // === HEADER SECTION ===
-      let yPos = 20;
-      
-      // Logo on left, company info on right - smaller logo
+      let yPos = 15;
+      const navyR = 30, navyG = 58, navyB = 95; // #1E3A5F brand navy
+
+      // Logo top-left
       if (logoDataUrl) {
         try {
-          doc.addImage(logoDataUrl, 'AUTO', 20, yPos - 5, 18, 18);
+          doc.addImage(logoDataUrl, 'AUTO', 15, yPos - 2, 20, 20);
         } catch (e) {
           console.log('Could not add logo to PDF');
         }
       }
-      
-      // Company name - always centered on page
+
+      // Company name — centered
       doc.setFontSize(16);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(40, 40, 40);
+      doc.setTextColor(15, 23, 42); // #0F172A
       const companyName = profile?.company_name || profile?.showmen_name || 'Maintenance Report';
-      doc.text(companyName, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 6;
+      doc.text(companyName, pageWidth / 2, yPos + 4, { align: 'center' });
+      yPos += 7;
 
-      // Controller name below company
+      // Controller name
       if (profile?.controller_name) {
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(100);
-        doc.text(`Controller: ${profile.controller_name}`, pageWidth / 2, yPos, { align: 'center' });
-        yPos += 5;
+        doc.text(`Controller: ${profile.controller_name}`, pageWidth / 2, yPos + 2, { align: 'center' });
+        yPos += 6;
       }
-      
-      yPos += 8;
 
-      // Report title with underline
-      doc.setFontSize(13);
+      yPos += 6;
+
+      // Report title
+      doc.setFontSize(12);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(50, 50, 50);
       doc.text('MAINTENANCE REPORT', pageWidth / 2, yPos, { align: 'center' });
@@ -216,22 +228,33 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
       // Date range
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
-      doc.setTextColor(80);
+      doc.setTextColor(100);
       const dateRangeText = `Period: ${reportDateFrom ? format(reportDateFrom, 'dd/MM/yyyy') : 'All'} to ${reportDateTo ? format(reportDateTo, 'dd/MM/yyyy') : 'Present'}`;
       doc.text(dateRangeText, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 8;
+      yPos += 7;
 
-      // Divider line
-      doc.setDrawColor(180);
-      doc.line(20, yPos, pageWidth - 20, yPos);
+      // Brand navy divider — 2px authority line
+      doc.setDrawColor(navyR, navyG, navyB);
+      doc.setLineWidth(1.2);
+      doc.line(15, yPos, pageWidth - 15, yPos);
+      doc.setLineWidth(0.5);
       yPos += 10;
 
       // === EQUIPMENT DETAILS SECTION WITH IMAGE ===
-      doc.setFontSize(11);
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(50, 50, 50);
-      doc.text('Equipment Details', 20, yPos);
-      yPos += 8;
+      doc.setTextColor(navyR, navyG, navyB);
+      doc.setCharSpace(0.5);
+      doc.text('EQUIPMENT DETAILS', 15, yPos);
+      doc.setCharSpace(0);
+      doc.setTextColor(0);
+      yPos += 5;
+      // Thin navy underline for section title
+      doc.setDrawColor(navyR, navyG, navyB);
+      doc.setLineWidth(0.4);
+      doc.line(15, yPos, pageWidth - 15, yPos);
+      doc.setDrawColor(200);
+      yPos += 6;
 
       // Calculate layout - if image exists, put it on the right with proper aspect ratio
       const hasImage = !!imageDataUrl;
@@ -334,32 +357,69 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
       yPos += 5;
 
       // === SUMMARY SECTION ===
-      doc.setDrawColor(200);
-      doc.line(20, yPos, pageWidth - 20, yPos);
-      yPos += 8;
+      doc.setDrawColor(220, 220, 220);
+      doc.setLineWidth(0.5);
+      doc.line(15, yPos, pageWidth - 15, yPos);
+      yPos += 7;
 
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(50, 50, 50);
-      doc.text('Summary', 20, yPos);
-      yPos += 8;
-
+      // Summary section title
       doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(navyR, navyG, navyB);
+      doc.setCharSpace(0.5);
+      doc.text('SUMMARY', 15, yPos);
+      doc.setCharSpace(0);
+      yPos += 4;
+      doc.setDrawColor(navyR, navyG, navyB);
+      doc.setLineWidth(0.4);
+      doc.line(15, yPos, pageWidth - 15, yPos);
+      doc.setLineWidth(0.5);
+      yPos += 5;
 
       const totalCost = filteredRecords.reduce((sum, r) => sum + (Number(r.cost) || 0), 0);
 
-      doc.text(`Total Records: ${filteredRecords.length}`, leftCol, yPos);
-      doc.text(`Total Cost: £${totalCost.toFixed(2)}`, pageWidth / 2, yPos);
-      yPos += 10;
+      // Summary box — light grey background
+      const summaryBoxY = yPos;
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(15, summaryBoxY, pageWidth - 30, 18, 2, 2, 'FD');
+
+      // Left: Records count
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100);
+      doc.text('Total Records', 22, summaryBoxY + 6);
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(15, 23, 42);
+      doc.text(`${filteredRecords.length}`, 22, summaryBoxY + 14);
+
+      // Right: Total cost — accented
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100);
+      doc.text('Total Cost', pageWidth - 55, summaryBoxY + 6);
+      doc.setFontSize(13);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(navyR, navyG, navyB);
+      doc.text(`£${totalCost.toFixed(2)}`, pageWidth - 55, summaryBoxY + 14);
+      doc.setTextColor(0);
+
+      yPos += 26;
 
       // === MAINTENANCE RECORDS TABLE ===
-      doc.setFontSize(11);
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(50, 50, 50);
-      doc.text('Maintenance Records', 20, yPos);
-      yPos += 5;
+      doc.setTextColor(navyR, navyG, navyB);
+      doc.setCharSpace(0.5);
+      doc.text('MAINTENANCE RECORDS', 15, yPos);
+      doc.setCharSpace(0);
+      yPos += 4;
+      doc.setDrawColor(navyR, navyG, navyB);
+      doc.setLineWidth(0.4);
+      doc.line(15, yPos, pageWidth - 15, yPos);
+      doc.setLineWidth(0.5);
+      yPos += 4;
 
       // Truncate description for table view
       const truncateText = (text: string, maxLength: number) => {
@@ -381,24 +441,26 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
         head: [['#', 'Date', 'Type', 'Work Done', 'By', 'Cost']],
         body: tableData,
         headStyles: { 
-          fillColor: [70, 70, 70],
+          fillColor: [navyR, navyG, navyB],
           textColor: 255,
           fontStyle: 'bold',
           fontSize: 9,
         },
         styles: { 
-          fontSize: 8, 
-          cellPadding: 3,
+          fontSize: 8.5, 
+          cellPadding: 3.5,
+          textColor: [15, 23, 42],
         },
         columnStyles: {
           0: { cellWidth: 10, halign: 'center' },
-          1: { cellWidth: 22 },
-          2: { cellWidth: 30 },
-          3: { cellWidth: 55 },
+          1: { cellWidth: 24, halign: 'center' },
+          2: { cellWidth: 32 },
+          3: { cellWidth: 52 },
           4: { cellWidth: 28 },
-          5: { cellWidth: 20, halign: 'right' },
+          5: { cellWidth: 22, halign: 'right' },
         },
-        alternateRowStyles: { fillColor: [245, 247, 250] },
+        alternateRowStyles: { fillColor: [248, 250, 252] },
+        bodyStyles: { lineColor: [226, 232, 240], lineWidth: 0.3 },
       });
       
       yPos = (doc as any).lastAutoTable.finalY + 15;
@@ -415,10 +477,24 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
         docs: Array<{ id: string; document_name: string; mime_type: string | null; file_path: string }>;
       }> = [];
 
-      doc.setFontSize(13);
+      doc.setFontSize(10);
       doc.setFont('helvetica', 'bold');
-      doc.setTextColor(50, 50, 50);
-      doc.text('Detailed Maintenance Records', 20, yPos);
+      doc.setTextColor(navyR, navyG, navyB);
+      doc.setCharSpace(0.5);
+      doc.text('DETAILED MAINTENANCE RECORDS', 15, yPos);
+      doc.setCharSpace(0);
+      yPos += 4;
+      doc.setDrawColor(navyR, navyG, navyB);
+      doc.setLineWidth(0.4);
+      doc.line(15, yPos, pageWidth - 15, yPos);
+      doc.setLineWidth(0.5);
+      yPos += 8;
+
+      // Compliance note
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(120);
+      doc.text('This report has been generated from digitally recorded maintenance records stored within the RideReadyDocs system.', 15, yPos, { maxWidth: pageWidth - 30 });
       yPos += 10;
       
       for (let i = 0; i < filteredRecords.length; i++) {
@@ -430,15 +506,16 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
           yPos = 20;
         }
 
-        // Record header with number
-        doc.setFillColor(240, 240, 240);
-        doc.rect(15, yPos - 5, pageWidth - 30, 8, 'F');
+        // Record header — navy strip
+        doc.setFillColor(navyR, navyG, navyB);
+        doc.rect(15, yPos - 5, pageWidth - 30, 9, 'F');
         
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(50, 50, 50);
-        doc.text(`${i + 1}. ${format(parseISO(record.maintenance_date), 'dd MMMM yyyy')} - ${getMaintenanceTypeLabel(record.maintenance_type)}`, 20, yPos);
-        yPos += 10;
+        doc.setTextColor(255, 255, 255);
+        doc.text(`${i + 1}.  ${format(parseISO(record.maintenance_date), 'dd MMMM yyyy')}  —  ${getMaintenanceTypeLabel(record.maintenance_type)}`, 19, yPos);
+        doc.setTextColor(0);
+        yPos += 11;
         
         doc.setFontSize(9);
         doc.setFont('helvetica', 'normal');
@@ -540,16 +617,23 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
         doc.addPage();
         yPos = 20;
         
-        doc.setFontSize(13);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.setTextColor(50, 50, 50);
-        doc.text('Appendix: Maintenance Attachments', 20, yPos);
-        yPos += 10;
+        doc.setTextColor(navyR, navyG, navyB);
+        doc.setCharSpace(0.5);
+        doc.text('APPENDIX: MAINTENANCE ATTACHMENTS', 15, yPos);
+        doc.setCharSpace(0);
+        yPos += 4;
+        doc.setDrawColor(navyR, navyG, navyB);
+        doc.setLineWidth(0.4);
+        doc.line(15, yPos, pageWidth - 15, yPos);
+        doc.setLineWidth(0.5);
+        yPos += 6;
         
-        doc.setFontSize(9);
+        doc.setFontSize(8.5);
         doc.setFont('helvetica', 'normal');
-        doc.setTextColor(80);
-        doc.text('Supporting documents, receipts, and photographs for maintenance records.', 20, yPos);
+        doc.setTextColor(100);
+        doc.text('Supporting documents, receipts, and photographs for maintenance records.', 15, yPos);
         yPos += 10;
         
         for (const attachment of attachmentsForAppendix) {
@@ -559,12 +643,13 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
             yPos = 20;
           }
           
-          doc.setFillColor(245, 245, 245);
-          doc.rect(15, yPos - 4, pageWidth - 30, 7, 'F');
-          doc.setFontSize(10);
+          doc.setFillColor(navyR, navyG, navyB);
+          doc.rect(15, yPos - 4, pageWidth - 30, 8, 'F');
+          doc.setFontSize(9.5);
           doc.setFont('helvetica', 'bold');
-          doc.setTextColor(50, 50, 50);
-          doc.text(`Record ${attachment.recordIndex}: ${attachment.recordDate} - ${attachment.recordType}`, 20, yPos);
+          doc.setTextColor(255, 255, 255);
+          doc.text(`Record ${attachment.recordIndex}: ${attachment.recordDate}  —  ${attachment.recordType}`, 19, yPos);
+          doc.setTextColor(0);
           yPos += 10;
           
           // Display images inline with auto-context labels
