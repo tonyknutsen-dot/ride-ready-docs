@@ -327,21 +327,33 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
   };
 
   return (
-    <div className="space-y-5" style={{ background: '#F1F5F9', minHeight: '100%', padding: '2px' }}>
+    <div style={{ background: '#F8FAFC', minHeight: '100%' }}>
 
-      {/* Info banner */}
-      <div
-        className="flex items-start gap-3 rounded-xl p-3"
-        style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)' }}
-      >
-        <Info className="h-4 w-4 mt-0.5 shrink-0" style={{ color: '#2563EB' }} />
-        <p className="text-xs leading-relaxed" style={{ color: '#2563EB' }}>
-          All attachments are stored in the equipment document register under "Maintenance". Generated reports will also appear there.
-        </p>
-      </div>
+      {/* ── OUTER FORM CONTAINER CARD ── */}
+      <div style={{
+        background: '#FFFFFF',
+        border: '1px solid #E2E8F0',
+        borderRadius: 16,
+        boxShadow: '0 4px 12px rgba(0,0,0,0.06)',
+        padding: 20,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 16,
+      }}>
 
-      {/* ── SECTION 1: Maintenance Details ── */}
-      <LogSectionCard style={{ background: '#F8FAFC' }}>
+        {/* Info banner */}
+        <div
+          className="flex items-start gap-3 rounded-xl p-3"
+          style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)' }}
+        >
+          <Info className="h-4 w-4 mt-0.5 shrink-0" style={{ color: '#2563EB' }} />
+          <p className="text-xs leading-relaxed" style={{ color: '#2563EB' }}>
+            All attachments are stored in the equipment document register under "Maintenance". Generated reports will also appear there.
+          </p>
+        </div>
+
+        {/* ── SECTION 1: Maintenance Details ── */}
+        <LogSectionCard style={{ background: '#F8FAFC', marginBottom: 0 }}>
         <LogSectionHeader
           icon={CalendarIcon}
           title="Maintenance Details"
@@ -803,6 +815,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         </Button>
       </div>
 
+      </div>{/* end outer form container card */}
     </div>
   );
 };
