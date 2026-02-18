@@ -735,13 +735,15 @@
 .field {
   display: grid;
   gap: 6px;
-  margin-bottom: 12px;
+  /* no margin-bottom here — let parent spacing-y handle it */
+  min-width: 0;
 }
 
 .row-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 10px;
+  min-width: 0;
 }
 
 @media (max-width: 360px) {
