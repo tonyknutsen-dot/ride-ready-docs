@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Settings as SettingsIcon, User, FileText, Globe, ArrowRight, Mail, ArrowLeft, Info, Bug, Calendar, Building2 } from 'lucide-react';
+import { Settings as SettingsIcon, User, FileText, Globe, ArrowRight, Mail, ArrowLeft, Info, Bug, Calendar, Building2, Shield, Users, CreditCard, Wrench, ChevronRight } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateTimeSettings, COUNTRY_TIMEZONES, COUNTRY_DATE_FORMATS } from '@/components/DateTimeSettings';
 import {
@@ -202,6 +202,14 @@ const Settings = () => {
   const currentTerms = getTerminologyForCountry(country);
   const newTerms = pendingCountry ? getTerminologyForCountry(pendingCountry) : null;
 
+  // Helper to render a section group label
+  const SectionLabel = ({ children }: { children: React.ReactNode }) => (
+    <div className="flex items-center gap-2 pt-2 pb-1">
+      <span className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{children}</span>
+      <div className="flex-1 h-px bg-border" />
+    </div>
+  );
+
   return (
     <>
       <AlertDialog open={showCountryDialog} onOpenChange={setShowCountryDialog}>
@@ -262,7 +270,7 @@ const Settings = () => {
         </AlertDialogContent>
       </AlertDialog>
       
-      <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5 max-w-2xl">
+      <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-4 max-w-2xl">
         {/* Back Button */}
         <Button
           variant="ghost"
@@ -276,21 +284,24 @@ const Settings = () => {
         
         {/* Header */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center shrink-0 shadow-sm">
-            <SettingsIcon className="h-5 w-5 text-primary" />
+          <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+            <SettingsIcon className="h-5 w-5 text-muted-foreground" />
           </div>
           <div>
             <h1 className="text-xl md:text-2xl font-bold">Settings</h1>
-            <p className="text-sm text-muted-foreground">Manage your profile and account</p>
+            <p className="text-sm text-muted-foreground">Configure your organisation, compliance system, and account preferences</p>
           </div>
         </div>
 
-        {/* Profile Card - Only show for account owners, not staff */}
+        {/* ─── SECTION: ORGANISATION ─── */}
+        <SectionLabel>Organisation</SectionLabel>
+
+        {/* Profile Card */}
         {isStaff ? (
-          <Card className="border-2 border-muted bg-gradient-to-br from-muted/30 to-transparent">
+          <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
                   <Building2 className="h-4 w-4 text-muted-foreground" />
                 </div>
                 <CardTitle className="text-base">Staff Account</CardTitle>
@@ -307,17 +318,19 @@ const Settings = () => {
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent shadow-elegant">
+          <Card>
             <CardHeader className="pb-3">
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                   <User className="h-4 w-4 text-primary" />
                 </div>
-                <CardTitle className="text-base">Profile Information</CardTitle>
+                <div>
+                  <CardTitle className="text-base">Organisation Profile</CardTitle>
+                  <CardDescription className="text-sm mt-0.5">
+                    Company details used on PDF reports and inspection records
+                  </CardDescription>
+                </div>
               </div>
-              <CardDescription className="text-sm">
-                Update your company and contact details
-              </CardDescription>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -333,50 +346,22 @@ const Settings = () => {
           </Card>
         )}
 
-        {/* Document Management Card */}
-        <Card className="border-2 border-accent/30 bg-gradient-to-br from-accent/5 to-transparent shadow-elegant">
+        {/* Region & Terminology */}
+        <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-accent/20 flex items-center justify-center">
-                <FileText className="h-4 w-4 text-accent-foreground" />
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                <Globe className="h-4 w-4 text-muted-foreground" />
               </div>
-              <CardTitle className="text-base">Document Management</CardTitle>
-            </div>
-            <CardDescription className="text-sm">
-              How your documents are organised
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="p-4 rounded-lg bg-secondary/50 border border-accent/20 space-y-2">
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium">📋 Automatic Version History</span>
+              <div>
+                <CardTitle className="text-base">Region & Terminology</CardTitle>
+                <CardDescription className="text-sm mt-0.5">
+                  Set your country for region-appropriate certificate names
+                </CardDescription>
               </div>
-              <p className="text-xs text-muted-foreground">
-                When you upload a document with the same name as an existing one, we automatically keep all versions. 
-                Each version is labelled with its upload date so you can easily find what you need.
-              </p>
-              <p className="text-xs text-primary mt-2">
-                💡 All previous versions are kept for your records and compliance audits.
-              </p>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Region Settings Card */}
-        <Card className="border-2 border-info/30 bg-gradient-to-br from-info/5 to-transparent shadow-elegant">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-info/20 flex items-center justify-center">
-                <Globe className="h-4 w-4 text-info" />
-              </div>
-              <CardTitle className="text-base">Region & Terminology</CardTitle>
-            </div>
-            <CardDescription className="text-sm">
-              Set your country for region-appropriate certificate names
-            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {/* Country */}
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 <Globe className="h-4 w-4 text-muted-foreground" />
@@ -389,7 +374,7 @@ const Settings = () => {
                 onValueChange={handleCountrySelectChange}
                 disabled={loading || updatingCountry}
               >
-                <SelectTrigger id="country-select" className="h-11 border-2 hover:border-primary/50 transition-colors">
+                <SelectTrigger id="country-select" className="h-11">
                   <SelectValue placeholder="Select your country..." />
                 </SelectTrigger>
                 <SelectContent>
@@ -406,7 +391,7 @@ const Settings = () => {
             </div>
             
             {selectedCountry && (
-              <div className="p-3 rounded-lg bg-secondary border-2 border-info/20">
+              <div className="p-3 rounded-lg bg-muted/50 border border-border">
                 <p className="text-xs text-muted-foreground">
                   <span className="font-medium text-foreground">{selectedCountry.flag} {selectedCountry.name}:</span>{' '}
                   {selectedCountry.note}
@@ -414,7 +399,6 @@ const Settings = () => {
               </div>
             )}
 
-            {/* Custom Terminology Editor */}
             <div className="pt-2 border-t border-border/50">
               <CustomTerminologyEditor
                 countryCode={country}
@@ -426,18 +410,20 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Date & Time Settings Card */}
-        <Card className="border-2 border-warning/30 bg-gradient-to-br from-warning/5 to-transparent shadow-elegant">
+        {/* Date & Time */}
+        <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-warning/20 flex items-center justify-center">
-                <Calendar className="h-4 w-4 text-warning" />
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
               </div>
-              <CardTitle className="text-base">Date & Time</CardTitle>
+              <div>
+                <CardTitle className="text-base">Date & Time</CardTitle>
+                <CardDescription className="text-sm mt-0.5">
+                  Set your preferred date format and timezone
+                </CardDescription>
+              </div>
             </div>
-            <CardDescription className="text-sm">
-              Set your preferred date format and timezone
-            </CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -458,54 +444,140 @@ const Settings = () => {
           </CardContent>
         </Card>
 
-        {/* Activity Log */}
-        <ActivityLog limit={5} showViewAll={false} />
+        {/* ─── SECTION: COMPLIANCE CONFIGURATION ─── */}
+        <SectionLabel>Compliance Configuration</SectionLabel>
+
+        {/* Document Management */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Document Management</CardTitle>
+                <CardDescription className="text-sm mt-0.5">
+                  How your documents are organised and versioned
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="p-4 rounded-lg bg-muted/40 border border-border space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium">📋 Automatic Version History</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                When you upload a document with the same name as an existing one, we automatically keep all versions. 
+                Each version is labelled with its upload date so you can easily find what you need.
+              </p>
+              <p className="text-xs text-primary mt-2">
+                💡 All previous versions are kept for your records and compliance audits.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ─── SECTION: USERS & ACCESS ─── */}
+        <SectionLabel>Users &amp; Access</SectionLabel>
+
+        {/* Staff Management link */}
+        {!isStaff && (
+          <Card
+            className="cursor-pointer hover:border-primary/40 transition-colors"
+            onClick={() => navigate('/staff')}
+          >
+            <CardContent className="flex items-center justify-between py-4 px-5">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Staff &amp; Permissions</p>
+                  <p className="text-xs text-muted-foreground">Manage user access, roles, and responsibilities</p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        )}
 
         {/* Support Access */}
         <SupportAccessManager />
 
-        <Card className="border-2 border-success/30 bg-gradient-to-br from-success/5 to-transparent shadow-elegant">
+        {/* ─── SECTION: ACCOUNT & BILLING ─── */}
+        <SectionLabel>Account &amp; Billing</SectionLabel>
+
+        {/* Account email */}
+        <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-success/20 flex items-center justify-center">
-                <Mail className="h-4 w-4 text-success" />
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                <Mail className="h-4 w-4 text-muted-foreground" />
               </div>
-              <CardTitle className="text-base">Account</CardTitle>
+              <div>
+                <CardTitle className="text-base">Account</CardTitle>
+                <CardDescription className="text-sm mt-0.5">Your login and account details</CardDescription>
+              </div>
             </div>
-            <CardDescription className="text-sm">
-              Your account details and preferences
-            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-3">
-              <div className="p-4 rounded-lg bg-secondary/50 border border-success/20">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium">Email Address</p>
-                    <p className="text-sm text-muted-foreground">{user?.email || 'Not logged in'}</p>
-                  </div>
+            <div className="p-4 rounded-lg bg-muted/40 border border-border">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Email Address</p>
+                  <p className="text-sm text-muted-foreground">{user?.email || 'Not logged in'}</p>
                 </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* App Info Card */}
-        <Card className="border-2 border-muted/50 bg-gradient-to-br from-muted/10 to-transparent shadow-elegant">
+        {/* Plan & Billing link */}
+        {!isStaff && (
+          <Card
+            className="cursor-pointer hover:border-primary/40 transition-colors"
+            onClick={() => navigate('/plan-billing')}
+          >
+            <CardContent className="flex items-center justify-between py-4 px-5">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                  <CreditCard className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Subscription &amp; Billing</p>
+                  <p className="text-xs text-muted-foreground">Manage your plan, payments, and billing history</p>
+                </div>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Activity Log */}
+        <ActivityLog limit={5} showViewAll={false} />
+
+        {/* ─── SECTION: SYSTEM ─── */}
+        <SectionLabel>System</SectionLabel>
+
+        {/* App Info */}
+        <Card>
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-muted/30 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
                 <Info className="h-4 w-4 text-muted-foreground" />
               </div>
-              <CardTitle className="text-base">About This App</CardTitle>
+              <div>
+                <CardTitle className="text-base">About This App</CardTitle>
+                <CardDescription className="text-sm mt-0.5">
+                  Version information and release notes
+                </CardDescription>
+              </div>
             </div>
-            <CardDescription className="text-sm">
-              Version information for testing and bug reporting
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="p-4 rounded-lg bg-secondary/50 border border-muted/30">
+              <div className="p-4 rounded-lg bg-muted/40 border border-border">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">App Name</span>
