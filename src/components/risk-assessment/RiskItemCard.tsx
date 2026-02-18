@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Pencil, Trash2, ChevronDown, ChevronUp, User, CalendarDays } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -34,8 +33,8 @@ interface RiskItemCardProps {
 }
 
 const STATUS_CONFIG: Record<string, { bg: string; text: string; label: string }> = {
-  open:        { bg: 'bg-blue-50',   text: 'text-blue-800',  label: 'Open' },
-  in_progress: { bg: 'bg-blue-100',  text: 'text-blue-900',  label: 'In Progress' },
+  open:        { bg: 'bg-[#DBEAFE]', text: 'text-[#1E3A8A]', label: 'Open' },
+  in_progress: { bg: 'bg-[#DBEAFE]', text: 'text-[#1E3A8A]', label: 'In Progress' },
   completed:   { bg: 'bg-green-50',  text: 'text-green-800', label: 'Closed' },
 };
 
@@ -52,8 +51,17 @@ export function RiskItemCard({
 
   const statusCfg = STATUS_CONFIG[item.status] || STATUS_CONFIG.open;
 
-  const likelihoodLabel = item.likelihood.charAt(0).toUpperCase() + item.likelihood.slice(1);
-  const severityLabel = item.severity.charAt(0).toUpperCase() + item.severity.slice(1);
+  // ── FIX 2: NaN guard ──
+  const validScore = Number.isFinite(riskScore) && riskScore > 0;
+  const scoreDisplay = validScore ? `${riskScore} / 25` : '— / 25';
+
+  // ── FIX 3: Capitalise labels for mini badges ──
+  const likelihoodLabel = item.likelihood
+    ? item.likelihood.charAt(0).toUpperCase() + item.likelihood.slice(1)
+    : '—';
+  const severityLabel = item.severity
+    ? item.severity.charAt(0).toUpperCase() + item.severity.slice(1)
+    : '—';
 
   return (
     <div
@@ -61,12 +69,11 @@ export function RiskItemCard({
       style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
     >
       {/* Left risk colour rail */}
-      <div
-        className={`absolute inset-y-0 left-0 w-1 rounded-l-2xl ${strip.rail}`}
-      />
+      <div className={`absolute inset-y-0 left-0 w-1 rounded-l-2xl ${strip.rail}`} />
 
       <div className="pl-4 pr-4 pt-4 pb-3 ml-1">
-        {/* ── HEADER ROW ── */}
+
+        {/* ── HEADER ROW: title + action icons ── */}
         <div className="flex items-start justify-between gap-3 mb-2">
           <h4 className="font-semibold text-[15px] leading-snug text-[#0F172A] flex-1">
             {item.hazard_description}
@@ -89,33 +96,24 @@ export function RiskItemCard({
           </div>
         </div>
 
-        {/* ── BADGE ROW ── */}
+        {/* ── FIX 1: BADGE ROW — Risk | Score | Status (separated hierarchy) ── */}
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
-          {/* Risk level badge */}
-          <span
-            className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${strip.chipBg} ${strip.chipText}`}
-          >
+          {/* Risk level badge — severity colour */}
+          <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${strip.chipBg} ${strip.chipText}`}>
             {strip.label}
           </span>
 
-          {/* Score badge */}
-          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-700">
-            Score: {riskScore}/25
+          {/* Score badge — indigo tint */}
+          <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-[#EEF2FF] text-[#3730A3]">
+            Score: {scoreDisplay}
           </span>
 
-          {/* Status badge */}
+          {/* Status badge — blue tint */}
           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold ${statusCfg.bg} ${statusCfg.text}`}>
             {statusCfg.label}
           </span>
 
-          {/* Overdue badge */}
-          {isOverdue && (
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-red-50 text-red-700">
-              ⚠ Overdue
-            </span>
-          )}
-
-          {/* Manual override indicator */}
+          {/* Manual override */}
           {item.is_manually_overridden && (
             <span className="inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700">
               * Professional override
@@ -129,7 +127,7 @@ export function RiskItemCard({
           {item.who_at_risk}
         </p>
 
-        {/* ── OWNER / DUE META ROW ── */}
+        {/* ── FIX 4: OWNER / DUE ROW — overdue badge on the right of due date ── */}
         {(item.action_owner || item.target_date) && (
           <div className="flex flex-wrap items-center gap-4 mb-3">
             {item.action_owner && (
@@ -139,11 +137,19 @@ export function RiskItemCard({
               </span>
             )}
             {item.target_date && (
-              <span className={`flex items-center gap-1.5 text-[13px] ${isOverdue ? 'text-red-600 font-semibold' : 'text-slate-600'}`}>
+              <span className="flex items-center gap-1.5 text-[13px] text-slate-600">
                 <CalendarDays className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                Due: {format(new Date(item.target_date), 'dd MMM yyyy')}
-                {dueDateStatus && (
-                  <span className={`ml-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${dueDateStatus.className}`}>
+                <span className={isOverdue ? 'text-red-600 font-semibold' : ''}>
+                  Due: {format(new Date(item.target_date), 'dd MMM yyyy')}
+                </span>
+                {/* Overdue badge — right of due date */}
+                {isOverdue && (
+                  <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-red-50 text-red-700 border border-red-200">
+                    Overdue
+                  </span>
+                )}
+                {!isOverdue && dueDateStatus && (
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${dueDateStatus.className}`}>
                     {dueDateStatus.label}
                   </span>
                 )}
@@ -152,23 +158,25 @@ export function RiskItemCard({
           </div>
         )}
 
-        {/* ── RISK SCORE BLOCK ── */}
-        <div className="inline-flex items-center gap-3 rounded-xl bg-[#F1F5F9] px-3 py-2 mb-3">
-          <span className="text-[13px] text-slate-600">
-            <span className="font-semibold text-slate-800">L:</span> {likelihoodLabel}
+        {/* ── FIX 3: L/S mini badges + score ── */}
+        <div className="flex flex-wrap items-center gap-1.5 mb-3">
+          <span className="inline-flex items-center px-2 py-1 rounded-lg bg-[#F1F5F9] text-[12px] font-medium text-[#334155]">
+            L: {likelihoodLabel}
           </span>
-          <span className="text-slate-300">·</span>
-          <span className="text-[13px] text-slate-600">
-            <span className="font-semibold text-slate-800">S:</span> {severityLabel}
+          <span className="inline-flex items-center px-2 py-1 rounded-lg bg-[#F1F5F9] text-[12px] font-medium text-[#334155]">
+            S: {severityLabel}
           </span>
-          <span className="text-slate-300">·</span>
-          <span className="text-[13px] font-bold text-slate-800">Risk: {riskScore}</span>
+          {validScore && (
+            <span className="inline-flex items-center px-2 py-1 rounded-lg bg-[#F1F5F9] text-[12px] font-bold text-[#0F172A]">
+              Risk score: {riskScore}
+            </span>
+          )}
         </div>
 
-        {/* ── EXPAND / COLLAPSE TOGGLE ── */}
+        {/* ── FIX 5: EXPAND TOGGLE — "View controls & actions" ── */}
         <button
           onClick={() => setExpanded((v) => !v)}
-          className="flex items-center gap-1.5 text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors w-full"
+          className="flex items-center gap-1.5 text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors"
         >
           {expanded ? (
             <>
@@ -178,9 +186,7 @@ export function RiskItemCard({
           ) : (
             <>
               <ChevronDown className="h-3.5 w-3.5" />
-              {[item.existing_controls, item.additional_actions].filter(Boolean).length > 0
-                ? 'Show controls & actions'
-                : 'No controls or actions recorded'}
+              View controls &amp; actions
             </>
           )}
         </button>
@@ -188,7 +194,6 @@ export function RiskItemCard({
         {/* ── COLLAPSIBLE: CONTROLS + ACTIONS ── */}
         {expanded && (
           <div className="mt-3 space-y-2">
-            {/* Controls in Place */}
             {item.existing_controls ? (
               <div className="rounded-xl bg-green-50 border border-green-200 px-3 py-2.5">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-green-700 mb-1">
@@ -203,7 +208,6 @@ export function RiskItemCard({
               </div>
             )}
 
-            {/* Further Actions */}
             {item.additional_actions ? (
               <div className="rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">
                 <p className="text-[11px] font-bold uppercase tracking-wider text-amber-700 mb-1">
