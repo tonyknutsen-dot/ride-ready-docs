@@ -648,139 +648,59 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     const rideImageData = await fetchRideImage();
     
     // === HEADER SECTION ===
-    let yPos = 15;
-    
-    // Company logo on left (if available)
-    if (logoDataUrl) {
-      try {
-        doc.addImage(logoDataUrl, 'AUTO', 14, yPos - 5, 18, 18);
-      } catch (e) {
-        console.log('Could not add logo to PDF');
-      }
-    }
-    
-    // Company name - centered
-    doc.setFontSize(16);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(40, 40, 40);
+    const docId = generateDocId('RISK');
     const companyName = profile?.company_name || 'Risk Assessment';
-    doc.text(companyName, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 6;
 
-    // Controller name below company
-    if (profile?.controller_name) {
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(100);
-      doc.text(`Controller: ${profile.controller_name}`, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 5;
-    }
-    
-    yPos += 4;
+    let yPos = drawPDFHeader({
+      doc,
+      logoDataUrl,
+      companyName,
+      controllerName: profile?.controller_name,
+      reportTitle: 'Risk Assessment',
+      subTitle: ride.ride_name,
+      period: `Assessment: ${format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy')}`,
+      generatedDate: format(new Date(), 'dd MMM yyyy'),
+      docId,
+    });
 
-    // Report title
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(50, 50, 50);
-    doc.text('RISK ASSESSMENT', pageWidth / 2, yPos, { align: 'center' });
-    yPos += 5;
+    // === EQUIPMENT + ASSESSMENT DETAILS ===
+    yPos = drawSectionTitle(doc, 'Equipment & Assessment Details', yPos);
 
-    // Divider line
-    doc.setDrawColor(180);
-    doc.line(14, yPos, pageWidth - 14, yPos);
-    yPos += 8;
+    // Use drawEquipmentDetails for the left-side fields + image
+    yPos = await drawEquipmentDetails({
+      doc,
+      y: yPos,
+      fields: [
+        { label: 'Equipment', value: ride.ride_name },
+        { label: 'Manufacturer', value: ride.manufacturer },
+        { label: 'Serial No', value: ride.serial_number },
+        { label: 'Year', value: ride.year_manufactured?.toString() },
+        { label: 'Assessor', value: selectedAssessment.assessor_name },
+        { label: 'Assessment Date', value: format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy') },
+        { label: 'Status', value: selectedAssessment.overall_status.replace('_', ' ').toUpperCase() },
+        ...(selectedAssessment.revision_number && selectedAssessment.revision_number > 1
+          ? [{ label: 'Revision', value: `Rev ${selectedAssessment.revision_number}` }]
+          : []),
+      ],
+      imageDataUrl: rideImageData?.dataUrl ?? null,
+      maxImageW: 45,
+      maxImageH: 30,
+    });
 
-    // === EQUIPMENT DETAILS WITH IMAGE ===
+    // Summary metrics
+    const highCount = assessmentItems.filter(i => i.risk_level === 'high').length;
+    const medCount  = assessmentItems.filter(i => i.risk_level === 'medium').length;
+    const lowCount  = assessmentItems.filter(i => i.risk_level === 'low').length;
+
+    yPos = drawSummaryBox(doc, [
+      { label: 'Total Hazards', value: String(assessmentItems.length), accent: true },
+      { label: 'High Risk', value: String(highCount) },
+      { label: 'Medium Risk', value: String(medCount) },
+      { label: 'Low Risk', value: String(lowCount) },
+    ], yPos);
+
     const leftCol = 14;
-    const labelWidth = 38;
     const rightCol = 180;
-    const detailsStartY = yPos;
-    
-    doc.setFontSize(10);
-    doc.setTextColor(0);
-
-    // Equipment info - left side
-    doc.setFont('helvetica', 'bold');
-    doc.text('Equipment:', leftCol, yPos);
-    doc.setFont('helvetica', 'normal');
-    doc.text(ride.ride_name, leftCol + labelWidth, yPos);
-    yPos += 5;
-    
-    if (ride.manufacturer) {
-      doc.setFont('helvetica', 'bold');
-      doc.text('Manufacturer:', leftCol, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(ride.manufacturer, leftCol + labelWidth, yPos);
-      yPos += 5;
-    }
-    
-    if (ride.serial_number) {
-      doc.setFont('helvetica', 'bold');
-      doc.text('Serial Number:', leftCol, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(ride.serial_number, leftCol + labelWidth, yPos);
-      yPos += 5;
-    }
-    
-    if (ride.year_manufactured) {
-      doc.setFont('helvetica', 'bold');
-      doc.text('Year Manufactured:', leftCol, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(ride.year_manufactured.toString(), leftCol + labelWidth, yPos);
-      yPos += 5;
-    }
-
-    // Assessment info - middle
-    const midCol = 100;
-    let midY = detailsStartY;
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('Assessment Date:', midCol, midY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy'), midCol + 32, midY);
-    midY += 5;
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('Assessor:', midCol, midY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(selectedAssessment.assessor_name, midCol + 32, midY);
-    midY += 5;
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('Status:', midCol, midY);
-    doc.setFont('helvetica', 'normal');
-    doc.text(selectedAssessment.overall_status.replace('_', ' ').toUpperCase(), midCol + 32, midY);
-    midY += 5;
-    
-    if (selectedAssessment.revision_number && selectedAssessment.revision_number > 1) {
-      doc.setFont('helvetica', 'bold');
-      doc.text('Revision:', midCol, midY);
-      doc.setFont('helvetica', 'normal');
-      doc.text(`Rev ${selectedAssessment.revision_number}`, midCol + 32, midY);
-    }
-
-    // Ride image on right - preserve aspect ratio
-    if (rideImageData) {
-      try {
-        const maxWidth = 45;
-        const maxHeight = 30;
-        let imgWidth = maxWidth;
-        let imgHeight = maxWidth / rideImageData.aspectRatio;
-        
-        if (imgHeight > maxHeight) {
-          imgHeight = maxHeight;
-          imgWidth = maxHeight * rideImageData.aspectRatio;
-        }
-        
-        const imgX = pageWidth - imgWidth - 14;
-        doc.addImage(rideImageData.dataUrl, 'JPEG', imgX, detailsStartY - 2, imgWidth, imgHeight);
-        yPos = Math.max(yPos, detailsStartY + imgHeight + 3);
-      } catch (e) {
-        console.warn('Failed to add ride image to PDF');
-      }
-    }
-    
-    yPos = Math.max(yPos, midY) + 5;
 
     // === HAZARDS TABLE ===
     // Helper to format likelihood/severity with numbers
@@ -799,49 +719,52 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     const overriddenItems = assessmentItems.filter(item => item.is_manually_overridden);
     const hasOverrides = overriddenItems.length > 0;
 
-    const tableData = assessmentItems.map((item, index) => {
+    yPos = drawSectionTitle(doc, 'Hazard Assessment', yPos);
+
+    const tableData = assessmentItems.map((item) => {
       const overrideMarker = item.is_manually_overridden ? ' *' : '';
       return [
         item.hazard_description,
         item.who_at_risk,
-        item.existing_controls || '-',
+        item.existing_controls || '—',
         item.risk_level.toUpperCase() + overrideMarker,
         formatWithScore(item.likelihood, 'likelihood'),
         formatWithScore(item.severity, 'severity'),
-        item.additional_actions || '-',
+        item.additional_actions || '—',
         item.status
       ];
     });
 
     autoTable(doc, {
       startY: yPos,
-      head: [['Hazard', 'Who at Risk', 'Existing Controls', 'Risk Level', 'Likelihood (1-5)', 'Severity (1-5)', 'Additional Actions', 'Status']],
+      head: [['Hazard', 'Who at Risk', 'Controls', 'Risk Level', 'Likelihood', 'Severity', 'Actions', 'Status']],
       body: tableData,
-      styles: { fontSize: 7, cellPadding: 2 },
-      headStyles: { fillColor: [66, 139, 202], fontSize: 8, fontStyle: 'bold' },
+      headStyles: { ...PDF_TABLE_HEAD_STYLES, fontSize: 7.5 },
+      bodyStyles: { fontSize: 7, cellPadding: 2 },
+      alternateRowStyles: PDF_TABLE_ALT_ROW,
       columnStyles: {
         0: { cellWidth: 48 },
         1: { cellWidth: 28 },
         2: { cellWidth: 38 },
-        3: { cellWidth: 20 },
+        3: { cellWidth: 20, halign: 'center' },
         4: { cellWidth: 26 },
         5: { cellWidth: 26 },
         6: { cellWidth: 42 },
-        7: { cellWidth: 18 }
+        7: { cellWidth: 18, halign: 'center' }
       },
-      margin: { bottom: 25 },
+      margin: { left: 14, right: 14, bottom: 25 },
       didParseCell: function(data) {
         if (data.column.index === 3 && data.section === 'body') {
           const risk = (data.cell.raw as string).replace(' *', '');
           if (risk === 'HIGH') {
-            data.cell.styles.fillColor = [239, 68, 68];
-            data.cell.styles.textColor = [255, 255, 255];
+            data.cell.styles.fillColor = [185, 28, 28] as [number, number, number];
+            data.cell.styles.textColor = [255, 255, 255] as [number, number, number];
           } else if (risk === 'MEDIUM') {
-            data.cell.styles.fillColor = [251, 146, 60];
-            data.cell.styles.textColor = [255, 255, 255];
+            data.cell.styles.fillColor = [217, 119, 6] as [number, number, number];
+            data.cell.styles.textColor = [255, 255, 255] as [number, number, number];
           } else if (risk === 'LOW') {
-            data.cell.styles.fillColor = [34, 197, 94];
-            data.cell.styles.textColor = [255, 255, 255];
+            data.cell.styles.fillColor = [22, 163, 74] as [number, number, number];
+            data.cell.styles.textColor = [255, 255, 255] as [number, number, number];
           }
         }
       }

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { format } from 'date-fns';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,7 @@ import {
   blobToDataUrl,
   drawPDFHeader,
   drawSectionTitle,
+  drawEquipmentDetails,
   drawSummaryBox,
   PDF_TABLE_HEAD_STYLES,
   drawAllPageFooters,
@@ -495,7 +497,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
       const pdf = new jsPDF();
       const pageWidth = pdf.internal.pageSize.getWidth();
       const pageHeight = pdf.internal.pageSize.getHeight();
-      const margin = 20;
+      const margin = 13;
+      const leftCol = margin;
+      const labelWidth = 32;
       let currentY = margin;
 
       // Helper function to check for page overflow and add new page if needed
@@ -506,169 +510,36 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
         }
       };
 
-      // Footer handled by drawAllPageFooters from pdfUtils
-
-      // === HEADER SECTION ===
-      // Logo on left, company info centered
-      if (logoDataUrl) {
-        try {
-          pdf.addImage(logoDataUrl, 'AUTO', margin, currentY - 5, 18, 18);
-        } catch (e) {
-          console.log('Could not add logo to PDF');
-        }
-      }
-
-      // Company name - always centered on page
-      pdf.setFontSize(16);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(40, 40, 40);
+      // === STANDARD HEADER ===
+      const docId = generateDocId('CHECK');
       const companyName = profile?.company_name || profile?.showmen_name || 'Safety Inspection Report';
-      pdf.text(companyName, pageWidth / 2, currentY, { align: 'center' });
-      currentY += 6;
-
-      // Controller name below company
-      if (profile?.controller_name) {
-        pdf.setFontSize(9);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(100);
-        pdf.text(`Controller: ${profile.controller_name}`, pageWidth / 2, currentY, { align: 'center' });
-        currentY += 5;
-      }
-
-      currentY += 8;
-
-      // Report title with underline
-      pdf.setFontSize(13);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(50, 50, 50);
       const frequencyLabel = frequency === 'preopening' ? 'PRE-OPENING' : frequency.toUpperCase();
-      const reportTitle = `${frequencyLabel} SAFETY CHECK REPORT`;
-      pdf.text(reportTitle, pageWidth / 2, currentY, { align: 'center' });
-      currentY += 6;
 
-      // Date
-      pdf.setFontSize(9);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(80);
-      pdf.text(`Date: ${new Date().toLocaleDateString('en-GB')}`, pageWidth / 2, currentY, { align: 'center' });
-      currentY += 8;
+      currentY = drawPDFHeader({
+        doc: pdf,
+        logoDataUrl,
+        companyName,
+        controllerName: profile?.controller_name,
+        reportTitle: `${frequencyLabel} SAFETY CHECK`,
+        period: format(new Date(), 'dd MMM yyyy'),
+        docId,
+      });
 
-      // Divider line
-      pdf.setDrawColor(180);
-      pdf.line(margin, currentY, pageWidth - margin, currentY);
-      currentY += 10;
-
-      // === EQUIPMENT DETAILS SECTION WITH IMAGE ===
-      pdf.setFontSize(11);
-      pdf.setFont('helvetica', 'bold');
-      pdf.setTextColor(50, 50, 50);
-      pdf.text('Equipment Details', margin, currentY);
-      currentY += 8;
-
-      // Calculate layout - if image exists, put it on the right
-      const hasImage = !!rideImageDataUrl;
-      const maxImageW = 40;
-      const maxImageH = 30;
-      let imageW = maxImageW;
-      let imageH = maxImageH;
-      
-      // Calculate aspect-ratio-preserving dimensions if we have an image
-      if (rideImageDataUrl) {
-        try {
-          // Create a temporary image to get dimensions
-          const img = new Image();
-          await new Promise<void>((resolve) => {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-            img.src = rideImageDataUrl;
-          });
-          
-          if (img.naturalWidth && img.naturalHeight) {
-            const aspectRatio = img.naturalWidth / img.naturalHeight;
-            
-            // Fit within max bounds while preserving aspect ratio
-            if (aspectRatio > maxImageW / maxImageH) {
-              // Image is wider - constrain by width
-              imageW = maxImageW;
-              imageH = maxImageW / aspectRatio;
-            } else {
-              // Image is taller - constrain by height
-              imageH = maxImageH;
-              imageW = maxImageH * aspectRatio;
-            }
-          }
-        } catch (e) {
-          console.log('Could not calculate image dimensions');
-        }
-      }
-      
-      const imageX = pageWidth - margin - imageW;
-      const imageY = currentY;
-
-      pdf.setFontSize(10);
-      pdf.setFont('helvetica', 'normal');
-      pdf.setTextColor(0);
-
-      const leftCol = margin;
-      const labelWidth = 32;
-      const textMaxWidth = hasImage ? imageX - margin - 10 : pageWidth - margin * 2;
-
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Name:', leftCol, currentY);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(ride.ride_name, leftCol + labelWidth, currentY);
-      currentY += 6;
-
-      pdf.setFont('helvetica', 'bold');
-      pdf.text('Category:', leftCol, currentY);
-      pdf.setFont('helvetica', 'normal');
-      pdf.text(ride.ride_categories?.name || '-', leftCol + labelWidth, currentY);
-      currentY += 6;
-
-      if (ride.manufacturer) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Manufacturer:', leftCol, currentY);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(ride.manufacturer, leftCol + labelWidth, currentY);
-        currentY += 6;
-      }
-      if (ride.serial_number) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Serial No:', leftCol, currentY);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(ride.serial_number, leftCol + labelWidth, currentY);
-        currentY += 6;
-      }
-      if (ride.year_manufactured) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Year:', leftCol, currentY);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(ride.year_manufactured.toString(), leftCol + labelWidth, currentY);
-        currentY += 6;
-      }
-      if (ride.owner_name) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Owner:', leftCol, currentY);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(ride.owner_name, leftCol + labelWidth, currentY);
-        currentY += 6;
-      }
-
-      // Add ride image on the right side if available - with proper aspect ratio
-      if (rideImageDataUrl) {
-        try {
-          // Add a subtle border around the image
-          pdf.setDrawColor(200);
-          pdf.setLineWidth(0.5);
-          pdf.rect(imageX - 1, imageY - 1, imageW + 2, imageH + 2);
-          pdf.addImage(rideImageDataUrl, 'JPEG', imageX, imageY, imageW, imageH);
-          currentY = Math.max(currentY, imageY + imageH + 5);
-        } catch (e) {
-          console.log('Could not add ride image to PDF');
-        }
-      }
-
-      currentY += 5;
+      // === EQUIPMENT DETAILS ===
+      currentY = drawSectionTitle(pdf, 'Equipment Details', currentY);
+      currentY = await drawEquipmentDetails({
+        doc: pdf,
+        y: currentY,
+        fields: [
+          { label: 'Equipment', value: ride.ride_name },
+          { label: 'Category', value: ride.ride_categories?.name },
+          { label: 'Manufacturer', value: ride.manufacturer },
+          { label: 'Serial No', value: ride.serial_number },
+          { label: 'Year', value: ride.year_manufactured?.toString() },
+          { label: 'Owner', value: ride.owner_name },
+        ],
+        imageDataUrl: rideImageDataUrl,
+      });
 
       // === INSPECTION DETAILS SECTION ===
       pdf.setDrawColor(200);

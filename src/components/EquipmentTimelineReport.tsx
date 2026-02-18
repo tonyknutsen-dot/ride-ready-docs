@@ -256,168 +256,99 @@ const EquipmentTimelineReport = ({ ride }: EquipmentTimelineReportProps) => {
 
       // Generate PDF
       const doc = new jsPDF();
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-
-      // Footer handled by drawAllPageFooters from pdfUtils
-
-      let yPos = 20;
-
-      // Header with logo
-      if (logoDataUrl) {
-        try {
-          doc.addImage(logoDataUrl, 'AUTO', 20, yPos - 5, 18, 18);
-        } catch (e) {
-          console.log('Could not add logo');
-        }
-      }
-
-      // Company name
-      doc.setFontSize(16);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(40, 40, 40);
+      const docId = generateDocId('TIMELINE');
       const companyName = profile?.company_name || profile?.showmen_name || 'Equipment Timeline';
-      doc.text(companyName, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 6;
+      const period = `${reportDateFrom ? format(reportDateFrom, 'dd/MM/yyyy') : 'All'} – ${reportDateTo ? format(reportDateTo, 'dd/MM/yyyy') : 'Present'}`;
 
-      if (profile?.controller_name) {
-        doc.setFontSize(9);
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(100);
-        doc.text(`Controller: ${profile.controller_name}`, pageWidth / 2, yPos, { align: 'center' });
-        yPos += 5;
-      }
-
-      yPos += 8;
-
-      // Report title
-      doc.setFontSize(13);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(50, 50, 50);
-      doc.text('EQUIPMENT TIMELINE REPORT', pageWidth / 2, yPos, { align: 'center' });
-      yPos += 6;
-
-      // Date range
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(80);
-      const dateRangeText = `Period: ${reportDateFrom ? format(reportDateFrom, 'dd/MM/yyyy') : 'All'} to ${reportDateTo ? format(reportDateTo, 'dd/MM/yyyy') : 'Present'}`;
-      doc.text(dateRangeText, pageWidth / 2, yPos, { align: 'center' });
-      yPos += 8;
-
-      // Divider
-      doc.setDrawColor(180);
-      doc.line(20, yPos, pageWidth - 20, yPos);
-      yPos += 10;
+      // Standard header
+      let yPos = drawPDFHeader({
+        doc,
+        logoDataUrl,
+        companyName,
+        controllerName: profile?.controller_name,
+        reportTitle: 'Equipment Timeline',
+        period,
+        generatedDate: format(new Date(), 'dd MMM yyyy'),
+        docId,
+      });
 
       // Equipment details
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(50, 50, 50);
-      doc.text('Equipment Details', 20, yPos);
-      yPos += 8;
+      yPos = drawSectionTitle(doc, 'Equipment Details', yPos);
+      yPos = await drawEquipmentDetails({
+        doc,
+        y: yPos,
+        fields: [
+          { label: 'Equipment', value: ride.ride_name },
+          { label: 'Category', value: ride.ride_categories?.name },
+          { label: 'Manufacturer', value: ride.manufacturer },
+          { label: 'Serial No', value: ride.serial_number },
+        ],
+      });
 
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(0);
-
-      const leftCol = 20;
-      const labelWidth = 32;
-
-      doc.setFont('helvetica', 'bold');
-      doc.text('Name:', leftCol, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(ride.ride_name, leftCol + labelWidth, yPos);
-      yPos += 6;
-
-      doc.setFont('helvetica', 'bold');
-      doc.text('Category:', leftCol, yPos);
-      doc.setFont('helvetica', 'normal');
-      doc.text(ride.ride_categories?.name || '-', leftCol + labelWidth, yPos);
-      yPos += 6;
-
-      if (ride.manufacturer) {
-        doc.setFont('helvetica', 'bold');
-        doc.text('Manufacturer:', leftCol, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(ride.manufacturer, leftCol + labelWidth, yPos);
-        yPos += 6;
-      }
-
-      if (ride.serial_number) {
-        doc.setFont('helvetica', 'bold');
-        doc.text('Serial No:', leftCol, yPos);
-        doc.setFont('helvetica', 'normal');
-        doc.text(ride.serial_number, leftCol + labelWidth, yPos);
-        yPos += 6;
-      }
-
-      yPos += 5;
-
-      // Summary stats
-      doc.setFontSize(11);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Summary', 20, yPos);
-      yPos += 6;
-
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'normal');
+      // Summary metrics
       const checksCount = events.filter(e => e.type === 'check').length;
       const maintenanceCount = events.filter(e => e.type === 'maintenance').length;
       const defectsCount = events.filter(e => e.type === 'defect').length;
       const inspectionsCount = events.filter(e => e.type === 'inspection').length;
       const ndtCount = events.filter(e => e.type === 'ndt_schedule' || e.type === 'ndt_report').length;
 
-      doc.text(`Total Events: ${events.length}  |  Checks: ${checksCount}  |  Maintenance: ${maintenanceCount}  |  Defects: ${defectsCount}  |  Inspections: ${inspectionsCount}  |  NDT: ${ndtCount}`, 20, yPos);
-      yPos += 10;
+      yPos = drawSummaryBox(doc, [
+        { label: 'Total Events', value: String(events.length), accent: true },
+        { label: 'Checks', value: String(checksCount) },
+        { label: 'Maintenance', value: String(maintenanceCount) },
+        { label: 'Defects', value: String(defectsCount) },
+      ], yPos);
 
-      // Divider
-      doc.setDrawColor(180);
-      doc.line(20, yPos, pageWidth - 20, yPos);
-      yPos += 8;
+      if (inspectionsCount + ndtCount > 0) {
+        yPos = drawSummaryBox(doc, [
+          { label: 'Inspections', value: String(inspectionsCount) },
+          { label: 'NDT Records', value: String(ndtCount) },
+        ], yPos);
+      }
 
       // Timeline table
       const getTypeLabel = (type: string) => {
         const labels: Record<string, string> = {
-          'check': '✓ Check',
-          'maintenance': '🔧 Maintenance',
-          'defect': '⚠ Defect',
-          'inspection': '📋 Annual Inspection',
-          'ndt_schedule': '🔬 NDT Schedule',
-          'ndt_report': '🔬 NDT Report',
+          'check': 'Check',
+          'maintenance': 'Maintenance',
+          'defect': 'Defect',
+          'inspection': 'Annual Inspection',
+          'ndt_schedule': 'NDT Schedule',
+          'ndt_report': 'NDT Report',
         };
         return labels[type] || type;
       };
+
+      yPos = drawSectionTitle(doc, 'Activity Timeline', yPos);
 
       const tableData = events.map(event => [
         format(event.date, 'dd/MM/yyyy'),
         getTypeLabel(event.type),
         event.title,
         event.description,
-        event.status || '-',
+        event.status || '—',
       ]);
 
       autoTable(doc, {
         startY: yPos,
         head: [['Date', 'Type', 'Event', 'Details', 'Status']],
         body: tableData,
-        styles: { fontSize: 8, cellPadding: 2 },
-        headStyles: { fillColor: [80, 80, 80], textColor: 255, fontStyle: 'bold' },
+        headStyles: PDF_TABLE_HEAD_STYLES,
+        bodyStyles: PDF_TABLE_BODY_STYLES,
+        alternateRowStyles: PDF_TABLE_ALT_ROW,
         columnStyles: {
-          0: { cellWidth: 22 },
+          0: { cellWidth: 22, halign: 'center' },
           1: { cellWidth: 28 },
-          2: { cellWidth: 35 },
+          2: { cellWidth: 33 },
           3: { cellWidth: 65 },
-          4: { cellWidth: 20 },
+          4: { cellWidth: 22, halign: 'center' },
         },
-        alternateRowStyles: { fillColor: [248, 248, 248] },
-        margin: { left: 20, right: 20 },
+        margin: { left: 13, right: 13 },
       });
 
-      drawAllPageFooters(doc);
+      drawAllPageFooters(doc, docId);
 
-      // Save PDF
-      const fileName = `${ride.ride_name.replace(/[^a-z0-9]/gi, '_')}_Timeline_${format(new Date(), 'yyyyMMdd')}.pdf`;
+      const fileName = buildFileName([ride.ride_name, 'Timeline', format(new Date(), 'yyyyMMdd')]);
       doc.save(fileName);
 
       toast({
