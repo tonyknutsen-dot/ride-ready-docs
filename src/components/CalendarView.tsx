@@ -120,11 +120,9 @@ const CalendarView = () => {
   const loadRides = async () => {
     if (!user?.id) return;
     try {
-      const { data, error } = await supabase
-        .from('rides')
-        .select('*')
-        .eq('user_id', effectiveUserId)
-        .order('ride_name');
+      let ridesQuery = supabase.from('rides').select('*').order('ride_name');
+      if (!isStaff) ridesQuery = ridesQuery.eq('user_id', effectiveUserId) as any;
+      const { data, error } = await ridesQuery;
       if (error) throw error;
       setRides(data || []);
     } catch (error) {
@@ -162,7 +160,8 @@ const CalendarView = () => {
       const allEvents: CalendarEvent[] = [];
       const rideIds = new Set<string>();
 
-      const buildQuery = (baseQuery: any) => baseQuery.eq('user_id', effectiveUserId);
+      // For owners, filter by user_id. For staff, RLS (staff_can_access_ride) handles it.
+      const buildQuery = (baseQuery: any) => isStaff ? baseQuery : baseQuery.eq('user_id', effectiveUserId);
 
       const { data: checks } = await buildQuery(
         supabase.from('checks').select('id, check_date, status, ride_id')
@@ -233,7 +232,9 @@ const CalendarView = () => {
       });
 
       if (rideIds.size > 0) {
-        const { data: ridesData } = await supabase.from('rides').select('id, ride_name').in('id', Array.from(rideIds)).eq('user_id', effectiveUserId);
+        let ridesQuery = supabase.from('rides').select('id, ride_name').in('id', Array.from(rideIds));
+        if (!isStaff) ridesQuery = ridesQuery.eq('user_id', effectiveUserId) as any;
+        const { data: ridesData } = await ridesQuery;
         const rideMap = new Map(ridesData?.map(r => [r.id, r.ride_name]) || []);
         allEvents.forEach(event => {
           if (event.rideId) {
