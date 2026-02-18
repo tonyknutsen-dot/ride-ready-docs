@@ -3,7 +3,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Settings2, Info, RotateCcw, Scale } from 'lucide-react';
+import { Settings2, Info, RotateCcw, Scale, Shield, ClipboardList, HardHat, Lock } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
@@ -92,24 +92,25 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
             <span>Risk Calculation Settings</span>
           </DialogTitle>
           <DialogDescription className="text-xs">
-            Customise how control measures reduce risk scores.
+            Configure control effectiveness weightings for residual risk calculation.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Explanation */}
+          {/* Methodology explanation */}
           <Alert className="bg-info/10 border-info/30">
             <Info className="h-4 w-4 text-info shrink-0" />
-            <AlertDescription className="text-xs leading-relaxed">
-              These percentages determine how much existing controls and additional actions 
-              reduce the inherent risk score. Combined total is capped at {MAX_COMBINED_REDUCTION}%.
+            <AlertDescription className="text-xs leading-relaxed space-y-1">
+              <p>These weightings represent the <strong>effectiveness of control measures</strong> in reducing inherent risk. Reduction is applied to the combined likelihood × severity score before residual risk is recalculated.</p>
+              <p className="text-muted-foreground">Combined weighting is capped at {MAX_COMBINED_REDUCTION}% — hazard elimination is required to achieve greater reductions.</p>
             </AlertDescription>
           </Alert>
 
-          {/* Existing Controls Reduction */}
+          {/* Existing Controls Weighting */}
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
+                <Shield className="h-3.5 w-3.5 text-green-600 shrink-0" />
                 <Label className="text-sm font-medium truncate">Existing Controls</Label>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -117,8 +118,15 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
                       <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent side="top" align="start" className="max-w-[calc(100vw-3rem)] text-sm p-3">
-                    <p>Reduction applied when existing control measures are documented.</p>
+                  <PopoverContent side="top" align="start" className="max-w-[calc(100vw-3rem)] p-3 space-y-2">
+                    <p className="text-xs font-semibold text-foreground">Control effectiveness guidance:</p>
+                    <div className="space-y-1 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-2"><span className="w-16 shrink-0 font-mono">5–10%</span><span>Administrative controls (signs, rules)</span></div>
+                      <div className="flex items-center gap-2"><span className="w-16 shrink-0 font-mono">10–20%</span><span>Procedural controls (SOPs, training)</span></div>
+                      <div className="flex items-center gap-2"><span className="w-16 shrink-0 font-mono">20–30%</span><span>Engineering controls (barriers, interlocks)</span></div>
+                      <div className="flex items-center gap-2"><span className="w-16 shrink-0 font-mono">30–40%</span><span>Physical safeguarding (guarding, PPE)</span></div>
+                    </div>
+                    <p className="text-xs text-muted-foreground border-t pt-2">Applied when existing control measures are currently in place and documented.</p>
                   </PopoverContent>
                 </Popover>
               </div>
@@ -135,15 +143,16 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
               className="w-full"
             />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>5%</span>
-              <span>{maxExistingControls}%</span>
+              <span>5% (administrative)</span>
+              <span>{maxExistingControls}% (physical)</span>
             </div>
           </div>
 
-          {/* Additional Actions Reduction */}
+          {/* Additional Actions Weighting */}
           <div className="space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 min-w-0">
+                <ClipboardList className="h-3.5 w-3.5 text-amber-600 shrink-0" />
                 <Label className="text-sm font-medium truncate">Additional Actions</Label>
                 <Popover>
                   <PopoverTrigger asChild>
@@ -151,8 +160,8 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
                       <Info className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                     </button>
                   </PopoverTrigger>
-                  <PopoverContent side="top" align="start" className="max-w-[calc(100vw-3rem)] text-sm p-3">
-                    <p>Reduction applied when additional control actions are planned.</p>
+                  <PopoverContent side="top" align="start" className="max-w-[calc(100vw-3rem)] text-xs p-3">
+                    <p>Weighting applied to planned improvements not yet fully implemented. These represent <em>anticipated</em> risk reduction once actions are complete.</p>
                   </PopoverContent>
                 </Popover>
               </div>
@@ -175,44 +184,55 @@ export function RiskSettingsDialog({ settings, onSave, saving }: RiskSettingsDia
           </div>
 
           {/* Combined Total Display */}
-          <div className={`text-xs rounded-lg p-3 ${
-            combinedTotal === MAX_COMBINED_REDUCTION 
-              ? 'bg-primary/10 border border-primary/30 text-primary' 
-              : 'bg-muted/50 text-muted-foreground'
+          <div className={`text-xs rounded-lg p-3 border ${
+            combinedTotal >= MAX_COMBINED_REDUCTION
+              ? 'bg-primary/10 border-primary/30 text-primary'
+              : 'bg-muted/40 border-border text-muted-foreground'
           }`}>
-            <p className="font-medium">
-              Combined: {combinedTotal}% / {MAX_COMBINED_REDUCTION}% max
-            </p>
-            <p className="mt-1 text-muted-foreground">
-              {combinedTotal === MAX_COMBINED_REDUCTION 
-                ? 'Maximum reduction reached. Adjust one slider to increase the other.'
-                : 'Risk can never be reduced by more than 50% through controls alone.'}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="font-semibold text-foreground">
+                Combined weighting: <span className="font-mono">{combinedTotal}%</span>
+              </p>
+              <span className="text-xs text-muted-foreground font-mono">max {MAX_COMBINED_REDUCTION}%</span>
+            </div>
+            {combinedTotal >= MAX_COMBINED_REDUCTION ? (
+              <div className="flex items-center gap-1.5 mt-1.5">
+                <Lock className="h-3 w-3 text-primary shrink-0" />
+                <p className="text-primary font-medium">Maximum weighting reached. Hazard elimination required for further reduction.</p>
+              </div>
+            ) : (
+              <p className="mt-1">
+                Remaining capacity: <span className="font-mono font-medium">{MAX_COMBINED_REDUCTION - combinedTotal}%</span>
+              </p>
+            )}
           </div>
 
           {/* Professional Disclaimer */}
           <div className="text-xs text-muted-foreground bg-warning/10 border border-warning/30 rounded-lg p-3">
             <div className="flex items-start gap-2">
               <Scale className="h-4 w-4 shrink-0 mt-0.5 text-warning" />
-              <div>
-                <strong className="text-foreground">Your Professional Judgement:</strong>{' '}
-                These values are suggestions only. You must determine appropriate reduction percentages 
-                based on your organisation's control effectiveness and risk appetite. 
-                The operators of this application accept no liability for values selected.
+              <div className="space-y-1">
+                <p><strong className="text-foreground">Professional Judgement Required:</strong>{' '}
+                These weightings are guidance only. You must determine appropriate values based on your organisation's specific control effectiveness, evidence, and risk appetite.</p>
+                <p>The operators of this application accept no liability for control weightings selected or residual risk determinations made.</p>
               </div>
             </div>
           </div>
         </div>
 
-        <DialogFooter className="flex-col-reverse sm:flex-row gap-2">
-          <Button variant="outline" onClick={handleReset} className="gap-1.5 w-full sm:w-auto">
-            <RotateCcw className="h-4 w-4" />
-            Reset
-          </Button>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Button variant="ghost" onClick={() => setOpen(false)} className="flex-1 sm:flex-initial">Cancel</Button>
-            <Button onClick={handleSave} disabled={saving} className="flex-1 sm:flex-initial">Save</Button>
+        <DialogFooter className="flex-col gap-2">
+          <div className="flex gap-2 w-full">
+            <Button variant="ghost" onClick={() => setOpen(false)} className="flex-1">Cancel</Button>
+            <Button onClick={handleSave} disabled={saving} className="flex-1">Save Settings</Button>
           </div>
+          <button
+            type="button"
+            onClick={handleReset}
+            className="flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors py-1 w-full"
+          >
+            <RotateCcw className="h-3 w-3" />
+            Reset to defaults (20% / 15%)
+          </button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
