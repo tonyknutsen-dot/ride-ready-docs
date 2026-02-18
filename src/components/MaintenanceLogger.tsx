@@ -47,8 +47,8 @@ const MAINTENANCE_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
-// Section header with coloured icon chip
-const SectionHeader = ({
+// ── Section header with coloured icon chip ──────────────────────────────────
+const LogSectionHeader = ({
   icon: Icon,
   title,
   iconColor,
@@ -70,8 +70,8 @@ const SectionHeader = ({
   </div>
 );
 
-// Reusable section card
-const SectionCard = ({
+// ── Reusable section card ───────────────────────────────────────────────────
+const LogSectionCard = ({
   children,
   className = '',
   style = {},
@@ -81,7 +81,7 @@ const SectionCard = ({
   style?: React.CSSProperties;
 }) => (
   <div
-    className={`rounded-2xl border p-4 space-y-4 ${className}`}
+    className={`border p-4 space-y-4 ${className}`}
     style={{
       background: '#FFFFFF',
       borderColor: '#E2E8F0',
@@ -94,7 +94,7 @@ const SectionCard = ({
   </div>
 );
 
-// Field input override — ensures consistent height/radius
+// ── Field styles ─────────────────────────────────────────────────────────────
 const fieldClass = 'h-11 rounded-[10px] border-[#CBD5E1] bg-white text-[#0F172A] placeholder:text-[#94A3B8] focus-visible:border-[#1E3A5F] focus-visible:shadow-[0_0_0_3px_rgba(30,58,95,0.15)]';
 const textareaClass = 'rounded-[10px] border-[#CBD5E1] bg-white text-[#0F172A] placeholder:text-[#94A3B8] focus-visible:border-[#1E3A5F] focus-visible:shadow-[0_0_0_3px_rgba(30,58,95,0.15)] min-h-[100px]';
 
@@ -341,8 +341,8 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
       </div>
 
       {/* ── SECTION 1: Maintenance Details ── */}
-      <SectionCard style={{ background: '#F8FAFC' }}>
-        <SectionHeader
+      <LogSectionCard style={{ background: '#F8FAFC' }}>
+        <LogSectionHeader
           icon={CalendarIcon}
           title="Maintenance Details"
           iconColor="#1E3A5F"
@@ -487,11 +487,11 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             />
           </div>
         )}
-      </SectionCard>
+      </LogSectionCard>
 
       {/* ── SECTION 2: Work Performed ── */}
-      <SectionCard>
-        <SectionHeader
+      <LogSectionCard>
+        <LogSectionHeader
           icon={Wrench}
           title="Work Performed"
           iconColor="#C27C2C"
@@ -548,11 +548,11 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             />
           </div>
         </div>
-      </SectionCard>
+      </LogSectionCard>
 
       {/* ── SECTION 3: Service Provider ── */}
-      <SectionCard>
-        <SectionHeader
+      <LogSectionCard>
+        <LogSectionHeader
           icon={UserCog}
           title="Service Provider"
           iconColor="#0F766E"
@@ -604,17 +604,17 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             />
           </div>
         </div>
-      </SectionCard>
+      </LogSectionCard>
 
       {/* ── SECTION 4: Verification ── */}
-      <SectionCard
+      <LogSectionCard
         style={
           formData.requires_verification
-            ? { background: '#ECFDF5', border: '1px solid #34D399' }
-            : { background: '#FFFFFF', border: '1px solid #E2E8F0' }
+            ? { background: '#ECFDF5', borderColor: '#34D399' }
+            : { background: '#FFFFFF', borderColor: '#E2E8F0' }
         }
       >
-        <SectionHeader
+        <LogSectionHeader
           icon={ShieldCheck}
           title="Verification"
           iconColor="#16A34A"
@@ -675,7 +675,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             </div>
           </div>
         )}
-      </SectionCard>
+      </LogSectionCard>
 
       {/* ── SECTION 5: Evidence & Attachments ── */}
       <div
