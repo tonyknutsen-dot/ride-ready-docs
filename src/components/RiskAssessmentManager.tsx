@@ -1625,14 +1625,14 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           resetItemForm();
         }
       }}>
-        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto bg-[#F8FAFC] p-0 gap-0">
-          {/* Dialog header */}
-          <div className="bg-white border-b border-[#E2E8F0] px-5 py-4 rounded-t-2xl">
-            <DialogTitle className="text-[17px] font-semibold text-[#0F172A]">
+        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto bg-[#F6F8FB] p-0 gap-0 rounded-2xl">
+          {/* ── Sticky modal header ── */}
+          <div className="modal-header rounded-t-2xl">
+            <DialogTitle className="text-[17px] font-semibold text-[#0F172A] leading-tight">
               {editingItem ? 'Edit' : 'Add'} Risk Item
             </DialogTitle>
-            <DialogDescription className="text-[13px] text-slate-500 mt-0.5">
-              A risk assessment helps identify hazards and controls to keep everyone safe. Answer each question as accurately as possible.
+            <DialogDescription className="text-[13px] text-slate-500 mt-0.5 leading-snug">
+              Identify the hazard, evaluate the risk, and define controls to keep everyone safe.
             </DialogDescription>
           </div>
 
@@ -1695,23 +1695,20 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           })()}
 
           <TooltipProvider>
-            <div className="space-y-4 px-4 py-4 pb-0">
+            <div className="modal-body space-y-3 pb-0">
               {/* ── SECTION 1: Risk Identification ── */}
-              <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
-              {/* Section header */}
+              <div className="bg-white rounded-[14px] border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)', marginBottom: 0 }}>
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F1F5F9]">
-                  <div className="w-[22px] h-[22px] rounded-full bg-[#EEF2FF] flex items-center justify-center shrink-0">
-                    <span className="text-[11px] font-bold text-[#1E3A5F]">1</span>
-                  </div>
+                  <div className="step-badge" style={{ background: '#EEF2FF', color: '#1E3A5F', border: '1px solid #C7D2FE' }}>1</div>
                   <div>
-                    <p className="text-[15px] font-semibold text-[#0F172A]">Risk Identification</p>
-                    <p className="text-[12px] text-slate-500">Describe the hazard and who could be harmed</p>
+                    <p className="step-title text-[#0F172A]">Risk Identification</p>
+                    <p className="text-[12px] text-slate-500 leading-snug">Describe the hazard and who could be harmed</p>
                   </div>
                 </div>
-                <div className="px-4 py-4 space-y-4">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <Label htmlFor="hazard_description">Hazard Description *</Label>
+                <div className="px-4 py-4 space-y-3">
+                  <div className="field">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="hazard_description" className="text-[13px] font-semibold text-[#0F172A]">Hazard Description *</Label>
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
@@ -2154,14 +2151,12 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
               </div>
 
               {/* ── SECTION 2: Risk Evaluation ── */}
-              <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+              <div className="bg-white rounded-[14px] border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F1F5F9]">
-                  <div className="w-[22px] h-[22px] rounded-full bg-[#EEF2FF] flex items-center justify-center shrink-0">
-                    <span className="text-[11px] font-bold text-[#1E3A5F]">2</span>
-                  </div>
+                  <div className="step-badge" style={{ background: '#EEF2FF', color: '#1E3A5F', border: '1px solid #C7D2FE' }}>2</div>
                   <div>
-                    <p className="text-[15px] font-semibold text-[#0F172A]">Risk Evaluation</p>
-                    <p className="text-[12px] text-slate-500">Risk is calculated as Likelihood × Severity. Controls reduce the residual risk.</p>
+                    <p className="step-title text-[#0F172A]">Risk Evaluation</p>
+                    <p className="text-[12px] text-slate-500 leading-snug">Risk = Likelihood × Severity. Controls reduce the residual risk.</p>
                   </div>
                 </div>
                 <div className="px-4 py-4">
@@ -2183,30 +2178,27 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
               </div>
 
               {/* ── SECTION 3: Risk Controls & Actions ── */}
-              <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+              <div className="bg-white rounded-[14px] border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F1F5F9]">
-                  <div className="w-[22px] h-[22px] rounded-full bg-[#EEF2FF] flex items-center justify-center shrink-0">
-                    <span className="text-[11px] font-bold text-[#1E3A5F]">3</span>
-                  </div>
+                  <div className="step-badge" style={{ background: '#EEF2FF', color: '#1E3A5F', border: '1px solid #C7D2FE' }}>3</div>
                   <div>
-                    <p className="text-[15px] font-semibold text-[#0F172A]">Risk Controls &amp; Actions</p>
-                    <p className="text-[12px] text-slate-500">Define controls in place and any additional actions required</p>
+                    <p className="step-title text-[#0F172A]">Risk Controls &amp; Actions</p>
+                    <p className="text-[12px] text-slate-500 leading-snug">Define controls in place and any additional actions required</p>
                   </div>
                 </div>
-                <div className="px-4 py-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="additional_actions">Additional Actions Required</Label>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                            <p>What extra steps need to be taken to further reduce the risk?</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
+                <div className="px-4 py-4 space-y-3">
+                  <div className="field">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="additional_actions" className="text-[13px] font-semibold text-[#0F172A]">Additional Actions Required</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>What extra steps need to be taken to further reduce the risk?</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                       
                       <Collapsible>
                         <CollapsibleTrigger asChild>
@@ -2297,151 +2289,147 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                           onChange={(e) => setItemFormData({ ...itemFormData, additional_actions: e.target.value })}
                         />
                       )}
-                    </div>
-                    
-                    {/* Action Owner + Due Date — always side-by-side, collapses to 1-col on very small screens */}
-                    <div className="grid grid-cols-2 gap-3" style={{ gridTemplateColumns: '1fr 1fr' }}>
-                      {/* Action Owner */}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <Label htmlFor="action_owner" className="text-[13px] font-semibold text-[#0F172A]">
-                            Action Owner
-                            {itemFormData.additional_actions?.trim() && (
-                              <span className="text-destructive ml-1">*</span>
-                            )}
-                          </Label>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              <p>The person accountable for implementing this action.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Input
-                          id="action_owner"
-                          placeholder="Person responsible"
-                          value={itemFormData.action_owner}
-                          onChange={(e) => setItemFormData({ ...itemFormData, action_owner: e.target.value })}
-                          className={cn(
-                            "h-11 rounded-[10px] border-[#CBD5E1] bg-white text-[14px] px-3 placeholder:text-muted-foreground/60",
-                            itemFormData.additional_actions?.trim() && !itemFormData.action_owner?.trim() && "border-destructive bg-[#FEF2F2]"
-                          )}
-                        />
-                        <p className="text-[12px] text-muted-foreground mt-1 leading-snug">
-                          {itemFormData.additional_actions?.trim()
-                            ? "Required — who will action this?"
-                            : "Name or role of implementer"}
-                        </p>
-                      </div>
+                  </div>
 
-                      {/* Action Due Date */}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 mb-2">
-                          <Label htmlFor="target_date" className="text-[13px] font-semibold text-[#0F172A]">
-                            Due Date
-                            {itemFormData.additional_actions?.trim() && (
-                              <span className="text-destructive ml-1">*</span>
-                            )}
-                          </Label>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">
-                              <p>Deadline for completing this control measure.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </div>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full justify-start text-left font-normal h-11 rounded-[10px] border-[#CBD5E1] bg-white text-[14px] px-3",
-                                !itemFormData.target_date && "text-muted-foreground",
-                                itemFormData.additional_actions?.trim() && !itemFormData.target_date && "border-destructive bg-[#FEF2F2]"
-                              )}
-                            >
-                              <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
-                              <span className="truncate">
-                                {itemFormData.target_date ? format(new Date(itemFormData.target_date), 'dd MMM yyyy') : 'Pick a date'}
-                              </span>
-                            </Button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={itemFormData.target_date ? new Date(itemFormData.target_date) : undefined}
-                              onSelect={(date) => setItemFormData({ ...itemFormData, target_date: date ? format(date, 'yyyy-MM-dd') : '' })}
-                              initialFocus
-                              className={cn("p-3 pointer-events-auto")}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                        {itemFormData.additional_actions?.trim() && !itemFormData.target_date && (
-                          <p className="text-[12px] text-destructive mt-1 leading-snug">
-                            Required when actions are set
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="col-span-2">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Label htmlFor="status" className="text-[13px] font-semibold text-[#0F172A]">Status</Label>
+                  {/* Action Owner + Due Date — row-2 grid */}
+                  <div className="row-2">
+                    {/* Action Owner */}
+                    <div className="field min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <Label htmlFor="action_owner" className="text-[13px] font-semibold text-[#0F172A]">
+                          Action Owner
+                          {itemFormData.additional_actions?.trim() && (
+                            <span className="text-destructive ml-1">*</span>
+                          )}
+                        </Label>
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Info className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" />
                           </TooltipTrigger>
                           <TooltipContent className="max-w-xs">
-                            <p>Track the progress of actions for this risk item</p>
+                            <p>The person accountable for implementing this action.</p>
                           </TooltipContent>
                         </Tooltip>
                       </div>
-                      <Select value={itemFormData.status} onValueChange={(value) => setItemFormData({ ...itemFormData, status: value })}>
-                        <SelectTrigger className="bg-white border-[#CBD5E1] rounded-xl h-10">
-                          <SelectValue>
-                            {itemFormData.status === 'open' && (
-                              <span className="inline-flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-blue-500" /> Open
-                              </span>
-                            )}
-                            {itemFormData.status === 'in_progress' && (
-                              <span className="inline-flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-amber-500" /> In Progress
-                              </span>
-                            )}
-                            {itemFormData.status === 'completed' && (
-                              <span className="inline-flex items-center gap-1.5">
-                                <span className="w-2 h-2 rounded-full bg-green-500" /> Completed
-                              </span>
-                            )}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent className="bg-background z-50">
-                          <SelectItem value="open">
-                            <div className="flex items-center gap-2">
-                              <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#DBEAFE] text-[#1E3A8A]">Open</span>
-                              <span className="text-xs text-slate-500">Not yet started</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="in_progress">
-                            <div className="flex items-center gap-2">
-                              <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FEF3C7] text-[#92400E]">In Progress</span>
-                              <span className="text-xs text-slate-500">Actions underway</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="completed">
-                            <div className="flex items-center gap-2">
-                              <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#DCFCE7] text-[#166534]">Completed</span>
-                              <span className="text-xs text-slate-500">Controls verified</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <Input
+                        id="action_owner"
+                        placeholder="Person responsible"
+                        value={itemFormData.action_owner}
+                        onChange={(e) => setItemFormData({ ...itemFormData, action_owner: e.target.value })}
+                        className={cn(
+                          "h-11 rounded-[10px] border-[#CBD5E1] bg-white text-[14px] px-3 placeholder:text-muted-foreground/60",
+                          itemFormData.additional_actions?.trim() && !itemFormData.action_owner?.trim() && "border-destructive bg-[#FEF2F2]"
+                        )}
+                      />
+                      <small className="helper">
+                        {itemFormData.additional_actions?.trim() ? "Required — who will action this?" : "Name or role of implementer"}
+                      </small>
                     </div>
+
+                    {/* Action Due Date */}
+                    <div className="field min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <Label htmlFor="target_date" className="text-[13px] font-semibold text-[#0F172A]">
+                          Due Date
+                          {itemFormData.additional_actions?.trim() && (
+                            <span className="text-destructive ml-1">*</span>
+                          )}
+                        </Label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="h-3.5 w-3.5 text-muted-foreground cursor-help shrink-0" />
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <p>Deadline for completing this control measure.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            className={cn(
+                              "w-full justify-start text-left font-normal h-11 rounded-[10px] border-[#CBD5E1] bg-white text-[14px] px-3",
+                              !itemFormData.target_date && "text-muted-foreground",
+                              itemFormData.additional_actions?.trim() && !itemFormData.target_date && "border-destructive bg-[#FEF2F2]"
+                            )}
+                          >
+                            <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+                            <span className="truncate">
+                              {itemFormData.target_date ? format(new Date(itemFormData.target_date), 'dd MMM yyyy') : 'Pick a date'}
+                            </span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={itemFormData.target_date ? new Date(itemFormData.target_date) : undefined}
+                            onSelect={(date) => setItemFormData({ ...itemFormData, target_date: date ? format(date, 'yyyy-MM-dd') : '' })}
+                            initialFocus
+                            className={cn("p-3 pointer-events-auto")}
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      {itemFormData.additional_actions?.trim() && !itemFormData.target_date && (
+                        <small className="helper" style={{ color: '#B91C1C' }}>Required when actions are set</small>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Status field */}
+                  <div className="field">
+                    <div className="flex items-center gap-2">
+                      <Label htmlFor="status" className="text-[13px] font-semibold text-[#0F172A]">Status</Label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3.5 w-3.5 text-slate-400 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-xs">
+                          <p>Track the progress of actions for this risk item</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
+                    <Select value={itemFormData.status} onValueChange={(value) => setItemFormData({ ...itemFormData, status: value })}>
+                      <SelectTrigger className="h-11 rounded-[10px] bg-white border-[#CBD5E1]">
+                        <SelectValue>
+                          {itemFormData.status === 'open' && (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-blue-500" /> Open
+                            </span>
+                          )}
+                          {itemFormData.status === 'in_progress' && (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-amber-500" /> In Progress
+                            </span>
+                          )}
+                          {itemFormData.status === 'completed' && (
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className="w-2 h-2 rounded-full bg-green-500" /> Completed
+                            </span>
+                          )}
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent className="bg-background z-50">
+                        <SelectItem value="open">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#DBEAFE] text-[#1E3A8A]">Open</span>
+                            <span className="text-xs text-slate-500">Not yet started</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="in_progress">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FEF3C7] text-[#92400E]">In Progress</span>
+                            <span className="text-xs text-slate-500">Actions underway</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="completed">
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#DCFCE7] text-[#166534]">Completed</span>
+                            <span className="text-xs text-slate-500">Controls verified</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
