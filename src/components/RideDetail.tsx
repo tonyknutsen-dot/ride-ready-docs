@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, FileText, CheckSquare, Upload, Settings, Mail, Wrench, Pencil, ImageIcon, Trash2, HelpCircle } from 'lucide-react';
+import { 
+  ArrowLeft, FileText, CheckSquare, Mail, Wrench, Pencil, ImageIcon, Trash2, HelpCircle,
+  ShieldCheck, ShieldAlert, Clock, ChevronRight
+} from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -15,7 +16,6 @@ import RideDocuments from './RideDocuments';
 import InspectionManager from './InspectionManager';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
 import { FeatureGate } from './FeatureGate';
-import { RestrictedFeatureCard } from './RestrictedFeatureCard';
 import RideForm from './RideForm';
 import SafetyCertificateCard from './SafetyCertificateCard';
 import ImageViewer from './ImageViewer';
@@ -45,7 +45,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Sync tab state with URL for proper back/forward navigation
   const activeTab = searchParams.get('tab') || initialTab;
   const setActiveTab = (tab: string) => {
     setSearchParams({ tab }, { replace: true });
@@ -57,13 +56,12 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
     docCount: 0,
     todayChecks: 0,
     maintenanceCount: 0,
+    hasExpiredDocs: false,
+    hasExpiringSoonDocs: false,
     loading: true
   });
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
   const [photoViewerOpen, setPhotoViewerOpen] = useState(false);
-
-  // All paying users and testers have full access
-  const isActiveUser = subscription?.subscriptionStatus === 'active' || subscription?.isTesterAccount;
 
   useEffect(() => {
     loadRideStatistics();
@@ -72,41 +70,35 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
   const loadRideStatistics = async () => {
     if (!effectiveUserId) return;
-
     try {
-      // Count ride-specific documents only (exclude maintenance and photo docs for display)
-      // For staff, don't filter by user_id - RLS handles access
       let docQuery = supabase
         .from('documents')
-        .select('*', { count: 'exact', head: true })
+        .select('expires_at, document_type', { count: 'exact' })
         .eq('ride_id', ride.id)
         .neq('document_type', 'maintenance')
         .neq('document_type', 'photo');
       if (!isStaff) docQuery = docQuery.eq('user_id', effectiveUserId);
-      const { count: docCount } = await docQuery;
+      const { data: docData, count: docCount } = await docQuery;
+
+      const thirtyDaysOut = new Date();
+      thirtyDaysOut.setDate(thirtyDaysOut.getDate() + 30);
+      const hasExpiredDocs = (docData || []).some(d => d.expires_at && new Date(d.expires_at) < new Date());
+      const hasExpiringSoonDocs = !hasExpiredDocs && (docData || []).some(d => d.expires_at && new Date(d.expires_at) <= thirtyDaysOut);
 
       const today = new Date().toISOString().split('T')[0];
       let checksQuery = supabase
-        .from('checks')
-        .select('*', { count: 'exact', head: true })
-        .eq('ride_id', ride.id)
-        .eq('check_date', today);
+        .from('checks').select('*', { count: 'exact', head: true })
+        .eq('ride_id', ride.id).eq('check_date', today);
       if (!isStaff) checksQuery = checksQuery.eq('user_id', effectiveUserId);
       const { count: todayChecks } = await checksQuery;
 
       let maintenanceQuery = supabase
-        .from('maintenance_records')
-        .select('*', { count: 'exact', head: true })
+        .from('maintenance_records').select('*', { count: 'exact', head: true })
         .eq('ride_id', ride.id);
       if (!isStaff) maintenanceQuery = maintenanceQuery.eq('user_id', effectiveUserId);
       const { count: maintenanceCount } = await maintenanceQuery;
 
-      setRideStats({
-        docCount: docCount || 0,
-        todayChecks: todayChecks || 0,
-        maintenanceCount: maintenanceCount || 0,
-        loading: false
-      });
+      setRideStats({ docCount: docCount || 0, todayChecks: todayChecks || 0, maintenanceCount: maintenanceCount || 0, hasExpiredDocs, hasExpiringSoonDocs, loading: false });
     } catch (error) {
       console.error('Error loading ride statistics:', error);
       setRideStats(prev => ({ ...prev, loading: false }));
@@ -115,30 +107,16 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
   const loadRidePhoto = async () => {
     if (!effectiveUserId) return;
-
     try {
-      // Get the device photo document
-      // For staff, RLS handles access; for owners, filter by user_id
       let photoQuery = supabase
-        .from('documents')
-        .select('file_path')
-        .eq('ride_id', ride.id)
-        .eq('document_type', 'photo')
-        .eq('is_latest_version', true)
-        .order('uploaded_at', { ascending: false })
-        .limit(1);
+        .from('documents').select('file_path')
+        .eq('ride_id', ride.id).eq('document_type', 'photo')
+        .eq('is_latest_version', true).order('uploaded_at', { ascending: false }).limit(1);
       if (!isStaff) photoQuery = photoQuery.eq('user_id', effectiveUserId);
       const { data: photoDoc } = await photoQuery.maybeSingle();
-
       if (photoDoc?.file_path) {
-        // Bucket is private, so use signed URL
-        const { data, error } = await supabase.storage
-          .from('ride-documents')
-          .createSignedUrl(photoDoc.file_path, 3600); // 1 hour expiry
-        
-        if (data?.signedUrl && !error) {
-          setPhotoUrl(data.signedUrl);
-        }
+        const { data, error } = await supabase.storage.from('ride-documents').createSignedUrl(photoDoc.file_path, 3600);
+        if (data?.signedUrl && !error) setPhotoUrl(data.signedUrl);
       }
     } catch (error) {
       console.error('Error loading ride photo:', error);
@@ -148,259 +126,228 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const handleEditSuccess = () => {
     setIsEditing(false);
     onUpdate();
-    loadRidePhoto(); // Refresh photo after edit
+    loadRidePhoto();
+  };
+
+  // Compliance status
+  const complianceStatus = rideStats.loading ? null
+    : rideStats.hasExpiredDocs ? 'overdue'
+    : rideStats.hasExpiringSoonDocs ? 'expiring'
+    : 'compliant';
+
+  const complianceConfig = {
+    overdue:   { label: 'Attention Required', sub: 'One or more documents have expired', bg: '#FEF2F2', border: '#FCA5A5', text: '#991B1B', Icon: ShieldAlert },
+    expiring:  { label: 'Due Soon', sub: 'Documents expiring within 30 days', bg: '#FFFBEB', border: '#FCD34D', text: '#92400E', Icon: Clock },
+    compliant: { label: 'Compliant', sub: 'All documents current', bg: '#F0FDF4', border: '#86EFAC', text: '#166534', Icon: ShieldCheck },
   };
 
   if (isEditing) {
     return (
       <div className="space-y-4">
-        <RideForm 
-          ride={ride} 
-          onSuccess={handleEditSuccess} 
-          onCancel={() => setIsEditing(false)} 
-        />
+        <RideForm ride={ride} onSuccess={handleEditSuccess} onCancel={() => setIsEditing(false)} />
       </div>
     );
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <ChecksOnboardingModal forceOpen={showChecksGuide} onClose={() => setShowChecksGuide(false)} />
+
       {/* Sticky Header */}
       <div className="sticky top-0 z-10 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-sm border-b border-border/50">
         <div className="flex items-center justify-between gap-3">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onBack} 
-            className="h-10 w-10 shrink-0 active:scale-95 transition-transform"
-          >
+          <Button variant="ghost" size="icon" onClick={onBack} className="h-10 w-10 shrink-0 active:scale-95">
             <ArrowLeft className="h-5 w-5" />
           </Button>
-          
           <div className="flex-1 min-w-0 text-center">
-            <h1 className="text-base font-semibold truncate">{ride.ride_name}</h1>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 mt-0.5">
-              {ride.ride_categories.name}
-            </Badge>
+            <h1 className="text-base font-bold truncate">{ride.ride_name}</h1>
+            <p className="text-xs text-muted-foreground">{ride.ride_categories.name}</p>
           </div>
-          
-          <div className="flex gap-1.5">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => setIsEditing(true)} 
-              className="h-10 w-10 shrink-0 active:scale-95 transition-transform"
-            >
+          <div className="flex gap-1">
+            <Button variant="ghost" size="icon" onClick={() => setIsEditing(true)} className="h-10 w-10 shrink-0 active:scale-95">
               <Pencil className="h-4 w-4" />
             </Button>
-            <SendDocumentsDialog 
-              ride={ride}
-              trigger={
-                <Button 
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 shrink-0 active:scale-95 transition-transform"
-                >
-                  <Mail className="h-4 w-4" />
-                </Button>
-              }
-            />
-            <DeleteRideDialog
-              ride={ride}
-              onDeleted={onBack}
-              trigger={
-                <Button 
-                  variant="ghost"
-                  size="icon"
-                  className="h-10 w-10 shrink-0 active:scale-95 transition-transform text-destructive hover:text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              }
-            />
+            <SendDocumentsDialog ride={ride} trigger={
+              <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 active:scale-95">
+                <Mail className="h-4 w-4" />
+              </Button>
+            } />
+            <DeleteRideDialog ride={ride} onDeleted={onBack} trigger={
+              <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 active:scale-95 text-destructive hover:text-destructive hover:bg-destructive/10">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            } />
           </div>
         </div>
       </div>
 
-      {/* Equipment Photo & Details */}
-      <Card className="overflow-hidden border-border">
-        <CardContent className="p-4 space-y-4">
-          {/* Photo Section - Centered with border */}
+      {/* Asset Hero Card */}
+      <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
+        {/* Photo */}
+        <div className="px-4 pt-4">
           {photoUrl ? (
-            <div 
-              className="flex justify-center cursor-pointer"
+            <div
+              className="relative rounded-xl overflow-hidden cursor-pointer flex items-center justify-center"
+              style={{ backgroundColor: 'hsl(210 40% 98%)', border: '1px solid hsl(215 19% 90%)', minHeight: '140px' }}
               onClick={() => setPhotoViewerOpen(true)}
             >
-              <div className="relative rounded-xl overflow-hidden border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 shadow-sm">
-                <img 
-                  src={photoUrl} 
-                  alt={ride.ride_name}
-                  className="h-40 w-auto max-w-full object-contain"
-                />
-                <div className="absolute inset-0 bg-black/0 hover:bg-black/10 transition-colors flex items-center justify-center opacity-0 hover:opacity-100">
-                  <span className="text-xs text-white bg-black/50 px-2 py-1 rounded">Tap to enlarge</span>
-                </div>
+              <img src={photoUrl} alt={ride.ride_name} className="h-40 w-auto max-w-full object-contain" />
+              <div className="absolute bottom-2 right-2 text-[10px] px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: 'hsl(217 91% 97%)', color: 'hsl(213 52% 24%)' }}>
+                Tap to enlarge
               </div>
             </div>
           ) : (
-            <div className="flex justify-center">
-              <div className="w-32 h-32 rounded-xl border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5 flex flex-col items-center justify-center gap-2">
-                <ImageIcon className="h-8 w-8 text-primary/40" />
-                <p className="text-xs text-muted-foreground text-center px-2">No photo</p>
-              </div>
+            <div className="rounded-xl flex flex-col items-center justify-center gap-2 py-8" style={{ backgroundColor: 'hsl(210 40% 98%)', border: '1px dashed hsl(215 19% 82%)' }}>
+              <ImageIcon className="h-8 w-8" style={{ color: 'hsl(215 19% 70%)' }} strokeWidth={1.5} />
+              <p className="text-xs" style={{ color: 'hsl(215 19% 55%)' }}>No photo — edit to add</p>
             </div>
           )}
-          
-          {/* Details Grid */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] space-y-1">
-              <span className="text-xs text-[#475569] font-medium">Category</span>
-              <p className="text-sm font-semibold text-[#0F172A]">{ride.ride_categories.name}</p>
+        </div>
+
+        {/* Compliance Status Bar */}
+        {complianceStatus && (() => {
+          const cfg = complianceConfig[complianceStatus];
+          return (
+            <div className="mx-4 mt-3 rounded-xl px-3 py-2.5 flex items-center gap-2.5" style={{ backgroundColor: cfg.bg, border: `1px solid ${cfg.border}` }}>
+              <cfg.Icon className="h-4 w-4 shrink-0" style={{ color: cfg.text }} strokeWidth={2} />
+              <span className="text-xs font-bold" style={{ color: cfg.text }}>{cfg.label}</span>
+              <span className="text-xs" style={{ color: cfg.text, opacity: 0.7 }}>· {cfg.sub}</span>
             </div>
-            <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] space-y-1">
-              <span className="text-xs text-[#475569] font-medium">Manufacturer</span>
-              <p className="text-sm font-semibold text-[#0F172A] truncate">{ride.manufacturer || '—'}</p>
+          );
+        })()}
+
+        {/* Metadata Grid */}
+        <div className="p-4 grid grid-cols-2 gap-2.5">
+          {[
+            { label: 'Category', value: ride.ride_categories.name },
+            { label: 'Manufacturer', value: ride.manufacturer || '—' },
+            { label: 'Year', value: ride.year_manufactured?.toString() || '—' },
+          ].map(({ label, value }) => (
+            <div key={label} className="p-3 rounded-xl space-y-1" style={{ backgroundColor: 'hsl(210 40% 98%)', border: '1px solid hsl(215 19% 90%)' }}>
+              <span className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'hsl(215 19% 55%)' }}>{label}</span>
+              <p className="text-sm font-semibold truncate" style={{ color: 'hsl(222 84% 5%)' }}>{value}</p>
             </div>
-            <div className="p-3 rounded-xl bg-white border border-[#E2E8F0] space-y-1">
-              <span className="text-xs text-[#475569] font-medium">Year</span>
-              <p className="text-sm font-semibold text-[#0F172A]">{ride.year_manufactured || '—'}</p>
-            </div>
-            <div className={`p-3 rounded-xl bg-white border space-y-1 ${!ride.serial_number ? 'border-[#F59E0B]' : 'border-[#E2E8F0]'}`}>
-              <span className="text-xs text-[#475569] font-medium">Serial</span>
-              <p className="text-sm font-semibold text-[#0F172A] truncate">{ride.serial_number || '—'}</p>
-            </div>
+          ))}
+          {/* Serial — compliance-critical */}
+          <div className="p-3 rounded-xl space-y-1" style={{ 
+            backgroundColor: ride.serial_number ? 'hsl(213 52% 24% / 0.04)' : 'hsl(38 92% 97%)',
+            border: ride.serial_number ? '2px solid hsl(213 52% 24% / 0.3)' : '2px solid hsl(38 92% 70% / 0.6)'
+          }}>
+            <span className="text-[11px] font-medium uppercase tracking-wide" style={{ color: 'hsl(215 19% 55%)' }}>Serial No.</span>
+            <p className="text-sm font-bold truncate" style={{ color: ride.serial_number ? 'hsl(213 52% 24%)' : 'hsl(38 80% 40%)' }}>
+              {ride.serial_number || 'Not set'}
+            </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Photo Viewer */}
       {photoUrl && (
-        <ImageViewer
-          isOpen={photoViewerOpen}
-          onClose={() => setPhotoViewerOpen(false)}
-          imageUrl={photoUrl}
-          imageName={ride.ride_name}
-          onDownload={() => window.open(photoUrl, '_blank')}
-        />
+        <ImageViewer isOpen={photoViewerOpen} onClose={() => setPhotoViewerOpen(false)} imageUrl={photoUrl} imageName={ride.ride_name} onDownload={() => window.open(photoUrl, '_blank')} />
       )}
 
-      {/* Main Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-        <TabsList className="grid w-full h-auto p-1.5 gap-1.5 bg-secondary border border-border grid-cols-3">
-          <TabsTrigger 
-            value="overview" 
-            className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-lg min-h-[60px] transition-all"
-          >
-            <FileText className="h-5 w-5" />
-            <span>Home</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="checks" 
-            className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-semibold data-[state=active]:bg-success data-[state=active]:text-success-foreground data-[state=active]:shadow-md rounded-lg min-h-[60px] transition-all"
-          >
-            <CheckSquare className="h-5 w-5" />
-            <span>Checks</span>
-          </TabsTrigger>
-          <TabsTrigger 
-            value="documents" 
-            className="flex flex-col items-center justify-center gap-1 py-3 px-2 text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md rounded-lg min-h-[60px] transition-all"
-          >
-            <FileText className="h-5 w-5" />
-            <span>Docs</span>
-          </TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="overview" className="space-y-4 animate-fade-in">
-          {/* Safety Certificate - Prominent Position */}
-          <SafetyCertificateCard 
-            ride={ride} 
-            onUploadClick={() => setActiveTab("documents")} 
-          />
-
-          <div className="grid grid-cols-1 gap-3">
-            {/* CHECKS - Main Priority Action */}
-            <FeatureGate feature="Inspections">
-              <Card 
-                className="active:scale-[0.98] transition-all cursor-pointer border border-[#E2E8F0] bg-white hover:border-[#1E3A5F] hover:shadow-card"
-                onClick={() => setActiveTab("checks")}
+      {/* Main Tabs — underline style */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+          <TabsList className="grid w-full grid-cols-3 h-auto p-0 bg-transparent rounded-none">
+            {[
+              { value: 'overview', label: 'Home', Icon: FileText },
+              { value: 'checks',   label: 'Checks', Icon: CheckSquare },
+              { value: 'documents', label: 'Docs', Icon: FileText },
+            ].map(({ value, label, Icon }) => (
+              <TabsTrigger
+                key={value}
+                value={value}
+                className="flex flex-col items-center gap-1 py-3.5 text-xs font-semibold rounded-none border-b-2 data-[state=active]:border-b-[hsl(213_52%_24%)] data-[state=inactive]:border-b-transparent data-[state=active]:text-[hsl(213_52%_24%)] data-[state=inactive]:text-muted-foreground data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent transition-all"
               >
-                <CardContent className="p-5 flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center shrink-0">
-                    <CheckSquare className="h-7 w-7 text-[#475569]" strokeWidth={2} />
+                <Icon className="h-4 w-4" strokeWidth={2} />
+                {label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </div>
+
+        <TabsContent value="overview" className="space-y-3 animate-fade-in">
+          {/* Safety Certificate */}
+          <SafetyCertificateCard ride={ride} onUploadClick={() => setActiveTab("documents")} />
+
+          {/* Checks — Primary (navy border, heavier shadow) */}
+          <FeatureGate feature="Inspections">
+            <button className="w-full text-left active:scale-[0.98] transition-all" onClick={() => setActiveTab("checks")}>
+              <div className="bg-white border-2 rounded-2xl overflow-hidden" style={{ borderColor: 'hsl(213 52% 24%)', boxShadow: '0 4px 14px rgba(30,58,95,0.12)' }}>
+                <div className="px-5 py-4 flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+                    <CheckSquare className="h-7 w-7" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-base text-[#0F172A]">Start Safety Check</p>
-                    <p className="text-sm text-[#475569]">Pre-opening, daily, weekly, monthly & yearly</p>
+                    <p className="font-bold text-base" style={{ color: 'hsl(222 84% 5%)' }}>Safety Checks</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'hsl(215 19% 50%)' }}>Pre-opening, daily, weekly, monthly &amp; yearly</p>
                   </div>
                   <div className="text-right shrink-0">
-                    <p className="text-2xl font-semibold text-[#0F172A]">
-                      {rideStats.loading ? '...' : rideStats.todayChecks}
+                    <p className="text-3xl font-bold" style={{ color: 'hsl(213 52% 24%)' }}>
+                      {rideStats.loading ? '·' : rideStats.todayChecks}
                     </p>
-                    <p className="text-[10px] text-[#475569] uppercase font-medium">Today</p>
+                    <p className="text-[10px] uppercase font-semibold tracking-wide" style={{ color: 'hsl(215 19% 55%)' }}>Today</p>
                   </div>
+                </div>
+                <div className="px-5 py-2.5 border-t flex items-center justify-between" style={{ borderColor: 'hsl(213 52% 24% / 0.15)', backgroundColor: 'hsl(217 91% 97%)' }}>
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowChecksGuide(true);
-                    }}
-                    className="h-10 w-10 shrink-0 text-[#475569] hover:text-primary hover:bg-primary/10"
-                    aria-label="How checks work"
+                    variant="ghost" size="sm"
+                    onClick={(e) => { e.stopPropagation(); setShowChecksGuide(true); }}
+                    className="h-7 text-xs gap-1 px-2 text-muted-foreground hover:text-primary"
                   >
-                    <HelpCircle className="h-5 w-5" strokeWidth={2} />
+                    <HelpCircle className="h-3.5 w-3.5" strokeWidth={2} />
+                    How it works
                   </Button>
-                </CardContent>
-              </Card>
-            </FeatureGate>
+                  <span className="text-xs font-bold flex items-center gap-1" style={{ color: 'hsl(213 52% 24%)' }}>
+                    Start Check <ChevronRight className="h-3.5 w-3.5" />
+                  </span>
+                </div>
+              </div>
+            </button>
+          </FeatureGate>
 
-            {/* Documents Quick Action */}
-            <Card 
-              className="active:scale-[0.98] transition-all cursor-pointer border border-[#E2E8F0] bg-white hover:border-[#1E3A5F] hover:shadow-card"
-              onClick={() => setActiveTab("documents")}
-            >
-              <CardContent className="p-4 flex items-center gap-4">
-                <div className="w-12 h-12 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center shrink-0">
-                  <FileText className="h-6 w-6 text-[#475569]" strokeWidth={2} />
+          {/* Documents — Secondary */}
+          <button className="w-full text-left active:scale-[0.98] transition-all" onClick={() => setActiveTab("documents")}>
+            <div className="bg-white border border-border rounded-2xl px-5 py-4 flex items-center gap-4 hover:border-primary/40 transition-colors" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+              <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'hsl(210 40% 97%)', border: '1px solid hsl(215 19% 90%)' }}>
+                <FileText className="h-5 w-5 text-muted-foreground" strokeWidth={2} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm" style={{ color: 'hsl(222 84% 5%)' }}>Documents</p>
+                <p className="text-xs text-muted-foreground">Upload and manage files</p>
+              </div>
+              <div className="text-right shrink-0 flex items-center gap-2">
+                <div>
+                  <p className="text-2xl font-bold" style={{ color: 'hsl(222 84% 5%)' }}>{rideStats.loading ? '·' : rideStats.docCount}</p>
+                  <p className="text-[10px] uppercase font-medium text-muted-foreground">Files</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </div>
+            </div>
+          </button>
+
+          {/* Maintenance — Tertiary */}
+          <FeatureGate feature="Maintenance Logging">
+            <button className="w-full text-left active:scale-[0.98] transition-all" onClick={() => navigate(`/maintenance?rideId=${ride.id}`)}>
+              <div className="bg-white border border-border rounded-2xl px-5 py-4 flex items-center gap-4 hover:border-primary/40 transition-colors" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: 'hsl(210 40% 97%)', border: '1px solid hsl(215 19% 90%)' }}>
+                  <Wrench className="h-5 w-5 text-muted-foreground" strokeWidth={2} />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-[#0F172A]">Documents</p>
-                  <p className="text-xs text-[#475569]">Upload and manage files</p>
+                  <p className="font-semibold text-sm" style={{ color: 'hsl(222 84% 5%)' }}>Maintenance</p>
+                  <p className="text-xs text-muted-foreground">Log repairs and service</p>
                 </div>
-                <div className="text-right shrink-0">
-                  <p className="text-2xl font-semibold text-[#0F172A]">
-                    {rideStats.loading ? '...' : rideStats.docCount}
-                  </p>
-                  <p className="text-[10px] text-[#475569] uppercase font-medium">Files</p>
+                <div className="text-right shrink-0 flex items-center gap-2">
+                  <div>
+                    <p className="text-2xl font-bold" style={{ color: 'hsl(222 84% 5%)' }}>{rideStats.loading ? '·' : rideStats.maintenanceCount}</p>
+                    <p className="text-[10px] uppercase font-medium text-muted-foreground">Records</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Maintenance Quick Action */}
-            <FeatureGate feature="Maintenance Logging">
-              <Card 
-                className="active:scale-[0.98] transition-all cursor-pointer border border-[#E2E8F0] bg-white hover:border-[#1E3A5F] hover:shadow-card"
-                onClick={() => navigate(`/maintenance?rideId=${ride.id}`)}
-              >
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-[#F8FAFC] border border-[#E2E8F0] flex items-center justify-center shrink-0">
-                    <Wrench className="h-6 w-6 text-[#475569]" strokeWidth={2} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-[#0F172A]">Maintenance</p>
-                    <p className="text-xs text-[#475569]">Log repairs and service</p>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <p className="text-2xl font-semibold text-[#0F172A]">
-                      {rideStats.loading ? '...' : rideStats.maintenanceCount}
-                    </p>
-                    <p className="text-[10px] text-[#475569] uppercase font-medium">Records</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </FeatureGate>
-          </div>
+              </div>
+            </button>
+          </FeatureGate>
         </TabsContent>
 
         <TabsContent value="documents" className="animate-fade-in">
@@ -412,7 +359,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             <InspectionManager ride={ride} />
           </FeatureGate>
         </TabsContent>
-
       </Tabs>
     </div>
   );
