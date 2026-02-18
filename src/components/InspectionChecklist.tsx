@@ -1276,32 +1276,34 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
           </DropdownMenu>
         </div>
 
-        {/* Start Check Card */}
-        <Card className="rounded-2xl border-primary/30 bg-gradient-to-br from-primary/5 to-accent/5">
-          <CardContent className="py-8 flex flex-col items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-              <PlayCircle className="h-8 w-8 text-primary" />
+        {/* Start Inspection Card — dominant CTA */}
+        <div
+          className="rounded-2xl overflow-hidden"
+          style={{ background: 'linear-gradient(135deg, hsl(213 52% 24%), hsl(213 52% 34%))', boxShadow: '0 8px 24px rgba(30,58,95,0.25)' }}
+        >
+          <div className="px-6 py-7 flex flex-col items-center gap-4">
+            <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.15)' }}>
+              <PlayCircle className="h-7 w-7 text-white" strokeWidth={2} />
             </div>
             <div className="text-center">
-              <p className="font-semibold text-lg">Ready to Start?</p>
-              <p className="text-sm text-muted-foreground max-w-sm mt-1">
-                {activeTemplate.daily_check_template_items.length} items to check. 
-                A PDF record will be saved automatically when you complete.
+              <p className="font-bold text-lg text-white">{activeTemplate.template_name}</p>
+              <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.75)' }}>
+                {activeTemplate.daily_check_template_items.length} inspection items · PDF generated automatically
               </p>
             </div>
-            <Button
-              size="lg"
-              className="h-14 px-8 text-base font-semibold shadow-lg rounded-2xl gap-2"
+            <button
+              className="w-full h-14 rounded-xl text-base font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
+              style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1.5px solid rgba(255,255,255,0.3)' }}
               onClick={() => {
                 setCheckStarted(true);
                 setCheckStartedAt(new Date());
               }}
             >
-              <PlayCircle className="h-5 w-5" />
-              Start Check
-            </Button>
-          </CardContent>
-        </Card>
+              <PlayCircle className="h-5 w-5" strokeWidth={2.5} />
+              Start Inspection
+            </button>
+          </div>
+        </div>
 
         {/* Open Defects */}
         <Card className="rounded-2xl border-warning/30 bg-warning/5">
