@@ -1625,9 +1625,9 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           resetItemForm();
         }
       }}>
-        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] overflow-y-auto bg-[#F6F8FB] p-0 gap-0 rounded-2xl">
+        <DialogContent className="max-w-2xl w-[95vw] max-h-[90vh] bg-[#F6F8FB] p-0 gap-0 rounded-2xl flex flex-col overflow-hidden">
           {/* ── Sticky modal header ── */}
-          <div className="modal-header rounded-t-2xl">
+          <div className="modal-header rounded-t-2xl flex-shrink-0">
             <DialogTitle className="text-[17px] font-semibold text-[#0F172A] leading-tight">
               {editingItem ? 'Edit' : 'Add'} Risk Item
             </DialogTitle>
@@ -1695,7 +1695,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           })()}
 
           <TooltipProvider>
-            <div className="modal-body space-y-3 pb-0">
+            <div className="flex-1 overflow-y-auto">
+            <div className="modal-body space-y-3 pb-4">
               {/* ── SECTION 1: Risk Identification ── */}
               <div className="bg-white rounded-[14px] border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)', marginBottom: 0 }}>
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F1F5F9]">
@@ -1779,7 +1780,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                             setItemFormData({ ...itemFormData, hazard_description: value });
                           }}
                         >
-                          <SelectTrigger>
+                          <SelectTrigger className="w-full min-w-0 h-11 rounded-[10px] border-[#CBD5E1] bg-[#F8FAFC] text-[14px]">
                             <SelectValue placeholder="Select a hazard from the library" />
                           </SelectTrigger>
                           <SelectContent className="bg-background z-50 max-h-[300px]">
@@ -2213,7 +2214,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                       </Collapsible>
                       
                       <Select value={itemFormData.additional_actions} onValueChange={(value) => setItemFormData({ ...itemFormData, additional_actions: value })}>
-                        <SelectTrigger>
+                        <SelectTrigger className="w-full min-w-0 h-11 rounded-[10px] border-[#CBD5E1] bg-[#F8FAFC] text-[14px]">
                           <SelectValue placeholder="Select additional actions or choose Custom" />
                         </SelectTrigger>
                         <SelectContent className="bg-background z-50">
@@ -2434,10 +2435,11 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                 </div>
               </div>
             </div>
+            </div>{/* end overflow-y-auto */}
           </TooltipProvider>
 
-          {/* ── Sticky footer action bar ── */}
-          <div className="sticky bottom-0 bg-white border-t border-[#E2E8F0] px-5 py-3 rounded-b-2xl flex gap-[10px]" style={{ boxShadow: '0 -2px 8px rgba(0,0,0,0.04)' }}>
+          {/* ── Sticky footer action bar (outside scroll area) ── */}
+          <div className="flex-shrink-0 bg-white border-t border-[#E2E8F0] px-5 py-3 rounded-b-2xl flex gap-[10px]" style={{ boxShadow: '0 -2px 8px rgba(0,0,0,0.04)' }}>
             <Button
               onClick={handleSaveItem}
               disabled={savingItem}
