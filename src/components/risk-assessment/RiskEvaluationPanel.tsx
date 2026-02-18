@@ -32,11 +32,11 @@ interface RiskEvaluationPanelProps {
   showDisclaimerLink?: boolean;
 }
 
-// ── Severity colour mapping ──────────────────────────────────────────────────
+// ── Severity colour mapping (standardised) ────────────────────────────────────
 const LEVEL_STYLE: Record<string, { bg: string; border: string; text: string; badge: string; badgeText: string }> = {
-  low:    { bg: '#ECFDF5', border: '#6EE7B7', text: '#065F46', badge: '#D1FAE5', badgeText: '#065F46' },
-  medium: { bg: '#FFFBEB', border: '#FCD34D', text: '#92400E', badge: '#FEF3C7', badgeText: '#92400E' },
-  high:   { bg: '#FEF2F2', border: '#FCA5A5', text: '#991B1B', badge: '#FEE2E2', badgeText: '#991B1B' },
+  low:    { bg: '#F0FDF4', border: '#BBF7D0', text: '#16A34A', badge: '#DCFCE7', badgeText: '#166534' },
+  medium: { bg: '#FFFBEB', border: '#FDE68A', text: '#F59E0B', badge: '#FEF3C7', badgeText: '#92400E' },
+  high:   { bg: '#FEF2F2', border: '#FCA5A5', text: '#DC2626', badge: '#FEE2E2', badgeText: '#991B1B' },
 };
 
 function RiskBadge({ level }: { level: string }) {
@@ -91,7 +91,7 @@ export function RiskEvaluationPanel({
         <div className="bg-white border border-[#CBD5E1] rounded-xl p-3 space-y-2">
           <div className="flex items-center gap-2">
             <Label className="text-[13px] font-semibold text-[#0F172A]">Likelihood</Label>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-[#EEF2FF] text-[#3730A3] text-[11px] font-bold">
+            <span className="inline-flex items-center font-bold rounded-lg bg-[#EEF2FF] text-[#3730A3] text-[12px]" style={{ padding: '6px 10px' }}>
               Score: {likelihoodInfo.score}
             </span>
             <Tooltip>
@@ -103,9 +103,9 @@ export function RiskEvaluationPanel({
               </TooltipContent>
             </Tooltip>
           </div>
-          <p className="text-[12px] text-slate-500">How likely is this hazard to cause harm?</p>
+          <p className="text-[12px] text-slate-500 mt-1">How likely is this hazard to cause harm?</p>
           <Select value={likelihood} onValueChange={onLikelihoodChange}>
-            <SelectTrigger className="h-10 bg-[#F8FAFC] border-[#E2E8F0] focus:border-[#1E3A5F] rounded-lg">
+            <SelectTrigger className="h-11 bg-[#F8FAFC] border-[#E2E8F0] focus:border-[#1E3A5F] rounded-[10px] text-[14px] px-3">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -126,7 +126,7 @@ export function RiskEvaluationPanel({
         <div className="bg-white border border-[#CBD5E1] rounded-xl p-3 space-y-2">
           <div className="flex items-center gap-2">
             <Label className="text-[13px] font-semibold text-[#0F172A]">Severity</Label>
-            <span className="inline-flex items-center px-2 py-0.5 rounded-lg bg-[#EEF2FF] text-[#3730A3] text-[11px] font-bold">
+            <span className="inline-flex items-center font-bold rounded-lg bg-[#EEF2FF] text-[#3730A3] text-[12px]" style={{ padding: '6px 10px' }}>
               Score: {severityInfo.score}
             </span>
             <Tooltip>
@@ -138,9 +138,9 @@ export function RiskEvaluationPanel({
               </TooltipContent>
             </Tooltip>
           </div>
-          <p className="text-[12px] text-slate-500">How serious would the injury or harm be?</p>
+          <p className="text-[12px] text-slate-500 mt-1">How serious would the injury or harm be?</p>
           <Select value={severity} onValueChange={onSeverityChange}>
-            <SelectTrigger className="h-10 bg-[#F8FAFC] border-[#E2E8F0] focus:border-[#1E3A5F] rounded-lg">
+            <SelectTrigger className="h-11 bg-[#F8FAFC] border-[#E2E8F0] focus:border-[#1E3A5F] rounded-[10px] text-[14px] px-3">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -189,7 +189,7 @@ export function RiskEvaluationPanel({
           <div className="bg-white rounded-xl border p-3" style={{ borderColor: levelStyle.border }}>
             <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Inherent Risk</p>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xl font-bold font-mono" style={{ color: levelStyle.text }}>
+              <span className="text-[18px] font-bold font-mono" style={{ color: levelStyle.text, padding: '6px 10px', background: levelStyle.badge, borderRadius: '8px' }}>
                 {calculation.inherentScore}
               </span>
               <RiskBadge level={calculation.inherentLevel} />
@@ -202,7 +202,7 @@ export function RiskEvaluationPanel({
               <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide mb-1.5 flex items-center gap-1">
                 <TrendingDown className="h-3 w-3" /> Reduction
               </p>
-              <span className="text-xl font-bold font-mono text-green-600">
+              <span className="text-[18px] font-bold font-mono text-green-600" style={{ padding: '6px 10px', background: '#DCFCE7', borderRadius: '8px' }}>
                 -{calculation.reductionPercent}%
               </span>
             </div>
@@ -214,7 +214,7 @@ export function RiskEvaluationPanel({
               {isOverridden ? 'Override' : 'Residual'} Risk
             </p>
             <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-xl font-bold font-mono" style={{ color: levelStyle.text }}>
+              <span className="text-[18px] font-bold font-mono" style={{ color: levelStyle.text, padding: '6px 10px', background: levelStyle.badge, borderRadius: '8px' }}>
                 {isOverridden ? '—' : calculation.residualScore}
               </span>
               <RiskBadge level={isOverridden ? riskLevel : calculation.residualLevel} />

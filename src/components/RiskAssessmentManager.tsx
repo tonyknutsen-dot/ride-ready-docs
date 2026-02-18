@@ -1661,29 +1661,31 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             const rStyle = LEVEL_BANNER[residualLevel];
             const iStyle = LEVEL_BANNER[inherentLevel];
             return (
-              <div className="mx-4 mt-4 rounded-xl border p-3" style={{ background: rStyle.bg, borderColor: rStyle.border }}>
-                <div className="grid grid-cols-3 gap-2 text-center">
+              <div className="mx-4 mt-4 rounded-[14px] border px-4 py-3.5" style={{ background: rStyle.bg, borderColor: rStyle.border }}>
+                <div className="grid grid-cols-3 gap-3 text-center">
                   {/* Inherent */}
                   <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: iStyle.text }}>Inherent Risk</p>
-                    <p className="text-[22px] font-bold font-mono" style={{ color: iStyle.text }}>{inherentScore}</p>
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: iStyle.badge, color: iStyle.badgeText }}>
+                    <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: iStyle.text }}>Inherent Risk</p>
+                    <p className="text-[22px] font-bold font-mono leading-none" style={{ color: iStyle.text }}>{inherentScore}</p>
+                    <p className="text-[11px] text-slate-400 uppercase">/ 25</p>
+                    <span className="inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ background: iStyle.badge, color: iStyle.badgeText }}>
                       {inherentLevel.toUpperCase()}
                     </span>
                   </div>
                   {/* Reduction */}
-                  <div className="space-y-1 border-x" style={{ borderColor: rStyle.border }}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Reduction</p>
-                    <p className="text-[22px] font-bold font-mono text-green-600">
+                  <div className="space-y-1 border-x px-3" style={{ borderColor: rStyle.border }}>
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-slate-500">Reduction</p>
+                    <p className="text-[22px] font-bold font-mono leading-none text-green-600">
                       {reductionPct > 0 ? `-${reductionPct}%` : '—'}
                     </p>
-                    <p className="text-[10px] text-slate-400">controls applied</p>
+                    <p className="text-[11px] text-slate-400">{reductionPct > 0 ? 'controls applied' : 'no controls yet'}</p>
                   </div>
                   {/* Residual */}
                   <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: rStyle.text }}>Residual Risk</p>
-                    <p className="text-[22px] font-bold font-mono" style={{ color: rStyle.text }}>{residualScore}</p>
-                    <span className="inline-flex px-2 py-0.5 rounded-full text-[11px] font-bold" style={{ background: rStyle.badge, color: rStyle.badgeText }}>
+                    <p className="text-[11px] font-bold uppercase tracking-wider" style={{ color: rStyle.text }}>Residual Risk</p>
+                    <p className="text-[22px] font-bold font-mono leading-none" style={{ color: rStyle.text }}>{residualScore}</p>
+                    <p className="text-[11px] text-slate-400 uppercase">/ 25</p>
+                    <span className="inline-flex px-2.5 py-1 rounded-full text-[11px] font-bold" style={{ background: rStyle.badge, color: rStyle.badgeText }}>
                       {residualLevel.toUpperCase()}
                     </span>
                   </div>
@@ -1696,10 +1698,10 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             <div className="space-y-4 px-4 py-4 pb-0">
               {/* ── SECTION 1: Risk Identification ── */}
               <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
-                {/* Section header */}
+              {/* Section header */}
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F1F5F9]">
-                  <div className="w-8 h-8 rounded-xl bg-[#EEF2FF] flex items-center justify-center shrink-0">
-                    <span className="text-[13px] font-bold text-[#1E3A8A]">1</span>
+                  <div className="w-[22px] h-[22px] rounded-full bg-[#EEF2FF] flex items-center justify-center shrink-0">
+                    <span className="text-[11px] font-bold text-[#1E3A5F]">1</span>
                   </div>
                   <div>
                     <p className="text-[15px] font-semibold text-[#0F172A]">Risk Identification</p>
@@ -2154,8 +2156,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
               {/* ── SECTION 2: Risk Evaluation ── */}
               <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F1F5F9]">
-                  <div className="w-8 h-8 rounded-xl bg-[#FFF7ED] flex items-center justify-center shrink-0">
-                    <span className="text-[13px] font-bold text-[#C2410C]">2</span>
+                  <div className="w-[22px] h-[22px] rounded-full bg-[#EEF2FF] flex items-center justify-center shrink-0">
+                    <span className="text-[11px] font-bold text-[#1E3A5F]">2</span>
                   </div>
                   <div>
                     <p className="text-[15px] font-semibold text-[#0F172A]">Risk Evaluation</p>
@@ -2183,8 +2185,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
               {/* ── SECTION 3: Risk Controls & Actions ── */}
               <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
                 <div className="flex items-center gap-3 px-4 py-3 border-b border-[#F1F5F9]">
-                  <div className="w-8 h-8 rounded-xl bg-[#F0FDF4] flex items-center justify-center shrink-0">
-                    <span className="text-[13px] font-bold text-[#166534]">3</span>
+                  <div className="w-[22px] h-[22px] rounded-full bg-[#EEF2FF] flex items-center justify-center shrink-0">
+                    <span className="text-[11px] font-bold text-[#1E3A5F]">3</span>
                   </div>
                   <div>
                     <p className="text-[15px] font-semibold text-[#0F172A]">Risk Controls &amp; Actions</p>
@@ -2443,12 +2445,12 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
           </TooltipProvider>
 
           {/* ── Sticky footer action bar ── */}
-          <div className="sticky bottom-0 bg-white border-t border-[#E2E8F0] px-5 py-3 rounded-b-2xl flex gap-3">
+          <div className="sticky bottom-0 bg-white border-t border-[#E2E8F0] px-5 py-3 rounded-b-2xl flex gap-[10px]" style={{ boxShadow: '0 -2px 8px rgba(0,0,0,0.04)' }}>
             <Button
               onClick={handleSaveItem}
               disabled={savingItem}
               className="flex-1 h-12 rounded-xl text-[14px] font-semibold"
-              style={{ background: '#1E3A5F', color: '#FFFFFF' }}
+              style={{ background: '#1E3A5F', color: '#FFFFFF', boxShadow: '0 4px 10px rgba(0,0,0,0.08)' }}
             >
               {savingItem ? (
                 <>
@@ -2467,7 +2469,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                 resetItemForm();
               }}
               disabled={savingItem}
-              className="flex-1 h-12 rounded-xl text-[14px] font-semibold bg-[#F1F5F9] text-[#334155] border-0"
+              className="flex-1 h-12 rounded-xl text-[14px] font-semibold bg-[#F1F5F9] text-[#334155] border border-[#CBD5E1] hover:bg-slate-200"
             >
               Cancel
             </Button>
