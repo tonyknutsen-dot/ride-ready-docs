@@ -66,7 +66,7 @@ const LogSectionHeader = ({
     >
       <Icon className="h-4 w-4" style={{ color: iconColor }} strokeWidth={2} />
     </div>
-    <span className="text-base font-semibold" style={{ color: '#0F172A' }}>{title}</span>
+    <span style={{ color: '#1E293B', fontSize: 16, fontWeight: 600, letterSpacing: '-0.2px' }}>{title}</span>
   </div>
 );
 
@@ -95,8 +95,8 @@ const LogSectionCard = ({
 );
 
 // ── Field styles ─────────────────────────────────────────────────────────────
-const fieldClass = 'h-11 rounded-[10px] border-[#CBD5E1] bg-white text-[#0F172A] placeholder:text-[#94A3B8] focus-visible:border-[#1E3A5F] focus-visible:shadow-[0_0_0_3px_rgba(30,58,95,0.15)]';
-const textareaClass = 'rounded-[10px] border-[#CBD5E1] bg-white text-[#0F172A] placeholder:text-[#94A3B8] focus-visible:border-[#1E3A5F] focus-visible:shadow-[0_0_0_3px_rgba(30,58,95,0.15)] min-h-[100px]';
+const fieldClass = 'h-11 rounded-[10px] border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] placeholder:text-[#94A3B8] focus-visible:outline-none focus-visible:border-[#1E3A5F] focus-visible:shadow-[0_0_0_3px_rgba(30,58,95,0.15)]';
+const textareaClass = 'rounded-[10px] border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] placeholder:text-[#94A3B8] focus-visible:outline-none focus-visible:border-[#1E3A5F] focus-visible:shadow-[0_0_0_3px_rgba(30,58,95,0.15)] min-h-[100px]';
 
 const ALLOWED_TYPES = [
   'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/tiff', 'image/bmp',
@@ -343,11 +343,11 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
 
         {/* Info banner */}
         <div
-          className="flex items-start gap-3 rounded-xl p-3"
-          style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)' }}
+          className="flex items-start gap-3"
+          style={{ background: 'rgba(37,99,235,0.06)', border: '1px solid rgba(37,99,235,0.15)', borderRadius: 12, padding: '14px 16px' }}
         >
-          <Info className="h-4 w-4 mt-0.5 shrink-0" style={{ color: '#2563EB' }} />
-          <p className="text-xs leading-relaxed" style={{ color: '#2563EB' }}>
+          <Info className="shrink-0 mt-0.5" size={18} style={{ color: '#2563EB' }} />
+          <p style={{ color: '#2563EB', fontSize: 13, lineHeight: '1.5' }}>
             All attachments are stored in the equipment document register under "Maintenance". Generated reports will also appear there.
           </p>
         </div>
@@ -785,15 +785,16 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
       </div>
 
       {/* ── PRIMARY CTA ── */}
-      <div className="flex flex-col sm:flex-row gap-3 pt-1">
+      <div className="flex flex-col items-stretch">
         <Button
           onClick={handleSubmit}
           disabled={loading}
-          className="flex-1 sm:flex-none h-[52px] rounded-xl text-base font-semibold"
+          className="h-[52px] w-full text-base font-semibold"
           style={{
             background: '#1E3A5F',
             color: '#FFFFFF',
             boxShadow: '0 6px 14px rgba(30,58,95,0.25)',
+            borderRadius: 12,
           }}
         >
           {loading ? (
@@ -803,16 +804,14 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           )}
           {loading ? 'Saving…' : 'Log Maintenance Record'}
         </Button>
-        <Button
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
-          className="text-sm"
-          style={{ color: '#64748B' }}
           onClick={resetForm}
+          className="bg-transparent border-none cursor-pointer text-center"
+          style={{ color: '#64748B', fontSize: 13, marginTop: 8 }}
         >
           Reset Form
-        </Button>
+        </button>
       </div>
 
       </div>{/* end outer form container card */}
