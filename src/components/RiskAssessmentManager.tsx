@@ -1707,11 +1707,13 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     ) : (
                       <>
                         <Collapsible>
-                          <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2">
-                            <ChevronDown className="h-3 w-3" />
-                            Browse hazard categories
+                          <CollapsibleTrigger asChild>
+                            <button type="button" className="w-full flex items-center gap-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px] px-3 py-2.5 text-[13px] text-[#334155] font-medium hover:border-[#CBD5E1] transition-colors mb-2">
+                              <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span>Browse hazard categories</span>
+                            </button>
                           </CollapsibleTrigger>
-                          <CollapsibleContent className="text-xs text-muted-foreground mb-2 ml-4">
+                          <CollapsibleContent className="text-[12px] text-slate-500 mb-2 px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px]">
                             Mechanical, Electrical, Hydraulics & Pneumatics, Structural, Stability & Anchoring, Transport/Packing/Setup, Environmental, Operator factors, Patron safety, Emergency, or Chemical/Substance hazards.
                           </CollapsibleContent>
                         </Collapsible>
@@ -1956,11 +1958,13 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
                     ) : (
                       <>
                         <Collapsible>
-                          <CollapsibleTrigger className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground mb-2">
-                            <ChevronDown className="h-3 w-3" />
-                            Browse control categories
+                          <CollapsibleTrigger asChild>
+                            <button type="button" className="w-full flex items-center gap-2.5 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px] px-3 py-2.5 text-[13px] text-[#334155] font-medium hover:border-[#CBD5E1] transition-colors mb-2">
+                              <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0" />
+                              <span>Browse control categories</span>
+                            </button>
                           </CollapsibleTrigger>
-                          <CollapsibleContent className="text-xs text-muted-foreground mb-2 ml-4">
+                          <CollapsibleContent className="text-[12px] text-slate-500 mb-2 px-3 py-2 bg-[#F8FAFC] border border-[#E2E8F0] rounded-[10px]">
                             Engineering controls, Administrative procedures, Inspection & maintenance, Emergency preparedness, Training programs, PPE, or Monitoring.
                           </CollapsibleContent>
                         </Collapsible>
