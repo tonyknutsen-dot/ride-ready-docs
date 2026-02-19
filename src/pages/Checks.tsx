@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   CheckSquare, HelpCircle, AlertTriangle, Clock, CheckCircle2,
-  Calendar, ChevronRight, ClipboardList, Zap
+  Calendar, ClipboardList
 } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import RideSelector from '@/components/RideSelector';
@@ -61,37 +61,40 @@ const RideStatusRow = ({
   ride: CheckRideStatus;
   onNavigate: (rideId: string) => void;
 }) => {
+  const isOverdue = ride.status === 'overdue';
+  const isDueToday = ride.status === 'due_today';
   const cfg = statusConfig[ride.status];
-  const Icon = cfg.icon;
+
+  const sublabel = isOverdue
+    ? ride.daysSinceLastCheck === null
+      ? 'No checks recorded'
+      : `Last check ${ride.daysSinceLastCheck}d ago`
+    : isDueToday
+    ? 'Due today'
+    : ride.status === 'due_soon'
+    ? 'Due soon'
+    : 'Up to date';
+
   return (
-    <button
-      onClick={() => onNavigate(ride.rideId)}
-      className="w-full flex items-center gap-3 py-3 px-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:bg-secondary transition-all text-left"
+    <div
+      className="flex items-center justify-between bg-card p-4 rounded-xl border border-border"
       style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
     >
-      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${cfg.dotColor}`} />
-      <div className="flex-1 min-w-0">
-        <span className="text-sm font-semibold text-foreground block truncate">{ride.rideName}</span>
-        <span className="text-xs text-muted-foreground">{ride.categoryName}</span>
+      <div className="flex-1 min-w-0 mr-3">
+        <p className="text-sm font-semibold text-foreground truncate">{ride.rideName}</p>
+        <p className={`text-xs mt-0.5 ${cfg.textColor}`}>{sublabel}</p>
       </div>
-      <div className="flex items-center gap-2 flex-shrink-0">
-        <span className={`text-xs font-semibold flex items-center gap-1 ${cfg.textColor}`}>
-          <Icon className="h-3 w-3" strokeWidth={2} />
-          {ride.status === 'overdue'
-            ? ride.daysSinceLastCheck === null
-              ? 'No checks'
-              : `${ride.daysSinceLastCheck}d ago`
-            : ride.status === 'due_today'
-            ? 'Due today'
-            : ride.status === 'due_soon'
-            ? 'Due soon'
-            : ride.lastCheckDate
-            ? 'Up to date'
-            : 'OK'}
-        </span>
-        <ChevronRight className="h-4 w-4 text-muted-foreground" strokeWidth={2} />
-      </div>
-    </button>
+      <button
+        onClick={() => onNavigate(ride.rideId)}
+        className={`shrink-0 px-3 py-2 rounded-lg text-xs font-semibold ${
+          isOverdue || isDueToday
+            ? 'bg-destructive text-white'
+            : 'bg-primary text-primary-foreground'
+        }`}
+      >
+        Perform Check
+      </button>
+    </div>
   );
 };
 
@@ -171,13 +174,13 @@ const Checks = () => {
 
         {/* ── COMPLIANCE ALERT BANNER ───────────── */}
         {!isLoading && hasAlerts && (
-          <div className="bg-destructive/5 border border-destructive/30 rounded-2xl px-4 py-3.5 flex items-start gap-3">
-            <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" strokeWidth={2} />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-destructive">
+          <div className="flex items-start gap-3 bg-destructive/5 border border-destructive/20 text-destructive p-3 rounded-xl">
+            <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" strokeWidth={2} />
+            <div className="text-sm">
+              <div className="font-semibold">
                 {stats!.overdueCount} ride{stats!.overdueCount !== 1 ? 's' : ''} need{stats!.overdueCount === 1 ? 's' : ''} a check
-              </p>
-              <p className="text-xs text-destructive/70 mt-0.5">Daily safety checks are overdue. Action required.</p>
+              </div>
+              <div className="text-destructive/70 text-xs mt-0.5">Daily safety checks are overdue.</div>
             </div>
           </div>
         )}
@@ -186,20 +189,16 @@ const Checks = () => {
         <div>
           <h2 className="text-xs font-semibold text-muted-foreground mb-3 tracking-widest uppercase">Check Status</h2>
           <div className="grid grid-cols-4 gap-2">
-            {kpiCards.map(({ label, value, accentColor, icon: Icon }) => (
+            {kpiCards.map(({ label, value, accentColor }) => (
               <div
                 key={label}
-                className="flex flex-col gap-2 p-3 rounded-2xl border border-border bg-card overflow-hidden relative"
-                style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                className="flex flex-col gap-1 p-3 rounded-2xl border border-border bg-card"
+                style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
               >
-                <span className="absolute top-0 left-0 right-0 h-[3px] rounded-t-2xl" style={{ backgroundColor: accentColor }} />
-                <span className="flex items-center justify-center w-7 h-7 rounded-lg mt-1" style={{ backgroundColor: `${accentColor}18` }}>
-                  <Icon className="h-3.5 w-3.5" strokeWidth={2} style={{ color: accentColor }} />
-                </span>
-                <div>
-                  <div className="text-xl font-bold text-foreground leading-none">{isLoading ? '–' : value}</div>
-                  <div className="text-[10px] text-muted-foreground font-medium mt-0.5 leading-tight">{label}</div>
+                <div className="text-2xl font-bold text-foreground leading-none" style={{ color: accentColor }}>
+                  {isLoading ? '–' : value}
                 </div>
+                <div className="text-[10px] text-muted-foreground font-medium leading-tight">{label}</div>
               </div>
             ))}
           </div>

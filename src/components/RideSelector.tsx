@@ -197,7 +197,7 @@ const RideSelector = ({
                 <img
                   src={thumbs[ride.id]}
                   alt={`${ride.ride_name} photo`}
-                  className="w-full h-32 rounded-t-xl object-cover"
+                  className="w-full h-40 rounded-t-xl object-cover"
                 />
               ) : (
                 <div className="w-full h-24 rounded-t-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center">
