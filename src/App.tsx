@@ -71,6 +71,7 @@ const Install = lazy(() => import("./pages/Install"));
 const DataIndependence = lazy(() => import("./pages/DataIndependence"));
 const SharedDocuments = lazy(() => import("./pages/SharedDocuments"));
 const Notifications = lazy(() => import("./pages/Notifications"));
+const Compliance = lazy(() => import("./pages/Compliance"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -508,6 +509,18 @@ const App = () => (
                     <ProfileGuard>
                       <AppLayout>
                         <Notifications />
+                      </AppLayout>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/compliance"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <AppLayout>
+                        <Compliance />
                       </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
