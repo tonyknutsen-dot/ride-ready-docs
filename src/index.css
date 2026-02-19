@@ -1121,3 +1121,12 @@
   scrollbar-width: none;
 }
 .scrollRow::-webkit-scrollbar { display: none; }
+
+/* ── Global form field contrast boost ───────────────────────────── */
+input, select, textarea {
+  color: #0f172a;
+}
+::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
