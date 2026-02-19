@@ -42,6 +42,7 @@ interface CalendarEvent {
 
 type Ride = Tables<'rides'>;
 
+// No "Checks" category — daily/monthly/pre-opening checks are managed in the Checks module
 const EVENT_TYPES = [
   { value: 'insurance-expiry', label: 'Insurance Expiry', category: 'Document Expiry' },
   { value: 'doc-expiry', label: 'Inspection Certificate Expiry', category: 'Document Expiry' },
@@ -54,13 +55,37 @@ const EVENT_TYPES = [
   { value: 'hydraulic', label: 'Hydraulic Inspection', category: 'Inspections' },
   { value: 'mechanical', label: 'Mechanical Inspection', category: 'Inspections' },
   { value: 'safety', label: 'Safety Inspection', category: 'Inspections' },
-  { value: 'daily-check', label: 'Daily Check', category: 'Checks' },
-  { value: 'monthly-check', label: 'Monthly Check', category: 'Checks' },
-  { value: 'yearly-check', label: 'Yearly Check', category: 'Checks' },
   { value: 'maintenance', label: 'Scheduled Maintenance', category: 'Maintenance' },
   { value: 'preventive', label: 'Preventive Maintenance', category: 'Maintenance' },
   { value: 'repair', label: 'Repair Follow-up', category: 'Maintenance' },
 ];
+
+interface EventDefaults {
+  category: string;
+  defaultName: string;
+  recurring: { enabled: boolean; every: 'days' | 'weeks' | 'months' | 'years'; interval: number } | null;
+  reminders: number[];
+}
+
+const EVENT_DEFAULTS: Record<string, EventDefaults> = {
+  // Document Expiry
+  'insurance-expiry':      { category: 'Document Expiry', defaultName: 'Insurance expiry',               recurring: { enabled: true,  every: 'years',  interval: 1 }, reminders: [60, 30, 14, 7, 1] },
+  'doc-expiry':            { category: 'Document Expiry', defaultName: 'Inspection certificate expiry',   recurring: { enabled: true,  every: 'years',  interval: 1 }, reminders: [60, 30, 14, 7, 1] },
+  'safety-cert-expiry':    { category: 'Document Expiry', defaultName: 'Safety certificate expiry',       recurring: { enabled: true,  every: 'years',  interval: 1 }, reminders: [60, 30, 14, 7, 1] },
+  'other-document-expiry': { category: 'Document Expiry', defaultName: 'Document expiry',                 recurring: null,                                            reminders: [60, 30, 14, 7]    },
+  // Inspections
+  'in-service':  { category: 'Inspections', defaultName: 'In-service inspection',  recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1]    },
+  'electrical':  { category: 'Inspections', defaultName: 'Electrical inspection',  recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1]    },
+  'ndt':         { category: 'Inspections', defaultName: 'NDT inspection',         recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [90, 60, 30, 14, 7, 1] },
+  'structural':  { category: 'Inspections', defaultName: 'Structural inspection',  recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1]    },
+  'hydraulic':   { category: 'Inspections', defaultName: 'Hydraulic inspection',   recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1]    },
+  'mechanical':  { category: 'Inspections', defaultName: 'Mechanical inspection',  recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1]    },
+  'safety':      { category: 'Inspections', defaultName: 'Safety inspection',      recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1]    },
+  // Maintenance
+  'maintenance': { category: 'Maintenance', defaultName: 'Scheduled maintenance',  recurring: null,                                            reminders: [14, 7, 1] },
+  'preventive':  { category: 'Maintenance', defaultName: 'Preventive maintenance', recurring: { enabled: true, every: 'months', interval: 1 }, reminders: [14, 7, 1] },
+  'repair':      { category: 'Maintenance', defaultName: 'Repair follow-up',       recurring: null,                                            reminders: [7, 3, 1]  },
+};
 
 const inspectionSchema = z.object({
   ride_id: z.string().uuid({ message: "Please select a ride" }),
@@ -309,6 +334,12 @@ const CalendarView = () => {
   const handleAddInspection = async () => {
     setFormErrors({});
     try {
+      // Guard: Checks are managed in the Checks module, not here
+      if (formData.inspection_type.includes('check')) {
+        toast({ title: "Use the Checks module", description: "Daily, monthly and pre-opening checks are managed in the Checks module.", variant: "destructive" });
+        return;
+      }
+
       const validatedData = inspectionSchema.parse(formData);
 
       let scheduleType = 'inspection';
@@ -316,8 +347,6 @@ const CalendarView = () => {
         scheduleType = formData.is_recurring ? 'recurring_document' : 'document';
       } else if (formData.inspection_type.includes('maintenance') || formData.inspection_type.includes('preventive') || formData.inspection_type.includes('repair')) {
         scheduleType = formData.is_recurring ? 'recurring_maintenance' : 'maintenance';
-      } else if (formData.inspection_type.includes('check')) {
-        scheduleType = formData.is_recurring ? 'recurring_check' : 'check';
       } else {
         scheduleType = formData.is_recurring ? 'recurring_inspection' : 'inspection';
       }
@@ -418,35 +447,51 @@ const CalendarView = () => {
                 Schedule reminders for inspections, maintenance and expiries.
               </DialogDescription>
 
-              {/* Category preset buttons */}
+              {/* Category preset buttons — apply smart defaults */}
               <div className="grid grid-cols-2 gap-2 mt-4">
                 {[
-                  { label: 'Inspection', value: 'safety', defaults: [60, 30, 14, 7, 1] },
-                  { label: 'Maintenance', value: 'maintenance', defaults: [14, 7, 1] },
-                  { label: 'Doc expiry', value: 'doc-expiry', defaults: [60, 30, 14, 7] },
-                  { label: 'NDT', value: 'ndt', defaults: [60, 30, 14, 7, 1] },
-                ].map(preset => (
-                  <button
-                    key={preset.value}
-                    type="button"
-                    onClick={() => setFormData(prev => ({
-                      ...prev,
-                      inspection_type: preset.value,
-                      reminder_days: preset.defaults,
-                      inspection_name: preset.label === 'Inspection' ? 'Annual Safety Inspection' :
-                        preset.label === 'Maintenance' ? 'Scheduled Maintenance' : prev.inspection_name,
-                    }))}
-                    className={cn(
-                      "rounded-xl border px-3 py-2.5 text-sm font-semibold text-left transition-colors",
-                      formData.inspection_type === preset.value
-                        ? "bg-primary text-primary-foreground border-primary"
-                        : "bg-white text-foreground border-border hover:bg-muted/50"
-                    )}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
+                  { label: 'Inspection', value: 'safety' },
+                  { label: 'Maintenance', value: 'maintenance' },
+                  { label: 'Doc expiry', value: 'doc-expiry' },
+                  { label: 'NDT', value: 'ndt' },
+                ].map(preset => {
+                  const defaults = EVENT_DEFAULTS[preset.value];
+                  return (
+                    <button
+                      key={preset.value}
+                      type="button"
+                      onClick={() => {
+                        if (!defaults) return;
+                        setFormData(prev => ({
+                          ...prev,
+                          inspection_type: preset.value,
+                          reminder_days: defaults.reminders,
+                           is_recurring: defaults.recurring?.enabled ?? false,
+                           recurrence_value: defaults.recurring?.interval ?? 1,
+                           recurrence_unit: (defaults.recurring?.every ?? 'months') as typeof prev.recurrence_unit,
+                          // Only fill name if user hasn't typed one yet
+                          inspection_name: prev.inspection_name ? prev.inspection_name : defaults.defaultName,
+                        }));
+                      }}
+                      className={cn(
+                        "rounded-xl border px-3 py-2.5 text-sm font-semibold text-left transition-colors",
+                        formData.inspection_type === preset.value
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-background text-foreground border-border hover:bg-muted/50"
+                      )}
+                    >
+                      {preset.label}
+                    </button>
+                  );
+                })}
               </div>
+
+              {/* Helper note */}
+              <p className="text-xs text-muted-foreground mt-2">
+                Daily &amp; pre-opening checks are managed in the{' '}
+                <button type="button" onClick={() => { setAddDialogOpen(false); navigate('/checks'); }} className="text-primary hover:underline font-medium">Checks module</button>
+                , not scheduled here.
+              </p>
             </div>
 
             {/* Scrollable body */}
@@ -502,14 +547,28 @@ const CalendarView = () => {
                   {formErrors.inspection_name && <p className="text-xs text-destructive">{formErrors.inspection_name}</p>}
                 </div>
 
-                {/* Event type (if not set by preset) */}
+                {/* Event type (if not set by preset) — no Checks category */}
                 {!formData.inspection_type && (
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Event Type *</Label>
-                    <Select value={formData.inspection_type} onValueChange={(value) => setFormData({ ...formData, inspection_type: value })}>
+                    <Select
+                      value={formData.inspection_type}
+                      onValueChange={(value) => {
+                        const defaults = EVENT_DEFAULTS[value];
+                        setFormData(prev => ({
+                          ...prev,
+                          inspection_type: value,
+                          reminder_days: defaults?.reminders ?? prev.reminder_days,
+                          is_recurring: defaults?.recurring?.enabled ?? false,
+                          recurrence_value: defaults?.recurring?.interval ?? 1,
+                          recurrence_unit: (defaults?.recurring?.every ?? 'months') as typeof prev.recurrence_unit,
+                          inspection_name: prev.inspection_name ? prev.inspection_name : (defaults?.defaultName ?? ''),
+                        }));
+                      }}
+                    >
                       <SelectTrigger><SelectValue placeholder="Select event type" /></SelectTrigger>
                       <SelectContent className="bg-popover z-50 max-h-[300px]">
-                        {['Document Expiry', 'Inspections', 'Checks', 'Maintenance'].map(category => {
+                        {['Document Expiry', 'Inspections', 'Maintenance'].map(category => {
                           const categoryTypes = EVENT_TYPES.filter(t => t.category === category);
                           if (categoryTypes.length === 0) return null;
                           return (
@@ -564,7 +623,7 @@ const CalendarView = () => {
                 {formData.enable_reminders && (
                   <>
                     <div className="flex flex-wrap gap-2">
-                      {[60, 30, 14, 7, 3, 1].map((days) => (
+                      {[90, 60, 30, 14, 7, 3, 1].map((days) => (
                         <button
                           key={days}
                           type="button"
@@ -577,7 +636,7 @@ const CalendarView = () => {
                             "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
                             formData.reminder_days.includes(days)
                               ? "bg-primary text-primary-foreground border-primary"
-                              : "bg-white text-muted-foreground border-border hover:bg-muted/50"
+                              : "bg-background text-muted-foreground border-border hover:bg-muted/50"
                           )}
                         >
                           {days === 1 ? '1 day' : `${days} days`}
@@ -619,6 +678,7 @@ const CalendarView = () => {
                       >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent className="bg-popover z-50">
+                          <SelectItem value="1-years">1 year</SelectItem>
                           <SelectItem value="12-months">12 months</SelectItem>
                           <SelectItem value="6-months">6 months</SelectItem>
                           <SelectItem value="3-months">3 months</SelectItem>
