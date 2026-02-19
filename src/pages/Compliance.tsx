@@ -1,17 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
 import {
   AlertTriangle, FileText, ClipboardCheck, ChevronRight,
-  Clock, CheckCircle, Wrench, Zap, RefreshCw
+  Clock, CheckCircle, Wrench, Zap, RefreshCw, Search, Filter
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { format } from "date-fns";
 
 type FilterType = "all" | "overdue" | "expired" | "expiring";
-type ItemType = "inspection" | "ndt" | "maintenance" | "document";
+type CategoryFilter = "all" | "inspection" | "maintenance" | "doc_expiry" | "ndt";
 
 interface ComplianceItem {
   id: string;
@@ -20,15 +22,16 @@ interface ComplianceItem {
   rideId: string | null;
   dueDate: string;
   daysValue: number;
-  itemType: ItemType;
-  category: FilterType;
+  category: string; // inspection | maintenance | doc_expiry | ndt
+  severity: FilterType; // overdue | expired | expiring
+  isRecurring: boolean;
 }
 
-const TYPE_CONFIG: Record<ItemType, { icon: typeof ClipboardCheck; label: string }> = {
+const CATEGORY_CONFIG: Record<string, { icon: typeof ClipboardCheck; label: string }> = {
   inspection: { icon: ClipboardCheck, label: "Inspection" },
   ndt: { icon: Zap, label: "NDT" },
   maintenance: { icon: Wrench, label: "Maintenance" },
-  document: { icon: FileText, label: "Document" },
+  doc_expiry: { icon: FileText, label: "Document" },
 };
 
 async function fetchComplianceData(userId: string) {
@@ -36,16 +39,25 @@ async function fetchComplianceData(userId: string) {
   const todayStr = today.toISOString().split("T")[0];
   const thirtyDaysStr = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
 
-  const [ridesRes, overdueInspRes, overdueNdtRes, overdueMaintenanceRes, expiredDocsRes, expiringInspRes, expiringNdtRes, expiringMaintenanceRes, expiringDocsRes] = await Promise.all([
+  const [ridesRes, overdueRes, expiringRes] = await Promise.all([
     supabase.from("rides").select("id, ride_name").eq("user_id", userId),
-    supabase.from("inspection_schedules").select("id, inspection_name, due_date, ride_id").eq("user_id", userId).lt("due_date", todayStr).eq("is_active", true).order("due_date", { ascending: true }),
-    supabase.from("ndt_schedules").select("id, schedule_name, next_inspection_due, ride_id").eq("user_id", userId).not("next_inspection_due", "is", null).lt("next_inspection_due", todayStr).eq("is_active", true).order("next_inspection_due", { ascending: true }),
-    supabase.from("maintenance_records").select("id, description, next_maintenance_due, ride_id").eq("user_id", userId).not("next_maintenance_due", "is", null).lt("next_maintenance_due", todayStr).order("next_maintenance_due", { ascending: true }),
-    supabase.from("documents").select("id, document_name, expires_at, ride_id").eq("user_id", userId).not("expires_at", "is", null).eq("is_latest_version", true).lt("expires_at", todayStr).order("expires_at", { ascending: true }),
-    supabase.from("inspection_schedules").select("id, inspection_name, due_date, ride_id").eq("user_id", userId).gte("due_date", todayStr).lte("due_date", thirtyDaysStr).eq("is_active", true).order("due_date", { ascending: true }),
-    supabase.from("ndt_schedules").select("id, schedule_name, next_inspection_due, ride_id").eq("user_id", userId).not("next_inspection_due", "is", null).gte("next_inspection_due", todayStr).lte("next_inspection_due", thirtyDaysStr).eq("is_active", true).order("next_inspection_due", { ascending: true }),
-    supabase.from("maintenance_records").select("id, description, next_maintenance_due, ride_id").eq("user_id", userId).not("next_maintenance_due", "is", null).gte("next_maintenance_due", todayStr).lte("next_maintenance_due", thirtyDaysStr).order("next_maintenance_due", { ascending: true }),
-    supabase.from("documents").select("id, document_name, expires_at, ride_id").eq("user_id", userId).not("expires_at", "is", null).eq("is_latest_version", true).gte("expires_at", todayStr).lte("expires_at", thirtyDaysStr).order("expires_at", { ascending: true }),
+    // Overdue/expired: due_date < today, still scheduled
+    supabase
+      .from("compliance_events")
+      .select("id, event_name, ride_id, due_date, category, is_recurring, status")
+      .eq("user_id", userId)
+      .eq("status", "scheduled")
+      .lt("due_date", todayStr)
+      .order("due_date", { ascending: true }),
+    // Expiring soon: due_date between today and +30 days, still scheduled
+    supabase
+      .from("compliance_events")
+      .select("id, event_name, ride_id, due_date, category, is_recurring, status")
+      .eq("user_id", userId)
+      .eq("status", "scheduled")
+      .gte("due_date", todayStr)
+      .lte("due_date", thirtyDaysStr)
+      .order("due_date", { ascending: true }),
   ]);
 
   const rideMap = new Map<string, string>();
@@ -54,19 +66,38 @@ async function fetchComplianceData(userId: string) {
   const items: ComplianceItem[] = [];
   const ms = 86400000;
 
-  (overdueInspRes.data || []).forEach((i) => items.push({ id: i.id, title: i.inspection_name, rideName: rideMap.get(i.ride_id) || "Unknown", rideId: i.ride_id, dueDate: i.due_date, daysValue: Math.ceil((today.getTime() - new Date(i.due_date).getTime()) / ms), itemType: "inspection", category: "overdue" }));
-  (overdueNdtRes.data || []).forEach((n) => items.push({ id: n.id, title: n.schedule_name, rideName: rideMap.get(n.ride_id) || "Unknown", rideId: n.ride_id, dueDate: n.next_inspection_due!, daysValue: Math.ceil((today.getTime() - new Date(n.next_inspection_due!).getTime()) / ms), itemType: "ndt", category: "overdue" }));
-  (overdueMaintenanceRes.data || []).forEach((m) => items.push({ id: m.id, title: m.description, rideName: rideMap.get(m.ride_id) || "Unknown", rideId: m.ride_id, dueDate: m.next_maintenance_due!, daysValue: Math.ceil((today.getTime() - new Date(m.next_maintenance_due!).getTime()) / ms), itemType: "maintenance", category: "overdue" }));
-  (expiredDocsRes.data || []).forEach((d) => items.push({ id: d.id, title: d.document_name, rideName: d.ride_id ? rideMap.get(d.ride_id) || "" : "Global", rideId: d.ride_id, dueDate: d.expires_at!, daysValue: Math.ceil((today.getTime() - new Date(d.expires_at!).getTime()) / ms), itemType: "document", category: "expired" }));
-  (expiringInspRes.data || []).forEach((i) => items.push({ id: i.id, title: i.inspection_name, rideName: rideMap.get(i.ride_id) || "Unknown", rideId: i.ride_id, dueDate: i.due_date, daysValue: Math.ceil((new Date(i.due_date).getTime() - today.getTime()) / ms), itemType: "inspection", category: "expiring" }));
-  (expiringNdtRes.data || []).forEach((n) => items.push({ id: n.id, title: n.schedule_name, rideName: rideMap.get(n.ride_id) || "Unknown", rideId: n.ride_id, dueDate: n.next_inspection_due!, daysValue: Math.ceil((new Date(n.next_inspection_due!).getTime() - today.getTime()) / ms), itemType: "ndt", category: "expiring" }));
-  (expiringMaintenanceRes.data || []).forEach((m) => items.push({ id: m.id, title: m.description, rideName: rideMap.get(m.ride_id) || "Unknown", rideId: m.ride_id, dueDate: m.next_maintenance_due!, daysValue: Math.ceil((new Date(m.next_maintenance_due!).getTime() - today.getTime()) / ms), itemType: "maintenance", category: "expiring" }));
-  (expiringDocsRes.data || []).forEach((d) => items.push({ id: d.id, title: d.document_name, rideName: d.ride_id ? rideMap.get(d.ride_id) || "" : "Global", rideId: d.ride_id, dueDate: d.expires_at!, daysValue: Math.ceil((new Date(d.expires_at!).getTime() - today.getTime()) / ms), itemType: "document", category: "expiring" }));
+  (overdueRes.data || []).forEach((e) => {
+    const severity: FilterType = e.category === "doc_expiry" ? "expired" : "overdue";
+    items.push({
+      id: e.id,
+      title: e.event_name,
+      rideName: e.ride_id ? rideMap.get(e.ride_id) || "Unknown" : "Global",
+      rideId: e.ride_id,
+      dueDate: e.due_date,
+      daysValue: Math.ceil((today.getTime() - new Date(e.due_date).getTime()) / ms),
+      category: e.category,
+      severity,
+      isRecurring: e.is_recurring,
+    });
+  });
+
+  (expiringRes.data || []).forEach((e) => {
+    items.push({
+      id: e.id,
+      title: e.event_name,
+      rideName: e.ride_id ? rideMap.get(e.ride_id) || "Unknown" : "Global",
+      rideId: e.ride_id,
+      dueDate: e.due_date,
+      daysValue: Math.ceil((new Date(e.due_date).getTime() - today.getTime()) / ms),
+      category: e.category,
+      severity: "expiring",
+      isRecurring: e.is_recurring,
+    });
+  });
 
   return { items, fetchedAt: new Date().toISOString() };
 }
 
-/** Severity-based badge colour for "expiring" items */
 function getExpiringBadgeClasses(daysLeft: number): string {
   if (daysLeft <= 7) return "bg-warning/15 text-warning border-warning/30 font-semibold";
   return "bg-warning/8 text-warning/70 border-warning/15";
@@ -74,8 +105,11 @@ function getExpiringBadgeClasses(daysLeft: number): string {
 
 const Compliance = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { effectiveUserId, loading: staffLoading } = useEffectiveUserId();
   const [filter, setFilter] = useState<FilterType>("all");
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const { data, isLoading, dataUpdatedAt } = useQuery({
     queryKey: ["compliance", effectiveUserId],
@@ -85,9 +119,20 @@ const Compliance = () => {
   });
 
   const items = data?.items ?? [];
-  const overdueItems = items.filter((i) => i.category === "overdue");
-  const expiredItems = items.filter((i) => i.category === "expired");
-  const expiringItems = items.filter((i) => i.category === "expiring");
+
+  // Apply search + category filter
+  const filtered = items.filter((i) => {
+    if (categoryFilter !== "all" && i.category !== categoryFilter) return false;
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      if (!i.title.toLowerCase().includes(q) && !i.rideName.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  const overdueItems = filtered.filter((i) => i.severity === "overdue");
+  const expiredItems = filtered.filter((i) => i.severity === "expired");
+  const expiringItems = filtered.filter((i) => i.severity === "expiring");
 
   const counts = { overdue: overdueItems.length, expired: expiredItems.length, expiring: expiringItems.length };
   const totalIssues = counts.overdue + counts.expired + counts.expiring;
@@ -109,10 +154,10 @@ const Compliance = () => {
     return sections;
   })();
 
-  const allClear = items.length === 0;
+  const allClear = filtered.length === 0;
 
   const handleRowClick = (item: ComplianceItem) => {
-    if (item.itemType === "document") {
+    if (item.category === "doc_expiry") {
       navigate("/documents");
     } else if (item.rideId) {
       navigate(`/rides/${item.rideId}`);
@@ -138,24 +183,24 @@ const Compliance = () => {
   }
 
   return (
-    <div className="container mx-auto py-6 pb-24 md:pb-8 max-w-3xl space-y-5">
-      {/* Header */}
+    <div className="container mx-auto py-4 pb-24 md:pb-8 max-w-3xl space-y-4">
+      {/* Header - tighter */}
       <div>
         <div className="flex items-center gap-3">
-          <AlertTriangle className="h-6 w-6 text-destructive" />
-          <h1 className="text-[22px] font-semibold text-foreground">Compliance</h1>
+          <AlertTriangle className="h-5 w-5 text-destructive" />
+          <h1 className="text-lg font-semibold text-foreground">Compliance</h1>
           {counts.overdue > 0 && (
             <Badge variant="destructive" className="text-xs">
               {counts.overdue} overdue
             </Badge>
           )}
         </div>
-        <p className="text-sm text-muted-foreground mt-1">
-          {totalIssues} active issue{totalIssues !== 1 ? "s" : ""} across inspections, NDT, maintenance &amp; documents
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {totalIssues} active issue{totalIssues !== 1 ? "s" : ""}
         </p>
       </div>
 
-      {/* Last checked timestamp */}
+      {/* Last checked */}
       {dataUpdatedAt > 0 && (
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
           <RefreshCw className="h-3 w-3" />
@@ -163,12 +208,12 @@ const Compliance = () => {
         </div>
       )}
 
-      {/* Tappable filter tiles */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* Tappable filter tiles - shorter */}
+      <div className="grid grid-cols-3 gap-2">
         {([
-          { key: "overdue" as const, label: "Overdue", count: counts.overdue, icon: <ClipboardCheck className="h-4 w-4" />, color: "destructive" as const },
-          { key: "expired" as const, label: "Expired", count: counts.expired, icon: <FileText className="h-4 w-4" />, color: "destructive" as const },
-          { key: "expiring" as const, label: "Expiring", count: counts.expiring, icon: <Clock className="h-4 w-4" />, color: "warning" as const },
+          { key: "overdue" as const, label: "Overdue", count: counts.overdue, icon: <ClipboardCheck className="h-3.5 w-3.5" />, color: "destructive" as const },
+          { key: "expired" as const, label: "Expired", count: counts.expired, icon: <FileText className="h-3.5 w-3.5" />, color: "destructive" as const },
+          { key: "expiring" as const, label: "Expiring", count: counts.expiring, icon: <Clock className="h-3.5 w-3.5" />, color: "warning" as const },
         ]).map((tile) => {
           const isActive = filter === tile.key;
           const bg = tile.color === "destructive" ? "bg-destructive/10" : "bg-warning/10";
@@ -181,16 +226,42 @@ const Compliance = () => {
             <button
               key={tile.key}
               onClick={() => handleTileClick(tile.key)}
-              className={`rounded-2xl border-2 bg-card p-3 text-center space-y-1 transition-all active:scale-[0.97] ${activeBorder} ${activeRing}`}
+              className={`rounded-2xl border-2 bg-card p-2.5 text-center space-y-0.5 transition-all active:scale-[0.97] ${activeBorder} ${activeRing}`}
             >
-              <div className={`mx-auto w-8 h-8 rounded-xl flex items-center justify-center ${bg} ${text}`}>
+              <div className={`mx-auto w-7 h-7 rounded-lg flex items-center justify-center ${bg} ${text}`}>
                 {tile.icon}
               </div>
-              <div className={`text-2xl font-bold ${numColor}`}>{tile.count}</div>
+              <div className={`text-xl font-bold ${numColor}`}>{tile.count}</div>
               <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{tile.label}</div>
             </button>
           );
         })}
+      </div>
+
+      {/* Search + Category filter */}
+      <div className="flex gap-2">
+        <div className="flex-1 relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search ride or event…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9 h-9 text-sm"
+          />
+        </div>
+        <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
+          <SelectTrigger className="w-[130px] h-9 text-sm">
+            <Filter className="h-3.5 w-3.5 mr-1" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="inspection">Inspection</SelectItem>
+            <SelectItem value="maintenance">Maintenance</SelectItem>
+            <SelectItem value="doc_expiry">Doc Expiry</SelectItem>
+            <SelectItem value="ndt">NDT</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* All clear */}
@@ -207,54 +278,52 @@ const Compliance = () => {
         const dotColor = section.color === "destructive" ? "bg-destructive" : "bg-warning";
         return (
           <div key={section.title}>
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-1.5">
               <span className={`w-2 h-2 rounded-full ${dotColor}`} />
               <h2 className="text-[13px] font-bold text-foreground uppercase tracking-[1px]">{section.title}</h2>
               <span className="text-xs text-muted-foreground">({section.items.length})</span>
             </div>
-            <div className="space-y-2">
+            <div className="space-y-1.5">
               {section.items.map((item) => {
-                const config = TYPE_CONFIG[item.itemType];
+                const config = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG.inspection;
                 const Icon = config.icon;
                 const iconColor = section.color === "destructive" ? "text-destructive" : "text-warning";
 
-                // Badge logic
                 let badgeLabel: string;
                 let badgeClasses: string;
-                if (item.category === "overdue") {
+                if (item.severity === "overdue") {
                   badgeLabel = `${item.daysValue}d overdue`;
                   badgeClasses = "";
-                } else if (item.category === "expired") {
+                } else if (item.severity === "expired") {
                   badgeLabel = `${item.daysValue}d expired`;
                   badgeClasses = "";
                 } else {
-                  badgeLabel = item.daysValue === 0 ? "Due today" : `Due in ${item.daysValue}d`;
+                  badgeLabel = item.daysValue === 0 ? "Due today" : `${item.daysValue}d left`;
                   badgeClasses = getExpiringBadgeClasses(item.daysValue);
                 }
 
                 return (
                   <button
-                    key={`${item.category}-${item.id}`}
+                    key={`${item.severity}-${item.id}`}
                     onClick={() => handleRowClick(item)}
-                    className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl border border-border bg-card hover:border-primary/50 active:scale-[0.98] transition-all text-left"
-                    style={{ boxShadow: "0 2px 6px rgba(0,0,0,0.04)" }}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border border-border bg-card hover:border-primary/50 active:scale-[0.98] transition-all text-left"
+                    style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}
                   >
                     <span className="flex-shrink-0">
                       <Icon className={`h-4 w-4 ${iconColor}`} />
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                      <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-xs text-muted-foreground truncate max-w-[120px]">{item.rideName}</span>
                         <span className="text-[10px] text-muted-foreground/50">·</span>
                         <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                          Due: {format(new Date(item.dueDate), "dd MMM yyyy")}
+                          {format(new Date(item.dueDate), "dd MMM yyyy")}
                         </span>
                       </div>
-                      <span className="text-[10px] text-muted-foreground/60 block">{config.label}</span>
                     </div>
                     <Badge
-                      variant={item.category !== "expiring" ? "destructive" : "secondary"}
+                      variant={item.severity !== "expiring" ? "destructive" : "secondary"}
                       className={`text-[10px] flex-shrink-0 whitespace-nowrap ${badgeClasses}`}
                     >
                       {badgeLabel}

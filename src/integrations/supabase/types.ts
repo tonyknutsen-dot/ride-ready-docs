@@ -524,6 +524,95 @@ export type Database = {
           },
         ]
       }
+      compliance_events: {
+        Row: {
+          advance_notice_days: number
+          auto_create_next: boolean
+          category: string
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          due_date: string
+          event_name: string
+          event_type: string
+          id: string
+          is_recurring: boolean
+          notes: string | null
+          recurrence_anchor_date: string | null
+          recurrence_end_date: string | null
+          recurrence_rule: string | null
+          reminder_days: Json | null
+          reminder_enabled: boolean
+          ride_id: string | null
+          series_id: string | null
+          source_id: string | null
+          source_table: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          advance_notice_days?: number
+          auto_create_next?: boolean
+          category: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          due_date: string
+          event_name: string
+          event_type: string
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          recurrence_anchor_date?: string | null
+          recurrence_end_date?: string | null
+          recurrence_rule?: string | null
+          reminder_days?: Json | null
+          reminder_enabled?: boolean
+          ride_id?: string | null
+          series_id?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          advance_notice_days?: number
+          auto_create_next?: boolean
+          category?: string
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          due_date?: string
+          event_name?: string
+          event_type?: string
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          recurrence_anchor_date?: string | null
+          recurrence_end_date?: string | null
+          recurrence_rule?: string | null
+          reminder_days?: Json | null
+          reminder_enabled?: boolean
+          ride_id?: string | null
+          series_id?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_events_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_check_template_items: {
         Row: {
           category: string | null
@@ -2495,6 +2584,7 @@ export type Database = {
       cleanup_expired_blocks: { Args: never; Returns: number }
       cleanup_old_blocked_ips: { Args: never; Returns: number }
       close_stale_tester_sessions: { Args: never; Returns: number }
+      complete_event: { Args: { p_event_id: string }; Returns: Json }
       decrypt_sensitive: { Args: { ciphertext: string }; Returns: string }
       encrypt_sensitive: { Args: { plaintext: string }; Returns: string }
       end_tester_session: { Args: { p_session_id: string }; Returns: undefined }
