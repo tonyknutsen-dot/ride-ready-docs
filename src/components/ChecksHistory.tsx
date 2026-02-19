@@ -223,11 +223,11 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'passed':
-        return <CheckCircle2 className="h-4 w-4 text-green-600" />;
+        return <CheckCircle2 className="h-4 w-4 text-success" />;
       case 'failed':
         return <XCircle className="h-4 w-4 text-destructive" />;
       case 'partial':
-        return <MinusCircle className="h-4 w-4 text-amber-600" />;
+        return <MinusCircle className="h-4 w-4 text-warning" />;
       default:
         return null;
     }
@@ -426,346 +426,289 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="py-12 text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading checks history...</p>
-        </CardContent>
-      </Card>
+      <div className="checksWrap -mx-4 px-4 pt-4 pb-24 space-y-4">
+        <div className="kpiGrid">
+          {[1,2,3,4].map(i => (
+            <div key={i} className="rounded-2xl border border-border bg-card p-4 animate-pulse h-20" />
+          ))}
+        </div>
+      </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {/* Statistics Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <div className="text-2xl font-bold text-primary">{overallStats.total}</div>
-            <div className="text-xs text-muted-foreground capitalize">{frequency} Checks</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <div className="text-2xl font-bold text-green-600">{overallStats.passed}</div>
-            <div className="text-xs text-muted-foreground">Passed</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <div className="text-2xl font-bold text-destructive">{overallStats.failed}</div>
-            <div className="text-xs text-muted-foreground">Failed</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <div className="text-2xl font-bold text-amber-600">{overallStats.partial}</div>
-            <div className="text-xs text-muted-foreground">Partial</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-6 text-center">
-            <div className="flex items-center justify-center gap-1">
-              <TrendingUp className="h-5 w-5 text-primary" />
-              <div className="text-2xl font-bold">{overallStats.passRate}%</div>
-            </div>
-            <div className="text-xs text-muted-foreground">Pass Rate</div>
-          </CardContent>
-        </Card>
+    <div className="checksWrap -mx-4 px-4 pt-4 pb-32 space-y-4">
+
+      {/* ── KPI cards ── */}
+      <div className="kpiGrid">
+        <KpiCard title={`${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Checks`} value={overallStats.total} tone="neutral" />
+        <KpiCard title="Passed" value={overallStats.passed} tone="good" />
+        <KpiCard title="Failed" value={overallStats.failed} tone="bad" />
+        <KpiCard title="Partial" value={overallStats.partial} tone="warn" />
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
-                Filters & Search
-              </CardTitle>
-              <CardDescription>Refine your checks history view</CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm" onClick={exportToPDF}>
-                <Download className="h-4 w-4 mr-2" />
-                PDF
-              </Button>
-              <Button variant="outline" size="sm" onClick={exportToCSV}>
-                <Download className="h-4 w-4 mr-2" />
-                CSV
-              </Button>
-            </div>
+      {/* Pass Rate full-width */}
+      <div className="t-card p-4 flex items-center justify-between gap-3 min-w-0">
+        <div className="min-w-0">
+          <div className="text-xs font-bold text-muted-foreground">Pass Rate</div>
+          <div className="text-3xl font-extrabold text-foreground">{overallStats.passRate}%</div>
+        </div>
+        <TrendingUp className="h-8 w-8 text-muted-foreground shrink-0" />
+      </div>
+
+      {/* ── Filters card ── */}
+      <div className="t-card overflow-hidden">
+        <div className="t-card-header flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="t-title text-base">Filters &amp; Search</div>
+            <div className="text-xs text-muted-foreground mt-0.5">Refine your checks history view</div>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Search */}
-            <div className="space-y-2">
-              <Label>Search</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Inspector or notes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-            </div>
+          <div className="flex gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={exportToPDF}
+              className="rounded-xl border border-border px-3 py-2 text-xs font-bold bg-card hover:bg-muted/50 flex items-center gap-1.5"
+            >
+              <Download className="h-3.5 w-3.5" />PDF
+            </button>
+            <button
+              type="button"
+              onClick={exportToCSV}
+              className="rounded-xl border border-border px-3 py-2 text-xs font-bold bg-card hover:bg-muted/50 flex items-center gap-1.5"
+            >
+              <Download className="h-3.5 w-3.5" />CSV
+            </button>
+          </div>
+        </div>
 
-            {/* Frequency Filter */}
-            <div className="space-y-2">
-              <Label>Frequency</Label>
-              <Select value={frequencyFilter} onValueChange={(value: any) => setFrequencyFilter(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all">All Frequencies</SelectItem>
-                  <SelectItem value="preopening">Pre-Opening</SelectItem>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
+        <div className="p-4 space-y-3">
+          {/* Search */}
+          <label className="block space-y-1">
+            <div className="text-xs font-bold text-muted-foreground">Search</div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <input
+                className="w-full rounded-xl border border-border bg-card pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                placeholder="Inspector or notes…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
             </div>
+          </label>
 
-            {/* Status Filter */}
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={statusFilter} onValueChange={(value: any) => setStatusFilter(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="passed">Passed</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="partial">Partial</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="grid grid-cols-2 gap-3">
+            <label className="block space-y-1">
+              <div className="text-xs font-bold text-muted-foreground">Frequency</div>
+              <select
+                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                value={frequencyFilter}
+                onChange={(e) => setFrequencyFilter(e.target.value as any)}
+              >
+                <option value="all">All Frequencies</option>
+                <option value="preopening">Pre-Opening</option>
+                <option value="daily">Daily</option>
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+                <option value="yearly">Yearly</option>
+              </select>
+            </label>
 
-            {/* Date Range */}
-            <div className="space-y-2">
-              <Label>Date Range</Label>
-              <Select value={dateRange} onValueChange={(value: any) => setDateRange(value)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-popover z-50">
-                  <SelectItem value="7">Last 7 Days</SelectItem>
-                  <SelectItem value="30">Last 30 Days</SelectItem>
-                  <SelectItem value="90">Last 90 Days</SelectItem>
-                  <SelectItem value="thisMonth">This Month</SelectItem>
-                  <SelectItem value="thisYear">This Year</SelectItem>
-                  <SelectItem value="custom">Custom Range</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <label className="block space-y-1">
+              <div className="text-xs font-bold text-muted-foreground">Status</div>
+              <select
+                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+              >
+                <option value="all">All Statuses</option>
+                <option value="passed">Passed</option>
+                <option value="failed">Failed</option>
+                <option value="partial">Partial</option>
+              </select>
+            </label>
+
+            <label className="block space-y-1 col-span-2">
+              <div className="text-xs font-bold text-muted-foreground">Date Range</div>
+              <select
+                className="w-full rounded-xl border border-border bg-card px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value as any)}
+              >
+                <option value="7">Last 7 Days</option>
+                <option value="30">Last 30 Days</option>
+                <option value="90">Last 90 Days</option>
+                <option value="thisMonth">This Month</option>
+                <option value="thisYear">This Year</option>
+                <option value="custom">Custom Range</option>
+              </select>
+            </label>
           </div>
 
-          {/* Custom Date Range */}
+          {/* Custom date pickers */}
           {dateRange === 'custom' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Start Date</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-muted-foreground">Start Date</div>
                 <Popover open={startCalendarOpen} onOpenChange={setStartCalendarOpen}>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !customStartDate && "text-muted-foreground"
-                      )}
-                    >
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal text-sm rounded-xl", !customStartDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customStartDate ? format(customStartDate, "d MMM yyyy") : "Pick start date"}
+                      {customStartDate ? format(customStartDate, "d MMM yyyy") : "Pick start"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-popover z-50" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={customStartDate}
-                      onSelect={(date) => {
-                        setCustomStartDate(date);
-                        setStartCalendarOpen(false);
-                      }}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
+                    <Calendar mode="single" selected={customStartDate} onSelect={(d) => { setCustomStartDate(d); setStartCalendarOpen(false); }} initialFocus className="pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
               </div>
-
-              <div className="space-y-2">
-                <Label>End Date</Label>
+              <div className="space-y-1">
+                <div className="text-xs font-bold text-muted-foreground">End Date</div>
                 <Popover open={endCalendarOpen} onOpenChange={setEndCalendarOpen}>
                   <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal",
-                        !customEndDate && "text-muted-foreground"
-                      )}
-                    >
+                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal text-sm rounded-xl", !customEndDate && "text-muted-foreground")}>
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customEndDate ? format(customEndDate, "d MMM yyyy") : "Pick end date"}
+                      {customEndDate ? format(customEndDate, "d MMM yyyy") : "Pick end"}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0 bg-popover z-50" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={customEndDate}
-                      onSelect={(date) => {
-                        setCustomEndDate(date);
-                        setEndCalendarOpen(false);
-                      }}
-                      initialFocus
-                      disabled={(date) => customStartDate ? date < customStartDate : false}
-                      className="pointer-events-auto"
-                    />
+                    <Calendar mode="single" selected={customEndDate} onSelect={(d) => { setCustomEndDate(d); setEndCalendarOpen(false); }} initialFocus disabled={(d) => customStartDate ? d < customStartDate : false} className="pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
-
-      {/* Monthly Groups */}
-      <div className="space-y-4">
-        {monthGroups.length === 0 ? (
-          <EmptyState
-            icon={FileText}
-            title="No checks found"
-            description="No checks found for the selected filters"
-            variant="compact"
-          />
-        ) : (
-          monthGroups.map((group) => (
-            <Collapsible key={group.month} defaultOpen>
-              <Card>
-                <CollapsibleTrigger asChild>
-                  <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <ChevronDown className="h-5 w-5 text-muted-foreground" />
-                        <div>
-                          <CardTitle className="text-lg">{group.month}</CardTitle>
-                          <CardDescription>
-                            {group.totalChecks} checks • {group.passedChecks} passed • {group.passRate}% pass rate
-                          </CardDescription>
-                        </div>
-                      </div>
-                      <Badge variant={group.passRate >= 80 ? 'default' : group.passRate >= 50 ? 'secondary' : 'destructive'}>
-                        {group.passRate}%
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <CardContent className="space-y-2">
-                    {group.checks.map((check) => (
-                      <div 
-                        key={check.id} 
-                        className="flex items-start gap-3 p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer"
-                        onClick={() => {
-                          setSelectedCheck(check);
-                          setShowCheckDetail(true);
-                        }}
-                      >
-                        <div className="shrink-0 mt-1">
-                          {getStatusIcon(check.status)}
-                        </div>
-                        <div className="flex-1 min-w-0 space-y-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <div className="flex items-center gap-1.5">
-                              <CalendarIcon className="h-4 w-4 text-muted-foreground shrink-0" />
-                              <span className="font-medium text-sm">{format(parseISO(check.check_date), 'PP')}</span>
-                            </div>
-                            <Badge variant="outline" className="text-xs shrink-0">
-                              {check.check_frequency}
-                            </Badge>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <User className="h-3 w-3 shrink-0" />
-                              <span className="truncate max-w-[120px] sm:max-w-none">{check.inspector_name}</span>
-                            </div>
-                            {(check as any).weather_conditions && (
-                              <div className="flex items-center gap-1">
-                                <Cloud className="h-3 w-3 shrink-0" />
-                                <span className="truncate max-w-[80px] sm:max-w-none">{(check as any).weather_conditions}</span>
-                              </div>
-                            )}
-                            {(check as any).location && (
-                              <div className="flex items-center gap-1">
-                                <MapPin className="h-3 w-3 shrink-0" />
-                                <span className="truncate max-w-[100px] sm:max-w-[200px]">{(check as any).location}</span>
-                              </div>
-                            )}
-                          </div>
-                          {check.notes && (
-                            <p className="text-xs text-muted-foreground italic line-clamp-2">
-                              {check.notes}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                          {getStatusBadge(check.status)}
-                          <Eye className="h-4 w-4 text-muted-foreground hidden sm:block" />
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </CollapsibleContent>
-              </Card>
-            </Collapsible>
-          ))
-        )}
+        </div>
       </div>
+
+      {/* ── Month groups ── */}
+      {monthGroups.length === 0 ? (
+        <EmptyState icon={FileText} title="No checks found" description="No checks found for the selected filters" variant="compact" />
+      ) : (
+        monthGroups.map((group) => (
+          <div key={group.month} className="t-card overflow-hidden">
+            {/* Month header */}
+            <div className="t-card-header flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="t-title text-base">{group.month}</div>
+                <div className="text-xs text-muted-foreground mt-0.5">
+                  {group.totalChecks} check{group.totalChecks !== 1 ? 's' : ''} · {group.passedChecks} passed · {group.passRate}% pass rate
+                </div>
+              </div>
+              <span className={cn(
+                "shrink-0 rounded-full px-3 py-1 text-xs font-extrabold border",
+                group.passRate >= 80 ? 'bg-success/10 border-success/30 text-success' :
+                group.passRate >= 50 ? 'bg-warning/10 border-warning/30 text-warning' :
+                                       'bg-destructive/10 border-destructive/30 text-destructive'
+              )}>
+                {group.passRate}%
+              </span>
+            </div>
+
+            {/* Check rows */}
+            <div className="p-4 space-y-3">
+              {group.checks.map((check) => (
+                <div
+                  key={check.id}
+                  className="rounded-2xl border border-border bg-card p-3 flex items-start justify-between gap-3 min-w-0 cursor-pointer hover:bg-muted/30 transition-colors"
+                  onClick={() => { setSelectedCheck(check); setShowCheckDetail(true); }}
+                >
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="text-xs text-muted-foreground">
+                      {format(parseISO(check.check_date), 'd MMM yyyy')} · <span className="font-semibold capitalize">{check.check_frequency}</span>
+                    </div>
+                    <div className="font-extrabold text-foreground truncate">{check.inspector_name}</div>
+                    <div className="text-xs text-muted-foreground flex flex-wrap gap-x-2 gap-y-0.5">
+                      {(check as any).weather_conditions && (
+                        <span className="flex items-center gap-1">
+                          <Cloud className="h-3 w-3 shrink-0" />
+                          <span className="truncate max-w-[120px]">{(check as any).weather_conditions}</span>
+                        </span>
+                      )}
+                      {(check as any).location && (
+                        <span className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          <span className="truncate max-w-[140px]">{(check as any).location}</span>
+                        </span>
+                      )}
+                    </div>
+                    {check.notes && (
+                      <p className="text-xs text-muted-foreground italic line-clamp-1">{check.notes}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className={cn(
+                      "rounded-full px-2.5 py-1 text-[11px] font-extrabold border",
+                      check.status === 'passed'  ? 'bg-success/10 border-success/30 text-success' :
+                      check.status === 'failed'  ? 'bg-destructive/10 border-destructive/30 text-destructive' :
+                      check.status === 'partial' ? 'bg-warning/10 border-warning/30 text-warning' :
+                                                   'bg-muted border-border text-muted-foreground'
+                    )}>
+                      {check.status.charAt(0).toUpperCase() + check.status.slice(1)}
+                    </span>
+                    <Eye className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <Card>
-          <CardContent className="py-4">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">
-                Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, filteredChecks.length)} of {filteredChecks.length} checks
-              </p>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Previous
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Next
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs text-muted-foreground">
+            {(currentPage - 1) * itemsPerPage + 1}–{Math.min(currentPage * itemsPerPage, filteredChecks.length)} of {filteredChecks.length}
+          </p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="rounded-xl border border-border px-4 py-2 text-sm font-bold bg-card hover:bg-muted/50 disabled:opacity-40"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+            >Previous</button>
+            <button
+              type="button"
+              className="rounded-xl border border-border px-4 py-2 text-sm font-bold bg-card hover:bg-muted/50 disabled:opacity-40"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+            >Next</button>
+          </div>
+        </div>
       )}
 
-      {/* Check Detail Dialog */}
-      <CheckDetailDialog
-        check={selectedCheck}
-        open={showCheckDetail}
-        onOpenChange={setShowCheckDetail}
-      />
+      {/* ── Sticky export bar ── */}
+      <div className="fixed left-0 right-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur-sm">
+        <div className="max-w-xl mx-auto px-4 py-3 grid grid-cols-2 gap-2">
+          <button type="button" onClick={exportToPDF} className="rounded-xl border border-border py-3 text-sm font-extrabold bg-card hover:bg-muted/50 flex items-center justify-center gap-1.5">
+            <Download className="h-4 w-4" />Export PDF
+          </button>
+          <button type="button" onClick={exportToCSV} className="t-btn-primary rounded-xl py-3 text-sm">
+            <Download className="h-4 w-4" />Export CSV
+          </button>
+        </div>
+      </div>
+
+      <CheckDetailDialog check={selectedCheck} open={showCheckDetail} onOpenChange={setShowCheckDetail} />
     </div>
   );
 };
 
+// ── Local sub-components ──────────────────────────────────────────────
+
+function KpiCard({ title, value, tone }: { title: string; value: number; tone: 'neutral' | 'good' | 'bad' | 'warn' }) {
+  const cls =
+    tone === 'good' ? 'border-success/30 bg-success/5' :
+    tone === 'bad'  ? 'border-destructive/30 bg-destructive/5' :
+    tone === 'warn' ? 'border-warning/30 bg-warning/5' :
+                      'border-border bg-card';
+  return (
+    <div className={cn('kpiCard rounded-2xl border shadow-sm p-4', cls)}>
+      <div className="text-xs font-bold text-muted-foreground truncate">{title}</div>
+      <div className="mt-1 text-3xl font-extrabold text-foreground">{value}</div>
+    </div>
+  );
+}
+
 export default ChecksHistory;
+
