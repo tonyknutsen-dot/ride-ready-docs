@@ -22,6 +22,9 @@ import {
   ExternalLink,
   Trash2,
   ChevronRight as ChevronRightIcon,
+  Pencil,
+  Bell,
+  CheckCircle2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -120,6 +123,8 @@ const CalendarView = () => {
   const [showHelpTips, setShowHelpTips] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [eventDetailOpen, setEventDetailOpen] = useState(false);
+  const [editingEvent, setEditingEvent] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [rides, setRides] = useState<Ride[]>([]);
   const [rideDocuments, setRideDocuments] = useState<{ id: string; document_name: string; expires_at: string | null }[]>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
@@ -303,12 +308,55 @@ const CalendarView = () => {
       const { error } = await supabase.from('inspection_schedules').delete().eq('id', event.id);
       if (error) throw error;
       toast({ title: "Deleted", description: "Event removed from calendar." });
+      setDeleteConfirmOpen(false);
       setEventDetailOpen(false);
       setSelectedEvent(null);
       loadCalendarEvents();
     } catch {
       toast({ title: "Error", description: "Could not delete event.", variant: "destructive" });
     }
+  };
+
+  const handleEditEvent = (event: CalendarEvent) => {
+    // Pre-fill the add form with this event's data
+    const eventType = event.type === 'inspection' ? 'safety' : event.type === 'maintenance' ? 'maintenance' : event.type === 'ndt' ? 'ndt' : 'doc-expiry';
+    const defaults = EVENT_DEFAULTS[eventType];
+    setFormData({
+      selected_document_id: '',
+      ride_id: event.rideId || '',
+      inspection_type: eventType,
+      inspection_name: event.eventName,
+      due_date: parseISO(event.date),
+      advance_notice_days: 30,
+      notes: event.notes || '',
+      enable_reminders: true,
+      reminder_days: defaults?.reminders ?? [7, 1],
+      is_recurring: false,
+      recurrence_value: defaults?.recurring?.interval ?? 1,
+      recurrence_unit: (defaults?.recurring?.every ?? 'months') as 'days' | 'weeks' | 'months' | 'years',
+    });
+    setEventDetailOpen(false);
+    setEditingEvent(true);
+    setAddDialogOpen(true);
+  };
+
+  const getEventTypeLabel = (event: CalendarEvent) => {
+    if (event.type === 'document_expiry') return 'Document Expiry';
+    if (event.type === 'ndt') return 'NDT Inspection';
+    if (event.type === 'maintenance') return 'Maintenance';
+    if (event.type === 'inspection') return 'Inspection';
+    return 'Check';
+  };
+
+  const getStatusChip = (event: CalendarEvent) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const d = new Date(event.date);
+    d.setHours(0, 0, 0, 0);
+    if (event.status === 'completed') return { label: 'Completed', className: 'bg-green-100 text-green-800 border-green-200' };
+    if (d < today || event.status === 'overdue') return { label: 'Overdue', className: 'bg-destructive/10 text-destructive border-destructive/20' };
+    if (d <= addDays(today, 7)) return { label: 'Due soon', className: 'bg-amber-100 text-amber-800 border-amber-200' };
+    return { label: 'Scheduled', className: 'bg-muted text-muted-foreground border-border' };
   };
 
   const getEventTypeColor = (type: string) => {
@@ -990,105 +1038,168 @@ const CalendarView = () => {
       </div>
 
       {/* ── Event Detail Sheet ── */}
-      <Sheet open={eventDetailOpen} onOpenChange={setEventDetailOpen}>
+      <Sheet open={eventDetailOpen} onOpenChange={(open) => { setEventDetailOpen(open); if (!open) setDeleteConfirmOpen(false); }}>
         <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] flex flex-col p-0">
-          {selectedEvent && (
-            <>
-              {/* Header */}
-              <div className="px-5 pt-5 pb-4 border-b border-border shrink-0">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3 min-w-0">
-                    <div className={cn(
-                      "w-3 h-3 rounded-full mt-1 shrink-0",
-                      selectedEvent.type === 'inspection' && "bg-primary",
-                      selectedEvent.type === 'maintenance' && "bg-blue-500",
-                      selectedEvent.type === 'document_expiry' && "bg-destructive",
-                      selectedEvent.type === 'ndt' && "bg-violet-500",
-                      selectedEvent.type === 'check' && "bg-muted-foreground",
-                    )} />
-                    <div className="min-w-0">
-                      <SheetTitle className="text-base font-semibold text-foreground leading-tight">{selectedEvent.eventName}</SheetTitle>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {selectedEvent.type === 'document_expiry' ? 'Document Expiry'
-                          : selectedEvent.type === 'ndt' ? 'NDT Inspection'
-                          : selectedEvent.type.charAt(0).toUpperCase() + selectedEvent.type.slice(1)}
-                      </p>
+          {selectedEvent && (() => {
+            const statusChip = getStatusChip(selectedEvent);
+            const eventTypeLabel = getEventTypeLabel(selectedEvent);
+            const isEditable = selectedEvent.type === 'inspection';
+            return (
+              <>
+                {/* Header */}
+                <div className="px-5 pt-5 pb-4 border-b border-border shrink-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className={cn(
+                        "w-3 h-3 rounded-full mt-1 shrink-0",
+                        selectedEvent.type === 'inspection' && "bg-primary",
+                        selectedEvent.type === 'maintenance' && "bg-blue-500",
+                        selectedEvent.type === 'document_expiry' && "bg-destructive",
+                        selectedEvent.type === 'ndt' && "bg-violet-500",
+                        selectedEvent.type === 'check' && "bg-muted-foreground",
+                      )} />
+                      <div className="min-w-0">
+                        <SheetTitle className="text-base font-semibold text-foreground leading-tight">{selectedEvent.eventName}</SheetTitle>
+                        <p className="text-xs text-muted-foreground mt-0.5">{eventTypeLabel}</p>
+                      </div>
                     </div>
+                    <Badge className={cn("shrink-0 text-xs", statusChip.className)}>
+                      {statusChip.label}
+                    </Badge>
                   </div>
-                  {selectedEvent.status === 'overdue'
-                    ? <Badge className="shrink-0 bg-destructive/10 text-destructive border-destructive/20">Overdue</Badge>
-                    : selectedEvent.status === 'pending' && new Date(selectedEvent.date) <= addDays(new Date(), 7)
-                    ? <Badge className="shrink-0 bg-amber-100 text-amber-800 border-amber-200">Due soon</Badge>
-                    : null
-                  }
-                </div>
-              </div>
-
-              {/* Body */}
-              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
-
-                {/* Due date */}
-                <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Due date</p>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">{format(parseISO(selectedEvent.date), 'EEEE, d MMMM yyyy')}</p>
-                  </div>
-                  <Clock className="h-4 w-4 text-muted-foreground" />
                 </div>
 
-                {/* Ride */}
-                {selectedEvent.rideName && selectedEvent.rideId && (
+                {/* Body */}
+                <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+
+                  {/* Due date */}
                   <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 flex items-center justify-between">
                     <div>
-                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Ride / Equipment</p>
-                      <p className="text-sm font-semibold text-foreground mt-0.5">{selectedEvent.rideName}</p>
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Due date</p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">{format(parseISO(selectedEvent.date), 'EEEE, d MMMM yyyy')}</p>
                     </div>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); navigate(`/rides/${selectedEvent.rideId}`); setEventDetailOpen(false); }}
-                      className="flex items-center gap-1 text-xs text-primary font-medium hover:underline shrink-0"
-                    >
-                      View <ExternalLink className="h-3.5 w-3.5" />
-                    </button>
+                    <Clock className="h-4 w-4 text-muted-foreground" />
                   </div>
-                )}
 
-                {/* Notes */}
-                {selectedEvent.notes && (
+                  {/* Ride */}
+                  {selectedEvent.rideName && selectedEvent.rideId && (
+                    <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Ride / Equipment</p>
+                        <p className="text-sm font-semibold text-foreground mt-0.5">{selectedEvent.rideName}</p>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); navigate(`/rides/${selectedEvent.rideId}`); setEventDetailOpen(false); }}
+                        className="flex items-center gap-1 text-xs text-primary font-medium hover:underline shrink-0"
+                      >
+                        View <ExternalLink className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Reminders */}
+                  {isEditable && (
+                    <div className="rounded-xl border border-border bg-muted/30 px-4 py-3">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bell className="h-3.5 w-3.5 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Reminders</p>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {EVENT_DEFAULTS[
+                          (() => {
+                            const found = EVENT_TYPES.find(t => selectedEvent.eventName.toLowerCase().includes(t.label.toLowerCase().split(' ')[0]));
+                            return found?.value ?? 'in-service';
+                          })()
+                        ]?.reminders?.map(d => (
+                          <span key={d} className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 text-xs font-medium">
+                            {d === 1 ? '1 day' : `${d} days`}
+                          </span>
+                        )) ?? (
+                          <span className="text-xs text-muted-foreground">No reminders configured</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Recurring */}
+                  {isEditable && (
+                    <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Recurring</p>
+                      </div>
+                      <span className="text-xs font-medium text-foreground">
+                        {selectedEvent.notes?.includes('[Recurring:')
+                          ? selectedEvent.notes.match(/\[Recurring: ([^\]]+)\]/)?.[1] ?? 'Enabled'
+                          : 'Not recurring'}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Notes */}
                   <div className="rounded-xl border border-border bg-muted/30 px-4 py-3">
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Notes</p>
-                    <p className="text-sm text-foreground">{selectedEvent.notes}</p>
+                    {selectedEvent.notes && !selectedEvent.notes.startsWith('[Recurring:') ? (
+                      <p className="text-sm text-foreground">{selectedEvent.notes.replace(/\n?\[Recurring:[^\]]+\]/, '').trim()}</p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">—</p>
+                    )}
                   </div>
-                )}
 
-                {/* Info for non-schedule events */}
-                {selectedEvent.type !== 'inspection' && (
-                  <p className="text-xs text-muted-foreground text-center px-2">
-                    This event is managed in the{' '}
-                    {selectedEvent.type === 'maintenance' ? 'Maintenance' : selectedEvent.type === 'document_expiry' ? 'Documents' : 'NDT'}
-                    {' '}module. Go there to edit or remove it.
-                  </p>
-                )}
-              </div>
+                  {/* Info for non-schedule events */}
+                  {!isEditable && (
+                    <div className="rounded-xl border border-border bg-muted/20 px-4 py-3">
+                      <p className="text-xs text-muted-foreground text-center">
+                        This event is managed in the{' '}
+                        <button
+                          onClick={() => { setEventDetailOpen(false); navigate(selectedEvent.type === 'maintenance' ? '/maintenance' : selectedEvent.type === 'document_expiry' ? '/documents' : '/checks'); }}
+                          className="text-primary hover:underline font-medium"
+                        >
+                          {selectedEvent.type === 'maintenance' ? 'Maintenance' : selectedEvent.type === 'document_expiry' ? 'Documents' : 'NDT'} module
+                        </button>. Go there to edit or remove it.
+                      </p>
+                    </div>
+                  )}
 
-              {/* Footer actions */}
-              <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex gap-2">
-                {selectedEvent.type === 'inspection' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-destructive border-destructive/30 hover:bg-destructive/10"
-                    onClick={() => handleDeleteEvent(selectedEvent)}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
+                  {/* Delete confirmation inline */}
+                  {deleteConfirmOpen && (
+                    <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-4 space-y-3">
+                      <p className="text-sm font-semibold text-destructive">Delete this event?</p>
+                      <p className="text-xs text-muted-foreground">This will permanently remove <strong>{selectedEvent.eventName}</strong> from your calendar. This action cannot be undone.</p>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" className="flex-1" onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
+                        <Button size="sm" className="flex-1 bg-destructive text-white hover:bg-destructive/90" onClick={() => handleDeleteEvent(selectedEvent)}>
+                          <Trash2 className="h-3.5 w-3.5 mr-1" /> Delete
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer actions */}
+                <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex gap-2">
+                  {isEditable && !deleteConfirmOpen && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                      onClick={() => setDeleteConfirmOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {isEditable && (
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleEditEvent(selectedEvent)}>
+                      <Pencil className="h-3.5 w-3.5" /> Edit
+                    </Button>
+                  )}
+                  <Button className="flex-1" onClick={() => { setEventDetailOpen(false); setDeleteConfirmOpen(false); }}>
+                    Close
                   </Button>
-                )}
-                <Button className="flex-1" onClick={() => setEventDetailOpen(false)}>
-                  Done
-                </Button>
-              </div>
-            </>
-          )}
+                </div>
+              </>
+            );
+          })()}
         </SheetContent>
       </Sheet>
 
