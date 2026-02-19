@@ -79,8 +79,8 @@
 
     /* Muted surfaces */
     --muted: 210 40% 96%;
-    /* Text Secondary: #475569 */
-    --muted-foreground: 215 19% 35%;
+    /* Text Secondary: #334155 slate-700 — lifted for WCAG AA+ (6:1+) */
+    --muted-foreground: 215 28% 27%;
 
     /* Accent: #3B82F6 - Secondary Brand Blue */
     --accent: 217 91% 60%;

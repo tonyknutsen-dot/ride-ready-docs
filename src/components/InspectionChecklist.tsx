@@ -1465,17 +1465,17 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             const isNA = v === 'na';
 
             const badgeClasses = isPass
-              ? 'bg-success/10 border-success/30 text-success'
+              ? 'bg-green-100 border-green-300 text-green-900'
               : isFail
-              ? 'bg-destructive/10 border-destructive/30 text-destructive'
+              ? 'bg-red-100 border-red-300 text-red-900'
               : isNA
-              ? 'bg-muted border-muted-foreground/20 text-muted-foreground'
-              : 'bg-background border-border text-muted-foreground';
+              ? 'bg-slate-200 border-slate-300 text-slate-800'
+              : 'bg-slate-100 border-slate-300 text-slate-800';
 
             const cardBorderClass = isFail
-              ? 'border-destructive/30'
+              ? 'border-red-300'
               : isPass
-              ? 'border-success/30'
+              ? 'border-green-300'
               : 'border-border';
 
             return (
@@ -1500,15 +1500,15 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
                 <div className="p-4 space-y-3">
                   {/* Pass / Fail / N/A — pill toggle group */}
-                  <div className="rounded-xl bg-muted/50 border border-border p-1.5 grid grid-cols-3 gap-1.5">
+                  <div className="rounded-xl bg-slate-100 border border-slate-200 p-1.5 grid grid-cols-3 gap-1.5">
                     {/* Pass */}
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'pass')}
                       className={`h-12 rounded-xl border text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-ring ${
                         isPass
-                          ? 'bg-success border-success text-success-foreground shadow-sm'
-                          : 'bg-card border-border text-foreground hover:border-success/60 hover:text-success'
+                          ? 'bg-green-600 border-green-700 text-white shadow-sm'
+                          : 'bg-white border-slate-300 text-slate-900 hover:border-green-500 hover:text-green-700'
                       }`}
                     >
                       <CheckCircle className="h-4 w-4 shrink-0" />
@@ -1520,8 +1520,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                       onClick={() => handleResultChange(item.id, 'fail')}
                       className={`h-12 rounded-xl border text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-ring ${
                         isFail
-                          ? 'bg-destructive border-destructive text-destructive-foreground shadow-sm'
-                          : 'bg-card border-border text-foreground hover:border-destructive/60 hover:text-destructive'
+                          ? 'bg-red-600 border-red-700 text-white shadow-sm'
+                          : 'bg-white border-slate-300 text-slate-900 hover:border-red-500 hover:text-red-700'
                       }`}
                     >
                       <XCircle className="h-4 w-4 shrink-0" />
@@ -1533,25 +1533,25 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                       onClick={() => handleResultChange(item.id, 'na')}
                       className={`h-12 rounded-xl border text-sm font-semibold flex items-center justify-center transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-ring ${
                         isNA
-                          ? 'bg-muted-foreground border-muted-foreground text-white shadow-sm'
-                          : 'bg-card border-border text-foreground hover:border-muted-foreground/60'
+                          ? 'bg-slate-700 border-slate-800 text-white shadow-sm'
+                          : 'bg-white border-slate-300 text-slate-900 hover:border-slate-500'
                       }`}
                     >
                       — N/A
                     </button>
                   </div>
-                  <p className="text-[11px] text-muted-foreground -mt-1">Tap the selected option again to clear.</p>
+                  <p className="text-[11px] text-slate-600 -mt-1">Tap the selected option again to clear.</p>
 
                   {/* Fail extras */}
                   {isFail && (
-                    <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 space-y-3">
+                    <div className="rounded-2xl border border-red-300 bg-red-50 p-4 space-y-3">
                       {/* Header */}
                       <div className="flex items-center justify-between">
-                        <p className="font-semibold text-destructive text-sm flex items-center gap-1.5">
+                        <p className="font-semibold text-red-900 text-sm flex items-center gap-1.5">
                           <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                           Defect required
                         </p>
-                        <span className="text-xs text-destructive bg-destructive/10 px-2 py-1 rounded-full">Add evidence</span>
+                        <span className="text-xs font-semibold text-red-900 bg-red-100 border border-red-300 px-2 py-1 rounded-full">Add evidence</span>
                       </div>
 
                       {/* Report Defect / Log Repair */}
