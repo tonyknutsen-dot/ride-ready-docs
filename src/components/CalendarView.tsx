@@ -595,7 +595,7 @@ const CalendarView = () => {
                       </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0 bg-popover z-50" align="start">
-                      <Calendar mode="single" selected={formData.due_date} onSelect={(date) => { setFormData({ ...formData, due_date: date }); setCalendarPickerOpen(false); }} initialFocus disabled={(date) => date < new Date()} />
+                      <Calendar mode="single" selected={formData.due_date} onSelect={(date) => { setFormData({ ...formData, due_date: date }); setCalendarPickerOpen(false); }} initialFocus disabled={(date) => date < new Date()} className="p-3 pointer-events-auto" />
                     </PopoverContent>
                   </Popover>
                   {formErrors.due_date && <p className="text-xs text-destructive">{formErrors.due_date}</p>}
