@@ -1130,119 +1130,130 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   // Start Check gate — show a start button before revealing the full checklist
   if (!checkStarted && activeTemplate) {
     return (
-      <div id="inspection-checklist-form" className="space-y-5">
-        {/* Checklist Header */}
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="font-semibold text-base truncate">{activeTemplate.template_name}</h3>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="icon" className="shrink-0 h-9 w-9">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
-                <Settings className="h-4 w-4 mr-2" />
-                Edit Checklist
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={generatePDF}>
-                <Download className="h-4 w-4 mr-2" />
-                Export PDF
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
+      <div id="inspection-checklist-form" className="space-y-4">
 
-        {/* Start Inspection Card — dominant CTA */}
-        <div
-          className="rounded-2xl overflow-hidden"
-          style={{ background: 'linear-gradient(135deg, hsl(213, 52%, 24%), hsl(213, 52%, 34%))', boxShadow: '0 8px 24px rgba(30,58,95,0.25)' }}
-        >
-          <div className="px-6 py-7 flex flex-col items-center gap-4">
-            <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ backgroundColor: 'rgba(255,255,255,0.12)' }}>
-              <PlayCircle className="h-7 w-7 text-white" strokeWidth={2} />
-            </div>
-            <div className="text-center space-y-1">
-              <p className="font-bold text-lg text-white">{activeTemplate.template_name}</p>
-              <div className="flex items-center justify-center gap-3 text-xs" style={{ color: 'rgba(255,255,255,0.7)' }}>
-                <span>{activeTemplate.daily_check_template_items.length} inspection items</span>
-                <span>·</span>
-                <span>PDF auto-saved</span>
-                <span>·</span>
-                <span>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+        {/* ── Primary inspection card ── */}
+        <div className="card overflow-hidden">
+          <div className="cardHeader px-4 py-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="text-xs text-muted-foreground">Next check</div>
+                <div className="sectionTitle text-lg truncate">{activeTemplate.template_name}</div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className="chip whitespace-nowrap">
+                  {activeTemplate.daily_check_template_items.length} items · PDF auto-saved
+                </span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
+                      <Settings className="h-4 w-4 mr-2" />
+                      Edit Checklist
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={generatePDF}>
+                      <Download className="h-4 w-4 mr-2" />
+                      Export PDF
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
+          </div>
+
+          <div className="p-4 space-y-4">
+            {/* KPI mini-stats */}
+            <div className="grid grid-cols-3 gap-3 text-center">
+              <div className="rounded-2xl border bg-background p-3">
+                <div className="text-[11px] text-muted-foreground font-semibold">Items</div>
+                <div className="text-lg font-extrabold text-foreground">
+                  {activeTemplate.daily_check_template_items.length}
+                </div>
+              </div>
+              <div className="rounded-2xl border bg-background p-3">
+                <div className="text-[11px] text-muted-foreground font-semibold">Last done</div>
+                <div className="text-lg font-extrabold text-foreground">
+                  {recentChecks[0]
+                    ? new Date(recentChecks[0].check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+                    : '—'}
+                </div>
+              </div>
+              <div className="rounded-2xl border bg-background p-3">
+                <div className="text-[11px] text-muted-foreground font-semibold">Due</div>
+                <div className="text-lg font-extrabold text-foreground">Today</div>
+              </div>
+            </div>
+
+            {/* Primary CTA */}
             <button
-              className="w-full h-14 rounded-xl text-base font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
-              style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1.5px solid rgba(255,255,255,0.3)' }}
+              className="primaryBtn w-full py-3.5 text-sm font-extrabold flex items-center justify-center gap-2"
+              type="button"
               onClick={() => navigate(`/checks/${ride.id}/${frequency}/execute`)}
             >
-              <PlayCircle className="h-5 w-5" strokeWidth={2.5} />
+              <PlayCircle className="h-4 w-4 shrink-0" />
               Start Inspection
             </button>
+
+            <p className="text-xs text-muted-foreground text-center">
+              Any failed item should raise a defect automatically.
+            </p>
           </div>
         </div>
 
-        {/* Open Defects */}
-        <Card className="rounded-2xl border-warning/30 bg-warning/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base flex items-center gap-2 text-warning">
-              <AlertTriangle className="h-5 w-5" />
-              Open Defects
-            </CardTitle>
-            <CardDescription>
-              Any unresolved defects reported for this equipment
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <DefectsList 
+        {/* ── Open Defects card ── */}
+        <div className="card overflow-hidden">
+          <div className="cardHeader px-4 py-3 flex items-center justify-between">
+            <div>
+              <div className="text-xs text-muted-foreground">Defects</div>
+              <div className="sectionTitle text-base">Open Defects</div>
+            </div>
+            <span className="chip">open</span>
+          </div>
+          <div className="p-4">
+            <DefectsList
               key={defectRefreshKey}
-              rideId={ride.id} 
+              rideId={ride.id}
               rideName={ride.ride_name}
               showResolved={false}
               onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
-        {/* Recent Checks */}
+        {/* ── Recent Checks card ── */}
         {recentChecks.length > 0 && (
-          <Card className="border-muted">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Clock className="h-4 w-4 text-muted-foreground" />
-                Recent {frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1)} Checks
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="divide-y divide-border">
-                {recentChecks.map((check) => (
-                  <div 
-                    key={check.id} 
-                    className="flex items-center justify-between py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-muted/50 -mx-4 px-4 rounded-md transition-colors"
-                    onClick={() => {
-                      setSelectedCheck(check);
-                      setShowCheckDetail(true);
-                    }}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium text-sm truncate">{check.inspector_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(check.check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={check.status === 'completed' ? 'default' : 'secondary'} className="text-xs shrink-0">
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Done
-                      </Badge>
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                  </div>
-                ))}
+          <div className="card overflow-hidden">
+            <div className="cardHeader px-4 py-3">
+              <div className="sectionTitle text-base">Recent Checks</div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                Most recent completions for this equipment
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="p-4 space-y-2">
+              {recentChecks.map((check) => (
+                <div
+                  key={check.id}
+                  className="flex items-center justify-between rounded-2xl border bg-background p-3 cursor-pointer hover:bg-muted/40 transition-colors"
+                  onClick={() => { setSelectedCheck(check); setShowCheckDetail(true); }}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-bold text-foreground text-sm truncate">{check.inspector_name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(check.check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="chip">Done</span>
+                    <Eye className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
 
         <CheckDetailDialog
