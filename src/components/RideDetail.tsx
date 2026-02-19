@@ -310,22 +310,41 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-3">
             <h2 className="text-sm font-semibold text-foreground">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-3">
-              <Button className="h-12 rounded-xl text-sm font-semibold col-span-2" onClick={() => setActiveTab('checks')}>
-                <CheckSquare className="h-4 w-4 mr-1.5" />
-                Start Daily Check
-              </Button>
-              <Button variant="outline" className="h-12 rounded-xl text-sm font-semibold" onClick={() => navigate(`/maintenance?rideId=${ride.id}`)}>
-                <Wrench className="h-4 w-4 mr-1.5" />
-                Log Maintenance
-              </Button>
-              <Button variant="outline" className="h-12 rounded-xl text-sm font-semibold" onClick={() => setActiveTab('documents')}>
-                <FileText className="h-4 w-4 mr-1.5" />
-                Upload Document
-              </Button>
-              <Button variant="outline" className="h-12 rounded-xl text-sm font-semibold col-span-2" onClick={() => navigate(`/risk-assessments`)}>
-                <ShieldCheck className="h-4 w-4 mr-1.5" />
-                Risk Register
-              </Button>
+              <button
+                className="flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground py-3 px-3 min-h-[52px] font-semibold text-sm shadow hover:opacity-90 text-center break-words col-span-2"
+                onClick={() => setActiveTab('checks')}
+              >
+                <CheckSquare className="h-4 w-4 shrink-0" />
+                <span className="leading-tight">Start Daily Check</span>
+              </button>
+              <button
+                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[52px] font-semibold text-sm text-foreground hover:bg-muted/40 text-center break-words"
+                onClick={() => navigate(`/maintenance?rideId=${ride.id}`)}
+              >
+                <Wrench className="h-4 w-4 shrink-0" />
+                <span className="leading-tight">Log Maintenance</span>
+              </button>
+              <button
+                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[52px] font-semibold text-sm text-foreground hover:bg-muted/40 text-center break-words"
+                onClick={() => navigate(`/risk-assessments`)}
+              >
+                <ShieldCheck className="h-4 w-4 shrink-0" />
+                <span className="leading-tight">Risk Register</span>
+              </button>
+              <button
+                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[52px] font-semibold text-sm text-foreground hover:bg-muted/40 text-center break-words"
+                onClick={() => setActiveTab('documents')}
+              >
+                <FileText className="h-4 w-4 shrink-0" />
+                <span className="leading-tight">Upload Document</span>
+              </button>
+              <button
+                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[52px] font-semibold text-sm text-foreground hover:bg-muted/40 text-center break-words"
+                onClick={() => navigate(`/maintenance?rideId=${ride.id}&tab=reports`)}
+              >
+                <FileText className="h-4 w-4 shrink-0" />
+                <span className="leading-tight">Generate Report</span>
+              </button>
             </div>
             <p className="text-xs text-muted-foreground">Keep checks, maintenance and risks up to date so your generated PDFs are accurate.</p>
           </div>
