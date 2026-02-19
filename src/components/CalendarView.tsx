@@ -33,25 +33,28 @@ import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, isSameDay, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { z } from 'zod';
 import { Tables } from '@/integrations/supabase/types';
 
 interface CalendarEvent {
   id: string;
-  title: string;       // full "RideName - EventName" label
-  eventName: string;   // just the event name, no ride prefix
+  title: string;
+  eventName: string;
   date: string;
-  type: 'check' | 'inspection' | 'maintenance' | 'document_expiry' | 'ndt';
-  status: 'pending' | 'completed' | 'overdue';
+  type: 'inspection' | 'maintenance' | 'document_expiry' | 'ndt';
+  status: 'scheduled' | 'completed' | 'overdue' | 'cancelled';
   rideId?: string;
   rideName?: string;
   notes?: string;
+  isRecurring?: boolean;
+  recurrenceRule?: string;
+  autoCreateNext?: boolean;
 }
 
 type Ride = Tables<'rides'>;
 
-// No "Checks" category — daily/monthly/pre-opening checks are managed in the Checks module
 const EVENT_TYPES = [
   { value: 'insurance-expiry', label: 'Insurance Expiry', category: 'Document Expiry' },
   { value: 'doc-expiry', label: 'Inspection Certificate Expiry', category: 'Document Expiry' },
@@ -74,26 +77,24 @@ interface EventDefaults {
   defaultName: string;
   recurring: { enabled: boolean; every: 'days' | 'weeks' | 'months' | 'years'; interval: number } | null;
   reminders: number[];
+  complianceCategory: string; // maps to compliance_events.category
 }
 
 const EVENT_DEFAULTS: Record<string, EventDefaults> = {
-  // Document Expiry
-  'insurance-expiry':      { category: 'Document Expiry', defaultName: 'Insurance expiry',               recurring: { enabled: true,  every: 'years',  interval: 1 }, reminders: [60, 30, 14, 7, 1] },
-  'doc-expiry':            { category: 'Document Expiry', defaultName: 'Inspection certificate expiry',   recurring: { enabled: true,  every: 'years',  interval: 1 }, reminders: [60, 30, 14, 7, 1] },
-  'safety-cert-expiry':    { category: 'Document Expiry', defaultName: 'Safety certificate expiry',       recurring: { enabled: true,  every: 'years',  interval: 1 }, reminders: [60, 30, 14, 7, 1] },
-  'other-document-expiry': { category: 'Document Expiry', defaultName: 'Document expiry',                 recurring: null,                                            reminders: [60, 30, 14, 7]    },
-  // Inspections
-  'in-service':  { category: 'Inspections', defaultName: 'In-service inspection',  recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1]    },
-  'electrical':  { category: 'Inspections', defaultName: 'Electrical inspection',  recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1]    },
-  'ndt':         { category: 'Inspections', defaultName: 'NDT inspection',         recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [90, 60, 30, 14, 7, 1] },
-  'structural':  { category: 'Inspections', defaultName: 'Structural inspection',  recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1]    },
-  'hydraulic':   { category: 'Inspections', defaultName: 'Hydraulic inspection',   recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1]    },
-  'mechanical':  { category: 'Inspections', defaultName: 'Mechanical inspection',  recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1]    },
-  'safety':      { category: 'Inspections', defaultName: 'Safety inspection',      recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1]    },
-  // Maintenance
-  'maintenance': { category: 'Maintenance', defaultName: 'Scheduled maintenance',  recurring: null,                                            reminders: [14, 7, 1] },
-  'preventive':  { category: 'Maintenance', defaultName: 'Preventive maintenance', recurring: { enabled: true, every: 'months', interval: 1 }, reminders: [14, 7, 1] },
-  'repair':      { category: 'Maintenance', defaultName: 'Repair follow-up',       recurring: null,                                            reminders: [7, 3, 1]  },
+  'insurance-expiry':      { category: 'Document Expiry', defaultName: 'Insurance expiry',               recurring: { enabled: true,  every: 'years',  interval: 1 }, reminders: [60, 30, 14, 7, 1], complianceCategory: 'doc_expiry' },
+  'doc-expiry':            { category: 'Document Expiry', defaultName: 'Inspection certificate expiry',   recurring: { enabled: true,  every: 'years',  interval: 1 }, reminders: [60, 30, 14, 7, 1], complianceCategory: 'doc_expiry' },
+  'safety-cert-expiry':    { category: 'Document Expiry', defaultName: 'Safety certificate expiry',       recurring: { enabled: true,  every: 'years',  interval: 1 }, reminders: [60, 30, 14, 7, 1], complianceCategory: 'doc_expiry' },
+  'other-document-expiry': { category: 'Document Expiry', defaultName: 'Document expiry',                 recurring: null,                                            reminders: [60, 30, 14, 7],    complianceCategory: 'doc_expiry' },
+  'in-service':  { category: 'Inspections', defaultName: 'In-service inspection',  recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1],    complianceCategory: 'inspection' },
+  'electrical':  { category: 'Inspections', defaultName: 'Electrical inspection',  recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1],    complianceCategory: 'inspection' },
+  'ndt':         { category: 'Inspections', defaultName: 'NDT inspection',         recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [90, 60, 30, 14, 7, 1], complianceCategory: 'ndt' },
+  'structural':  { category: 'Inspections', defaultName: 'Structural inspection',  recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1],    complianceCategory: 'inspection' },
+  'hydraulic':   { category: 'Inspections', defaultName: 'Hydraulic inspection',   recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1],    complianceCategory: 'inspection' },
+  'mechanical':  { category: 'Inspections', defaultName: 'Mechanical inspection',  recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1],    complianceCategory: 'inspection' },
+  'safety':      { category: 'Inspections', defaultName: 'Safety inspection',      recurring: { enabled: true, every: 'years', interval: 1 }, reminders: [60, 30, 14, 7, 1],    complianceCategory: 'inspection' },
+  'maintenance': { category: 'Maintenance', defaultName: 'Scheduled maintenance',  recurring: null,                                            reminders: [14, 7, 1], complianceCategory: 'maintenance' },
+  'preventive':  { category: 'Maintenance', defaultName: 'Preventive maintenance', recurring: { enabled: true, every: 'months', interval: 1 }, reminders: [14, 7, 1], complianceCategory: 'maintenance' },
+  'repair':      { category: 'Maintenance', defaultName: 'Repair follow-up',       recurring: null,                                            reminders: [7, 3, 1],  complianceCategory: 'maintenance' },
 };
 
 const inspectionSchema = z.object({
@@ -101,9 +102,19 @@ const inspectionSchema = z.object({
   inspection_type: z.string().min(1, { message: "Please select an inspection type" }),
   inspection_name: z.string().trim().min(1, { message: "Inspection name is required" }).max(200, { message: "Inspection name must be less than 200 characters" }),
   due_date: z.date({ required_error: "Due date is required" }),
-  advance_notice_days: z.number().min(1, { message: "Advance notice must be at least 1 day" }).max(365, { message: "Advance notice cannot exceed 365 days" }),
-  notes: z.string().max(1000, { message: "Notes must be less than 1000 characters" }).optional(),
+  advance_notice_days: z.number().min(1).max(365),
+  notes: z.string().max(1000).optional(),
 });
+
+function mapCategoryToType(category: string): CalendarEvent['type'] {
+  switch (category) {
+    case 'inspection': return 'inspection';
+    case 'maintenance': return 'maintenance';
+    case 'doc_expiry': return 'document_expiry';
+    case 'ndt': return 'ndt';
+    default: return 'inspection';
+  }
+}
 
 const CalendarView = () => {
   const { user } = useAuth();
@@ -112,6 +123,7 @@ const CalendarView = () => {
   const { toast } = useToast();
   const { subscription } = useSubscription();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -125,6 +137,7 @@ const CalendarView = () => {
   const [eventDetailOpen, setEventDetailOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [markingComplete, setMarkingComplete] = useState(false);
   const [rides, setRides] = useState<Ride[]>([]);
   const [rideDocuments, setRideDocuments] = useState<{ id: string; document_name: string; expires_at: string | null }[]>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
@@ -196,78 +209,50 @@ const CalendarView = () => {
       const monthStart = startOfMonth(currentMonth);
       const monthEnd = endOfMonth(currentMonth);
       const allEvents: CalendarEvent[] = [];
+
+      // Fetch from compliance_events (single source of truth)
+      let query = supabase
+        .from('compliance_events')
+        .select('id, event_name, due_date, category, status, ride_id, notes, is_recurring, recurrence_rule, auto_create_next')
+        .gte('due_date', format(monthStart, 'yyyy-MM-dd'))
+        .lte('due_date', format(monthEnd, 'yyyy-MM-dd'))
+        .neq('status', 'cancelled');
+
+      if (!isStaff) query = query.eq('user_id', effectiveUserId) as any;
+
+      const { data: complianceEvents, error } = await query;
+      if (error) throw error;
+
       const rideIds = new Set<string>();
-
-      const buildQuery = (baseQuery: any) => isStaff ? baseQuery : baseQuery.eq('user_id', effectiveUserId);
-
-      const { data: checks } = await buildQuery(
-        supabase.from('checks').select('id, check_date, status, ride_id')
-          .gte('check_date', format(monthStart, 'yyyy-MM-dd'))
-          .lte('check_date', format(monthEnd, 'yyyy-MM-dd'))
-          .eq('is_test_data', false)
-      );
-      checks?.forEach((check: any) => {
-        if (check.ride_id) rideIds.add(check.ride_id);
-        allEvents.push({ id: check.id, title: 'Check', eventName: 'Check', date: check.check_date, type: 'check', status: check.status as any, rideId: check.ride_id });
-      });
-
-      const { data: maintenance } = await buildQuery(
-        supabase.from('maintenance_records').select('id, next_maintenance_due, maintenance_type, ride_id, notes')
-          .not('next_maintenance_due', 'is', null)
-          .gte('next_maintenance_due', format(monthStart, 'yyyy-MM-dd'))
-          .lte('next_maintenance_due', format(monthEnd, 'yyyy-MM-dd'))
-      );
-      maintenance?.forEach((record: any) => {
-        if (record.next_maintenance_due) {
-          if (record.ride_id) rideIds.add(record.ride_id);
-          allEvents.push({ id: record.id, title: record.maintenance_type, eventName: record.maintenance_type, date: record.next_maintenance_due, type: 'maintenance', status: 'pending', rideId: record.ride_id, notes: record.notes });
-        }
-      });
-
-      const { data: documents } = await buildQuery(
-        supabase.from('documents').select('id, document_name, expires_at, ride_id, notes')
-          .not('expires_at', 'is', null)
-          .gte('expires_at', format(monthStart, 'yyyy-MM-dd'))
-          .lte('expires_at', format(monthEnd, 'yyyy-MM-dd'))
-      );
-      documents?.forEach((doc: any) => {
-        if (doc.expires_at) {
-          if (doc.ride_id) rideIds.add(doc.ride_id);
-          allEvents.push({ id: doc.id, title: `${doc.document_name} Expires`, eventName: `${doc.document_name} Expires`, date: doc.expires_at, type: 'document_expiry', status: 'pending', rideId: doc.ride_id, notes: doc.notes });
-        }
-      });
-
-      const { data: ndt } = await buildQuery(
-        supabase.from('ndt_schedules').select('id, schedule_name, next_inspection_due, ride_id, notes')
-          .eq('is_active', true)
-          .not('next_inspection_due', 'is', null)
-          .gte('next_inspection_due', format(monthStart, 'yyyy-MM-dd'))
-          .lte('next_inspection_due', format(monthEnd, 'yyyy-MM-dd'))
-      );
-      ndt?.forEach((schedule: any) => {
-        if (schedule.next_inspection_due) {
-          if (schedule.ride_id) rideIds.add(schedule.ride_id);
-          allEvents.push({ id: schedule.id, title: schedule.schedule_name, eventName: schedule.schedule_name, date: schedule.next_inspection_due, type: 'ndt', status: 'pending', rideId: schedule.ride_id, notes: schedule.notes });
-        }
-      });
-
-      const { data: inspectionSchedules, error: schedulesError } = await buildQuery(
-        supabase.from('inspection_schedules').select('id, inspection_name, due_date, ride_id, advance_notice_days, notes')
-          .eq('is_active', true)
-          .gte('due_date', format(monthStart, 'yyyy-MM-dd'))
-          .lte('due_date', format(monthEnd, 'yyyy-MM-dd'))
-      );
-      if (schedulesError) console.error('Error fetching inspection schedules:', schedulesError);
-
       const todayForOverdue = new Date();
       todayForOverdue.setHours(0, 0, 0, 0);
-      inspectionSchedules?.forEach((schedule: any) => {
-        if (schedule.ride_id) rideIds.add(schedule.ride_id);
-        const dueDate = new Date(schedule.due_date);
+
+      (complianceEvents || []).forEach((ce: any) => {
+        if (ce.ride_id) rideIds.add(ce.ride_id);
+        const dueDate = new Date(ce.due_date);
         dueDate.setHours(0, 0, 0, 0);
-        allEvents.push({ id: schedule.id, title: schedule.inspection_name, eventName: schedule.inspection_name, date: schedule.due_date, type: 'inspection', status: dueDate < todayForOverdue ? 'overdue' : 'pending', rideId: schedule.ride_id, notes: schedule.notes });
+
+        let status: CalendarEvent['status'] = ce.status;
+        if (ce.status === 'scheduled' && dueDate < todayForOverdue) {
+          status = 'overdue';
+        }
+
+        allEvents.push({
+          id: ce.id,
+          title: ce.event_name,
+          eventName: ce.event_name,
+          date: ce.due_date,
+          type: mapCategoryToType(ce.category),
+          status,
+          rideId: ce.ride_id,
+          notes: ce.notes,
+          isRecurring: ce.is_recurring,
+          recurrenceRule: ce.recurrence_rule,
+          autoCreateNext: ce.auto_create_next,
+        });
       });
 
+      // Resolve ride names
       if (rideIds.size > 0) {
         let ridesQuery = supabase.from('rides').select('id, ride_name').in('id', Array.from(rideIds));
         if (!isStaff) ridesQuery = ridesQuery.eq('user_id', effectiveUserId) as any;
@@ -276,7 +261,7 @@ const CalendarView = () => {
         allEvents.forEach(event => {
           if (event.rideId) {
             event.rideName = rideMap.get(event.rideId) || 'Unknown Ride';
-            event.title = `${event.rideName} - ${event.title}`;
+            event.title = `${event.rideName} - ${event.eventName}`;
           }
         });
       }
@@ -299,26 +284,54 @@ const CalendarView = () => {
     setEventDetailOpen(true);
   };
 
-  const handleDeleteEvent = async (event: CalendarEvent) => {
-    if (event.type !== 'inspection') {
-      toast({ title: "Info", description: "Only manually scheduled events can be deleted here. Go to the relevant module to remove this item." });
-      return;
-    }
+  const handleMarkComplete = async (event: CalendarEvent) => {
+    setMarkingComplete(true);
     try {
-      const { error } = await supabase.from('inspection_schedules').delete().eq('id', event.id);
+      const { data, error } = await supabase.rpc('complete_event', { p_event_id: event.id });
+      if (error) throw error;
+
+      const result = data as any;
+      const nextCreated = result?.created_next;
+
+      toast({
+        title: "Marked Complete",
+        description: nextCreated
+          ? `Event completed. Next occurrence scheduled for ${format(new Date(result.next_due_date), 'd MMM yyyy')}.`
+          : "Event marked as completed.",
+      });
+
+      setEventDetailOpen(false);
+      setSelectedEvent(null);
+      loadCalendarEvents();
+      // Invalidate compliance queries
+      queryClient.invalidateQueries({ queryKey: ['compliance'] });
+    } catch (error: any) {
+      console.error('Error completing event:', error);
+      toast({ title: "Error", description: error.message || "Could not complete event.", variant: "destructive" });
+    } finally {
+      setMarkingComplete(false);
+    }
+  };
+
+  const handleDeleteEvent = async (event: CalendarEvent) => {
+    try {
+      const { error } = await supabase
+        .from('compliance_events')
+        .update({ status: 'cancelled' })
+        .eq('id', event.id);
       if (error) throw error;
       toast({ title: "Deleted", description: "Event removed from calendar." });
       setDeleteConfirmOpen(false);
       setEventDetailOpen(false);
       setSelectedEvent(null);
       loadCalendarEvents();
+      queryClient.invalidateQueries({ queryKey: ['compliance'] });
     } catch {
       toast({ title: "Error", description: "Could not delete event.", variant: "destructive" });
     }
   };
 
   const handleEditEvent = (event: CalendarEvent) => {
-    // Pre-fill the add form with this event's data
     const eventType = event.type === 'inspection' ? 'safety' : event.type === 'maintenance' ? 'maintenance' : event.type === 'ndt' ? 'ndt' : 'doc-expiry';
     const defaults = EVENT_DEFAULTS[eventType];
     setFormData({
@@ -331,7 +344,7 @@ const CalendarView = () => {
       notes: event.notes || '',
       enable_reminders: true,
       reminder_days: defaults?.reminders ?? [7, 1],
-      is_recurring: false,
+      is_recurring: event.isRecurring || false,
       recurrence_value: defaults?.recurring?.interval ?? 1,
       recurrence_unit: (defaults?.recurring?.every ?? 'months') as 'days' | 'weeks' | 'months' | 'years',
     });
@@ -345,7 +358,7 @@ const CalendarView = () => {
     if (event.type === 'ndt') return 'NDT Inspection';
     if (event.type === 'maintenance') return 'Maintenance';
     if (event.type === 'inspection') return 'Inspection';
-    return 'Check';
+    return 'Event';
   };
 
   const getStatusChip = (event: CalendarEvent) => {
@@ -366,14 +379,6 @@ const CalendarView = () => {
       case 'document_expiry': return 'bg-destructive/10 text-destructive border-destructive/20';
       case 'ndt': return 'bg-secondary text-secondary-foreground border-secondary';
       default: return 'bg-muted text-muted-foreground border-border';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'overdue': return <AlertTriangle className="h-3 w-3 text-destructive" />;
-      case 'pending': return <Clock className="h-3 w-3 text-warning" />;
-      default: return null;
     }
   };
 
@@ -401,55 +406,56 @@ const CalendarView = () => {
     setAddDialogOpen(true);
   };
 
-  const handleAddInspection = async () => {
+  const handleAddEvent = async () => {
     setFormErrors({});
     try {
-      // Guard: Checks are managed in the Checks module, not here
       if (formData.inspection_type.includes('check')) {
         toast({ title: "Use the Checks module", description: "Daily, monthly and pre-opening checks are managed in the Checks module.", variant: "destructive" });
         return;
       }
 
       const validatedData = inspectionSchema.parse(formData);
+      const defaults = EVENT_DEFAULTS[formData.inspection_type];
+      const complianceCategory = defaults?.complianceCategory || 'inspection';
 
-      let scheduleType = 'inspection';
-      if (formData.inspection_type.includes('expiry')) {
-        scheduleType = formData.is_recurring ? 'recurring_document' : 'document';
-      } else if (formData.inspection_type.includes('maintenance') || formData.inspection_type.includes('preventive') || formData.inspection_type.includes('repair')) {
-        scheduleType = formData.is_recurring ? 'recurring_maintenance' : 'maintenance';
-      } else {
-        scheduleType = formData.is_recurring ? 'recurring_inspection' : 'inspection';
-      }
+      const recurrenceRule = formData.is_recurring
+        ? `${formData.recurrence_unit}:${formData.recurrence_value}`
+        : null;
 
-      const { error } = await supabase.from('inspection_schedules').insert([{
+      const seriesId = formData.is_recurring ? crypto.randomUUID() : null;
+
+      const { error } = await supabase.from('compliance_events').insert([{
         user_id: user!.id,
         ride_id: validatedData.ride_id,
-        inspection_type: validatedData.inspection_type,
-        inspection_name: validatedData.inspection_name,
+        category: complianceCategory,
+        event_type: formData.inspection_type,
+        event_name: validatedData.inspection_name,
         due_date: format(validatedData.due_date, 'yyyy-MM-dd'),
+        status: 'scheduled',
+        notes: validatedData.notes || null,
         advance_notice_days: validatedData.advance_notice_days,
-        notes: formData.is_recurring
-          ? `${validatedData.notes || ''}\n[Recurring: every ${formData.recurrence_value} ${formData.recurrence_unit}]`.trim()
-          : validatedData.notes || null,
-        schedule_type: scheduleType,
+        is_recurring: formData.is_recurring,
+        recurrence_rule: recurrenceRule,
+        recurrence_anchor_date: formData.is_recurring ? format(validatedData.due_date, 'yyyy-MM-dd') : null,
+        series_id: seriesId,
+        auto_create_next: formData.is_recurring,
+        reminder_days: formData.enable_reminders ? formData.reminder_days : [],
+        reminder_enabled: formData.enable_reminders,
       }]);
 
       if (error) throw error;
 
-      const recurrenceLabel = formData.recurrence_value === 1
-        ? formData.recurrence_unit.slice(0, -1)
-        : `${formData.recurrence_value} ${formData.recurrence_unit}`;
-
       toast({
         title: "Success",
         description: formData.is_recurring
-          ? `Recurring schedule created (every ${recurrenceLabel})`
+          ? `Recurring schedule created (every ${formData.recurrence_value} ${formData.recurrence_unit})`
           : "Schedule created successfully",
       });
 
       setAddDialogOpen(false);
       resetForm();
       loadCalendarEvents();
+      queryClient.invalidateQueries({ queryKey: ['compliance'] });
     } catch (error) {
       if (error instanceof z.ZodError) {
         const errors: Record<string, string> = {};
@@ -458,7 +464,7 @@ const CalendarView = () => {
         });
         setFormErrors(errors);
       } else {
-        console.error('Error saving inspection schedule:', error);
+        console.error('Error saving event:', error);
         toast({ title: "Error", description: "Failed to create schedule", variant: "destructive" });
       }
     }
@@ -474,10 +480,9 @@ const CalendarView = () => {
     );
   }
 
-  // Status chips
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const overdueCount = events.filter(e => e.status === 'overdue' || (e.status === 'pending' && new Date(e.date) < todayStart)).length;
+  const overdueCount = events.filter(e => e.status === 'overdue' || (e.status === 'scheduled' && new Date(e.date) < todayStart)).length;
   const dueSoonCount = events.filter(e => {
     const d = new Date(e.date);
     return d >= todayStart && d <= addDays(todayStart, 7) && e.status !== 'overdue';
@@ -517,7 +522,6 @@ const CalendarView = () => {
                 Schedule reminders for inspections, maintenance and expiries.
               </DialogDescription>
 
-              {/* Category preset buttons — apply smart defaults */}
               <div className="grid grid-cols-2 gap-2 mt-4">
                 {[
                   { label: 'Inspection', value: 'safety' },
@@ -536,10 +540,9 @@ const CalendarView = () => {
                           ...prev,
                           inspection_type: preset.value,
                           reminder_days: defaults.reminders,
-                           is_recurring: defaults.recurring?.enabled ?? false,
-                           recurrence_value: defaults.recurring?.interval ?? 1,
-                           recurrence_unit: (defaults.recurring?.every ?? 'months') as typeof prev.recurrence_unit,
-                          // Only fill name if user hasn't typed one yet
+                          is_recurring: defaults.recurring?.enabled ?? false,
+                          recurrence_value: defaults.recurring?.interval ?? 1,
+                          recurrence_unit: (defaults.recurring?.every ?? 'months') as typeof prev.recurrence_unit,
                           inspection_name: prev.inspection_name ? prev.inspection_name : defaults.defaultName,
                         }));
                       }}
@@ -556,7 +559,6 @@ const CalendarView = () => {
                 })}
               </div>
 
-              {/* Helper note */}
               <p className="text-xs text-muted-foreground mt-2">
                 Daily &amp; pre-opening checks are managed in the{' '}
                 <button type="button" onClick={() => { setAddDialogOpen(false); navigate('/checks'); }} className="text-primary hover:underline font-medium">Checks module</button>
@@ -617,7 +619,6 @@ const CalendarView = () => {
                   {formErrors.inspection_name && <p className="text-xs text-destructive">{formErrors.inspection_name}</p>}
                 </div>
 
-                {/* Event type (if not set by preset) — no Checks category */}
                 {!formData.inspection_type && (
                   <div className="space-y-1.5">
                     <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Event Type *</Label>
@@ -654,7 +655,6 @@ const CalendarView = () => {
                   </div>
                 )}
 
-                {/* Due date */}
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Due Date *</Label>
                   <Popover open={calendarPickerOpen} onOpenChange={setCalendarPickerOpen}>
@@ -785,7 +785,6 @@ const CalendarView = () => {
                 />
                 {formErrors.notes && <p className="text-xs text-destructive">{formErrors.notes}</p>}
               </div>
-
             </div>
 
             {/* Sticky footer */}
@@ -793,7 +792,7 @@ const CalendarView = () => {
               <Button variant="outline" className="flex-1" onClick={() => setAddDialogOpen(false)}>
                 Cancel
               </Button>
-              <Button className="flex-1" onClick={handleAddInspection}>
+              <Button className="flex-1" onClick={handleAddEvent}>
                 Create Schedule
               </Button>
             </div>
@@ -877,7 +876,7 @@ const CalendarView = () => {
             }}
             modifiers={{
               hasEvents: (date) => getEventsForDate(date).length > 0,
-              overdue: (date) => getEventsForDate(date).some(e => e.status === 'overdue' || (e.status === 'pending' && new Date(e.date) < new Date())),
+              overdue: (date) => getEventsForDate(date).some(e => e.status === 'overdue' || (e.status === 'scheduled' && new Date(e.date) < new Date())),
             }}
             modifiersClassNames={{
               hasEvents: "font-bold",
@@ -934,13 +933,13 @@ const CalendarView = () => {
                         event.type === 'maintenance' && "bg-blue-500",
                         event.type === 'document_expiry' && "bg-destructive",
                         event.type === 'ndt' && "bg-violet-500",
-                        event.type === 'check' && "bg-muted-foreground",
                       )} />
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-sm text-foreground truncate">{event.eventName}</p>
                         {event.rideName && <p className="text-xs text-muted-foreground truncate">{event.rideName}</p>}
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
+                        {event.status === 'completed' && <Badge className="text-[10px] px-1.5 bg-green-100 text-green-800 border-green-200">Done</Badge>}
                         {event.status === 'overdue' && <Badge className="text-[10px] px-1.5 bg-destructive/10 text-destructive border-destructive/20">Overdue</Badge>}
                         <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
                       </div>
@@ -1030,20 +1029,20 @@ const CalendarView = () => {
               </li>
               <li className="flex items-start gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
-                <span><strong className="text-foreground">Click an event</strong> to navigate to that item's details</span>
+                <span><strong className="text-foreground">Click an event</strong> to view details, mark complete, or delete</span>
               </li>
             </ul>
           </div>
         )}
       </div>
 
-      {/* ── Event Detail Sheet ── */}
+      {/* ── Event Detail Sheet with Mark Complete ── */}
       <Sheet open={eventDetailOpen} onOpenChange={(open) => { setEventDetailOpen(open); if (!open) setDeleteConfirmOpen(false); }}>
         <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] flex flex-col p-0">
           {selectedEvent && (() => {
             const statusChip = getStatusChip(selectedEvent);
             const eventTypeLabel = getEventTypeLabel(selectedEvent);
-            const isEditable = selectedEvent.type === 'inspection';
+            const isCompleted = selectedEvent.status === 'completed';
             return (
               <>
                 {/* Header */}
@@ -1056,7 +1055,6 @@ const CalendarView = () => {
                         selectedEvent.type === 'maintenance' && "bg-blue-500",
                         selectedEvent.type === 'document_expiry' && "bg-destructive",
                         selectedEvent.type === 'ndt' && "bg-violet-500",
-                        selectedEvent.type === 'check' && "bg-muted-foreground",
                       )} />
                       <div className="min-w-0">
                         <SheetTitle className="text-base font-semibold text-foreground leading-tight">{selectedEvent.eventName}</SheetTitle>
@@ -1097,66 +1095,35 @@ const CalendarView = () => {
                     </div>
                   )}
 
-                  {/* Reminders */}
-                  {isEditable && (
-                    <div className="rounded-xl border border-border bg-muted/30 px-4 py-3">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Bell className="h-3.5 w-3.5 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Reminders</p>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5">
-                        {EVENT_DEFAULTS[
-                          (() => {
-                            const found = EVENT_TYPES.find(t => selectedEvent.eventName.toLowerCase().includes(t.label.toLowerCase().split(' ')[0]));
-                            return found?.value ?? 'in-service';
-                          })()
-                        ]?.reminders?.map(d => (
-                          <span key={d} className="rounded-full bg-primary/10 text-primary border border-primary/20 px-2.5 py-0.5 text-xs font-medium">
-                            {d === 1 ? '1 day' : `${d} days`}
-                          </span>
-                        )) ?? (
-                          <span className="text-xs text-muted-foreground">No reminders configured</span>
-                        )}
-                      </div>
+                  {/* Recurring info */}
+                  <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Recurring</p>
                     </div>
-                  )}
-
-                  {/* Recurring */}
-                  {isEditable && (
-                    <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Repeat className="h-3.5 w-3.5 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Recurring</p>
-                      </div>
-                      <span className="text-xs font-medium text-foreground">
-                        {selectedEvent.notes?.includes('[Recurring:')
-                          ? selectedEvent.notes.match(/\[Recurring: ([^\]]+)\]/)?.[1] ?? 'Enabled'
-                          : 'Not recurring'}
-                      </span>
-                    </div>
-                  )}
+                    <span className="text-xs font-medium text-foreground">
+                      {selectedEvent.isRecurring && selectedEvent.recurrenceRule
+                        ? `Every ${selectedEvent.recurrenceRule.replace(':', ' ')}`
+                        : 'Not recurring'}
+                    </span>
+                  </div>
 
                   {/* Notes */}
                   <div className="rounded-xl border border-border bg-muted/30 px-4 py-3">
                     <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Notes</p>
-                    {selectedEvent.notes && !selectedEvent.notes.startsWith('[Recurring:') ? (
-                      <p className="text-sm text-foreground">{selectedEvent.notes.replace(/\n?\[Recurring:[^\]]+\]/, '').trim()}</p>
+                    {selectedEvent.notes ? (
+                      <p className="text-sm text-foreground">{selectedEvent.notes}</p>
                     ) : (
                       <p className="text-sm text-muted-foreground">—</p>
                     )}
                   </div>
 
-                  {/* Info for non-schedule events */}
-                  {!isEditable && (
-                    <div className="rounded-xl border border-border bg-muted/20 px-4 py-3">
-                      <p className="text-xs text-muted-foreground text-center">
-                        This event is managed in the{' '}
-                        <button
-                          onClick={() => { setEventDetailOpen(false); navigate(selectedEvent.type === 'maintenance' ? '/maintenance' : selectedEvent.type === 'document_expiry' ? '/documents' : '/checks'); }}
-                          className="text-primary hover:underline font-medium"
-                        >
-                          {selectedEvent.type === 'maintenance' ? 'Maintenance' : selectedEvent.type === 'document_expiry' ? 'Documents' : 'NDT'} module
-                        </button>. Go there to edit or remove it.
+                  {/* Recurring auto-create confirmation */}
+                  {!isCompleted && selectedEvent.isRecurring && selectedEvent.autoCreateNext && (
+                    <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+                      <p className="text-xs text-primary font-medium">
+                        <Repeat className="h-3 w-3 inline mr-1" />
+                        Completing this will automatically schedule the next occurrence.
                       </p>
                     </div>
                   )}
@@ -1165,7 +1132,7 @@ const CalendarView = () => {
                   {deleteConfirmOpen && (
                     <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-4 space-y-3">
                       <p className="text-sm font-semibold text-destructive">Delete this event?</p>
-                      <p className="text-xs text-muted-foreground">This will permanently remove <strong>{selectedEvent.eventName}</strong> from your calendar. This action cannot be undone.</p>
+                      <p className="text-xs text-muted-foreground">This will permanently remove <strong>{selectedEvent.eventName}</strong> from your calendar.</p>
                       <div className="flex gap-2">
                         <Button variant="outline" size="sm" className="flex-1" onClick={() => setDeleteConfirmOpen(false)}>Cancel</Button>
                         <Button size="sm" className="flex-1 bg-destructive text-white hover:bg-destructive/90" onClick={() => handleDeleteEvent(selectedEvent)}>
@@ -1178,7 +1145,7 @@ const CalendarView = () => {
 
                 {/* Footer actions */}
                 <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex gap-2">
-                  {isEditable && !deleteConfirmOpen && (
+                  {!isCompleted && !deleteConfirmOpen && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -1188,14 +1155,25 @@ const CalendarView = () => {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
-                  {isEditable && (
+                  {!isCompleted && (
                     <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleEditEvent(selectedEvent)}>
                       <Pencil className="h-3.5 w-3.5" /> Edit
                     </Button>
                   )}
-                  <Button className="flex-1" onClick={() => { setEventDetailOpen(false); setDeleteConfirmOpen(false); }}>
-                    Close
-                  </Button>
+                  {!isCompleted ? (
+                    <Button
+                      className="flex-1 gap-1.5"
+                      onClick={() => handleMarkComplete(selectedEvent)}
+                      disabled={markingComplete}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      {markingComplete ? 'Completing…' : 'Mark Complete'}
+                    </Button>
+                  ) : (
+                    <Button className="flex-1" onClick={() => { setEventDetailOpen(false); setDeleteConfirmOpen(false); }}>
+                      Close
+                    </Button>
+                  )}
                 </div>
               </>
             );
