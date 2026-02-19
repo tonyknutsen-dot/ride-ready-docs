@@ -140,7 +140,7 @@ const Overview = () => {
           {/* ── COMPLIANCE ALERT BANNER ────────────── */}
           {hasAlerts && (
             <button
-              onClick={() => navigate('/notifications')}
+              onClick={() => navigate('/compliance')}
               className="w-full text-left bg-destructive/5 border border-destructive/30 rounded-2xl px-4 py-3.5 space-y-1.5 hover:border-destructive/50 hover:bg-destructive/10 transition-all shadow-sm"
             >
               <div className="flex items-center justify-between">
