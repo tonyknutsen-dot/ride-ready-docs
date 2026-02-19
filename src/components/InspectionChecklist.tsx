@@ -1130,7 +1130,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   // Start Check gate — show a start button before revealing the full checklist
   if (!checkStarted && activeTemplate) {
     return (
-      <div id="inspection-checklist-form" className="t-page -mx-4 px-4 pb-6 pt-2 space-y-4">
+      <div id="inspection-checklist-form" className="checksWrap -mx-4 px-4 pb-6 pt-2 space-y-4">
 
         {/* ── Primary inspection card ── */}
         <div className="t-card">
@@ -1165,7 +1165,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
           <div className="p-4 space-y-4">
             {/* KPI mini-stats */}
-            <div className="grid grid-cols-3 gap-3 text-center">
+            <div className="kpiGrid text-center">
               {[
                 { label: 'Items', value: activeTemplate.daily_check_template_items.length },
                 {
@@ -1176,7 +1176,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                 },
                 { label: 'Due', value: 'Today' },
               ].map(({ label, value }) => (
-                <div key={label} className="rounded-2xl border border-border bg-[#f8fafc] p-3">
+                <div key={label} className="kpiCard rounded-2xl border border-border bg-[#f8fafc] p-3 overflow-hidden">
                   <div className="text-[11px] font-semibold" style={{ color: '#64748b' }}>{label}</div>
                   <div className="text-lg font-extrabold" style={{ color: '#0f172a' }}>{value}</div>
                 </div>

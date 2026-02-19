@@ -1085,3 +1085,29 @@
 .primaryBtn:hover  { opacity: 0.92; }
 .primaryBtn:active { transform: translateY(1px); opacity: 0.85; }
 .primaryBtn:disabled { background: hsl(var(--muted)); color: hsl(var(--muted-foreground)); box-shadow: none; cursor: not-allowed; opacity: 1; }
+
+/* ── Checks Dashboard utility classes ──────────────────────────────── */
+
+.checksWrap {
+  background: linear-gradient(180deg, #fff 0%, #f6f8fb 22%, #f6f8fb 100%);
+}
+
+.quickTabs {
+  display: flex;
+  gap: .5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: .25rem;
+  scrollbar-width: none;
+}
+.quickTabs::-webkit-scrollbar { display: none; }
+
+.kpiGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .6rem;
+}
+
+.kpiCard {
+  min-width: 0;
+}
