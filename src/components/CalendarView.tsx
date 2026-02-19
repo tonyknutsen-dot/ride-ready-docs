@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,7 +18,10 @@ import {
   Filter,
   Clock,
   AlertTriangle,
-  Repeat
+  Repeat,
+  ExternalLink,
+  Trash2,
+  ChevronRight as ChevronRightIcon,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -32,12 +36,14 @@ import { Tables } from '@/integrations/supabase/types';
 
 interface CalendarEvent {
   id: string;
-  title: string;
+  title: string;       // full "RideName - EventName" label
+  eventName: string;   // just the event name, no ride prefix
   date: string;
   type: 'check' | 'inspection' | 'maintenance' | 'document_expiry' | 'ndt';
   status: 'pending' | 'completed' | 'overdue';
   rideId?: string;
   rideName?: string;
+  notes?: string;
 }
 
 type Ride = Tables<'rides'>;
@@ -112,6 +118,8 @@ const CalendarView = () => {
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [calendarPickerOpen, setCalendarPickerOpen] = useState(false);
   const [showHelpTips, setShowHelpTips] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [eventDetailOpen, setEventDetailOpen] = useState(false);
   const [rides, setRides] = useState<Ride[]>([]);
   const [rideDocuments, setRideDocuments] = useState<{ id: string; document_name: string; expires_at: string | null }[]>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
@@ -195,11 +203,11 @@ const CalendarView = () => {
       );
       checks?.forEach((check: any) => {
         if (check.ride_id) rideIds.add(check.ride_id);
-        allEvents.push({ id: check.id, title: 'Check', date: check.check_date, type: 'check', status: check.status as any, rideId: check.ride_id });
+        allEvents.push({ id: check.id, title: 'Check', eventName: 'Check', date: check.check_date, type: 'check', status: check.status as any, rideId: check.ride_id });
       });
 
       const { data: maintenance } = await buildQuery(
-        supabase.from('maintenance_records').select('id, next_maintenance_due, maintenance_type, ride_id')
+        supabase.from('maintenance_records').select('id, next_maintenance_due, maintenance_type, ride_id, notes')
           .not('next_maintenance_due', 'is', null)
           .gte('next_maintenance_due', format(monthStart, 'yyyy-MM-dd'))
           .lte('next_maintenance_due', format(monthEnd, 'yyyy-MM-dd'))
@@ -207,12 +215,12 @@ const CalendarView = () => {
       maintenance?.forEach((record: any) => {
         if (record.next_maintenance_due) {
           if (record.ride_id) rideIds.add(record.ride_id);
-          allEvents.push({ id: record.id, title: record.maintenance_type, date: record.next_maintenance_due, type: 'maintenance', status: 'pending', rideId: record.ride_id });
+          allEvents.push({ id: record.id, title: record.maintenance_type, eventName: record.maintenance_type, date: record.next_maintenance_due, type: 'maintenance', status: 'pending', rideId: record.ride_id, notes: record.notes });
         }
       });
 
       const { data: documents } = await buildQuery(
-        supabase.from('documents').select('id, document_name, expires_at, ride_id')
+        supabase.from('documents').select('id, document_name, expires_at, ride_id, notes')
           .not('expires_at', 'is', null)
           .gte('expires_at', format(monthStart, 'yyyy-MM-dd'))
           .lte('expires_at', format(monthEnd, 'yyyy-MM-dd'))
@@ -220,12 +228,12 @@ const CalendarView = () => {
       documents?.forEach((doc: any) => {
         if (doc.expires_at) {
           if (doc.ride_id) rideIds.add(doc.ride_id);
-          allEvents.push({ id: doc.id, title: `${doc.document_name} Expires`, date: doc.expires_at, type: 'document_expiry', status: 'pending', rideId: doc.ride_id });
+          allEvents.push({ id: doc.id, title: `${doc.document_name} Expires`, eventName: `${doc.document_name} Expires`, date: doc.expires_at, type: 'document_expiry', status: 'pending', rideId: doc.ride_id, notes: doc.notes });
         }
       });
 
       const { data: ndt } = await buildQuery(
-        supabase.from('ndt_schedules').select('id, schedule_name, next_inspection_due, ride_id')
+        supabase.from('ndt_schedules').select('id, schedule_name, next_inspection_due, ride_id, notes')
           .eq('is_active', true)
           .not('next_inspection_due', 'is', null)
           .gte('next_inspection_due', format(monthStart, 'yyyy-MM-dd'))
@@ -234,12 +242,12 @@ const CalendarView = () => {
       ndt?.forEach((schedule: any) => {
         if (schedule.next_inspection_due) {
           if (schedule.ride_id) rideIds.add(schedule.ride_id);
-          allEvents.push({ id: schedule.id, title: schedule.schedule_name, date: schedule.next_inspection_due, type: 'ndt', status: 'pending', rideId: schedule.ride_id });
+          allEvents.push({ id: schedule.id, title: schedule.schedule_name, eventName: schedule.schedule_name, date: schedule.next_inspection_due, type: 'ndt', status: 'pending', rideId: schedule.ride_id, notes: schedule.notes });
         }
       });
 
       const { data: inspectionSchedules, error: schedulesError } = await buildQuery(
-        supabase.from('inspection_schedules').select('id, inspection_name, due_date, ride_id, advance_notice_days')
+        supabase.from('inspection_schedules').select('id, inspection_name, due_date, ride_id, advance_notice_days, notes')
           .eq('is_active', true)
           .gte('due_date', format(monthStart, 'yyyy-MM-dd'))
           .lte('due_date', format(monthEnd, 'yyyy-MM-dd'))
@@ -252,7 +260,7 @@ const CalendarView = () => {
         if (schedule.ride_id) rideIds.add(schedule.ride_id);
         const dueDate = new Date(schedule.due_date);
         dueDate.setHours(0, 0, 0, 0);
-        allEvents.push({ id: schedule.id, title: `Scheduled: ${schedule.inspection_name}`, date: schedule.due_date, type: 'inspection', status: dueDate < todayForOverdue ? 'overdue' : 'pending', rideId: schedule.ride_id });
+        allEvents.push({ id: schedule.id, title: schedule.inspection_name, eventName: schedule.inspection_name, date: schedule.due_date, type: 'inspection', status: dueDate < todayForOverdue ? 'overdue' : 'pending', rideId: schedule.ride_id, notes: schedule.notes });
       });
 
       if (rideIds.size > 0) {
@@ -282,11 +290,25 @@ const CalendarView = () => {
     events.filter(event => isSameDay(parseISO(event.date), date) && (filterType === 'all' || event.type === filterType));
 
   const handleEventClick = (event: CalendarEvent) => {
-    if (!event.rideId) {
-      toast({ title: "Navigation Error", description: "Cannot navigate to event without ride information", variant: "destructive" });
+    setSelectedEvent(event);
+    setEventDetailOpen(true);
+  };
+
+  const handleDeleteEvent = async (event: CalendarEvent) => {
+    if (event.type !== 'inspection') {
+      toast({ title: "Info", description: "Only manually scheduled events can be deleted here. Go to the relevant module to remove this item." });
       return;
     }
-    navigate(`/rides/${event.rideId}`);
+    try {
+      const { error } = await supabase.from('inspection_schedules').delete().eq('id', event.id);
+      if (error) throw error;
+      toast({ title: "Deleted", description: "Event removed from calendar." });
+      setEventDetailOpen(false);
+      setSelectedEvent(null);
+      loadCalendarEvents();
+    } catch {
+      toast({ title: "Error", description: "Could not delete event.", variant: "destructive" });
+    }
   };
 
   const getEventTypeColor = (type: string) => {
@@ -856,26 +878,24 @@ const CalendarView = () => {
               <div className="space-y-2">
                 {selectedDateEvents.map((event) => (
                   <button key={event.id} onClick={() => handleEventClick(event)}
-                    className="w-full p-3 rounded-xl border border-border bg-white hover:border-primary/30 hover:bg-muted/30 transition-colors text-left">
-                    <div className="flex items-start gap-2.5">
+                    className="w-full p-3 rounded-xl border border-border bg-background hover:border-primary/30 hover:bg-muted/30 transition-colors text-left">
+                    <div className="flex items-center gap-2.5">
                       <div className={cn(
-                        "w-2 h-2 rounded-full mt-1.5 shrink-0",
+                        "w-2 h-2 rounded-full shrink-0",
                         event.type === 'inspection' && "bg-primary",
-                        event.type === 'maintenance' && "bg-[#3B82F6]",
+                        event.type === 'maintenance' && "bg-blue-500",
                         event.type === 'document_expiry' && "bg-destructive",
-                        event.type === 'ndt' && "bg-[#8B5CF6]",
+                        event.type === 'ndt' && "bg-violet-500",
                         event.type === 'check' && "bg-muted-foreground",
                       )} />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1 mb-0.5">
-                          {getStatusIcon(event.status)}
-                          <p className="font-semibold text-sm text-foreground truncate">{event.title.split(' - ').pop()}</p>
-                        </div>
+                        <p className="font-semibold text-sm text-foreground truncate">{event.eventName}</p>
                         {event.rideName && <p className="text-xs text-muted-foreground truncate">{event.rideName}</p>}
                       </div>
-                      <Badge variant="outline" className={cn("text-[10px] px-1.5 shrink-0", getEventTypeColor(event.type))}>
-                        {event.type === 'document_expiry' ? 'Expiry' : event.type.replace('_', ' ')}
-                      </Badge>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {event.status === 'overdue' && <Badge className="text-[10px] px-1.5 bg-destructive/10 text-destructive border-destructive/20">Overdue</Badge>}
+                        <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
+                      </div>
                     </div>
                   </button>
                 ))}
@@ -900,19 +920,34 @@ const CalendarView = () => {
         ) : (
           <div className="space-y-2">
             {upcomingEvents.map((event) => (
-              <div key={event.id} onClick={() => handleEventClick(event)}
-                className="flex items-center justify-between p-3 rounded-xl border border-border bg-white hover:border-primary/30 hover:bg-muted/30 transition-colors cursor-pointer">
+              <button key={event.id} onClick={() => handleEventClick(event)}
+                className="w-full flex items-center justify-between p-3 rounded-xl border border-border bg-background hover:border-primary/30 hover:bg-muted/30 transition-colors text-left">
                 <div className="flex items-center gap-3 min-w-0">
-                  {getStatusIcon(event.status)}
+                  <div className={cn(
+                    "w-2 h-2 rounded-full shrink-0",
+                    event.type === 'inspection' && "bg-primary",
+                    event.type === 'maintenance' && "bg-blue-500",
+                    event.type === 'document_expiry' && "bg-destructive",
+                    event.type === 'ndt' && "bg-violet-500",
+                  )} />
                   <div className="min-w-0">
-                    <p className="font-semibold text-sm text-foreground truncate">{event.title}</p>
-                    <p className="text-xs text-muted-foreground">{format(parseISO(event.date), 'EEE d MMM')}</p>
+                    <p className="font-semibold text-sm text-foreground truncate">{event.eventName}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {event.rideName && <span>{event.rideName} · </span>}
+                      {format(parseISO(event.date), 'EEE d MMM')}
+                    </p>
                   </div>
                 </div>
-                <Badge variant="outline" className={cn("ml-3 shrink-0", getEventTypeColor(event.type))}>
-                  {event.type.replace('_', ' ')}
-                </Badge>
-              </div>
+                <div className="flex items-center gap-1.5 ml-3 shrink-0">
+                  {event.status === 'overdue'
+                    ? <Badge className="text-[10px] px-1.5 bg-destructive/10 text-destructive border-destructive/20">Overdue</Badge>
+                    : <Badge variant="outline" className={cn("text-[10px] px-1.5", getEventTypeColor(event.type))}>
+                        {event.type === 'document_expiry' ? 'Expiry' : event.type.replace('_', ' ')}
+                      </Badge>
+                  }
+                  <ChevronRightIcon className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </button>
             ))}
           </div>
         )}
@@ -953,6 +988,109 @@ const CalendarView = () => {
           </div>
         )}
       </div>
+
+      {/* ── Event Detail Sheet ── */}
+      <Sheet open={eventDetailOpen} onOpenChange={setEventDetailOpen}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[85vh] flex flex-col p-0">
+          {selectedEvent && (
+            <>
+              {/* Header */}
+              <div className="px-5 pt-5 pb-4 border-b border-border shrink-0">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className={cn(
+                      "w-3 h-3 rounded-full mt-1 shrink-0",
+                      selectedEvent.type === 'inspection' && "bg-primary",
+                      selectedEvent.type === 'maintenance' && "bg-blue-500",
+                      selectedEvent.type === 'document_expiry' && "bg-destructive",
+                      selectedEvent.type === 'ndt' && "bg-violet-500",
+                      selectedEvent.type === 'check' && "bg-muted-foreground",
+                    )} />
+                    <div className="min-w-0">
+                      <SheetTitle className="text-base font-semibold text-foreground leading-tight">{selectedEvent.eventName}</SheetTitle>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {selectedEvent.type === 'document_expiry' ? 'Document Expiry'
+                          : selectedEvent.type === 'ndt' ? 'NDT Inspection'
+                          : selectedEvent.type.charAt(0).toUpperCase() + selectedEvent.type.slice(1)}
+                      </p>
+                    </div>
+                  </div>
+                  {selectedEvent.status === 'overdue'
+                    ? <Badge className="shrink-0 bg-destructive/10 text-destructive border-destructive/20">Overdue</Badge>
+                    : selectedEvent.status === 'pending' && new Date(selectedEvent.date) <= addDays(new Date(), 7)
+                    ? <Badge className="shrink-0 bg-amber-100 text-amber-800 border-amber-200">Due soon</Badge>
+                    : null
+                  }
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+
+                {/* Due date */}
+                <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Due date</p>
+                    <p className="text-sm font-semibold text-foreground mt-0.5">{format(parseISO(selectedEvent.date), 'EEEE, d MMMM yyyy')}</p>
+                  </div>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </div>
+
+                {/* Ride */}
+                {selectedEvent.rideName && selectedEvent.rideId && (
+                  <div className="rounded-xl border border-border bg-muted/30 px-4 py-3 flex items-center justify-between">
+                    <div>
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">Ride / Equipment</p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">{selectedEvent.rideName}</p>
+                    </div>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); navigate(`/rides/${selectedEvent.rideId}`); setEventDetailOpen(false); }}
+                      className="flex items-center gap-1 text-xs text-primary font-medium hover:underline shrink-0"
+                    >
+                      View <ExternalLink className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Notes */}
+                {selectedEvent.notes && (
+                  <div className="rounded-xl border border-border bg-muted/30 px-4 py-3">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">Notes</p>
+                    <p className="text-sm text-foreground">{selectedEvent.notes}</p>
+                  </div>
+                )}
+
+                {/* Info for non-schedule events */}
+                {selectedEvent.type !== 'inspection' && (
+                  <p className="text-xs text-muted-foreground text-center px-2">
+                    This event is managed in the{' '}
+                    {selectedEvent.type === 'maintenance' ? 'Maintenance' : selectedEvent.type === 'document_expiry' ? 'Documents' : 'NDT'}
+                    {' '}module. Go there to edit or remove it.
+                  </p>
+                )}
+              </div>
+
+              {/* Footer actions */}
+              <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex gap-2">
+                {selectedEvent.type === 'inspection' && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                    onClick={() => handleDeleteEvent(selectedEvent)}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                )}
+                <Button className="flex-1" onClick={() => setEventDetailOpen(false)}>
+                  Done
+                </Button>
+              </div>
+            </>
+          )}
+        </SheetContent>
+      </Sheet>
 
     </div>
   );
