@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -61,9 +62,11 @@ interface InspectionChecklistProps {
   ride: Ride;
   frequency: string;
   onChecklistSaved?: () => void;
+  startImmediately?: boolean;
 }
 
-const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionChecklistProps) => {
+const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediately = false }: InspectionChecklistProps) => {
+  const navigate = useNavigate();
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
   const [recentChecks, setRecentChecks] = useState<Check[]>([]);
   const [itemResults, setItemResults] = useState<{ [key: string]: CheckItemResult }>({});
@@ -84,8 +87,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
   const [selectedCheck, setSelectedCheck] = useState<Check | null>(null);
   const [showCheckDetail, setShowCheckDetail] = useState(false);
   const [detailsExpanded, setDetailsExpanded] = useState(true);
-  const [checkStarted, setCheckStarted] = useState(false);
-  const [checkStartedAt, setCheckStartedAt] = useState<Date | null>(null);
+  const [checkStarted, setCheckStarted] = useState(startImmediately);
+  const [checkStartedAt, setCheckStartedAt] = useState<Date | null>(startImmediately ? new Date() : null);
   const [showMaintenanceForItem, setShowMaintenanceForItem] = useState<string | null>(null);
   const [declarationChecked, setDeclarationChecked] = useState(false);
 
@@ -1172,10 +1175,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved }: InspectionCh
             <button
               className="w-full h-14 rounded-xl text-base font-bold flex items-center justify-center gap-2 transition-opacity hover:opacity-90"
               style={{ backgroundColor: 'rgba(255,255,255,0.15)', color: 'white', border: '1.5px solid rgba(255,255,255,0.3)' }}
-              onClick={() => {
-                setCheckStarted(true);
-                setCheckStartedAt(new Date());
-              }}
+              onClick={() => navigate(`/checks/${ride.id}/${frequency}/execute`)}
             >
               <PlayCircle className="h-5 w-5" strokeWidth={2.5} />
               Start Inspection
