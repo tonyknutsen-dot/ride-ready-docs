@@ -410,157 +410,262 @@ const CalendarView = () => {
               Add
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Add Event</DialogTitle>
-              <DialogDescription>Schedule an event with automatic reminders</DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="ride_id">Ride *</Label>
-                <Select value={formData.ride_id} onValueChange={(value) => { setFormData({ ...formData, ride_id: value, selected_document_id: '', inspection_name: '' }); loadRideDocuments(value); }}>
-                  <SelectTrigger><SelectValue placeholder="Select a ride" /></SelectTrigger>
-                  <SelectContent className="bg-popover z-50">
-                    {rides.map((ride) => <SelectItem key={ride.id} value={ride.id}>{ride.ride_name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-                {formErrors.ride_id && <p className="text-xs text-destructive">{formErrors.ride_id}</p>}
-              </div>
+          <DialogContent className="max-w-md p-0 gap-0 max-h-[92vh] flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="px-5 pt-5 pb-4 border-b border-border shrink-0">
+              <DialogTitle className="text-lg font-semibold text-foreground">Add Event</DialogTitle>
+              <DialogDescription className="text-sm text-muted-foreground mt-0.5">
+                Schedule reminders for inspections, maintenance and expiries.
+              </DialogDescription>
 
-              <div className="space-y-2">
-                <Label htmlFor="inspection_type">Event Type *</Label>
-                <Select value={formData.inspection_type} onValueChange={(value) => setFormData({ ...formData, inspection_type: value })}>
-                  <SelectTrigger><SelectValue placeholder="Select event type" /></SelectTrigger>
-                  <SelectContent className="bg-popover z-50 max-h-[300px]">
-                    {['Document Expiry', 'Inspections', 'Checks', 'Maintenance'].map(category => {
-                      const categoryTypes = EVENT_TYPES.filter(t => t.category === category);
-                      if (categoryTypes.length === 0) return null;
-                      return (
-                        <div key={category}>
-                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">{category}</div>
-                          {categoryTypes.map((type) => <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>)}
-                        </div>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-                {formErrors.inspection_type && <p className="text-xs text-destructive">{formErrors.inspection_type}</p>}
+              {/* Category preset buttons */}
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                {[
+                  { label: 'Inspection', value: 'safety', defaults: [60, 30, 14, 7, 1] },
+                  { label: 'Maintenance', value: 'maintenance', defaults: [14, 7, 1] },
+                  { label: 'Doc expiry', value: 'doc-expiry', defaults: [60, 30, 14, 7] },
+                  { label: 'NDT', value: 'ndt', defaults: [60, 30, 14, 7, 1] },
+                ].map(preset => (
+                  <button
+                    key={preset.value}
+                    type="button"
+                    onClick={() => setFormData(prev => ({
+                      ...prev,
+                      inspection_type: preset.value,
+                      reminder_days: preset.defaults,
+                      inspection_name: preset.label === 'Inspection' ? 'Annual Safety Inspection' :
+                        preset.label === 'Maintenance' ? 'Scheduled Maintenance' : prev.inspection_name,
+                    }))}
+                    className={cn(
+                      "rounded-xl border px-3 py-2.5 text-sm font-semibold text-left transition-colors",
+                      formData.inspection_type === preset.value
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-white text-foreground border-border hover:bg-muted/50"
+                    )}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
               </div>
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="inspection_name">{formData.inspection_type.includes('expiry') ? 'Document *' : 'Event Name *'}</Label>
-                {formData.inspection_type.includes('expiry') ? (
-                  <>
-                    <Select value={formData.selected_document_id} onValueChange={(value) => {
-                      const doc = rideDocuments.find(d => d.id === value);
-                      setFormData({ ...formData, selected_document_id: value, inspection_name: doc?.document_name || '', due_date: doc?.expires_at ? new Date(doc.expires_at) : formData.due_date });
-                    }} disabled={!formData.ride_id || loadingDocuments}>
-                      <SelectTrigger>
-                        <SelectValue placeholder={!formData.ride_id ? "Select a ride first" : loadingDocuments ? "Loading documents..." : rideDocuments.length === 0 ? "No documents uploaded for this ride" : "Select a document"} />
-                      </SelectTrigger>
-                      <SelectContent className="bg-popover z-50">
-                        {rideDocuments.map((doc) => (
-                          <SelectItem key={doc.id} value={doc.id}>
-                            {doc.document_name}
-                            {doc.expires_at && <span className="text-muted-foreground ml-2">(expires {format(new Date(doc.expires_at), 'dd/MM/yyyy')})</span>}
-                          </SelectItem>
-                        ))}
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+
+              {/* Details card */}
+              <div className="rounded-2xl border border-border bg-white p-4 space-y-3">
+                <p className="text-sm font-semibold text-foreground">Details</p>
+
+                <div className="space-y-1.5">
+                  <Label htmlFor="ride_id" className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Ride *</Label>
+                  <Select value={formData.ride_id} onValueChange={(value) => { setFormData({ ...formData, ride_id: value, selected_document_id: '', inspection_name: '' }); loadRideDocuments(value); }}>
+                    <SelectTrigger><SelectValue placeholder="Select a ride" /></SelectTrigger>
+                    <SelectContent className="bg-popover z-50">
+                      {rides.map((ride) => <SelectItem key={ride.id} value={ride.id}>{ride.ride_name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                  {formErrors.ride_id && <p className="text-xs text-destructive">{formErrors.ride_id}</p>}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    {formData.inspection_type.includes('expiry') ? 'Document *' : 'Event Name *'}
+                  </Label>
+                  {formData.inspection_type.includes('expiry') ? (
+                    <>
+                      <Select value={formData.selected_document_id} onValueChange={(value) => {
+                        const doc = rideDocuments.find(d => d.id === value);
+                        setFormData({ ...formData, selected_document_id: value, inspection_name: doc?.document_name || '', due_date: doc?.expires_at ? new Date(doc.expires_at) : formData.due_date });
+                      }} disabled={!formData.ride_id || loadingDocuments}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={!formData.ride_id ? "Select a ride first" : loadingDocuments ? "Loading documents..." : rideDocuments.length === 0 ? "No documents for this ride" : "Select a document"} />
+                        </SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          {rideDocuments.map((doc) => (
+                            <SelectItem key={doc.id} value={doc.id}>
+                              {doc.document_name}
+                              {doc.expires_at && <span className="text-muted-foreground ml-2">(expires {format(new Date(doc.expires_at), 'dd/MM/yyyy')})</span>}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      {formData.ride_id && rideDocuments.length === 0 && !loadingDocuments && (
+                        <p className="text-xs text-muted-foreground">No documents yet. <button type="button" onClick={() => navigate(`/rides/${formData.ride_id}`)} className="text-primary hover:underline">Upload documents</button> first.</p>
+                      )}
+                    </>
+                  ) : (
+                    <>
+                      <Input id="inspection_name" value={formData.inspection_name} onChange={(e) => setFormData({ ...formData, inspection_name: e.target.value })} placeholder="e.g., Annual Safety Inspection" maxLength={200} />
+                      <p className="text-xs text-muted-foreground">This name appears on reports and reminders.</p>
+                    </>
+                  )}
+                  {formErrors.inspection_name && <p className="text-xs text-destructive">{formErrors.inspection_name}</p>}
+                </div>
+
+                {/* Event type (if not set by preset) */}
+                {!formData.inspection_type && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Event Type *</Label>
+                    <Select value={formData.inspection_type} onValueChange={(value) => setFormData({ ...formData, inspection_type: value })}>
+                      <SelectTrigger><SelectValue placeholder="Select event type" /></SelectTrigger>
+                      <SelectContent className="bg-popover z-50 max-h-[300px]">
+                        {['Document Expiry', 'Inspections', 'Checks', 'Maintenance'].map(category => {
+                          const categoryTypes = EVENT_TYPES.filter(t => t.category === category);
+                          if (categoryTypes.length === 0) return null;
+                          return (
+                            <div key={category}>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50">{category}</div>
+                              {categoryTypes.map((type) => <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>)}
+                            </div>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
-                    {formData.ride_id && rideDocuments.length === 0 && !loadingDocuments && (
-                      <p className="text-xs text-muted-foreground">No documents uploaded yet. <button type="button" onClick={() => navigate(`/rides/${formData.ride_id}`)} className="text-primary hover:underline">Upload documents</button> first.</p>
-                    )}
-                  </>
-                ) : (
-                  <Input id="inspection_name" value={formData.inspection_name} onChange={(e) => setFormData({ ...formData, inspection_name: e.target.value })} placeholder="e.g., Annual Safety Inspection" maxLength={200} />
+                    {formErrors.inspection_type && <p className="text-xs text-destructive">{formErrors.inspection_type}</p>}
+                  </div>
                 )}
-                {formErrors.inspection_name && <p className="text-xs text-destructive">{formErrors.inspection_name}</p>}
-              </div>
 
-              <div className="space-y-2">
-                <Label>Due Date *</Label>
-                <Popover open={calendarPickerOpen} onOpenChange={setCalendarPickerOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.due_date && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.due_date ? format(formData.due_date, "d MMM yyyy") : "Select due date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0 bg-popover z-50" align="start">
-                    <Calendar mode="single" selected={formData.due_date} onSelect={(date) => { setFormData({ ...formData, due_date: date }); setCalendarPickerOpen(false); }} initialFocus disabled={(date) => date < new Date()} />
-                  </PopoverContent>
-                </Popover>
-                {formErrors.due_date && <p className="text-xs text-destructive">{formErrors.due_date}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="advance_notice_days">Advance Notice (Days)</Label>
-                <Input id="advance_notice_days" type="number" min="1" max="365" value={formData.advance_notice_days} onChange={(e) => setFormData({ ...formData, advance_notice_days: parseInt(e.target.value) || 30 })} />
-                <p className="text-xs text-muted-foreground">Reminders start this many days before the due date</p>
-                {formErrors.advance_notice_days && <p className="text-xs text-destructive">{formErrors.advance_notice_days}</p>}
-              </div>
-
-              <div className="space-y-3 p-4 rounded-lg bg-secondary/50 border border-border">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="enable_reminders" className="font-medium">Email Reminders</Label>
-                  <input type="checkbox" id="enable_reminders" checked={formData.enable_reminders} onChange={(e) => setFormData({ ...formData, enable_reminders: e.target.checked })} className="h-4 w-4 rounded border-border" />
+                {/* Due date */}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Due Date *</Label>
+                  <Popover open={calendarPickerOpen} onOpenChange={setCalendarPickerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.due_date && "text-muted-foreground")}>
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.due_date ? format(formData.due_date, "d MMM yyyy") : "Select due date"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0 bg-popover z-50" align="start">
+                      <Calendar mode="single" selected={formData.due_date} onSelect={(date) => { setFormData({ ...formData, due_date: date }); setCalendarPickerOpen(false); }} initialFocus disabled={(date) => date < new Date()} />
+                    </PopoverContent>
+                  </Popover>
+                  {formErrors.due_date && <p className="text-xs text-destructive">{formErrors.due_date}</p>}
                 </div>
+              </div>
+
+              {/* Reminders card */}
+              <div className="rounded-2xl border border-border bg-white p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Reminders</p>
+                    <p className="text-xs text-muted-foreground">Choose when you want to be notified.</p>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs font-medium text-foreground cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={formData.enable_reminders}
+                      onChange={(e) => setFormData({ ...formData, enable_reminders: e.target.checked })}
+                      className="w-4 h-4 rounded border-border accent-primary"
+                    />
+                    Email
+                  </label>
+                </div>
+
                 {formData.enable_reminders && (
-                  <div className="space-y-2">
-                    <p className="text-xs text-muted-foreground">You'll receive reminder emails at the following intervals:</p>
+                  <>
                     <div className="flex flex-wrap gap-2">
-                      {[30, 14, 7, 3, 1].map((days) => (
-                        <button key={days} type="button" onClick={() => {
-                          const current = formData.reminder_days;
-                          const updated = current.includes(days) ? current.filter(d => d !== days) : [...current, days].sort((a, b) => b - a);
-                          setFormData({ ...formData, reminder_days: updated });
-                        }} className={cn("px-3 py-1.5 rounded-full text-xs font-medium transition-colors", formData.reminder_days.includes(days) ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80")}>
-                          {days === 1 ? '1 day before' : `${days} days before`}
+                      {[60, 30, 14, 7, 3, 1].map((days) => (
+                        <button
+                          key={days}
+                          type="button"
+                          onClick={() => {
+                            const current = formData.reminder_days;
+                            const updated = current.includes(days) ? current.filter(d => d !== days) : [...current, days].sort((a, b) => b - a);
+                            setFormData({ ...formData, reminder_days: updated });
+                          }}
+                          className={cn(
+                            "rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors",
+                            formData.reminder_days.includes(days)
+                              ? "bg-primary text-primary-foreground border-primary"
+                              : "bg-white text-muted-foreground border-border hover:bg-muted/50"
+                          )}
+                        >
+                          {days === 1 ? '1 day' : `${days} days`}
                         </button>
                       ))}
                     </div>
-                  </div>
+                    <div className="rounded-xl bg-muted/30 border border-border px-3 py-2 text-xs text-muted-foreground">
+                      Reminders sent relative to the due date.
+                    </div>
+                  </>
                 )}
               </div>
 
-              <div className="space-y-3 p-4 rounded-lg bg-accent/10 border border-accent/20">
+              {/* Recurring card */}
+              <div className="rounded-2xl border border-border bg-white p-4 space-y-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="is_recurring" className="font-medium">Recurring Event</Label>
-                    <p className="text-xs text-muted-foreground">Automatically schedule future occurrences</p>
+                    <p className="text-sm font-semibold text-foreground">Recurring</p>
+                    <p className="text-xs text-muted-foreground">Auto-create future occurrences.</p>
                   </div>
-                  <input type="checkbox" id="is_recurring" checked={formData.is_recurring} onChange={(e) => setFormData({ ...formData, is_recurring: e.target.checked })} className="h-4 w-4 rounded border-border" />
+                  <input
+                    type="checkbox"
+                    checked={formData.is_recurring}
+                    onChange={(e) => setFormData({ ...formData, is_recurring: e.target.checked })}
+                    className="w-5 h-5 rounded border-border accent-primary cursor-pointer"
+                  />
                 </div>
+
                 {formData.is_recurring && (
-                  <div className="space-y-3 pt-3 border-t border-accent/20">
-                    <Label className="text-sm">Repeat Every</Label>
-                    <div className="flex items-center gap-2">
-                      <Input type="number" min="1" max="365" value={formData.recurrence_value} onChange={(e) => setFormData({ ...formData, recurrence_value: Math.max(1, parseInt(e.target.value) || 1) })} className="w-20" />
-                      <Select value={formData.recurrence_unit} onValueChange={(value) => setFormData({ ...formData, recurrence_unit: value as typeof formData.recurrence_unit })}>
-                        <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-border">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">Repeat every</Label>
+                      <Select
+                        value={`${formData.recurrence_value}-${formData.recurrence_unit}`}
+                        onValueChange={(val) => {
+                          const [v, u] = val.split('-');
+                          setFormData({ ...formData, recurrence_value: parseInt(v), recurrence_unit: u as typeof formData.recurrence_unit });
+                        }}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent className="bg-popover z-50">
-                          <SelectItem value="days">Day(s)</SelectItem>
-                          <SelectItem value="weeks">Week(s)</SelectItem>
-                          <SelectItem value="months">Month(s)</SelectItem>
-                          <SelectItem value="years">Year(s)</SelectItem>
+                          <SelectItem value="12-months">12 months</SelectItem>
+                          <SelectItem value="6-months">6 months</SelectItem>
+                          <SelectItem value="3-months">3 months</SelectItem>
+                          <SelectItem value="1-months">1 month</SelectItem>
+                          <SelectItem value="1-weeks">1 week</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <p className="text-xs text-muted-foreground">After completing this event, the next occurrence will be automatically scheduled</p>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-medium text-muted-foreground">End</Label>
+                      <Select defaultValue="never">
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent className="bg-popover z-50">
+                          <SelectItem value="never">Never</SelectItem>
+                          <SelectItem value="5">After 5 times</SelectItem>
+                          <SelectItem value="10">After 10 times</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="notes">Notes</Label>
-                <Textarea id="notes" value={formData.notes} onChange={(e) => setFormData({ ...formData, notes: e.target.value })} placeholder="Additional notes or requirements" rows={3} maxLength={1000} />
+              {/* Notes card */}
+              <div className="rounded-2xl border border-border bg-white p-4 space-y-3">
+                <p className="text-sm font-semibold text-foreground">Notes</p>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Requirements, access notes, reference numbers, etc."
+                  rows={3}
+                  maxLength={1000}
+                />
                 {formErrors.notes && <p className="text-xs text-destructive">{formErrors.notes}</p>}
               </div>
 
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button variant="outline" onClick={() => setAddDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleAddInspection}>Create Schedule</Button>
-              </div>
+            </div>
+
+            {/* Sticky footer */}
+            <div className="shrink-0 border-t border-border bg-white px-5 py-4 flex gap-3">
+              <Button variant="outline" className="flex-1" onClick={() => setAddDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button className="flex-1" onClick={handleAddInspection}>
+                Create Schedule
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
