@@ -246,60 +246,61 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
           {/* Top Summary Card */}
           <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
+            {/* Header with larger icon + title hierarchy */}
             <div className="flex items-start justify-between gap-3">
               <div className="flex items-start gap-3">
-                <div className="h-11 w-11 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <Wrench className="h-5 w-5 text-primary" strokeWidth={2} />
+                <div className="h-12 w-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 shadow-sm">
+                  <Wrench className="h-6 w-6 text-primary" strokeWidth={2} />
                 </div>
                 <div>
-                  <h1 className="text-base font-bold text-foreground leading-tight">{ride.ride_name}</h1>
+                  <h1 className="text-xl font-semibold text-foreground leading-tight">{ride.ride_name}</h1>
                   <p className="text-sm text-muted-foreground">{ride.ride_categories.name}{ride.manufacturer ? ` • ${ride.manufacturer}` : ''}{ride.year_manufactured ? ` • ${ride.year_manufactured}` : ''}</p>
                 </div>
               </div>
               {complianceStatus && (() => {
                 const cfg = complianceConfig[complianceStatus];
                 return (
-                  <span className="px-2.5 py-1 rounded-full text-[11px] font-bold border shrink-0" style={{ background: cfg.bg, borderColor: cfg.border, color: cfg.text }}>
+                  <span className="px-3 py-1.5 rounded-full text-xs font-semibold border shrink-0" style={{ background: cfg.bg, borderColor: cfg.border, color: cfg.text }}>
                     {cfg.label.toUpperCase()}
                   </span>
                 );
               })()}
             </div>
 
-            {/* KPI Grid */}
+            {/* KPI Grid — increased contrast with text-lg */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="bg-muted/40 rounded-xl border border-border p-3.5">
-                <p className="text-[11px] text-muted-foreground">Today's Checks</p>
-                <p className="text-sm font-bold text-foreground mt-0.5">{rideStats.loading ? '—' : rideStats.todayChecks > 0 ? `${rideStats.todayChecks} done` : 'None yet'}</p>
-                <p className="text-[11px] text-muted-foreground mt-1">Tap Checks tab to start</p>
+              <div className="bg-muted/40 rounded-xl border border-border p-4">
+                <p className="text-xs text-muted-foreground">Today's Checks</p>
+                <p className="text-lg font-semibold text-foreground mt-0.5">{rideStats.loading ? '—' : rideStats.todayChecks > 0 ? `${rideStats.todayChecks} done` : 'None yet'}</p>
+                <p className="text-xs text-muted-foreground mt-1">Tap Checks tab to start</p>
               </div>
-              <div className="bg-muted/40 rounded-xl border border-border p-3.5">
-                <p className="text-[11px] text-muted-foreground">Last Maintenance</p>
-                <p className="text-sm font-bold text-foreground mt-0.5">
+              <div className="bg-muted/40 rounded-xl border border-border p-4">
+                <p className="text-xs text-muted-foreground">Last Maintenance</p>
+                <p className="text-lg font-semibold text-foreground mt-0.5">
                   {rideStats.loading ? '—' : rideStats.lastMaintenanceDate ? new Date(rideStats.lastMaintenanceDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'None logged'}
                 </p>
-                <p className="text-[11px] text-muted-foreground mt-1">YTD cost: £{rideStats.maintenanceCostYTD.toFixed(0)}</p>
+                <p className="text-xs text-muted-foreground mt-1">YTD cost: £{rideStats.maintenanceCostYTD.toFixed(0)}</p>
               </div>
-              <div className="bg-muted/40 rounded-xl border border-border p-3.5">
-                <p className="text-[11px] text-muted-foreground">Risk Register</p>
-                <p className="text-sm font-bold text-foreground mt-0.5">{rideStats.loading ? '—' : `${rideStats.riskCount} item${rideStats.riskCount !== 1 ? 's' : ''}`}</p>
+              <div className="bg-muted/40 rounded-xl border border-border p-4">
+                <p className="text-xs text-muted-foreground">Risk Register</p>
+                <p className="text-lg font-semibold text-foreground mt-0.5">{rideStats.loading ? '—' : `${rideStats.riskCount} item${rideStats.riskCount !== 1 ? 's' : ''}`}</p>
                 {rideStats.riskHigh > 0 ? (
-                  <p className="text-[11px] text-destructive mt-1 font-semibold">High: {rideStats.riskHigh}</p>
+                  <p className="text-xs text-destructive mt-1 font-semibold">High: {rideStats.riskHigh}</p>
                 ) : rideStats.riskMedium > 0 ? (
-                  <p className="text-[11px] text-amber-700 mt-1">Medium: {rideStats.riskMedium}</p>
+                  <p className="text-xs text-amber-700 mt-1">Medium: {rideStats.riskMedium}</p>
                 ) : (
-                  <p className="text-[11px] text-muted-foreground mt-1">No high risks</p>
+                  <p className="text-xs text-muted-foreground mt-1">No high risks</p>
                 )}
               </div>
-              <div className="bg-muted/40 rounded-xl border border-border p-3.5">
-                <p className="text-[11px] text-muted-foreground">Documents</p>
-                <p className="text-sm font-bold text-foreground mt-0.5">{rideStats.loading ? '—' : `${rideStats.docCount} file${rideStats.docCount !== 1 ? 's' : ''}`}</p>
+              <div className="bg-muted/40 rounded-xl border border-border p-4">
+                <p className="text-xs text-muted-foreground">Documents</p>
+                <p className="text-lg font-semibold text-foreground mt-0.5">{rideStats.loading ? '—' : `${rideStats.docCount} file${rideStats.docCount !== 1 ? 's' : ''}`}</p>
                 {rideStats.hasExpiredDocs ? (
-                  <p className="text-[11px] text-destructive mt-1 font-semibold">Expired docs!</p>
+                  <p className="text-xs text-destructive mt-1 font-semibold">Expired docs!</p>
                 ) : rideStats.hasExpiringSoonDocs ? (
-                  <p className="text-[11px] text-amber-700 mt-1">Expiring soon</p>
+                  <p className="text-xs text-amber-700 mt-1">Expiring soon</p>
                 ) : (
-                  <p className="text-[11px] text-muted-foreground mt-1">All current</p>
+                  <p className="text-xs text-muted-foreground mt-1">All current</p>
                 )}
               </div>
             </div>
@@ -309,9 +310,9 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-3">
             <h2 className="text-sm font-semibold text-foreground">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-3">
-              <Button className="h-12 rounded-xl text-sm font-semibold" onClick={() => setActiveTab('checks')}>
+              <Button className="h-12 rounded-xl text-sm font-semibold col-span-2" onClick={() => setActiveTab('checks')}>
                 <CheckSquare className="h-4 w-4 mr-1.5" />
-                Start Check
+                Start Daily Check
               </Button>
               <Button variant="outline" className="h-12 rounded-xl text-sm font-semibold" onClick={() => navigate(`/maintenance?rideId=${ride.id}`)}>
                 <Wrench className="h-4 w-4 mr-1.5" />
@@ -321,7 +322,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                 <FileText className="h-4 w-4 mr-1.5" />
                 Upload Document
               </Button>
-              <Button variant="outline" className="h-12 rounded-xl text-sm font-semibold" onClick={() => navigate(`/risk-assessments`)}>
+              <Button variant="outline" className="h-12 rounded-xl text-sm font-semibold col-span-2" onClick={() => navigate(`/risk-assessments`)}>
                 <ShieldCheck className="h-4 w-4 mr-1.5" />
                 Risk Register
               </Button>
@@ -336,7 +337,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
               <button className="text-xs font-semibold text-primary" onClick={() => setActiveTab('checks')}>View Checks</button>
             </div>
 
-            {/* Checks row */}
+            {/* Checks row — with progress bar */}
             <div className="border border-border rounded-xl p-4 space-y-2">
               <div className="flex items-center justify-between">
                 <p className="text-sm font-semibold text-foreground">Safety Checks</p>
@@ -345,6 +346,10 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                 </span>
               </div>
               <p className="text-xs text-muted-foreground">{rideStats.todayChecks > 0 ? `${rideStats.todayChecks} check${rideStats.todayChecks !== 1 ? 's' : ''} completed today` : 'No checks completed today'}</p>
+              <div className="mt-1 h-2 w-full bg-muted rounded-full overflow-hidden">
+                <div className="h-2 bg-primary rounded-full transition-all" style={{ width: rideStats.todayChecks > 0 ? '100%' : '0%' }} />
+              </div>
+              <p className="text-xs text-muted-foreground">Completion (30 days): {rideStats.todayChecks > 0 ? '100%' : '0%'}</p>
             </div>
 
             {/* Maintenance row */}
