@@ -188,105 +188,111 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
         )}
       </DialogTrigger>
       
-      <DialogContent className="max-w-xl max-h-[85vh] overflow-hidden flex flex-col">
-        <DialogHeader className="flex-shrink-0">
-          <DialogTitle className="flex items-center gap-2 text-lg">
-            <Mail className="h-5 w-5 text-primary" />
-            Send Documents
-          </DialogTitle>
-          <p className="text-sm text-muted-foreground mt-1">{rideInfo}</p>
-        </DialogHeader>
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+        {/* Header */}
+        <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-border flex-shrink-0">
+          <div>
+            <DialogTitle className="text-base font-semibold text-foreground">
+              Send Documents
+            </DialogTitle>
+            <p className="text-xs text-muted-foreground mt-0.5">{rideInfo}</p>
+          </div>
+        </div>
 
-        <div className="flex-1 overflow-y-auto space-y-5 pr-2">
-          {/* Sender Information */}
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-2">
-            <h3 className="text-sm font-semibold text-primary flex items-center gap-2">
-              <Mail className="h-4 w-4" />
-              Your Information (will be included in email)
-            </h3>
-            <div className="text-xs space-y-1 text-muted-foreground">
-              {profile?.company_name && (
-                <p><span className="font-medium">Company:</span> {profile.company_name}</p>
-              )}
-              {profile?.controller_name && (
-                <p><span className="font-medium">Controller:</span> {profile.controller_name}</p>
-              )}
-              {profile?.address && (
-                <p><span className="font-medium">Address:</span> {profile.address}</p>
-              )}
-              {user?.email && (
-                <p><span className="font-medium">Email:</span> {user.email}</p>
-              )}
-              {!isStaff && !profile?.company_name && !profile?.controller_name && (
-                <p className="text-destructive italic">⚠️ Please complete your profile in Settings</p>
-              )}
+        <div className="flex-1 overflow-y-auto space-y-5 px-5 py-4">
+          {/* Sender Information — muted card */}
+          <div className="bg-muted/40 border border-border rounded-xl p-3 space-y-1">
+            <p className="text-xs font-semibold text-foreground">Sender Information</p>
+            <div className="text-xs text-muted-foreground space-y-0.5">
+              {profile?.company_name && <p>{profile.company_name}</p>}
+              {profile?.controller_name && <p>{profile.controller_name}</p>}
+              {user?.email && <p>{user.email}</p>}
             </div>
+            {!isStaff && !profile?.company_name && !profile?.controller_name && (
+              <p className="text-xs text-warning-foreground mt-1">Complete your profile details in Settings</p>
+            )}
           </div>
 
-          {/* Recipient Information */}
+          {/* Recipient */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold">Recipient</h3>
-            <div className="space-y-3">
+            <h3 className="text-sm font-semibold text-foreground">Recipient</h3>
+            <div className="space-y-2">
               <div>
-                <Label htmlFor="recipientEmail" className="text-xs">Email Address *</Label>
+                <Label htmlFor="recipientEmail" className="text-xs font-medium text-foreground mb-1.5 block">
+                  Email Address *
+                </Label>
                 <Input
                   id="recipientEmail"
                   type="email"
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
                   placeholder={`${terminology.localAuthority}@example.com`}
-                  className="mt-1.5"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="recipientName" className="text-xs">Name/Organization</Label>
+                <Label htmlFor="recipientName" className="text-xs font-medium text-foreground mb-1.5 block">
+                  Name / Organisation
+                </Label>
                 <Input
                   id="recipientName"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   placeholder={terminology.isUK ? "Local Council / Guild" : "Local Authority / Organization"}
-                  className="mt-1.5"
-                />
-              </div>
-              <div>
-                <Label htmlFor="message" className="text-xs">Message (Optional)</Label>
-                <Textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Additional notes for the recipient..."
-                  className="mt-1.5 resize-none"
-                  rows={2}
                 />
               </div>
             </div>
           </div>
 
-          {/* Document Selection */}
+          {/* Message — single instance */}
+          <div className="space-y-2">
+            <Label htmlFor="message" className="text-xs font-medium text-foreground block">
+              Message <span className="text-muted-foreground font-normal">(optional)</span>
+            </Label>
+            <Textarea
+              id="message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Add notes for the recipient…"
+              className="resize-none"
+              rows={3}
+            />
+          </div>
+
+          {/* Documents — single instance */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Documents</h3>
-              <Badge variant="secondary" className="text-xs">{totalSelectedDocs} selected</Badge>
-            </div>
-            
-            {/* File size info */}
-            <div className="flex items-center justify-between text-xs bg-muted/50 rounded-lg px-3 py-2">
-              <span className="text-muted-foreground">Total size:</span>
-              <Badge variant={exceedsEmailLimit ? "destructive" : "outline"} className="text-xs">
-                {formatFileSize(totalFileSize)}
-              </Badge>
+              <h3 className="text-sm font-semibold text-foreground">Documents</h3>
+              <span className="text-xs text-muted-foreground">{totalSelectedDocs} selected</span>
             </div>
 
+            {/* Size bar */}
+            {totalFileSize > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs text-muted-foreground">
+                  <span>Total size</span>
+                  <span className={exceedsEmailLimit ? "text-destructive font-medium" : ""}>
+                    {formatFileSize(totalFileSize)}
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${exceedsEmailLimit ? "bg-destructive" : "bg-primary"}`}
+                    style={{ width: `${Math.min((totalSizeMB / 25) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
+
             {exceedsEmailLimit && (
-              <div className="bg-warning/10 border border-warning/30 rounded-lg p-3">
-                <div className="flex gap-2 text-warning-foreground">
-                  <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  <div className="text-xs">
+              <div className="bg-warning/10 border border-warning/30 rounded-xl p-3">
+                <div className="flex gap-2">
+                  <AlertCircle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
+                  <div className="text-xs text-warning-foreground">
                     <p className="font-medium">Large file size ({totalSizeMB.toFixed(1)}MB)</p>
-                    <p className="text-muted-foreground mt-0.5">
-                      {totalSizeMB > 25 
-                        ? "Documents will be sent via a secure 7-day download link" 
+                    <p className="mt-0.5">
+                      {totalSizeMB > 25
+                        ? "Documents will be sent via a secure 7-day download link"
                         : "Documents will be compressed into a ZIP attachment"}
                     </p>
                   </div>
@@ -294,37 +300,34 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
               </div>
             )}
 
-            {/* Ride-specific documents */}
+            {/* Ride documents */}
             {documents.length > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <div className="space-y-1.5">
+                <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                   <FileText className="h-3.5 w-3.5" />
-                  <span>Ride Documents ({documents.length})</span>
-                </div>
-                <div className="space-y-1.5">
+                  Ride Documents ({documents.length})
+                </p>
+                <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
                   {documents.map((doc) => (
-                    <label 
-                      key={doc.id} 
-                      className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors"
+                    <label
+                      key={doc.id}
+                      className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/40 transition-colors"
                     >
                       <Checkbox
                         checked={selectedDocuments.includes(doc.id)}
                         onCheckedChange={() => handleDocumentToggle(doc.id)}
-                        className="mt-0.5"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm">{doc.document_name}</span>
-                          <Badge variant="outline" className="text-xs">{doc.document_type}</Badge>
-                          {doc.expires_at && isExpiringSoon(doc.expires_at) && (
-                            <Badge variant="destructive" className="text-xs">Expiring</Badge>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {formatFileSize(doc.file_size)}
-                          {doc.expires_at && ` • Expires: ${new Date(doc.expires_at).toLocaleDateString()}`}
-                        </div>
+                        <p className="text-sm font-medium text-foreground truncate">{doc.document_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.document_type}
+                          {doc.file_size ? ` • ${formatFileSize(doc.file_size)}` : ""}
+                          {doc.expires_at ? ` • Exp: ${new Date(doc.expires_at).toLocaleDateString()}` : ""}
+                        </p>
                       </div>
+                      {doc.expires_at && isExpiringSoon(doc.expires_at) && (
+                        <Badge variant="destructive" className="text-xs shrink-0">Expiring</Badge>
+                      )}
                     </label>
                   ))}
                 </div>
@@ -333,13 +336,13 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
 
             {/* Insurance documents */}
             {insuranceDocuments.length > 0 && (
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+                  <p className="text-xs font-medium text-muted-foreground flex items-center gap-1.5">
                     <CheckCircle className="h-3.5 w-3.5" />
-                    <span>Insurance Documents ({insuranceDocuments.length})</span>
-                  </div>
-                  <label className="flex items-center gap-2 cursor-pointer">
+                    Insurance Documents ({insuranceDocuments.length})
+                  </p>
+                  <label className="flex items-center gap-1.5 cursor-pointer">
                     <Checkbox
                       checked={includeInsurance}
                       onCheckedChange={(checked) => {
@@ -350,7 +353,7 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
                             ...insuranceDocuments.map(doc => doc.id).filter(id => !prev.includes(id))
                           ]);
                         } else {
-                          setSelectedDocuments(prev => 
+                          setSelectedDocuments(prev =>
                             prev.filter(id => !insuranceDocuments.some(doc => doc.id === id))
                           );
                         }
@@ -359,30 +362,27 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
                     <span className="text-xs text-muted-foreground">Select all</span>
                   </label>
                 </div>
-                <div className="space-y-1.5">
+                <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
                   {insuranceDocuments.map((doc) => (
-                    <label 
-                      key={doc.id} 
-                      className="flex items-start gap-3 p-3 border rounded-lg cursor-pointer hover:bg-accent/50 transition-colors bg-accent/30"
+                    <label
+                      key={doc.id}
+                      className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/40 transition-colors"
                     >
                       <Checkbox
                         checked={selectedDocuments.includes(doc.id)}
                         onCheckedChange={() => handleDocumentToggle(doc.id)}
-                        className="mt-0.5"
                       />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="font-medium text-sm">{doc.document_name}</span>
-                          <Badge variant="outline" className="text-xs">{doc.document_type}</Badge>
-                          {doc.expires_at && isExpiringSoon(doc.expires_at) && (
-                            <Badge variant="destructive" className="text-xs">Expiring</Badge>
-                          )}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                          {formatFileSize(doc.file_size)}
-                          {doc.expires_at && ` • Expires: ${new Date(doc.expires_at).toLocaleDateString()}`}
-                        </div>
+                        <p className="text-sm font-medium text-foreground truncate">{doc.document_name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.document_type}
+                          {doc.file_size ? ` • ${formatFileSize(doc.file_size)}` : ""}
+                          {doc.expires_at ? ` • Exp: ${new Date(doc.expires_at).toLocaleDateString()}` : ""}
+                        </p>
                       </div>
+                      {doc.expires_at && isExpiringSoon(doc.expires_at) && (
+                        <Badge variant="destructive" className="text-xs shrink-0">Expiring</Badge>
+                      )}
                     </label>
                   ))}
                 </div>
@@ -390,8 +390,8 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
             )}
 
             {documents.length === 0 && insuranceDocuments.length === 0 && (
-              <div className="text-center py-8 text-muted-foreground">
-                <FileText className="mx-auto h-12 w-12 mb-3 opacity-30" />
+              <div className="text-center py-8 text-muted-foreground border-2 border-dashed border-border rounded-xl">
+                <FileText className="mx-auto h-10 w-10 mb-2 opacity-30" />
                 <p className="text-sm font-medium">No documents available</p>
                 <p className="text-xs mt-1">Upload documents to this ride first</p>
               </div>
@@ -399,24 +399,25 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex-shrink-0 flex justify-end gap-3 pt-4 border-t mt-4">
-          <Button variant="outline" onClick={() => setOpen(false)}>
+        {/* Sticky footer */}
+        <div className="flex-shrink-0 flex gap-3 px-5 py-4 border-t border-border bg-background">
+          <Button variant="outline" className="flex-1" onClick={() => setOpen(false)}>
             Cancel
           </Button>
-          <Button 
-            onClick={handleSend} 
+          <Button
+            className="flex-1"
+            onClick={handleSend}
             disabled={loading || !recipientEmail || selectedDocuments.length === 0}
           >
             {loading ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Sending...
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Sending…
               </>
             ) : (
               <>
-                <Mail className="h-4 w-4 mr-2" />
-                Send {totalSelectedDocs > 0 && `(${totalSelectedDocs})`}
+                <Mail className="h-4 w-4" />
+                Send{totalSelectedDocs > 0 ? ` (${totalSelectedDocs})` : ""}
               </>
             )}
           </Button>
