@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { 
+import {
   Calendar as CalendarIcon,
   ChevronLeft,
   ChevronRight,
@@ -160,7 +160,6 @@ const CalendarView = () => {
       const allEvents: CalendarEvent[] = [];
       const rideIds = new Set<string>();
 
-      // For owners, filter by user_id. For staff, RLS (staff_can_access_ride) handles it.
       const buildQuery = (baseQuery: any) => isStaff ? baseQuery : baseQuery.eq('user_id', effectiveUserId);
 
       const { data: checks } = await buildQuery(
@@ -169,7 +168,7 @@ const CalendarView = () => {
           .lte('check_date', format(monthEnd, 'yyyy-MM-dd'))
           .eq('is_test_data', false)
       );
-      checks?.forEach(check => {
+      checks?.forEach((check: any) => {
         if (check.ride_id) rideIds.add(check.ride_id);
         allEvents.push({ id: check.id, title: 'Check', date: check.check_date, type: 'check', status: check.status as any, rideId: check.ride_id });
       });
@@ -180,7 +179,7 @@ const CalendarView = () => {
           .gte('next_maintenance_due', format(monthStart, 'yyyy-MM-dd'))
           .lte('next_maintenance_due', format(monthEnd, 'yyyy-MM-dd'))
       );
-      maintenance?.forEach(record => {
+      maintenance?.forEach((record: any) => {
         if (record.next_maintenance_due) {
           if (record.ride_id) rideIds.add(record.ride_id);
           allEvents.push({ id: record.id, title: record.maintenance_type, date: record.next_maintenance_due, type: 'maintenance', status: 'pending', rideId: record.ride_id });
@@ -193,7 +192,7 @@ const CalendarView = () => {
           .gte('expires_at', format(monthStart, 'yyyy-MM-dd'))
           .lte('expires_at', format(monthEnd, 'yyyy-MM-dd'))
       );
-      documents?.forEach(doc => {
+      documents?.forEach((doc: any) => {
         if (doc.expires_at) {
           if (doc.ride_id) rideIds.add(doc.ride_id);
           allEvents.push({ id: doc.id, title: `${doc.document_name} Expires`, date: doc.expires_at, type: 'document_expiry', status: 'pending', rideId: doc.ride_id });
@@ -207,7 +206,7 @@ const CalendarView = () => {
           .gte('next_inspection_due', format(monthStart, 'yyyy-MM-dd'))
           .lte('next_inspection_due', format(monthEnd, 'yyyy-MM-dd'))
       );
-      ndt?.forEach(schedule => {
+      ndt?.forEach((schedule: any) => {
         if (schedule.next_inspection_due) {
           if (schedule.ride_id) rideIds.add(schedule.ride_id);
           allEvents.push({ id: schedule.id, title: schedule.schedule_name, date: schedule.next_inspection_due, type: 'ndt', status: 'pending', rideId: schedule.ride_id });
@@ -222,20 +221,20 @@ const CalendarView = () => {
       );
       if (schedulesError) console.error('Error fetching inspection schedules:', schedulesError);
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      inspectionSchedules?.forEach(schedule => {
+      const todayForOverdue = new Date();
+      todayForOverdue.setHours(0, 0, 0, 0);
+      inspectionSchedules?.forEach((schedule: any) => {
         if (schedule.ride_id) rideIds.add(schedule.ride_id);
         const dueDate = new Date(schedule.due_date);
         dueDate.setHours(0, 0, 0, 0);
-        allEvents.push({ id: schedule.id, title: `Scheduled: ${schedule.inspection_name}`, date: schedule.due_date, type: 'inspection', status: dueDate < today ? 'overdue' : 'pending', rideId: schedule.ride_id });
+        allEvents.push({ id: schedule.id, title: `Scheduled: ${schedule.inspection_name}`, date: schedule.due_date, type: 'inspection', status: dueDate < todayForOverdue ? 'overdue' : 'pending', rideId: schedule.ride_id });
       });
 
       if (rideIds.size > 0) {
         let ridesQuery = supabase.from('rides').select('id, ride_name').in('id', Array.from(rideIds));
         if (!isStaff) ridesQuery = ridesQuery.eq('user_id', effectiveUserId) as any;
         const { data: ridesData } = await ridesQuery;
-        const rideMap = new Map(ridesData?.map(r => [r.id, r.ride_name]) || []);
+        const rideMap = new Map(ridesData?.map((r: any) => [r.id, r.ride_name]) || []);
         allEvents.forEach(event => {
           if (event.rideId) {
             event.rideName = rideMap.get(event.rideId) || 'Unknown Ride';
@@ -278,7 +277,7 @@ const CalendarView = () => {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'overdue': return <AlertTriangle className="h-3 w-3 text-destructive" />;
-      case 'pending': return <Clock className="h-3 w-3 text-amber-600" />;
+      case 'pending': return <Clock className="h-3 w-3 text-warning" />;
       default: return null;
     }
   };
@@ -370,35 +369,45 @@ const CalendarView = () => {
 
   if (!user) {
     return (
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-8 text-center">
-        <p className="text-[#64748B]">Please log in to view the calendar</p>
+      <div className="bg-white border border-border rounded-2xl p-8 text-center">
+        <p className="text-muted-foreground">Please log in to view the calendar</p>
       </div>
     );
   }
 
+  // Status chips
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+  const overdueCount = events.filter(e => e.status === 'overdue' || (e.status === 'pending' && new Date(e.date) < todayStart)).length;
+  const dueSoonCount = events.filter(e => {
+    const d = new Date(e.date);
+    return d >= todayStart && d <= addDays(todayStart, 7) && e.status !== 'overdue';
+  }).length;
+  const thisMonthCount = events.filter(e => {
+    const d = new Date(e.date);
+    return d >= startOfMonth(currentMonth) && d <= endOfMonth(currentMonth);
+  }).length;
+
   const upcomingEvents = events.filter(event => {
     const eventDate = parseISO(event.date);
     const now = new Date();
-    return eventDate >= now && eventDate <= addDays(now, 7);
-  }).slice(0, 5);
+    return eventDate >= now && eventDate <= addDays(now, 30);
+  }).slice(0, 20);
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
 
-      {/* ── Header + Add Event ── */}
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-        <div className="space-y-0.5">
-          <h1 className="text-2xl font-semibold text-[#0F172A] tracking-tight">Calendar</h1>
-          <p className="text-sm text-[#64748B]">
-            Plan inspections, maintenance and document expiry dates
-          </p>
+      {/* ── Page header ── */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-foreground">Calendar</h1>
+          <p className="text-sm text-muted-foreground">Inspections, maintenance and expiry dates</p>
         </div>
-
         <Dialog open={addDialogOpen} onOpenChange={(open) => { setAddDialogOpen(open); if (!open) resetForm(); }}>
           <DialogTrigger asChild>
-            <Button className="shrink-0 bg-[#1E3A5F] text-white hover:bg-[#162d4a] rounded-xl px-[18px] py-3 shadow-[0_4px_10px_rgba(0,0,0,0.08)]">
-              <Plus className="h-4 w-4 mr-2" />
-              Add Event
+            <Button className="shrink-0">
+              <Plus className="h-4 w-4" />
+              Add
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
@@ -557,33 +566,33 @@ const CalendarView = () => {
         </Dialog>
       </div>
 
-      {/* ── Empty state ── */}
-      {!loading && events.length === 0 && (
-        <div className="bg-white border border-[#E2E8F0] rounded-2xl p-5 flex items-start gap-3">
-          <CalendarIcon className="h-5 w-5 text-[#475569] shrink-0 mt-0.5" />
-          <div>
-            <p className="font-semibold text-[#0F172A] text-sm">Your calendar is empty</p>
-            <p className="text-sm text-[#64748B] mt-0.5">
-              {loadError
-                ? 'No events yet — add events using the button above.'
-                : 'Click any date to add an event, or use "Add Event" above.'}
-            </p>
-          </div>
+      {/* ── Status chips ── */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-3">
+          <div className="text-xs text-destructive font-medium">Overdue</div>
+          <div className="text-lg font-bold text-destructive">{overdueCount}</div>
         </div>
-      )}
+        <div className="rounded-xl border border-warning/30 bg-warning/5 p-3">
+          <div className="text-xs text-warning font-medium">Due soon</div>
+          <div className="text-lg font-bold text-warning">{dueSoonCount}</div>
+        </div>
+        <div className="rounded-xl border border-border bg-muted/30 p-3">
+          <div className="text-xs text-muted-foreground font-medium">This month</div>
+          <div className="text-lg font-bold text-foreground">{thisMonthCount}</div>
+        </div>
+      </div>
 
       {/* ── Calendar + Day Events ── */}
       <div className="grid gap-4 lg:gap-5 lg:grid-cols-3">
 
         {/* Calendar card */}
-        <div className="lg:col-span-2 bg-white border border-[#E2E8F0] rounded-2xl p-4 md:p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-          {/* Toolbar row */}
+        <div className="lg:col-span-2 bg-white border border-border rounded-2xl p-4 md:p-5 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <p className="font-semibold text-base text-[#0F172A]">{format(currentMonth, 'MMMM yyyy')}</p>
+            <p className="font-semibold text-base text-foreground">{format(currentMonth, 'MMMM yyyy')}</p>
             <div className="flex items-center gap-2">
               <Select value={filterType} onValueChange={setFilterType}>
-                <SelectTrigger className="w-full sm:w-[170px] h-9 text-sm border-[#E2E8F0]">
-                  <Filter className="h-3.5 w-3.5 mr-1.5 text-[#475569] shrink-0" />
+                <SelectTrigger className="w-full sm:w-[160px] h-9 text-sm">
+                  <Filter className="h-3.5 w-3.5 mr-1.5 text-muted-foreground shrink-0" />
                   <SelectValue placeholder="Filter events" />
                 </SelectTrigger>
                 <SelectContent className="bg-popover z-50">
@@ -591,14 +600,14 @@ const CalendarView = () => {
                   <SelectItem value="inspection">Inspections</SelectItem>
                   <SelectItem value="maintenance">Maintenance</SelectItem>
                   <SelectItem value="ndt">NDT Tests</SelectItem>
-                  <SelectItem value="document_expiry">Document Expiry</SelectItem>
+                  <SelectItem value="document_expiry">Doc Expiry</SelectItem>
                 </SelectContent>
               </Select>
-              <Button variant="outline" size="icon" className="h-9 w-9 border-[#E2E8F0] text-[#475569] hover:border-[#1E3A5F] hover:text-[#1E3A5F]"
+              <Button variant="outline" size="icon" className="h-9 w-9"
                 onClick={() => { const m = addDays(currentMonth, -30); setCurrentMonth(m); setSelectedDate(startOfMonth(m)); }}>
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" className="h-9 w-9 border-[#E2E8F0] text-[#475569] hover:border-[#1E3A5F] hover:text-[#1E3A5F]"
+              <Button variant="outline" size="icon" className="h-9 w-9"
                 onClick={() => { const m = addDays(currentMonth, 30); setCurrentMonth(m); setSelectedDate(startOfMonth(m)); }}>
                 <ChevronRight className="h-4 w-4" />
               </Button>
@@ -612,7 +621,7 @@ const CalendarView = () => {
             onDayClick={(date) => { if (getEventsForDate(date).length === 0) openQuickAdd(date); }}
             month={currentMonth}
             onMonthChange={setCurrentMonth}
-            className="rounded-xl border border-[#E2E8F0] bg-white w-full [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-day]:cursor-pointer [&_.rdp-day]:h-10 [&_.rdp-day]:sm:h-12 [&_.rdp-cell]:p-0.5 [&_.rdp-day:hover]:bg-[#1E3A5F]/10 [&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-[#475569] [&_.rdp-day_selected]:!bg-[#1E3A5F] [&_.rdp-day_selected]:!text-white [&_.rdp-day_selected]:!rounded-lg"
+            className="rounded-xl border border-border bg-white w-full [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-day]:cursor-pointer [&_.rdp-day]:h-10 [&_.rdp-day]:sm:h-12 [&_.rdp-cell]:p-0.5 [&_.rdp-day:hover]:bg-primary/10 [&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-muted-foreground [&_.rdp-day_selected]:!bg-primary [&_.rdp-day_selected]:!text-primary-foreground [&_.rdp-day_selected]:!rounded-lg"
             components={{
               DayContent: ({ date }) => {
                 const dayEvents = getEventsForDate(date);
@@ -621,9 +630,9 @@ const CalendarView = () => {
                     <span className="text-sm sm:text-base">{date.getDate()}</span>
                     {dayEvents.length > 0 && (
                       <div className="flex gap-0.5 mt-0.5 absolute bottom-1">
-                        {dayEvents.some(e => e.type === 'inspection') && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#1E3A5F]" />}
+                        {dayEvents.some(e => e.type === 'inspection') && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-primary" />}
                         {dayEvents.some(e => e.type === 'maintenance') && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#3B82F6]" />}
-                        {dayEvents.some(e => e.type === 'document_expiry') && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#DC2626]" />}
+                        {dayEvents.some(e => e.type === 'document_expiry') && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-destructive" />}
                         {dayEvents.some(e => e.type === 'ndt') && <div className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-[#8B5CF6]" />}
                       </div>
                     )}
@@ -641,69 +650,63 @@ const CalendarView = () => {
             }}
           />
 
-          {/* Inline legend */}
-          <div className="mt-4 pt-3 border-t border-[#E2E8F0] flex flex-wrap gap-x-4 gap-y-2">
-            {[
-              { color: '#1E3A5F', label: 'Inspections' },
-              { color: '#3B82F6', label: 'Maintenance' },
-              { color: '#DC2626', label: 'Doc Expiry' },
-              { color: '#8B5CF6', label: 'NDT' },
-              { color: '#F59E0B', label: 'Pending', isIcon: true, icon: <Clock className="h-2.5 w-2.5" /> },
-              { color: '#DC2626', label: 'Overdue', isIcon: true, icon: <AlertTriangle className="h-2.5 w-2.5" /> },
-            ].map(({ color, label, isIcon, icon }) => (
-              <div key={label} className="flex items-center gap-1.5">
-                {isIcon ? (
-                  <span style={{ color }}>{icon}</span>
-                ) : (
-                  <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                )}
-                <span className="text-xs text-[#475569]">{label}</span>
-              </div>
-            ))}
-          </div>
+          {/* Collapsible legend */}
+          <details className="mt-3 rounded-xl bg-muted/30 border border-border">
+            <summary className="px-3 py-2.5 text-xs font-medium text-muted-foreground cursor-pointer select-none list-none">
+              Legend
+            </summary>
+            <div className="px-3 pb-3 grid grid-cols-2 gap-2 text-xs text-foreground border-t border-border pt-2.5">
+              <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-primary shrink-0" /> Inspections</div>
+              <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#3B82F6] shrink-0" /> Maintenance</div>
+              <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-destructive shrink-0" /> Doc Expiry</div>
+              <div className="flex items-center gap-2"><span className="w-2 h-2 rounded-full bg-[#8B5CF6] shrink-0" /> NDT</div>
+              <div className="flex items-center gap-2"><Clock className="h-3 w-3 text-warning shrink-0" /> Pending</div>
+              <div className="flex items-center gap-2"><AlertTriangle className="h-3 w-3 text-destructive shrink-0" /> Overdue</div>
+            </div>
+          </details>
         </div>
 
         {/* Selected day events */}
-        <div className="bg-white border border-[#E2E8F0] rounded-2xl shadow-[0_4px_12px_rgba(0,0,0,0.05)] lg:max-h-[600px] flex flex-col">
-          <div className="px-4 pt-4 pb-3 border-b border-[#E2E8F0]">
-            <p className="font-semibold text-[#0F172A] text-base">{format(selectedDate, 'MMM d, yyyy')}</p>
-            <p className="text-xs text-[#64748B] mt-0.5">
-              {selectedDateEvents.length === 0
-                ? 'No events — tap date to add'
-                : `${selectedDateEvents.length} event${selectedDateEvents.length > 1 ? 's' : ''}`}
-            </p>
+        <div className="bg-white border border-border rounded-2xl shadow-sm flex flex-col">
+          <div className="px-4 pt-4 pb-3 border-b border-border flex items-start justify-between">
+            <div>
+              <p className="font-semibold text-foreground text-sm">{format(selectedDate, 'EEE d MMM yyyy')}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {selectedDateEvents.length === 0
+                  ? '0 events'
+                  : `${selectedDateEvents.length} event${selectedDateEvents.length > 1 ? 's' : ''}`}
+              </p>
+            </div>
+            <Button size="sm" onClick={() => openQuickAdd(selectedDate)}>
+              <Plus className="h-3.5 w-3.5" /> Add
+            </Button>
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             {selectedDateEvents.length === 0 ? (
-              <div className="text-center py-8">
-                <CalendarIcon className="h-8 w-8 text-[#475569] opacity-30 mx-auto mb-3" />
-                <p className="font-medium text-sm text-[#0F172A] mb-1">No events</p>
-                <Button size="sm" onClick={() => openQuickAdd(selectedDate)}
-                  className="mt-3 bg-[#1E3A5F] text-white hover:bg-[#162d4a] rounded-xl">
-                  <Plus className="h-3.5 w-3.5 mr-1.5" />
-                  Add Event
-                </Button>
+              <div className="rounded-xl border border-border bg-muted/30 p-5 text-center">
+                <p className="text-sm font-medium text-foreground">No events for this date</p>
+                <p className="text-xs text-muted-foreground mt-1">Add an inspection, maintenance or expiry reminder.</p>
               </div>
             ) : (
               <div className="space-y-2">
                 {selectedDateEvents.map((event) => (
                   <button key={event.id} onClick={() => handleEventClick(event)}
-                    className="w-full p-3 rounded-xl border border-[#E2E8F0] bg-white hover:border-[#1E3A5F]/30 hover:bg-[#F8FAFC] transition-colors text-left">
+                    className="w-full p-3 rounded-xl border border-border bg-white hover:border-primary/30 hover:bg-muted/30 transition-colors text-left">
                     <div className="flex items-start gap-2.5">
                       <div className={cn(
                         "w-2 h-2 rounded-full mt-1.5 shrink-0",
-                        event.type === 'inspection' && "bg-[#1E3A5F]",
+                        event.type === 'inspection' && "bg-primary",
                         event.type === 'maintenance' && "bg-[#3B82F6]",
-                        event.type === 'document_expiry' && "bg-[#DC2626]",
+                        event.type === 'document_expiry' && "bg-destructive",
                         event.type === 'ndt' && "bg-[#8B5CF6]",
-                        event.type === 'check' && "bg-[#475569]",
+                        event.type === 'check' && "bg-muted-foreground",
                       )} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1 mb-0.5">
                           {getStatusIcon(event.status)}
-                          <p className="font-semibold text-sm text-[#0F172A] truncate">{event.title.split(' - ').pop()}</p>
+                          <p className="font-semibold text-sm text-foreground truncate">{event.title.split(' - ').pop()}</p>
                         </div>
-                        {event.rideName && <p className="text-xs text-[#64748B] truncate">{event.rideName}</p>}
+                        {event.rideName && <p className="text-xs text-muted-foreground truncate">{event.rideName}</p>}
                       </div>
                       <Badge variant="outline" className={cn("text-[10px] px-1.5 shrink-0", getEventTypeColor(event.type))}>
                         {event.type === 'document_expiry' ? 'Expiry' : event.type.replace('_', ' ')}
@@ -717,26 +720,28 @@ const CalendarView = () => {
         </div>
       </div>
 
-      {/* ── Upcoming Events ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl p-4 md:p-5 shadow-[0_4px_12px_rgba(0,0,0,0.05)]">
-        <p className="font-semibold text-lg text-[#0F172A] mb-0.5">Upcoming Events</p>
-        <p className="text-sm text-[#64748B] mb-4">Next 7 days overview</p>
+      {/* ── Upcoming Events (30 days) ── */}
+      <div className="bg-white border border-border rounded-2xl p-4 md:p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-3">
+          <p className="font-semibold text-foreground text-sm">Upcoming</p>
+          <span className="text-xs text-muted-foreground">Next 30 days</span>
+        </div>
         {loading ? (
           <div className="space-y-2">
-            {[1, 2, 3].map((i) => <div key={i} className="h-14 bg-[#F8FAFC] rounded-xl animate-pulse" />)}
+            {[1, 2, 3].map((i) => <div key={i} className="h-14 bg-muted/30 rounded-xl animate-pulse" />)}
           </div>
         ) : upcomingEvents.length === 0 ? (
-          <p className="text-sm text-[#64748B] py-4 text-center">No events in the next 7 days</p>
+          <p className="text-sm text-muted-foreground py-4 text-center">Nothing scheduled in the next 30 days.</p>
         ) : (
           <div className="space-y-2">
             {upcomingEvents.map((event) => (
               <div key={event.id} onClick={() => handleEventClick(event)}
-                className="flex items-center justify-between p-3 rounded-xl border border-[#E2E8F0] bg-white hover:border-[#1E3A5F]/30 hover:bg-[#F8FAFC] transition-colors cursor-pointer">
+                className="flex items-center justify-between p-3 rounded-xl border border-border bg-white hover:border-primary/30 hover:bg-muted/30 transition-colors cursor-pointer">
                 <div className="flex items-center gap-3 min-w-0">
                   {getStatusIcon(event.status)}
                   <div className="min-w-0">
-                    <p className="font-semibold text-sm text-[#0F172A] truncate">{event.title}</p>
-                    <p className="text-xs text-[#64748B]">{format(parseISO(event.date), 'MMM d, yyyy')}</p>
+                    <p className="font-semibold text-sm text-foreground truncate">{event.title}</p>
+                    <p className="text-xs text-muted-foreground">{format(parseISO(event.date), 'EEE d MMM')}</p>
                   </div>
                 </div>
                 <Badge variant="outline" className={cn("ml-3 shrink-0", getEventTypeColor(event.type))}>
@@ -749,35 +754,35 @@ const CalendarView = () => {
       </div>
 
       {/* ── Help Guide (collapsed by default) ── */}
-      <div className="bg-white border border-[#E2E8F0] rounded-2xl overflow-hidden">
+      <div className="bg-white border border-border rounded-2xl overflow-hidden">
         <button
           className="w-full flex items-center justify-between px-4 py-3 text-left"
           onClick={() => setShowHelpTips(v => !v)}
         >
           <div className="flex items-center gap-2">
-            <CalendarIcon className="h-4 w-4 text-[#1E3A5F]" />
-            <span className="text-sm font-semibold text-[#475569]">Show calendar guide</span>
+            <CalendarIcon className="h-4 w-4 text-primary" />
+            <span className="text-sm font-semibold text-muted-foreground">Show calendar guide</span>
           </div>
-          <ChevronRight className={cn("h-4 w-4 text-[#475569] transition-transform duration-200", showHelpTips && "rotate-90")} />
+          <ChevronRight className={cn("h-4 w-4 text-muted-foreground transition-transform duration-200", showHelpTips && "rotate-90")} />
         </button>
         {showHelpTips && (
-          <div className="px-4 pb-4 border-t border-[#E2E8F0]">
-            <ul className="text-sm text-[#475569] space-y-2 mt-3">
+          <div className="px-4 pb-4 border-t border-border">
+            <ul className="text-sm text-muted-foreground space-y-2 mt-3">
               <li className="flex items-start gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#1E3A5F] mt-1.5 shrink-0" />
-                <span><strong className="text-[#0F172A]">Click any date</strong> to quickly add a new event</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                <span><strong className="text-foreground">Click any date</strong> to quickly add a new event</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#1E3A5F] mt-1.5 shrink-0" />
-                <span><strong className="text-[#0F172A]">Coloured dots</strong> below a date show event types (see legend)</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                <span><strong className="text-foreground">Coloured dots</strong> below a date show event types (see legend)</span>
               </li>
               <li className="flex items-start gap-2">
-                <Repeat className="h-3.5 w-3.5 text-[#1E3A5F] mt-0.5 shrink-0" />
-                <span><strong className="text-[#0F172A]">Recurring events</strong> automatically reschedule after completion</span>
+                <Repeat className="h-3.5 w-3.5 text-primary mt-0.5 shrink-0" />
+                <span><strong className="text-foreground">Recurring events</strong> automatically reschedule after completion</span>
               </li>
               <li className="flex items-start gap-2">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#1E3A5F] mt-1.5 shrink-0" />
-                <span><strong className="text-[#0F172A]">Click an event</strong> to navigate to that item's details</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-primary mt-1.5 shrink-0" />
+                <span><strong className="text-foreground">Click an event</strong> to navigate to that item's details</span>
               </li>
             </ul>
           </div>
