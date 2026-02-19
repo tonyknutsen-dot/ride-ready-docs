@@ -1451,81 +1451,104 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           .map((item, index) => {
             const v = itemResults[item.id];
             const isFail = v === 'fail';
+            const isPass = v === 'pass';
+            const isNA = v === 'na';
+
+            const badgeClasses = isPass
+              ? 'bg-success/10 border-success/30 text-success'
+              : isFail
+              ? 'bg-destructive/10 border-destructive/30 text-destructive'
+              : isNA
+              ? 'bg-muted border-muted-foreground/20 text-muted-foreground'
+              : 'bg-background border-border text-muted-foreground';
+
+            const cardBorderClass = isFail
+              ? 'border-destructive/30'
+              : isPass
+              ? 'border-success/30'
+              : 'border-border';
+
             return (
               <div
                 key={item.id}
-                className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ${
-                  isFail ? 'border-destructive/30' : v === 'pass' ? 'border-success/30' : v === 'na' ? 'border-border' : 'border-border'
-                }`}
+                className={`bg-card border rounded-2xl overflow-hidden shadow-sm transition-all ${cardBorderClass}`}
               >
-                {/* Item header strip */}
-                <div className={`px-4 py-3 border-b flex items-start justify-between gap-3 ${
-                  isFail ? 'bg-destructive/5' : v === 'pass' ? 'bg-success/5' : 'bg-slate-50'
-                }`}>
-                  <div className="min-w-0">
-                    <div className="text-xs font-bold text-muted-foreground">Item {index + 1}</div>
-                    <div className="font-extrabold text-foreground leading-snug break-words">{item.check_item_text}</div>
+                {/* Card header */}
+                <div className="px-4 pt-4 pb-3 flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs text-muted-foreground mb-0.5">Item {index + 1}</p>
+                    <h3 className="font-semibold text-foreground leading-snug break-words text-[15px]">
+                      {item.check_item_text}
+                    </h3>
                   </div>
-                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-extrabold border ${
-                    v === 'pass' ? 'bg-success/10 border-success/30 text-success' :
-                    v === 'fail' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
-                    v === 'na'   ? 'bg-muted border-muted-foreground/20 text-muted-foreground' :
-                                   'bg-white border-border text-muted-foreground'
-                  }`}>
-                    {v ? v.toUpperCase() : 'PENDING'}
+                  <span className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-bold border whitespace-nowrap ${badgeClasses}`}>
+                    {v ? v.toUpperCase() : 'Pending'}
                   </span>
                 </div>
 
+                <div className="border-t mx-4" />
+
                 <div className="p-4 space-y-3">
-                  {/* Pass / Fail / N/A buttons */}
+                  {/* Pass / Fail / N/A — h-12 for glove-friendly touch targets */}
                   <div className="grid grid-cols-3 gap-2">
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'pass')}
-                      className={`rounded-xl border py-2.5 text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] ${
-                        v === 'pass' ? 'bg-success border-success text-success-foreground shadow-sm' : 'bg-white border-border text-muted-foreground hover:border-success/50 hover:text-success'
+                      className={`h-12 rounded-xl border text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] ${
+                        isPass
+                          ? 'bg-success border-success text-success-foreground shadow-sm'
+                          : 'bg-card border-border text-muted-foreground hover:border-success/50 hover:text-success'
                       }`}
                     >
-                      <CheckCircle className="h-4 w-4 shrink-0" />Pass
+                      <CheckCircle className="h-4 w-4 shrink-0" />
+                      Pass
                     </button>
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'fail')}
-                      className={`rounded-xl border py-2.5 text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] ${
-                        v === 'fail' ? 'bg-destructive border-destructive text-destructive-foreground shadow-sm' : 'bg-white border-border text-muted-foreground hover:border-destructive/50 hover:text-destructive'
+                      className={`h-12 rounded-xl border text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] ${
+                        isFail
+                          ? 'bg-destructive border-destructive text-destructive-foreground shadow-sm'
+                          : 'bg-card border-border text-muted-foreground hover:border-destructive/50 hover:text-destructive'
                       }`}
                     >
-                      <XCircle className="h-4 w-4 shrink-0" />Fail
+                      <XCircle className="h-4 w-4 shrink-0" />
+                      Fail
                     </button>
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'na')}
-                      className={`rounded-xl border py-2.5 text-sm font-extrabold flex items-center justify-center transition-all active:scale-[0.97] ${
-                        v === 'na' ? 'bg-muted-foreground border-muted-foreground text-white shadow-sm' : 'bg-white border-border text-muted-foreground hover:border-muted-foreground/50'
+                      className={`h-12 rounded-xl border text-sm font-semibold flex items-center justify-center transition-all active:scale-[0.97] ${
+                        isNA
+                          ? 'bg-muted-foreground border-muted-foreground text-white shadow-sm'
+                          : 'bg-card border-border text-muted-foreground hover:border-muted-foreground/50'
                       }`}
                     >
-                      N/A
+                      — N/A
                     </button>
                   </div>
 
                   {/* Fail extras */}
                   {isFail && (
                     <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-3 space-y-2">
-                      <p className="font-extrabold text-destructive text-sm">Defect required</p>
+                      <p className="font-semibold text-destructive text-sm flex items-center gap-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                        Defect will be raised — log below
+                      </p>
                       <div className="flex gap-2">
                         <DefectReportDialog
                           rideId={ride.id}
                           rideName={ride.ride_name}
                           onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
                           trigger={
-                            <button type="button" className="flex-1 rounded-xl border bg-white py-2 text-sm font-extrabold flex items-center justify-center gap-1.5 text-destructive border-destructive/30">
+                            <button type="button" className="flex-1 h-10 rounded-xl border bg-card text-sm font-semibold flex items-center justify-center gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5">
                               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />Report Defect
                             </button>
                           }
                         />
                         <button
                           type="button"
-                          className="flex-1 rounded-xl border bg-white py-2 text-sm font-extrabold flex items-center justify-center gap-1.5 text-primary border-primary/30"
+                          className="flex-1 h-10 rounded-xl border bg-card text-sm font-semibold flex items-center justify-center gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
                           onClick={() => setShowMaintenanceForItem(showMaintenanceForItem === item.id ? null : item.id)}
                         >
                           <Wrench className="h-3.5 w-3.5 shrink-0" />Log Repair
@@ -1540,18 +1563,36 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                           onCancel={() => setShowMaintenanceForItem(null)}
                         />
                       )}
+                      <Textarea
+                        placeholder="Describe the failure, location, immediate action taken…"
+                        value={notes[item.id] || ''}
+                        onChange={(e) => handleNoteChange(item.id, e.target.value)}
+                        className={`min-h-[72px] text-sm resize-none rounded-xl ${!notes[item.id] ? 'border-destructive/40' : ''}`}
+                        rows={3}
+                      />
                     </div>
                   )}
 
-                  {/* Notes textarea */}
-                  {(isFail || notes[item.id]) && (
+                  {/* Optional notes (non-fail) */}
+                  {!isFail && notes[item.id] !== undefined && (
                     <Textarea
-                      placeholder={isFail ? "Describe the failure, location, immediate action taken…" : "Add notes (optional)"}
+                      placeholder="Add notes (optional)"
                       value={notes[item.id] || ''}
                       onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                      className={`min-h-[64px] text-sm resize-none rounded-xl ${isFail && !notes[item.id] ? 'border-destructive' : ''}`}
+                      className="min-h-[56px] text-sm resize-none rounded-xl"
                       rows={2}
                     />
+                  )}
+
+                  {/* Add note link when no note yet and not fail */}
+                  {!isFail && notes[item.id] === undefined && (
+                    <button
+                      type="button"
+                      onClick={() => handleNoteChange(item.id, '')}
+                      className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2"
+                    >
+                      + Add note
+                    </button>
                   )}
                 </div>
               </div>
