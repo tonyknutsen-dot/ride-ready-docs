@@ -1111,3 +1111,13 @@
 .kpiCard {
   min-width: 0;
 }
+
+.scrollRow {
+  display: flex;
+  gap: .5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: .25rem;
+  scrollbar-width: none;
+}
+.scrollRow::-webkit-scrollbar { display: none; }
