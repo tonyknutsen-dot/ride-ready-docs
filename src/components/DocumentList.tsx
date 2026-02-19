@@ -508,6 +508,21 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     });
   };
 
+  // Category colour coding config
+  const CATEGORY_STYLES: Record<string, { iconBg: string; iconColor: string; borderColor: string }> = {
+    "🌐 Global Documents":        { iconBg: "bg-blue-100",   iconColor: "text-blue-700",   borderColor: "border-blue-200" },
+    "📜 Inspection Reports":      { iconBg: "bg-indigo-100", iconColor: "text-indigo-700", borderColor: "border-indigo-200" },
+    "✅ Check Records":           { iconBg: "bg-emerald-100",iconColor: "text-emerald-700",borderColor: "border-emerald-200" },
+    "🔬 NDT":                     { iconBg: "bg-purple-100", iconColor: "text-purple-700", borderColor: "border-purple-200" },
+    "📐 Design & Review":         { iconBg: "bg-sky-100",    iconColor: "text-sky-700",    borderColor: "border-sky-200" },
+    "⚠️ Risk Assessments":        { iconBg: "bg-amber-100",  iconColor: "text-amber-700",  borderColor: "border-amber-200" },
+    "🔧 Maintenance":             { iconBg: "bg-green-100",  iconColor: "text-green-700",  borderColor: "border-green-200" },
+    "📖 Manuals & Procedures":    { iconBg: "bg-slate-100",  iconColor: "text-slate-700",  borderColor: "border-slate-200" },
+    "🛡️ Insurance & Certificates":{ iconBg: "bg-teal-100",   iconColor: "text-teal-700",   borderColor: "border-teal-200" },
+    "📸 Device Photos":           { iconBg: "bg-pink-100",   iconColor: "text-pink-700",   borderColor: "border-pink-200" },
+    "📁 Other":                   { iconBg: "bg-slate-100",  iconColor: "text-slate-600",  borderColor: "border-slate-200" },
+  };
+
   const groupByType = (docs: Document[]) => {
     const ORDER = [
       "📜 Inspection Reports",
@@ -656,112 +671,107 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
 
   // Grouped render for mobile-first clarity
   // Component to render a single document row
-  const DocumentRow = ({ doc, isOlderVersion = false, hasMultipleVersions = false }: { doc: Document; isOlderVersion?: boolean; hasMultipleVersions?: boolean }) => (
-    (() => {
-      const displayName = getDocumentDisplayName(doc);
-      return (
-    <div className={`border-2 rounded-2xl p-3 flex items-start gap-3 transition-all min-w-0 bg-card ${
-      isOlderVersion 
-        ? 'border-border/40 opacity-75 hover:opacity-100' 
-        : 'border-border/60 hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent shadow-sm'
-    }`}>
-      <div className="shrink-0">
-        {thumbs[doc.id] ? (
-          <img
-            src={thumbs[doc.id]}
-            alt={displayName}
-            className={`rounded-xl object-cover border-2 border-primary/20 cursor-pointer shadow-sm hover:shadow-md transition-shadow ${
-              isOlderVersion ? 'w-10 h-10' : 'w-12 h-12'
-            }`}
-            onClick={() => handleView(doc)}
-          />
-        ) : (
-          <div className={`rounded-xl bg-gradient-to-br from-primary/10 to-info/10 flex items-center justify-center border border-primary/20 ${
-            isOlderVersion ? 'w-10 h-10' : 'w-12 h-12'
-          }`}>
-            <FileText className={isOlderVersion ? 'w-4 h-4 text-primary' : 'w-5 h-5 text-primary'} />
-          </div>
-        )}
-      </div>
-      <div className="flex-1 min-w-0">
-        <div className={`font-medium truncate flex items-center gap-2 ${isOlderVersion ? 'text-sm' : 'text-[15px]'}`} title={displayName}>
-          {isOlderVersion ? (
-            <span className="text-muted-foreground">
-              📅 {new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-            </span>
+  const DocumentRow = ({ doc, isOlderVersion = false, hasMultipleVersions = false }: { doc: Document; isOlderVersion?: boolean; hasMultipleVersions?: boolean }) => {
+    const displayName = getDocumentDisplayName(doc);
+    const expired = doc.expires_at && isExpired(doc.expires_at);
+    const expiringSoon = doc.expires_at && !expired && isExpiringSoon(doc.expires_at);
+    const uploadedStr = new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    const sizeStr = doc.file_size ? formatFileSize(doc.file_size) : null;
+
+    return (
+      <div className={`flex items-center gap-3 px-3 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors min-w-0 ${isOlderVersion ? 'opacity-70' : ''}`}>
+        {/* File icon / thumbnail */}
+        <div className="shrink-0">
+          {thumbs[doc.id] ? (
+            <img
+              src={thumbs[doc.id]}
+              alt={displayName}
+              className="w-10 h-10 object-cover rounded-lg border border-slate-200 cursor-pointer"
+              onClick={() => handleView(doc)}
+            />
           ) : (
-            <>
-              {doc.is_global && (
-                <Globe className="h-4 w-4 text-info shrink-0" />
-              )}
-              <span className="truncate">{displayName}</span>
-              {hasMultipleVersions && (
-                <Badge variant="secondary" className="shrink-0 bg-primary/10 text-primary text-[10px] px-1.5 py-0">
-                  Latest
-                </Badge>
-              )}
-            </>
+            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 cursor-pointer" onClick={() => isViewable(doc) && handleView(doc)}>
+              <FileText className="w-5 h-5 text-slate-600" />
+            </div>
           )}
         </div>
-        <div className="text-xs text-muted-foreground break-words">
-          {!isOlderVersion && <span className="font-medium text-primary/80">{getDocumentTypeDisplay(doc.document_type)}</span>}
-          {doc.expires_at && <span> • Expires {new Date(doc.expires_at).toLocaleDateString('en-GB')}</span>}
-          {!isOlderVersion && <span> • Uploaded {new Date(doc.uploaded_at).toLocaleDateString('en-GB')}</span>}
+
+        {/* File info */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 min-w-0">
+            {doc.is_global && !isOlderVersion && <Globe className="h-3.5 w-3.5 text-blue-600 shrink-0" />}
+            <p className="text-sm font-semibold text-slate-900 truncate" title={displayName}>
+              {isOlderVersion
+                ? `📅 ${new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                : displayName}
+            </p>
+            {hasMultipleVersions && !isOlderVersion && (
+              <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">Latest</span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+            {!isOlderVersion && (
+              <span className="text-xs text-slate-500">{uploadedStr}</span>
+            )}
+            {sizeStr && <span className="text-xs text-slate-400">• {sizeStr}</span>}
+            {/* Expiry badge */}
+            {doc.expires_at && !isOlderVersion && (
+              expired ? (
+                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-800 border border-red-200">Expired</span>
+              ) : expiringSoon ? (
+                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">Expires soon</span>
+              ) : (
+                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-green-100 text-green-800 border border-green-200">Valid</span>
+              )
+            )}
+          </div>
         </div>
-        {doc.notes && !isOlderVersion && (
-          <p className="text-xs text-muted-foreground mt-1 break-words">{doc.notes}</p>
-        )}
+
+        {/* Actions */}
+        <div className="flex items-center gap-0.5 shrink-0 ml-2">
+          {/* Toggle global */}
+          {!isOlderVersion && !['photo', 'device_photo', 'maintenance', 'check record', 'check_record'].includes(doc.document_type.toLowerCase()) && !doc.file_path?.includes('/check-records/') && (
+            <button
+              className={`p-2 rounded-lg hover:bg-slate-100 transition-colors ${doc.is_global ? 'text-blue-600' : 'text-slate-400'}`}
+              onClick={() => handleToggleGlobal(doc)}
+              title={doc.is_global ? 'Make ride-specific' : 'Make global'}
+            >
+              <Globe className="w-4 h-4" />
+            </button>
+          )}
+          {isViewable(doc) && (
+            <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600" onClick={() => handleView(doc)}>
+              <Eye className="w-4 h-4" />
+            </button>
+          )}
+          <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600" onClick={() => handleDownload(doc)}>
+            <Download className="w-4 h-4" />
+          </button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button className="p-2 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600">
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete "{displayName}"? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => handleDelete(doc)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
-      <div className="flex flex-wrap items-center gap-1 shrink-0">
-        {/* Toggle global/ride-specific - hide for document types that are always ride-specific */}
-        {!isOlderVersion && !['photo', 'device_photo', 'maintenance', 'check record', 'check_record'].includes(doc.document_type.toLowerCase()) && !doc.file_path?.includes('/check-records/') && (
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className={`h-8 w-8 p-0 ${doc.is_global ? 'text-info' : 'text-muted-foreground'}`}
-            onClick={() => handleToggleGlobal(doc)}
-            title={doc.is_global ? "Click to make ride-specific" : "Click to make global (all devices)"}
-          >
-            <Globe className="h-4 w-4" />
-          </Button>
-        )}
-        {isViewable(doc) && (
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleView(doc)}>
-            <Eye className="h-4 w-4" />
-          </Button>
-        )}
-        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => handleDownload(doc)}>
-          <Download className="h-4 w-4" />
-        </Button>
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button size="sm" variant="ghost" className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive">
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete Document</AlertDialogTitle>
-              <AlertDialogDescription>
-                Are you sure you want to delete "{displayName}"? This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => handleDelete(doc)}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </div>
-      );
-    })()
-  );
+    );
+  };
 
   if (grouped) {
     const groupedDocs = groupByType(documents);
@@ -855,128 +865,127 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           const originalTotal = g.items.reduce((sum, docGroup) => sum + 1 + docGroup.olderVersions.length, 0);
           const isFiltered = isCheckRecordSection && totalDocs !== originalTotal;
           
+          const catStyle = CATEGORY_STYLES[g.type] || CATEGORY_STYLES["📁 Other"];
           return (
-            <section key={g.type} className="space-y-3">
-              <div className="flex items-center justify-between flex-wrap gap-2">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <span className={`w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center`}>
-                    <FileText className="w-3.5 h-3.5 text-white" />
-                  </span>
-                  {g.type}
-                </h3>
-                <div className="flex items-center gap-2">
-                  {isCheckRecordSection && originalTotal >= 5 && (
-                    <>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => setShowCheckRecordFilters(!showCheckRecordFilters)}
-                      >
-                        <Filter className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Filter</span>
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-xs gap-1"
-                        onClick={() => setSendCheckRecordsOpen(true)}
-                      >
-                        <Send className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline">Send</span>
-                      </Button>
-                    </>
-                  )}
-                  <span className="text-xs px-3 py-1 rounded-full border font-medium bg-primary/10 text-primary border-primary/30">
-                    {isFiltered ? `${totalDocs} of ${originalTotal}` : `${totalDocs} file${totalDocs !== 1 ? "s" : ""}`}
-                  </span>
-                </div>
-              </div>
-              
-              {/* Check record filters */}
-              {isCheckRecordSection && showCheckRecordFilters && (
-                <CheckRecordFilters
-                  filters={checkRecordFilters}
-                  onFiltersChange={(newFilters) => {
-                    setCheckRecordFilters(newFilters);
-                    setCheckRecordDisplayLimit(CHECK_RECORD_PAGE_SIZE); // Reset pagination on filter change
-                  }}
-                  onClear={() => {
-                    setCheckRecordFilters(defaultCheckRecordFilters);
-                    setCheckRecordDisplayLimit(CHECK_RECORD_PAGE_SIZE); // Reset pagination on clear
-                  }}
-                  documentCount={originalTotal}
-                  filteredCount={totalDocs}
-                />
-              )}
-              
-              {displayItems.length === 0 ? (
-                <div className="text-center py-6 text-muted-foreground text-sm">
-                  No records match your filters
-                </div>
-              ) : (
-                <>
-                  {/* Pagination for check records - only show limited items */}
-                  {(() => {
-                    const itemsToShow = isCheckRecordSection 
-                      ? displayItems.slice(0, checkRecordDisplayLimit)
-                      : displayItems;
-                    const hasMore = isCheckRecordSection && displayItems.length > checkRecordDisplayLimit;
-                    const remainingCount = displayItems.length - checkRecordDisplayLimit;
-                    
-                    return (
+            <section key={g.type} className="space-y-0">
+              {/* Category card */}
+              <div className={`bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden`}>
+                {/* Category header */}
+                <div className={`flex items-center justify-between px-4 py-3 border-b border-slate-100`}>
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className={`w-9 h-9 ${catStyle.iconBg} rounded-lg flex items-center justify-center shrink-0 border ${catStyle.borderColor}`}>
+                      <FileText className={`w-5 h-5 ${catStyle.iconColor}`} />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-slate-900 font-semibold text-sm">{g.type}</h3>
+                      <p className="text-xs text-slate-500">{isFiltered ? `${totalDocs} of ${originalTotal}` : `${totalDocs} file${totalDocs !== 1 ? 's' : ''}`}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {isCheckRecordSection && originalTotal >= 5 && (
                       <>
-                        <div className="grid grid-cols-1 gap-3">
-                          {itemsToShow.map(docGroup => (
-                            <div key={docGroup.latestDoc.id} className="space-y-2">
-                              {/* Latest version */}
-                              <DocumentRow doc={docGroup.latestDoc} hasMultipleVersions={docGroup.olderVersions.length > 0} />
-                              
-                              {/* Older versions - collapsible */}
-                              {docGroup.olderVersions.length > 0 && (
-                                <Collapsible>
-                                  <CollapsibleTrigger asChild>
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      className="w-full justify-start gap-2 h-8 text-xs text-muted-foreground hover:text-foreground ml-2"
-                                    >
-                                      <History className="h-3.5 w-3.5" />
-                                      <span>{docGroup.olderVersions.length} older version{docGroup.olderVersions.length !== 1 ? 's' : ''}</span>
-                                      <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform group-data-[state=open]:rotate-180" />
-                                    </Button>
-                                  </CollapsibleTrigger>
-                                  <CollapsibleContent className="space-y-2 ml-4 mt-2 pl-2 border-l-2 border-muted">
-                                    {docGroup.olderVersions.map(olderDoc => (
-                                      <DocumentRow key={olderDoc.id} doc={olderDoc} isOlderVersion />
-                                    ))}
-                                  </CollapsibleContent>
-                                </Collapsible>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                        
-                        {/* Load more button for check records */}
-                        {hasMore && (
-                          <div className="flex justify-center pt-4">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setCheckRecordDisplayLimit(prev => prev + CHECK_RECORD_PAGE_SIZE)}
-                              className="gap-2"
-                            >
-                              <ChevronDown className="h-4 w-4" />
-                              Load {Math.min(remainingCount, CHECK_RECORD_PAGE_SIZE)} more
-                              <span className="text-muted-foreground">({remainingCount} remaining)</span>
-                            </Button>
-                          </div>
-                        )}
+                        <button
+                          className="text-slate-500 text-xs font-medium hover:text-slate-900 transition-colors flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-slate-100"
+                          onClick={() => setShowCheckRecordFilters(!showCheckRecordFilters)}
+                        >
+                          <Filter className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Filter</span>
+                        </button>
+                        <button
+                          className="text-slate-500 text-xs font-medium hover:text-slate-900 transition-colors flex items-center gap-1 px-2 py-1 rounded-lg hover:bg-slate-100"
+                          onClick={() => setSendCheckRecordsOpen(true)}
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          <span className="hidden sm:inline">Send</span>
+                        </button>
                       </>
-                    );
-                  })()}
-                </>
-              )}
+                    )}
+                  </div>
+                </div>
+
+                {/* Check record filters (inside card) */}
+                {isCheckRecordSection && showCheckRecordFilters && (
+                  <div className="px-4 py-3 border-b border-slate-100">
+                    <CheckRecordFilters
+                      filters={checkRecordFilters}
+                      onFiltersChange={(newFilters) => {
+                        setCheckRecordFilters(newFilters);
+                        setCheckRecordDisplayLimit(CHECK_RECORD_PAGE_SIZE);
+                      }}
+                      onClear={() => {
+                        setCheckRecordFilters(defaultCheckRecordFilters);
+                        setCheckRecordDisplayLimit(CHECK_RECORD_PAGE_SIZE);
+                      }}
+                      documentCount={originalTotal}
+                      filteredCount={totalDocs}
+                    />
+                  </div>
+                )}
+
+                {/* File rows */}
+                {displayItems.length === 0 ? (
+                  <div className="text-center py-6 text-slate-500 text-sm">
+                    No records match your filters
+                  </div>
+                ) : (
+                  <>
+                    {(() => {
+                      const itemsToShow = isCheckRecordSection
+                        ? displayItems.slice(0, checkRecordDisplayLimit)
+                        : displayItems;
+                      const hasMore = isCheckRecordSection && displayItems.length > checkRecordDisplayLimit;
+                      const remainingCount = displayItems.length - checkRecordDisplayLimit;
+
+                      return (
+                        <>
+                          <div className="divide-y divide-slate-100">
+                            {itemsToShow.map(docGroup => (
+                              <div key={docGroup.latestDoc.id}>
+                                <DocumentRow doc={docGroup.latestDoc} hasMultipleVersions={docGroup.olderVersions.length > 0} />
+                                {docGroup.olderVersions.length > 0 && (
+                                  <Collapsible>
+                                    <CollapsibleTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="w-full justify-start gap-2 h-8 text-xs text-slate-500 hover:text-slate-900 ml-14 pl-0"
+                                      >
+                                        <History className="h-3.5 w-3.5" />
+                                        <span>{docGroup.olderVersions.length} older version{docGroup.olderVersions.length !== 1 ? 's' : ''}</span>
+                                        <ChevronDown className="h-3.5 w-3.5 ml-auto transition-transform group-data-[state=open]:rotate-180" />
+                                      </Button>
+                                    </CollapsibleTrigger>
+                                    <CollapsibleContent className="border-l-2 border-slate-100 ml-14">
+                                      {docGroup.olderVersions.map(olderDoc => (
+                                        <DocumentRow key={olderDoc.id} doc={olderDoc} isOlderVersion />
+                                      ))}
+                                    </CollapsibleContent>
+                                  </Collapsible>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+
+                          {hasMore && (
+                            <div className="flex justify-center py-4 border-t border-slate-100">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setCheckRecordDisplayLimit(prev => prev + CHECK_RECORD_PAGE_SIZE)}
+                                className="gap-2 text-slate-700"
+                              >
+                                <ChevronDown className="h-4 w-4" />
+                                Load {Math.min(remainingCount, CHECK_RECORD_PAGE_SIZE)} more
+                                <span className="text-slate-400">({remainingCount} remaining)</span>
+                              </Button>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </>
+                )}
+              </div>{/* end card */}
             </section>
           );
         })}
