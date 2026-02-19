@@ -1266,33 +1266,17 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
 
   return (
-    <div id="inspection-checklist-form" className="space-y-5">
-      {/* Inspection header strip — who / when */}
-      <div className="flex items-center justify-between gap-2 px-1">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          <Clock className="h-3.5 w-3.5 shrink-0" />
-          {checkStartedAt ? (
-            <span>Started at <strong className="text-foreground">{checkStartedAt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}</strong> · {checkStartedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-          ) : (
-            <span>{new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-          )}
-        </div>
-        {!isOnline && (
-          <Badge variant="outline" className="text-xs border-warning text-warning gap-1">
-            <CloudOff className="h-3 w-3" /> Offline
-          </Badge>
-        )}
-      </div>
+    <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32">
 
-      {/* Offline / sync banner — compact */}
+      {/* ── Offline / sync banner ── */}
       {(!isOnline || usingCachedTemplate || pendingCount > 0) && (
-        <div className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs border ${
+        <div className={`mx-4 mt-3 flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-xs border ${
           !isOnline ? 'bg-warning/8 border-warning/30 text-warning' : pendingCount > 0 ? 'bg-info/8 border-info/30 text-info' : 'bg-muted border-muted-foreground/20 text-muted-foreground'
         }`}>
           <div className="flex items-center gap-1.5">
             {!isOnline ? <CloudOff className="h-3.5 w-3.5 shrink-0" /> : pendingCount > 0 ? <RefreshCw className={`h-3.5 w-3.5 shrink-0 ${isSyncing ? 'animate-spin' : ''}`} /> : <WifiOff className="h-3.5 w-3.5 shrink-0" />}
             <span>
-              {!isOnline ? 'Offline — check saved locally and synced when online' : pendingCount > 0 ? `${pendingCount} check${pendingCount > 1 ? 's' : ''} pending sync` : 'Using cached template'}
+              {!isOnline ? 'Offline — saved locally, synced when online' : pendingCount > 0 ? `${pendingCount} check${pendingCount > 1 ? 's' : ''} pending sync` : 'Using cached template'}
             </span>
           </div>
           {isOnline && pendingCount > 0 && !isSyncing && (
@@ -1301,476 +1285,398 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         </div>
       )}
 
-      {/* Checklist Header — clean single row, no duplicate cogs */}
-
-      <div className="flex items-center justify-between gap-2">
-        <h3 className="font-semibold text-base truncate">{activeTemplate.template_name}</h3>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="icon" className="shrink-0 h-9 w-9">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
-              <Settings className="h-4 w-4 mr-2" />
-              Edit Checklist
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={generatePDF}>
-              <Download className="h-4 w-4 mr-2" />
-              Export PDF
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <AlertDialog onOpenChange={(open) => open && checkLinkedRecords()}>
-              <AlertDialogTrigger asChild>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                  <Archive className="h-4 w-4 mr-2" />
-                  Archive Template
-                </DropdownMenuItem>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Archive Template</AlertDialogTitle>
-                  <AlertDialogDescription asChild>
-                    <div>
-                      <span>Archive "{activeTemplate.template_name}"? It will be hidden from active use but preserved for historical records.</span>
-                      {checkingLinked ? (
-                        <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
-                      ) : linkedChecksInfo && linkedChecksInfo.count > 0 ? (
-                        <div className="mt-3 p-3 bg-muted border rounded-md">
-                          <span className="block font-medium">This template has linked check records:</span>
-                          <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
-                            <li>• Total records: <strong className="text-foreground">{linkedChecksInfo.count}</strong></li>
-                            <li>• Date range: <strong className="text-foreground">
-                              {new Date(linkedChecksInfo.earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo.latest!).toLocaleDateString('en-GB')}
-                            </strong></li>
-                          </ul>
-                          <span className="block mt-2 text-xs text-muted-foreground">
-                            Archiving preserves all historical data.
-                          </span>
-                        </div>
-                      ) : null}
-                    </div>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleArchiveTemplate}>
-                    Archive
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-            <DropdownMenuSeparator />
-            <AlertDialog onOpenChange={(open) => open && checkLinkedRecords()}>
-              <AlertDialogTrigger asChild>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Delete Permanently
-                </DropdownMenuItem>
-              </AlertDialogTrigger>
-              <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Delete Template</AlertDialogTitle>
-                  <AlertDialogDescription asChild>
-                    <div>
-                      <span>Are you sure you want to permanently delete "{activeTemplate.template_name}"?</span>
-                      {checkingLinked ? (
-                        <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
-                      ) : linkedChecksInfo && linkedChecksInfo.count > 0 ? (
-                        <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
-                          <span className="block text-destructive font-medium">
-                            ⚠️ Warning: This template has linked check records
-                          </span>
-                          <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
-                            <li>• Total records: <strong className="text-foreground">{linkedChecksInfo.count}</strong></li>
-                            <li>• Date range: <strong className="text-foreground">
-                              {new Date(linkedChecksInfo.earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo.latest!).toLocaleDateString('en-GB')}
-                            </strong></li>
-                          </ul>
-                          <span className="block mt-2 text-xs text-destructive">
-                            Consider archiving instead to preserve historical data.
-                          </span>
-                        </div>
-                      ) : (
-                        <span className="block mt-2 text-muted-foreground">This action cannot be undone.</span>
-                      )}
-                    </div>
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={handleDeleteTemplate}
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                  >
-                    Delete Permanently
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </DropdownMenuContent>
-        </DropdownMenu>
+      {/* ── Inspector Details card ── */}
+      <div className="mx-4 mt-4">
+        <div className="t-card">
+          <button
+            type="button"
+            onClick={() => setDetailsExpanded(!detailsExpanded)}
+            className="w-full t-card-header flex items-center justify-between gap-2"
+          >
+            <div className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                inspectorName.trim() ? 'bg-success text-success-foreground' : 'bg-primary/15 text-primary'
+              }`}>
+                1
+              </div>
+              <div className="text-left">
+                <p className="font-bold text-sm text-foreground">Inspector Details</p>
+                <p className="text-xs text-muted-foreground">
+                  {inspectorName.trim() ? `${inspectorName}${location ? ` · ${location}` : ''}` : 'Name, location & conditions'}
+                </p>
+              </div>
+            </div>
+            {detailsExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground shrink-0" /> : <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />}
+          </button>
+          {detailsExpanded && (
+            <div className="p-4 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="checkedBy">Checked By *</Label>
+                  <Input id="checkedBy" value={inspectorName} onChange={(e) => setInspectorName(e.target.value)} placeholder="Enter staff name" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="weather">Weather Conditions</Label>
+                  <Input id="weather" value={weatherConditions} onChange={(e) => setWeatherConditions(e.target.value)} placeholder="e.g. Sunny, 20°C, Light wind" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="location" className="flex items-center gap-2"><MapPin className="h-4 w-4" />Location</Label>
+                <div className="flex gap-2">
+                  <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Enter location or use GPS" className="flex-1" />
+                  <Button type="button" variant="outline" size="icon" onClick={getGPSLocation} disabled={gettingLocation} title="Get GPS location">
+                    {gettingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Step 1: Inspector Details — collapsible card */}
-      <Card className="rounded-2xl overflow-hidden">
-        <button
-          type="button"
-          onClick={() => setDetailsExpanded(!detailsExpanded)}
-          className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/30 transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-              inspectorName.trim() ? 'bg-success text-success-foreground' : 'bg-primary/15 text-primary'
-            }`}>
-              1
-            </div>
-            <div>
-              <p className="font-semibold text-sm">Inspector Details</p>
-              <p className="text-xs text-muted-foreground">
-                {inspectorName.trim() ? `${inspectorName}${location ? ` • ${location}` : ''}` : 'Name, location & conditions'}
-              </p>
-            </div>
-          </div>
-          {detailsExpanded ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-        </button>
-        {detailsExpanded && (
-          <CardContent className="pt-0 pb-4 space-y-4">
-            <Separator />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="checkedBy">Checked By *</Label>
-                <Input
-                  id="checkedBy"
-                  value={inspectorName}
-                  onChange={(e) => setInspectorName(e.target.value)}
-                  placeholder="Enter staff name"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="weather">Weather Conditions</Label>
-                <Input
-                  id="weather"
-                  value={weatherConditions}
-                  onChange={(e) => setWeatherConditions(e.target.value)}
-                  placeholder="e.g. Sunny, 20°C, Light wind"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="location" className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                Location
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="location"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="Enter location or use GPS"
-                  className="flex-1"
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={getGPSLocation}
-                  disabled={gettingLocation}
-                  title="Get GPS location"
-                >
-                  {gettingLocation ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Locate className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        )}
-      </Card>
-
-      {/* Step 2: Inspection Items */}
-      <Card className="rounded-2xl overflow-hidden">
-        <div className="p-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
+      {/* ── Progress strip ── */}
+      <div className="mx-4 mt-4">
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2">
             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
               getProgress() === 100 ? 'bg-success text-success-foreground' : 'bg-primary/15 text-primary'
-            }`}>
-              2
-            </div>
+            }`}>2</div>
             <div>
-              <p className="font-semibold text-sm">Inspection Items</p>
+              <p className="font-bold text-sm text-foreground">Inspection Items</p>
               <p className="text-xs text-muted-foreground">
-                {Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} of {activeTemplate.daily_check_template_items.length} completed
+                {Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} / {activeTemplate.daily_check_template_items.length} completed
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {getProgress() === 100 && (
-              <Badge className="bg-success text-success-foreground">
-                <CheckCircle className="h-3 w-3 mr-1" />
-                Done
-              </Badge>
+              <Badge className="bg-success text-success-foreground text-xs"><CheckCircle className="h-3 w-3 mr-1" />Done</Badge>
             )}
-            <DefectReportDialog 
-              rideId={ride.id} 
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="shrink-0 h-9 w-9">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
+                  <Settings className="h-4 w-4 mr-2" />Edit Checklist
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={generatePDF}>
+                  <Download className="h-4 w-4 mr-2" />Export PDF
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <AlertDialog onOpenChange={(open) => open && checkLinkedRecords()}>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                      <Archive className="h-4 w-4 mr-2" />Archive Template
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Archive Template</AlertDialogTitle>
+                      <AlertDialogDescription asChild>
+                        <div>
+                          <span>Archive "{activeTemplate.template_name}"? It will be hidden from active use but preserved for historical records.</span>
+                          {checkingLinked ? (
+                            <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
+                          ) : linkedChecksInfo && linkedChecksInfo.count > 0 ? (
+                            <div className="mt-3 p-3 bg-muted border rounded-md">
+                              <span className="block font-medium">This template has linked check records:</span>
+                              <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
+                                <li>• Total records: <strong className="text-foreground">{linkedChecksInfo.count}</strong></li>
+                                <li>• Date range: <strong className="text-foreground">{new Date(linkedChecksInfo.earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo.latest!).toLocaleDateString('en-GB')}</strong></li>
+                              </ul>
+                              <span className="block mt-2 text-xs text-muted-foreground">Archiving preserves all historical data.</span>
+                            </div>
+                          ) : null}
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleArchiveTemplate}>Archive</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+                <DropdownMenuSeparator />
+                <AlertDialog onOpenChange={(open) => open && checkLinkedRecords()}>
+                  <AlertDialogTrigger asChild>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                      <Trash2 className="h-4 w-4 mr-2" />Delete Permanently
+                    </DropdownMenuItem>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Delete Template</AlertDialogTitle>
+                      <AlertDialogDescription asChild>
+                        <div>
+                          <span>Are you sure you want to permanently delete "{activeTemplate.template_name}"?</span>
+                          {checkingLinked ? (
+                            <span className="block mt-2 text-muted-foreground">Checking for linked records...</span>
+                          ) : linkedChecksInfo && linkedChecksInfo.count > 0 ? (
+                            <div className="mt-3 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                              <span className="block text-destructive font-medium">⚠️ Warning: This template has linked check records</span>
+                              <ul className="mt-2 text-sm space-y-1 text-muted-foreground">
+                                <li>• Total records: <strong className="text-foreground">{linkedChecksInfo.count}</strong></li>
+                                <li>• Date range: <strong className="text-foreground">{new Date(linkedChecksInfo.earliest!).toLocaleDateString('en-GB')} — {new Date(linkedChecksInfo.latest!).toLocaleDateString('en-GB')}</strong></li>
+                              </ul>
+                              <span className="block mt-2 text-xs text-destructive">Consider archiving instead to preserve historical data.</span>
+                            </div>
+                          ) : (
+                            <span className="block mt-2 text-muted-foreground">This action cannot be undone.</span>
+                          )}
+                        </div>
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handleDeleteTemplate} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete Permanently</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+        <div className="h-2 rounded-full bg-muted overflow-hidden">
+          <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${Math.round(getProgress())}%` }} />
+        </div>
+      </div>
+
+      {/* ── Item cards ── */}
+      <div className="mx-4 mt-4 space-y-3">
+        {activeTemplate.daily_check_template_items
+          .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+          .map((item, index) => {
+            const v = itemResults[item.id];
+            const isFail = v === 'fail';
+            return (
+              <div
+                key={item.id}
+                className={`bg-white border rounded-2xl overflow-hidden shadow-sm transition-all ${
+                  isFail ? 'border-destructive/30' : v === 'pass' ? 'border-success/30' : v === 'na' ? 'border-border' : 'border-border'
+                }`}
+              >
+                {/* Item header strip */}
+                <div className={`px-4 py-3 border-b flex items-start justify-between gap-3 ${
+                  isFail ? 'bg-destructive/5' : v === 'pass' ? 'bg-success/5' : 'bg-slate-50'
+                }`}>
+                  <div className="min-w-0">
+                    <div className="text-xs font-bold text-muted-foreground">Item {index + 1}</div>
+                    <div className="font-extrabold text-foreground leading-snug break-words">{item.check_item_text}</div>
+                  </div>
+                  <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-extrabold border ${
+                    v === 'pass' ? 'bg-success/10 border-success/30 text-success' :
+                    v === 'fail' ? 'bg-destructive/10 border-destructive/30 text-destructive' :
+                    v === 'na'   ? 'bg-muted border-muted-foreground/20 text-muted-foreground' :
+                                   'bg-white border-border text-muted-foreground'
+                  }`}>
+                    {v ? v.toUpperCase() : 'PENDING'}
+                  </span>
+                </div>
+
+                <div className="p-4 space-y-3">
+                  {/* Pass / Fail / N/A buttons */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleResultChange(item.id, 'pass')}
+                      className={`rounded-xl border py-2.5 text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] ${
+                        v === 'pass' ? 'bg-success border-success text-success-foreground shadow-sm' : 'bg-white border-border text-muted-foreground hover:border-success/50 hover:text-success'
+                      }`}
+                    >
+                      <CheckCircle className="h-4 w-4 shrink-0" />Pass
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleResultChange(item.id, 'fail')}
+                      className={`rounded-xl border py-2.5 text-sm font-extrabold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] ${
+                        v === 'fail' ? 'bg-destructive border-destructive text-destructive-foreground shadow-sm' : 'bg-white border-border text-muted-foreground hover:border-destructive/50 hover:text-destructive'
+                      }`}
+                    >
+                      <XCircle className="h-4 w-4 shrink-0" />Fail
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleResultChange(item.id, 'na')}
+                      className={`rounded-xl border py-2.5 text-sm font-extrabold flex items-center justify-center transition-all active:scale-[0.97] ${
+                        v === 'na' ? 'bg-muted-foreground border-muted-foreground text-white shadow-sm' : 'bg-white border-border text-muted-foreground hover:border-muted-foreground/50'
+                      }`}
+                    >
+                      N/A
+                    </button>
+                  </div>
+
+                  {/* Fail extras */}
+                  {isFail && (
+                    <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-3 space-y-2">
+                      <p className="font-extrabold text-destructive text-sm">Defect required</p>
+                      <div className="flex gap-2">
+                        <DefectReportDialog
+                          rideId={ride.id}
+                          rideName={ride.ride_name}
+                          onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
+                          trigger={
+                            <button type="button" className="flex-1 rounded-xl border bg-white py-2 text-sm font-extrabold flex items-center justify-center gap-1.5 text-destructive border-destructive/30">
+                              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />Report Defect
+                            </button>
+                          }
+                        />
+                        <button
+                          type="button"
+                          className="flex-1 rounded-xl border bg-white py-2 text-sm font-extrabold flex items-center justify-center gap-1.5 text-primary border-primary/30"
+                          onClick={() => setShowMaintenanceForItem(showMaintenanceForItem === item.id ? null : item.id)}
+                        >
+                          <Wrench className="h-3.5 w-3.5 shrink-0" />Log Repair
+                        </button>
+                      </div>
+                      {showMaintenanceForItem === item.id && (
+                        <QuickMaintenanceLog
+                          rideId={ride.id}
+                          rideName={ride.ride_name}
+                          checkItemText={item.check_item_text}
+                          onLogged={() => setShowMaintenanceForItem(null)}
+                          onCancel={() => setShowMaintenanceForItem(null)}
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Notes textarea */}
+                  {(isFail || notes[item.id]) && (
+                    <Textarea
+                      placeholder={isFail ? "Describe the failure, location, immediate action taken…" : "Add notes (optional)"}
+                      value={notes[item.id] || ''}
+                      onChange={(e) => handleNoteChange(item.id, e.target.value)}
+                      className={`min-h-[64px] text-sm resize-none rounded-xl ${isFail && !notes[item.id] ? 'border-destructive' : ''}`}
+                      rows={2}
+                    />
+                  )}
+                </div>
+              </div>
+            );
+          })}
+      </div>
+
+      {/* ── Open Defects ── */}
+      <div className="mx-4 mt-4">
+        <div className="t-card">
+          <div className="t-card-header flex items-center justify-between gap-2">
+            <div>
+              <div className="text-xs text-muted-foreground">Open Issues</div>
+              <div className="t-title text-base flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-warning" />Open Defects
+              </div>
+            </div>
+            <DefectReportDialog
+              rideId={ride.id}
               rideName={ride.ride_name}
               onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
             />
           </div>
-        </div>
-        
-        {/* Progress bar with percentage */}
-        <div className="px-4 pb-3 space-y-1">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>Progress</span>
-            <span className="font-semibold text-foreground">{Math.round(getProgress())}%</span>
+          <div className="p-4">
+            <DefectsList
+              key={defectRefreshKey}
+              rideId={ride.id}
+              rideName={ride.ride_name}
+              showResolved={false}
+              onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
+            />
           </div>
-          <Progress value={getProgress()} className="h-2.5" />
         </div>
-
-        <CardContent className="pt-0 space-y-3">
-          {activeTemplate.daily_check_template_items
-            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-            .map((item, index) => {
-              const currentResult = itemResults[item.id];
-              return (
-              <div 
-                key={item.id} 
-                className={`p-3 rounded-xl border-2 transition-all duration-200 ${
-                  currentResult === 'pass'
-                    ? 'bg-success/5 border-success/30' 
-                    : currentResult === 'fail'
-                    ? 'bg-destructive/5 border-destructive/30'
-                    : currentResult === 'na'
-                    ? 'bg-muted/50 border-muted-foreground/20'
-                    : 'border-border hover:border-primary/20'
-                }`}
-              >
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <span className="text-sm font-medium leading-snug">
-                    {item.check_item_text}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground font-mono shrink-0 mt-0.5">
-                    #{index + 1}
-                  </span>
-                </div>
-                
-                <div className="flex gap-2">
-                  <button 
-                    type="button"
-                    onClick={() => handleResultChange(item.id, 'pass')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border-2 font-semibold text-sm transition-all active:scale-[0.97] ${
-                      currentResult === 'pass' 
-                        ? 'border-success bg-success text-success-foreground shadow-sm' 
-                        : 'border-border hover:border-success/50 text-muted-foreground hover:text-success'
-                    }`}
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    Pass
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => handleResultChange(item.id, 'fail')}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg border-2 font-semibold text-sm transition-all active:scale-[0.97] ${
-                      currentResult === 'fail' 
-                        ? 'border-destructive bg-destructive text-destructive-foreground shadow-sm' 
-                        : 'border-border hover:border-destructive/50 text-muted-foreground hover:text-destructive'
-                    }`}
-                  >
-                    <XCircle className="h-4 w-4" />
-                    Fail
-                  </button>
-                  <button 
-                    type="button"
-                    onClick={() => handleResultChange(item.id, 'na')}
-                    className={`w-14 flex items-center justify-center py-2 rounded-lg border-2 font-medium text-xs transition-all active:scale-[0.97] ${
-                      currentResult === 'na' 
-                        ? 'border-muted-foreground bg-muted text-muted-foreground shadow-sm' 
-                        : 'border-border hover:border-muted-foreground/50 text-muted-foreground'
-                    }`}
-                  >
-                    N/A
-                  </button>
-                </div>
-                
-                {(currentResult === 'fail' || notes[item.id]) && (
-                  <Textarea
-                    placeholder={currentResult === 'fail' ? "Describe the failure..." : "Add notes (optional)"}
-                    value={notes[item.id] || ''}
-                    onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                    className={`mt-2 min-h-[60px] text-sm resize-none rounded-lg ${currentResult === 'fail' && !notes[item.id] ? 'border-destructive' : ''}`}
-                    rows={2}
-                  />
-                )}
-
-                {/* Per-item fail actions */}
-                {currentResult === 'fail' && (
-                  <div className="mt-2 space-y-2">
-                    <div className="flex gap-2">
-                      <DefectReportDialog
-                        rideId={ride.id}
-                        rideName={ride.ride_name}
-                        onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
-                        trigger={
-                          <Button type="button" variant="outline" size="sm" className="text-xs gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/10">
-                            <AlertTriangle className="h-3 w-3" />
-                            Report Defect
-                          </Button>
-                        }
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="text-xs gap-1.5 text-primary border-primary/30 hover:bg-primary/10"
-                        onClick={() => setShowMaintenanceForItem(showMaintenanceForItem === item.id ? null : item.id)}
-                      >
-                        <Wrench className="h-3 w-3" />
-                        Log Repair
-                      </Button>
-                    </div>
-
-                    {showMaintenanceForItem === item.id && (
-                      <QuickMaintenanceLog
-                        rideId={ride.id}
-                        rideName={ride.ride_name}
-                        checkItemText={item.check_item_text}
-                        onLogged={() => setShowMaintenanceForItem(null)}
-                        onCancel={() => setShowMaintenanceForItem(null)}
-                      />
-                    )}
-                  </div>
-                )}
-              </div>
-              );
-            })}
-        </CardContent>
-      </Card>
-
-      {/* Open Defects */}
-      <Card className="rounded-2xl border-warning/30 bg-warning/5">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base flex items-center gap-2 text-warning">
-            <AlertTriangle className="h-5 w-5" />
-            Open Defects
-          </CardTitle>
-          <CardDescription>
-            Any unresolved defects reported for this equipment
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <DefectsList 
-            key={defectRefreshKey}
-            rideId={ride.id} 
-            rideName={ride.ride_name}
-            showResolved={false}
-            onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
-          />
-        </CardContent>
-      </Card>
-
-      {/* Inspector Declaration */}
-      <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Inspector Declaration</p>
-        <p className="text-sm text-foreground leading-relaxed">
-          I confirm this inspection has been completed in accordance with operational procedures and the equipment is safe to operate at this time.
-        </p>
-        <label className="flex items-start gap-3 cursor-pointer group">
-          <div
-            className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-              declarationChecked ? 'bg-primary border-primary' : 'border-border group-hover:border-primary/50'
-            }`}
-            onClick={() => setDeclarationChecked(prev => !prev)}
-          >
-            {declarationChecked && <CheckCircle className="h-3.5 w-3.5 text-primary-foreground" />}
-          </div>
-          <span className="text-sm text-muted-foreground leading-snug select-none" onClick={() => setDeclarationChecked(prev => !prev)}>
-            I declare the above inspection is complete and accurate
-          </span>
-        </label>
       </div>
 
-      {/* Complete & Save — dominant CTA */}
-      <Button
-        onClick={handleSubmitChecks} 
-        disabled={submitting || !inspectorName.trim() || !declarationChecked}
-        size="lg"
-        className="w-full h-14 text-base font-bold shadow-lg rounded-2xl"
-      >
-        {submitting ? (
-          <>
-            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            Saving Record...
-          </>
-        ) : (
-          <>
-            <CheckCircle className="h-5 w-5 mr-2" />
-            Complete &amp; Save Inspection
-          </>
-        )}
-      </Button>
-      {(!inspectorName.trim() || !declarationChecked) && (
-        <p className="text-xs text-center text-muted-foreground -mt-2">
-          {!inspectorName.trim() ? 'Enter your name in "Checked By" to submit' : 'Check the declaration above to submit'}
-        </p>
-      )}
+      {/* ── Inspector Declaration ── */}
+      <div className="mx-4 mt-4">
+        <div className="t-card p-4 space-y-3">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Inspector Declaration</p>
+          <p className="text-sm text-foreground leading-relaxed">
+            I confirm this inspection has been completed in accordance with operational procedures and the equipment is safe to operate at this time.
+          </p>
+          <label className="flex items-start gap-3 cursor-pointer group">
+            <div
+              className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                declarationChecked ? 'bg-primary border-primary' : 'border-border group-hover:border-primary/50'
+              }`}
+              onClick={() => setDeclarationChecked(prev => !prev)}
+            >
+              {declarationChecked && <CheckCircle className="h-3.5 w-3.5 text-primary-foreground" />}
+            </div>
+            <span className="text-sm text-muted-foreground leading-snug select-none" onClick={() => setDeclarationChecked(prev => !prev)}>
+              I declare the above inspection is complete and accurate
+            </span>
+          </label>
+        </div>
+      </div>
 
-      {/* Recent Checks - Compact mobile-friendly */}
+      {/* ── Recent Checks ── */}
       {recentChecks.length > 0 && (
-        <Card className="border-muted">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              Recent {frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1)} Checks
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="divide-y divide-border">
+        <div className="mx-4 mt-4">
+          <div className="t-card">
+            <div className="t-card-header">
+              <div className="t-title text-base flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                Recent Checks
+              </div>
+            </div>
+            <div className="p-4 space-y-2">
               {recentChecks.map((check) => (
-                <div 
-                  key={check.id} 
-                  className="flex items-center justify-between py-3 first:pt-0 last:pb-0 cursor-pointer hover:bg-muted/50 -mx-4 px-4 rounded-md transition-colors"
-                  onClick={() => {
-                    setSelectedCheck(check);
-                    setShowCheckDetail(true);
-                  }}
+                <div
+                  key={check.id}
+                  className="flex items-center justify-between rounded-2xl border border-border bg-[#f8fafc] p-3 cursor-pointer hover:bg-[#f1f5f9] transition-colors"
+                  onClick={() => { setSelectedCheck(check); setShowCheckDetail(true); }}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-sm truncate">{check.inspector_name}</p>
+                    <p className="font-bold text-sm truncate text-foreground">{check.inspector_name}</p>
                     <p className="text-xs text-muted-foreground">
-                      {new Date(check.check_date).toLocaleDateString('en-GB', { 
-                        day: 'numeric', 
-                        month: 'short',
-                        year: 'numeric'
-                      })}
+                      {new Date(check.check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge 
-                      variant={check.status === 'completed' ? 'default' : 'secondary'}
-                      className="text-xs shrink-0"
-                    >
-                      <CheckCircle className="h-3 w-3 mr-1" />
-                      Done
-                    </Badge>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="t-chip">Done</span>
                     <Eye className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </div>
               ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       )}
 
-      {/* Check Detail Dialog */}
-      <CheckDetailDialog
-        check={selectedCheck}
-        open={showCheckDetail}
-        onOpenChange={setShowCheckDetail}
-      />
+      {/* ── Sticky bottom bar ── */}
+      <div className="fixed left-0 right-0 bottom-0 z-30 border-t bg-white/95 backdrop-blur-sm">
+        <div className="max-w-xl mx-auto px-4 py-3 space-y-2">
+          {(!inspectorName.trim() || !declarationChecked) && (
+            <p className="text-xs text-center text-muted-foreground">
+              {!inspectorName.trim() ? 'Enter your name above to submit' : 'Check the declaration above to submit'}
+            </p>
+          )}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              className="rounded-xl border border-border py-3 text-sm font-extrabold bg-card hover:bg-muted/50 text-foreground"
+              onClick={() => setCheckStarted(false)}
+            >
+              Exit
+            </button>
+            <button
+              type="button"
+              disabled={submitting || !inspectorName.trim() || !declarationChecked}
+              onClick={handleSubmitChecks}
+              className="t-btn-primary rounded-xl py-3 text-sm"
+            >
+              {submitting ? (
+                <><Loader2 className="h-4 w-4 animate-spin shrink-0" />Saving…</>
+              ) : (
+                <><CheckCircle className="h-4 w-4 shrink-0" />Complete Check</>
+              )}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <CheckDetailDialog check={selectedCheck} open={showCheckDetail} onOpenChange={setShowCheckDetail} />
     </div>
   );
 };
