@@ -86,6 +86,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [usingCachedTemplate, setUsingCachedTemplate] = useState(false);
   const [selectedCheck, setSelectedCheck] = useState<Check | null>(null);
   const [showCheckDetail, setShowCheckDetail] = useState(false);
+  const [itemAttachments, setItemAttachments] = useState<Record<string, File[]>>({});
   const [detailsExpanded, setDetailsExpanded] = useState(true);
   const [checkStarted, setCheckStarted] = useState(startImmediately);
   const [checkStartedAt, setCheckStartedAt] = useState<Date | null>(startImmediately ? new Date() : null);
@@ -1530,30 +1531,37 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
                   {/* Fail extras */}
                   {isFail && (
-                    <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-3 space-y-2">
-                      <p className="font-semibold text-destructive text-sm flex items-center gap-1.5">
-                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                        Defect will be raised — log below
-                      </p>
-                      <div className="flex gap-2">
+                    <div className="rounded-2xl border border-destructive/20 bg-destructive/5 p-4 space-y-3">
+                      {/* Header */}
+                      <div className="flex items-center justify-between">
+                        <p className="font-semibold text-destructive text-sm flex items-center gap-1.5">
+                          <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                          Defect required
+                        </p>
+                        <span className="text-xs text-destructive bg-destructive/10 px-2 py-1 rounded-full">Add evidence</span>
+                      </div>
+
+                      {/* Report Defect / Log Repair */}
+                      <div className="grid grid-cols-2 gap-2">
                         <DefectReportDialog
                           rideId={ride.id}
                           rideName={ride.ride_name}
                           onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
                           trigger={
-                            <button type="button" className="flex-1 h-10 rounded-xl border bg-card text-sm font-semibold flex items-center justify-center gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5">
+                            <button type="button" className="h-11 rounded-xl border bg-card text-sm font-semibold flex items-center justify-center gap-1.5 text-destructive border-destructive/30 hover:bg-destructive/5 w-full">
                               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />Report Defect
                             </button>
                           }
                         />
                         <button
                           type="button"
-                          className="flex-1 h-10 rounded-xl border bg-card text-sm font-semibold flex items-center justify-center gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
+                          className="h-11 rounded-xl border bg-card text-sm font-semibold flex items-center justify-center gap-1.5 text-primary border-primary/30 hover:bg-primary/5"
                           onClick={() => setShowMaintenanceForItem(showMaintenanceForItem === item.id ? null : item.id)}
                         >
                           <Wrench className="h-3.5 w-3.5 shrink-0" />Log Repair
                         </button>
                       </div>
+
                       {showMaintenanceForItem === item.id && (
                         <QuickMaintenanceLog
                           rideId={ride.id}
@@ -1563,12 +1571,76 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                           onCancel={() => setShowMaintenanceForItem(null)}
                         />
                       )}
+
+                      {/* Evidence / Photos */}
+                      <div className="rounded-xl border border-border bg-card p-3 space-y-2">
+                        <p className="text-sm font-medium text-foreground">Photos / Evidence</p>
+                        <div className="grid grid-cols-2 gap-2">
+                          <label className="h-11 rounded-xl border border-dashed border-border flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground cursor-pointer hover:border-primary/40 hover:text-primary transition-colors">
+                            📷 Take Photo
+                            <input
+                              type="file"
+                              accept="image/*"
+                              capture="environment"
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                if (!files.length) return;
+                                setItemAttachments(prev => ({ ...prev, [item.id]: [...(prev[item.id] || []), ...files] }));
+                                e.currentTarget.value = '';
+                              }}
+                            />
+                          </label>
+                          <label className="h-11 rounded-xl border border-dashed border-border flex items-center justify-center gap-1.5 text-sm font-medium text-muted-foreground cursor-pointer hover:border-primary/40 hover:text-primary transition-colors">
+                            📎 Choose File
+                            <input
+                              type="file"
+                              accept="image/*,application/pdf"
+                              multiple
+                              className="hidden"
+                              onChange={(e) => {
+                                const files = Array.from(e.target.files || []);
+                                if (!files.length) return;
+                                setItemAttachments(prev => ({ ...prev, [item.id]: [...(prev[item.id] || []), ...files] }));
+                                e.currentTarget.value = '';
+                              }}
+                            />
+                          </label>
+                        </div>
+
+                        {/* Thumbnails */}
+                        {(itemAttachments[item.id]?.length ?? 0) > 0 && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {itemAttachments[item.id].map((f, idx) => (
+                              <div key={`${f.name}-${idx}`} className="flex items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-2 py-1 text-xs">
+                                <span className="max-w-[130px] truncate text-foreground">{f.name}</span>
+                                <button
+                                  type="button"
+                                  className="text-destructive font-bold shrink-0 hover:opacity-70"
+                                  onClick={() => setItemAttachments(prev => ({
+                                    ...prev,
+                                    [item.id]: (prev[item.id] || []).filter((_, i) => i !== idx)
+                                  }))}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <p className="text-[11px] text-muted-foreground">
+                          Tip: take at least 1 close-up + 1 context photo.
+                        </p>
+                      </div>
+
+                      {/* Failure notes */}
                       <Textarea
                         placeholder="Describe the failure, location, immediate action taken…"
                         value={notes[item.id] || ''}
                         onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                        className={`min-h-[72px] text-sm resize-none rounded-xl ${!notes[item.id] ? 'border-destructive/40' : ''}`}
-                        rows={3}
+                        className={`min-h-[100px] text-sm resize-none rounded-xl bg-card ${!notes[item.id] ? 'border-destructive/40' : ''}`}
+                        rows={4}
                       />
                     </div>
                   )}
