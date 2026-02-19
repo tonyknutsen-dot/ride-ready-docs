@@ -1130,67 +1130,62 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   // Start Check gate — show a start button before revealing the full checklist
   if (!checkStarted && activeTemplate) {
     return (
-      <div id="inspection-checklist-form" className="space-y-4">
+      <div id="inspection-checklist-form" className="t-page -mx-4 px-4 pb-6 pt-2 space-y-4">
 
         {/* ── Primary inspection card ── */}
-        <div className="card overflow-hidden">
-          <div className="cardHeader px-4 py-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="text-xs text-muted-foreground">Next check</div>
-                <div className="sectionTitle text-lg truncate">{activeTemplate.template_name}</div>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <span className="chip whitespace-nowrap">
-                  {activeTemplate.daily_check_template_items.length} items · PDF auto-saved
-                </span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
-                      <Settings className="h-4 w-4 mr-2" />
-                      Edit Checklist
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={generatePDF}>
-                      <Download className="h-4 w-4 mr-2" />
-                      Export PDF
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
+        <div className="t-card">
+          <div className="t-card-header flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-xs text-muted-foreground">Next check</div>
+              <div className="t-title text-lg truncate">{activeTemplate.template_name}</div>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="t-chip">
+                {activeTemplate.daily_check_template_items.length} items · PDF
+              </span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    Edit Checklist
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={generatePDF}>
+                    <Download className="h-4 w-4 mr-2" />
+                    Export PDF
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
 
           <div className="p-4 space-y-4">
             {/* KPI mini-stats */}
             <div className="grid grid-cols-3 gap-3 text-center">
-              <div className="rounded-2xl border bg-background p-3">
-                <div className="text-[11px] text-muted-foreground font-semibold">Items</div>
-                <div className="text-lg font-extrabold text-foreground">
-                  {activeTemplate.daily_check_template_items.length}
-                </div>
-              </div>
-              <div className="rounded-2xl border bg-background p-3">
-                <div className="text-[11px] text-muted-foreground font-semibold">Last done</div>
-                <div className="text-lg font-extrabold text-foreground">
-                  {recentChecks[0]
+              {[
+                { label: 'Items', value: activeTemplate.daily_check_template_items.length },
+                {
+                  label: 'Last done',
+                  value: recentChecks[0]
                     ? new Date(recentChecks[0].check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-                    : '—'}
+                    : '—',
+                },
+                { label: 'Due', value: 'Today' },
+              ].map(({ label, value }) => (
+                <div key={label} className="rounded-2xl border border-border bg-[#f8fafc] p-3">
+                  <div className="text-[11px] font-semibold" style={{ color: '#64748b' }}>{label}</div>
+                  <div className="text-lg font-extrabold" style={{ color: '#0f172a' }}>{value}</div>
                 </div>
-              </div>
-              <div className="rounded-2xl border bg-background p-3">
-                <div className="text-[11px] text-muted-foreground font-semibold">Due</div>
-                <div className="text-lg font-extrabold text-foreground">Today</div>
-              </div>
+              ))}
             </div>
 
             {/* Primary CTA */}
             <button
-              className="primaryBtn w-full py-3.5 text-sm font-extrabold flex items-center justify-center gap-2"
+              className="t-btn-primary w-full py-3.5 text-sm"
               type="button"
               onClick={() => navigate(`/checks/${ride.id}/${frequency}/execute`)}
             >
@@ -1198,20 +1193,20 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               Start Inspection
             </button>
 
-            <p className="text-xs text-muted-foreground text-center">
-              Any failed item should raise a defect automatically.
+            <p className="text-xs text-center" style={{ color: '#94a3b8' }}>
+              Any failed item automatically raises a defect.
             </p>
           </div>
         </div>
 
         {/* ── Open Defects card ── */}
-        <div className="card overflow-hidden">
-          <div className="cardHeader px-4 py-3 flex items-center justify-between">
+        <div className="t-card">
+          <div className="t-card-header flex items-center justify-between gap-2">
             <div>
               <div className="text-xs text-muted-foreground">Defects</div>
-              <div className="sectionTitle text-base">Open Defects</div>
+              <div className="t-title text-base">Open Defects</div>
             </div>
-            <span className="chip">open</span>
+            <span className="t-chip">open</span>
           </div>
           <div className="p-4">
             <DefectsList
@@ -1226,10 +1221,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
         {/* ── Recent Checks card ── */}
         {recentChecks.length > 0 && (
-          <div className="card overflow-hidden">
-            <div className="cardHeader px-4 py-3">
-              <div className="sectionTitle text-base">Recent Checks</div>
-              <div className="text-xs text-muted-foreground mt-0.5">
+          <div className="t-card">
+            <div className="t-card-header">
+              <div className="t-title text-base">Recent Checks</div>
+              <div className="text-xs mt-0.5" style={{ color: '#64748b' }}>
                 Most recent completions for this equipment
               </div>
             </div>
@@ -1237,17 +1232,20 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               {recentChecks.map((check) => (
                 <div
                   key={check.id}
-                  className="flex items-center justify-between rounded-2xl border bg-background p-3 cursor-pointer hover:bg-muted/40 transition-colors"
+                  className="flex items-center justify-between rounded-2xl border border-border p-3 cursor-pointer transition-colors"
+                  style={{ background: '#f8fafc' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}
                   onClick={() => { setSelectedCheck(check); setShowCheckDetail(true); }}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-foreground text-sm truncate">{check.inspector_name}</p>
-                    <p className="text-xs text-muted-foreground">
+                    <p className="font-bold text-sm truncate" style={{ color: '#0f172a' }}>{check.inspector_name}</p>
+                    <p className="text-xs" style={{ color: '#64748b' }}>
                       {new Date(check.check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <span className="chip">Done</span>
+                    <span className="t-chip">Done</span>
                     <Eye className="h-4 w-4 text-muted-foreground" />
                   </div>
                 </div>
