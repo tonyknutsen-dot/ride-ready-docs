@@ -224,10 +224,19 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   };
 
   const handleResultChange = (itemId: string, result: CheckItemResult) => {
-    setItemResults(prev => ({
-      ...prev,
-      [itemId]: result
-    }));
+    setItemResults(prev => {
+      const current = prev[itemId];
+      // Toggle off if tapping the already-selected option
+      if (current === result) {
+        const { [itemId]: _, ...rest } = prev;
+        return rest;
+      }
+      // Clear attachments when moving away from fail
+      if (current === 'fail' && result !== 'fail') {
+        setItemAttachments(a => { const { [itemId]: _, ...rest } = a; return rest; });
+      }
+      return { ...prev, [itemId]: result };
+    });
   };
 
   const handleNoteChange = (itemId: string, note: string) => {
@@ -1490,44 +1499,48 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                 <div className="border-t mx-4" />
 
                 <div className="p-4 space-y-3">
-                  {/* Pass / Fail / N/A — h-12 for glove-friendly touch targets */}
-                  <div className="grid grid-cols-3 gap-2">
+                  {/* Pass / Fail / N/A — pill toggle group */}
+                  <div className="rounded-xl bg-muted/50 border border-border p-1.5 grid grid-cols-3 gap-1.5">
+                    {/* Pass */}
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'pass')}
-                      className={`h-12 rounded-xl border text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] ${
+                      className={`h-12 rounded-xl border text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-ring ${
                         isPass
                           ? 'bg-success border-success text-success-foreground shadow-sm'
-                          : 'bg-card border-border text-muted-foreground hover:border-success/50 hover:text-success'
+                          : 'bg-card border-border text-foreground hover:border-success/60 hover:text-success'
                       }`}
                     >
                       <CheckCircle className="h-4 w-4 shrink-0" />
                       Pass
                     </button>
+                    {/* Fail */}
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'fail')}
-                      className={`h-12 rounded-xl border text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] ${
+                      className={`h-12 rounded-xl border text-sm font-semibold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-ring ${
                         isFail
                           ? 'bg-destructive border-destructive text-destructive-foreground shadow-sm'
-                          : 'bg-card border-border text-muted-foreground hover:border-destructive/50 hover:text-destructive'
+                          : 'bg-card border-border text-foreground hover:border-destructive/60 hover:text-destructive'
                       }`}
                     >
                       <XCircle className="h-4 w-4 shrink-0" />
                       Fail
                     </button>
+                    {/* N/A */}
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'na')}
-                      className={`h-12 rounded-xl border text-sm font-semibold flex items-center justify-center transition-all active:scale-[0.97] ${
+                      className={`h-12 rounded-xl border text-sm font-semibold flex items-center justify-center transition-all active:scale-[0.98] focus:outline-none focus:ring-2 focus:ring-ring ${
                         isNA
                           ? 'bg-muted-foreground border-muted-foreground text-white shadow-sm'
-                          : 'bg-card border-border text-muted-foreground hover:border-muted-foreground/50'
+                          : 'bg-card border-border text-foreground hover:border-muted-foreground/60'
                       }`}
                     >
                       — N/A
                     </button>
                   </div>
+                  <p className="text-[11px] text-muted-foreground -mt-1">Tap the selected option again to clear.</p>
 
                   {/* Fail extras */}
                   {isFail && (
