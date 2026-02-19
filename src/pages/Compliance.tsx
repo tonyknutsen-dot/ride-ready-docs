@@ -5,11 +5,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
 import {
   AlertTriangle, FileText, ClipboardCheck, ChevronRight,
-  Clock, CheckCircle, Wrench, Zap, RefreshCw, Search, Filter
+  Clock, CheckCircle, Wrench, Zap, RefreshCw, Search, Filter,
+  List, Layers
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 
 type FilterType = "all" | "overdue" | "expired" | "expiring";
@@ -22,8 +24,8 @@ interface ComplianceItem {
   rideId: string | null;
   dueDate: string;
   daysValue: number;
-  category: string; // inspection | maintenance | doc_expiry | ndt
-  severity: FilterType; // overdue | expired | expiring
+  category: string;
+  severity: FilterType;
   isRecurring: boolean;
 }
 
@@ -41,7 +43,6 @@ async function fetchComplianceData(userId: string) {
 
   const [ridesRes, overdueRes, expiringRes] = await Promise.all([
     supabase.from("rides").select("id, ride_name").eq("user_id", userId),
-    // Overdue/expired: due_date < today, still scheduled
     supabase
       .from("compliance_events")
       .select("id, event_name, ride_id, due_date, category, is_recurring, status")
@@ -49,7 +50,6 @@ async function fetchComplianceData(userId: string) {
       .eq("status", "scheduled")
       .lt("due_date", todayStr)
       .order("due_date", { ascending: true }),
-    // Expiring soon: due_date between today and +30 days, still scheduled
     supabase
       .from("compliance_events")
       .select("id, event_name, ride_id, due_date, category, is_recurring, status")
@@ -110,6 +110,7 @@ const Compliance = () => {
   const [filter, setFilter] = useState<FilterType>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [groupByRide, setGroupByRide] = useState(false);
 
   const { data, isLoading, dataUpdatedAt } = useQuery({
     queryKey: ["compliance", effectiveUserId],
@@ -120,7 +121,6 @@ const Compliance = () => {
 
   const items = data?.items ?? [];
 
-  // Apply search + category filter
   const filtered = items.filter((i) => {
     if (categoryFilter !== "all" && i.category !== categoryFilter) return false;
     if (searchQuery) {
@@ -139,6 +139,35 @@ const Compliance = () => {
 
   const sortWorstFirst = (arr: ComplianceItem[]) => [...arr].sort((a, b) => b.daysValue - a.daysValue);
   const sortSoonestFirst = (arr: ComplianceItem[]) => [...arr].sort((a, b) => a.daysValue - b.daysValue);
+
+  // Get items for current filter
+  const getFilteredItems = (): ComplianceItem[] => {
+    let result: ComplianceItem[] = [];
+    if (filter === "all" || filter === "overdue") result = [...result, ...sortWorstFirst(overdueItems)];
+    if (filter === "all" || filter === "expired") result = [...result, ...sortWorstFirst(expiredItems)];
+    if (filter === "all" || filter === "expiring") result = [...result, ...sortSoonestFirst(expiringItems)];
+    return result;
+  };
+
+  const filteredItems = getFilteredItems();
+
+  // Group by ride
+  const groupedByRide = (() => {
+    const groups = new Map<string, { rideName: string; rideId: string | null; items: ComplianceItem[] }>();
+    filteredItems.forEach((item) => {
+      const key = item.rideId || "global";
+      if (!groups.has(key)) {
+        groups.set(key, { rideName: item.rideName, rideId: item.rideId, items: [] });
+      }
+      groups.get(key)!.items.push(item);
+    });
+    return Array.from(groups.values()).sort((a, b) => {
+      // Sort by worst issue first
+      const aWorst = Math.max(...a.items.map(i => i.severity === "expiring" ? -i.daysValue : i.daysValue));
+      const bWorst = Math.max(...b.items.map(i => i.severity === "expiring" ? -i.daysValue : i.daysValue));
+      return bWorst - aWorst;
+    });
+  })();
 
   const filteredSections = (() => {
     const sections: { title: string; items: ComplianceItem[]; color: "destructive" | "warning" }[] = [];
@@ -168,6 +197,57 @@ const Compliance = () => {
     setFilter(filter === key ? "all" : key);
   };
 
+  const renderItemRow = (item: ComplianceItem, sectionColor?: "destructive" | "warning") => {
+    const config = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG.inspection;
+    const Icon = config.icon;
+    const iconColor = item.severity !== "expiring" ? "text-destructive" : "text-warning";
+
+    let badgeLabel: string;
+    let badgeClasses: string = "";
+    if (item.severity === "overdue") {
+      badgeLabel = `${item.daysValue}d overdue`;
+    } else if (item.severity === "expired") {
+      badgeLabel = `${item.daysValue}d expired`;
+    } else {
+      badgeLabel = item.daysValue === 0 ? "Due today" : `${item.daysValue}d left`;
+      badgeClasses = getExpiringBadgeClasses(item.daysValue);
+    }
+
+    return (
+      <button
+        key={`${item.severity}-${item.id}`}
+        onClick={() => handleRowClick(item)}
+        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border border-border bg-card hover:border-primary/50 active:scale-[0.98] transition-all text-left"
+        style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}
+      >
+        <span className="flex-shrink-0">
+          <Icon className={`h-4 w-4 ${iconColor}`} />
+        </span>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
+          <div className="flex items-center gap-1.5 mt-0.5">
+            {!groupByRide && (
+              <>
+                <span className="text-xs text-muted-foreground truncate max-w-[120px]">{item.rideName}</span>
+                <span className="text-[10px] text-muted-foreground/50">·</span>
+              </>
+            )}
+            <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+              {format(new Date(item.dueDate), "dd MMM yyyy")}
+            </span>
+          </div>
+        </div>
+        <Badge
+          variant={item.severity !== "expiring" ? "destructive" : "secondary"}
+          className={`text-[10px] flex-shrink-0 whitespace-nowrap ${badgeClasses}`}
+        >
+          {badgeLabel}
+        </Badge>
+        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+      </button>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="container mx-auto py-6 pb-24 md:pb-8 max-w-3xl space-y-4">
@@ -184,15 +264,13 @@ const Compliance = () => {
 
   return (
     <div className="container mx-auto py-4 pb-24 md:pb-8 max-w-3xl space-y-4">
-      {/* Header - tighter */}
+      {/* Header */}
       <div>
         <div className="flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 text-destructive" />
           <h1 className="text-lg font-semibold text-foreground">Compliance</h1>
           {counts.overdue > 0 && (
-            <Badge variant="destructive" className="text-xs">
-              {counts.overdue} overdue
-            </Badge>
+            <Badge variant="destructive" className="text-xs">{counts.overdue} overdue</Badge>
           )}
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
@@ -208,7 +286,7 @@ const Compliance = () => {
         </div>
       )}
 
-      {/* Tappable filter tiles - shorter */}
+      {/* Filter tiles */}
       <div className="grid grid-cols-3 gap-2">
         {([
           { key: "overdue" as const, label: "Overdue", count: counts.overdue, icon: <ClipboardCheck className="h-3.5 w-3.5" />, color: "destructive" as const },
@@ -238,7 +316,7 @@ const Compliance = () => {
         })}
       </div>
 
-      {/* Search + Category filter */}
+      {/* Search + Category + View toggle */}
       <div className="flex gap-2">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -262,6 +340,15 @@ const Compliance = () => {
             <SelectItem value="ndt">NDT</SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          variant={groupByRide ? "default" : "outline"}
+          size="icon"
+          className="h-9 w-9 flex-shrink-0"
+          onClick={() => setGroupByRide(!groupByRide)}
+          title={groupByRide ? "Flat list" : "Group by ride"}
+        >
+          {groupByRide ? <Layers className="h-4 w-4" /> : <List className="h-4 w-4" />}
+        </Button>
       </div>
 
       {/* All clear */}
@@ -273,8 +360,25 @@ const Compliance = () => {
         </div>
       )}
 
-      {/* Sections */}
-      {filteredSections.map((section) => {
+      {/* Grouped view */}
+      {groupByRide && !allClear && (
+        <div className="space-y-4">
+          {groupedByRide.map((group) => (
+            <div key={group.rideId || "global"} className="space-y-1.5">
+              <div className="flex items-center gap-2 px-1">
+                <h3 className="text-sm font-bold text-foreground">{group.rideName}</h3>
+                <Badge variant="outline" className="text-[10px]">{group.items.length}</Badge>
+              </div>
+              <div className="space-y-1.5">
+                {group.items.map((item) => renderItemRow(item))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Flat view (sections by severity) */}
+      {!groupByRide && filteredSections.map((section) => {
         const dotColor = section.color === "destructive" ? "bg-destructive" : "bg-warning";
         return (
           <div key={section.title}>
@@ -284,66 +388,29 @@ const Compliance = () => {
               <span className="text-xs text-muted-foreground">({section.items.length})</span>
             </div>
             <div className="space-y-1.5">
-              {section.items.map((item) => {
-                const config = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG.inspection;
-                const Icon = config.icon;
-                const iconColor = section.color === "destructive" ? "text-destructive" : "text-warning";
-
-                let badgeLabel: string;
-                let badgeClasses: string;
-                if (item.severity === "overdue") {
-                  badgeLabel = `${item.daysValue}d overdue`;
-                  badgeClasses = "";
-                } else if (item.severity === "expired") {
-                  badgeLabel = `${item.daysValue}d expired`;
-                  badgeClasses = "";
-                } else {
-                  badgeLabel = item.daysValue === 0 ? "Due today" : `${item.daysValue}d left`;
-                  badgeClasses = getExpiringBadgeClasses(item.daysValue);
-                }
-
-                return (
-                  <button
-                    key={`${item.severity}-${item.id}`}
-                    onClick={() => handleRowClick(item)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border border-border bg-card hover:border-primary/50 active:scale-[0.98] transition-all text-left"
-                    style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}
-                  >
-                    <span className="flex-shrink-0">
-                      <Icon className={`h-4 w-4 ${iconColor}`} />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        <span className="text-xs text-muted-foreground truncate max-w-[120px]">{item.rideName}</span>
-                        <span className="text-[10px] text-muted-foreground/50">·</span>
-                        <span className="text-[10px] text-muted-foreground whitespace-nowrap">
-                          {format(new Date(item.dueDate), "dd MMM yyyy")}
-                        </span>
-                      </div>
-                    </div>
-                    <Badge
-                      variant={item.severity !== "expiring" ? "destructive" : "secondary"}
-                      className={`text-[10px] flex-shrink-0 whitespace-nowrap ${badgeClasses}`}
-                    >
-                      {badgeLabel}
-                    </Badge>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                  </button>
-                );
-              })}
+              {section.items.map((item) => renderItemRow(item, section.color))}
             </div>
           </div>
         );
       })}
 
       {/* Empty filter state */}
-      {!allClear && filteredSections.length === 0 && (
+      {!allClear && !groupByRide && filteredSections.length === 0 && (
         <div className="bg-card border border-border rounded-2xl p-6 text-center space-y-2">
           <CheckCircle className="h-8 w-8 text-success mx-auto" />
           <p className="text-sm font-medium text-foreground">No {filter} items</p>
           <button onClick={() => setFilter("all")} className="text-xs text-primary font-semibold hover:underline">
             Show all
+          </button>
+        </div>
+      )}
+
+      {!allClear && groupByRide && groupedByRide.length === 0 && (
+        <div className="bg-card border border-border rounded-2xl p-6 text-center space-y-2">
+          <CheckCircle className="h-8 w-8 text-success mx-auto" />
+          <p className="text-sm font-medium text-foreground">No matching items</p>
+          <button onClick={() => { setFilter("all"); setSearchQuery(""); setCategoryFilter("all"); }} className="text-xs text-primary font-semibold hover:underline">
+            Clear filters
           </button>
         </div>
       )}
