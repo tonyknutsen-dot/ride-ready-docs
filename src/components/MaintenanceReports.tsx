@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Calendar, FileDown, FileText } from 'lucide-react';
+import { Calendar, FileDown, FileText, Eye } from 'lucide-react';
 import { format, parseISO, isWithinInterval, subMonths } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -54,6 +54,65 @@ const MAINTENANCE_TYPES = [
   { value: 'safety', label: 'Safety System Work' },
   { value: 'other', label: 'Other' },
 ];
+
+// Sub-component: lists previously generated maintenance report PDFs for this ride
+const GeneratedReportsList = ({ rideId }: { rideId: string }) => {
+  const [reports, setReports] = useState<Tables<'documents'>[]>([]);
+  const [loadingReports, setLoadingReports] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('ride_id', rideId)
+        .eq('user_id', user.id)
+        .eq('document_type', 'maintenance_report')
+        .order('uploaded_at', { ascending: false });
+      setReports(data || []);
+      setLoadingReports(false);
+    };
+    load();
+  }, [rideId]);
+
+  const handleView = async (filePath: string) => {
+    const { data } = await supabase.storage.from('ride-documents').createSignedUrl(filePath, 300);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  };
+
+  if (loadingReports) return null;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-sm font-semibold text-foreground">Generated Reports</h3>
+      {reports.length === 0 ? (
+        <p className="text-sm text-muted-foreground">No reports generated yet.</p>
+      ) : (
+        reports.map((report) => (
+          <div key={report.id} className="bg-card border border-border rounded-xl p-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="h-10 w-10 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                <FileText className="h-5 w-5 text-destructive" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground truncate">{report.document_name}</p>
+                <p className="text-xs text-muted-foreground">
+                  Generated {format(parseISO(report.uploaded_at), 'd MMM yyyy')}
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => handleView(report.file_path)} className="shrink-0">
+              <Eye className="h-3.5 w-3.5 mr-1" />
+              View
+            </Button>
+          </div>
+        ))
+      )}
+    </div>
+  );
+};
 
 const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
   const [records, setRecords] = useState<MaintenanceRecord[]>([]);
@@ -508,99 +567,88 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Main report card — elevated with top stripe */}
-      <div className="rounded-[18px] border border-border bg-card shadow-[0_6px_20px_rgba(0,0,0,0.06)] overflow-hidden">
-        {/* Brand top stripe */}
-        <div className="h-1 w-full bg-primary" />
-
-        <div className="p-5 space-y-5">
-          {/* Title */}
-          <div className="flex items-start gap-3">
-            <div className="h-9 w-9 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-              <FileText className="h-4 w-4 text-primary" strokeWidth={2} />
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-foreground leading-tight">Generate Maintenance Report</h3>
-              <p className="text-sm text-muted-foreground mt-0.5">
-                Create a professional PDF report of maintenance activities for {ride.ride_name}
-              </p>
-            </div>
+    <div className="space-y-5 pb-24">
+      {/* Generate Report Card */}
+      <div className="bg-card rounded-2xl shadow-sm border border-border p-5 space-y-5">
+        {/* Header */}
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <FileText className="h-5 w-5 text-primary" strokeWidth={2} />
           </div>
-
-          {records.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
-              <p className="text-muted-foreground font-medium">No maintenance records to report</p>
-              <p className="text-sm text-muted-foreground">Log some maintenance activities first to generate a report</p>
-            </div>
-          ) : (
-            <>
-              {/* Report Summary label */}
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground">Report Summary</span>
-                <div className="flex-1 h-px bg-border" />
-              </div>
-
-              {/* Stats grid */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="bg-muted/40 rounded-[14px] border border-border p-4 text-center">
-                  <p className="text-[22px] font-bold text-foreground leading-tight">{records.length}</p>
-                  <p className="text-[13px] text-muted-foreground mt-0.5">Total Records</p>
-                </div>
-                {/* Total cost — subtle brand tint */}
-                <div className="bg-primary/5 rounded-[14px] border border-primary/15 p-4 text-center">
-                  <p className="text-[22px] font-bold text-foreground leading-tight">
-                    £{records.reduce((sum, r) => sum + (Number(r.cost) || 0), 0).toFixed(0)}
-                  </p>
-                  <p className="text-[13px] text-muted-foreground mt-0.5">Total Cost</p>
-                </div>
-                <div className="bg-muted/40 rounded-[14px] border border-border p-4 text-center">
-                  <p className="text-[22px] font-bold text-foreground leading-tight">
-                    {records.length > 0 ? format(parseISO(records[0].maintenance_date), 'MMM yyyy') : '-'}
-                  </p>
-                  <p className="text-[13px] text-muted-foreground mt-0.5">Latest Record</p>
-                </div>
-                <div className="bg-muted/40 rounded-[14px] border border-border p-4 text-center">
-                  <p className="text-[22px] font-bold text-foreground leading-tight">
-                    {records.length > 0 ? format(parseISO(records[records.length - 1].maintenance_date), 'MMM yyyy') : '-'}
-                  </p>
-                  <p className="text-[13px] text-muted-foreground mt-0.5">Earliest Record</p>
-                </div>
-              </div>
-
-              {/* Generate button — dominant primary action */}
-              <Button
-                onClick={() => setReportDialogOpen(true)}
-                className="w-full h-13 rounded-[14px] shadow-[0_4px_12px_rgba(30,58,95,0.25)] text-base font-semibold"
-                size="lg"
-              >
-                <FileDown className="h-5 w-5 mr-2" />
-                Generate PDF Report
-              </Button>
-
-              {/* Report includes — supportive info container */}
-              <div className="rounded-[14px] border border-border bg-muted/30 p-4">
-                <p className="text-sm font-semibold text-foreground mb-3">Report includes:</p>
-                <ul className="space-y-1.5">
-                  {[
-                    'Your company/showman details with logo',
-                    'Equipment details and photo (if available)',
-                    'Summary table of all maintenance records',
-                    'Detailed breakdown with work descriptions',
-                    'Costs, parts replaced, and timestamps',
-                  ].map((item) => (
-                    <li key={item} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <span className="text-primary mt-0.5 shrink-0">•</span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </>
-          )}
+          <div>
+            <h2 className="text-base font-semibold text-foreground leading-tight">Generate Maintenance Report</h2>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Create a professional PDF report of maintenance activities
+            </p>
+          </div>
         </div>
+
+        {records.length === 0 ? (
+          <div className="text-center py-8">
+            <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
+            <p className="text-muted-foreground font-medium">No maintenance records to report</p>
+            <p className="text-sm text-muted-foreground">Log some maintenance activities first to generate a report</p>
+          </div>
+        ) : (
+          <>
+            {/* Summary Grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-muted/40 rounded-xl border border-border p-4 text-center">
+                <p className="text-2xl font-bold text-foreground leading-tight">{records.length}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Total Records</p>
+              </div>
+              <div className="bg-primary/5 rounded-xl border border-primary/15 p-4 text-center">
+                <p className="text-2xl font-bold text-foreground leading-tight">
+                  £{records.reduce((sum, r) => sum + (Number(r.cost) || 0), 0).toFixed(0)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">Total Cost</p>
+              </div>
+              <div className="bg-muted/40 rounded-xl border border-border p-4 text-center">
+                <p className="text-sm font-semibold text-foreground">
+                  {records.length > 0 ? format(parseISO(records[0].maintenance_date), 'MMM yyyy') : '-'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">Latest Record</p>
+              </div>
+              <div className="bg-muted/40 rounded-xl border border-border p-4 text-center">
+                <p className="text-sm font-semibold text-foreground">
+                  {records.length > 0 ? format(parseISO(records[records.length - 1].maintenance_date), 'MMM yyyy') : '-'}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">Earliest Record</p>
+              </div>
+            </div>
+
+            {/* Generate Button */}
+            <Button
+              onClick={() => setReportDialogOpen(true)}
+              className="w-full h-12 rounded-xl shadow-[0_4px_12px_rgba(30,58,95,0.25)] text-sm font-semibold"
+              size="lg"
+            >
+              <FileDown className="h-5 w-5 mr-2" />
+              Generate PDF Report
+            </Button>
+          </>
+        )}
       </div>
+
+      {/* Report Includes Card */}
+      <div className="bg-card rounded-2xl shadow-sm border border-border p-5">
+        <h3 className="text-sm font-semibold text-foreground mb-3">Report Includes</h3>
+        <ul className="space-y-2 text-sm text-muted-foreground list-disc pl-5">
+          {[
+            'Company / showman branding and logo',
+            'Equipment details and photo',
+            'Maintenance summary table',
+            'Detailed work descriptions',
+            'Parts replaced and cost breakdown',
+            'Engineer and service provider records',
+          ].map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Generated Reports List */}
+      <GeneratedReportsList rideId={ride.id} />
 
       {/* Report Options Dialog */}
       <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
@@ -613,7 +661,6 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
           </DialogHeader>
           
           <div className="space-y-4 py-4">
-            {/* Date Range */}
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>From Date</Label>
@@ -676,61 +723,22 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
               </div>
             </div>
 
-            {/* Quick date range options */}
             <div className="space-y-2">
               <Label>Quick Select</Label>
               <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setReportDateFrom(subMonths(new Date(), 3));
-                    setReportDateTo(new Date());
-                  }}
-                >
-                  Last 3 months
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setReportDateFrom(subMonths(new Date(), 6));
-                    setReportDateTo(new Date());
-                  }}
-                >
-                  Last 6 months
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setReportDateFrom(subMonths(new Date(), 12));
-                    setReportDateTo(new Date());
-                  }}
-                >
-                  Last 12 months
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setReportDateFrom(undefined);
-                    setReportDateTo(undefined);
-                  }}
-                >
-                  All time
-                </Button>
+                <Button variant="outline" size="sm" onClick={() => { setReportDateFrom(subMonths(new Date(), 3)); setReportDateTo(new Date()); }}>Last 3 months</Button>
+                <Button variant="outline" size="sm" onClick={() => { setReportDateFrom(subMonths(new Date(), 6)); setReportDateTo(new Date()); }}>Last 6 months</Button>
+                <Button variant="outline" size="sm" onClick={() => { setReportDateFrom(subMonths(new Date(), 12)); setReportDateTo(new Date()); }}>Last 12 months</Button>
+                <Button variant="outline" size="sm" onClick={() => { setReportDateFrom(undefined); setReportDateTo(undefined); }}>All time</Button>
               </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReportDialogOpen(false)}>
-              Cancel
-            </Button>
+            <Button variant="outline" onClick={() => setReportDialogOpen(false)}>Cancel</Button>
             <Button onClick={generateMaintenanceReport} disabled={generatingPdf}>
               {generatingPdf ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
               ) : (
                 <FileDown className="h-4 w-4 mr-2" />
               )}
