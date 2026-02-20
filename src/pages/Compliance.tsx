@@ -464,7 +464,7 @@ const Compliance = () => {
 
           {/* Grouped by ride — always */}
           {!allClear && groupedByRide.length > 0 && (
-            <div className="space-y-1">
+            <div className="space-y-4">
               {groupedByRide.map((group) => {
                 const rideKey = group.rideId || "global";
                 const isOpen = openRideKeys.has(rideKey);
@@ -512,7 +512,7 @@ const Compliance = () => {
                         </div>
                       </div>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="mt-0.5 ml-3 space-y-1.5">
+                    <CollapsibleContent className="mt-1 ml-7 space-y-1.5">
                       {sections.map((sec, idx) => (
                         <div key={sec.key}>
                           {idx > 0 && <div className="border-t border-border/40 my-1" />}
