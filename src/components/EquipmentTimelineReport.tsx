@@ -258,8 +258,8 @@ const EquipmentTimelineReport = ({ ride }: EquipmentTimelineReportProps) => {
 
       // Generate PDF
       const doc = new jsPDF();
-      const docId = await generateDocumentId(ride.id, 'TL');
-      const templateOpts = { doc, title: 'EQUIPMENT TIMELINE REPORT', documentId: docId, docType: 'TL' as const };
+      const docId = await generateDocumentId(ride.id, 'DR');
+      const templateOpts = { doc, title: 'EQUIPMENT TIMELINE REPORT', documentId: docId, docType: 'DR' as const };
 
       // Standard header
       let yPos = drawTemplateHeader(templateOpts);

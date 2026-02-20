@@ -524,9 +524,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         }
       };
 
-      const docId = await generateDocumentId(ride.id, 'IC');
+      const docId = await generateDocumentId(ride.id, 'IR');
       const frequencyLabel = frequency === 'preopening' ? 'PRE-OPENING' : frequency.toUpperCase();
-      const templateOpts = { doc: pdf, title: `${frequencyLabel} INSPECTION CHECKLIST`, documentId: docId, docType: 'IC' as const };
+      const templateOpts = { doc: pdf, title: `${frequencyLabel} SAFETY CHECK`, documentId: docId, docType: 'IR' as const };
 
       currentY = drawTemplateHeader(templateOpts);
 
