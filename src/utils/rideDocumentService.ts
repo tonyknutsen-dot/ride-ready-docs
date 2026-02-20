@@ -43,6 +43,8 @@ export interface RideDocument {
   archived_at: string | null;
   archived_by: string | null;
   archive_reason: string | null;
+  updated_at: string;
+  updated_by: string | null;
 }
 
 interface StoreRideDocumentParams {

@@ -34,6 +34,8 @@ interface DocumentMeta {
   version: number;
   createdBy: string;
   createdAt: string;
+  updatedAt: string | null;
+  updatedBy: string | null;
   documentType: string;
   status: string;
   isArchived: boolean;
@@ -186,6 +188,8 @@ const DocumentViewerPage = () => {
       version: rd.version,
       createdBy: rd.created_by,
       createdAt: rd.created_at,
+      updatedAt: rd.updated_at || null,
+      updatedBy: rd.updated_by || null,
       documentType: RIDE_DOC_TYPE_LABELS[rd.document_type as keyof typeof RIDE_DOC_TYPE_LABELS] || rd.document_type,
       status: rd.status,
       isArchived: !!rd.archived_at,
@@ -244,6 +248,8 @@ const DocumentViewerPage = () => {
       version: parseInt(doc.version_number || '1', 10),
       createdBy: doc.user_id,
       createdAt: doc.uploaded_at,
+      updatedAt: null,
+      updatedBy: null,
       documentType: doc.document_type,
       status: 'active',
       isArchived: false,
