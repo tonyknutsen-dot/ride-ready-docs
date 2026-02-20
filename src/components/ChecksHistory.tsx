@@ -52,6 +52,7 @@ import {
   drawTemplateFooters,
   generateDocumentId,
 } from '@/utils/pdfTemplate';
+import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 
 type Check = Tables<'checks'>;
 
@@ -360,7 +361,30 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
     }
 
     drawTemplateFooters(templateOpts);
-    doc.save(buildFileName([rideName, frequency, 'SafetyChecks', format(new Date(), 'yyyyMMdd')]));
+
+    // Save to storage and register
+    const pdfBlob = doc.output('blob');
+    const fileName = buildFileName([rideName, frequency, 'SafetyChecks', format(new Date(), 'yyyyMMdd')]);
+    const storagePath = `${effectiveUserId}/checks-history/${rideId}/${Date.now()}-${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('ride-documents')
+      .upload(storagePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
+
+    if (!uploadError) {
+      const rideCode = await getRideCode(rideId);
+      await storeRideDocument({
+        rideId,
+        rideCode,
+        documentType: 'CH',
+        documentId: docId,
+        fileUrl: storagePath,
+        title: `${frequencyLabel} Safety Checks – ${rideName} – ${format(new Date(), 'dd MMM yyyy')}`,
+        metadata: { checkCount: filteredChecks.length, passRate: overallStats.passRate },
+      });
+    }
+
+    doc.save(fileName);
 
     toast({
       title: "Export Complete",

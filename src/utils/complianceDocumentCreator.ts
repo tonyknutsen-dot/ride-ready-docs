@@ -12,6 +12,7 @@ import {
   type DocTypeCode,
   DOC_TYPE_LABELS,
 } from './pdfTemplate';
+import { storeRideDocument, getRideCode } from './rideDocumentService';
 
 /**
  * Maps compliance event category + event_type to a document_type
@@ -143,6 +144,24 @@ export async function createComplianceDocument(
     .single();
 
   if (error) throw error;
+
+  // Register in ride_documents for versioned tracking
+  if (rideId) {
+    const rideCode = await getRideCode(rideId);
+    const docTypeCode = categoryToDocTypeCode(eventCategory, eventType);
+    const registerId = fullDocumentId || await generateDocumentId(rideId, docTypeCode);
+    await storeRideDocument({
+      rideId,
+      rideCode,
+      documentType: 'CR',
+      documentId: registerId,
+      fileUrl: filePath,
+      title: documentName,
+      relatedEventId: eventId,
+      metadata: { inspectorCompany, certificateReference, category: eventCategory },
+    });
+  }
+
   return { documentId: data.id, documentName };
 }
 

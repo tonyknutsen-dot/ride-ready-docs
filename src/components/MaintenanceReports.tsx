@@ -30,6 +30,7 @@ import {
   generateDocumentId,
   checkOverflow,
 } from '@/utils/pdfTemplate';
+import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -527,6 +528,18 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
         if (docError) {
           console.error('Document record error:', docError);
         }
+        
+        // Also register in ride_documents
+        const rideCode = await getRideCode(ride.id);
+        await storeRideDocument({
+          rideId: ride.id,
+          rideCode,
+          documentType: 'MR',
+          documentId: docId,
+          fileUrl: storagePath,
+          title: documentName,
+          metadata: { recordCount: filteredRecords.length, totalCost: totalCost },
+        });
         
         // Also download locally
         doc.save(fileName);

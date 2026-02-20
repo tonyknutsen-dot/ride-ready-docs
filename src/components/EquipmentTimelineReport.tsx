@@ -29,6 +29,7 @@ import {
   drawTemplateFooters,
   generateDocumentId,
 } from '@/utils/pdfTemplate';
+import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 import { Ride } from '@/types/ride';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 
@@ -340,7 +341,28 @@ const EquipmentTimelineReport = ({ ride }: EquipmentTimelineReportProps) => {
 
       drawTemplateFooters(templateOpts);
 
+      // Save to storage and register in ride_documents
+      const pdfBlob = doc.output('blob');
       const fileName = buildFileName([ride.ride_name, 'Timeline', format(new Date(), 'yyyyMMdd')]);
+      const storagePath = `${effectiveUserId}/timeline/${ride.id}/${Date.now()}-${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('ride-documents')
+        .upload(storagePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
+
+      if (!uploadError) {
+        const rideCode = await getRideCode(ride.id);
+        await storeRideDocument({
+          rideId: ride.id,
+          rideCode,
+          documentType: 'TL',
+          documentId: docId,
+          fileUrl: storagePath,
+          title: `Equipment Timeline – ${ride.ride_name} – ${format(new Date(), 'dd MMM yyyy')}`,
+          metadata: { events: events.length },
+        });
+      }
+
       doc.save(fileName);
 
       toast({

@@ -36,6 +36,7 @@ import {
   drawTemplateFooters,
   generateDocumentId,
 } from '@/utils/pdfTemplate';
+import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 import { cn } from '@/lib/utils';
 import { useTerminology } from '@/hooks/useTerminology';
 import { WhoAtRiskSelector } from './risk-assessment/WhoAtRiskSelector';
@@ -951,6 +952,20 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
             notes: `Generated from risk assessment by ${selectedAssessment.assessor_name}`
           });
       }
+
+      // Register in ride_documents
+      const rideCode = await getRideCode(ride.id);
+      const docId = await generateDocumentId(ride.id, 'RA');
+      await storeRideDocument({
+        rideId: ride.id,
+        rideCode,
+        documentType: 'RA',
+        documentId: docId,
+        fileUrl: filePath,
+        title: `Risk Assessment – ${ride.ride_name} – ${format(new Date(selectedAssessment.assessment_date), 'dd MMM yyyy')}`,
+        relatedEventId: selectedAssessment.id,
+        metadata: { assessor: selectedAssessment.assessor_name, revision: selectedAssessment.revision_number },
+      });
 
       return true;
     } catch (error) {
