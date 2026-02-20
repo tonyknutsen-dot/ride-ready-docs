@@ -14,19 +14,22 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
   PDF_COLORS,
-  generateDocId,
   buildFileName,
   blobToDataUrl,
-  drawPDFHeader,
   drawSectionTitle,
   drawEquipmentDetails,
   drawSummaryBox,
   PDF_TABLE_HEAD_STYLES,
   PDF_TABLE_BODY_STYLES,
   PDF_TABLE_ALT_ROW,
-  drawAllPageFooters,
   drawComplianceStatement,
 } from '@/utils/pdfUtils';
+import {
+  drawTemplateHeader,
+  drawTemplateFooters,
+  generateDocumentId,
+  checkOverflow,
+} from '@/utils/pdfTemplate';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -231,26 +234,16 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
         }
       }
 
-      const docId = generateDocId('MAINT');
+      const docId = await generateDocumentId(ride.id, 'MR');
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.getWidth();
       const pageHeight = doc.internal.pageSize.getHeight();
       const margin = 13;
 
-      const companyName = profile?.company_name || profile?.showmen_name || 'Maintenance Report';
-      const periodStr = `Period: ${reportDateFrom ? format(reportDateFrom, 'dd/MM/yyyy') : 'All'} – ${reportDateTo ? format(reportDateTo, 'dd/MM/yyyy') : 'Present'}`;
+      const templateOpts = { doc, title: 'MAINTENANCE REPORT', documentId: docId, docType: 'MR' as const };
 
       // === HEADER ===
-      let yPos = drawPDFHeader({
-        doc,
-        logoDataUrl,
-        companyName,
-        controllerName: profile?.controller_name,
-        reportTitle: 'MAINTENANCE REPORT',
-        period: periodStr,
-        generatedDate: format(new Date(), 'dd MMM yyyy'),
-        docId,
-      });
+      let yPos = drawTemplateHeader(templateOpts);
 
       // === EQUIPMENT DETAILS ===
       yPos = drawSectionTitle(doc, 'Equipment Details', yPos, margin);
@@ -277,7 +270,7 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
       yPos = drawSummaryBox(doc, [
         { label: 'Total Records', value: String(filteredRecords.length) },
         { label: 'Total Cost', value: `£${totalCost.toFixed(2)}`, accent: true },
-        { label: 'Period', value: periodStr.replace('Period: ', '') },
+        { label: 'Period', value: `${reportDateFrom ? format(reportDateFrom, 'dd/MM/yyyy') : 'All'} – ${reportDateTo ? format(reportDateTo, 'dd/MM/yyyy') : 'Present'}` },
       ], yPos, margin);
 
       // === MAINTENANCE RECORDS TABLE ===
@@ -489,7 +482,7 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
       }
 
       // Add standardised footers to all pages
-      drawAllPageFooters(doc, docId);
+      drawTemplateFooters(templateOpts);
       
       // Generate filename with date range
       const fromStr = reportDateFrom ? format(reportDateFrom, 'ddMMMyyyy') : 'all';

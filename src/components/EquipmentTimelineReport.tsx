@@ -15,18 +15,20 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
   PDF_COLORS,
-  generateDocId,
   buildFileName,
   blobToDataUrl,
-  drawPDFHeader,
   drawSectionTitle,
   drawEquipmentDetails,
   drawSummaryBox,
   PDF_TABLE_HEAD_STYLES,
   PDF_TABLE_BODY_STYLES,
   PDF_TABLE_ALT_ROW,
-  drawAllPageFooters,
 } from '@/utils/pdfUtils';
+import {
+  drawTemplateHeader,
+  drawTemplateFooters,
+  generateDocumentId,
+} from '@/utils/pdfTemplate';
 import { Ride } from '@/types/ride';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 
@@ -256,21 +258,11 @@ const EquipmentTimelineReport = ({ ride }: EquipmentTimelineReportProps) => {
 
       // Generate PDF
       const doc = new jsPDF();
-      const docId = generateDocId('TIMELINE');
-      const companyName = profile?.company_name || profile?.showmen_name || 'Equipment Timeline';
-      const period = `${reportDateFrom ? format(reportDateFrom, 'dd/MM/yyyy') : 'All'} – ${reportDateTo ? format(reportDateTo, 'dd/MM/yyyy') : 'Present'}`;
+      const docId = await generateDocumentId(ride.id, 'DR');
+      const templateOpts = { doc, title: 'EQUIPMENT TIMELINE REPORT', documentId: docId, docType: 'DR' as const };
 
       // Standard header
-      let yPos = drawPDFHeader({
-        doc,
-        logoDataUrl,
-        companyName,
-        controllerName: profile?.controller_name,
-        reportTitle: 'Equipment Timeline',
-        period,
-        generatedDate: format(new Date(), 'dd MMM yyyy'),
-        docId,
-      });
+      let yPos = drawTemplateHeader(templateOpts);
 
       // Equipment details
       yPos = drawSectionTitle(doc, 'Equipment Details', yPos);
@@ -346,7 +338,7 @@ const EquipmentTimelineReport = ({ ride }: EquipmentTimelineReportProps) => {
         margin: { left: 13, right: 13 },
       });
 
-      drawAllPageFooters(doc, docId);
+      drawTemplateFooters(templateOpts);
 
       const fileName = buildFileName([ride.ride_name, 'Timeline', format(new Date(), 'yyyyMMdd')]);
       doc.save(fileName);

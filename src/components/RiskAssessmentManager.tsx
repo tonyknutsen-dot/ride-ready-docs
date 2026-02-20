@@ -22,19 +22,20 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
   PDF_COLORS,
-  generateDocId,
   buildFileName,
   blobToDataUrl,
-  drawPDFHeader,
   drawSectionTitle,
   drawEquipmentDetails,
   drawSummaryBox,
   PDF_TABLE_HEAD_STYLES,
   PDF_TABLE_BODY_STYLES,
   PDF_TABLE_ALT_ROW,
-  drawAllPageFooters,
-  drawComplianceStatement,
 } from '@/utils/pdfUtils';
+import {
+  drawTemplateHeader,
+  drawTemplateFooters,
+  generateDocumentId,
+} from '@/utils/pdfTemplate';
 import { cn } from '@/lib/utils';
 import { useTerminology } from '@/hooks/useTerminology';
 import { WhoAtRiskSelector } from './risk-assessment/WhoAtRiskSelector';
@@ -649,20 +650,10 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     const rideImageData = await fetchRideImage();
     
     // === HEADER SECTION ===
-    const docId = generateDocId('RISK');
-    const companyName = profile?.company_name || 'Risk Assessment';
+    const docId = await generateDocumentId(ride.id, 'DR');
+    const templateOpts = { doc, title: 'RISK ASSESSMENT', documentId: docId, docType: 'DR' as const };
 
-    let yPos = drawPDFHeader({
-      doc,
-      logoDataUrl,
-      companyName,
-      controllerName: profile?.controller_name,
-      reportTitle: 'Risk Assessment',
-      subTitle: ride.ride_name,
-      period: `Assessment: ${format(new Date(selectedAssessment.assessment_date), 'dd/MM/yyyy')}`,
-      generatedDate: format(new Date(), 'dd MMM yyyy'),
-      docId,
-    });
+    let yPos = drawTemplateHeader(templateOpts);
 
     // === EQUIPMENT + ASSESSMENT DETAILS ===
     yPos = drawSectionTitle(doc, 'Equipment & Assessment Details', yPos);
@@ -880,7 +871,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     }
 
     // Add standardised footers to all pages
-    drawAllPageFooters(doc);
+    drawTemplateFooters(templateOpts);
 
     const fileName = buildFileName([ride.ride_name, 'RiskAssessment', format(new Date(), 'yyyyMMdd')]);
     return { blob: doc.output('blob'), fileName };

@@ -652,18 +652,21 @@ export type Database = {
         Row: {
           completion_year: number
           current_sequence: number
+          doc_type: string
           id: string
           ride_id: string
         }
         Insert: {
           completion_year: number
           current_sequence?: number
+          doc_type?: string
           id?: string
           ride_id: string
         }
         Update: {
           completion_year?: number
           current_sequence?: number
+          doc_type?: string
           id?: string
           ride_id?: string
         }
@@ -2666,10 +2669,19 @@ export type Database = {
       encrypt_sensitive: { Args: { plaintext: string }; Returns: string }
       end_tester_session: { Args: { p_session_id: string }; Returns: undefined }
       expire_support_grants: { Args: never; Returns: number }
-      generate_compliance_record_number: {
-        Args: { p_completion_year: number; p_ride_id: string }
-        Returns: string
-      }
+      generate_compliance_record_number:
+        | {
+            Args: { p_completion_year: number; p_ride_id: string }
+            Returns: string
+          }
+        | {
+            Args: {
+              p_completion_year: number
+              p_doc_type?: string
+              p_ride_id: string
+            }
+            Returns: string
+          }
       get_staff_permission: {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["staff_permission"]
