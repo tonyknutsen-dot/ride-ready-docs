@@ -36,6 +36,7 @@ import {
   drawTemplateFooters,
   generateDocumentId,
 } from '@/utils/pdfTemplate';
+import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 import TemplateBuilder from './TemplateBuilder';
 import { EmptyState } from '@/components/EmptyState';
 import DefectReportDialog from './DefectReportDialog';
@@ -958,6 +959,20 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                   file_size: pdfBlob.size,
                   notes: `Checked by: ${savedInspectorName}${savedWeatherConditions ? ` | Weather: ${savedWeatherConditions}` : ''}`
                 });
+
+              // Register in ride_documents
+              const docId = await generateDocumentId(ride.id, 'IC');
+              const rideCode = await getRideCode(ride.id);
+              await storeRideDocument({
+                rideId: ride.id,
+                rideCode,
+                documentType: 'IC',
+                documentId: docId,
+                fileUrl: filePath,
+                title: `${frequencyLabel} Safety Check – ${ride.ride_name} – ${dateStr}`,
+                metadata: { inspector: savedInspectorName, frequency },
+              });
+
               queryClient.invalidateQueries({ queryKey: ['overview'] });
               queryClient.invalidateQueries({ queryKey: ['documents'] });
             }

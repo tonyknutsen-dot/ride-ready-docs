@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, FileText, Mail, Download } from 'lucide-react';
+import { Upload, FileText, Mail, Download, ClipboardList } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import DocumentUpload from './DocumentUpload';
 import DocumentList from './DocumentList';
+import RideDocumentRegister from './RideDocumentRegister';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import JSZip from 'jszip';
-
 interface RideDocumentsProps {
   ride: Ride;
 }
@@ -189,14 +189,18 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2 gap-2 p-1.5 bg-muted border border-border/50 h-auto">
+        <TabsList className="grid w-full grid-cols-3 gap-2 p-1.5 bg-muted border border-border/50 h-auto">
           <TabsTrigger value="list" className="flex items-center justify-center gap-2 py-2.5">
             <FileText className="h-4 w-4" />
-            <span>View Files</span>
+            <span>Files</span>
+          </TabsTrigger>
+          <TabsTrigger value="register" className="flex items-center justify-center gap-2 py-2.5">
+            <ClipboardList className="h-4 w-4" />
+            <span>Register</span>
           </TabsTrigger>
           <TabsTrigger id="rrd-btn-upload-doc" value="upload" className="flex items-center justify-center gap-2 py-2.5">
             <Upload className="h-4 w-4" />
-            <span>Upload New</span>
+            <span>Upload</span>
           </TabsTrigger>
         </TabsList>
 
@@ -207,6 +211,13 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
             rideName={ride.ride_name}
             onDocumentDeleted={handleDocumentDeleted}
             grouped
+          />
+        </TabsContent>
+
+        <TabsContent value="register">
+          <RideDocumentRegister
+            rideId={ride.id}
+            rideName={ride.ride_name}
           />
         </TabsContent>
 

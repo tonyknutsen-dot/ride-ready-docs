@@ -1851,7 +1851,7 @@ export type Database = {
           ride_code: string
           ride_id: string
           status: string
-          title: string | null
+          title: string
           version: number
         }
         Insert: {
@@ -1869,7 +1869,7 @@ export type Database = {
           ride_code: string
           ride_id: string
           status?: string
-          title?: string | null
+          title: string
           version?: number
         }
         Update: {
@@ -1887,7 +1887,7 @@ export type Database = {
           ride_code?: string
           ride_id?: string
           status?: string
-          title?: string | null
+          title?: string
           version?: number
         }
         Relationships: [
@@ -2747,6 +2747,10 @@ export type Database = {
             }
             Returns: string
           }
+      get_next_ride_document_version: {
+        Args: { p_document_id: string }
+        Returns: number
+      }
       get_staff_permission: {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["staff_permission"]
@@ -2821,6 +2825,19 @@ export type Database = {
       update_tester_heartbeat: {
         Args: { p_session_id: string }
         Returns: undefined
+      }
+      upsert_ride_document: {
+        Args: {
+          p_document_id: string
+          p_document_type: string
+          p_file_url: string
+          p_metadata?: Json
+          p_related_event_id?: string
+          p_ride_code: string
+          p_ride_id: string
+          p_title: string
+        }
+        Returns: string
       }
     }
     Enums: {
