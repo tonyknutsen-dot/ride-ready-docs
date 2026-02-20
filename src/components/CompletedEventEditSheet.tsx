@@ -15,6 +15,9 @@ import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { formatDateUK } from "@/utils/dateFormat";
 import { compressImage } from "@/utils/imageCompression";
+import { createComplianceDocument, categoryToDocTypeCode } from "@/utils/complianceDocumentCreator";
+import { storeRideDocument, getRideCode } from "@/utils/rideDocumentService";
+import { generateDocumentId } from "@/utils/pdfTemplate";
 
 interface CompletedEventEditSheetProps {
   open: boolean;
@@ -32,6 +35,7 @@ interface CompletedEventEditSheetProps {
     completionNotes: string | null;
     evidenceUrls: string[];
     documentId: string | null;
+    fullDocumentId: string | null;
   };
 }
 
@@ -94,7 +98,7 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
 
       if (eventError) throw eventError;
 
-      // Update the linked document if exists
+      // Update the linked document metadata if exists
       if (event.documentId) {
         const noteParts = [
           inspectorCompany ? `Inspector: ${inspectorCompany}` : null,
@@ -116,7 +120,38 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
           .eq("id", event.documentId);
       }
 
-      toast.success("Completion record updated");
+      // ── Generate new PDF version in ride_documents ──
+      // This creates a new version (v2, v3, etc.) and supersedes the previous one
+      if (event.rideId) {
+        const { data: userData } = await supabase.auth.getUser();
+        const userId = userData?.user?.id;
+        if (userId) {
+          // Use the existing fullDocumentId to keep the same document_id
+          const rideCode = await getRideCode(event.rideId);
+          const docTypeCode = categoryToDocTypeCode(event.category, event.eventType);
+          const registerId = event.fullDocumentId || await generateDocumentId(event.rideId, docTypeCode);
+
+          // Re-generate the compliance PDF with updated data
+          const { documentName } = await createComplianceDocument({
+            eventId: event.id,
+            eventName: event.eventName,
+            eventCategory: event.category,
+            eventType: event.eventType,
+            rideId: event.rideId,
+            rideName: event.rideName,
+            dueDate: completionDate.toISOString(),
+            completionDate,
+            completedByUserId: userId,
+            notes: notes || undefined,
+            evidenceUrls: allEvidence,
+            inspectorCompany: inspectorCompany || undefined,
+            certificateReference: certificateReference || undefined,
+            fullDocumentId: registerId,
+          });
+        }
+      }
+
+      toast.success("Record updated – new version created");
       queryClient.invalidateQueries({ queryKey: ["compliance-completed"] });
       onOpenChange(false);
     } catch (err: any) {
@@ -132,6 +167,9 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
         <SheetHeader>
           <SheetTitle className="text-base">Edit Completion</SheetTitle>
           <p className="text-xs text-muted-foreground">{event.eventName} · {event.rideName}</p>
+          <p className="text-[10px] text-muted-foreground">
+            Saving will generate a new document version
+          </p>
         </SheetHeader>
 
         <div className="space-y-4 mt-4">
@@ -241,7 +279,7 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
           {/* Save */}
           <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            Save Changes
+            Save & Create New Version
           </Button>
         </div>
       </SheetContent>
