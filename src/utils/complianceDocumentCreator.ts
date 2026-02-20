@@ -70,6 +70,8 @@ interface CreateComplianceDocumentParams {
   notes?: string;
   /** Storage paths of evidence files already uploaded */
   evidenceUrls: string[];
+  inspectorCompany?: string;
+  certificateReference?: string;
 }
 
 interface CreateComplianceDocumentResult {
@@ -97,6 +99,8 @@ export async function createComplianceDocument(
     completedByUserId,
     notes,
     evidenceUrls,
+    inspectorCompany,
+    certificateReference,
   } = params;
 
   const dateStr = format(completionDate, 'dd MMM yyyy');
@@ -123,8 +127,23 @@ export async function createComplianceDocument(
       notes,
       evidenceUrls,
       completedByUserId,
+      inspectorCompany,
+      certificateReference,
     });
   }
+
+  // Build structured notes with inspector/reference for document card display
+  const noteParts = [
+    inspectorCompany ? `Inspector: ${inspectorCompany}` : null,
+    certificateReference ? `Ref: ${certificateReference}` : null,
+    notes,
+    `Compliance event: ${eventName}`,
+    `Due date: ${format(new Date(dueDate), 'dd MMM yyyy')}`,
+    `Event ID: ${eventId}`,
+    evidenceUrls.length > 0
+      ? `Evidence files: ${evidenceUrls.length}`
+      : null,
+  ].filter(Boolean).join('\n');
 
   // Create the document record
   const { data, error } = await supabase
@@ -135,17 +154,7 @@ export async function createComplianceDocument(
       file_path: filePath,
       ride_id: rideId,
       user_id: completedByUserId,
-      notes: [
-        notes,
-        `Compliance event: ${eventName}`,
-        `Due date: ${format(new Date(dueDate), 'dd MMM yyyy')}`,
-        `Event ID: ${eventId}`,
-        evidenceUrls.length > 0
-          ? `Evidence files: ${evidenceUrls.length}`
-          : null,
-      ]
-        .filter(Boolean)
-        .join('\n'),
+      notes: noteParts,
       mime_type: 'application/pdf',
     })
     .select('id')
@@ -169,6 +178,8 @@ interface PdfParams {
   notes?: string;
   evidenceUrls: string[];
   completedByUserId: string;
+  inspectorCompany?: string;
+  certificateReference?: string;
 }
 
 async function generateCompletionPdf(params: PdfParams): Promise<string> {
@@ -181,6 +192,8 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
     notes,
     evidenceUrls,
     completedByUserId,
+    inspectorCompany,
+    certificateReference,
   } = params;
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -231,6 +244,8 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
   addRow('Due Date', format(new Date(dueDate), 'dd MMM yyyy'));
   addRow('Completed', format(completionDate, 'dd MMM yyyy'));
   addRow('Status', 'COMPLETED');
+  if (inspectorCompany) addRow('Inspector / Company', inspectorCompany);
+  if (certificateReference) addRow('Reference', certificateReference);
 
   if (evidenceUrls.length > 0) {
     addRow('Evidence', `${evidenceUrls.length} file(s) attached`);

@@ -709,6 +709,22 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
               <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">Latest</span>
             )}
           </div>
+          {/* Compliance subtitle: inspector + reference parsed from notes */}
+          {!isOlderVersion && doc.notes && (() => {
+            const lines = doc.notes.split('\n');
+            const inspectorLine = lines.find(l => l.startsWith('Inspector: '));
+            const refLine = lines.find(l => l.startsWith('Ref: '));
+            if (!inspectorLine && !refLine) return null;
+            const parts: string[] = [];
+            if (rideName) parts.push(rideName);
+            if (inspectorLine) parts.push(inspectorLine);
+            if (refLine) parts.push(refLine);
+            return (
+              <p className="text-xs text-muted-foreground truncate mt-0.5" title={parts.join(' • ')}>
+                {parts.join(' • ')}
+              </p>
+            );
+          })()}
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
             {!isOlderVersion && (
               <span className="text-xs text-slate-500">{uploadedStr}</span>

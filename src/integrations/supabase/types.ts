@@ -529,6 +529,7 @@ export type Database = {
           advance_notice_days: number
           auto_create_next: boolean
           category: string
+          certificate_reference: string | null
           completed_at: string | null
           completed_by: string | null
           completion_notes: string | null
@@ -538,6 +539,7 @@ export type Database = {
           event_type: string
           evidence_urls: string[] | null
           id: string
+          inspector_company: string | null
           is_recurring: boolean
           next_event_id: string | null
           notes: string | null
@@ -559,6 +561,7 @@ export type Database = {
           advance_notice_days?: number
           auto_create_next?: boolean
           category: string
+          certificate_reference?: string | null
           completed_at?: string | null
           completed_by?: string | null
           completion_notes?: string | null
@@ -568,6 +571,7 @@ export type Database = {
           event_type: string
           evidence_urls?: string[] | null
           id?: string
+          inspector_company?: string | null
           is_recurring?: boolean
           next_event_id?: string | null
           notes?: string | null
@@ -589,6 +593,7 @@ export type Database = {
           advance_notice_days?: number
           auto_create_next?: boolean
           category?: string
+          certificate_reference?: string | null
           completed_at?: string | null
           completed_by?: string | null
           completion_notes?: string | null
@@ -598,6 +603,7 @@ export type Database = {
           event_type?: string
           evidence_urls?: string[] | null
           id?: string
+          inspector_company?: string | null
           is_recurring?: boolean
           next_event_id?: string | null
           notes?: string | null
