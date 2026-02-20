@@ -682,11 +682,17 @@ function CompletedItemRow({
   const isArchived = doc?.archived_at;
 
   return (
-    <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border transition-colors ${
-      isArchived
-        ? 'border-border/40 bg-muted/15 opacity-60'
-        : 'border-border/40 bg-background hover:border-primary/20'
-    }`}>
+    <div
+      role={onViewPdf ? "button" : undefined}
+      tabIndex={onViewPdf ? 0 : undefined}
+      onClick={onViewPdf}
+      onKeyDown={onViewPdf ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewPdf(); } } : undefined}
+      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border transition-colors ${
+        isArchived
+          ? 'border-border/40 bg-muted/15 opacity-60'
+          : 'border-border/40 bg-background hover:bg-muted/40 active:bg-muted/60'
+      } ${onViewPdf ? 'cursor-pointer' : ''}`}
+    >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
           <p className="text-[13px] font-bold text-foreground truncate leading-tight">{item.eventName}</p>
@@ -719,16 +725,16 @@ function CompletedItemRow({
         )}
       </div>
 
-      <div className="flex items-center gap-1 flex-shrink-0">
+      <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         {onViewPdf && (
-          <Button variant="ghost" size="sm" className="h-8 px-2 gap-1 text-[11px] font-normal text-muted-foreground border border-border/60 rounded-lg hover:bg-muted/50 hover:text-foreground hover:shadow-none hover:-translate-y-0 active:scale-100" onClick={onViewPdf}>
-            <Eye className="h-3.5 w-3.5 shrink-0" />
-            View PDF
-          </Button>
+          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 select-none">
+            <Eye className="h-3 w-3" />
+            PDF
+          </span>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-muted">
               <MoreVertical className="h-3.5 w-3.5" />
             </Button>
           </DropdownMenuTrigger>
