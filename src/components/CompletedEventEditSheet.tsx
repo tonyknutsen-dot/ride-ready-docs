@@ -48,7 +48,10 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
   const [inspectorCompany, setInspectorCompany] = useState(event.inspectorCompany || "");
   const [certificateReference, setCertificateReference] = useState(event.certificateReference || "");
   const [notes, setNotes] = useState(event.completionNotes || "");
+  const [editReason, setEditReason] = useState("");
   const [newFiles, setNewFiles] = useState<File[]>([]);
+
+  const canSave = editReason.trim().length > 0;
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -65,6 +68,10 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
   };
 
   const handleSave = async () => {
+    if (!canSave) {
+      toast.error("Edit reason is required");
+      return;
+    }
     setSaving(true);
     try {
       // Upload any new files
@@ -106,6 +113,7 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
           notes,
           `Compliance event: ${event.eventName}`,
           `Event ID: ${event.id}`,
+          `Edit reason: ${editReason.trim()}`,
         ].filter(Boolean).join("\n");
 
         const dateStr = format(completionDate, "dd MMM yyyy");
@@ -121,18 +129,33 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
       }
 
       // ── Generate new PDF version in ride_documents ──
-      // This creates a new version (v2, v3, etc.) and supersedes the previous one
       if (event.rideId) {
         const { data: userData } = await supabase.auth.getUser();
         const userId = userData?.user?.id;
         if (userId) {
-          // Use the existing fullDocumentId to keep the same document_id
+          // Fetch user profile for snapshot
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("controller_name")
+            .eq("user_id", userId)
+            .single();
+
+          // Fetch staff permission level for role snapshot
+          const { data: membership } = await supabase
+            .from("organisation_members")
+            .select("permission_level")
+            .eq("user_id", userId)
+            .eq("is_active", true)
+            .maybeSingle();
+
+          const userName = profile?.controller_name || "Unknown";
+          const userRole = membership?.permission_level || "owner";
+
           const rideCode = await getRideCode(event.rideId);
           const docTypeCode = categoryToDocTypeCode(event.category, event.eventType);
           const registerId = event.fullDocumentId || await generateDocumentId(event.rideId, docTypeCode);
 
-          // Re-generate the compliance PDF with updated data
-          const { documentName } = await createComplianceDocument({
+          await createComplianceDocument({
             eventId: event.id,
             eventName: event.eventName,
             eventCategory: event.category,
@@ -142,11 +165,14 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
             dueDate: completionDate.toISOString(),
             completionDate,
             completedByUserId: userId,
+            completedByName: userName,
+            completedByRole: userRole,
             notes: notes || undefined,
             evidenceUrls: allEvidence,
             inspectorCompany: inspectorCompany || undefined,
             certificateReference: certificateReference || undefined,
             fullDocumentId: registerId,
+            editReason: editReason.trim(),
           });
         }
       }
@@ -173,6 +199,23 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
         </SheetHeader>
 
         <div className="space-y-4 mt-4">
+          {/* Edit Reason – mandatory */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium">
+              Edit Reason <span className="text-destructive">*</span>
+            </Label>
+            <Textarea
+              value={editReason}
+              onChange={(e) => setEditReason(e.target.value)}
+              placeholder="Why is this record being amended?"
+              rows={2}
+              className="text-sm border-destructive/30 focus-visible:ring-destructive/30"
+            />
+            {editReason.trim().length === 0 && (
+              <p className="text-[10px] text-destructive">Required — every edit must have a reason for the audit trail.</p>
+            )}
+          </div>
+
           {/* Completion Date */}
           <div className="space-y-1.5">
             <Label className="text-xs font-medium">Completion Date</Label>
@@ -277,7 +320,7 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
           </div>
 
           {/* Save */}
-          <Button onClick={handleSave} disabled={saving} className="w-full gap-2">
+          <Button onClick={handleSave} disabled={saving || !canSave} className="w-full gap-2">
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Save & Create New Version
           </Button>
