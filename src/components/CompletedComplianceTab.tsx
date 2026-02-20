@@ -721,8 +721,8 @@ function CompletedItemRow({
 
       <div className="flex items-center gap-1 flex-shrink-0">
         {onViewPdf && (
-          <Button variant="outline" size="sm" className="h-9 px-3 gap-1.5 text-xs font-normal" onClick={onViewPdf}>
-            <Eye className="h-3.5 w-3.5" />
+          <Button variant="ghost" size="sm" className="h-8 px-2 gap-1 text-[11px] font-normal text-muted-foreground border border-border/60 rounded-lg hover:bg-muted/50 hover:text-foreground hover:shadow-none hover:-translate-y-0 active:scale-100" onClick={onViewPdf}>
+            <Eye className="h-3.5 w-3.5 shrink-0" />
             View PDF
           </Button>
         )}
