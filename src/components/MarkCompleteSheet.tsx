@@ -2,11 +2,12 @@ import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CheckCircle2, Calendar as CalendarIcon, Repeat, Camera, Upload, X, FileText, Image as ImageIcon, ArrowLeft, ExternalLink } from 'lucide-react';
+import { CheckCircle2, Calendar as CalendarIcon, Repeat, Camera, Upload, X, FileText, Image as ImageIcon, ArrowLeft, ExternalLink, Building2, Hash } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -60,6 +61,8 @@ const MarkCompleteSheet = ({
   const queryClient = useQueryClient();
   const [completionDate, setCompletionDate] = useState<Date>(new Date());
   const [notes, setNotes] = useState('');
+  const [inspectorCompany, setInspectorCompany] = useState('');
+  const [certificateReference, setCertificateReference] = useState('');
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [evidenceFiles, setEvidenceFiles] = useState<EvidenceFile[]>([]);
@@ -126,7 +129,14 @@ const MarkCompleteSheet = ({
     return urls;
   };
 
+  const isInspectionCategory = eventCategory === 'inspection' || eventCategory === 'ndt';
+
   const handleConfirm = async () => {
+    if (isInspectionCategory && !inspectorCompany.trim()) {
+      toast({ title: "Inspector / Company required", description: "Please enter the inspector or company name for this inspection.", variant: "destructive" });
+      return;
+    }
+
     setSubmitting(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -144,6 +154,17 @@ const MarkCompleteSheet = ({
       });
       if (error) throw error;
 
+      // 2b. Save inspector/reference on the event record
+      if (inspectorCompany || certificateReference) {
+        await supabase
+          .from('compliance_events')
+          .update({
+            inspector_company: inspectorCompany || null,
+            certificate_reference: certificateReference || null,
+          })
+          .eq('id', eventId);
+      }
+
       const result = data as any;
 
       // 3. Auto-create document record
@@ -159,6 +180,8 @@ const MarkCompleteSheet = ({
         completedByUserId: user.id,
         notes: notes || undefined,
         evidenceUrls,
+        inspectorCompany: inspectorCompany || undefined,
+        certificateReference: certificateReference || undefined,
       });
 
       // 4. Show success state
@@ -179,6 +202,8 @@ const MarkCompleteSheet = ({
 
   const resetState = () => {
     setNotes('');
+    setInspectorCompany('');
+    setCertificateReference('');
     setCompletionDate(new Date());
     evidenceFiles.forEach(ev => { if (ev.preview) URL.revokeObjectURL(ev.preview); });
     setEvidenceFiles([]);
@@ -281,6 +306,38 @@ const MarkCompleteSheet = ({
                 />
               </PopoverContent>
             </Popover>
+          </div>
+
+          {/* Inspector / Company */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Inspector / Company {isInspectionCategory && <span className="text-destructive">*</span>}
+            </Label>
+            <div className="relative">
+              <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={inspectorCompany}
+                onChange={(e) => setInspectorCompany(e.target.value)}
+                placeholder="e.g. ADIPS Inspector, LEAPS, DMG Technical"
+                className="pl-9"
+                maxLength={200}
+              />
+            </div>
+          </div>
+
+          {/* Certificate / Report Reference */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Certificate / Report Reference</Label>
+            <div className="relative">
+              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={certificateReference}
+                onChange={(e) => setCertificateReference(e.target.value)}
+                placeholder="Certificate or report number"
+                className="pl-9"
+                maxLength={100}
+              />
+            </div>
           </div>
 
           {/* Evidence */}
