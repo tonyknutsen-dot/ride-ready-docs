@@ -320,6 +320,7 @@ const DocumentViewerPage = () => {
     const ok = await restoreRideDocument(rideDoc.id);
     if (ok) {
       toast({ title: 'Document restored' });
+      // Reload in-place to update banner and meta
       loadDocument(rideDoc.id);
     } else {
       toast({ title: 'Failed to restore', variant: 'destructive' });
@@ -360,6 +361,32 @@ const DocumentViewerPage = () => {
   // ── Main ──
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      {/* ── Archived Banner ── */}
+      {meta?.isArchived && rideDoc && (
+        <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <Archive className="h-4 w-4 text-destructive shrink-0" />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-destructive">This document is archived</p>
+              <p className="text-xs text-muted-foreground">
+                Archived {rideDoc.archived_at ? format(parseISO(rideDoc.archived_at), 'dd MMM yyyy HH:mm') : ''}
+                {rideDoc.archived_by && <> · By: {rideDoc.archived_by}</>}
+                {rideDoc.archive_reason && <> · Reason: {rideDoc.archive_reason}</>}
+              </p>
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            className="gap-1.5 text-xs border-destructive/30 text-destructive hover:bg-destructive/10 shrink-0"
+            onClick={handleRestore}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Restore
+          </Button>
+        </div>
+      )}
+
       {/* ── Superseded Version Banner ── */}
       {isViewingOldVersion && meta && (
         <div className="bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 px-4 py-2.5 flex items-center justify-between gap-3">
