@@ -5,8 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
 import {
   AlertTriangle, FileText, ClipboardCheck, ChevronRight,
-  Clock, CheckCircle, Wrench, Zap, RefreshCw, Search, Filter,
-  List, Layers, CheckSquare, Eye
+  Clock, CheckCircle, Wrench, Zap, RefreshCw, Search,
+  CheckSquare, Eye
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDateUK } from "@/utils/dateFormat";
@@ -130,7 +130,7 @@ const Compliance = () => {
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [rideFilter, setRideFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [groupByRide, setGroupByRide] = useState(false);
+  const [openRideKeys, setOpenRideKeys] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkMode, setBulkMode] = useState(false);
 
@@ -178,33 +178,23 @@ const Compliance = () => {
 
   const filteredItems = getFilteredItems();
 
-  // Group by ride (collapsible)
+  // Group by ride — always used now, sorted by overdue count desc
   const groupedByRide = (() => {
-    const groups = new Map<string, { rideName: string; rideId: string | null; items: ComplianceItem[] }>();
+    const groups = new Map<string, { rideName: string; rideId: string | null; items: ComplianceItem[]; oldestDue: string }>();
     filteredItems.forEach((item) => {
       const key = item.rideId || "global";
-      if (!groups.has(key)) groups.set(key, { rideName: item.rideName, rideId: item.rideId, items: [] });
-      groups.get(key)!.items.push(item);
+      if (!groups.has(key)) groups.set(key, { rideName: item.rideName, rideId: item.rideId, items: [], oldestDue: item.dueDate });
+      const g = groups.get(key)!;
+      g.items.push(item);
+      if (item.dueDate < g.oldestDue) g.oldestDue = item.dueDate;
     });
+    // Sort rides by number of overdue items desc, then by oldest due
     return Array.from(groups.values()).sort((a, b) => {
-      const aWorst = Math.max(...a.items.map(i => i.severity === "expiring" ? -i.daysValue : i.daysValue));
-      const bWorst = Math.max(...b.items.map(i => i.severity === "expiring" ? -i.daysValue : i.daysValue));
-      return bWorst - aWorst;
+      const aOverdue = a.items.filter(i => i.severity === "overdue" || i.severity === "expired").length;
+      const bOverdue = b.items.filter(i => i.severity === "overdue" || i.severity === "expired").length;
+      if (bOverdue !== aOverdue) return bOverdue - aOverdue;
+      return a.oldestDue.localeCompare(b.oldestDue);
     });
-  })();
-
-  const filteredSections = (() => {
-    const sections: { title: string; items: ComplianceItem[]; color: "destructive" | "warning" }[] = [];
-    if (filter === "all" || filter === "overdue") {
-      if (overdueItems.length > 0) sections.push({ title: "Overdue", items: sortWorstFirst(overdueItems), color: "destructive" });
-    }
-    if (filter === "all" || filter === "expired") {
-      if (expiredItems.length > 0) sections.push({ title: "Expired Documents", items: sortWorstFirst(expiredItems), color: "destructive" });
-    }
-    if (filter === "all" || filter === "expiring") {
-      if (expiringItems.length > 0) sections.push({ title: "Expiring Soon", items: sortSoonestFirst(expiringItems), color: "warning" });
-    }
-    return sections;
   })();
 
   const allClear = filtered.length === 0;
@@ -288,12 +278,8 @@ const Compliance = () => {
         <div className="flex-1 min-w-0">
           <p className="text-[13px] font-semibold text-foreground truncate leading-tight">{item.title}</p>
           <div className="flex items-center gap-1 mt-px">
-            {!groupByRide && (
-              <>
-                <span className="text-[11px] text-muted-foreground/70 truncate max-w-[120px]">{item.rideName}</span>
-                <span className="text-[10px] text-muted-foreground/40">·</span>
-              </>
-            )}
+            <span className="text-[10px] text-muted-foreground/70">{config.label}</span>
+            <span className="text-[10px] text-muted-foreground/40">·</span>
             <span className="text-[10px] text-muted-foreground whitespace-nowrap">
               {format(new Date(item.dueDate), "dd MMM yyyy")}
             </span>
@@ -425,13 +411,6 @@ const Compliance = () => {
               </Select>
             )}
             <button
-              onClick={() => setGroupByRide(!groupByRide)}
-              title={groupByRide ? "Flat list" : "Group by ride"}
-              className={`h-9 w-9 flex items-center justify-center rounded-lg border transition-colors flex-shrink-0 ${groupByRide ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'}`}
-            >
-              {groupByRide ? <Layers className="h-3.5 w-3.5" /> : <List className="h-3.5 w-3.5" />}
-            </button>
-            <button
               onClick={() => { setBulkMode(!bulkMode); setSelectedIds(new Set()); }}
               title="Bulk select"
               className={`h-9 w-9 flex items-center justify-center rounded-lg border transition-colors flex-shrink-0 ${bulkMode ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'}`}
@@ -442,7 +421,7 @@ const Compliance = () => {
 
           {/* Bulk actions bar */}
           {bulkMode && selectedIds.size > 0 && (
-            <div className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
+            <div className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2">
               <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
               <div className="flex-1" />
               <Button size="sm" className="gap-1.5" onClick={handleBulkComplete}>
@@ -463,58 +442,64 @@ const Compliance = () => {
             </div>
           )}
 
-          {/* Grouped view (collapsible) */}
-          {groupByRide && !allClear && (
-            <div className="space-y-1.5">
-              {groupedByRide.map((group) => (
-                <Collapsible key={group.rideId || "global"} defaultOpen>
-                  <CollapsibleTrigger className="w-full flex items-center gap-2 px-1 py-1 hover:bg-muted/30 rounded-lg transition-colors">
-                    <ChevronRight className="h-4.5 w-4.5 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90" />
-                    <h3 className="text-sm font-bold text-foreground">{group.rideName}</h3>
-                    <Badge variant="outline" className="text-[10px]">{group.items.length}</Badge>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="space-y-1 mt-1">
-                      {group.items.map((item) => renderItemRow(item))}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              ))}
+          {/* Grouped by ride — always */}
+          {!allClear && groupedByRide.length > 0 && (
+            <div className="space-y-1">
+              {groupedByRide.map((group) => {
+                const rideKey = group.rideId || "global";
+                const isOpen = openRideKeys.has(rideKey);
+                const overdueCount = group.items.filter(i => i.severity === "overdue" || i.severity === "expired").length;
+                const expiringCount = group.items.filter(i => i.severity === "expiring").length;
+
+                return (
+                  <Collapsible
+                    key={rideKey}
+                    open={isOpen}
+                    onOpenChange={open => {
+                      setOpenRideKeys(prev => {
+                        const next = new Set(prev);
+                        if (open) next.add(rideKey); else next.delete(rideKey);
+                        return next;
+                      });
+                    }}
+                  >
+                    <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors text-left group">
+                      <ChevronRight className="h-4.5 w-4.5 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90 shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold text-foreground truncate">{group.rideName}</span>
+                          {overdueCount > 0 && (
+                            <Badge variant="destructive" className="text-[10px] font-semibold flex-shrink-0">
+                              {overdueCount} overdue
+                            </Badge>
+                          )}
+                          {expiringCount > 0 && (
+                            <Badge className="text-[10px] font-semibold bg-warning/15 text-warning border-0 flex-shrink-0">
+                              {expiringCount} expiring
+                            </Badge>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground leading-none">
+                          Oldest overdue: {formatDateUK(group.oldestDue)}
+                        </span>
+                      </div>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-0.5 ml-3">
+                      <div className="space-y-0.5">
+                        {group.items.map((item) => renderItemRow(item))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
+                );
+              })}
             </div>
           )}
-
-          {/* Flat view (sections by severity) */}
-          {!groupByRide && filteredSections.map((section) => {
-            const dotColor = section.color === "destructive" ? "bg-destructive" : "bg-warning";
-            return (
-              <div key={section.title}>
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
-                  <h2 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{section.title}</h2>
-                  <span className="text-[10px] text-muted-foreground/60">({section.items.length})</span>
-                </div>
-                <div className="space-y-1">
-                  {section.items.map((item) => renderItemRow(item))}
-                </div>
-              </div>
-            );
-          })}
 
           {/* Empty filter state */}
-          {!allClear && !groupByRide && filteredSections.length === 0 && (
-            <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
-              <CheckCircle className="h-8 w-8 text-success mx-auto" />
-              <p className="text-sm font-medium text-foreground">No {filter} items</p>
-              <button onClick={() => setFilter("all")} className="text-xs text-primary font-semibold hover:underline">
-                Show all
-              </button>
-            </div>
-          )}
-
-          {!allClear && groupByRide && groupedByRide.length === 0 && (
-            <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
-              <CheckCircle className="h-8 w-8 text-success mx-auto" />
-              <p className="text-sm font-medium text-foreground">No matching items</p>
+          {!allClear && groupedByRide.length === 0 && (
+            <div className="border border-border rounded-lg p-5 text-center space-y-1.5">
+              <CheckCircle className="h-6 w-6 text-success mx-auto" />
+              <p className="text-sm font-medium text-foreground">No {filter !== "all" ? filter : "matching"} items</p>
               <button onClick={() => { setFilter("all"); setSearchQuery(""); setCategoryFilter("all"); setRideFilter("all"); }} className="text-xs text-primary font-semibold hover:underline">
                 Clear filters
               </button>
