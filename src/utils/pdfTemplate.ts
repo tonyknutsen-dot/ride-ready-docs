@@ -242,6 +242,124 @@ export function checkOverflow(doc: jsPDF, y: number, needed: number, topMargin =
   return y;
 }
 
+// ─── Audit Trail types ──────────────────────────────────────────────────────
+export interface AuditTrailEntry {
+  version: number;
+  status: 'active' | 'superseded';
+  created_at: string;
+  created_by_name?: string | null;
+  created_by_role?: string | null;
+  updated_at?: string | null;
+  updated_by_name?: string | null;
+  updated_by_role?: string | null;
+  edit_reason?: string | null;
+}
+
+// ─── Draw Audit Trail section ───────────────────────────────────────────────
+export function drawAuditTrail(doc: jsPDF, entries: AuditTrailEntry[], y: number): number {
+  const mL = 15;
+  const pageW = doc.internal.pageSize.getWidth();
+  const mR = 15;
+  const contentW = pageW - mL - mR;
+
+  y = checkOverflow(doc, y, 20);
+  y = drawSection(doc, 'Audit Trail', y);
+
+  // Column headers
+  const cols = [mL + 2, mL + 18, mL + 50, mL + 100, mL + 138];
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.5);
+  doc.setTextColor(100, 116, 139); // #64748B
+  doc.text('VERSION', cols[0], y);
+  doc.text('STATUS', cols[1], y);
+  doc.text('CREATED', cols[2], y);
+  doc.text('SUPERSEDED', cols[3], y);
+  doc.text('REASON', cols[4], y);
+  y += 2;
+
+  // Divider
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.2);
+  doc.line(mL, y, pageW - mR, y);
+  y += 3;
+
+  for (const entry of entries) {
+    y = checkOverflow(doc, y, 12);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(30, 58, 95);
+    doc.text(`v${entry.version}`, cols[0], y);
+
+    // Status badge
+    if (entry.status === 'active') {
+      doc.setFillColor(220, 252, 231); // green-100
+      doc.roundedRect(cols[1], y - 2.5, 14, 3.5, 0.8, 0.8, 'F');
+      doc.setTextColor(22, 101, 52); // green-800
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(5.5);
+      doc.text('ACTIVE', cols[1] + 1, y);
+    } else {
+      doc.setFillColor(241, 245, 249); // slate-100
+      doc.roundedRect(cols[1], y - 2.5, 22, 3.5, 0.8, 0.8, 'F');
+      doc.setTextColor(100, 116, 139); // slate-500
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(5.5);
+      doc.text('SUPERSEDED', cols[1] + 1, y);
+    }
+
+    // Created info
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(25, 25, 25);
+    const createdDate = entry.created_at ? format(new Date(entry.created_at), 'dd MMM yyyy HH:mm') : '—';
+    doc.text(createdDate, cols[2], y);
+
+    // Created by on next line
+    if (entry.created_by_name) {
+      doc.setFontSize(6);
+      doc.setTextColor(100, 116, 139);
+      const byText = entry.created_by_name + (entry.created_by_role ? ` (${entry.created_by_role})` : '');
+      doc.text(byText, cols[2], y + 3.5);
+    }
+
+    // Superseded date
+    if (entry.status === 'superseded' && entry.updated_at) {
+      doc.setFontSize(6.5);
+      doc.setTextColor(25, 25, 25);
+      doc.text(format(new Date(entry.updated_at), 'dd MMM yyyy HH:mm'), cols[3], y);
+      if (entry.updated_by_name) {
+        doc.setFontSize(6);
+        doc.setTextColor(100, 116, 139);
+        const supByText = entry.updated_by_name + (entry.updated_by_role ? ` (${entry.updated_by_role})` : '');
+        doc.text(supByText, cols[3], y + 3.5);
+      }
+    } else {
+      doc.setFontSize(6.5);
+      doc.setTextColor(150, 150, 150);
+      doc.text('—', cols[3], y);
+    }
+
+    // Edit reason
+    if (entry.edit_reason) {
+      doc.setFontSize(6.5);
+      doc.setTextColor(25, 25, 25);
+      const maxReasonW = contentW - (cols[4] - mL) - 2;
+      const truncReason = doc.splitTextToSize(entry.edit_reason, maxReasonW)[0] || entry.edit_reason;
+      doc.text(truncReason, cols[4], y);
+    } else {
+      doc.setFontSize(6.5);
+      doc.setTextColor(150, 150, 150);
+      doc.text('—', cols[4], y);
+    }
+
+    y += 8;
+  }
+
+  doc.setTextColor(0);
+  return y + 2;
+}
+
 // ─── Fetch company logo as data URL ─────────────────────────────────────────
 export async function fetchLogoDataUrl(userId: string): Promise<string | null> {
   try {

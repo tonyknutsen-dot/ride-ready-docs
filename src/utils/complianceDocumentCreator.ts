@@ -7,12 +7,14 @@ import {
   drawMetadataRows,
   drawNotesBox,
   drawTemplateFooters,
+  drawAuditTrail,
   checkOverflow,
   generateDocumentId,
   type DocTypeCode,
+  type AuditTrailEntry,
   DOC_TYPE_LABELS,
 } from './pdfTemplate';
-import { storeRideDocument, getRideCode } from './rideDocumentService';
+import { storeRideDocument, getRideCode, fetchDocumentVersions } from './rideDocumentService';
 
 /**
  * Maps compliance event category + event_type to a document_type
@@ -110,6 +112,43 @@ export async function createComplianceDocument(
   const hasPdf = evidenceUrls.some((u) => u.toLowerCase().endsWith('.pdf'));
   let filePath: string;
 
+  // Fetch existing version history for audit trail
+  let auditTrail: AuditTrailEntry[] = [];
+  if (rideId && fullDocumentId) {
+    const versions = await fetchDocumentVersions(fullDocumentId);
+    auditTrail = versions.map((v) => ({
+      version: v.version,
+      status: v.status as 'active' | 'superseded',
+      created_at: v.created_at,
+      created_by_name: v.metadata?.completed_by_name || completedByName || null,
+      created_by_role: v.metadata?.completed_by_role || completedByRole || null,
+      updated_at: v.updated_at || null,
+      updated_by_name: v.metadata?.updated_by_name || null,
+      updated_by_role: v.metadata?.updated_by_role || null,
+      edit_reason: v.metadata?.edit_reason || null,
+    }));
+  }
+  // Add current version entry (will become active)
+  const currentVersion = auditTrail.length > 0
+    ? Math.max(...auditTrail.map((e) => e.version)) + 1
+    : 1;
+  auditTrail.unshift({
+    version: currentVersion,
+    status: 'active',
+    created_at: completionDate.toISOString(),
+    created_by_name: completedByName || null,
+    created_by_role: completedByRole || null,
+  });
+  // Mark all previous as superseded in the trail
+  for (let i = 1; i < auditTrail.length; i++) {
+    if (auditTrail[i].status === 'active') {
+      auditTrail[i].status = 'superseded';
+      auditTrail[i].updated_at = auditTrail[i].updated_at || completionDate.toISOString();
+      auditTrail[i].updated_by_name = auditTrail[i].updated_by_name || completedByName || null;
+      auditTrail[i].updated_by_role = auditTrail[i].updated_by_role || completedByRole || null;
+    }
+  }
+
   if (hasPdf) {
     filePath = evidenceUrls.find((u) => u.toLowerCase().endsWith('.pdf'))!;
   } else {
@@ -118,6 +157,7 @@ export async function createComplianceDocument(
       evidenceUrls, completedByUserId, inspectorCompany,
       certificateReference, fullDocumentId,
       eventCategory, eventType, completedByName, completedByRole,
+      auditTrail,
     });
   }
 
@@ -160,7 +200,7 @@ export async function createComplianceDocument(
       fileUrl: filePath,
       title: documentName,
       relatedEventId: eventId,
-      metadata: { inspectorCompany, certificateReference, category: eventCategory },
+      metadata: { inspectorCompany, certificateReference, category: eventCategory, completed_by_name: completedByName, completed_by_role: completedByRole },
     });
   }
 
@@ -187,6 +227,7 @@ interface PdfParams {
   eventType?: string;
   completedByName?: string;
   completedByRole?: string;
+  auditTrail?: AuditTrailEntry[];
 }
 
 async function generateCompletionPdf(params: PdfParams): Promise<string> {
@@ -246,6 +287,12 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
   if (notes) {
     y = drawSection(doc, 'Notes', y);
     y = drawNotesBox(doc, notes, y);
+  }
+
+  // ── Audit Trail ──
+  if (params.auditTrail && params.auditTrail.length > 0) {
+    y = checkOverflow(doc, y, 20);
+    y = drawAuditTrail(doc, params.auditTrail, y);
   }
 
   // ── Footer ──
