@@ -155,6 +155,9 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   // Ride documents cache per ride
   const [rideDocsCache, setRideDocsCache] = useState<Record<string, RideDocument[]>>({});
 
+  // Fallback: documents table cache per ride (when ride_documents is empty)
+  const [docsFallbackCache, setDocsFallbackCache] = useState<Record<string, { id: string; document_name: string; file_path: string; notes: string | null; document_type: string; ride_id: string }[]>>({});
+
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['compliance-completed', effectiveUserId, daysFilter],
     queryFn: () => fetchCompletedEvents(effectiveUserId, daysFilter),
@@ -252,13 +255,53 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
     if (rideDocsCache[rideId]) return;
     const docs = await fetchRideDocuments(rideId, { includeArchived: true });
     setRideDocsCache(prev => ({ ...prev, [rideId]: docs }));
+
+    // Also load from documents table as fallback
+    if (!docsFallbackCache[rideId]) {
+      const { data } = await supabase
+        .from('documents')
+        .select('id, document_name, file_path, notes, document_type, ride_id')
+        .eq('ride_id', rideId)
+        .eq('user_id', effectiveUserId)
+        .order('uploaded_at', { ascending: false });
+      if (data) {
+        setDocsFallbackCache(prev => ({ ...prev, [rideId]: data }));
+      }
+    }
   };
 
-  // Find CR doc for a given event
+  // Find CR doc for a given event - check ride_documents first, then fallback to documents table
   const findDocForEvent = (eventId: string, rideId: string | null): RideDocument | null => {
     if (!rideId) return null;
     const docs = rideDocsCache[rideId] || [];
-    return docs.find(d => d.related_event_id === eventId && d.status === 'active') || null;
+    const rideDoc = docs.find(d => d.related_event_id === eventId && d.status === 'active');
+    if (rideDoc) return rideDoc;
+
+    // Fallback: check documents table by matching event ID in notes
+    const fallbackDocs = docsFallbackCache[rideId] || [];
+    const fallbackDoc = fallbackDocs.find(d => d.notes?.includes(`Event ID: ${eventId}`));
+    if (fallbackDoc) {
+      // Create a compatible RideDocument-like object
+      return {
+        id: fallbackDoc.id,
+        ride_id: fallbackDoc.ride_id,
+        ride_code: '',
+        document_type: fallbackDoc.document_type,
+        document_id: fallbackDoc.id,
+        title: fallbackDoc.document_name,
+        file_url: fallbackDoc.file_path,
+        version: 1,
+        status: 'active',
+        created_by: effectiveUserId,
+        created_at: '',
+        related_event_id: eventId,
+        metadata: null,
+        archived_at: null,
+        archived_by: null,
+        archive_reason: null,
+      } as RideDocument;
+    }
+    return null;
   };
 
   const getSignedUrl = async (doc: RideDocument): Promise<string | null> => {
