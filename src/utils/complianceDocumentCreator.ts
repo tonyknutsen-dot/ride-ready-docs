@@ -198,91 +198,131 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
   const pageW = doc.internal.pageSize.getWidth();
-  let y = 20;
+  const pageH = doc.internal.pageSize.getHeight();
+  const mL = 15;
+  const mR = 15;
+  const contentW = pageW - mL - mR;
+  let y = 0;
 
-  // Header bar
-  doc.setFillColor(30, 58, 95); // navy
-  doc.rect(0, 0, pageW, 14, 'F');
+  // Auto-generated document ID
+  const docId = `RRD-CMP-${format(completionDate, 'yyyyMMdd')}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+  const generatedAt = format(new Date(), "dd MMM yyyy 'at' HH:mm");
+
+  // ── Header bar ──
+  doc.setFillColor(30, 58, 95);
+  doc.rect(0, 0, pageW, 18, 'F');
+
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(10);
+  doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
-  doc.text('COMPLIANCE COMPLETION RECORD', pageW / 2, 9, { align: 'center' });
-
-  // Title
-  y = 24;
-  doc.setTextColor(30, 58, 95);
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text(label, 15, y);
-  y += 8;
-
-  doc.setFontSize(11);
+  doc.text('RIDEREADY DOCS', mL, 8);
+  doc.setFontSize(7);
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(80, 80, 80);
-  doc.text(eventName, 15, y);
+  doc.text('Compliance Management', mL, 13);
+
+  // Right side: doc ID + timestamp
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'normal');
+  doc.text(docId, pageW - mR, 8, { align: 'right' });
+  doc.text(generatedAt, pageW - mR, 13, { align: 'right' });
+
+  y = 24;
+
+  // ── Document title ──
+  doc.setTextColor(30, 58, 95);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('COMPLIANCE COMPLETION RECORD', mL, y);
+  y += 5;
+
+  // Status badge (green pill)
+  const badgeText = 'COMPLETED';
+  doc.setFontSize(7);
+  const badgeW = doc.getTextWidth(badgeText) + 8;
+  const badgeH = 5;
+  doc.setFillColor(34, 139, 34);
+  doc.roundedRect(mL, y, badgeW, badgeH, 2.5, 2.5, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.text(badgeText, mL + 4, y + 3.5);
   y += 10;
 
-  // Divider
-  doc.setDrawColor(200, 200, 200);
-  doc.line(15, y, pageW - 15, y);
-  y += 8;
-
-  // Details grid
-  const addRow = (label: string, value: string) => {
+  // ── Helper: section header ──
+  const sectionHeader = (title: string) => {
+    doc.setDrawColor(200, 200, 200);
+    doc.line(mL, y, pageW - mR, y);
+    y += 5;
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(9);
-    doc.text(label.toUpperCase(), 15, y);
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(40, 40, 40);
-    doc.setFontSize(10);
-    doc.text(value, 65, y);
-    y += 7;
+    doc.setTextColor(30, 58, 95);
+    doc.text(title, mL, y);
+    y += 4;
   };
 
-  addRow('Equipment', rideName);
-  addRow('Due Date', format(new Date(dueDate), 'dd MMM yyyy'));
-  addRow('Completed', format(completionDate, 'dd MMM yyyy'));
-  addRow('Status', 'COMPLETED');
-  if (inspectorCompany) addRow('Inspector / Company', inspectorCompany);
-  if (certificateReference) addRow('Reference', certificateReference);
-
-  if (evidenceUrls.length > 0) {
-    addRow('Evidence', `${evidenceUrls.length} file(s) attached`);
-  }
-
-  y += 4;
-
-  // Notes
-  if (notes) {
-    doc.setDrawColor(200, 200, 200);
-    doc.line(15, y, pageW - 15, y);
-    y += 6;
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(9);
-    doc.text('NOTES', 15, y);
-    y += 6;
+  // ── Helper: 2-column row ──
+  const valueX = pageW - mR;
+  const addRow = (rowLabel: string, value: string) => {
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(40, 40, 40);
-    doc.setFontSize(10);
-    const lines = doc.splitTextToSize(notes, pageW - 30);
-    doc.text(lines, 15, y);
-    y += lines.length * 5 + 4;
+    doc.setTextColor(100, 100, 100);
+    doc.setFontSize(8);
+    doc.text(rowLabel, mL + 2, y);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 30, 30);
+    doc.text(value, valueX, y, { align: 'right' });
+    y += 5;
+  };
+
+  // ── SECTION: Event Details ──
+  sectionHeader('EVENT DETAILS');
+  addRow('Event Type', label);
+  addRow('Event Name', eventName);
+  addRow('Equipment / Ride', rideName);
+  addRow('Scheduled Due Date', format(new Date(dueDate), 'dd MMM yyyy'));
+  y += 2;
+
+  // ── SECTION: Completion Details ──
+  sectionHeader('COMPLETION DETAILS');
+  addRow('Date Completed', format(completionDate, 'dd MMM yyyy'));
+  if (inspectorCompany) addRow('Inspector / Company', inspectorCompany);
+  if (certificateReference) addRow('Certificate / Report Ref', certificateReference);
+  if (evidenceUrls.length > 0) addRow('Evidence Attached', `${evidenceUrls.length} file(s)`);
+  y += 2;
+
+  // ── SECTION: Notes ──
+  if (notes) {
+    sectionHeader('NOTES');
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(50, 50, 50);
+    doc.setFontSize(8);
+    const lines = doc.splitTextToSize(notes, contentW - 4);
+    doc.text(lines, mL + 2, y);
+    y += lines.length * 4 + 2;
   }
 
-  // Footer
-  const footerY = doc.internal.pageSize.getHeight() - 12;
-  doc.setFontSize(7);
-  doc.setTextColor(160, 160, 160);
+  // ── Closing divider ──
+  y += 2;
+  doc.setDrawColor(200, 200, 200);
+  doc.line(mL, y, pageW - mR, y);
+
+  // ── Footer ──
+  doc.setFontSize(6.5);
+  doc.setTextColor(140, 140, 140);
+  doc.setFont('helvetica', 'italic');
   doc.text(
-    `Generated by RideReady Docs · ${format(new Date(), "dd MMM yyyy 'at' HH:mm")}`,
+    'System-generated compliance record. Not a substitute for an official inspection certificate.',
     pageW / 2,
-    footerY,
+    pageH - 14,
+    { align: 'center' },
+  );
+  doc.setFont('helvetica', 'normal');
+  doc.text(
+    `${docId}  ·  RideReady Docs  ·  Page 1 of 1`,
+    pageW / 2,
+    pageH - 9,
     { align: 'center' },
   );
 
-  // Upload PDF
+  // ── Upload PDF ──
   const pdfBlob = doc.output('blob');
   const safeName = rideName.replace(/[^a-z0-9]/gi, '_');
   const safeLabel = label.replace(/[^a-z0-9]/gi, '_');
