@@ -709,19 +709,29 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
               <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">Latest</span>
             )}
           </div>
-          {/* Compliance subtitle: inspector + reference parsed from notes */}
-          {!isOlderVersion && doc.notes && (() => {
-            const lines = doc.notes.split('\n');
-            const inspectorLine = lines.find(l => l.startsWith('Inspector: '));
-            const refLine = lines.find(l => l.startsWith('Ref: '));
-            if (!inspectorLine && !refLine) return null;
+          {/* Compliance subtitle: document ID + inspector + reference parsed from notes */}
+          {!isOlderVersion && (() => {
+            // Extract full_document_id from document_name prefix (e.g. "TC-CR-2026-0004 – ...")
+            const docIdMatch = doc.document_name?.match(/^([A-Z0-9]+-CR-\d{4}-\d{4})/);
+            const fullDocId = docIdMatch ? docIdMatch[1] : null;
+            
             const parts: string[] = [];
-            if (rideName) parts.push(rideName);
-            if (inspectorLine) parts.push(inspectorLine);
-            if (refLine) parts.push(refLine);
+            if (fullDocId) parts.push(fullDocId);
+            
+            if (doc.notes) {
+              const lines = doc.notes.split('\n');
+              const inspectorLine = lines.find(l => l.startsWith('Inspector: '));
+              const refLine = lines.find(l => l.startsWith('Ref: '));
+              if (rideName && !fullDocId) parts.push(rideName);
+              if (inspectorLine) parts.push(inspectorLine);
+              if (refLine) parts.push(refLine);
+            }
+            
+            if (parts.length === 0) return null;
             return (
               <p className="text-xs text-muted-foreground truncate mt-0.5" title={parts.join(' • ')}>
-                {parts.join(' • ')}
+                {fullDocId && <span className="font-mono font-semibold text-primary mr-1">{fullDocId}</span>}
+                {parts.slice(fullDocId ? 1 : 0).join(' • ')}
               </p>
             );
           })()}

@@ -21,9 +21,26 @@ const PDFViewer = ({ isOpen, onClose, pdfUrl, pdfName, onDownload }: PDFViewerPr
         <div className="relative w-full h-[90vh] bg-background">
           {/* Header */}
           <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-between p-4 bg-background border-b">
-            <h3 className="text-lg font-semibold text-foreground truncate max-w-md">
-              {pdfName}
-            </h3>
+            <div className="min-w-0 flex-1">
+              {(() => {
+                const docIdMatch = pdfName?.match(/^([A-Z0-9]+-CR-\d{4}-\d{4})\s*[–—-]\s*/);
+                if (docIdMatch) {
+                  const docId = docIdMatch[1];
+                  const rest = pdfName.slice(docIdMatch[0].length);
+                  return (
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="font-mono font-bold text-primary text-base shrink-0">{docId}</span>
+                      <h3 className="text-sm text-muted-foreground truncate">{rest}</h3>
+                    </div>
+                  );
+                }
+                return (
+                  <h3 className="text-lg font-semibold text-foreground truncate max-w-md">
+                    {pdfName}
+                  </h3>
+                );
+              })()}
+            </div>
             <div className="flex items-center gap-2">
               <Button variant="secondary" size="icon" onClick={onDownload}>
                 <Download className="h-4 w-4" />
