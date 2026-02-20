@@ -6,8 +6,11 @@ import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
 import {
   AlertTriangle, FileText, ClipboardCheck, ChevronRight,
   Clock, CheckCircle, Wrench, Zap, RefreshCw, Search, Filter,
-  List, Layers, CheckSquare
+  List, Layers, CheckSquare, Eye
 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatDateUK } from "@/utils/dateFormat";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -20,7 +23,7 @@ import MarkCompleteSheet from "@/components/MarkCompleteSheet";
 type FilterType = "all" | "overdue" | "expired" | "expiring";
 type CategoryFilter = "all" | "inspection" | "maintenance" | "doc_expiry" | "ndt";
 type StatusFilter = "open" | "completed" | "all";
-
+type CompletedDaysFilter = 30 | 60 | 90;
 interface ComplianceItem {
   id: string;
   title: string;
@@ -33,6 +36,19 @@ interface ComplianceItem {
   severity: FilterType;
   isRecurring: boolean;
   recurrenceRule?: string | null;
+}
+
+interface CompletedItem {
+  id: string;
+  eventName: string;
+  eventType: string;
+  category: string;
+  rideName: string;
+  rideId: string | null;
+  completedAt: string;
+  inspectorCompany: string | null;
+  certificateReference: string | null;
+  documentId: string | null;
 }
 
 const CATEGORY_CONFIG: Record<string, { icon: typeof ClipboardCheck; label: string }> = {
@@ -111,6 +127,58 @@ async function fetchComplianceData(userId: string) {
   return { items, rideList, fetchedAt: new Date().toISOString() };
 }
 
+async function fetchCompletedEvents(userId: string, days: CompletedDaysFilter) {
+  const cutoff = new Date(Date.now() - days * 86400000).toISOString();
+
+  const [ridesRes, eventsRes] = await Promise.all([
+    supabase.from("rides").select("id, ride_name").eq("user_id", userId),
+    supabase
+      .from("compliance_events")
+      .select("id, event_name, event_type, category, ride_id, completed_at, inspector_company, certificate_reference, completion_notes")
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .gte("completed_at", cutoff)
+      .order("completed_at", { ascending: false }),
+  ]);
+
+  const rideMap = new Map<string, string>();
+  ridesRes.data?.forEach((r) => rideMap.set(r.id, r.ride_name));
+
+  // Try to find linked documents for each event
+  const eventIds = (eventsRes.data || []).map(e => e.id);
+  let docMap = new Map<string, string>();
+  if (eventIds.length > 0) {
+    // Documents created by compliance have the event ID in their notes field
+    const { data: docs } = await supabase
+      .from("documents")
+      .select("id, notes")
+      .eq("user_id", userId)
+      .not("notes", "is", null);
+
+    docs?.forEach(d => {
+      if (d.notes) {
+        const match = eventIds.find(eid => d.notes!.includes(`Event ID: ${eid}`));
+        if (match) docMap.set(match, d.id);
+      }
+    });
+  }
+
+  const items: CompletedItem[] = (eventsRes.data || []).map(e => ({
+    id: e.id,
+    eventName: e.event_name,
+    eventType: e.event_type,
+    category: e.category,
+    rideName: e.ride_id ? rideMap.get(e.ride_id) || "Unknown" : "Global",
+    rideId: e.ride_id,
+    completedAt: e.completed_at || "",
+    inspectorCompany: e.inspector_company,
+    certificateReference: e.certificate_reference,
+    documentId: docMap.get(e.id) || null,
+  }));
+
+  return items;
+}
+
 function getExpiringBadgeClasses(daysLeft: number): string {
   if (daysLeft <= 7) return "bg-warning/15 text-warning border-warning/30 font-semibold";
   return "bg-warning/8 text-warning/70 border-warning/15";
@@ -120,6 +188,8 @@ const Compliance = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { effectiveUserId, loading: staffLoading } = useEffectiveUserId();
+  const [activeTab, setActiveTab] = useState<"open" | "completed">("open");
+  const [completedDaysFilter, setCompletedDaysFilter] = useState<CompletedDaysFilter>(30);
   const [filter, setFilter] = useState<FilterType>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [rideFilter, setRideFilter] = useState<string>("all");
@@ -136,6 +206,13 @@ const Compliance = () => {
     queryKey: ["compliance", effectiveUserId],
     queryFn: () => fetchComplianceData(effectiveUserId!),
     enabled: !!effectiveUserId && !staffLoading,
+    staleTime: 1000 * 60 * 2,
+  });
+
+  const { data: completedItems, isLoading: completedLoading } = useQuery({
+    queryKey: ["compliance-completed", effectiveUserId, completedDaysFilter],
+    queryFn: () => fetchCompletedEvents(effectiveUserId!, completedDaysFilter),
+    enabled: !!effectiveUserId && !staffLoading && activeTab === "completed",
     staleTime: 1000 * 60 * 2,
   });
 
@@ -241,6 +318,7 @@ const Compliance = () => {
 
   const handleCompleted = () => {
     queryClient.invalidateQueries({ queryKey: ["compliance"] });
+    queryClient.invalidateQueries({ queryKey: ["compliance-completed"] });
     setSelectedIds(new Set());
     setBulkMode(false);
   };
@@ -324,189 +402,304 @@ const Compliance = () => {
         <div className="flex items-center gap-3">
           <AlertTriangle className="h-5 w-5 text-destructive" />
           <h1 className="text-lg font-semibold text-foreground">Compliance</h1>
-          {counts.overdue > 0 && (
+          {activeTab === "open" && counts.overdue > 0 && (
             <Badge variant="destructive" className="text-xs">{counts.overdue} overdue</Badge>
           )}
         </div>
         <p className="text-xs text-muted-foreground mt-0.5">
-          {totalIssues} active issue{totalIssues !== 1 ? "s" : ""}
+          {activeTab === "open"
+            ? `${totalIssues} active issue${totalIssues !== 1 ? "s" : ""}`
+            : `Completed events (last ${completedDaysFilter} days)`}
         </p>
       </div>
 
-      {/* Last checked */}
-      {dataUpdatedAt > 0 && (
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
-          <RefreshCw className="h-3 w-3" />
-          <span>Last checked: {format(new Date(dataUpdatedAt), "dd MMM yyyy, HH:mm")}</span>
-        </div>
-      )}
+      {/* Open / Completed toggle */}
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "open" | "completed")}>
+        <TabsList className="w-full">
+          <TabsTrigger value="open" className="flex-1 gap-1.5">
+            <AlertTriangle className="h-3.5 w-3.5" /> Open
+          </TabsTrigger>
+          <TabsTrigger value="completed" className="flex-1 gap-1.5">
+            <CheckCircle className="h-3.5 w-3.5" /> Completed
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
-      {/* Filter tiles */}
-      <div className="grid grid-cols-3 gap-2">
-        {([
-          { key: "overdue" as const, label: "Overdue", count: counts.overdue, icon: <ClipboardCheck className="h-3.5 w-3.5" />, color: "destructive" as const },
-          { key: "expired" as const, label: "Expired", count: counts.expired, icon: <FileText className="h-3.5 w-3.5" />, color: "destructive" as const },
-          { key: "expiring" as const, label: "Expiring", count: counts.expiring, icon: <Clock className="h-3.5 w-3.5" />, color: "warning" as const },
-        ]).map((tile) => {
-          const isActive = filter === tile.key;
-          const bg = tile.color === "destructive" ? "bg-destructive/10" : "bg-warning/10";
-          const text = tile.color === "destructive" ? "text-destructive" : "text-warning";
-          const numColor = tile.count > 0 ? text : "text-muted-foreground";
-          const activeBorder = isActive ? (tile.color === "destructive" ? "border-destructive" : "border-warning") : "border-border";
-          const activeRing = isActive ? "ring-2 ring-offset-1 " + (tile.color === "destructive" ? "ring-destructive/30" : "ring-warning/30") : "";
-
-          return (
-            <button
-              key={tile.key}
-              onClick={() => handleTileClick(tile.key)}
-              className={`rounded-xl border-2 bg-card p-2.5 text-center space-y-0.5 transition-all active:scale-[0.97] ${activeBorder} ${activeRing}`}
-            >
-              <div className={`mx-auto w-7 h-7 rounded-lg flex items-center justify-center ${bg} ${text}`}>
-                {tile.icon}
-              </div>
-              <div className={`text-xl font-bold ${numColor}`}>{tile.count}</div>
-              <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{tile.label}</div>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Search + Category + Ride + View toggle */}
-      <div className="flex flex-wrap gap-2">
-        <div className="flex-1 min-w-[140px] relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Search ride or event…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-sm"
-          />
-        </div>
-        <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
-          <SelectTrigger className="w-[120px] h-9 text-sm">
-            <Filter className="h-3.5 w-3.5 mr-1" />
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="inspection">Inspection</SelectItem>
-            <SelectItem value="maintenance">Maintenance</SelectItem>
-            <SelectItem value="doc_expiry">Doc Expiry</SelectItem>
-            <SelectItem value="ndt">NDT</SelectItem>
-          </SelectContent>
-        </Select>
-        {rideList.length > 1 && (
-          <Select value={rideFilter} onValueChange={setRideFilter}>
-            <SelectTrigger className="w-[120px] h-9 text-sm">
-              <SelectValue placeholder="All Rides" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Rides</SelectItem>
-              {rideList.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        )}
-        <div className="flex gap-1">
-          <Button
-            variant={groupByRide ? "default" : "outline"}
-            size="icon"
-            className="h-9 w-9 flex-shrink-0"
-            onClick={() => setGroupByRide(!groupByRide)}
-            title={groupByRide ? "Flat list" : "Group by ride"}
-          >
-            {groupByRide ? <Layers className="h-4 w-4" /> : <List className="h-4 w-4" />}
-          </Button>
-          <Button
-            variant={bulkMode ? "default" : "outline"}
-            size="icon"
-            className="h-9 w-9 flex-shrink-0"
-            onClick={() => { setBulkMode(!bulkMode); setSelectedIds(new Set()); }}
-            title="Bulk select"
-          >
-            <CheckSquare className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Bulk actions bar */}
-      {bulkMode && selectedIds.size > 0 && (
-        <div className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
-          <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
-          <div className="flex-1" />
-          <Button size="sm" className="gap-1.5" onClick={handleBulkComplete}>
-            <CheckCircle className="h-3.5 w-3.5" /> Mark Complete
-          </Button>
-          <Button size="sm" variant="outline" onClick={() => { setSelectedIds(new Set()); setBulkMode(false); }}>
-            Cancel
-          </Button>
-        </div>
-      )}
-
-      {/* All clear */}
-      {allClear && (
-        <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
-          <CheckCircle className="h-10 w-10 text-green-600 mx-auto" />
-          <p className="text-sm font-semibold text-foreground">All Clear</p>
-          <p className="text-xs text-muted-foreground">No compliance issues found</p>
-        </div>
-      )}
-
-      {/* Grouped view (collapsible) */}
-      {groupByRide && !allClear && (
-        <div className="space-y-3">
-          {groupedByRide.map((group) => (
-            <Collapsible key={group.rideId || "global"} defaultOpen>
-              <CollapsibleTrigger className="w-full flex items-center gap-2 px-1 py-1 hover:bg-muted/30 rounded-lg transition-colors">
-                <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90" />
-                <h3 className="text-sm font-bold text-foreground">{group.rideName}</h3>
-                <Badge variant="outline" className="text-[10px]">{group.items.length}</Badge>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <div className="space-y-1.5 mt-1.5">
-                  {group.items.map((item) => renderItemRow(item))}
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-          ))}
-        </div>
-      )}
-
-      {/* Flat view (sections by severity) */}
-      {!groupByRide && filteredSections.map((section) => {
-        const dotColor = section.color === "destructive" ? "bg-destructive" : "bg-warning";
-        return (
-          <div key={section.title}>
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-              <h2 className="text-[13px] font-bold text-foreground uppercase tracking-[1px]">{section.title}</h2>
-              <span className="text-xs text-muted-foreground">({section.items.length})</span>
+      {/* ===== OPEN TAB ===== */}
+      {activeTab === "open" && (
+        <>
+          {/* Last checked */}
+          {dataUpdatedAt > 0 && (
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
+              <RefreshCw className="h-3 w-3" />
+              <span>Last checked: {format(new Date(dataUpdatedAt), "dd MMM yyyy, HH:mm")}</span>
             </div>
-            <div className="space-y-1.5">
-              {section.items.map((item) => renderItemRow(item))}
+          )}
+
+          {/* Filter tiles */}
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              { key: "overdue" as const, label: "Overdue", count: counts.overdue, icon: <ClipboardCheck className="h-3.5 w-3.5" />, color: "destructive" as const },
+              { key: "expired" as const, label: "Expired", count: counts.expired, icon: <FileText className="h-3.5 w-3.5" />, color: "destructive" as const },
+              { key: "expiring" as const, label: "Expiring", count: counts.expiring, icon: <Clock className="h-3.5 w-3.5" />, color: "warning" as const },
+            ]).map((tile) => {
+              const isActive = filter === tile.key;
+              const bg = tile.color === "destructive" ? "bg-destructive/10" : "bg-warning/10";
+              const text = tile.color === "destructive" ? "text-destructive" : "text-warning";
+              const numColor = tile.count > 0 ? text : "text-muted-foreground";
+              const activeBorder = isActive ? (tile.color === "destructive" ? "border-destructive" : "border-warning") : "border-border";
+              const activeRing = isActive ? "ring-2 ring-offset-1 " + (tile.color === "destructive" ? "ring-destructive/30" : "ring-warning/30") : "";
+
+              return (
+                <button
+                  key={tile.key}
+                  onClick={() => handleTileClick(tile.key)}
+                  className={`rounded-xl border-2 bg-card p-2.5 text-center space-y-0.5 transition-all active:scale-[0.97] ${activeBorder} ${activeRing}`}
+                >
+                  <div className={`mx-auto w-7 h-7 rounded-lg flex items-center justify-center ${bg} ${text}`}>
+                    {tile.icon}
+                  </div>
+                  <div className={`text-xl font-bold ${numColor}`}>{tile.count}</div>
+                  <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{tile.label}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Search + Category + Ride + View toggle */}
+          <div className="flex flex-wrap gap-2">
+            <div className="flex-1 min-w-[140px] relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search ride or event…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9 h-9 text-sm"
+              />
+            </div>
+            <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
+              <SelectTrigger className="w-[120px] h-9 text-sm">
+                <Filter className="h-3.5 w-3.5 mr-1" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="inspection">Inspection</SelectItem>
+                <SelectItem value="maintenance">Maintenance</SelectItem>
+                <SelectItem value="doc_expiry">Doc Expiry</SelectItem>
+                <SelectItem value="ndt">NDT</SelectItem>
+              </SelectContent>
+            </Select>
+            {rideList.length > 1 && (
+              <Select value={rideFilter} onValueChange={setRideFilter}>
+                <SelectTrigger className="w-[120px] h-9 text-sm">
+                  <SelectValue placeholder="All Rides" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Rides</SelectItem>
+                  {rideList.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
+            <div className="flex gap-1">
+              <Button
+                variant={groupByRide ? "default" : "outline"}
+                size="icon"
+                className="h-9 w-9 flex-shrink-0"
+                onClick={() => setGroupByRide(!groupByRide)}
+                title={groupByRide ? "Flat list" : "Group by ride"}
+              >
+                {groupByRide ? <Layers className="h-4 w-4" /> : <List className="h-4 w-4" />}
+              </Button>
+              <Button
+                variant={bulkMode ? "default" : "outline"}
+                size="icon"
+                className="h-9 w-9 flex-shrink-0"
+                onClick={() => { setBulkMode(!bulkMode); setSelectedIds(new Set()); }}
+                title="Bulk select"
+              >
+                <CheckSquare className="h-4 w-4" />
+              </Button>
             </div>
           </div>
-        );
-      })}
 
-      {/* Empty filter state */}
-      {!allClear && !groupByRide && filteredSections.length === 0 && (
-        <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
-          <CheckCircle className="h-8 w-8 text-green-600 mx-auto" />
-          <p className="text-sm font-medium text-foreground">No {filter} items</p>
-          <button onClick={() => setFilter("all")} className="text-xs text-primary font-semibold hover:underline">
-            Show all
-          </button>
-        </div>
+          {/* Bulk actions bar */}
+          {bulkMode && selectedIds.size > 0 && (
+            <div className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
+              <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
+              <div className="flex-1" />
+              <Button size="sm" className="gap-1.5" onClick={handleBulkComplete}>
+                <CheckCircle className="h-3.5 w-3.5" /> Mark Complete
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => { setSelectedIds(new Set()); setBulkMode(false); }}>
+                Cancel
+              </Button>
+            </div>
+          )}
+
+          {/* All clear */}
+          {allClear && (
+            <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
+              <CheckCircle className="h-10 w-10 text-success mx-auto" />
+              <p className="text-sm font-semibold text-foreground">All Clear</p>
+              <p className="text-xs text-muted-foreground">No compliance issues found</p>
+            </div>
+          )}
+
+          {/* Grouped view (collapsible) */}
+          {groupByRide && !allClear && (
+            <div className="space-y-3">
+              {groupedByRide.map((group) => (
+                <Collapsible key={group.rideId || "global"} defaultOpen>
+                  <CollapsibleTrigger className="w-full flex items-center gap-2 px-1 py-1 hover:bg-muted/30 rounded-lg transition-colors">
+                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90" />
+                    <h3 className="text-sm font-bold text-foreground">{group.rideName}</h3>
+                    <Badge variant="outline" className="text-[10px]">{group.items.length}</Badge>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="space-y-1.5 mt-1.5">
+                      {group.items.map((item) => renderItemRow(item))}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              ))}
+            </div>
+          )}
+
+          {/* Flat view (sections by severity) */}
+          {!groupByRide && filteredSections.map((section) => {
+            const dotColor = section.color === "destructive" ? "bg-destructive" : "bg-warning";
+            return (
+              <div key={section.title}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className={`w-2 h-2 rounded-full ${dotColor}`} />
+                  <h2 className="text-[13px] font-bold text-foreground uppercase tracking-[1px]">{section.title}</h2>
+                  <span className="text-xs text-muted-foreground">({section.items.length})</span>
+                </div>
+                <div className="space-y-1.5">
+                  {section.items.map((item) => renderItemRow(item))}
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Empty filter state */}
+          {!allClear && !groupByRide && filteredSections.length === 0 && (
+            <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
+              <CheckCircle className="h-8 w-8 text-success mx-auto" />
+              <p className="text-sm font-medium text-foreground">No {filter} items</p>
+              <button onClick={() => setFilter("all")} className="text-xs text-primary font-semibold hover:underline">
+                Show all
+              </button>
+            </div>
+          )}
+
+          {!allClear && groupByRide && groupedByRide.length === 0 && (
+            <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
+              <CheckCircle className="h-8 w-8 text-success mx-auto" />
+              <p className="text-sm font-medium text-foreground">No matching items</p>
+              <button onClick={() => { setFilter("all"); setSearchQuery(""); setCategoryFilter("all"); setRideFilter("all"); }} className="text-xs text-primary font-semibold hover:underline">
+                Clear filters
+              </button>
+            </div>
+          )}
+        </>
       )}
 
-      {!allClear && groupByRide && groupedByRide.length === 0 && (
-        <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
-          <CheckCircle className="h-8 w-8 text-green-600 mx-auto" />
-          <p className="text-sm font-medium text-foreground">No matching items</p>
-          <button onClick={() => { setFilter("all"); setSearchQuery(""); setCategoryFilter("all"); setRideFilter("all"); }} className="text-xs text-primary font-semibold hover:underline">
-            Clear filters
-          </button>
-        </div>
+      {/* ===== COMPLETED TAB ===== */}
+      {activeTab === "completed" && (
+        <>
+          {/* Date range filter */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground font-medium">Show:</span>
+            {([30, 60, 90] as CompletedDaysFilter[]).map((d) => (
+              <Button
+                key={d}
+                size="sm"
+                variant={completedDaysFilter === d ? "default" : "outline"}
+                className="h-8 text-xs"
+                onClick={() => setCompletedDaysFilter(d)}
+              >
+                {d} days
+              </Button>
+            ))}
+          </div>
+
+          {completedLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />
+              ))}
+            </div>
+          ) : (completedItems || []).length === 0 ? (
+            <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
+              <CheckCircle className="h-8 w-8 text-muted-foreground mx-auto" />
+              <p className="text-sm font-medium text-foreground">No completed events</p>
+              <p className="text-xs text-muted-foreground">Nothing completed in the last {completedDaysFilter} days</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-xl border border-border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs">Event</TableHead>
+                    <TableHead className="text-xs">Ride</TableHead>
+                    <TableHead className="text-xs">Completed</TableHead>
+                    <TableHead className="text-xs hidden sm:table-cell">Inspector</TableHead>
+                    <TableHead className="text-xs hidden sm:table-cell">Reference</TableHead>
+                    <TableHead className="text-xs w-[60px]"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(completedItems || []).map((item) => {
+                    const config = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG.inspection;
+                    const Icon = config.icon;
+                    return (
+                      <TableRow key={item.id}>
+                        <TableCell className="py-2.5">
+                          <div className="flex items-center gap-2">
+                            <Icon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-foreground truncate">{item.eventName}</p>
+                              <p className="text-[10px] text-muted-foreground">{item.eventType}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="py-2.5">
+                          <span className="text-xs text-muted-foreground">{item.rideName}</span>
+                        </TableCell>
+                        <TableCell className="py-2.5">
+                          <span className="text-xs text-foreground">
+                            {item.completedAt ? formatDateUK(item.completedAt) : "–"}
+                          </span>
+                        </TableCell>
+                        <TableCell className="py-2.5 hidden sm:table-cell">
+                          <span className="text-xs text-muted-foreground">{item.inspectorCompany || "–"}</span>
+                        </TableCell>
+                        <TableCell className="py-2.5 hidden sm:table-cell">
+                          <span className="text-xs text-muted-foreground font-mono">{item.certificateReference || "–"}</span>
+                        </TableCell>
+                        <TableCell className="py-2.5">
+                          {item.documentId && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 w-7 p-0"
+                              onClick={() => navigate(`/documents`)}
+                              title="View Document"
+                            >
+                              <Eye className="h-3.5 w-3.5" />
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </>
       )}
 
       {/* Mark Complete Sheet */}
