@@ -272,7 +272,7 @@ const Compliance = () => {
       <button
         key={`${item.severity}-${item.id}`}
         onClick={() => handleRowClick(item)}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-card hover:border-primary/50 active:scale-[0.98] transition-all text-left"
+        className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-lg border border-border bg-card hover:border-primary/40 active:scale-[0.98] transition-all text-left"
       >
         {bulkMode && (
           <Checkbox
@@ -286,12 +286,12 @@ const Compliance = () => {
           <Icon className={`h-4 w-4 ${iconColor}`} />
         </span>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-foreground truncate">{item.title}</p>
-          <div className="flex items-center gap-1.5 mt-0.5">
+          <p className="text-[13px] font-semibold text-foreground truncate leading-tight">{item.title}</p>
+          <div className="flex items-center gap-1 mt-px">
             {!groupByRide && (
               <>
-                <span className="text-xs text-muted-foreground truncate max-w-[120px]">{item.rideName}</span>
-                <span className="text-[10px] text-muted-foreground/50">·</span>
+                <span className="text-[11px] text-muted-foreground/70 truncate max-w-[120px]">{item.rideName}</span>
+                <span className="text-[10px] text-muted-foreground/40">·</span>
               </>
             )}
             <span className="text-[10px] text-muted-foreground whitespace-nowrap">
@@ -305,7 +305,7 @@ const Compliance = () => {
         >
           {badgeLabel}
         </Badge>
-        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+        <ChevronRight className="h-4.5 w-4.5 text-muted-foreground flex-shrink-0" />
       </button>
     );
   };
@@ -325,7 +325,7 @@ const Compliance = () => {
   }
 
   return (
-    <div className="container mx-auto py-4 pb-24 md:pb-8 max-w-3xl space-y-4">
+    <div className="container mx-auto py-3 pb-24 md:pb-8 max-w-3xl space-y-3">
       {/* Header */}
       <div>
         <div className="flex items-center gap-3">
@@ -357,58 +357,52 @@ const Compliance = () => {
       {/* ===== OPEN TAB ===== */}
       {activeTab === "open" && (
         <>
-          {/* Last checked */}
-          {dataUpdatedAt > 0 && (
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground/70">
-              <RefreshCw className="h-3 w-3" />
-              <span>Last checked: {format(new Date(dataUpdatedAt), "dd MMM yyyy, HH:mm")}</span>
-            </div>
-          )}
-
-          {/* Filter tiles */}
-          <div className="grid grid-cols-3 gap-2">
+          {/* Stat pills */}
+          <div className="flex items-center gap-1.5 flex-wrap">
             {([
-              { key: "overdue" as const, label: "Overdue", count: counts.overdue, icon: <ClipboardCheck className="h-3.5 w-3.5" />, color: "destructive" as const },
-              { key: "expired" as const, label: "Expired", count: counts.expired, icon: <FileText className="h-3.5 w-3.5" />, color: "destructive" as const },
-              { key: "expiring" as const, label: "Expiring", count: counts.expiring, icon: <Clock className="h-3.5 w-3.5" />, color: "warning" as const },
-            ]).map((tile) => {
-              const isActive = filter === tile.key;
-              const bg = tile.color === "destructive" ? "bg-destructive/10" : "bg-warning/10";
-              const text = tile.color === "destructive" ? "text-destructive" : "text-warning";
-              const numColor = tile.count > 0 ? text : "text-muted-foreground";
-              const activeBorder = isActive ? (tile.color === "destructive" ? "border-destructive" : "border-warning") : "border-border";
-              const activeRing = isActive ? "ring-2 ring-offset-1 " + (tile.color === "destructive" ? "ring-destructive/30" : "ring-warning/30") : "";
+              { key: "overdue" as const, label: "Overdue", count: counts.overdue, color: "destructive" as const },
+              { key: "expired" as const, label: "Expired", count: counts.expired, color: "destructive" as const },
+              { key: "expiring" as const, label: "Expiring", count: counts.expiring, color: "warning" as const },
+            ]).map((pill) => {
+              const isActive = filter === pill.key;
+              const hasItems = pill.count > 0;
+              const baseClasses = pill.color === "destructive"
+                ? hasItems ? "bg-destructive/10 text-destructive border-destructive/30" : "bg-muted/50 text-muted-foreground border-border"
+                : hasItems ? "bg-warning/10 text-warning border-warning/30" : "bg-muted/50 text-muted-foreground border-border";
+              const activeClasses = isActive
+                ? pill.color === "destructive" ? "ring-1 ring-destructive/40 border-destructive" : "ring-1 ring-warning/40 border-warning"
+                : "";
 
               return (
                 <button
-                  key={tile.key}
-                  onClick={() => handleTileClick(tile.key)}
-                  className={`rounded-xl border-2 bg-card p-2.5 text-center space-y-0.5 transition-all active:scale-[0.97] ${activeBorder} ${activeRing}`}
+                  key={pill.key}
+                  onClick={() => handleTileClick(pill.key)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-[11px] font-semibold transition-all ${baseClasses} ${activeClasses}`}
                 >
-                  <div className={`mx-auto w-7 h-7 rounded-lg flex items-center justify-center ${bg} ${text}`}>
-                    {tile.icon}
-                  </div>
-                  <div className={`text-xl font-bold ${numColor}`}>{tile.count}</div>
-                  <div className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{tile.label}</div>
+                  {pill.label}: <span className="font-bold">{pill.count}</span>
                 </button>
               );
             })}
+            {dataUpdatedAt > 0 && (
+              <span className="text-[10px] text-muted-foreground/50 ml-auto">
+                {format(new Date(dataUpdatedAt), "HH:mm")}
+              </span>
+            )}
           </div>
 
-          {/* Search + Category + Ride + View toggle */}
-          <div className="flex flex-wrap gap-2">
-            <div className="flex-1 min-w-[140px] relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          {/* Search + filters */}
+          <div className="flex gap-2">
+            <div className="flex-1 relative">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 placeholder="Search ride or event…"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-sm"
+                className="pl-8 h-9 text-sm"
               />
             </div>
             <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
               <SelectTrigger className="w-[120px] h-9 text-sm">
-                <Filter className="h-3.5 w-3.5 mr-1" />
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -421,7 +415,7 @@ const Compliance = () => {
             </Select>
             {rideList.length > 1 && (
               <Select value={rideFilter} onValueChange={setRideFilter}>
-                <SelectTrigger className="w-[120px] h-9 text-sm">
+                <SelectTrigger className="w-[110px] h-9 text-sm">
                   <SelectValue placeholder="All Rides" />
                 </SelectTrigger>
                 <SelectContent>
@@ -430,26 +424,20 @@ const Compliance = () => {
                 </SelectContent>
               </Select>
             )}
-            <div className="flex gap-1">
-              <Button
-                variant={groupByRide ? "default" : "outline"}
-                size="icon"
-                className="h-9 w-9 flex-shrink-0"
-                onClick={() => setGroupByRide(!groupByRide)}
-                title={groupByRide ? "Flat list" : "Group by ride"}
-              >
-                {groupByRide ? <Layers className="h-4 w-4" /> : <List className="h-4 w-4" />}
-              </Button>
-              <Button
-                variant={bulkMode ? "default" : "outline"}
-                size="icon"
-                className="h-9 w-9 flex-shrink-0"
-                onClick={() => { setBulkMode(!bulkMode); setSelectedIds(new Set()); }}
-                title="Bulk select"
-              >
-                <CheckSquare className="h-4 w-4" />
-              </Button>
-            </div>
+            <button
+              onClick={() => setGroupByRide(!groupByRide)}
+              title={groupByRide ? "Flat list" : "Group by ride"}
+              className={`h-9 w-9 flex items-center justify-center rounded-lg border transition-colors flex-shrink-0 ${groupByRide ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+            >
+              {groupByRide ? <Layers className="h-3.5 w-3.5" /> : <List className="h-3.5 w-3.5" />}
+            </button>
+            <button
+              onClick={() => { setBulkMode(!bulkMode); setSelectedIds(new Set()); }}
+              title="Bulk select"
+              className={`h-9 w-9 flex items-center justify-center rounded-lg border transition-colors flex-shrink-0 ${bulkMode ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:text-foreground hover:bg-muted'}`}
+            >
+              <CheckSquare className="h-3.5 w-3.5" />
+            </button>
           </div>
 
           {/* Bulk actions bar */}
@@ -468,8 +456,8 @@ const Compliance = () => {
 
           {/* All clear */}
           {allClear && (
-            <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
-              <CheckCircle className="h-10 w-10 text-success mx-auto" />
+            <div className="border border-border rounded-lg p-5 text-center space-y-1.5">
+              <CheckCircle className="h-7 w-7 text-success mx-auto" />
               <p className="text-sm font-semibold text-foreground">All Clear</p>
               <p className="text-xs text-muted-foreground">No compliance issues found</p>
             </div>
@@ -477,16 +465,16 @@ const Compliance = () => {
 
           {/* Grouped view (collapsible) */}
           {groupByRide && !allClear && (
-            <div className="space-y-3">
+            <div className="space-y-1.5">
               {groupedByRide.map((group) => (
                 <Collapsible key={group.rideId || "global"} defaultOpen>
                   <CollapsibleTrigger className="w-full flex items-center gap-2 px-1 py-1 hover:bg-muted/30 rounded-lg transition-colors">
-                    <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90" />
+                    <ChevronRight className="h-4.5 w-4.5 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90" />
                     <h3 className="text-sm font-bold text-foreground">{group.rideName}</h3>
                     <Badge variant="outline" className="text-[10px]">{group.items.length}</Badge>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <div className="space-y-1.5 mt-1.5">
+                    <div className="space-y-1 mt-1">
                       {group.items.map((item) => renderItemRow(item))}
                     </div>
                   </CollapsibleContent>
@@ -500,12 +488,12 @@ const Compliance = () => {
             const dotColor = section.color === "destructive" ? "bg-destructive" : "bg-warning";
             return (
               <div key={section.title}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <span className={`w-2 h-2 rounded-full ${dotColor}`} />
-                  <h2 className="text-[13px] font-bold text-foreground uppercase tracking-[1px]">{section.title}</h2>
-                  <span className="text-xs text-muted-foreground">({section.items.length})</span>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} />
+                  <h2 className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">{section.title}</h2>
+                  <span className="text-[10px] text-muted-foreground/60">({section.items.length})</span>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1">
                   {section.items.map((item) => renderItemRow(item))}
                 </div>
               </div>
