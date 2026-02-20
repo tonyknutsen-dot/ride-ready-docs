@@ -6,11 +6,12 @@ import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
 import {
   AlertTriangle, FileText, ClipboardCheck, ChevronRight,
   Clock, CheckCircle, Wrench, Zap, RefreshCw, Search, Filter,
-  List, Layers, CheckSquare, Eye
+  List, Layers, CheckSquare, Eye, Pencil
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { formatDateUK } from "@/utils/dateFormat";
+import CompletedEventEditSheet from "@/components/CompletedEventEditSheet";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -23,7 +24,7 @@ import MarkCompleteSheet from "@/components/MarkCompleteSheet";
 type FilterType = "all" | "overdue" | "expired" | "expiring";
 type CategoryFilter = "all" | "inspection" | "maintenance" | "doc_expiry" | "ndt";
 type StatusFilter = "open" | "completed" | "all";
-type CompletedDaysFilter = 30 | 60 | 90;
+type CompletedDaysFilter = 30 | 90 | 365 | 0;
 interface ComplianceItem {
   id: string;
   title: string;
@@ -48,6 +49,8 @@ interface CompletedItem {
   completedAt: string;
   inspectorCompany: string | null;
   certificateReference: string | null;
+  completionNotes: string | null;
+  evidenceUrls: string[];
   documentId: string | null;
 }
 
@@ -128,27 +131,29 @@ async function fetchComplianceData(userId: string) {
 }
 
 async function fetchCompletedEvents(userId: string, days: CompletedDaysFilter) {
-  const cutoff = new Date(Date.now() - days * 86400000).toISOString();
+  const query = supabase
+    .from("compliance_events")
+    .select("id, event_name, event_type, category, ride_id, completed_at, inspector_company, certificate_reference, completion_notes, evidence_urls")
+    .eq("user_id", userId)
+    .eq("status", "completed")
+    .order("completed_at", { ascending: false });
+
+  if (days > 0) {
+    const cutoff = new Date(Date.now() - days * 86400000).toISOString();
+    query.gte("completed_at", cutoff);
+  }
 
   const [ridesRes, eventsRes] = await Promise.all([
     supabase.from("rides").select("id, ride_name").eq("user_id", userId),
-    supabase
-      .from("compliance_events")
-      .select("id, event_name, event_type, category, ride_id, completed_at, inspector_company, certificate_reference, completion_notes")
-      .eq("user_id", userId)
-      .eq("status", "completed")
-      .gte("completed_at", cutoff)
-      .order("completed_at", { ascending: false }),
+    query,
   ]);
 
   const rideMap = new Map<string, string>();
   ridesRes.data?.forEach((r) => rideMap.set(r.id, r.ride_name));
 
-  // Try to find linked documents for each event
   const eventIds = (eventsRes.data || []).map(e => e.id);
-  let docMap = new Map<string, string>();
+  const docMap = new Map<string, string>();
   if (eventIds.length > 0) {
-    // Documents created by compliance have the event ID in their notes field
     const { data: docs } = await supabase
       .from("documents")
       .select("id, notes")
@@ -173,6 +178,8 @@ async function fetchCompletedEvents(userId: string, days: CompletedDaysFilter) {
     completedAt: e.completed_at || "",
     inspectorCompany: e.inspector_company,
     certificateReference: e.certificate_reference,
+    completionNotes: e.completion_notes,
+    evidenceUrls: (e.evidence_urls as string[]) || [],
     documentId: docMap.get(e.id) || null,
   }));
 
@@ -189,7 +196,9 @@ const Compliance = () => {
   const queryClient = useQueryClient();
   const { effectiveUserId, loading: staffLoading } = useEffectiveUserId();
   const [activeTab, setActiveTab] = useState<"open" | "completed">("open");
-  const [completedDaysFilter, setCompletedDaysFilter] = useState<CompletedDaysFilter>(30);
+  const [completedDaysFilter, setCompletedDaysFilter] = useState<CompletedDaysFilter>(90);
+  const [completedSearch, setCompletedSearch] = useState("");
+  const [editingEvent, setEditingEvent] = useState<CompletedItem | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
   const [rideFilter, setRideFilter] = useState<string>("all");
@@ -409,7 +418,7 @@ const Compliance = () => {
         <p className="text-xs text-muted-foreground mt-0.5">
           {activeTab === "open"
             ? `${totalIssues} active issue${totalIssues !== 1 ? "s" : ""}`
-            : `Completed events (last ${completedDaysFilter} days)`}
+            : `Completed events${completedDaysFilter > 0 ? ` (last ${completedDaysFilter === 365 ? "year" : completedDaysFilter + " days"})` : ""}`}
         </p>
       </div>
 
@@ -607,100 +616,199 @@ const Compliance = () => {
       )}
 
       {/* ===== COMPLETED TAB ===== */}
-      {activeTab === "completed" && (
-        <>
-          {/* Date range filter */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground font-medium">Show:</span>
-            {([30, 60, 90] as CompletedDaysFilter[]).map((d) => (
-              <Button
-                key={d}
-                size="sm"
-                variant={completedDaysFilter === d ? "default" : "outline"}
-                className="h-8 text-xs"
-                onClick={() => setCompletedDaysFilter(d)}
-              >
-                {d} days
-              </Button>
-            ))}
-          </div>
+      {activeTab === "completed" && (() => {
+        const allCompleted = completedItems || [];
+        const searched = completedSearch
+          ? allCompleted.filter(i => {
+              const q = completedSearch.toLowerCase();
+              return i.eventName.toLowerCase().includes(q)
+                || i.rideName.toLowerCase().includes(q)
+                || i.eventType.toLowerCase().includes(q)
+                || (i.certificateReference || "").toLowerCase().includes(q);
+            })
+          : allCompleted;
 
-          {completedLoading ? (
-            <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />
-              ))}
+        // Group by ride
+        const rideGroups = new Map<string, { rideName: string; rideId: string | null; items: CompletedItem[]; lastCompleted: string }>();
+        searched.forEach(item => {
+          const key = item.rideId || "global";
+          if (!rideGroups.has(key)) {
+            rideGroups.set(key, { rideName: item.rideName, rideId: item.rideId, items: [], lastCompleted: item.completedAt });
+          }
+          const group = rideGroups.get(key)!;
+          group.items.push(item);
+          if (item.completedAt > group.lastCompleted) group.lastCompleted = item.completedAt;
+        });
+        const sortedGroups = Array.from(rideGroups.values()).sort((a, b) => b.lastCompleted.localeCompare(a.lastCompleted));
+
+        const COMPLETED_CATEGORIES: { key: string; label: string; icon: typeof ClipboardCheck }[] = [
+          { key: "inspection", label: "Inspections", icon: ClipboardCheck },
+          { key: "ndt", label: "NDT", icon: Zap },
+          { key: "maintenance", label: "Maintenance", icon: Wrench },
+          { key: "doc_expiry", label: "Document Expiry / Certificates", icon: FileText },
+        ];
+
+        return (
+          <>
+            {/* Search + Date filters */}
+            <div className="flex flex-wrap gap-2">
+              <div className="flex-1 min-w-[140px] relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <Input
+                  placeholder="Search ride, event, or reference…"
+                  value={completedSearch}
+                  onChange={(e) => setCompletedSearch(e.target.value)}
+                  className="pl-9 h-9 text-sm"
+                />
+              </div>
+              <div className="flex gap-1">
+                {([
+                  { value: 30 as CompletedDaysFilter, label: "30d" },
+                  { value: 90 as CompletedDaysFilter, label: "90d" },
+                  { value: 365 as CompletedDaysFilter, label: "1yr" },
+                  { value: 0 as CompletedDaysFilter, label: "All" },
+                ]).map((opt) => (
+                  <Button
+                    key={opt.value}
+                    size="sm"
+                    variant={completedDaysFilter === opt.value ? "default" : "outline"}
+                    className="h-9 text-xs px-3"
+                    onClick={() => setCompletedDaysFilter(opt.value)}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-          ) : (completedItems || []).length === 0 ? (
-            <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
-              <CheckCircle className="h-8 w-8 text-muted-foreground mx-auto" />
-              <p className="text-sm font-medium text-foreground">No completed events</p>
-              <p className="text-xs text-muted-foreground">Nothing completed in the last {completedDaysFilter} days</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-xl border border-border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="text-xs">Event</TableHead>
-                    <TableHead className="text-xs">Ride</TableHead>
-                    <TableHead className="text-xs">Completed</TableHead>
-                    <TableHead className="text-xs hidden sm:table-cell">Inspector</TableHead>
-                    <TableHead className="text-xs hidden sm:table-cell">Reference</TableHead>
-                    <TableHead className="text-xs w-[60px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(completedItems || []).map((item) => {
-                    const config = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG.inspection;
-                    const Icon = config.icon;
-                    return (
-                      <TableRow key={item.id}>
-                        <TableCell className="py-2.5">
-                          <div className="flex items-center gap-2">
-                            <Icon className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                            <div className="min-w-0">
-                              <p className="text-sm font-medium text-foreground truncate">{item.eventName}</p>
-                              <p className="text-[10px] text-muted-foreground">{item.eventType}</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="py-2.5">
-                          <span className="text-xs text-muted-foreground">{item.rideName}</span>
-                        </TableCell>
-                        <TableCell className="py-2.5">
-                          <span className="text-xs text-foreground">
-                            {item.completedAt ? formatDateUK(item.completedAt) : "–"}
+
+            {completedLoading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-16 bg-muted rounded-xl animate-pulse" />
+                ))}
+              </div>
+            ) : searched.length === 0 ? (
+              <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
+                <CheckCircle className="h-8 w-8 text-muted-foreground mx-auto" />
+                <p className="text-sm font-medium text-foreground">No completed events</p>
+                <p className="text-xs text-muted-foreground">
+                  {completedSearch ? "No results match your search" : `Nothing completed${completedDaysFilter > 0 ? ` in the last ${completedDaysFilter} days` : ""}`}
+                </p>
+              </div>
+            ) : (
+              <Accordion type="single" collapsible className="space-y-2">
+                {sortedGroups.map((group) => {
+                  const rideKey = group.rideId || "global";
+                  return (
+                    <AccordionItem
+                      key={rideKey}
+                      value={rideKey}
+                      className="border border-border rounded-xl overflow-hidden bg-card"
+                    >
+                      <AccordionTrigger className="px-3 py-2.5 hover:no-underline hover:bg-muted/30">
+                        <div className="flex items-center gap-2 flex-1 min-w-0 text-left">
+                          <h3 className="text-sm font-semibold text-foreground truncate">{group.rideName}</h3>
+                          <Badge variant="secondary" className="text-[10px] flex-shrink-0">
+                            {group.items.length}
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground ml-auto mr-2 flex-shrink-0">
+                            Last: {formatDateUK(group.lastCompleted)}
                           </span>
-                        </TableCell>
-                        <TableCell className="py-2.5 hidden sm:table-cell">
-                          <span className="text-xs text-muted-foreground">{item.inspectorCompany || "–"}</span>
-                        </TableCell>
-                        <TableCell className="py-2.5 hidden sm:table-cell">
-                          <span className="text-xs text-muted-foreground font-mono">{item.certificateReference || "–"}</span>
-                        </TableCell>
-                        <TableCell className="py-2.5">
-                          {item.documentId && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              className="h-7 w-7 p-0"
-                              onClick={() => navigate(`/documents`)}
-                              title="View Document"
-                            >
-                              <Eye className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </>
-      )}
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent className="px-3 pb-3 pt-0">
+                        <div className="space-y-3">
+                          {COMPLETED_CATEGORIES.map(cat => {
+                            const catItems = group.items.filter(i => i.category === cat.key);
+                            if (catItems.length === 0) return null;
+                            const CatIcon = cat.icon;
+                            return (
+                              <Collapsible key={cat.key} defaultOpen={catItems.length <= 8}>
+                                <CollapsibleTrigger className="w-full flex items-center gap-2 py-1 hover:bg-muted/20 rounded-md px-1 transition-colors">
+                                  <CatIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                                  <span className="text-xs font-semibold text-foreground">{cat.label}</span>
+                                  <Badge variant="outline" className="text-[9px] h-4">{catItems.length}</Badge>
+                                  <ChevronRight className="h-3 w-3 text-muted-foreground ml-auto transition-transform [[data-state=open]>&]:rotate-90" />
+                                </CollapsibleTrigger>
+                                <CollapsibleContent>
+                                  <div className="space-y-1 mt-1">
+                                    {catItems.map(item => (
+                                      <div
+                                        key={item.id}
+                                        className="flex items-center gap-2 px-2 py-2 rounded-lg border border-border/50 bg-background hover:border-primary/30 transition-colors"
+                                      >
+                                        <div className="flex-1 min-w-0">
+                                          <p className="text-sm font-medium text-foreground truncate">{item.eventName}</p>
+                                          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                                            <span className="text-[10px] text-muted-foreground">
+                                              {item.completedAt ? formatDateUK(item.completedAt) : "–"}
+                                            </span>
+                                            {item.inspectorCompany && (
+                                              <>
+                                                <span className="text-[10px] text-muted-foreground/50">·</span>
+                                                <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">
+                                                  {item.inspectorCompany}
+                                                </span>
+                                              </>
+                                            )}
+                                            {item.certificateReference && (
+                                              <>
+                                                <span className="text-[10px] text-muted-foreground/50">·</span>
+                                                <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[100px]">
+                                                  {item.certificateReference}
+                                                </span>
+                                              </>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-1 flex-shrink-0">
+                                          {item.documentId && (
+                                            <Button
+                                              size="sm"
+                                              variant="ghost"
+                                              className="h-7 w-7 p-0"
+                                              onClick={() => navigate("/documents")}
+                                              title="View Document"
+                                            >
+                                              <Eye className="h-3.5 w-3.5" />
+                                            </Button>
+                                          )}
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-7 w-7 p-0"
+                                            onClick={() => setEditingEvent(item)}
+                                            title="Edit"
+                                          >
+                                            <Pencil className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ))}
+                                  </div>
+                                </CollapsibleContent>
+                              </Collapsible>
+                            );
+                          })}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  );
+                })}
+              </Accordion>
+            )}
+
+            {/* Edit Sheet */}
+            {editingEvent && (
+              <CompletedEventEditSheet
+                open={!!editingEvent}
+                onOpenChange={(open) => { if (!open) setEditingEvent(null); }}
+                event={editingEvent}
+              />
+            )}
+          </>
+        );
+      })()}
 
       {/* Mark Complete Sheet */}
       {markCompleteEvent && (
