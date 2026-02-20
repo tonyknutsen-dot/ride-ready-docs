@@ -52,6 +52,7 @@ interface CompletedItem {
   completionNotes: string | null;
   evidenceUrls: string[];
   documentId: string | null;
+  fullDocumentId: string | null;
 }
 
 const CATEGORY_CONFIG: Record<string, { icon: typeof ClipboardCheck; label: string }> = {
@@ -133,7 +134,7 @@ async function fetchComplianceData(userId: string) {
 async function fetchCompletedEvents(userId: string, days: CompletedDaysFilter) {
   const query = supabase
     .from("compliance_events")
-    .select("id, event_name, event_type, category, ride_id, completed_at, inspector_company, certificate_reference, completion_notes, evidence_urls")
+    .select("id, event_name, event_type, category, ride_id, completed_at, inspector_company, certificate_reference, completion_notes, evidence_urls, full_document_id")
     .eq("user_id", userId)
     .eq("status", "completed")
     .order("completed_at", { ascending: false });
@@ -181,6 +182,7 @@ async function fetchCompletedEvents(userId: string, days: CompletedDaysFilter) {
     completionNotes: e.completion_notes,
     evidenceUrls: (e.evidence_urls as string[]) || [],
     documentId: docMap.get(e.id) || null,
+    fullDocumentId: (e as any).full_document_id || null,
   }));
 
   return items;
@@ -738,7 +740,14 @@ const Compliance = () => {
                                         className="flex items-center gap-2 px-2 py-2 rounded-lg border border-border/50 bg-background hover:border-primary/30 transition-colors"
                                       >
                                         <div className="flex-1 min-w-0">
-                                          <p className="text-sm font-medium text-foreground truncate">{item.eventName}</p>
+                                          <div className="flex items-center gap-2">
+                                            <p className="text-sm font-medium text-foreground truncate">{item.eventName}</p>
+                                            {item.fullDocumentId && (
+                                              <Badge variant="outline" className="text-[9px] font-mono flex-shrink-0 h-4">
+                                                {item.fullDocumentId}
+                                              </Badge>
+                                            )}
+                                          </div>
                                           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                                             <span className="text-[10px] text-muted-foreground">
                                               {item.completedAt ? formatDateUK(item.completedAt) : "–"}

@@ -72,6 +72,8 @@ interface CreateComplianceDocumentParams {
   evidenceUrls: string[];
   inspectorCompany?: string;
   certificateReference?: string;
+  /** Ride-specific compliance record number e.g. TC-CR-2026-0004 */
+  fullDocumentId?: string;
 }
 
 interface CreateComplianceDocumentResult {
@@ -101,11 +103,14 @@ export async function createComplianceDocument(
     evidenceUrls,
     inspectorCompany,
     certificateReference,
+    fullDocumentId,
   } = params;
 
   const dateStr = format(completionDate, 'dd MMM yyyy');
   const label = friendlyCategory(eventCategory, eventType);
-  const documentName = `${label} – Completed ${dateStr}`;
+  const documentName = fullDocumentId
+    ? `${fullDocumentId} – ${label} – ${dateStr}`
+    : `${label} – Completed ${dateStr}`;
   const documentType = mapEventToDocumentType(eventCategory, eventType);
 
   // Check if any evidence file is a PDF
@@ -129,6 +134,7 @@ export async function createComplianceDocument(
       completedByUserId,
       inspectorCompany,
       certificateReference,
+      fullDocumentId,
     });
   }
 
@@ -180,6 +186,7 @@ interface PdfParams {
   completedByUserId: string;
   inspectorCompany?: string;
   certificateReference?: string;
+  fullDocumentId?: string;
 }
 
 async function generateCompletionPdf(params: PdfParams): Promise<string> {
@@ -194,6 +201,7 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
     completedByUserId,
     inspectorCompany,
     certificateReference,
+    fullDocumentId,
   } = params;
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
@@ -204,8 +212,8 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
   const contentW = pageW - mL - mR;
   let y = 0;
 
-  // Auto-generated document ID
-  const docId = `RRD-CMP-${format(completionDate, 'yyyyMMdd')}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
+  // Document ID: use ride-specific compliance record number, or fallback
+  const docId = fullDocumentId || `RRD-CMP-${format(completionDate, 'yyyyMMdd')}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
   const generatedAt = format(new Date(), "dd MMM yyyy 'at' HH:mm");
 
   // ── Full-width navy header ──
