@@ -532,6 +532,8 @@ export type Database = {
           certificate_reference: string | null
           completed_at: string | null
           completed_by: string | null
+          completed_by_name: string | null
+          completed_by_role: string | null
           completion_notes: string | null
           created_at: string
           due_date: string
@@ -565,6 +567,8 @@ export type Database = {
           certificate_reference?: string | null
           completed_at?: string | null
           completed_by?: string | null
+          completed_by_name?: string | null
+          completed_by_role?: string | null
           completion_notes?: string | null
           created_at?: string
           due_date: string
@@ -598,6 +602,8 @@ export type Database = {
           certificate_reference?: string | null
           completed_at?: string | null
           completed_by?: string | null
+          completed_by_name?: string | null
+          completed_by_role?: string | null
           completion_notes?: string | null
           created_at?: string
           due_date?: string
@@ -2723,6 +2729,17 @@ export type Database = {
         | { Args: { p_event_id: string }; Returns: Json }
         | {
             Args: {
+              p_completion_date?: string
+              p_completion_notes?: string
+              p_event_id: string
+              p_evidence_urls?: string[]
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_completed_by_name?: string
+              p_completed_by_role?: string
               p_completion_date?: string
               p_completion_notes?: string
               p_event_id: string

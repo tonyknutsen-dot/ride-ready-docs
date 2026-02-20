@@ -77,6 +77,8 @@ interface CreateComplianceDocumentParams {
   dueDate: string;
   completionDate: Date;
   completedByUserId: string;
+  completedByName?: string;
+  completedByRole?: string;
   notes?: string;
   evidenceUrls: string[];
   inspectorCompany?: string;
@@ -94,8 +96,8 @@ export async function createComplianceDocument(
 ): Promise<CreateComplianceDocumentResult> {
   const {
     eventId, eventName, eventCategory, eventType, rideId, rideName,
-    dueDate, completionDate, completedByUserId, notes, evidenceUrls,
-    inspectorCompany, certificateReference, fullDocumentId,
+    dueDate, completionDate, completedByUserId, completedByName, completedByRole,
+    notes, evidenceUrls, inspectorCompany, certificateReference, fullDocumentId,
   } = params;
 
   const dateStr = format(completionDate, 'dd MMM yyyy');
@@ -115,7 +117,7 @@ export async function createComplianceDocument(
       eventName, label, rideName, dueDate, completionDate, notes,
       evidenceUrls, completedByUserId, inspectorCompany,
       certificateReference, fullDocumentId,
-      eventCategory, eventType,
+      eventCategory, eventType, completedByName, completedByRole,
     });
   }
 
@@ -183,13 +185,15 @@ interface PdfParams {
   fullDocumentId?: string;
   eventCategory?: string;
   eventType?: string;
+  completedByName?: string;
+  completedByRole?: string;
 }
 
 async function generateCompletionPdf(params: PdfParams): Promise<string> {
   const {
     eventName, label, rideName, dueDate, completionDate, notes,
     evidenceUrls, completedByUserId, inspectorCompany, certificateReference,
-    fullDocumentId, eventCategory, eventType,
+    fullDocumentId, eventCategory, eventType, completedByName, completedByRole,
   } = params;
 
   const docTypeCode = categoryToDocTypeCode(eventCategory || 'compliance', eventType);
@@ -227,8 +231,12 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
 
   // ── Completion Details ──
   y = drawSection(doc, 'Completion Details', y);
+  const completedByDisplay = completedByName
+    ? `${completedByName}${completedByRole ? ` (${completedByRole})` : ''}`
+    : undefined;
   y = drawMetadataRows(doc, [
     { label: 'Date Completed', value: format(completionDate, 'dd MMM yyyy') },
+    { label: 'Completed By', value: completedByDisplay },
     { label: 'Inspector / Company', value: inspectorCompany },
     { label: 'Certificate / Report Ref', value: certificateReference },
     { label: 'Evidence Attached', value: evidenceUrls.length > 0 ? `${evidenceUrls.length} file(s)` : null },

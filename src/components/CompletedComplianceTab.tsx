@@ -54,6 +54,8 @@ interface CompletedItem {
   evidenceUrls: string[];
   documentId: string | null;
   fullDocumentId: string | null;
+  completedByName: string | null;
+  completedByRole: string | null;
 }
 
 interface CompletedComplianceTabProps {
@@ -84,7 +86,7 @@ const PAGE_SIZE = 25;
 async function fetchCompletedEvents(userId: string, days: DaysFilter) {
   const query = supabase
     .from('compliance_events')
-    .select('id, event_name, event_type, category, ride_id, due_date, completed_at, inspector_company, certificate_reference, completion_notes, evidence_urls, full_document_id')
+    .select('id, event_name, event_type, category, ride_id, due_date, completed_at, inspector_company, certificate_reference, completion_notes, evidence_urls, full_document_id, completed_by_name, completed_by_role')
     .eq('user_id', userId)
     .eq('status', 'completed')
     .order('completed_at', { ascending: false });
@@ -119,6 +121,8 @@ async function fetchCompletedEvents(userId: string, days: DaysFilter) {
     evidenceUrls: (e.evidence_urls as string[]) || [],
     documentId: null,
     fullDocumentId: (e as any).full_document_id || null,
+    completedByName: (e as any).completed_by_name || null,
+    completedByRole: (e as any).completed_by_role || null,
   }));
 
   return { items, rideList };
@@ -677,6 +681,9 @@ function CompletedItemRow({
         </div>
         <p className="text-[11px] mt-px" style={{ color: '#64748B' }}>
           Completed {item.completedAt ? formatDateUK(item.completedAt) : '–'}
+          {item.completedByName && (
+            <> · By: {item.completedByName}{item.completedByRole ? ` (${item.completedByRole})` : ''}</>
+          )}
         </p>
         {item.certificateReference && (
           <p className="text-[11px] font-mono" style={{ color: '#64748B' }}>
