@@ -11,14 +11,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { PDF_COLORS, blobToDataUrl } from './pdfUtils';
 
 // ─── Doc type codes ──────────────────────────────────────────────────────────
-export type DocTypeCode = 'CR' | 'IR' | 'NDT' | 'MR' | 'DR';
+export type DocTypeCode = 'CR' | 'IR' | 'NDT' | 'MR' | 'DR' | 'TL' | 'CH' | 'IC' | 'RA';
 
 export const DOC_TYPE_LABELS: Record<DocTypeCode, string> = {
   CR: 'COMPLIANCE COMPLETION RECORD',
   IR: 'INSPECTION RECORD',
   NDT: 'NDT RECORD',
-  MR: 'MAINTENANCE RECORD',
+  MR: 'MAINTENANCE REPORT',
   DR: 'DOCUMENT RECORD',
+  TL: 'EQUIPMENT TIMELINE REPORT',
+  CH: 'CHECKS HISTORY REPORT',
+  IC: 'INSPECTION CHECKLIST',
+  RA: 'RISK ASSESSMENT',
 };
 
 export const DOC_TYPE_DISCLAIMERS: Record<DocTypeCode, string> = {
@@ -27,6 +31,10 @@ export const DOC_TYPE_DISCLAIMERS: Record<DocTypeCode, string> = {
   NDT: 'System-generated NDT record. Not a substitute for an official inspection certificate where required.',
   MR: 'System-generated maintenance record.',
   DR: 'Stored copy of uploaded document.',
+  TL: 'System-generated equipment timeline report for audit and compliance purposes.',
+  CH: 'System-generated checks history report.',
+  IC: 'System-generated inspection checklist record.',
+  RA: 'System-generated risk assessment record. Professional judgement must always be applied.',
 };
 
 // ─── Generate document ID via Supabase RPC ───────────────────────────────────
