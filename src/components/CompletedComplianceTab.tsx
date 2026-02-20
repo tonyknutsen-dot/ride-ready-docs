@@ -23,7 +23,7 @@ import {
 import {
   Search, ChevronRight, CheckCircle, ClipboardCheck, Zap, Wrench,
   FileText, Eye, History, Archive, RotateCcw, MoreVertical, Pencil,
-  ChevronsUpDown, ChevronsDownUp, MapPin,
+  ChevronsUpDown, ChevronsDownUp,
 } from 'lucide-react';
 import { formatDateUK } from '@/utils/dateFormat';
 import { format, parseISO } from 'date-fns';
@@ -70,10 +70,10 @@ const DAYS_OPTIONS: { value: DaysFilter; label: string }[] = [
 ];
 
 const CATEGORY_CONFIG: { key: string; label: string; icon: typeof ClipboardCheck }[] = [
-  { key: 'inspection', label: 'Inspections', icon: ClipboardCheck },
+  { key: 'inspection', label: 'INSPECTIONS', icon: ClipboardCheck },
   { key: 'ndt', label: 'NDT', icon: Zap },
-  { key: 'maintenance', label: 'Maintenance', icon: Wrench },
-  { key: 'doc_expiry', label: 'Document Expiry', icon: FileText },
+  { key: 'maintenance', label: 'MAINTENANCE', icon: Wrench },
+  { key: 'doc_expiry', label: 'DOCUMENT EXPIRY', icon: FileText },
 ];
 
 const PAGE_SIZE = 25;
@@ -132,14 +132,12 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   // Filters
   const [daysFilter, setDaysFilter] = useState<DaysFilter>(30);
   const [searchQuery, setSearchQuery] = useState('');
-  const [rideSearchQuery, setRideSearchQuery] = useState('');
-  const [rideFilter, setRideFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
 
   // Pagination per ride group
   const [ridePageMap, setRidePageMap] = useState<Record<string, number>>({});
 
-  // Expand/collapse state: ride keys and category keys (rideKey:catKey)
+  // Expand/collapse state
   const [openRides, setOpenRides] = useState<Set<string>>(new Set());
   const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
 
@@ -167,10 +165,9 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   const allItems = data?.items ?? [];
   const rideList = data?.rideList ?? [];
 
-  // Apply filters
+  // Unified search: ride names + event names + reference numbers
   const filtered = useMemo(() => {
     return allItems.filter(item => {
-      if (rideFilter !== 'all' && item.rideId !== rideFilter) return false;
       if (categoryFilter !== 'all' && item.category !== categoryFilter) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -182,7 +179,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
       }
       return true;
     });
-  }, [allItems, rideFilter, categoryFilter, searchQuery]);
+  }, [allItems, categoryFilter, searchQuery]);
 
   // Group: Ride → Category → items
   const rideGroups = useMemo(() => {
@@ -191,49 +188,41 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
       rideId: string | null;
       items: CompletedItem[];
       count: number;
+      lastCompleted: string;
     }>();
 
     filtered.forEach(item => {
       const key = item.rideId || 'global';
       if (!groups.has(key)) {
-        groups.set(key, { rideName: item.rideName, rideId: item.rideId, items: [], count: 0 });
+        groups.set(key, { rideName: item.rideName, rideId: item.rideId, items: [], count: 0, lastCompleted: '' });
       }
       const g = groups.get(key)!;
       g.items.push(item);
       g.count++;
+      if (!g.lastCompleted || (item.completedAt && item.completedAt > g.lastCompleted)) {
+        g.lastCompleted = item.completedAt;
+      }
     });
 
-    return Array.from(groups.values()).sort((a, b) => {
-      const aLast = a.items[0]?.completedAt || '';
-      const bLast = b.items[0]?.completedAt || '';
-      return bLast.localeCompare(aLast);
-    });
+    return Array.from(groups.values()).sort((a, b) => b.lastCompleted.localeCompare(a.lastCompleted));
   }, [filtered]);
-
-  // Apply ride search filter (separate from global search)
-  const visibleRideGroups = useMemo(() => {
-    if (!rideSearchQuery) return rideGroups;
-    const q = rideSearchQuery.toLowerCase();
-    return rideGroups.filter(g => g.rideName.toLowerCase().includes(q));
-  }, [rideGroups, rideSearchQuery]);
 
   // Expand/collapse all helpers
   const expandAll = useCallback(() => {
-    const rideKeys = new Set(visibleRideGroups.map(g => g.rideId || 'global'));
+    const rideKeys = new Set(rideGroups.map(g => g.rideId || 'global'));
     setOpenRides(rideKeys);
     const catKeys = new Set<string>();
-    visibleRideGroups.forEach(g => {
+    rideGroups.forEach(g => {
       const rideKey = g.rideId || 'global';
       CATEGORY_CONFIG.forEach(cat => {
         if (g.items.some(i => i.category === cat.key)) {
           catKeys.add(`${rideKey}:${cat.key}`);
         }
       });
-      // Load docs for all rides being expanded
       if (g.rideId) loadRideDocs(g.rideId);
     });
     setOpenCategories(catKeys);
-  }, [visibleRideGroups]);
+  }, [rideGroups]);
 
   const collapseAll = useCallback(() => {
     setOpenRides(new Set());
@@ -296,7 +285,6 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
       toast({ title: 'Document archived' });
       setArchiveDialogDoc(null);
       setArchiveReason('');
-      // Clear cache for that ride
       const rideId = archiveDialogDoc.ride_id;
       setRideDocsCache(prev => { const n = { ...prev }; delete n[rideId]; return n; });
     } else {
@@ -321,20 +309,20 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   // ── Render ──
 
   return (
-    <div className="space-y-3">
-      {/* Filters row */}
-      <div className="flex flex-wrap gap-2">
-        <div className="flex-1 min-w-[140px] relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+    <div className="space-y-2">
+      {/* Row 1: Search + Type filter */}
+      <div className="flex gap-2">
+        <div className="flex-1 relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
-            placeholder="Search ride, event, reference…"
+            placeholder="Search rides, events, references…"
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            className="pl-9 h-9 text-sm"
+            className="pl-8 h-9 text-sm"
           />
         </div>
         <Select value={categoryFilter} onValueChange={v => setCategoryFilter(v as CategoryFilter)}>
-          <SelectTrigger className="w-[120px] h-9 text-sm">
+          <SelectTrigger className="w-[130px] h-9 text-sm">
             <SelectValue placeholder="All Types" />
           </SelectTrigger>
           <SelectContent>
@@ -345,75 +333,54 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
             <SelectItem value="doc_expiry">Doc Expiry</SelectItem>
           </SelectContent>
         </Select>
-        {rideList.length > 1 && (
-          <Select value={rideFilter} onValueChange={setRideFilter}>
-            <SelectTrigger className="w-[120px] h-9 text-sm">
-              <SelectValue placeholder="All Rides" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Rides</SelectItem>
-              {rideList.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        )}
       </div>
 
-      {/* Date range pills */}
-      <div className="flex gap-1">
-        {DAYS_OPTIONS.map(opt => (
-          <Button
-            key={opt.value}
-            size="sm"
-            variant={daysFilter === opt.value ? 'default' : 'outline'}
-            className="h-8 text-xs px-3"
-            onClick={() => { setDaysFilter(opt.value); setRidePageMap({}); }}
-          >
-            {opt.label}
-          </Button>
-        ))}
-      </div>
-
-      {/* Ride search + Expand/Collapse controls */}
-      <div className="flex flex-wrap items-center gap-2">
-        <div className="flex-1 min-w-[120px] relative">
-          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-          <Input
-            placeholder="Search rides…"
-            value={rideSearchQuery}
-            onChange={e => setRideSearchQuery(e.target.value)}
-            className="pl-9 h-8 text-xs"
-          />
+      {/* Row 2: Date chips left, Expand/Collapse right */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex gap-0.5">
+          {DAYS_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => { setDaysFilter(opt.value); setRidePageMap({}); }}
+              className={`px-2.5 py-1 text-[11px] font-semibold rounded-md transition-colors ${
+                daysFilter === opt.value
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+              }`}
+            >
+              {opt.label}
+            </button>
+          ))}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 text-xs gap-1.5"
-          onClick={expandAll}
-        >
-          <ChevronsUpDown className="h-3.5 w-3.5" /> Expand all
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 text-xs gap-1.5"
-          onClick={collapseAll}
-        >
-          <ChevronsDownUp className="h-3.5 w-3.5" /> Collapse all
-        </Button>
+        <div className="flex gap-1">
+          <button
+            onClick={expandAll}
+            className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors rounded"
+          >
+            <ChevronsUpDown className="h-3 w-3" /> Expand
+          </button>
+          <button
+            onClick={collapseAll}
+            className="flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors rounded"
+          >
+            <ChevronsDownUp className="h-3 w-3" /> Collapse
+          </button>
+        </div>
       </div>
+
       {isLoading && (
-        <div className="space-y-3">
+        <div className="space-y-1.5">
           {[1, 2, 3].map(i => (
-            <div key={i} className="h-14 bg-muted rounded-xl animate-pulse" />
+            <div key={i} className="h-12 bg-muted rounded-lg animate-pulse" />
           ))}
         </div>
       )}
 
       {/* Empty state */}
       {!isLoading && filtered.length === 0 && (
-        <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
-          <CheckCircle className="h-8 w-8 text-muted-foreground mx-auto" />
-          <p className="text-sm font-medium text-foreground">
+        <div className="border border-border rounded-lg p-5 text-center space-y-1.5">
+          <CheckCircle className="h-6 w-6 text-muted-foreground mx-auto" />
+          <p className="text-sm font-semibold text-foreground">
             No completed items in this period
           </p>
           <p className="text-xs text-muted-foreground">
@@ -422,118 +389,112 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
               : `Nothing completed ${daysFilter > 0 ? `in the last ${daysFilter === 365 ? '12 months' : daysFilter + ' days'}` : ''}`}
           </p>
           {daysFilter > 0 && daysFilter < 90 && (
-            <Button
-              variant="link"
-              size="sm"
-              className="text-xs"
+            <button
+              className="text-xs text-primary font-medium hover:underline"
               onClick={() => setDaysFilter(90)}
             >
               Expand to 90 days
-            </Button>
+            </button>
           )}
           {daysFilter === 90 && (
-            <Button
-              variant="link"
-              size="sm"
-              className="text-xs"
+            <button
+              className="text-xs text-primary font-medium hover:underline"
               onClick={() => setDaysFilter(0)}
             >
               Show all time
-            </Button>
+            </button>
           )}
-        </div>
-      )}
-
-      {/* No rides match ride search */}
-      {!isLoading && filtered.length > 0 && visibleRideGroups.length === 0 && rideSearchQuery && (
-        <div className="bg-card border border-border rounded-xl p-4 text-center">
-          <p className="text-sm text-muted-foreground">No rides matching "{rideSearchQuery}"</p>
         </div>
       )}
 
       {/* Ride groups */}
-      {!isLoading && visibleRideGroups.map(group => {
-        const rideKey = group.rideId || 'global';
-        const currentPage = ridePageMap[rideKey] || 1;
-        const isRideOpen = openRides.has(rideKey);
+      <div className="space-y-1">
+        {!isLoading && rideGroups.map(group => {
+          const rideKey = group.rideId || 'global';
+          const currentPage = ridePageMap[rideKey] || 1;
+          const isRideOpen = openRides.has(rideKey);
 
-        // Group items by category
-        const catGroups = CATEGORY_CONFIG.map(cat => ({
-          ...cat,
-          items: group.items.filter(i => i.category === cat.key),
-        })).filter(cg => cg.items.length > 0);
+          const catGroups = CATEGORY_CONFIG.map(cat => ({
+            ...cat,
+            items: group.items.filter(i => i.category === cat.key),
+          })).filter(cg => cg.items.length > 0);
 
-        // Total visible items for pagination
-        const totalItems = group.items.length;
-        const maxVisible = currentPage * PAGE_SIZE;
+          const totalItems = group.items.length;
+          const maxVisible = currentPage * PAGE_SIZE;
 
-        return (
-          <Collapsible
-            key={rideKey}
-            open={isRideOpen}
-            onOpenChange={open => toggleRide(rideKey, open, group.rideId)}
-          >
-            <CollapsibleTrigger className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors text-left">
-              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90 shrink-0" />
-              <h3 className="text-sm font-bold text-foreground truncate">{group.rideName}</h3>
-              <Badge variant="secondary" className="text-[10px] flex-shrink-0">
-                {group.count} completed
-              </Badge>
-            </CollapsibleTrigger>
+          return (
+            <Collapsible
+              key={rideKey}
+              open={isRideOpen}
+              onOpenChange={open => toggleRide(rideKey, open, group.rideId)}
+            >
+              <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors text-left group">
+                <ChevronRight className="h-4.5 w-4.5 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold text-foreground truncate">{group.rideName}</span>
+                    <Badge className="text-[10px] font-semibold bg-primary/15 text-primary border-0 flex-shrink-0">
+                      {group.count} completed
+                    </Badge>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground leading-none">
+                    Last completed: {group.lastCompleted ? formatDateUK(group.lastCompleted) : '–'}
+                  </span>
+                </div>
+              </CollapsibleTrigger>
 
-            <CollapsibleContent className="mt-1 ml-2 space-y-2">
-              {catGroups.map(cg => {
-                const CatIcon = cg.icon;
-                const catKey = `${rideKey}:${cg.key}`;
-                const isCatOpen = openCategories.has(catKey);
-                const catItemsToShow = cg.items.slice(0, maxVisible);
+              <CollapsibleContent className="mt-0.5 ml-3 space-y-0">
+                {catGroups.map((cg, idx) => {
+                  const catKey = `${rideKey}:${cg.key}`;
+                  const isCatOpen = openCategories.has(catKey);
+                  const catItemsToShow = cg.items.slice(0, maxVisible);
 
-                return (
-                  <Collapsible key={cg.key} open={isCatOpen} onOpenChange={open => toggleCategory(catKey, open)}>
-                    <CollapsibleTrigger className="w-full flex items-center gap-2 py-1.5 px-2 hover:bg-muted/20 rounded-lg transition-colors">
-                      <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90" />
-                      <CatIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs font-semibold text-foreground">{cg.label}</span>
-                      <Badge variant="outline" className="text-[9px] h-4">{cg.items.length}</Badge>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="space-y-1 mt-1 ml-1">
-                        {catItemsToShow.map(item => {
-                          const doc = findDocForEvent(item.id, item.rideId);
-                          return (
-                            <CompletedItemRow
-                              key={item.id}
-                              item={item}
-                              doc={doc}
-                              onEdit={() => setEditingEvent(item)}
-                              onViewPdf={doc ? () => handleViewPdf(doc) : undefined}
-                              onVersions={doc ? () => handleShowVersions(doc) : undefined}
-                              onArchive={doc && !doc.archived_at ? () => setArchiveDialogDoc(doc) : undefined}
-                              onRestore={doc?.archived_at ? () => handleRestore(doc) : undefined}
-                            />
-                          );
-                        })}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                );
-              })}
+                  return (
+                    <div key={cg.key}>
+                      {idx > 0 && <div className="border-t border-border/50 my-0.5 ml-1" />}
+                      <Collapsible open={isCatOpen} onOpenChange={open => toggleCategory(catKey, open)}>
+                        <CollapsibleTrigger className="w-full flex items-center gap-2 py-1.5 px-1.5 hover:bg-muted/20 rounded transition-colors">
+                          <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90" />
+                          <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">{cg.label}</span>
+                          <span className="text-[9px] text-muted-foreground/70 font-medium">{cg.items.length}</span>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <div className="space-y-0.5 mt-0.5 ml-1">
+                            {catItemsToShow.map(item => {
+                              const doc = findDocForEvent(item.id, item.rideId);
+                              return (
+                                <CompletedItemRow
+                                  key={item.id}
+                                  item={item}
+                                  doc={doc}
+                                  onEdit={() => setEditingEvent(item)}
+                                  onViewPdf={doc ? () => handleViewPdf(doc) : undefined}
+                                  onVersions={doc ? () => handleShowVersions(doc) : undefined}
+                                  onArchive={doc && !doc.archived_at ? () => setArchiveDialogDoc(doc) : undefined}
+                                  onRestore={doc?.archived_at ? () => handleRestore(doc) : undefined}
+                                />
+                              );
+                            })}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    </div>
+                  );
+                })}
 
-              {/* Pagination within ride group */}
-              {totalItems > maxVisible && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="w-full text-xs text-primary"
-                  onClick={() => showMoreForRide(rideKey)}
-                >
-                  Show more ({totalItems - maxVisible} remaining)
-                </Button>
-              )}
-            </CollapsibleContent>
-          </Collapsible>
-        );
-      })}
+                {totalItems > maxVisible && (
+                  <button
+                    className="w-full text-[11px] text-primary font-medium py-1.5 hover:underline"
+                    onClick={() => showMoreForRide(rideKey)}
+                  >
+                    Show more ({totalItems - maxVisible} remaining)
+                  </button>
+                )}
+              </CollapsibleContent>
+            </Collapsible>
+          );
+        })}
+      </div>
 
       {/* Edit Sheet */}
       {editingEvent && (
@@ -555,21 +516,21 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
             {versions.map(v => (
               <div
                 key={v.id}
-                className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${
+                className={`flex items-center justify-between gap-3 rounded-lg border p-2.5 ${
                   v.status === 'active' ? 'border-primary/30 bg-primary/5' : 'border-border'
                 }`}
               >
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold">v{v.version}</span>
-                    {v.status === 'active' && <Badge variant="default" className="text-[10px]">Active</Badge>}
+                    {v.status === 'active' && <Badge className="text-[10px] bg-primary/15 text-primary border-0">Active</Badge>}
                     {v.status === 'superseded' && <Badge variant="secondary" className="text-[10px]">Superseded</Badge>}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
+                  <p className="text-[10px] text-muted-foreground mt-0.5">
                     {format(parseISO(v.created_at), 'dd MMM yyyy HH:mm')}
                   </p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => handleViewPdf(v)}>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={() => handleViewPdf(v)}>
                   <Eye className="h-3.5 w-3.5" />
                 </Button>
               </div>
@@ -606,7 +567,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   );
 };
 
-// ── Compact row for each completed item ──
+// ── Compact row ──
 
 function CompletedItemRow({
   item,
@@ -628,38 +589,38 @@ function CompletedItemRow({
   const isArchived = doc?.archived_at;
 
   return (
-    <div className={`flex items-center gap-2 px-2.5 py-2 rounded-lg border transition-colors ${
+    <div className={`flex items-center gap-2 px-2 py-1.5 rounded-md border transition-colors ${
       isArchived
-        ? 'border-border/50 bg-muted/20 opacity-70'
-        : 'border-border/50 bg-background hover:border-primary/30'
+        ? 'border-border/40 bg-muted/15 opacity-60'
+        : 'border-border/40 bg-background hover:border-primary/20'
     }`}>
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium text-foreground truncate">{item.eventName}</p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-[13px] font-semibold text-foreground truncate leading-tight">{item.eventName}</p>
           {item.fullDocumentId && (
-            <Badge variant="outline" className="text-[9px] font-mono flex-shrink-0 h-4">
+            <span className="text-[9px] font-mono text-muted-foreground bg-muted px-1 rounded flex-shrink-0">
               {item.fullDocumentId}
-            </Badge>
-          )}
-          {isArchived && (
-            <Badge variant="outline" className="text-[9px] border-destructive/30 text-destructive flex-shrink-0 h-4">
-              Archived
-            </Badge>
-          )}
-        </div>
-        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-          {item.dueDate && (
-            <span className="text-[10px] text-muted-foreground">
-              Due {formatDateUK(item.dueDate)}
             </span>
           )}
-          <span className="text-[10px] text-muted-foreground/50">→</span>
+          {isArchived && (
+            <span className="text-[9px] font-medium text-destructive bg-destructive/10 px-1 rounded flex-shrink-0">
+              Archived
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1 mt-px">
+          {item.dueDate && (
+            <span className="text-[10px] text-muted-foreground">
+              {formatDateUK(item.dueDate)}
+            </span>
+          )}
+          <span className="text-[10px] text-muted-foreground/40">→</span>
           <span className="text-[10px] text-muted-foreground">
             {item.completedAt ? formatDateUK(item.completedAt) : '–'}
           </span>
           {item.certificateReference && (
             <>
-              <span className="text-[10px] text-muted-foreground/50">·</span>
+              <span className="text-[10px] text-muted-foreground/40">·</span>
               <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[100px]">
                 {item.certificateReference}
               </span>
@@ -668,19 +629,16 @@ function CompletedItemRow({
         </div>
       </div>
 
-      <div className="flex items-center gap-0.5 flex-shrink-0">
-        {/* View PDF quick action */}
+      <div className="flex items-center gap-0 flex-shrink-0">
         {onViewPdf && (
-          <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={onViewPdf} title="View PDF">
-            <Eye className="h-3.5 w-3.5" />
+          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onViewPdf} title="View PDF">
+            <Eye className="h-3 w-3" />
           </Button>
         )}
-
-        {/* More actions */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-              <MoreVertical className="h-3.5 w-3.5" />
+            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+              <MoreVertical className="h-3 w-3" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
