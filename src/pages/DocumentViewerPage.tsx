@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -47,6 +48,7 @@ const DocumentViewerPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -309,10 +311,19 @@ const DocumentViewerPage = () => {
       toast({ title: 'Document archived' });
       setArchiveDialogOpen(false);
       setArchiveReason('');
+      invalidateComplianceQueries();
       navigate(-1);
     } else {
       toast({ title: 'Failed to archive', variant: 'destructive' });
     }
+  };
+
+
+
+  const invalidateComplianceQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['compliance-completed'] });
+    queryClient.invalidateQueries({ queryKey: ['compliance'] });
+    queryClient.invalidateQueries({ queryKey: ['overview'] });
   };
 
   const handleRestore = async () => {
@@ -320,8 +331,8 @@ const DocumentViewerPage = () => {
     const ok = await restoreRideDocument(rideDoc.id);
     if (ok) {
       toast({ title: 'Document restored' });
-      // Reload in-place to update banner and meta
       loadDocument(rideDoc.id);
+      invalidateComplianceQueries();
     } else {
       toast({ title: 'Failed to restore', variant: 'destructive' });
     }
