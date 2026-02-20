@@ -13,7 +13,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
-import { createComplianceDocument } from '@/utils/complianceDocumentCreator';
+import { createComplianceDocument, categoryToDocTypeCode } from '@/utils/complianceDocumentCreator';
+import { generateDocumentId } from '@/utils/pdfTemplate';
 
 interface MarkCompleteSheetProps {
   open: boolean;
@@ -148,13 +149,11 @@ const MarkCompleteSheet = ({
       // 1b. Generate compliance record number
       let fullDocumentId: string | undefined;
       if (rideId) {
-        const completionYear = completionDate.getFullYear();
-        const { data: docIdResult, error: docIdErr } = await supabase.rpc(
-          'generate_compliance_record_number' as any,
-          { p_ride_id: rideId, p_completion_year: completionYear } as any,
-        );
-        if (!docIdErr && docIdResult) {
-          fullDocumentId = docIdResult as string;
+        const docTypeCode = categoryToDocTypeCode(eventCategory || 'compliance', eventType);
+        try {
+          fullDocumentId = await generateDocumentId(rideId, docTypeCode, completionDate.getFullYear());
+        } catch (e) {
+          console.warn('Could not generate document ID:', e);
         }
       }
 

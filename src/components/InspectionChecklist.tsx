@@ -24,17 +24,18 @@ import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import {
   PDF_COLORS,
-  generateDocId,
   buildFileName,
   blobToDataUrl,
-  drawPDFHeader,
   drawSectionTitle,
   drawEquipmentDetails,
   drawSummaryBox,
   PDF_TABLE_HEAD_STYLES,
-  drawAllPageFooters,
-  drawComplianceStatement,
 } from '@/utils/pdfUtils';
+import {
+  drawTemplateHeader,
+  drawTemplateFooters,
+  generateDocumentId,
+} from '@/utils/pdfTemplate';
 import TemplateBuilder from './TemplateBuilder';
 import { EmptyState } from '@/components/EmptyState';
 import DefectReportDialog from './DefectReportDialog';
@@ -523,20 +524,11 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         }
       };
 
-      // === STANDARD HEADER ===
-      const docId = generateDocId('CHECK');
-      const companyName = profile?.company_name || profile?.showmen_name || 'Safety Inspection Report';
+      const docId = await generateDocumentId(ride.id, 'IR');
       const frequencyLabel = frequency === 'preopening' ? 'PRE-OPENING' : frequency.toUpperCase();
+      const templateOpts = { doc: pdf, title: `${frequencyLabel} SAFETY CHECK`, documentId: docId, docType: 'IR' as const };
 
-      currentY = drawPDFHeader({
-        doc: pdf,
-        logoDataUrl,
-        companyName,
-        controllerName: profile?.controller_name,
-        reportTitle: `${frequencyLabel} SAFETY CHECK`,
-        period: format(new Date(), 'dd MMM yyyy'),
-        docId,
-      });
+      currentY = drawTemplateHeader(templateOpts);
 
       // === EQUIPMENT DETAILS ===
       currentY = drawSectionTitle(pdf, 'Equipment Details', currentY);
@@ -824,7 +816,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       }
 
       // Add standardised footers to all pages
-      drawAllPageFooters(pdf);
+      drawTemplateFooters(templateOpts);
 
       return pdf.output('blob');
     } catch (error) {

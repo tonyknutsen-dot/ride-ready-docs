@@ -38,19 +38,20 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
   PDF_COLORS,
-  generateDocId,
   buildFileName,
   blobToDataUrl,
-  drawPDFHeader,
   drawSectionTitle,
   drawEquipmentDetails,
   drawSummaryBox,
   PDF_TABLE_HEAD_STYLES,
   PDF_TABLE_BODY_STYLES,
   PDF_TABLE_ALT_ROW,
-  drawAllPageFooters,
-  drawComplianceStatement,
 } from '@/utils/pdfUtils';
+import {
+  drawTemplateHeader,
+  drawTemplateFooters,
+  generateDocumentId,
+} from '@/utils/pdfTemplate';
 
 type Check = Tables<'checks'>;
 
@@ -241,8 +242,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
 
   const exportToPDF = async () => {
     const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const docId = generateDocId('CHECK');
+    const docId = await generateDocumentId(rideId, 'DR');
 
     // Fetch profile for company branding
     const { data: profile } = await supabase
@@ -284,18 +284,10 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
     const { startDate, endDate } = getDateRange();
     const companyName = profile?.company_name || profile?.showmen_name || 'Safety Checks Report';
     const frequencyLabel = frequency === 'daily' ? 'DAILY' : frequency === 'monthly' ? 'MONTHLY' : frequency === 'yearly' ? 'YEARLY' : frequency.toUpperCase();
+    const templateOpts = { doc, title: `${frequencyLabel} SAFETY CHECKS`, documentId: docId, docType: 'DR' as const };
 
     // Standard header
-    let currentY = drawPDFHeader({
-      doc,
-      logoDataUrl,
-      companyName,
-      controllerName: profile?.controller_name,
-      reportTitle: `${frequencyLabel} SAFETY CHECKS`,
-      period: `${startDate} – ${endDate}`,
-      generatedDate: format(new Date(), 'dd MMM yyyy'),
-      docId,
-    });
+    let currentY = drawTemplateHeader(templateOpts);
 
     // Equipment details + image
     currentY = drawSectionTitle(doc, 'Equipment Details', currentY);
@@ -362,12 +354,12 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8.5);
         doc.setTextColor(...PDF_COLORS.body);
-        const lines = doc.splitTextToSize(check.notes, pageWidth - 26);
+        const lines = doc.splitTextToSize(check.notes, doc.internal.pageSize.getWidth() - 26);
         doc.text(lines, 13, y);
       }
     }
 
-    drawAllPageFooters(doc, docId);
+    drawTemplateFooters(templateOpts);
     doc.save(buildFileName([rideName, frequency, 'SafetyChecks', format(new Date(), 'yyyyMMdd')]));
 
     toast({

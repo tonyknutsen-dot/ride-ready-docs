@@ -1,6 +1,17 @@
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import jsPDF from 'jspdf';
+import {
+  drawTemplateHeader,
+  drawSection,
+  drawMetadataRows,
+  drawNotesBox,
+  drawTemplateFooters,
+  checkOverflow,
+  generateDocumentId,
+  type DocTypeCode,
+  DOC_TYPE_LABELS,
+} from './pdfTemplate';
 
 /**
  * Maps compliance event category + event_type to a document_type
@@ -9,33 +20,31 @@ import jsPDF from 'jspdf';
  */
 export function mapEventToDocumentType(category: string, eventType?: string): string {
   const et = (eventType || '').toLowerCase();
-
-  // NDT
   if (category === 'ndt' || et.includes('ndt')) return 'ndt_report';
-
-  // Maintenance
   if (category === 'maintenance') return 'maintenance_report';
-
-  // Document expiry – decide by event type text
   if (category === 'doc_expiry') {
     if (et.includes('insur')) return 'insurance';
-    return 'other'; // "Other Document Expiry"
+    return 'other';
   }
-
-  // Inspection – map specific sub-types
   if (category === 'inspection') {
     if (et.includes('electrical')) return 'electrical_inspection';
     if (et.includes('in-service') || et.includes('inservice')) return 'inservice_inspection';
-    // All other inspections → inspection certificate
     return 'declaration_of_compliance';
   }
-
   return 'other';
 }
 
 /**
- * Human-readable document type label for the generated document title.
+ * Maps category to doc type code for document ID generation.
  */
+export function categoryToDocTypeCode(category: string, eventType?: string): DocTypeCode {
+  const et = (eventType || '').toLowerCase();
+  if (category === 'ndt' || et.includes('ndt')) return 'NDT';
+  if (category === 'maintenance') return 'MR';
+  if (category === 'inspection') return 'IR';
+  return 'CR';
+}
+
 function friendlyCategory(category: string, eventType?: string): string {
   const et = (eventType || '').toLowerCase();
   if (category === 'ndt') return 'NDT Inspection';
@@ -68,11 +77,9 @@ interface CreateComplianceDocumentParams {
   completionDate: Date;
   completedByUserId: string;
   notes?: string;
-  /** Storage paths of evidence files already uploaded */
   evidenceUrls: string[];
   inspectorCompany?: string;
   certificateReference?: string;
-  /** Ride-specific compliance record number e.g. TC-CR-2026-0004 */
   fullDocumentId?: string;
 }
 
@@ -81,29 +88,13 @@ interface CreateComplianceDocumentResult {
   documentName: string;
 }
 
-/**
- * Auto-creates a document record in the `documents` table when a compliance
- * event is marked complete. If no PDF file was attached, it generates a simple
- * completion certificate PDF and uploads it.
- */
 export async function createComplianceDocument(
   params: CreateComplianceDocumentParams,
 ): Promise<CreateComplianceDocumentResult> {
   const {
-    eventId,
-    eventName,
-    eventCategory,
-    eventType,
-    rideId,
-    rideName,
-    dueDate,
-    completionDate,
-    completedByUserId,
-    notes,
-    evidenceUrls,
-    inspectorCompany,
-    certificateReference,
-    fullDocumentId,
+    eventId, eventName, eventCategory, eventType, rideId, rideName,
+    dueDate, completionDate, completedByUserId, notes, evidenceUrls,
+    inspectorCompany, certificateReference, fullDocumentId,
   } = params;
 
   const dateStr = format(completionDate, 'dd MMM yyyy');
@@ -113,32 +104,20 @@ export async function createComplianceDocument(
     : `${label} – Completed ${dateStr}`;
   const documentType = mapEventToDocumentType(eventCategory, eventType);
 
-  // Check if any evidence file is a PDF
   const hasPdf = evidenceUrls.some((u) => u.toLowerCase().endsWith('.pdf'));
-
   let filePath: string;
 
   if (hasPdf) {
-    // Use the first PDF as the primary document file
     filePath = evidenceUrls.find((u) => u.toLowerCase().endsWith('.pdf'))!;
   } else {
-    // Generate a completion certificate PDF
     filePath = await generateCompletionPdf({
-      eventName,
-      label,
-      rideName,
-      dueDate,
-      completionDate,
-      notes,
-      evidenceUrls,
-      completedByUserId,
-      inspectorCompany,
-      certificateReference,
-      fullDocumentId,
+      eventName, label, rideName, dueDate, completionDate, notes,
+      evidenceUrls, completedByUserId, inspectorCompany,
+      certificateReference, fullDocumentId,
+      eventCategory, eventType,
     });
   }
 
-  // Build structured notes with inspector/reference for document card display
   const noteParts = [
     inspectorCompany ? `Inspector: ${inspectorCompany}` : null,
     certificateReference ? `Ref: ${certificateReference}` : null,
@@ -146,12 +125,9 @@ export async function createComplianceDocument(
     `Compliance event: ${eventName}`,
     `Due date: ${format(new Date(dueDate), 'dd MMM yyyy')}`,
     `Event ID: ${eventId}`,
-    evidenceUrls.length > 0
-      ? `Evidence files: ${evidenceUrls.length}`
-      : null,
+    evidenceUrls.length > 0 ? `Evidence files: ${evidenceUrls.length}` : null,
   ].filter(Boolean).join('\n');
 
-  // Create the document record
   const { data, error } = await supabase
     .from('documents')
     .insert({
@@ -167,12 +143,11 @@ export async function createComplianceDocument(
     .single();
 
   if (error) throw error;
-
   return { documentId: data.id, documentName };
 }
 
 /* ------------------------------------------------------------------ */
-/*  PDF Generation                                                     */
+/*  PDF Generation using unified template                              */
 /* ------------------------------------------------------------------ */
 
 interface PdfParams {
@@ -187,66 +162,32 @@ interface PdfParams {
   inspectorCompany?: string;
   certificateReference?: string;
   fullDocumentId?: string;
+  eventCategory?: string;
+  eventType?: string;
 }
 
 async function generateCompletionPdf(params: PdfParams): Promise<string> {
   const {
-    eventName,
-    label,
-    rideName,
-    dueDate,
-    completionDate,
-    notes,
-    evidenceUrls,
-    completedByUserId,
-    inspectorCompany,
-    certificateReference,
-    fullDocumentId,
+    eventName, label, rideName, dueDate, completionDate, notes,
+    evidenceUrls, completedByUserId, inspectorCompany, certificateReference,
+    fullDocumentId, eventCategory, eventType,
   } = params;
 
-  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-  const pageW = doc.internal.pageSize.getWidth();
-  const pageH = doc.internal.pageSize.getHeight();
-  const mL = 15;
-  const mR = 15;
-  const contentW = pageW - mL - mR;
-  let y = 0;
-
-  // Document ID: use ride-specific compliance record number, or fallback
+  const docTypeCode = categoryToDocTypeCode(eventCategory || 'compliance', eventType);
+  const docTitle = DOC_TYPE_LABELS[docTypeCode] || 'COMPLIANCE COMPLETION RECORD';
   const docId = fullDocumentId || `RRD-CMP-${format(completionDate, 'yyyyMMdd')}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-  const generatedAt = format(new Date(), "dd MMM yyyy 'at' HH:mm");
 
-  // ── Full-width navy header ──
-  const hdrH = 20;
-  doc.setFillColor(30, 58, 95);
-  doc.rect(0, 0, pageW, hdrH, 'F');
-  doc.setTextColor(255, 255, 255);
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const mL = 15;
 
-  // Left: brand
-  doc.setFontSize(8);
-  doc.setFont('helvetica', 'bold');
-  doc.text('RIDEREADY DOCS', mL, 8);
-  doc.setFontSize(6);
-  doc.setFont('helvetica', 'normal');
-  doc.text('Compliance Management', mL, 13);
+  const templateOpts = { doc, title: docTitle, documentId: docId, docType: docTypeCode };
 
-  // Centre: document title
-  doc.setFontSize(7.5);
-  doc.setFont('helvetica', 'bold');
-  doc.text('COMPLIANCE COMPLETION RECORD', pageW / 2, 10.5, { align: 'center' });
+  // ── Header ──
+  let y = drawTemplateHeader(templateOpts);
 
-  // Right: Document ID prominent (16pt bold) + generated date below (10pt)
-  doc.setFontSize(16);
-  doc.setFont('helvetica', 'bold');
-  doc.text(docId, pageW - mR, 11, { align: 'right' });
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'normal');
-  doc.text(generatedAt, pageW - mR, 17, { align: 'right' });
-
-  // ── Event title block ──
-  y = hdrH + 6;
+  // ── Event title ──
   doc.setTextColor(30, 58, 95);
-  doc.setFontSize(13);
+  doc.setFontSize(12);
   doc.setFont('helvetica', 'bold');
   doc.text(eventName, mL, y);
   y += 5;
@@ -254,112 +195,34 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(80, 80, 80);
   doc.text(rideName, mL, y);
+  y += 6;
 
-  // Status badge (green pill) — right-aligned on same line
-  const badgeText = 'COMPLETED';
-  doc.setFontSize(6.5);
-  doc.setFont('helvetica', 'bold');
-  const badgeW = doc.getTextWidth(badgeText) + 7;
-  const badgeH = 4.5;
-  const badgeX = pageW - mR - badgeW;
-  const badgeY = y - 3.5;
-  doc.setFillColor(22, 120, 55);
-  doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 2, 2, 'F');
-  doc.setTextColor(255, 255, 255);
-  doc.text(badgeText, badgeX + 3.5, badgeY + 3.2);
+  // ── Event Details ──
+  y = drawSection(doc, 'Event Details', y);
+  y = drawMetadataRows(doc, [
+    { label: 'Event Type', value: label },
+    { label: 'Event Name', value: eventName },
+    { label: 'Equipment / Ride', value: rideName },
+    { label: 'Scheduled Due Date', value: format(new Date(dueDate), 'dd MMM yyyy') },
+  ], y);
 
-  y += 4;
-  doc.setDrawColor(190, 190, 190);
-  doc.setLineWidth(0.3);
-  doc.line(mL, y, pageW - mR, y);
-  doc.setLineWidth(0.2);
-  y += 4;
+  // ── Completion Details ──
+  y = drawSection(doc, 'Completion Details', y);
+  y = drawMetadataRows(doc, [
+    { label: 'Date Completed', value: format(completionDate, 'dd MMM yyyy') },
+    { label: 'Inspector / Company', value: inspectorCompany },
+    { label: 'Certificate / Report Ref', value: certificateReference },
+    { label: 'Evidence Attached', value: evidenceUrls.length > 0 ? `${evidenceUrls.length} file(s)` : null },
+  ], y);
 
-  // ── Helpers ──
-  const sectionHeader = (title: string) => {
-    doc.setFillColor(240, 242, 245);
-    doc.rect(mL, y - 1, contentW, 5.5, 'F');
-    doc.setFontSize(7);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(30, 58, 95);
-    doc.text(title, mL + 2, y + 2.8);
-    y += 7;
-  };
-
-  const valueX = pageW - mR - 2;
-  const addRow = (rowLabel: string, value: string) => {
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(110, 110, 110);
-    doc.setFontSize(7.5);
-    doc.text(rowLabel, mL + 3, y);
-    doc.setTextColor(25, 25, 25);
-    doc.setFont('helvetica', 'normal');
-    doc.text(value, valueX, y, { align: 'right' });
-    y += 4.5;
-  };
-
-  // ── SECTION: Event Details ──
-  sectionHeader('EVENT DETAILS');
-  addRow('Event Type', label);
-  addRow('Event Name', eventName);
-  addRow('Equipment / Ride', rideName);
-  addRow('Scheduled Due Date', format(new Date(dueDate), 'dd MMM yyyy'));
-  y += 1.5;
-
-  // ── SECTION: Completion Details ──
-  sectionHeader('COMPLETION DETAILS');
-  addRow('Date Completed', format(completionDate, 'dd MMM yyyy'));
-  if (inspectorCompany) addRow('Inspector / Company', inspectorCompany);
-  if (certificateReference) addRow('Certificate / Report Ref', certificateReference);
-  if (evidenceUrls.length > 0) addRow('Evidence Attached', `${evidenceUrls.length} file(s)`);
-  y += 1.5;
-
-  // ── SECTION: Notes ──
+  // ── Notes ──
   if (notes) {
-    sectionHeader('NOTES');
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(50, 50, 50);
-    doc.setFontSize(7.5);
-    const lines = doc.splitTextToSize(notes, contentW - 6);
-    doc.text(lines, mL + 3, y);
-    y += lines.length * 3.8 + 2;
+    y = drawSection(doc, 'Notes', y);
+    y = drawNotesBox(doc, notes, y);
   }
 
-  // ── Compliance statement box ──
-  y += 3;
-  const boxH = 10;
-  doc.setDrawColor(190, 190, 190);
-  doc.setFillColor(248, 249, 250);
-  doc.roundedRect(mL, y, contentW, boxH, 1.5, 1.5, 'FD');
-  doc.setFontSize(6);
-  doc.setFont('helvetica', 'italic');
-  doc.setTextColor(100, 100, 100);
-  doc.text(
-    'This document confirms completion logging within RideReady Docs.',
-    pageW / 2, y + 3.8, { align: 'center' },
-  );
-  doc.text(
-    'Not a substitute for an official inspection certificate.',
-    pageW / 2, y + 7.2, { align: 'center' },
-  );
-
   // ── Footer ──
-  doc.setFontSize(6.5);
-  doc.setTextColor(140, 140, 140);
-  doc.setFont('helvetica', 'italic');
-  doc.text(
-    'System-generated compliance record. Not a substitute for an official inspection certificate.',
-    pageW / 2,
-    pageH - 14,
-    { align: 'center' },
-  );
-  doc.setFont('helvetica', 'normal');
-  doc.text(
-    `${docId}  ·  RideReady Docs  ·  Page 1 of 1`,
-    pageW / 2,
-    pageH - 9,
-    { align: 'center' },
-  );
+  drawTemplateFooters(templateOpts);
 
   // ── Upload PDF ──
   const pdfBlob = doc.output('blob');
@@ -372,6 +235,5 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
     .upload(path, pdfBlob, { contentType: 'application/pdf', upsert: true });
 
   if (error) throw error;
-
   return path;
 }
