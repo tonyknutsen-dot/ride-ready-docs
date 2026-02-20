@@ -24,7 +24,7 @@ import {
 import {
   Search, ChevronRight, CheckCircle, ClipboardCheck, Zap, Wrench,
   FileText, Eye, History, Archive, RotateCcw, MoreVertical, Pencil,
-  ChevronsUpDown, ChevronsDownUp, Download, ExternalLink,
+  ChevronsUpDown, ChevronsDownUp, Download, ExternalLink, Loader2,
 } from 'lucide-react';
 import { formatDateUK } from '@/utils/dateFormat';
 import { format, parseISO } from 'date-fns';
@@ -680,18 +680,33 @@ function CompletedItemRow({
   onOpenInDocs?: () => void;
 }) {
   const isArchived = doc?.archived_at;
+  const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
+
+  const handleCardClick = () => {
+    if (!onViewPdf || loading) return;
+    setLoading(true);
+    try {
+      onViewPdf();
+    } catch {
+      toast({ title: 'Failed to open document', variant: 'destructive' });
+      setLoading(false);
+    }
+  };
 
   return (
     <div
       role={onViewPdf ? "button" : undefined}
       tabIndex={onViewPdf ? 0 : undefined}
-      onClick={onViewPdf}
-      onKeyDown={onViewPdf ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onViewPdf(); } } : undefined}
-      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border transition-colors ${
-        isArchived
-          ? 'border-border/40 bg-muted/15 opacity-60'
-          : 'border-border/40 bg-background hover:bg-muted/40 active:bg-muted/60'
-      } ${onViewPdf ? 'cursor-pointer' : ''}`}
+      onClick={handleCardClick}
+      onKeyDown={onViewPdf ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(); } } : undefined}
+      className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border ${
+        loading
+          ? 'border-primary/30 bg-muted/50 pointer-events-none'
+          : isArchived
+            ? 'border-border/40 bg-muted/15 opacity-60'
+            : 'border-border/40 bg-background hover:bg-muted/40 active:bg-muted/60'
+      } ${onViewPdf && !loading ? 'cursor-pointer' : ''}`}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
@@ -728,9 +743,12 @@ function CompletedItemRow({
       <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
         {onViewPdf && (
           <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 select-none">
-            <Eye className="h-3 w-3" />
-            PDF
+            {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
+            {loading ? 'Loading…' : 'PDF'}
           </span>
+        )}
+        {loading && (
+          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground sm:hidden" />
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
