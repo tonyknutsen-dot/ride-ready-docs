@@ -23,7 +23,7 @@ import {
 import {
   Search, ChevronRight, CheckCircle, ClipboardCheck, Zap, Wrench,
   FileText, Eye, History, Archive, RotateCcw, MoreVertical, Pencil,
-  ChevronsUpDown, ChevronsDownUp,
+  ChevronsUpDown, ChevronsDownUp, Download, ExternalLink,
 } from 'lucide-react';
 import { formatDateUK } from '@/utils/dateFormat';
 import { format, parseISO } from 'date-fns';
@@ -261,15 +261,31 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
     return docs.find(d => d.related_event_id === eventId && d.status === 'active') || null;
   };
 
-  const handleViewPdf = async (doc: RideDocument) => {
+  const getSignedUrl = async (doc: RideDocument): Promise<string | null> => {
     const { data, error } = await supabase.storage
       .from('ride-documents')
       .createSignedUrl(doc.file_url, 3600);
     if (error || !data?.signedUrl) {
       toast({ title: 'Could not open document', variant: 'destructive' });
-      return;
+      return null;
     }
-    window.open(data.signedUrl, '_blank');
+    return data.signedUrl;
+  };
+
+  const handleViewPdf = async (doc: RideDocument) => {
+    const url = await getSignedUrl(doc);
+    if (url) window.open(url, '_blank');
+  };
+
+  const handleDownload = async (doc: RideDocument) => {
+    const url = await getSignedUrl(doc);
+    if (!url) return;
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = doc.title || 'document.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const handleShowVersions = async (doc: RideDocument) => {
@@ -469,9 +485,11 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
                                   doc={doc}
                                   onEdit={() => setEditingEvent(item)}
                                   onViewPdf={doc ? () => handleViewPdf(doc) : undefined}
+                                  onDownload={doc ? () => handleDownload(doc) : undefined}
                                   onVersions={doc ? () => handleShowVersions(doc) : undefined}
                                   onArchive={doc && !doc.archived_at ? () => setArchiveDialogDoc(doc) : undefined}
                                   onRestore={doc?.archived_at ? () => handleRestore(doc) : undefined}
+                                  onOpenInDocs={item.fullDocumentId ? () => window.open(`/documents?highlight=${item.fullDocumentId}`, '_blank') : undefined}
                                 />
                               );
                             })}
@@ -574,22 +592,26 @@ function CompletedItemRow({
   doc,
   onEdit,
   onViewPdf,
+  onDownload,
   onVersions,
   onArchive,
   onRestore,
+  onOpenInDocs,
 }: {
   item: CompletedItem;
   doc: RideDocument | null;
   onEdit: () => void;
   onViewPdf?: () => void;
+  onDownload?: () => void;
   onVersions?: () => void;
   onArchive?: () => void;
   onRestore?: () => void;
+  onOpenInDocs?: () => void;
 }) {
   const isArchived = doc?.archived_at;
 
   return (
-    <div className={`flex items-center gap-2 px-2 py-1.5 rounded-md border transition-colors ${
+    <div className={`flex items-center gap-2 px-2.5 py-2 rounded-md border transition-colors ${
       isArchived
         ? 'border-border/40 bg-muted/15 opacity-60'
         : 'border-border/40 bg-background hover:border-primary/20'
@@ -626,19 +648,28 @@ function CompletedItemRow({
               </span>
             </>
           )}
+          {item.evidenceUrls.length > 0 && (
+            <>
+              <span className="text-[10px] text-muted-foreground/40">·</span>
+              <span className="text-[9px] text-muted-foreground">
+                {item.evidenceUrls.length} attachment{item.evidenceUrls.length !== 1 ? 's' : ''}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
-      <div className="flex items-center gap-0 flex-shrink-0">
+      <div className="flex items-center gap-1 flex-shrink-0">
         {onViewPdf && (
-          <Button variant="ghost" size="sm" className="h-6 w-6 p-0" onClick={onViewPdf} title="View PDF">
+          <Button variant="outline" size="sm" className="h-7 px-2.5 gap-1.5 text-[11px] font-medium" onClick={onViewPdf}>
             <Eye className="h-3 w-3" />
+            View PDF
           </Button>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
-              <MoreVertical className="h-3 w-3" />
+            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+              <MoreVertical className="h-3.5 w-3.5" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -650,20 +681,30 @@ function CompletedItemRow({
                 <Eye className="h-3.5 w-3.5 mr-2" /> View PDF
               </DropdownMenuItem>
             )}
+            {onDownload && (
+              <DropdownMenuItem onClick={onDownload}>
+                <Download className="h-3.5 w-3.5 mr-2" /> Download
+              </DropdownMenuItem>
+            )}
             {onVersions && (
               <DropdownMenuItem onClick={onVersions}>
-                <History className="h-3.5 w-3.5 mr-2" /> Version History
+                <History className="h-3.5 w-3.5 mr-2" /> View History
+              </DropdownMenuItem>
+            )}
+            {onOpenInDocs && (
+              <DropdownMenuItem onClick={onOpenInDocs}>
+                <ExternalLink className="h-3.5 w-3.5 mr-2" /> Open in Documents
               </DropdownMenuItem>
             )}
             {(onArchive || onRestore) && <DropdownMenuSeparator />}
             {onArchive && (
               <DropdownMenuItem onClick={onArchive}>
-                <Archive className="h-3.5 w-3.5 mr-2" /> Archive Document
+                <Archive className="h-3.5 w-3.5 mr-2" /> Archive
               </DropdownMenuItem>
             )}
             {onRestore && (
               <DropdownMenuItem onClick={onRestore}>
-                <RotateCcw className="h-3.5 w-3.5 mr-2" /> Restore Document
+                <RotateCcw className="h-3.5 w-3.5 mr-2" /> Restore
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
