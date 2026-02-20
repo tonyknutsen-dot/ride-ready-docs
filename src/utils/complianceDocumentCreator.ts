@@ -217,7 +217,7 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
   const generatedAt = format(new Date(), "dd MMM yyyy 'at' HH:mm");
 
   // ── Full-width navy header ──
-  const hdrH = 16;
+  const hdrH = 20;
   doc.setFillColor(30, 58, 95);
   doc.rect(0, 0, pageW, hdrH, 'F');
   doc.setTextColor(255, 255, 255);
@@ -225,21 +225,23 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
   // Left: brand
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text('RIDEREADY DOCS', mL, 7);
+  doc.text('RIDEREADY DOCS', mL, 8);
   doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
-  doc.text('Compliance Management', mL, 11.5);
+  doc.text('Compliance Management', mL, 13);
 
   // Centre: document title
-  doc.setFontSize(8);
+  doc.setFontSize(7.5);
   doc.setFont('helvetica', 'bold');
-  doc.text('COMPLIANCE COMPLETION RECORD', pageW / 2, 9, { align: 'center' });
+  doc.text('COMPLIANCE COMPLETION RECORD', pageW / 2, 10.5, { align: 'center' });
 
-  // Right: doc ID + generated timestamp
-  doc.setFontSize(6);
+  // Right: Document ID prominent (16pt bold) + generated date below (10pt)
+  doc.setFontSize(16);
+  doc.setFont('helvetica', 'bold');
+  doc.text(docId, pageW - mR, 11, { align: 'right' });
+  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text(docId, pageW - mR, 7, { align: 'right' });
-  doc.text(generatedAt, pageW - mR, 11.5, { align: 'right' });
+  doc.text(generatedAt, pageW - mR, 17, { align: 'right' });
 
   // ── Event title block ──
   y = hdrH + 6;
