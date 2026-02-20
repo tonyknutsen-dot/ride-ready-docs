@@ -489,7 +489,7 @@ const Compliance = () => {
                       });
                     }}
                   >
-                    <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors text-left">
+                    <CollapsibleTrigger className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors text-left ${oCount > 0 ? 'border-l-4 border-l-destructive' : eCount > 0 ? 'border-l-4 border-l-[#D97706]' : xCount > 0 ? 'border-l-4 border-l-[#F59E0B]' : ''}`}>
                       <ChevronRight className="h-4.5 w-4.5 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1.5 flex-wrap">
