@@ -650,8 +650,8 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     const rideImageData = await fetchRideImage();
     
     // === HEADER SECTION ===
-    const docId = await generateDocumentId(ride.id, 'DR');
-    const templateOpts = { doc, title: 'RISK ASSESSMENT', documentId: docId, docType: 'DR' as const };
+    const docId = await generateDocumentId(ride.id, 'RA');
+    const templateOpts = { doc, title: 'RISK ASSESSMENT', documentId: docId, docType: 'RA' as const };
 
     let yPos = drawTemplateHeader(templateOpts);
 
