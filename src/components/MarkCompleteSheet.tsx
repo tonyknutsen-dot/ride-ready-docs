@@ -1,16 +1,16 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Sheet, SheetContent, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CheckCircle2, Calendar as CalendarIcon, Repeat } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { CheckCircle2, Calendar as CalendarIcon, Repeat, Camera, Upload, X, FileText, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
+import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
 
 interface MarkCompleteSheetProps {
   open: boolean;
@@ -20,6 +20,12 @@ interface MarkCompleteSheetProps {
   isRecurring?: boolean;
   recurrenceRule?: string | null;
   onCompleted?: () => void;
+}
+
+interface EvidenceFile {
+  file: File;
+  preview?: string;
+  type: 'photo' | 'file';
 }
 
 const MarkCompleteSheet = ({
@@ -37,15 +43,79 @@ const MarkCompleteSheet = ({
   const [notes, setNotes] = useState('');
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [evidenceFiles, setEvidenceFiles] = useState<EvidenceFile[]>([]);
+
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleCameraCapture = () => {
+    cameraInputRef.current?.click();
+  };
+
+  const handleFileUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleCameraChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    for (const file of Array.from(files)) {
+      let processed = file;
+      if (isLikelyCameraPhoto(file)) {
+        try { processed = await compressImage(file, 1920, 1920, 0.8); } catch { /* use original */ }
+      }
+      const preview = URL.createObjectURL(processed);
+      setEvidenceFiles(prev => [...prev, { file: processed, preview, type: 'photo' }]);
+    }
+    e.target.value = '';
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    for (const file of Array.from(files)) {
+      const isImage = file.type.startsWith('image/');
+      const preview = isImage ? URL.createObjectURL(file) : undefined;
+      setEvidenceFiles(prev => [...prev, { file, preview, type: isImage ? 'photo' : 'file' }]);
+    }
+    e.target.value = '';
+  };
+
+  const removeEvidence = (index: number) => {
+    setEvidenceFiles(prev => {
+      const removed = prev[index];
+      if (removed.preview) URL.revokeObjectURL(removed.preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  const uploadEvidence = async (): Promise<string[]> => {
+    if (evidenceFiles.length === 0) return [];
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Not authenticated');
+
+    const urls: string[] = [];
+    for (const ev of evidenceFiles) {
+      const ext = ev.file.name.split('.').pop() || 'jpg';
+      const path = `${user.id}/evidence/${eventId}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage.from('ride-documents').upload(path, ev.file);
+      if (error) throw error;
+      urls.push(path);
+    }
+    return urls;
+  };
 
   const handleConfirm = async () => {
     setSubmitting(true);
     try {
+      const evidenceUrls = await uploadEvidence();
+
       const { data, error } = await supabase.rpc('complete_event', {
         p_event_id: eventId,
         p_completion_date: format(completionDate, 'yyyy-MM-dd'),
         p_completion_notes: notes || null,
-        p_evidence_urls: [],
+        p_evidence_urls: evidenceUrls,
       });
       if (error) throw error;
 
@@ -61,8 +131,7 @@ const MarkCompleteSheet = ({
 
       queryClient.invalidateQueries({ queryKey: ['compliance'] });
       onOpenChange(false);
-      setNotes('');
-      setCompletionDate(new Date());
+      resetState();
       onCompleted?.();
     } catch (error: any) {
       toast({ title: "Error", description: error.message || "Could not complete event.", variant: "destructive" });
@@ -71,13 +140,20 @@ const MarkCompleteSheet = ({
     }
   };
 
+  const resetState = () => {
+    setNotes('');
+    setCompletionDate(new Date());
+    evidenceFiles.forEach(ev => { if (ev.preview) URL.revokeObjectURL(ev.preview); });
+    setEvidenceFiles([]);
+  };
+
   const recurrenceLabel = recurrenceRule
     ? `Every ${recurrenceRule.replace(':', ' ')}`
     : null;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[70vh] flex flex-col p-0">
+    <Sheet open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) resetState(); }}>
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] flex flex-col p-0">
         {/* Header */}
         <div className="px-5 pt-5 pb-4 border-b border-border shrink-0">
           <div className="flex items-center gap-2">
@@ -110,6 +186,83 @@ const MarkCompleteSheet = ({
             </Popover>
           </div>
 
+          {/* Evidence */}
+          <div className="space-y-1.5">
+            <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Evidence (optional)</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-1.5"
+                onClick={handleCameraCapture}
+                disabled={submitting}
+              >
+                <Camera className="h-4 w-4" />
+                Take Photo
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-1.5"
+                onClick={handleFileUpload}
+                disabled={submitting}
+              >
+                <Upload className="h-4 w-4" />
+                Upload File
+              </Button>
+            </div>
+
+            {/* Hidden inputs */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleCameraChange}
+            />
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+              multiple
+              className="hidden"
+              onChange={handleFileChange}
+            />
+
+            {/* Evidence previews */}
+            {evidenceFiles.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-2">
+                {evidenceFiles.map((ev, idx) => (
+                  <div key={idx} className="relative group">
+                    {ev.preview ? (
+                      <img
+                        src={ev.preview}
+                        alt={`Evidence ${idx + 1}`}
+                        className="w-16 h-16 rounded-lg object-cover border border-border"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-lg border border-border bg-muted flex flex-col items-center justify-center gap-0.5">
+                        <FileText className="h-5 w-5 text-muted-foreground" />
+                        <span className="text-[8px] text-muted-foreground truncate max-w-[56px]">
+                          {ev.file.name.split('.').pop()?.toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <button
+                      onClick={() => removeEvidence(idx)}
+                      className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Notes */}
           <div className="space-y-1.5">
             <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Notes (optional)</Label>
@@ -140,7 +293,7 @@ const MarkCompleteSheet = ({
           </Button>
           <Button className="flex-1 gap-1.5" onClick={handleConfirm} disabled={submitting}>
             <CheckCircle2 className="h-4 w-4" />
-            {submitting ? 'Completing…' : 'Confirm'}
+            {submitting ? (evidenceFiles.length > 0 ? 'Uploading…' : 'Completing…') : 'Confirm'}
           </Button>
         </div>
       </SheetContent>
