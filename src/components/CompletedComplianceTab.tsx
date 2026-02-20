@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -56,6 +56,7 @@ interface CompletedItem {
   fullDocumentId: string | null;
   completedByName: string | null;
   completedByRole: string | null;
+  isDocArchived?: boolean;
 }
 
 interface CompletedComplianceTabProps {
@@ -96,15 +97,29 @@ async function fetchCompletedEvents(userId: string, days: DaysFilter) {
     query.gte('completed_at', cutoff);
   }
 
-  const [ridesRes, eventsRes] = await Promise.all([
+  // Fetch events, rides, and archived ride_document event IDs in parallel
+  const [ridesRes, eventsRes, archivedDocsRes] = await Promise.all([
     supabase.from('rides').select('id, ride_name').eq('user_id', userId),
     query,
+    // Get event IDs of archived or superseded ride_documents to exclude from stats
+    supabase
+      .from('ride_documents')
+      .select('related_event_id')
+      .eq('created_by', userId)
+      .or('archived_at.not.is.null,status.neq.active'),
   ]);
 
   const rideMap = new Map<string, string>();
   ridesRes.data?.forEach(r => rideMap.set(r.id, r.ride_name));
 
   const rideList = Array.from(rideMap.entries()).map(([id, name]) => ({ id, name }));
+
+  // Build set of event IDs that have ONLY archived/superseded docs (no active non-archived doc)
+  const archivedEventIds = new Set(
+    (archivedDocsRes.data || [])
+      .map(d => d.related_event_id)
+      .filter(Boolean) as string[]
+  );
 
   const items: CompletedItem[] = (eventsRes.data || []).map(e => ({
     id: e.id,
@@ -123,6 +138,7 @@ async function fetchCompletedEvents(userId: string, days: DaysFilter) {
     fullDocumentId: (e as any).full_document_id || null,
     completedByName: (e as any).completed_by_name || null,
     completedByRole: (e as any).completed_by_role || null,
+    isDocArchived: archivedEventIds.has(e.id),
   }));
 
   return { items, rideList };
@@ -134,6 +150,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   // Filters
   const [daysFilter, setDaysFilter] = useState<DaysFilter>(30);
@@ -174,9 +191,11 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   const allItems = data?.items ?? [];
   const rideList = data?.rideList ?? [];
 
-  // Unified search: ride names + event names + reference numbers
+  // Unified search + exclude archived ride_documents from counts
   const filtered = useMemo(() => {
     return allItems.filter(item => {
+      // Exclude items whose ride_document is archived or superseded
+      if (item.isDocArchived) return false;
       if (categoryFilter !== 'all' && item.category !== categoryFilter) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -343,6 +362,12 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
     setVersions(v);
   };
 
+  const invalidateComplianceQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['compliance-completed'] });
+    queryClient.invalidateQueries({ queryKey: ['compliance'] });
+    queryClient.invalidateQueries({ queryKey: ['overview'] });
+  };
+
   const handleArchive = async () => {
     if (!archiveDialogDoc || !user) return;
     const ok = await archiveRideDocument(archiveDialogDoc.id, user.id, archiveReason);
@@ -352,6 +377,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
       setArchiveReason('');
       const rideId = archiveDialogDoc.ride_id;
       setRideDocsCache(prev => { const n = { ...prev }; delete n[rideId]; return n; });
+      invalidateComplianceQueries();
     } else {
       toast({ title: 'Failed to archive', variant: 'destructive' });
     }
@@ -362,6 +388,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
     if (ok) {
       toast({ title: 'Document restored' });
       setRideDocsCache(prev => { const n = { ...prev }; delete n[doc.ride_id]; return n; });
+      invalidateComplianceQueries();
     } else {
       toast({ title: 'Failed to restore', variant: 'destructive' });
     }
