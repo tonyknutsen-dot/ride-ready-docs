@@ -178,21 +178,41 @@ const Compliance = () => {
 
   const filteredItems = getFilteredItems();
 
-  // Group by ride — always used now, sorted by overdue count desc
+  // Group by ride with per-severity breakdowns
   const groupedByRide = (() => {
-    const groups = new Map<string, { rideName: string; rideId: string | null; items: ComplianceItem[]; oldestDue: string }>();
+    const groups = new Map<string, {
+      rideName: string; rideId: string | null;
+      overdue: ComplianceItem[]; expired: ComplianceItem[]; expiring: ComplianceItem[];
+      oldestDue: string;
+    }>();
+
     filteredItems.forEach((item) => {
       const key = item.rideId || "global";
-      if (!groups.has(key)) groups.set(key, { rideName: item.rideName, rideId: item.rideId, items: [], oldestDue: item.dueDate });
+      if (!groups.has(key)) groups.set(key, { rideName: item.rideName, rideId: item.rideId, overdue: [], expired: [], expiring: [], oldestDue: item.dueDate });
       const g = groups.get(key)!;
-      g.items.push(item);
+      if (item.severity === "overdue") g.overdue.push(item);
+      else if (item.severity === "expired") g.expired.push(item);
+      else g.expiring.push(item);
       if (item.dueDate < g.oldestDue) g.oldestDue = item.dueDate;
     });
-    // Sort rides by number of overdue items desc, then by oldest due
+
+    // Sort each sub-list
+    for (const g of groups.values()) {
+      g.overdue.sort((a, b) => b.daysValue - a.daysValue);   // longest overdue first
+      g.expired.sort((a, b) => a.daysValue - b.daysValue);    // most recently expired first
+      g.expiring.sort((a, b) => a.daysValue - b.daysValue);   // soonest due first
+    }
+
+    // Sort rides: overdue first (by count desc), then expired-only, then expiring-only
     return Array.from(groups.values()).sort((a, b) => {
-      const aOverdue = a.items.filter(i => i.severity === "overdue" || i.severity === "expired").length;
-      const bOverdue = b.items.filter(i => i.severity === "overdue" || i.severity === "expired").length;
-      if (bOverdue !== aOverdue) return bOverdue - aOverdue;
+      const aO = a.overdue.length, bO = b.overdue.length;
+      const aE = a.expired.length, bE = b.expired.length;
+      // Priority: has overdue > has expired > has expiring
+      const aPri = aO > 0 ? 0 : aE > 0 ? 1 : 2;
+      const bPri = bO > 0 ? 0 : bE > 0 ? 1 : 2;
+      if (aPri !== bPri) return aPri - bPri;
+      if (aPri === 0) return bO - aO || a.oldestDue.localeCompare(b.oldestDue);
+      if (aPri === 1) return bE - aE;
       return a.oldestDue.localeCompare(b.oldestDue);
     });
   })();
@@ -448,8 +468,14 @@ const Compliance = () => {
               {groupedByRide.map((group) => {
                 const rideKey = group.rideId || "global";
                 const isOpen = openRideKeys.has(rideKey);
-                const overdueCount = group.items.filter(i => i.severity === "overdue" || i.severity === "expired").length;
-                const expiringCount = group.items.filter(i => i.severity === "expiring").length;
+                const oCount = group.overdue.length;
+                const eCount = group.expired.length;
+                const xCount = group.expiring.length;
+
+                const sections: { key: string; label: string; items: ComplianceItem[]; dot: string }[] = [];
+                if (oCount > 0) sections.push({ key: "overdue", label: "OVERDUE", items: group.overdue, dot: "bg-destructive" });
+                if (eCount > 0) sections.push({ key: "expired", label: "EXPIRED", items: group.expired, dot: "bg-destructive" });
+                if (xCount > 0) sections.push({ key: "expiring", label: "EXPIRING SOON", items: group.expiring, dot: "bg-warning" });
 
                 return (
                   <Collapsible
@@ -463,31 +489,43 @@ const Compliance = () => {
                       });
                     }}
                   >
-                    <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors text-left group">
+                    <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors text-left">
                       <ChevronRight className="h-4.5 w-4.5 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <span className="text-sm font-bold text-foreground truncate">{group.rideName}</span>
-                          {overdueCount > 0 && (
+                          {oCount > 0 && (
                             <Badge variant="destructive" className="text-[10px] font-semibold flex-shrink-0">
-                              {overdueCount} overdue
+                              Overdue: {oCount}
                             </Badge>
                           )}
-                          {expiringCount > 0 && (
+                          {eCount > 0 && (
+                            <Badge variant="destructive" className="text-[10px] font-semibold flex-shrink-0">
+                              Expired: {eCount}
+                            </Badge>
+                          )}
+                          {xCount > 0 && (
                             <Badge className="text-[10px] font-semibold bg-warning/15 text-warning border-0 flex-shrink-0">
-                              {expiringCount} expiring
+                              Expiring: {xCount}
                             </Badge>
                           )}
                         </div>
-                        <span className="text-[10px] text-muted-foreground leading-none">
-                          Oldest overdue: {formatDateUK(group.oldestDue)}
-                        </span>
                       </div>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="mt-0.5 ml-3">
-                      <div className="space-y-0.5">
-                        {group.items.map((item) => renderItemRow(item))}
-                      </div>
+                    <CollapsibleContent className="mt-0.5 ml-3 space-y-1.5">
+                      {sections.map((sec, idx) => (
+                        <div key={sec.key}>
+                          {idx > 0 && <div className="border-t border-border/40 my-1" />}
+                          <div className="flex items-center gap-1.5 mb-0.5 px-1">
+                            <span className={`w-1.5 h-1.5 rounded-full ${sec.dot}`} />
+                            <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">{sec.label}</span>
+                            <span className="text-[9px] text-muted-foreground/60">{sec.items.length}</span>
+                          </div>
+                          <div className="space-y-0.5">
+                            {sec.items.map(item => renderItemRow(item))}
+                          </div>
+                        </div>
+                      ))}
                     </CollapsibleContent>
                   </Collapsible>
                 );
