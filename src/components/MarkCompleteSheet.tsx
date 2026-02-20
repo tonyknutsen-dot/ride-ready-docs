@@ -143,6 +143,25 @@ const MarkCompleteSheet = ({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      // Snapshot the completing user's name and role
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('controller_name, company_name')
+        .eq('user_id', user.id)
+        .single();
+
+      const { data: memberData } = await supabase
+        .from('organisation_members')
+        .select('permission_level')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      const completedByName = profileData?.controller_name || user.email || 'Unknown';
+      const completedByRole = memberData
+        ? (memberData.permission_level === 'full_access' ? 'Owner' : memberData.permission_level?.replace('_', ' ') || 'Staff')
+        : 'Owner';
+
       // 1. Upload evidence
       const evidenceUrls = await uploadEvidence();
 
@@ -157,12 +176,14 @@ const MarkCompleteSheet = ({
         }
       }
 
-      // 2. Complete the event (RPC)
+      // 2. Complete the event (RPC) with snapshot data
       const { data, error } = await supabase.rpc('complete_event', {
         p_event_id: eventId,
         p_completion_date: format(completionDate, 'yyyy-MM-dd'),
         p_completion_notes: notes || null,
         p_evidence_urls: evidenceUrls,
+        p_completed_by_name: completedByName,
+        p_completed_by_role: completedByRole,
       });
       if (error) throw error;
 
@@ -191,6 +212,8 @@ const MarkCompleteSheet = ({
         dueDate: dueDate || format(completionDate, 'yyyy-MM-dd'),
         completionDate,
         completedByUserId: user.id,
+        completedByName: completedByName,
+        completedByRole: completedByRole,
         notes: notes || undefined,
         evidenceUrls,
         inspectorCompany: inspectorCompany || undefined,
