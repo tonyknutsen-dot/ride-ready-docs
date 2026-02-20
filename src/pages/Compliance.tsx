@@ -29,6 +29,7 @@ interface ComplianceItem {
   dueDate: string;
   daysValue: number;
   category: string;
+  eventType?: string;
   severity: FilterType;
   isRecurring: boolean;
   recurrenceRule?: string | null;
@@ -50,14 +51,14 @@ async function fetchComplianceData(userId: string) {
     supabase.from("rides").select("id, ride_name").eq("user_id", userId),
     supabase
       .from("compliance_events")
-      .select("id, event_name, ride_id, due_date, category, is_recurring, recurrence_rule, status")
+      .select("id, event_name, event_type, ride_id, due_date, category, is_recurring, recurrence_rule, status")
       .eq("user_id", userId)
       .eq("status", "open")
       .lt("due_date", todayStr)
       .order("due_date", { ascending: true }),
     supabase
       .from("compliance_events")
-      .select("id, event_name, ride_id, due_date, category, is_recurring, recurrence_rule, status")
+      .select("id, event_name, event_type, ride_id, due_date, category, is_recurring, recurrence_rule, status")
       .eq("user_id", userId)
       .eq("status", "open")
       .gte("due_date", todayStr)
@@ -81,6 +82,7 @@ async function fetchComplianceData(userId: string) {
       dueDate: e.due_date,
       daysValue: Math.ceil((today.getTime() - new Date(e.due_date).getTime()) / ms),
       category: e.category,
+      eventType: e.event_type,
       severity,
       isRecurring: e.is_recurring,
       recurrenceRule: e.recurrence_rule,
@@ -96,6 +98,7 @@ async function fetchComplianceData(userId: string) {
       dueDate: e.due_date,
       daysValue: Math.ceil((new Date(e.due_date).getTime() - today.getTime()) / ms),
       category: e.category,
+      eventType: e.event_type,
       severity: "expiring",
       isRecurring: e.is_recurring,
       recurrenceRule: e.recurrence_rule,
@@ -513,6 +516,11 @@ const Compliance = () => {
           onOpenChange={(open) => { setMarkCompleteOpen(open); if (!open) setMarkCompleteEvent(null); }}
           eventId={markCompleteEvent.id}
           eventName={markCompleteEvent.title}
+          eventCategory={markCompleteEvent.category}
+          eventType={markCompleteEvent.eventType}
+          rideId={markCompleteEvent.rideId}
+          rideName={markCompleteEvent.rideName}
+          dueDate={markCompleteEvent.dueDate}
           isRecurring={markCompleteEvent.isRecurring}
           recurrenceRule={markCompleteEvent.recurrenceRule}
           onCompleted={handleCompleted}
