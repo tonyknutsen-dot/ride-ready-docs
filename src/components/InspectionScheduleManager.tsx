@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Plus, Calendar as CalendarIcon, Edit, Trash2, AlertTriangle, Clock, Repeat, CheckCircle2 } from 'lucide-react';
+import MarkCompleteSheet from '@/components/MarkCompleteSheet';
 import { format, differenceInDays, isBefore, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -52,6 +53,8 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
   const [editingEvent, setEditingEvent] = useState<ComplianceEvent | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [markingComplete, setMarkingComplete] = useState<string | null>(null);
+  const [markCompleteSheetOpen, setMarkCompleteSheetOpen] = useState(false);
+  const [markCompleteTarget, setMarkCompleteTarget] = useState<ComplianceEvent | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -184,7 +187,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
         const seriesId = formData.is_recurring ? crypto.randomUUID() : null;
         const { error } = await supabase
           .from('compliance_events')
-          .insert([{ ...eventData, series_id: seriesId, status: 'scheduled' }]);
+          .insert([{ ...eventData, series_id: seriesId, status: 'open' }]);
         if (error) throw error;
         toast({ title: "Success", description: "Inspection schedule created" });
       }
@@ -215,27 +218,14 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
     }
   };
 
-  const handleMarkComplete = async (event: ComplianceEvent) => {
-    setMarkingComplete(event.id);
-    try {
-      const { data, error } = await supabase.rpc('complete_event', { p_event_id: event.id });
-      if (error) throw error;
+  const handleMarkComplete = (event: ComplianceEvent) => {
+    setMarkCompleteTarget(event);
+    setMarkCompleteSheetOpen(true);
+  };
 
-      const result = data as any;
-      toast({
-        title: "Marked Complete",
-        description: result?.created_next
-          ? `Completed. Next scheduled for ${format(new Date(result.next_due_date), 'd MMM yyyy')}.`
-          : "Inspection marked as completed.",
-      });
-      loadEvents();
-      queryClient.invalidateQueries({ queryKey: ['compliance'] });
-    } catch (error: any) {
-      console.error('Error completing event:', error);
-      toast({ title: "Error", description: error.message || "Could not complete event.", variant: "destructive" });
-    } finally {
-      setMarkingComplete(null);
-    }
+  const handleMarkCompleteFinished = () => {
+    loadEvents();
+    queryClient.invalidateQueries({ queryKey: ['compliance'] });
   };
 
   const getStatusBadge = (event: ComplianceEvent) => {
@@ -273,7 +263,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
     );
   }
 
-  const scheduledEvents = events.filter(e => e.status === 'scheduled');
+  const scheduledEvents = events.filter(e => e.status === 'open');
   const completedEvents = events.filter(e => e.status === 'completed');
 
   return (
@@ -510,6 +500,19 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
             </div>
           )}
         </div>
+      )}
+
+      {/* Mark Complete Sheet */}
+      {markCompleteTarget && (
+        <MarkCompleteSheet
+          open={markCompleteSheetOpen}
+          onOpenChange={(open) => { setMarkCompleteSheetOpen(open); if (!open) setMarkCompleteTarget(null); }}
+          eventId={markCompleteTarget.id}
+          eventName={markCompleteTarget.event_name}
+          isRecurring={markCompleteTarget.is_recurring}
+          recurrenceRule={markCompleteTarget.recurrence_rule}
+          onCompleted={handleMarkCompleteFinished}
+        />
       )}
     </div>
   );

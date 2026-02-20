@@ -37,6 +37,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, isSameDay, addDays, startOfMonth, endOfMonth } from 'date-fns';
 import { z } from 'zod';
 import { Tables } from '@/integrations/supabase/types';
+import MarkCompleteSheet from '@/components/MarkCompleteSheet';
 
 interface CalendarEvent {
   id: string;
@@ -44,7 +45,7 @@ interface CalendarEvent {
   eventName: string;
   date: string;
   type: 'inspection' | 'maintenance' | 'document_expiry' | 'ndt';
-  status: 'scheduled' | 'completed' | 'overdue' | 'cancelled';
+  status: 'open' | 'completed' | 'overdue' | 'cancelled';
   rideId?: string;
   rideName?: string;
   notes?: string;
@@ -138,6 +139,8 @@ const CalendarView = () => {
   const [editingEvent, setEditingEvent] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [markingComplete, setMarkingComplete] = useState(false);
+  const [markCompleteSheetOpen, setMarkCompleteSheetOpen] = useState(false);
+  const [markCompleteTarget, setMarkCompleteTarget] = useState<CalendarEvent | null>(null);
   const [rides, setRides] = useState<Ride[]>([]);
   const [rideDocuments, setRideDocuments] = useState<{ id: string; document_name: string; expires_at: string | null }[]>([]);
   const [loadingDocuments, setLoadingDocuments] = useState(false);
@@ -233,7 +236,7 @@ const CalendarView = () => {
         dueDate.setHours(0, 0, 0, 0);
 
         let status: CalendarEvent['status'] = ce.status;
-        if (ce.status === 'scheduled' && dueDate < todayForOverdue) {
+        if (ce.status === 'open' && dueDate < todayForOverdue) {
           status = 'overdue';
         }
 
@@ -284,33 +287,15 @@ const CalendarView = () => {
     setEventDetailOpen(true);
   };
 
-  const handleMarkComplete = async (event: CalendarEvent) => {
-    setMarkingComplete(true);
-    try {
-      const { data, error } = await supabase.rpc('complete_event', { p_event_id: event.id });
-      if (error) throw error;
+  const handleMarkComplete = (event: CalendarEvent) => {
+    setMarkCompleteTarget(event);
+    setMarkCompleteSheetOpen(true);
+  };
 
-      const result = data as any;
-      const nextCreated = result?.created_next;
-
-      toast({
-        title: "Marked Complete",
-        description: nextCreated
-          ? `Event completed. Next occurrence scheduled for ${format(new Date(result.next_due_date), 'd MMM yyyy')}.`
-          : "Event marked as completed.",
-      });
-
-      setEventDetailOpen(false);
-      setSelectedEvent(null);
-      loadCalendarEvents();
-      // Invalidate compliance queries
-      queryClient.invalidateQueries({ queryKey: ['compliance'] });
-    } catch (error: any) {
-      console.error('Error completing event:', error);
-      toast({ title: "Error", description: error.message || "Could not complete event.", variant: "destructive" });
-    } finally {
-      setMarkingComplete(false);
-    }
+  const handleMarkCompleteFinished = () => {
+    setEventDetailOpen(false);
+    setSelectedEvent(null);
+    loadCalendarEvents();
   };
 
   const handleDeleteEvent = async (event: CalendarEvent) => {
@@ -431,7 +416,7 @@ const CalendarView = () => {
         event_type: formData.inspection_type,
         event_name: validatedData.inspection_name,
         due_date: format(validatedData.due_date, 'yyyy-MM-dd'),
-        status: 'scheduled',
+        status: 'open',
         notes: validatedData.notes || null,
         advance_notice_days: validatedData.advance_notice_days,
         is_recurring: formData.is_recurring,
@@ -482,7 +467,7 @@ const CalendarView = () => {
 
   const todayStart = new Date();
   todayStart.setHours(0, 0, 0, 0);
-  const overdueCount = events.filter(e => e.status === 'overdue' || (e.status === 'scheduled' && new Date(e.date) < todayStart)).length;
+  const overdueCount = events.filter(e => e.status === 'overdue' || (e.status === 'open' && new Date(e.date) < todayStart)).length;
   const dueSoonCount = events.filter(e => {
     const d = new Date(e.date);
     return d >= todayStart && d <= addDays(todayStart, 7) && e.status !== 'overdue';
@@ -876,7 +861,7 @@ const CalendarView = () => {
             }}
             modifiers={{
               hasEvents: (date) => getEventsForDate(date).length > 0,
-              overdue: (date) => getEventsForDate(date).some(e => e.status === 'overdue' || (e.status === 'scheduled' && new Date(e.date) < new Date())),
+              overdue: (date) => getEventsForDate(date).some(e => e.status === 'overdue' || (e.status === 'open' && new Date(e.date) < new Date())),
             }}
             modifiersClassNames={{
               hasEvents: "font-bold",
@@ -1164,10 +1149,9 @@ const CalendarView = () => {
                     <Button
                       className="flex-1 gap-1.5"
                       onClick={() => handleMarkComplete(selectedEvent)}
-                      disabled={markingComplete}
                     >
                       <CheckCircle2 className="h-4 w-4" />
-                      {markingComplete ? 'Completing…' : 'Mark Complete'}
+                      Mark Complete
                     </Button>
                   ) : (
                     <Button className="flex-1" onClick={() => { setEventDetailOpen(false); setDeleteConfirmOpen(false); }}>
@@ -1180,6 +1164,19 @@ const CalendarView = () => {
           })()}
         </SheetContent>
       </Sheet>
+
+      {/* Mark Complete Sheet */}
+      {markCompleteTarget && (
+        <MarkCompleteSheet
+          open={markCompleteSheetOpen}
+          onOpenChange={(open) => { setMarkCompleteSheetOpen(open); if (!open) setMarkCompleteTarget(null); }}
+          eventId={markCompleteTarget.id}
+          eventName={markCompleteTarget.eventName}
+          isRecurring={markCompleteTarget.isRecurring}
+          recurrenceRule={markCompleteTarget.recurrenceRule}
+          onCompleted={handleMarkCompleteFinished}
+        />
+      )}
 
     </div>
   );

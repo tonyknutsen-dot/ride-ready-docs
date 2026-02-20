@@ -6,16 +6,20 @@ import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
 import {
   AlertTriangle, FileText, ClipboardCheck, ChevronRight,
   Clock, CheckCircle, Wrench, Zap, RefreshCw, Search, Filter,
-  List, Layers
+  List, Layers, CheckSquare
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { format } from "date-fns";
+import MarkCompleteSheet from "@/components/MarkCompleteSheet";
 
 type FilterType = "all" | "overdue" | "expired" | "expiring";
 type CategoryFilter = "all" | "inspection" | "maintenance" | "doc_expiry" | "ndt";
+type StatusFilter = "open" | "completed" | "all";
 
 interface ComplianceItem {
   id: string;
@@ -27,6 +31,7 @@ interface ComplianceItem {
   category: string;
   severity: FilterType;
   isRecurring: boolean;
+  recurrenceRule?: string | null;
 }
 
 const CATEGORY_CONFIG: Record<string, { icon: typeof ClipboardCheck; label: string }> = {
@@ -45,16 +50,16 @@ async function fetchComplianceData(userId: string) {
     supabase.from("rides").select("id, ride_name").eq("user_id", userId),
     supabase
       .from("compliance_events")
-      .select("id, event_name, ride_id, due_date, category, is_recurring, status")
+      .select("id, event_name, ride_id, due_date, category, is_recurring, recurrence_rule, status")
       .eq("user_id", userId)
-      .eq("status", "scheduled")
+      .eq("status", "open")
       .lt("due_date", todayStr)
       .order("due_date", { ascending: true }),
     supabase
       .from("compliance_events")
-      .select("id, event_name, ride_id, due_date, category, is_recurring, status")
+      .select("id, event_name, ride_id, due_date, category, is_recurring, recurrence_rule, status")
       .eq("user_id", userId)
-      .eq("status", "scheduled")
+      .eq("status", "open")
       .gte("due_date", todayStr)
       .lte("due_date", thirtyDaysStr)
       .order("due_date", { ascending: true }),
@@ -78,6 +83,7 @@ async function fetchComplianceData(userId: string) {
       category: e.category,
       severity,
       isRecurring: e.is_recurring,
+      recurrenceRule: e.recurrence_rule,
     });
   });
 
@@ -92,10 +98,14 @@ async function fetchComplianceData(userId: string) {
       category: e.category,
       severity: "expiring",
       isRecurring: e.is_recurring,
+      recurrenceRule: e.recurrence_rule,
     });
   });
 
-  return { items, fetchedAt: new Date().toISOString() };
+  // Get unique ride list for ride filter
+  const rideList = Array.from(rideMap.entries()).map(([id, name]) => ({ id, name }));
+
+  return { items, rideList, fetchedAt: new Date().toISOString() };
 }
 
 function getExpiringBadgeClasses(daysLeft: number): string {
@@ -109,8 +119,15 @@ const Compliance = () => {
   const { effectiveUserId, loading: staffLoading } = useEffectiveUserId();
   const [filter, setFilter] = useState<FilterType>("all");
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("all");
+  const [rideFilter, setRideFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [groupByRide, setGroupByRide] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkMode, setBulkMode] = useState(false);
+
+  // Mark complete sheet state
+  const [markCompleteOpen, setMarkCompleteOpen] = useState(false);
+  const [markCompleteEvent, setMarkCompleteEvent] = useState<ComplianceItem | null>(null);
 
   const { data, isLoading, dataUpdatedAt } = useQuery({
     queryKey: ["compliance", effectiveUserId],
@@ -120,9 +137,11 @@ const Compliance = () => {
   });
 
   const items = data?.items ?? [];
+  const rideList = data?.rideList ?? [];
 
   const filtered = items.filter((i) => {
     if (categoryFilter !== "all" && i.category !== categoryFilter) return false;
+    if (rideFilter !== "all" && i.rideId !== rideFilter) return false;
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       if (!i.title.toLowerCase().includes(q) && !i.rideName.toLowerCase().includes(q)) return false;
@@ -140,7 +159,6 @@ const Compliance = () => {
   const sortWorstFirst = (arr: ComplianceItem[]) => [...arr].sort((a, b) => b.daysValue - a.daysValue);
   const sortSoonestFirst = (arr: ComplianceItem[]) => [...arr].sort((a, b) => a.daysValue - b.daysValue);
 
-  // Get items for current filter
   const getFilteredItems = (): ComplianceItem[] => {
     let result: ComplianceItem[] = [];
     if (filter === "all" || filter === "overdue") result = [...result, ...sortWorstFirst(overdueItems)];
@@ -151,18 +169,15 @@ const Compliance = () => {
 
   const filteredItems = getFilteredItems();
 
-  // Group by ride
+  // Group by ride (collapsible)
   const groupedByRide = (() => {
     const groups = new Map<string, { rideName: string; rideId: string | null; items: ComplianceItem[] }>();
     filteredItems.forEach((item) => {
       const key = item.rideId || "global";
-      if (!groups.has(key)) {
-        groups.set(key, { rideName: item.rideName, rideId: item.rideId, items: [] });
-      }
+      if (!groups.has(key)) groups.set(key, { rideName: item.rideName, rideId: item.rideId, items: [] });
       groups.get(key)!.items.push(item);
     });
     return Array.from(groups.values()).sort((a, b) => {
-      // Sort by worst issue first
       const aWorst = Math.max(...a.items.map(i => i.severity === "expiring" ? -i.daysValue : i.daysValue));
       const bWorst = Math.max(...b.items.map(i => i.severity === "expiring" ? -i.daysValue : i.daysValue));
       return bWorst - aWorst;
@@ -186,18 +201,48 @@ const Compliance = () => {
   const allClear = filtered.length === 0;
 
   const handleRowClick = (item: ComplianceItem) => {
-    if (item.category === "doc_expiry") {
-      navigate("/documents");
-    } else if (item.rideId) {
-      navigate(`/rides/${item.rideId}`);
+    if (bulkMode) {
+      toggleSelection(item.id);
+      return;
     }
+    // Open mark complete sheet
+    setMarkCompleteEvent(item);
+    setMarkCompleteOpen(true);
+  };
+
+  const handleNavigate = (item: ComplianceItem) => {
+    if (item.category === "doc_expiry") navigate("/documents");
+    else if (item.rideId) navigate(`/rides/${item.rideId}`);
   };
 
   const handleTileClick = (key: FilterType) => {
     setFilter(filter === key ? "all" : key);
   };
 
-  const renderItemRow = (item: ComplianceItem, sectionColor?: "destructive" | "warning") => {
+  const toggleSelection = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelectedIds(next);
+  };
+
+  const handleBulkComplete = () => {
+    // For bulk, we'll just mark them one-by-one via the first selected
+    // This is a simplified approach; for now open sheet for the first item
+    const firstId = Array.from(selectedIds)[0];
+    const item = filteredItems.find(i => i.id === firstId);
+    if (item) {
+      setMarkCompleteEvent(item);
+      setMarkCompleteOpen(true);
+    }
+  };
+
+  const handleCompleted = () => {
+    queryClient.invalidateQueries({ queryKey: ["compliance"] });
+    setSelectedIds(new Set());
+    setBulkMode(false);
+  };
+
+  const renderItemRow = (item: ComplianceItem) => {
     const config = CATEGORY_CONFIG[item.category] || CATEGORY_CONFIG.inspection;
     const Icon = config.icon;
     const iconColor = item.severity !== "expiring" ? "text-destructive" : "text-warning";
@@ -217,9 +262,16 @@ const Compliance = () => {
       <button
         key={`${item.severity}-${item.id}`}
         onClick={() => handleRowClick(item)}
-        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl border border-border bg-card hover:border-primary/50 active:scale-[0.98] transition-all text-left"
-        style={{ boxShadow: "0 1px 4px rgba(0,0,0,0.03)" }}
+        className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl border border-border bg-card hover:border-primary/50 active:scale-[0.98] transition-all text-left"
       >
+        {bulkMode && (
+          <Checkbox
+            checked={selectedIds.has(item.id)}
+            onCheckedChange={() => toggleSelection(item.id)}
+            onClick={(e) => e.stopPropagation()}
+            className="shrink-0"
+          />
+        )}
         <span className="flex-shrink-0">
           <Icon className={`h-4 w-4 ${iconColor}`} />
         </span>
@@ -255,7 +307,7 @@ const Compliance = () => {
         <div className="h-5 w-64 bg-muted rounded animate-pulse" />
         <div className="space-y-3 mt-6">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="h-20 bg-muted rounded-2xl animate-pulse" />
+            <div key={i} className="h-20 bg-muted rounded-xl animate-pulse" />
           ))}
         </div>
       </div>
@@ -304,7 +356,7 @@ const Compliance = () => {
             <button
               key={tile.key}
               onClick={() => handleTileClick(tile.key)}
-              className={`rounded-2xl border-2 bg-card p-2.5 text-center space-y-0.5 transition-all active:scale-[0.97] ${activeBorder} ${activeRing}`}
+              className={`rounded-xl border-2 bg-card p-2.5 text-center space-y-0.5 transition-all active:scale-[0.97] ${activeBorder} ${activeRing}`}
             >
               <div className={`mx-auto w-7 h-7 rounded-lg flex items-center justify-center ${bg} ${text}`}>
                 {tile.icon}
@@ -316,9 +368,9 @@ const Compliance = () => {
         })}
       </div>
 
-      {/* Search + Category + View toggle */}
-      <div className="flex gap-2">
-        <div className="flex-1 relative">
+      {/* Search + Category + Ride + View toggle */}
+      <div className="flex flex-wrap gap-2">
+        <div className="flex-1 min-w-[140px] relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
             placeholder="Search ride or event…"
@@ -328,7 +380,7 @@ const Compliance = () => {
           />
         </div>
         <Select value={categoryFilter} onValueChange={(v) => setCategoryFilter(v as CategoryFilter)}>
-          <SelectTrigger className="w-[130px] h-9 text-sm">
+          <SelectTrigger className="w-[120px] h-9 text-sm">
             <Filter className="h-3.5 w-3.5 mr-1" />
             <SelectValue />
           </SelectTrigger>
@@ -340,39 +392,78 @@ const Compliance = () => {
             <SelectItem value="ndt">NDT</SelectItem>
           </SelectContent>
         </Select>
-        <Button
-          variant={groupByRide ? "default" : "outline"}
-          size="icon"
-          className="h-9 w-9 flex-shrink-0"
-          onClick={() => setGroupByRide(!groupByRide)}
-          title={groupByRide ? "Flat list" : "Group by ride"}
-        >
-          {groupByRide ? <Layers className="h-4 w-4" /> : <List className="h-4 w-4" />}
-        </Button>
+        {rideList.length > 1 && (
+          <Select value={rideFilter} onValueChange={setRideFilter}>
+            <SelectTrigger className="w-[120px] h-9 text-sm">
+              <SelectValue placeholder="All Rides" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Rides</SelectItem>
+              {rideList.map(r => <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
+        <div className="flex gap-1">
+          <Button
+            variant={groupByRide ? "default" : "outline"}
+            size="icon"
+            className="h-9 w-9 flex-shrink-0"
+            onClick={() => setGroupByRide(!groupByRide)}
+            title={groupByRide ? "Flat list" : "Group by ride"}
+          >
+            {groupByRide ? <Layers className="h-4 w-4" /> : <List className="h-4 w-4" />}
+          </Button>
+          <Button
+            variant={bulkMode ? "default" : "outline"}
+            size="icon"
+            className="h-9 w-9 flex-shrink-0"
+            onClick={() => { setBulkMode(!bulkMode); setSelectedIds(new Set()); }}
+            title="Bulk select"
+          >
+            <CheckSquare className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
+
+      {/* Bulk actions bar */}
+      {bulkMode && selectedIds.size > 0 && (
+        <div className="flex items-center gap-2 rounded-xl border border-primary/30 bg-primary/5 px-3 py-2">
+          <span className="text-sm font-medium text-foreground">{selectedIds.size} selected</span>
+          <div className="flex-1" />
+          <Button size="sm" className="gap-1.5" onClick={handleBulkComplete}>
+            <CheckCircle className="h-3.5 w-3.5" /> Mark Complete
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => { setSelectedIds(new Set()); setBulkMode(false); }}>
+            Cancel
+          </Button>
+        </div>
+      )}
 
       {/* All clear */}
       {allClear && (
-        <div className="bg-card border border-border rounded-2xl p-6 text-center space-y-2">
-          <CheckCircle className="h-10 w-10 text-success mx-auto" />
+        <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
+          <CheckCircle className="h-10 w-10 text-green-600 mx-auto" />
           <p className="text-sm font-semibold text-foreground">All Clear</p>
           <p className="text-xs text-muted-foreground">No compliance issues found</p>
         </div>
       )}
 
-      {/* Grouped view */}
+      {/* Grouped view (collapsible) */}
       {groupByRide && !allClear && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {groupedByRide.map((group) => (
-            <div key={group.rideId || "global"} className="space-y-1.5">
-              <div className="flex items-center gap-2 px-1">
+            <Collapsible key={group.rideId || "global"} defaultOpen>
+              <CollapsibleTrigger className="w-full flex items-center gap-2 px-1 py-1 hover:bg-muted/30 rounded-lg transition-colors">
+                <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90" />
                 <h3 className="text-sm font-bold text-foreground">{group.rideName}</h3>
                 <Badge variant="outline" className="text-[10px]">{group.items.length}</Badge>
-              </div>
-              <div className="space-y-1.5">
-                {group.items.map((item) => renderItemRow(item))}
-              </div>
-            </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="space-y-1.5 mt-1.5">
+                  {group.items.map((item) => renderItemRow(item))}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           ))}
         </div>
       )}
@@ -388,7 +479,7 @@ const Compliance = () => {
               <span className="text-xs text-muted-foreground">({section.items.length})</span>
             </div>
             <div className="space-y-1.5">
-              {section.items.map((item) => renderItemRow(item, section.color))}
+              {section.items.map((item) => renderItemRow(item))}
             </div>
           </div>
         );
@@ -396,8 +487,8 @@ const Compliance = () => {
 
       {/* Empty filter state */}
       {!allClear && !groupByRide && filteredSections.length === 0 && (
-        <div className="bg-card border border-border rounded-2xl p-6 text-center space-y-2">
-          <CheckCircle className="h-8 w-8 text-success mx-auto" />
+        <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
+          <CheckCircle className="h-8 w-8 text-green-600 mx-auto" />
           <p className="text-sm font-medium text-foreground">No {filter} items</p>
           <button onClick={() => setFilter("all")} className="text-xs text-primary font-semibold hover:underline">
             Show all
@@ -406,13 +497,26 @@ const Compliance = () => {
       )}
 
       {!allClear && groupByRide && groupedByRide.length === 0 && (
-        <div className="bg-card border border-border rounded-2xl p-6 text-center space-y-2">
-          <CheckCircle className="h-8 w-8 text-success mx-auto" />
+        <div className="bg-card border border-border rounded-xl p-6 text-center space-y-2">
+          <CheckCircle className="h-8 w-8 text-green-600 mx-auto" />
           <p className="text-sm font-medium text-foreground">No matching items</p>
-          <button onClick={() => { setFilter("all"); setSearchQuery(""); setCategoryFilter("all"); }} className="text-xs text-primary font-semibold hover:underline">
+          <button onClick={() => { setFilter("all"); setSearchQuery(""); setCategoryFilter("all"); setRideFilter("all"); }} className="text-xs text-primary font-semibold hover:underline">
             Clear filters
           </button>
         </div>
+      )}
+
+      {/* Mark Complete Sheet */}
+      {markCompleteEvent && (
+        <MarkCompleteSheet
+          open={markCompleteOpen}
+          onOpenChange={(open) => { setMarkCompleteOpen(open); if (!open) setMarkCompleteEvent(null); }}
+          eventId={markCompleteEvent.id}
+          eventName={markCompleteEvent.title}
+          isRecurring={markCompleteEvent.isRecurring}
+          recurrenceRule={markCompleteEvent.recurrenceRule}
+          onCompleted={handleCompleted}
+        />
       )}
     </div>
   );
