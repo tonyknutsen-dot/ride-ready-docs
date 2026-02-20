@@ -145,6 +145,19 @@ const MarkCompleteSheet = ({
       // 1. Upload evidence
       const evidenceUrls = await uploadEvidence();
 
+      // 1b. Generate compliance record number
+      let fullDocumentId: string | undefined;
+      if (rideId) {
+        const completionYear = completionDate.getFullYear();
+        const { data: docIdResult, error: docIdErr } = await supabase.rpc(
+          'generate_compliance_record_number' as any,
+          { p_ride_id: rideId, p_completion_year: completionYear } as any,
+        );
+        if (!docIdErr && docIdResult) {
+          fullDocumentId = docIdResult as string;
+        }
+      }
+
       // 2. Complete the event (RPC)
       const { data, error } = await supabase.rpc('complete_event', {
         p_event_id: eventId,
@@ -154,14 +167,15 @@ const MarkCompleteSheet = ({
       });
       if (error) throw error;
 
-      // 2b. Save inspector/reference on the event record
-      if (inspectorCompany || certificateReference) {
+      // 2b. Save inspector/reference + document ID on the event record
+      const eventUpdate: Record<string, any> = {};
+      if (inspectorCompany) eventUpdate.inspector_company = inspectorCompany;
+      if (certificateReference) eventUpdate.certificate_reference = certificateReference;
+      if (fullDocumentId) eventUpdate.full_document_id = fullDocumentId;
+      if (Object.keys(eventUpdate).length > 0) {
         await supabase
           .from('compliance_events')
-          .update({
-            inspector_company: inspectorCompany || null,
-            certificate_reference: certificateReference || null,
-          })
+          .update(eventUpdate)
           .eq('id', eventId);
       }
 
@@ -182,6 +196,7 @@ const MarkCompleteSheet = ({
         evidenceUrls,
         inspectorCompany: inspectorCompany || undefined,
         certificateReference: certificateReference || undefined,
+        fullDocumentId,
       });
 
       // 4. Show success state

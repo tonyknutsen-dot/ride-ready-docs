@@ -538,6 +538,7 @@ export type Database = {
           event_name: string
           event_type: string
           evidence_urls: string[] | null
+          full_document_id: string | null
           id: string
           inspector_company: string | null
           is_recurring: boolean
@@ -570,6 +571,7 @@ export type Database = {
           event_name: string
           event_type: string
           evidence_urls?: string[] | null
+          full_document_id?: string | null
           id?: string
           inspector_company?: string | null
           is_recurring?: boolean
@@ -602,6 +604,7 @@ export type Database = {
           event_name?: string
           event_type?: string
           evidence_urls?: string[] | null
+          full_document_id?: string | null
           id?: string
           inspector_company?: string | null
           is_recurring?: boolean
@@ -641,6 +644,35 @@ export type Database = {
             columns: ["source_event_id"]
             isOneToOne: false
             referencedRelation: "compliance_events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compliance_record_sequences: {
+        Row: {
+          completion_year: number
+          current_sequence: number
+          id: string
+          ride_id: string
+        }
+        Insert: {
+          completion_year: number
+          current_sequence?: number
+          id?: string
+          ride_id: string
+        }
+        Update: {
+          completion_year?: number
+          current_sequence?: number
+          id?: string
+          ride_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compliance_record_sequences_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
             referencedColumns: ["id"]
           },
         ]
@@ -1850,6 +1882,7 @@ export type Database = {
           is_test_data: boolean
           manufacturer: string | null
           owner_name: string | null
+          ride_code: string | null
           ride_name: string
           serial_number: string | null
           updated_at: string
@@ -1863,6 +1896,7 @@ export type Database = {
           is_test_data?: boolean
           manufacturer?: string | null
           owner_name?: string | null
+          ride_code?: string | null
           ride_name: string
           serial_number?: string | null
           updated_at?: string
@@ -1876,6 +1910,7 @@ export type Database = {
           is_test_data?: boolean
           manufacturer?: string | null
           owner_name?: string | null
+          ride_code?: string | null
           ride_name?: string
           serial_number?: string | null
           updated_at?: string
@@ -2631,6 +2666,10 @@ export type Database = {
       encrypt_sensitive: { Args: { plaintext: string }; Returns: string }
       end_tester_session: { Args: { p_session_id: string }; Returns: undefined }
       expire_support_grants: { Args: never; Returns: number }
+      generate_compliance_record_number: {
+        Args: { p_completion_year: number; p_ride_id: string }
+        Returns: string
+      }
       get_staff_permission: {
         Args: { _org_id: string; _user_id: string }
         Returns: Database["public"]["Enums"]["staff_permission"]
