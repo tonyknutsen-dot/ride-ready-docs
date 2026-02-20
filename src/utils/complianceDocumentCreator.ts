@@ -208,68 +208,84 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
   const docId = `RRD-CMP-${format(completionDate, 'yyyyMMdd')}-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
   const generatedAt = format(new Date(), "dd MMM yyyy 'at' HH:mm");
 
-  // ── Header bar ──
+  // ── Full-width navy header ──
+  const hdrH = 16;
   doc.setFillColor(30, 58, 95);
-  doc.rect(0, 0, pageW, 18, 'F');
-
+  doc.rect(0, 0, pageW, hdrH, 'F');
   doc.setTextColor(255, 255, 255);
-  doc.setFontSize(9);
+
+  // Left: brand
+  doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
-  doc.text('RIDEREADY DOCS', mL, 8);
-  doc.setFontSize(7);
+  doc.text('RIDEREADY DOCS', mL, 7);
+  doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
-  doc.text('Compliance Management', mL, 13);
+  doc.text('Compliance Management', mL, 11.5);
 
-  // Right side: doc ID + timestamp
-  doc.setFontSize(7);
+  // Centre: document title
+  doc.setFontSize(8);
+  doc.setFont('helvetica', 'bold');
+  doc.text('COMPLIANCE COMPLETION RECORD', pageW / 2, 9, { align: 'center' });
+
+  // Right: doc ID + generated timestamp
+  doc.setFontSize(6);
   doc.setFont('helvetica', 'normal');
-  doc.text(docId, pageW - mR, 8, { align: 'right' });
-  doc.text(generatedAt, pageW - mR, 13, { align: 'right' });
+  doc.text(docId, pageW - mR, 7, { align: 'right' });
+  doc.text(generatedAt, pageW - mR, 11.5, { align: 'right' });
 
-  y = 24;
-
-  // ── Document title ──
+  // ── Event title block ──
+  y = hdrH + 6;
   doc.setTextColor(30, 58, 95);
-  doc.setFontSize(14);
+  doc.setFontSize(13);
   doc.setFont('helvetica', 'bold');
-  doc.text('COMPLIANCE COMPLETION RECORD', mL, y);
+  doc.text(eventName, mL, y);
   y += 5;
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(80, 80, 80);
+  doc.text(rideName, mL, y);
 
-  // Status badge (green pill)
+  // Status badge (green pill) — right-aligned on same line
   const badgeText = 'COMPLETED';
-  doc.setFontSize(7);
-  const badgeW = doc.getTextWidth(badgeText) + 8;
-  const badgeH = 5;
-  doc.setFillColor(34, 139, 34);
-  doc.roundedRect(mL, y, badgeW, badgeH, 2.5, 2.5, 'F');
-  doc.setTextColor(255, 255, 255);
+  doc.setFontSize(6.5);
   doc.setFont('helvetica', 'bold');
-  doc.text(badgeText, mL + 4, y + 3.5);
-  y += 10;
+  const badgeW = doc.getTextWidth(badgeText) + 7;
+  const badgeH = 4.5;
+  const badgeX = pageW - mR - badgeW;
+  const badgeY = y - 3.5;
+  doc.setFillColor(22, 120, 55);
+  doc.roundedRect(badgeX, badgeY, badgeW, badgeH, 2, 2, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.text(badgeText, badgeX + 3.5, badgeY + 3.2);
 
-  // ── Helper: section header ──
+  y += 4;
+  doc.setDrawColor(190, 190, 190);
+  doc.setLineWidth(0.3);
+  doc.line(mL, y, pageW - mR, y);
+  doc.setLineWidth(0.2);
+  y += 4;
+
+  // ── Helpers ──
   const sectionHeader = (title: string) => {
-    doc.setDrawColor(200, 200, 200);
-    doc.line(mL, y, pageW - mR, y);
-    y += 5;
-    doc.setFontSize(8);
+    doc.setFillColor(240, 242, 245);
+    doc.rect(mL, y - 1, contentW, 5.5, 'F');
+    doc.setFontSize(7);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(30, 58, 95);
-    doc.text(title, mL, y);
-    y += 4;
+    doc.text(title, mL + 2, y + 2.8);
+    y += 7;
   };
 
-  // ── Helper: 2-column row ──
-  const valueX = pageW - mR;
+  const valueX = pageW - mR - 2;
   const addRow = (rowLabel: string, value: string) => {
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(100, 100, 100);
-    doc.setFontSize(8);
-    doc.text(rowLabel, mL + 2, y);
+    doc.setTextColor(110, 110, 110);
+    doc.setFontSize(7.5);
+    doc.text(rowLabel, mL + 3, y);
+    doc.setTextColor(25, 25, 25);
     doc.setFont('helvetica', 'normal');
-    doc.setTextColor(30, 30, 30);
     doc.text(value, valueX, y, { align: 'right' });
-    y += 5;
+    y += 4.5;
   };
 
   // ── SECTION: Event Details ──
@@ -278,7 +294,7 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
   addRow('Event Name', eventName);
   addRow('Equipment / Ride', rideName);
   addRow('Scheduled Due Date', format(new Date(dueDate), 'dd MMM yyyy'));
-  y += 2;
+  y += 1.5;
 
   // ── SECTION: Completion Details ──
   sectionHeader('COMPLETION DETAILS');
@@ -286,23 +302,36 @@ async function generateCompletionPdf(params: PdfParams): Promise<string> {
   if (inspectorCompany) addRow('Inspector / Company', inspectorCompany);
   if (certificateReference) addRow('Certificate / Report Ref', certificateReference);
   if (evidenceUrls.length > 0) addRow('Evidence Attached', `${evidenceUrls.length} file(s)`);
-  y += 2;
+  y += 1.5;
 
   // ── SECTION: Notes ──
   if (notes) {
     sectionHeader('NOTES');
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(50, 50, 50);
-    doc.setFontSize(8);
-    const lines = doc.splitTextToSize(notes, contentW - 4);
-    doc.text(lines, mL + 2, y);
-    y += lines.length * 4 + 2;
+    doc.setFontSize(7.5);
+    const lines = doc.splitTextToSize(notes, contentW - 6);
+    doc.text(lines, mL + 3, y);
+    y += lines.length * 3.8 + 2;
   }
 
-  // ── Closing divider ──
-  y += 2;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(mL, y, pageW - mR, y);
+  // ── Compliance statement box ──
+  y += 3;
+  const boxH = 10;
+  doc.setDrawColor(190, 190, 190);
+  doc.setFillColor(248, 249, 250);
+  doc.roundedRect(mL, y, contentW, boxH, 1.5, 1.5, 'FD');
+  doc.setFontSize(6);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(100, 100, 100);
+  doc.text(
+    'This document confirms completion logging within RideReady Docs.',
+    pageW / 2, y + 3.8, { align: 'center' },
+  );
+  doc.text(
+    'Not a substitute for an official inspection certificate.',
+    pageW / 2, y + 7.2, { align: 'center' },
+  );
 
   // ── Footer ──
   doc.setFontSize(6.5);
