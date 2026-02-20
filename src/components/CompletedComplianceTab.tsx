@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -128,6 +129,7 @@ async function fetchCompletedEvents(userId: string, days: DaysFilter) {
 const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   // Filters
   const [daysFilter, setDaysFilter] = useState<DaysFilter>(30);
@@ -315,9 +317,9 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
     return data.signedUrl;
   };
 
-  const handleViewPdf = async (doc: RideDocument) => {
-    const url = await getSignedUrl(doc);
-    if (url) window.open(url, '_blank');
+  const handleViewPdf = (doc: RideDocument) => {
+    // Navigate to the full document viewer page
+    navigate(`/documents/${doc.id}`);
   };
 
   const handleDownload = async (doc: RideDocument) => {

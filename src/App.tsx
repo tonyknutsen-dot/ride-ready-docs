@@ -72,6 +72,7 @@ const DataIndependence = lazy(() => import("./pages/DataIndependence"));
 const SharedDocuments = lazy(() => import("./pages/SharedDocuments"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const Compliance = lazy(() => import("./pages/Compliance"));
+const DocumentViewerPage = lazy(() => import("./pages/DocumentViewerPage"));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -522,6 +523,17 @@ const App = () => (
                       <AppLayout>
                         <Compliance />
                       </AppLayout>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              {/* Document Viewer - full page, no sidebar layout */}
+              <Route 
+                path="/documents/:documentId"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <DocumentViewerPage />
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 
