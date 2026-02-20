@@ -489,18 +489,13 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
               open={isRideOpen}
               onOpenChange={open => toggleRide(rideKey, open, group.rideId)}
             >
-              <CollapsibleTrigger className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors text-left group">
-                <ChevronRight className="h-4.5 w-4.5 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90 shrink-0" />
+              <CollapsibleTrigger className="w-full flex items-center gap-2 px-3 py-1.5 rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors text-left group">
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90 shrink-0" />
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-foreground truncate">{group.rideName}</span>
-                    <Badge className="text-[10px] font-semibold bg-primary/15 text-primary border-0 flex-shrink-0">
-                      {group.count} completed
-                    </Badge>
-                  </div>
-                  <span className="text-[10px] text-muted-foreground leading-none">
-                    Last completed: {group.lastCompleted ? formatDateUK(group.lastCompleted) : '–'}
-                  </span>
+                  <span className="text-sm font-semibold text-foreground truncate">{group.rideName}</span>
+                  <p className="text-[11px] leading-tight" style={{ color: '#64748B' }}>
+                    {group.count} completed • Last completed {group.lastCompleted ? formatDateUK(group.lastCompleted) : '–'}
+                  </p>
                 </div>
               </CollapsibleTrigger>
 
@@ -514,10 +509,10 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
                     <div key={cg.key}>
                       {idx > 0 && <div className="border-t border-border/50 my-0.5 ml-1" />}
                       <Collapsible open={isCatOpen} onOpenChange={open => toggleCategory(catKey, open)}>
-                        <CollapsibleTrigger className="w-full flex items-center gap-2 py-1.5 px-1.5 hover:bg-muted/20 rounded transition-colors">
-                          <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90" />
-                          <span className="text-[10px] font-bold tracking-wider text-muted-foreground uppercase">{cg.label}</span>
-                          <span className="text-[9px] text-muted-foreground/70 font-medium">{cg.items.length}</span>
+                        <CollapsibleTrigger className="w-full flex items-center gap-1.5 py-1 px-1.5 hover:bg-muted/20 rounded transition-colors">
+                          <ChevronRight className="h-2.5 w-2.5 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90" />
+                          <span className="text-xs font-medium uppercase" style={{ color: '#64748B', fontSize: '12px', letterSpacing: '0.08em' }}>{cg.label}</span>
+                          <span className="text-[10px] font-medium" style={{ color: '#64748B' }}>{cg.items.length}</span>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <div className="space-y-0.5 mt-0.5 ml-1">
@@ -656,14 +651,19 @@ function CompletedItemRow({
   const isArchived = doc?.archived_at;
 
   return (
-    <div className={`flex items-center gap-2 px-2.5 py-2 rounded-md border transition-colors ${
+    <div className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border transition-colors ${
       isArchived
         ? 'border-border/40 bg-muted/15 opacity-60'
         : 'border-border/40 bg-background hover:border-primary/20'
     }`}>
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
-          <p className="text-[13px] font-semibold text-foreground truncate leading-tight">{item.eventName}</p>
+          <p className="text-[13px] font-bold text-foreground truncate leading-tight">{item.eventName}</p>
+          {doc && (
+            <span className="text-[9px] font-mono font-medium bg-muted text-muted-foreground px-1 py-px rounded flex-shrink-0">
+              v{doc.version}
+            </span>
+          )}
           {item.fullDocumentId && (
             <span className="text-[9px] font-mono text-muted-foreground bg-muted px-1 rounded flex-shrink-0">
               {item.fullDocumentId}
@@ -675,45 +675,26 @@ function CompletedItemRow({
             </span>
           )}
         </div>
-        <div className="flex items-center gap-1 mt-px">
-          {item.dueDate && (
-            <span className="text-[10px] text-muted-foreground">
-              {formatDateUK(item.dueDate)}
-            </span>
-          )}
-          <span className="text-[10px] text-muted-foreground/40">→</span>
-          <span className="text-[10px] text-muted-foreground">
-            {item.completedAt ? formatDateUK(item.completedAt) : '–'}
-          </span>
-          {item.certificateReference && (
-            <>
-              <span className="text-[10px] text-muted-foreground/40">·</span>
-              <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[100px]">
-                {item.certificateReference}
-              </span>
-            </>
-          )}
-          {item.evidenceUrls.length > 0 && (
-            <>
-              <span className="text-[10px] text-muted-foreground/40">·</span>
-              <span className="text-[9px] text-muted-foreground">
-                {item.evidenceUrls.length} attachment{item.evidenceUrls.length !== 1 ? 's' : ''}
-              </span>
-            </>
-          )}
-        </div>
+        <p className="text-[11px] mt-px" style={{ color: '#64748B' }}>
+          Completed {item.completedAt ? formatDateUK(item.completedAt) : '–'}
+        </p>
+        {item.certificateReference && (
+          <p className="text-[11px] font-mono" style={{ color: '#64748B' }}>
+            Ref: {item.certificateReference}
+          </p>
+        )}
       </div>
 
       <div className="flex items-center gap-1 flex-shrink-0">
         {onViewPdf && (
-          <Button variant="outline" size="sm" className="h-7 px-2.5 gap-1.5 text-[11px] font-medium" onClick={onViewPdf}>
-            <Eye className="h-3 w-3" />
+          <Button variant="outline" size="sm" className="h-9 px-3 gap-1.5 text-xs font-normal" onClick={onViewPdf}>
+            <Eye className="h-3.5 w-3.5" />
             View PDF
           </Button>
         )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+            <Button variant="ghost" size="sm" className="h-9 w-9 p-0">
               <MoreVertical className="h-3.5 w-3.5" />
             </Button>
           </DropdownMenuTrigger>
