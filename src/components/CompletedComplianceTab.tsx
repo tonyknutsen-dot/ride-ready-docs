@@ -527,7 +527,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
                                   key={item.id}
                                   item={item}
                                   doc={doc}
-                                  onEdit={() => setEditingEvent(item)}
+                                  onEdit={doc?.archived_at ? undefined : () => setEditingEvent(item)}
                                   onViewPdf={doc ? () => handleViewPdf(doc) : undefined}
                                   onDownload={doc ? () => handleDownload(doc) : undefined}
                                   onVersions={doc ? () => handleShowVersions(doc) : undefined}
@@ -644,7 +644,7 @@ function CompletedItemRow({
 }: {
   item: CompletedItem;
   doc: RideDocument | null;
-  onEdit: () => void;
+  onEdit?: () => void;
   onViewPdf?: () => void;
   onDownload?: () => void;
   onVersions?: () => void;
@@ -706,9 +706,15 @@ function CompletedItemRow({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={onEdit}>
-              <Pencil className="h-3.5 w-3.5 mr-2" /> Edit Completion
-            </DropdownMenuItem>
+            {onEdit ? (
+              <DropdownMenuItem onClick={onEdit}>
+                <Pencil className="h-3.5 w-3.5 mr-2" /> Edit Completion
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem disabled className="opacity-50">
+                <Pencil className="h-3.5 w-3.5 mr-2" /> Edit (Restore first)
+              </DropdownMenuItem>
+            )}
             {onViewPdf && (
               <DropdownMenuItem onClick={onViewPdf}>
                 <Eye className="h-3.5 w-3.5 mr-2" /> View PDF
