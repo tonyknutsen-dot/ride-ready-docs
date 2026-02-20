@@ -86,6 +86,7 @@ interface CreateComplianceDocumentParams {
   inspectorCompany?: string;
   certificateReference?: string;
   fullDocumentId?: string;
+  editReason?: string;
 }
 
 interface CreateComplianceDocumentResult {
@@ -99,7 +100,7 @@ export async function createComplianceDocument(
   const {
     eventId, eventName, eventCategory, eventType, rideId, rideName,
     dueDate, completionDate, completedByUserId, completedByName, completedByRole,
-    notes, evidenceUrls, inspectorCompany, certificateReference, fullDocumentId,
+    notes, evidenceUrls, inspectorCompany, certificateReference, fullDocumentId, editReason,
   } = params;
 
   const dateStr = format(completionDate, 'dd MMM yyyy');
@@ -200,7 +201,7 @@ export async function createComplianceDocument(
       fileUrl: filePath,
       title: documentName,
       relatedEventId: eventId,
-      metadata: { inspectorCompany, certificateReference, category: eventCategory, completed_by_name: completedByName, completed_by_role: completedByRole },
+      metadata: { inspectorCompany, certificateReference, category: eventCategory, completed_by_name: completedByName, completed_by_role: completedByRole, edit_reason: editReason },
     });
   }
 
