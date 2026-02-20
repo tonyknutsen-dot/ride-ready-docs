@@ -91,6 +91,16 @@ export interface CachedLocation {
   cachedAt: string;
 }
 
+// Cached PDF for offline document viewing
+export interface CachedPdf {
+  documentId: string;   // ride_documents.document_id (logical doc ID)
+  version: number;      // version number
+  fileUrl: string;      // storage path (ride_documents.file_url)
+  blob: Blob;           // the actual PDF data
+  title: string;        // document title for display
+  cachedAt: string;
+}
+
 // Dexie database class
 class OfflineDatabase extends Dexie {
   offlineChecks!: EntityTable<OfflineCheck, 'id'>;
@@ -98,6 +108,7 @@ class OfflineDatabase extends Dexie {
   cachedRides!: EntityTable<CachedRide, 'id'>;
   cachedTemplates!: EntityTable<CachedTemplate, 'id'>;
   cachedLocations!: EntityTable<CachedLocation, 'id'>;
+  cachedPdfs!: EntityTable<CachedPdf, 'documentId'>;
 
   constructor() {
     super('RideReadyOfflineDB');
@@ -124,6 +135,16 @@ class OfflineDatabase extends Dexie {
       cachedRides: 'id, cachedAt',
       cachedTemplates: 'id, rideId, cachedAt',
       cachedLocations: '++id, latitude, longitude, lastUsed'
+    });
+
+    // Version 4: Add cached PDFs for offline document viewing
+    this.version(4).stores({
+      offlineChecks: '++id, localId, rideId, syncStatus, createdAt, needsAddressResolution',
+      offlineDefects: '++id, localId, rideId, checkLocalId, syncStatus',
+      cachedRides: 'id, cachedAt',
+      cachedTemplates: 'id, rideId, cachedAt',
+      cachedLocations: '++id, latitude, longitude, lastUsed',
+      cachedPdfs: 'documentId, version, cachedAt'
     });
   }
 }

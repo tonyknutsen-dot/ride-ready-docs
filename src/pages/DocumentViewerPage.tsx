@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { getCachedPdf, cachePdf, createCachedPdfUrl, fetchPdfBlob } from '@/lib/pdfCache';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import {
 import {
   ArrowLeft, Download, History, Archive, RotateCcw,
   FileText, Calendar, Building2, Hash, Clock, Loader2,
-  MapPin, Eye, CheckCircle2, AlertTriangle,
+  MapPin, Eye, CheckCircle2, AlertTriangle, WifiOff,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatDateUK } from '@/utils/dateFormat';
@@ -52,6 +53,7 @@ const DocumentViewerPage = () => {
 
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [pdfSource, setPdfSource] = useState<'network' | 'cache' | null>(null);
   const [docTitle, setDocTitle] = useState('');
   const [docDisplayId, setDocDisplayId] = useState('');
   const [meta, setMeta] = useState<DocumentMeta | null>(null);
@@ -154,8 +156,42 @@ const DocumentViewerPage = () => {
     setDocTitle(rd.title);
     setDocDisplayId(rd.document_id);
 
-    const url = await getSignedUrl(rd.file_url);
-    setPdfUrl(url);
+    // ── Cache-first PDF loading ──
+    const cached = await getCachedPdf(rd.document_id);
+    const isOnline = navigator.onLine;
+
+    if (cached && cached.version === rd.version) {
+      // Cache hit — version matches, serve locally
+      setPdfUrl(createCachedPdfUrl(cached));
+      setPdfSource('cache');
+    } else if (isOnline) {
+      // Online: fetch fresh, cache it
+      const signedUrl = await getSignedUrl(rd.file_url);
+      if (signedUrl) {
+        setPdfUrl(signedUrl);
+        setPdfSource('network');
+        // Cache in background
+        fetchPdfBlob(signedUrl).then(blob => {
+          if (blob) cachePdf(rd.document_id, rd.version, rd.file_url, blob, rd.title);
+        });
+      } else {
+        // Signed URL failed but we may have a stale cache
+        if (cached) {
+          setPdfUrl(createCachedPdfUrl(cached));
+          setPdfSource('cache');
+        } else {
+          setPdfUrl(null);
+        }
+      }
+    } else if (cached) {
+      // Offline with stale cache — serve what we have
+      setPdfUrl(createCachedPdfUrl(cached));
+      setPdfSource('cache');
+    } else {
+      // Offline, no cache
+      setPdfUrl(null);
+      setPdfSource(null);
+    }
 
     const rideName = await getRideName(rd.ride_id);
 
@@ -367,6 +403,37 @@ const DocumentViewerPage = () => {
     );
   }
 
+  // ── Offline / no PDF available ──
+  if (!pdfUrl && !loading) {
+    const isOffline = !navigator.onLine;
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-3 max-w-xs px-4">
+          {isOffline ? (
+            <>
+              <WifiOff className="mx-auto h-10 w-10 text-muted-foreground" />
+              <p className="text-sm font-semibold text-foreground">You're offline</p>
+              <p className="text-xs text-muted-foreground">
+                This document hasn't been cached yet. Open it while online to make it available offline.
+              </p>
+            </>
+          ) : (
+            <>
+              <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
+              <p className="text-sm font-semibold text-foreground">Document unavailable</p>
+              <p className="text-xs text-muted-foreground">
+                The PDF could not be loaded. It may have been removed or you may not have access.
+              </p>
+            </>
+          )}
+          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Go back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   const isLatest = !isViewingOldVersion;
 
   // ── Main ──
@@ -449,6 +516,11 @@ const DocumentViewerPage = () => {
               }`}>
                 Version v{meta.version} ({meta.status === 'active' ? 'Active' : 'Superseded'})
               </Badge>
+            )}
+            {pdfSource === 'cache' && (
+              <span className="text-[9px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded shrink-0">
+                Cached
+              </span>
             )}
             <h1 className="text-sm font-semibold text-foreground truncate">{docTitle}</h1>
           </div>
