@@ -531,12 +531,15 @@ export type Database = {
           category: string
           completed_at: string | null
           completed_by: string | null
+          completion_notes: string | null
           created_at: string
           due_date: string
           event_name: string
           event_type: string
+          evidence_urls: string[] | null
           id: string
           is_recurring: boolean
+          next_event_id: string | null
           notes: string | null
           recurrence_anchor_date: string | null
           recurrence_end_date: string | null
@@ -545,6 +548,7 @@ export type Database = {
           reminder_enabled: boolean
           ride_id: string | null
           series_id: string | null
+          source_event_id: string | null
           source_id: string | null
           source_table: string | null
           status: string
@@ -557,12 +561,15 @@ export type Database = {
           category: string
           completed_at?: string | null
           completed_by?: string | null
+          completion_notes?: string | null
           created_at?: string
           due_date: string
           event_name: string
           event_type: string
+          evidence_urls?: string[] | null
           id?: string
           is_recurring?: boolean
+          next_event_id?: string | null
           notes?: string | null
           recurrence_anchor_date?: string | null
           recurrence_end_date?: string | null
@@ -571,6 +578,7 @@ export type Database = {
           reminder_enabled?: boolean
           ride_id?: string | null
           series_id?: string | null
+          source_event_id?: string | null
           source_id?: string | null
           source_table?: string | null
           status?: string
@@ -583,12 +591,15 @@ export type Database = {
           category?: string
           completed_at?: string | null
           completed_by?: string | null
+          completion_notes?: string | null
           created_at?: string
           due_date?: string
           event_name?: string
           event_type?: string
+          evidence_urls?: string[] | null
           id?: string
           is_recurring?: boolean
+          next_event_id?: string | null
           notes?: string | null
           recurrence_anchor_date?: string | null
           recurrence_end_date?: string | null
@@ -597,6 +608,7 @@ export type Database = {
           reminder_enabled?: boolean
           ride_id?: string | null
           series_id?: string | null
+          source_event_id?: string | null
           source_id?: string | null
           source_table?: string | null
           status?: string
@@ -605,10 +617,24 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "compliance_events_next_event_id_fkey"
+            columns: ["next_event_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "compliance_events_ride_id_fkey"
             columns: ["ride_id"]
             isOneToOne: false
             referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compliance_events_source_event_id_fkey"
+            columns: ["source_event_id"]
+            isOneToOne: false
+            referencedRelation: "compliance_events"
             referencedColumns: ["id"]
           },
         ]
@@ -2584,7 +2610,17 @@ export type Database = {
       cleanup_expired_blocks: { Args: never; Returns: number }
       cleanup_old_blocked_ips: { Args: never; Returns: number }
       close_stale_tester_sessions: { Args: never; Returns: number }
-      complete_event: { Args: { p_event_id: string }; Returns: Json }
+      complete_event:
+        | { Args: { p_event_id: string }; Returns: Json }
+        | {
+            Args: {
+              p_completion_date?: string
+              p_completion_notes?: string
+              p_event_id: string
+              p_evidence_urls?: string[]
+            }
+            Returns: Json
+          }
       decrypt_sensitive: { Args: { ciphertext: string }; Returns: string }
       encrypt_sensitive: { Args: { plaintext: string }; Returns: string }
       end_tester_session: { Args: { p_session_id: string }; Returns: undefined }
