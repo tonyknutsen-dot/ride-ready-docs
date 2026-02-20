@@ -242,7 +242,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
 
   const exportToPDF = async () => {
     const doc = new jsPDF();
-    const docId = await generateDocumentId(rideId, 'DR');
+    const docId = await generateDocumentId(rideId, 'CH');
 
     // Fetch profile for company branding
     const { data: profile } = await supabase
@@ -284,7 +284,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
     const { startDate, endDate } = getDateRange();
     const companyName = profile?.company_name || profile?.showmen_name || 'Safety Checks Report';
     const frequencyLabel = frequency === 'daily' ? 'DAILY' : frequency === 'monthly' ? 'MONTHLY' : frequency === 'yearly' ? 'YEARLY' : frequency.toUpperCase();
-    const templateOpts = { doc, title: `${frequencyLabel} SAFETY CHECKS`, documentId: docId, docType: 'DR' as const };
+    const templateOpts = { doc, title: `${frequencyLabel} SAFETY CHECKS`, documentId: docId, docType: 'CH' as const };
 
     // Standard header
     let currentY = drawTemplateHeader(templateOpts);
