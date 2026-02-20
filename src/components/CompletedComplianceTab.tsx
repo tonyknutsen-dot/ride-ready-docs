@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,7 +22,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import {
   Search, ChevronRight, CheckCircle, ClipboardCheck, Zap, Wrench,
-  FileText, Eye, History, Archive, RotateCcw, MoreVertical, Pencil, CalendarDays,
+  FileText, Eye, History, Archive, RotateCcw, MoreVertical, Pencil,
+  ChevronsUpDown, ChevronsDownUp, MapPin,
 } from 'lucide-react';
 import { formatDateUK } from '@/utils/dateFormat';
 import { format, parseISO } from 'date-fns';
@@ -131,11 +132,16 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   // Filters
   const [daysFilter, setDaysFilter] = useState<DaysFilter>(30);
   const [searchQuery, setSearchQuery] = useState('');
+  const [rideSearchQuery, setRideSearchQuery] = useState('');
   const [rideFilter, setRideFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all');
 
   // Pagination per ride group
   const [ridePageMap, setRidePageMap] = useState<Record<string, number>>({});
+
+  // Expand/collapse state: ride keys and category keys (rideKey:catKey)
+  const [openRides, setOpenRides] = useState<Set<string>>(new Set());
+  const [openCategories, setOpenCategories] = useState<Set<string>>(new Set());
 
   // Edit sheet
   const [editingEvent, setEditingEvent] = useState<CompletedItem | null>(null);
@@ -203,6 +209,54 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
       return bLast.localeCompare(aLast);
     });
   }, [filtered]);
+
+  // Apply ride search filter (separate from global search)
+  const visibleRideGroups = useMemo(() => {
+    if (!rideSearchQuery) return rideGroups;
+    const q = rideSearchQuery.toLowerCase();
+    return rideGroups.filter(g => g.rideName.toLowerCase().includes(q));
+  }, [rideGroups, rideSearchQuery]);
+
+  // Expand/collapse all helpers
+  const expandAll = useCallback(() => {
+    const rideKeys = new Set(visibleRideGroups.map(g => g.rideId || 'global'));
+    setOpenRides(rideKeys);
+    const catKeys = new Set<string>();
+    visibleRideGroups.forEach(g => {
+      const rideKey = g.rideId || 'global';
+      CATEGORY_CONFIG.forEach(cat => {
+        if (g.items.some(i => i.category === cat.key)) {
+          catKeys.add(`${rideKey}:${cat.key}`);
+        }
+      });
+      // Load docs for all rides being expanded
+      if (g.rideId) loadRideDocs(g.rideId);
+    });
+    setOpenCategories(catKeys);
+  }, [visibleRideGroups]);
+
+  const collapseAll = useCallback(() => {
+    setOpenRides(new Set());
+    setOpenCategories(new Set());
+  }, []);
+
+  const toggleRide = useCallback((rideKey: string, open: boolean, rideId: string | null) => {
+    setOpenRides(prev => {
+      const next = new Set(prev);
+      if (open) { next.add(rideKey); if (rideId) loadRideDocs(rideId); }
+      else next.delete(rideKey);
+      return next;
+    });
+  }, []);
+
+  const toggleCategory = useCallback((catKey: string, open: boolean) => {
+    setOpenCategories(prev => {
+      const next = new Set(prev);
+      if (open) next.add(catKey);
+      else next.delete(catKey);
+      return next;
+    });
+  }, []);
 
   // Load ride_documents for a specific ride (lazy)
   const loadRideDocs = async (rideId: string) => {
@@ -319,7 +373,34 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
         ))}
       </div>
 
-      {/* Loading */}
+      {/* Ride search + Expand/Collapse controls */}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="flex-1 min-w-[120px] relative">
+          <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search rides…"
+            value={rideSearchQuery}
+            onChange={e => setRideSearchQuery(e.target.value)}
+            className="pl-9 h-8 text-xs"
+          />
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 text-xs gap-1.5"
+          onClick={expandAll}
+        >
+          <ChevronsUpDown className="h-3.5 w-3.5" /> Expand all
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 text-xs gap-1.5"
+          onClick={collapseAll}
+        >
+          <ChevronsDownUp className="h-3.5 w-3.5" /> Collapse all
+        </Button>
+      </div>
       {isLoading && (
         <div className="space-y-3">
           {[1, 2, 3].map(i => (
@@ -363,10 +444,18 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
         </div>
       )}
 
+      {/* No rides match ride search */}
+      {!isLoading && filtered.length > 0 && visibleRideGroups.length === 0 && rideSearchQuery && (
+        <div className="bg-card border border-border rounded-xl p-4 text-center">
+          <p className="text-sm text-muted-foreground">No rides matching "{rideSearchQuery}"</p>
+        </div>
+      )}
+
       {/* Ride groups */}
-      {!isLoading && rideGroups.map(group => {
+      {!isLoading && visibleRideGroups.map(group => {
         const rideKey = group.rideId || 'global';
         const currentPage = ridePageMap[rideKey] || 1;
+        const isRideOpen = openRides.has(rideKey);
 
         // Group items by category
         const catGroups = CATEGORY_CONFIG.map(cat => ({
@@ -381,7 +470,8 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
         return (
           <Collapsible
             key={rideKey}
-            onOpenChange={open => { if (open && group.rideId) loadRideDocs(group.rideId); }}
+            open={isRideOpen}
+            onOpenChange={open => toggleRide(rideKey, open, group.rideId)}
           >
             <CollapsibleTrigger className="w-full flex items-center gap-2 px-3 py-2.5 rounded-xl border border-border bg-card hover:bg-muted/30 transition-colors text-left">
               <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90 shrink-0" />
@@ -394,11 +484,12 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
             <CollapsibleContent className="mt-1 ml-2 space-y-2">
               {catGroups.map(cg => {
                 const CatIcon = cg.icon;
-                // Apply pagination at the category level proportionally or just show all within page
+                const catKey = `${rideKey}:${cg.key}`;
+                const isCatOpen = openCategories.has(catKey);
                 const catItemsToShow = cg.items.slice(0, maxVisible);
 
                 return (
-                  <Collapsible key={cg.key}>
+                  <Collapsible key={cg.key} open={isCatOpen} onOpenChange={open => toggleCategory(catKey, open)}>
                     <CollapsibleTrigger className="w-full flex items-center gap-2 py-1.5 px-2 hover:bg-muted/20 rounded-lg transition-colors">
                       <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform [[data-state=open]>&]:rotate-90" />
                       <CatIcon className="h-3.5 w-3.5 text-muted-foreground" />
