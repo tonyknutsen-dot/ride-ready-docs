@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CheckCircle2, Calendar as CalendarIcon, Repeat, Camera, Upload, X, FileText, Image as ImageIcon, ArrowLeft, ExternalLink, Building2, Hash } from 'lucide-react';
+import { CheckCircle2, Calendar as CalendarIcon, Repeat, Camera, Upload, X, FileText, Image as ImageIcon, ArrowLeft, ExternalLink, Building2, Hash, CloudOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
@@ -15,6 +15,8 @@ import { format } from 'date-fns';
 import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
 import { createComplianceDocument, categoryToDocTypeCode } from '@/utils/complianceDocumentCreator';
 import { generateDocumentId } from '@/utils/pdfTemplate';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { addOfflineComplianceCompletion } from '@/lib/offlineDb';
 
 interface MarkCompleteSheetProps {
   open: boolean;
@@ -60,6 +62,7 @@ const MarkCompleteSheet = ({
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { isOnline } = useOnlineStatus();
   const [completionDate, setCompletionDate] = useState<Date>(new Date());
   const [notes, setNotes] = useState('');
   const [inspectorCompany, setInspectorCompany] = useState('');
@@ -68,6 +71,7 @@ const MarkCompleteSheet = ({
   const [submitting, setSubmitting] = useState(false);
   const [evidenceFiles, setEvidenceFiles] = useState<EvidenceFile[]>([]);
   const [completionResult, setCompletionResult] = useState<CompletionResult | null>(null);
+  const [offlineCompleted, setOfflineCompleted] = useState(false);
 
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -139,11 +143,70 @@ const MarkCompleteSheet = ({
     }
 
     setSubmitting(true);
+
+    // ── OFFLINE PATH ──
+    if (!isOnline) {
+      try {
+        // Convert evidence files to ArrayBuffers for IndexedDB storage
+        const evidenceBlobs: { name: string; type: string; data: ArrayBuffer }[] = [];
+        for (const ev of evidenceFiles) {
+          const data = await ev.file.arrayBuffer();
+          evidenceBlobs.push({ name: ev.file.name, type: ev.file.type, data });
+        }
+
+        await addOfflineComplianceCompletion({
+          localId: crypto.randomUUID(),
+          eventId,
+          eventName,
+          eventCategory: eventCategory || 'inspection',
+          eventType,
+          rideId: rideId || null,
+          rideName,
+          dueDate: dueDate || format(completionDate, 'yyyy-MM-dd'),
+          completionDate: format(completionDate, 'yyyy-MM-dd'),
+          notes: notes || undefined,
+          inspectorCompany: inspectorCompany || undefined,
+          certificateReference: certificateReference || undefined,
+          isRecurring: isRecurring || false,
+          recurrenceRule,
+          evidenceBlobs,
+          createdAt: new Date().toISOString(),
+          syncStatus: 'pending',
+          syncAttempts: 0,
+        });
+
+        // Optimistically update the compliance event status in local query cache
+        // so it immediately moves out of Open tab
+        queryClient.setQueryData(['compliance', undefined], (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            items: (old.items || []).filter((i: any) => i.id !== eventId),
+          };
+        });
+
+        setOfflineCompleted(true);
+        queryClient.invalidateQueries({ queryKey: ['compliance'] });
+        queryClient.invalidateQueries({ queryKey: ['compliance-completed'] });
+        onCompleted?.();
+
+        toast({
+          title: "Saved offline",
+          description: "Will sync and generate PDF when back online.",
+        });
+      } catch (error: any) {
+        toast({ title: "Error", description: error.message || "Could not save offline.", variant: "destructive" });
+      } finally {
+        setSubmitting(false);
+      }
+      return;
+    }
+
+    // ── ONLINE PATH (existing) ──
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Snapshot the completing user's name and role
       const { data: profileData } = await supabase
         .from('profiles')
         .select('controller_name, company_name')
@@ -162,10 +225,8 @@ const MarkCompleteSheet = ({
         ? (memberData.permission_level === 'full_access' ? 'Owner' : memberData.permission_level?.replace('_', ' ') || 'Staff')
         : 'Owner';
 
-      // 1. Upload evidence
       const evidenceUrls = await uploadEvidence();
 
-      // 1b. Generate compliance record number
       let fullDocumentId: string | undefined;
       if (rideId) {
         const docTypeCode = categoryToDocTypeCode(eventCategory || 'compliance', eventType);
@@ -176,7 +237,6 @@ const MarkCompleteSheet = ({
         }
       }
 
-      // 2. Complete the event (RPC) with snapshot data
       const { data, error } = await supabase.rpc('complete_event', {
         p_event_id: eventId,
         p_completion_date: format(completionDate, 'yyyy-MM-dd'),
@@ -187,7 +247,6 @@ const MarkCompleteSheet = ({
       });
       if (error) throw error;
 
-      // 2b. Save inspector/reference + document ID on the event record
       const eventUpdate: Record<string, any> = {};
       if (inspectorCompany) eventUpdate.inspector_company = inspectorCompany;
       if (certificateReference) eventUpdate.certificate_reference = certificateReference;
@@ -201,7 +260,6 @@ const MarkCompleteSheet = ({
 
       const result = data as any;
 
-      // 3. Auto-create document record
       const docResult = await createComplianceDocument({
         eventId,
         eventName,
@@ -221,7 +279,6 @@ const MarkCompleteSheet = ({
         fullDocumentId,
       });
 
-      // 4. Show success state
       setCompletionResult({
         documentId: docResult.documentId,
         documentName: docResult.documentName,
@@ -245,6 +302,7 @@ const MarkCompleteSheet = ({
     evidenceFiles.forEach(ev => { if (ev.preview) URL.revokeObjectURL(ev.preview); });
     setEvidenceFiles([]);
     setCompletionResult(null);
+    setOfflineCompleted(false);
   };
 
   const handleClose = () => {
@@ -268,6 +326,33 @@ const MarkCompleteSheet = ({
   const recurrenceLabel = recurrenceRule
     ? `Every ${recurrenceRule.replace(':', ' ')}`
     : null;
+
+  // ─── Offline success state ───
+  if (offlineCompleted) {
+    return (
+      <Sheet open={open} onOpenChange={() => handleClose()}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[50vh] flex flex-col p-0">
+          <div className="flex-1 flex flex-col items-center justify-center px-5 py-8 text-center gap-4">
+            <div className="w-14 h-14 rounded-full bg-warning/15 flex items-center justify-center">
+              <CloudOff className="h-7 w-7 text-warning" />
+            </div>
+            <div className="space-y-1">
+              <SheetTitle className="text-lg font-semibold text-foreground">Saved Offline</SheetTitle>
+              <p className="text-sm text-muted-foreground">{eventName}</p>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Will sync and generate PDF when connection returns.
+            </p>
+          </div>
+          <div className="shrink-0 border-t border-border bg-background px-5 py-4">
+            <Button className="w-full" onClick={handleBackToCompliance}>
+              Back to Compliance
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
 
   // ─── Success state ───
   if (completionResult) {

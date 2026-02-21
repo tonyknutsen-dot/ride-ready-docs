@@ -534,7 +534,9 @@ export type Database = {
           completed_by: string | null
           completed_by_name: string | null
           completed_by_role: string | null
+          completed_offline: boolean
           completion_notes: string | null
+          completion_status: string
           created_at: string
           due_date: string
           event_name: string
@@ -557,6 +559,7 @@ export type Database = {
           source_id: string | null
           source_table: string | null
           status: string
+          synced_at: string | null
           updated_at: string
           user_id: string
         }
@@ -569,7 +572,9 @@ export type Database = {
           completed_by?: string | null
           completed_by_name?: string | null
           completed_by_role?: string | null
+          completed_offline?: boolean
           completion_notes?: string | null
+          completion_status?: string
           created_at?: string
           due_date: string
           event_name: string
@@ -592,6 +597,7 @@ export type Database = {
           source_id?: string | null
           source_table?: string | null
           status?: string
+          synced_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -604,7 +610,9 @@ export type Database = {
           completed_by?: string | null
           completed_by_name?: string | null
           completed_by_role?: string | null
+          completed_offline?: boolean
           completion_notes?: string | null
+          completion_status?: string
           created_at?: string
           due_date?: string
           event_name?: string
@@ -627,6 +635,7 @@ export type Database = {
           source_id?: string | null
           source_table?: string | null
           status?: string
+          synced_at?: string | null
           updated_at?: string
           user_id?: string
         }

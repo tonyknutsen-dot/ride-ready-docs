@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,6 +25,7 @@ import {
   Search, ChevronRight, CheckCircle, ClipboardCheck, Zap, Wrench,
   FileText, Eye, History, Archive, RotateCcw, MoreVertical, Pencil,
   ChevronsUpDown, ChevronsDownUp, Download, ExternalLink, Loader2,
+  CloudOff, RefreshCw,
 } from 'lucide-react';
 import { formatDateUK } from '@/utils/dateFormat';
 import { format, parseISO } from 'date-fns';
@@ -33,6 +34,9 @@ import {
   restoreRideDocument, RideDocument,
 } from '@/utils/rideDocumentService';
 import CompletedEventEditSheet from '@/components/CompletedEventEditSheet';
+import { getAllOfflineComplianceCompletions, offlineDb, type OfflineComplianceCompletion } from '@/lib/offlineDb';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 
 // ── Types ──
 
@@ -57,6 +61,9 @@ interface CompletedItem {
   completedByName: string | null;
   completedByRole: string | null;
   isDocArchived?: boolean;
+  isPendingSync?: boolean;
+  syncFailed?: boolean;
+  syncError?: string;
 }
 
 interface CompletedComplianceTabProps {
@@ -151,6 +158,11 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   const { toast } = useToast();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { isOnline } = useOnlineStatus();
+  const { syncAll } = useOfflineSync();
+
+  // Offline completions
+  const [offlineItems, setOfflineItems] = useState<CompletedItem[]>([]);
 
   // Filters
   const [daysFilter, setDaysFilter] = useState<DaysFilter>(30);
@@ -181,6 +193,36 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   // Fallback: documents table cache per ride (when ride_documents is empty)
   const [docsFallbackCache, setDocsFallbackCache] = useState<Record<string, { id: string; document_name: string; file_path: string; notes: string | null; document_type: string; ride_id: string }[]>>({});
 
+  // Load offline completions from IndexedDB
+  useEffect(() => {
+    const loadOffline = async () => {
+      const completions = await getAllOfflineComplianceCompletions();
+      const pending = completions.filter(c => c.syncStatus !== 'synced');
+      setOfflineItems(pending.map(c => ({
+        id: c.eventId,
+        eventName: c.eventName,
+        eventType: c.eventType || '',
+        category: c.eventCategory,
+        rideName: c.rideName,
+        rideId: c.rideId,
+        dueDate: c.dueDate,
+        completedAt: c.createdAt,
+        inspectorCompany: c.inspectorCompany || null,
+        certificateReference: c.certificateReference || null,
+        completionNotes: c.notes || null,
+        evidenceUrls: [],
+        documentId: null,
+        fullDocumentId: null,
+        completedByName: null,
+        completedByRole: null,
+        isPendingSync: c.syncStatus === 'pending' || c.syncStatus === 'syncing',
+        syncFailed: c.syncStatus === 'failed',
+        syncError: c.syncError,
+      })));
+    };
+    loadOffline();
+  }, []);
+
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['compliance-completed', effectiveUserId, daysFilter],
     queryFn: () => fetchCompletedEvents(effectiveUserId, daysFilter),
@@ -188,7 +230,10 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
     staleTime: 1000 * 60 * 2,
   });
 
-  const allItems = data?.items ?? [];
+  // Merge server items with offline-pending items (deduplicate by eventId)
+  const serverItems = data?.items ?? [];
+  const offlineEventIds = new Set(offlineItems.map(i => i.id));
+  const allItems = [...offlineItems, ...serverItems.filter(i => !offlineEventIds.has(i.id))];
   const rideList = data?.rideList ?? [];
 
   // Unified search + exclude archived ride_documents from counts
@@ -680,11 +725,13 @@ function CompletedItemRow({
   onOpenInDocs?: () => void;
 }) {
   const isArchived = doc?.archived_at;
+  const isPending = item.isPendingSync;
+  const isFailed = item.syncFailed;
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   const handleCardClick = () => {
-    if (!onViewPdf || loading) return;
+    if (isPending || isFailed || !onViewPdf || loading) return;
     setLoading(true);
     try {
       onViewPdf();
@@ -696,17 +743,21 @@ function CompletedItemRow({
 
   return (
     <div
-      role={onViewPdf ? "button" : undefined}
-      tabIndex={onViewPdf ? 0 : undefined}
+      role={onViewPdf && !isPending && !isFailed ? "button" : undefined}
+      tabIndex={onViewPdf && !isPending && !isFailed ? 0 : undefined}
       onClick={handleCardClick}
-      onKeyDown={onViewPdf ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(); } } : undefined}
+      onKeyDown={onViewPdf && !isPending && !isFailed ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(); } } : undefined}
       className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border ${
-        loading
-          ? 'border-primary/30 bg-muted/50 pointer-events-none'
-          : isArchived
-            ? 'border-border/40 bg-muted/15 opacity-60'
-            : 'border-border/40 bg-background hover:bg-muted/40 active:bg-muted/60'
-      } ${onViewPdf && !loading ? 'cursor-pointer' : ''}`}
+        isPending
+          ? 'border-warning/40 bg-warning/5'
+          : isFailed
+            ? 'border-destructive/40 bg-destructive/5'
+            : loading
+              ? 'border-primary/30 bg-muted/50 pointer-events-none'
+              : isArchived
+                ? 'border-border/40 bg-muted/15 opacity-60'
+                : 'border-border/40 bg-background hover:bg-muted/40 active:bg-muted/60'
+      } ${onViewPdf && !loading && !isPending && !isFailed ? 'cursor-pointer' : ''}`}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
@@ -726,6 +777,16 @@ function CompletedItemRow({
               Archived
             </span>
           )}
+          {isPending && (
+            <Badge variant="secondary" className="text-[9px] bg-warning/15 text-warning border-warning/30 flex-shrink-0 gap-0.5">
+              <CloudOff className="h-2.5 w-2.5" /> Pending sync
+            </Badge>
+          )}
+          {isFailed && (
+            <Badge variant="destructive" className="text-[9px] flex-shrink-0 gap-0.5">
+              <RefreshCw className="h-2.5 w-2.5" /> Sync failed
+            </Badge>
+          )}
         </div>
         <p className="text-[11px] mt-px" style={{ color: '#64748B' }}>
           Completed {item.completedAt ? formatDateUK(item.completedAt) : '–'}
@@ -738,10 +799,16 @@ function CompletedItemRow({
             Ref: {item.certificateReference}
           </p>
         )}
+        {isFailed && item.syncError && (
+          <p className="text-[10px] text-destructive mt-0.5 truncate">{item.syncError}</p>
+        )}
       </div>
 
       <div className="flex items-center gap-1 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
-        {onViewPdf && (
+        {isPending && (
+          <span className="text-[10px] text-muted-foreground select-none">Waiting for connection</span>
+        )}
+        {!isPending && !isFailed && onViewPdf && (
           <span className="hidden sm:inline-flex items-center gap-1 text-[10px] text-muted-foreground/70 select-none">
             {loading ? <Loader2 className="h-3 w-3 animate-spin" /> : <Eye className="h-3 w-3" />}
             {loading ? 'Loading…' : 'PDF'}
