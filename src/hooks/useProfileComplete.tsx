@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
+import { getOfflineIdentity, saveOfflineIdentity } from '@/lib/offlineIdentity';
 
 export function useProfileComplete() {
-  const { user } = useAuth();
+  const { user, isOfflineMode } = useAuth();
   const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
   const [isStaffMember, setIsStaffMember] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -12,6 +13,21 @@ export function useProfileComplete() {
     if (!user) {
       setIsProfileComplete(null);
       setIsStaffMember(false);
+      setLoading(false);
+      return;
+    }
+
+    // Offline mode: use cached identity instead of querying Supabase
+    if (isOfflineMode || !navigator.onLine) {
+      const cached = getOfflineIdentity();
+      if (cached && cached.userId === user.id) {
+        setIsProfileComplete(cached.profileComplete);
+        setIsStaffMember(cached.isStaff);
+        setLoading(false);
+        return;
+      }
+      // No cached identity – treat as complete to avoid onboarding redirect
+      setIsProfileComplete(true);
       setLoading(false);
       return;
     }
@@ -33,6 +49,7 @@ export function useProfileComplete() {
         // Staff members don't need to complete profile setup - they're part of an existing company
         if (isStaff) {
           setIsProfileComplete(true);
+          saveOfflineIdentity({ userId: user.id, email: user.email ?? null, profileComplete: true, isStaff: true, lastSyncedAt: new Date().toISOString() });
           setLoading(false);
           return;
         }
@@ -54,9 +71,21 @@ export function useProfileComplete() {
           // Profile exists - check if required fields are filled
           const isComplete = !!(data.company_name && data.controller_name);
           setIsProfileComplete(isComplete);
+          // Persist for offline boot
+          saveOfflineIdentity({ userId: user.id, email: user.email ?? null, profileComplete: isComplete, isStaff: false, lastSyncedAt: new Date().toISOString() });
         }
       } catch (error) {
         console.error('Error checking profile:', error);
+        // If fetch failed (possibly offline), try cached identity
+        if (!navigator.onLine) {
+          const cached = getOfflineIdentity();
+          if (cached && cached.userId === user.id) {
+            setIsProfileComplete(cached.profileComplete);
+            setIsStaffMember(cached.isStaff);
+            setLoading(false);
+            return;
+          }
+        }
         setIsProfileComplete(false);
       } finally {
         setLoading(false);
@@ -64,7 +93,7 @@ export function useProfileComplete() {
     };
 
     checkProfile();
-  }, [user]);
+  }, [user, isOfflineMode]);
 
   return { isProfileComplete, isStaffMember, loading };
 }

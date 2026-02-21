@@ -8,6 +8,7 @@ import { Shield, FileText, Clock, Mail, Loader2, CheckCircle2 } from "lucide-rea
 import { supabase } from "@/integrations/supabase/client";
 import { getEmailSuggestion } from "@/utils/emailSuggestion";
 import { toast } from "sonner";
+import { getLastRoute, getOfflineIdentity } from "@/lib/offlineIdentity";
 
 const isStandaloneMode = () =>
   window.matchMedia('(display-mode: standalone)').matches ||
@@ -20,8 +21,11 @@ const ComingSoon = () => {
   // When opened as installed PWA, skip the landing page
   useEffect(() => {
     if (!isStandaloneMode()) return;
-    // Redirect to app — ProtectedRoute will handle auth check
-    navigate('/overview', { replace: true });
+    // If offline with a cached identity, go to last visited route
+    const cached = getOfflineIdentity();
+    const lastRoute = getLastRoute();
+    const target = lastRoute || '/overview';
+    navigate(target, { replace: true });
   }, [navigate]);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");

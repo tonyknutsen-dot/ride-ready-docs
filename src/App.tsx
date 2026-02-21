@@ -14,6 +14,7 @@ import { ProfileGuard } from "@/components/ProfileGuard";
 import { FeatureGate } from "@/components/FeatureGate";
 import { StaffRoute } from "@/components/StaffRoute";
 import ScrollToTop from "@/components/ScrollToTop";
+import { LastRouteTracker } from "@/components/LastRouteTracker";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import { AppLayout } from "@/components/AppLayout";
 import { StartupUpdateCheck } from "@/components/StartupUpdateCheck";
@@ -106,6 +107,7 @@ const App = () => (
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>
+          <LastRouteTracker />
           <AdminProvider>
             <TesterProvider>
               <StaffProvider>
