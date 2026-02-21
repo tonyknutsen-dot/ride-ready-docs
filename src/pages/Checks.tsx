@@ -10,6 +10,7 @@ import { ChecksOnboardingModal } from '@/components/ChecksOnboardingModal';
 import { Button } from '@/components/ui/button';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
 import { useChecksCompliance, CheckRideStatus } from '@/hooks/useChecksCompliance';
+import { OfflineStaleAlert } from '@/components/OfflineStaleAlert';
 
 
 type Ride = Tables<'rides'> & {
@@ -171,6 +172,9 @@ const Checks = () => {
       </header>
 
       <main className="container mx-auto px-4 py-5 space-y-5">
+
+        {/* ── OFFLINE BANNER ──────────────────────── */}
+        <OfflineStaleAlert />
 
         {/* ── COMPLIANCE ALERT BANNER ───────────── */}
         {!isLoading && hasAlerts && (

@@ -19,6 +19,13 @@ import { AppLayout } from "@/components/AppLayout";
 import { StartupUpdateCheck } from "@/components/StartupUpdateCheck";
 import { AuthenticatedAppShell } from "@/components/AuthenticatedAppShell";
 import { OfflineSuspense } from "@/components/OfflineSuspense";
+import { useLocation } from "react-router-dom";
+
+/** Wrapper that passes current pathname to OfflineSuspense so it resets on navigation */
+function LocationAwareOfflineSuspense({ children }: { children: React.ReactNode }) {
+  const { pathname } = useLocation();
+  return <OfflineSuspense resetKey={pathname}>{children}</OfflineSuspense>;
+}
 
 // Eager load critical pages
 import ComingSoon from "./pages/ComingSoon";
@@ -104,7 +111,7 @@ const App = () => (
               <StaffProvider>
               {/* Authenticated user components loaded lazily */}
               <AuthenticatedAppShell />
-              <OfflineSuspense>
+              <LocationAwareOfflineSuspense>
               <Routes>
               <Route path="/" element={<ComingSoon />} />
               <Route path="/auth" element={<Auth />} />
@@ -533,7 +540,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
               </Routes>
-              </OfflineSuspense>
+              </LocationAwareOfflineSuspense>
               {/* Cookie consent shown globally (lightweight) */}
               <CookieConsentBanner />
               </StaffProvider>

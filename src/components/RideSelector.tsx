@@ -10,6 +10,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
 import { EmptyState } from '@/components/EmptyState';
+import { useOfflineQuery } from '@/hooks/useOfflineQuery';
+import { OfflineDataPlaceholder } from '@/components/OfflineDataPlaceholder';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -41,8 +44,7 @@ const RideSelector = ({
   const { user } = useAuth();
   const { isStaff } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
-  const [rides, setRides] = useState<Ride[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { isOnline } = useOnlineStatus();
   const [openRequest, setOpenRequest] = useState(false);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
 
@@ -53,14 +55,10 @@ const RideSelector = ({
     return "border-2 border-primary/30 bg-gradient-to-br from-primary/5 to-transparent";
   };
 
-  useEffect(() => {
-    if (user && effectiveUserId) {
-      loadRides();
-    }
-  }, [user, effectiveUserId]);
-
-  const loadRides = async () => {
-    try {
+  // Use offline-capable query for rides list
+  const { data: rides = [], isLoading: loading, isOfflineData } = useOfflineQuery<Ride[]>({
+    queryKey: ['rides-selector', effectiveUserId, isStaff],
+    queryFn: async () => {
       let query = supabase
         .from('rides')
         .select(`
@@ -73,31 +71,28 @@ const RideSelector = ({
         `)
         .order('ride_name');
 
-      // For owners, scope to their own rides.
-      // For staff, skip the filter — RLS (staff_can_access_ride) handles access.
       if (!isStaff) {
         query = query.eq('user_id', effectiveUserId);
       }
 
       const { data, error } = await query;
-
       if (error) throw error;
-      setRides(data as Ride[]);
-      setLoading(false);
+      return (data || []) as Ride[];
+    },
+    enabled: !!user && !!effectiveUserId,
+    staleTime: 1000 * 60 * 2,
+    offlineCacheKey: `rides-selector:${effectiveUserId}`,
+  });
 
-      // Load thumbnails in background (non-blocking)
-      if (Array.isArray(data) && data.length) {
-        loadThumbnails(data as Ride[]);
-      }
-    } catch (error) {
-      console.error('Error loading rides:', error);
-      setLoading(false);
+  // Load thumbnails when rides data is available and online
+  useEffect(() => {
+    if (rides.length > 0 && isOnline && effectiveUserId) {
+      loadThumbnails(rides);
     }
-  };
+  }, [rides, isOnline, effectiveUserId]);
 
   const loadThumbnails = async (ridesList: Ride[]) => {
     try {
-      // Batch fetch all photo documents in a single query
       const { data: docs, error } = await supabase
         .from('documents')
         .select('id, file_path, ride_id')
@@ -108,7 +103,6 @@ const RideSelector = ({
 
       if (error || !docs?.length) return;
 
-      // Get one photo per ride (first one is latest due to ordering)
       const photosByRide = new Map<string, string>();
       for (const doc of docs) {
         if (doc.ride_id && !photosByRide.has(doc.ride_id)) {
@@ -118,7 +112,6 @@ const RideSelector = ({
 
       if (photosByRide.size === 0) return;
 
-      // Batch create signed URLs
       const urlPromises = Array.from(photosByRide.entries()).map(async ([rideId, filePath]) => {
         const { data: urlData } = await supabase.storage
           .from('ride-documents')
@@ -136,6 +129,11 @@ const RideSelector = ({
       console.warn('Thumb load skipped:', e);
     }
   };
+
+  // Offline with no cached data
+  if (!isOnline && rides.length === 0 && !loading) {
+    return <OfflineDataPlaceholder message="Open this page once online to make equipment available offline." />;
+  }
 
   if (loading) {
     return (
