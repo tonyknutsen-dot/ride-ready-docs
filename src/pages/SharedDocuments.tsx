@@ -76,8 +76,11 @@ const SharedDocuments = () => {
   };
 
   const handleDownload = async (doc: SharedDocument) => {
+    if (!navigator.onLine) {
+      toast.error('Requires connection', { description: 'Downloads are unavailable while offline.' });
+      return;
+    }
     setDownloadingIds(prev => new Set(prev).add(doc.id));
-    
     try {
       // Create a temporary link and click it to download
       const response = await fetch(doc.download_url);

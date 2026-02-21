@@ -313,6 +313,10 @@ const DocumentViewerPage = () => {
   };
 
   const handleDownload = async () => {
+    if (!navigator.onLine) {
+      toast({ title: 'Requires connection', description: 'Downloads are unavailable while offline.' });
+      return;
+    }
     const filePath = rideDoc?.file_url;
     if (!filePath && !fallbackDocId) return;
 
@@ -412,9 +416,9 @@ const DocumentViewerPage = () => {
           {isOffline ? (
             <>
               <WifiOff className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="text-sm font-semibold text-foreground">You're offline</p>
+              <p className="text-sm font-semibold text-foreground">PDF available when online</p>
               <p className="text-xs text-muted-foreground">
-                This document hasn't been cached yet. Open it while online to make it available offline.
+                This document hasn't been cached locally. It will be available once you're back online, or open it while connected to cache it for offline use.
               </p>
             </>
           ) : (
@@ -427,7 +431,7 @@ const DocumentViewerPage = () => {
             </>
           )}
           <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
-            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> Go back
+            <ArrowLeft className="h-3.5 w-3.5 mr-1.5" /> OK
           </Button>
         </div>
       </div>
