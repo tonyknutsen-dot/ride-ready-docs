@@ -23,7 +23,12 @@ import {
   MinusCircle,
   MapPin,
   Cloud,
-  Eye
+  Eye,
+  RefreshCw,
+  AlertTriangle,
+  Loader2,
+  CloudOff,
+  Paperclip,
 } from 'lucide-react';
 import { format, startOfMonth, endOfMonth, startOfYear, subDays, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -34,6 +39,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { EmptyState } from '@/components/EmptyState';
 import CheckDetailDialog from './CheckDetailDialog';
+import { useOfflineCheckHistory, type OfflineCheckDisplay } from '@/hooks/useOfflineCheckHistory';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
+import { offlineDb } from '@/lib/offlineDb';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
@@ -82,6 +91,9 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const { user } = useAuth();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
+  const { isOnline } = useOnlineStatus();
+  const { syncAll, isSyncing } = useOfflineSync();
+  const { offlineChecks, refresh: refreshOffline } = useOfflineCheckHistory(rideId, frequency);
   const [checks, setChecks] = useState<CheckWithResults[]>([]);
   const [filteredChecks, setFilteredChecks] = useState<CheckWithResults[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,6 +109,22 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const [selectedCheck, setSelectedCheck] = useState<CheckWithResults | null>(null);
   const [showCheckDetail, setShowCheckDetail] = useState(false);
   const itemsPerPage = 20;
+
+  const hasFailedItems = offlineChecks.some(c => c.syncStatus === 'failed');
+
+  const retryFailed = async () => {
+    // Reset failed items to pending so syncAll picks them up
+    await offlineDb.offlineChecks
+      .where('syncStatus')
+      .equals('failed')
+      .modify({ syncStatus: 'pending', syncAttempts: 0 });
+    await offlineDb.offlineDefects
+      .where('syncStatus')
+      .equals('failed')
+      .modify({ syncStatus: 'pending', syncAttempts: 0 });
+    refreshOffline();
+    syncAll();
+  };
 
   useEffect(() => {
     if (effectiveUserId) {
@@ -596,8 +624,54 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         </div>
       </div>
 
+      {/* ── Offline pending checks ── */}
+      {offlineChecks.length > 0 && (
+        <div className="t-card overflow-hidden border-warning/40">
+          <div className="t-card-header flex items-start justify-between gap-3 bg-warning/5">
+            <div className="min-w-0">
+              <div className="t-title text-base flex items-center gap-2">
+                <CloudOff className="h-4 w-4 text-warning" />
+                Pending Sync
+              </div>
+              <div className="text-xs text-muted-foreground mt-0.5">
+                {offlineChecks.length} check{offlineChecks.length !== 1 ? 's' : ''} saved locally
+              </div>
+            </div>
+            <div className="flex gap-2 shrink-0">
+              {hasFailedItems && (
+                <button
+                  type="button"
+                  onClick={retryFailed}
+                  disabled={isSyncing}
+                  className="rounded-xl border border-destructive/30 px-3 py-1.5 text-xs font-bold bg-destructive/5 hover:bg-destructive/10 text-destructive flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <RefreshCw className={cn("h-3.5 w-3.5", isSyncing && "animate-spin")} />
+                  Retry
+                </button>
+              )}
+              {isOnline && (
+                <button
+                  type="button"
+                  onClick={syncAll}
+                  disabled={isSyncing}
+                  className="rounded-xl border border-primary/30 px-3 py-1.5 text-xs font-bold bg-primary/5 hover:bg-primary/10 text-primary flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <RefreshCw className={cn("h-3.5 w-3.5", isSyncing && "animate-spin")} />
+                  Sync now
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="p-4 space-y-3">
+            {offlineChecks.map((oc) => (
+              <OfflineCheckRow key={oc.localId} check={oc} />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* ── Month groups ── */}
-      {monthGroups.length === 0 ? (
+      {monthGroups.length === 0 && offlineChecks.length === 0 ? (
         <EmptyState icon={FileText} title="No checks found" description="No checks found for the selected filters" variant="compact" />
       ) : (
         monthGroups.map((group) => (
@@ -722,6 +796,74 @@ function KpiCard({ title, value, tone }: { title: string; value: number; tone: '
     <div className={cn('kpiCard rounded-2xl border shadow-sm p-4', cls)}>
       <div className="text-xs font-bold text-muted-foreground truncate">{title}</div>
       <div className="mt-1 text-3xl font-extrabold text-foreground">{value}</div>
+    </div>
+  );
+}
+
+function OfflineCheckRow({ check }: { check: OfflineCheckDisplay }) {
+  const syncBadge = () => {
+    switch (check.syncStatus) {
+      case 'pending':
+      case 'syncing':
+        return (
+          <span className="rounded-full px-2.5 py-1 text-[11px] font-extrabold border bg-warning/10 border-warning/30 text-warning flex items-center gap-1">
+            {check.syncStatus === 'syncing' ? <Loader2 className="h-3 w-3 animate-spin" /> : <CloudOff className="h-3 w-3" />}
+            Pending Sync
+          </span>
+        );
+      case 'failed':
+        return (
+          <span className="rounded-full px-2.5 py-1 text-[11px] font-extrabold border bg-destructive/10 border-destructive/30 text-destructive flex items-center gap-1">
+            <AlertTriangle className="h-3 w-3" />
+            Sync Failed
+          </span>
+        );
+      case 'synced':
+        if (check.hasLinkedDefects && !check.defectsSynced) {
+          return (
+            <span className="rounded-full px-2.5 py-1 text-[11px] font-extrabold border bg-warning/10 border-warning/30 text-warning flex items-center gap-1">
+              <Paperclip className="h-3 w-3" />
+              Attachments pending
+            </span>
+          );
+        }
+        return (
+          <span className="rounded-full px-2.5 py-1 text-[11px] font-extrabold border bg-success/10 border-success/30 text-success flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3" />
+            Synced
+          </span>
+        );
+    }
+  };
+
+  return (
+    <div className="rounded-2xl border border-warning/30 bg-warning/5 p-3 flex items-start justify-between gap-3 min-w-0">
+      <div className="min-w-0 flex-1 space-y-1">
+        <div className="text-xs text-muted-foreground">
+          {check.checkDate} · <span className="font-semibold capitalize">{check.checkFrequency}</span>
+        </div>
+        <div className="font-extrabold text-foreground truncate">{check.inspectorName}</div>
+        {check.location && (
+          <div className="text-xs text-muted-foreground flex items-center gap-1">
+            <MapPin className="h-3 w-3 shrink-0" />
+            <span className="truncate max-w-[140px]">{check.location}</span>
+          </div>
+        )}
+        {check.syncError && (
+          <p className="text-xs text-destructive italic line-clamp-1">{check.syncError}</p>
+        )}
+      </div>
+      <div className="flex flex-col items-end gap-1.5 shrink-0">
+        <span className={cn(
+          "rounded-full px-2.5 py-1 text-[11px] font-extrabold border",
+          check.status === 'passed'  ? 'bg-success/10 border-success/30 text-success' :
+          check.status === 'failed'  ? 'bg-destructive/10 border-destructive/30 text-destructive' :
+                                       'bg-warning/10 border-warning/30 text-warning'
+        )}>
+          {check.status.charAt(0).toUpperCase() + check.status.slice(1)}
+        </span>
+        {syncBadge()}
+      </div>
     </div>
   );
 }
