@@ -18,6 +18,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     mode !== "development" && VitePWA({
       registerType: "autoUpdate",
+      injectRegister: "script-defer",
       includeAssets: ["pwa-icon.jpg", "favicon.ico", "app-logo.jpg"],
       manifest: {
         name: "Ride Ready Docs",
@@ -55,10 +56,31 @@ export default defineConfig(({ mode }) => ({
         skipWaiting: true,
         clientsClaim: true,
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/functions\//],
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/functions\//, /^\/rest\//],
         globPatterns: ["**/*.{js,css,html,ico,png,jpg,svg,woff2,webmanifest}"],
         cleanupOutdatedCaches: true,
         runtimeCaching: [
+          // Navigation requests — NetworkFirst, fall back to cached app shell
+          {
+            urlPattern: ({request}) => request.mode === 'navigate',
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "pages-cache",
+              networkTimeoutSeconds: 3,
+            }
+          },
+          // Static assets (JS/CSS/fonts/images) — StaleWhileRevalidate
+          {
+            urlPattern: /\.(?:js|css|woff2?|ttf|otf|png|jpg|jpeg|svg|gif|webp|ico)$/i,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "static-assets-cache",
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
+          },
           // Supabase REST API — network-first, fall back to cache
           {
             urlPattern: /^https:\/\/sbtldudgiskqfqqkrmaa\.supabase\.co\/rest\/v1\/.*/i,
