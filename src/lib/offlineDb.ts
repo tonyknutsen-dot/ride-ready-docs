@@ -91,13 +91,39 @@ export interface CachedLocation {
   cachedAt: string;
 }
 
+// Offline compliance completion queued for sync
+export interface OfflineComplianceCompletion {
+  id?: number;
+  localId: string;
+  eventId: string;
+  eventName: string;
+  eventCategory: string;
+  eventType?: string;
+  rideId: string | null;
+  rideName: string;
+  dueDate: string;
+  completionDate: string;
+  notes?: string;
+  inspectorCompany?: string;
+  certificateReference?: string;
+  isRecurring: boolean;
+  recurrenceRule?: string | null;
+  // Evidence file blobs stored locally for upload on sync
+  evidenceBlobs: { name: string; type: string; data: ArrayBuffer }[];
+  createdAt: string;
+  syncStatus: 'pending' | 'syncing' | 'synced' | 'failed';
+  syncError?: string;
+  syncAttempts: number;
+  lastSyncAttempt?: string;
+}
+
 // Cached PDF for offline document viewing
 export interface CachedPdf {
-  documentId: string;   // ride_documents.document_id (logical doc ID)
-  version: number;      // version number
-  fileUrl: string;      // storage path (ride_documents.file_url)
-  blob: Blob;           // the actual PDF data
-  title: string;        // document title for display
+  documentId: string;
+  version: number;
+  fileUrl: string;
+  blob: Blob;
+  title: string;
   cachedAt: string;
 }
 
@@ -109,6 +135,7 @@ class OfflineDatabase extends Dexie {
   cachedTemplates!: EntityTable<CachedTemplate, 'id'>;
   cachedLocations!: EntityTable<CachedLocation, 'id'>;
   cachedPdfs!: EntityTable<CachedPdf, 'documentId'>;
+  offlineComplianceCompletions!: EntityTable<OfflineComplianceCompletion, 'id'>;
 
   constructor() {
     super('RideReadyOfflineDB');
@@ -145,6 +172,17 @@ class OfflineDatabase extends Dexie {
       cachedTemplates: 'id, rideId, cachedAt',
       cachedLocations: '++id, latitude, longitude, lastUsed',
       cachedPdfs: 'documentId, version, cachedAt'
+    });
+
+    // Version 5: Add offline compliance completions
+    this.version(5).stores({
+      offlineChecks: '++id, localId, rideId, syncStatus, createdAt, needsAddressResolution',
+      offlineDefects: '++id, localId, rideId, checkLocalId, syncStatus',
+      cachedRides: 'id, cachedAt',
+      cachedTemplates: 'id, rideId, cachedAt',
+      cachedLocations: '++id, latitude, longitude, lastUsed',
+      cachedPdfs: 'documentId, version, cachedAt',
+      offlineComplianceCompletions: '++id, localId, eventId, syncStatus, createdAt'
     });
   }
 }
@@ -290,4 +328,21 @@ export async function cacheLocationAddress(lat: number, lon: number, address: st
 // Get all cached locations (for UI display if needed)
 export async function getCachedLocations(): Promise<CachedLocation[]> {
   return offlineDb.cachedLocations.orderBy('usageCount').reverse().toArray();
+}
+
+// ── Offline compliance completion helpers ──
+
+export async function addOfflineComplianceCompletion(completion: Omit<OfflineComplianceCompletion, 'id'>): Promise<void> {
+  await offlineDb.offlineComplianceCompletions.add(completion as OfflineComplianceCompletion);
+}
+
+export async function getPendingComplianceCompletions(): Promise<OfflineComplianceCompletion[]> {
+  return offlineDb.offlineComplianceCompletions
+    .where('syncStatus')
+    .anyOf(['pending', 'failed'])
+    .toArray();
+}
+
+export async function getAllOfflineComplianceCompletions(): Promise<OfflineComplianceCompletion[]> {
+  return offlineDb.offlineComplianceCompletions.toArray();
 }

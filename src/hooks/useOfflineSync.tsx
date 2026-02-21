@@ -7,13 +7,18 @@ import {
   offlineDb,
   getPendingChecks,
   getPendingDefects,
+  getPendingComplianceCompletions,
   markCheckSynced,
   markCheckFailed,
   clearSyncedData,
   cacheLocationAddress,
   type OfflineCheck,
   type OfflineDefect,
+  type OfflineComplianceCompletion,
 } from '@/lib/offlineDb';
+import { format } from 'date-fns';
+import { createComplianceDocument, categoryToDocTypeCode } from '@/utils/complianceDocumentCreator';
+import { generateDocumentId } from '@/utils/pdfTemplate';
 
 export function useOfflineSync() {
   const { user } = useAuth();
@@ -24,9 +29,12 @@ export function useOfflineSync() {
 
   // Update pending count
   const refreshPendingCount = useCallback(async () => {
-    const checks = await getPendingChecks();
-    const defects = await getPendingDefects();
-    setPendingCount(checks.length + defects.length);
+    const [checks, defects, completions] = await Promise.all([
+      getPendingChecks(),
+      getPendingDefects(),
+      getPendingComplianceCompletions(),
+    ]);
+    setPendingCount(checks.length + defects.length + completions.length);
   }, []);
 
   // Resolve address from coordinates using OpenStreetMap Nominatim
@@ -170,6 +178,126 @@ export function useOfflineSync() {
     }
   };
 
+  // Sync a single offline compliance completion
+  const syncComplianceCompletion = async (completion: OfflineComplianceCompletion): Promise<boolean> => {
+    if (!user) return false;
+
+    try {
+      await offlineDb.offlineComplianceCompletions
+        .where('localId')
+        .equals(completion.localId)
+        .modify({ syncStatus: 'syncing' });
+
+      // 1. Get profile data for snapshot
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('controller_name, company_name')
+        .eq('user_id', user.id)
+        .single();
+
+      const { data: memberData } = await supabase
+        .from('organisation_members')
+        .select('permission_level')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .maybeSingle();
+
+      const completedByName = profileData?.controller_name || user.email || 'Unknown';
+      const completedByRole = memberData
+        ? (memberData.permission_level === 'full_access' ? 'Owner' : memberData.permission_level?.replace('_', ' ') || 'Staff')
+        : 'Owner';
+
+      // 2. Upload evidence files from stored blobs
+      const evidenceUrls: string[] = [];
+      for (const blob of completion.evidenceBlobs) {
+        const ext = blob.name.split('.').pop() || 'jpg';
+        const path = `${user.id}/evidence/${completion.eventId}/${crypto.randomUUID()}.${ext}`;
+        const file = new File([blob.data], blob.name, { type: blob.type });
+        const { error } = await supabase.storage.from('ride-documents').upload(path, file);
+        if (error) throw error;
+        evidenceUrls.push(path);
+      }
+
+      // 3. Generate document ID
+      let fullDocumentId: string | undefined;
+      const completionDate = new Date(completion.completionDate);
+      if (completion.rideId) {
+        const docTypeCode = categoryToDocTypeCode(completion.eventCategory || 'compliance', completion.eventType);
+        try {
+          fullDocumentId = await generateDocumentId(completion.rideId, docTypeCode, completionDate.getFullYear());
+        } catch (e) {
+          console.warn('Could not generate document ID during sync:', e);
+        }
+      }
+
+      // 4. Complete the event via RPC
+      const { data, error } = await supabase.rpc('complete_event', {
+        p_event_id: completion.eventId,
+        p_completion_date: completion.completionDate,
+        p_completion_notes: completion.notes || null,
+        p_evidence_urls: evidenceUrls,
+        p_completed_by_name: completedByName,
+        p_completed_by_role: completedByRole,
+      });
+      if (error) throw error;
+
+      // 5. Update event with inspector/reference/document ID + offline flags
+      const eventUpdate: Record<string, any> = {
+        completion_status: 'synced',
+        completed_offline: true,
+        synced_at: new Date().toISOString(),
+      };
+      if (completion.inspectorCompany) eventUpdate.inspector_company = completion.inspectorCompany;
+      if (completion.certificateReference) eventUpdate.certificate_reference = completion.certificateReference;
+      if (fullDocumentId) eventUpdate.full_document_id = fullDocumentId;
+
+      await supabase
+        .from('compliance_events')
+        .update(eventUpdate)
+        .eq('id', completion.eventId);
+
+      // 6. Generate PDF + create document record
+      await createComplianceDocument({
+        eventId: completion.eventId,
+        eventName: completion.eventName,
+        eventCategory: completion.eventCategory,
+        eventType: completion.eventType,
+        rideId: completion.rideId,
+        rideName: completion.rideName,
+        dueDate: completion.dueDate,
+        completionDate,
+        completedByUserId: user.id,
+        completedByName,
+        completedByRole,
+        notes: completion.notes,
+        evidenceUrls,
+        inspectorCompany: completion.inspectorCompany,
+        certificateReference: completion.certificateReference,
+        fullDocumentId,
+      });
+
+      // 7. Mark synced
+      await offlineDb.offlineComplianceCompletions
+        .where('localId')
+        .equals(completion.localId)
+        .modify({ syncStatus: 'synced' });
+
+      return true;
+    } catch (error: any) {
+      console.error('Failed to sync compliance completion:', error);
+      await offlineDb.offlineComplianceCompletions
+        .where('localId')
+        .equals(completion.localId)
+        .modify({
+          syncStatus: 'failed',
+          syncError: error.message || 'Unknown error',
+          syncAttempts: (completion.syncAttempts || 0) + 1,
+          lastSyncAttempt: new Date().toISOString(),
+        });
+      return false;
+    }
+  };
+
   // Sync all pending items
   const syncAll = useCallback(async () => {
     if (!isOnline || !user || isSyncing) return;
@@ -182,9 +310,7 @@ export function useOfflineSync() {
       // Sync checks
       const pendingChecks = await getPendingChecks();
       for (const check of pendingChecks) {
-        // Skip checks that have failed too many times
         if (check.syncAttempts >= 5) continue;
-        
         const success = await syncCheck(check);
         if (success) successCount++;
         else failCount++;
@@ -194,14 +320,32 @@ export function useOfflineSync() {
       const pendingDefects = await getPendingDefects();
       for (const defect of pendingDefects) {
         if (defect.syncAttempts >= 5) continue;
-        
         const success = await syncDefect(defect);
+        if (success) successCount++;
+        else failCount++;
+      }
+
+      // Sync compliance completions
+      const pendingCompletions = await getPendingComplianceCompletions();
+      for (const completion of pendingCompletions) {
+        if (completion.syncAttempts >= 5) continue;
+        const success = await syncComplianceCompletion(completion);
         if (success) successCount++;
         else failCount++;
       }
 
       // Clean up old synced data
       await clearSyncedData();
+
+      // Clean up old synced compliance completions
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - 7);
+      await offlineDb.offlineComplianceCompletions
+        .where('syncStatus')
+        .equals('synced')
+        .filter(c => c.createdAt < cutoff.toISOString())
+        .delete();
+
       await refreshPendingCount();
 
       if (successCount > 0) {
