@@ -37,7 +37,7 @@ export function useProfileComplete() {
         // First check if user is a staff member (part of an organisation they don't own)
         const { data: memberData } = await supabase
           .from('organisation_members')
-          .select('id, organisation_id, organisations!inner(owner_id)')
+          .select('id, organisation_id, permission_level, can_access_checks, can_access_documents, can_access_maintenance, can_access_calendar, can_access_risk_assessments, can_access_send_documents, organisations!inner(owner_id)')
           .eq('user_id', user.id)
           .eq('is_active', true)
           .maybeSingle();
@@ -50,7 +50,15 @@ export function useProfileComplete() {
         if (isStaff) {
           setIsProfileComplete(true);
           const orgId = memberData?.organisation_id ?? null;
-          saveOfflineIdentity({ userId: user.id, role: 'employee', organisationId: orgId, setupComplete: true, lastSync: new Date().toISOString() });
+          const perms = memberData ? {
+            checks: memberData.can_access_checks,
+            documents: memberData.can_access_documents,
+            maintenance: memberData.can_access_maintenance,
+            calendar: memberData.can_access_calendar,
+            riskAssessments: memberData.can_access_risk_assessments,
+            sendDocuments: memberData.can_access_send_documents,
+          } : {};
+          saveOfflineIdentity({ userId: user.id, role: memberData?.permission_level ?? 'employee', organisationId: orgId, setupComplete: true, permissions: perms, lastSync: new Date().toISOString() });
           setLoading(false);
           return;
         }
