@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     mode !== "development" && VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       includeAssets: ["pwa-icon.jpg", "favicon.ico", "app-logo.jpg"],
       manifest: {
         name: "Ride Ready Docs",
