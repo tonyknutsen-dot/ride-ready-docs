@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { getOfflineIdentity, saveOfflineIdentity, clearOfflineIdentity } from '@/lib/offlineIdentity';
 
 interface AuthContextType {
   user: User | null;
@@ -8,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   isSuspended: boolean;
   suspensionReason: string | null;
+  isOfflineMode: boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, country?: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
@@ -70,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const [isSuspended, setIsSuspended] = useState(false);
   const [suspensionReason, setSuspensionReason] = useState<string | null>(null);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   const checkSuspensionStatus = async (userId: string) => {
     try {
@@ -112,6 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Always update session and user state synchronously
         setSession(session);
         setUser(session?.user ?? null);
+        setIsOfflineMode(false); // We got a real session, not offline
         
         // Handle suspension and subscription sync in a deferred callback
         // to avoid Supabase deadlock issues
@@ -150,13 +154,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // then fall back to getSession for existing sessions
     const initializeAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (!isMounted) return;
+
+        // Offline fallback: if getSession fails or returns null while offline,
+        // use cached identity to keep user signed in
+        if (!session && !navigator.onLine) {
+          const cached = getOfflineIdentity();
+          if (cached) {
+            console.log('[AUTH] Offline boot – using cached identity', cached.userId);
+            // Create a minimal User-like object so ProtectedRoute allows access
+            setUser({ id: cached.userId, email: cached.email } as User);
+            setIsOfflineMode(true);
+            if (!initialLoadDone) {
+              initialLoadDone = true;
+              setLoading(false);
+            }
+            return;
+          }
+        }
         
         if (!initialLoadDone) {
-          // If this is an OAuth callback and getSession returned null,
-          // Supabase is still processing the hash tokens asynchronously.
-          // Wait for onAuthStateChange to fire instead of prematurely setting loading=false.
           const hash = window.location.hash;
           const hasAuthCallback = hash.includes('access_token') || hash.includes('error_description');
           
@@ -174,7 +192,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           setSession(session);
           setUser(session?.user ?? null);
-          
+
+          // Persist identity for offline boot
           if (session?.user) {
             const { suspended, reason } = await checkSuspensionStatus(session.user.id);
             if (!isMounted) return;
@@ -282,6 +301,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     setIsSuspended(false);
     setSuspensionReason(null);
+    clearOfflineIdentity();
     const { error } = await supabase.auth.signOut();
     return { error };
   }, []);
@@ -302,11 +322,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     isSuspended,
     suspensionReason,
+    isOfflineMode,
     signIn,
     signUp,
     signOut,
     resetPassword,
-  }), [user, session, loading, isSuspended, suspensionReason, signIn, signUp, signOut, resetPassword]);
+  }), [user, session, loading, isSuspended, suspensionReason, isOfflineMode, signIn, signUp, signOut, resetPassword]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
