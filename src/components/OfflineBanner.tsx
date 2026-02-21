@@ -88,11 +88,16 @@ export function OfflineBanner() {
   if (!isOnline) {
     const syncLabel = formatSyncTime(lastSync);
     return (
-      <div className="fixed top-0 left-0 right-0 z-50 bg-warning text-warning-foreground py-2 px-4 text-center text-sm font-medium flex items-center justify-center gap-2">
-        <CloudOff className="h-4 w-4" />
-        Offline mode — showing last saved data
-        {syncLabel && <span className="text-xs opacity-80">• last sync: {syncLabel}</span>}
-        {pendingCount > 0 && <span className="text-xs opacity-80">• {pendingCount} pending</span>}
+      <div className="fixed top-0 left-0 right-0 z-50 bg-warning text-warning-foreground py-2 px-4 text-center text-xs font-medium space-y-0.5">
+        <div className="flex items-center justify-center gap-2 font-semibold text-sm">
+          <CloudOff className="h-4 w-4" />
+          Offline mode (limited)
+          {syncLabel && <span className="text-xs font-normal opacity-80">• last sync: {syncLabel}</span>}
+        </div>
+        <p className="opacity-80">
+          View last-synced rides &amp; compliance. Some actions sync when reconnected. PDFs/photos may be unavailable unless previously opened.
+        </p>
+        {pendingCount > 0 && <p className="opacity-80">{pendingCount} change{pendingCount !== 1 ? 's' : ''} pending sync</p>}
       </div>
     );
   }

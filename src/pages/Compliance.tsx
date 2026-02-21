@@ -12,6 +12,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDateUK } from "@/utils/dateFormat";
 import CompletedComplianceTab from "@/components/CompletedComplianceTab";
+import { OfflineStaleAlert } from "@/components/OfflineStaleAlert";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -334,6 +335,9 @@ const Compliance = () => {
 
   return (
     <div className="container mx-auto py-3 pb-24 md:pb-8 max-w-3xl space-y-3">
+      {/* Offline staleness alert */}
+      <OfflineStaleAlert />
+
       {/* Header */}
       <div>
         <div className="flex items-center gap-3">
