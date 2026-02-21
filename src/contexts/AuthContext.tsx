@@ -164,7 +164,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (cached) {
             console.log('[AUTH] Offline boot – using cached identity', cached.userId);
             // Create a minimal User-like object so ProtectedRoute allows access
-            setUser({ id: cached.userId, email: cached.email } as User);
+            setUser({ id: cached.userId } as User);
             setIsOfflineMode(true);
             if (!initialLoadDone) {
               initialLoadDone = true;

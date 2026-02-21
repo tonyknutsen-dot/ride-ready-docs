@@ -21,8 +21,8 @@ export function useProfileComplete() {
     if (isOfflineMode || !navigator.onLine) {
       const cached = getOfflineIdentity();
       if (cached && cached.userId === user.id) {
-        setIsProfileComplete(cached.profileComplete);
-        setIsStaffMember(cached.isStaff);
+        setIsProfileComplete(cached.setupComplete);
+        setIsStaffMember(cached.role === 'employee');
         setLoading(false);
         return;
       }
@@ -49,7 +49,8 @@ export function useProfileComplete() {
         // Staff members don't need to complete profile setup - they're part of an existing company
         if (isStaff) {
           setIsProfileComplete(true);
-          saveOfflineIdentity({ userId: user.id, email: user.email ?? null, profileComplete: true, isStaff: true, lastSyncedAt: new Date().toISOString() });
+          const orgId = memberData?.organisation_id ?? null;
+          saveOfflineIdentity({ userId: user.id, role: 'employee', organisationId: orgId, setupComplete: true, lastSync: new Date().toISOString() });
           setLoading(false);
           return;
         }
@@ -72,7 +73,7 @@ export function useProfileComplete() {
           const isComplete = !!(data.company_name && data.controller_name);
           setIsProfileComplete(isComplete);
           // Persist for offline boot
-          saveOfflineIdentity({ userId: user.id, email: user.email ?? null, profileComplete: isComplete, isStaff: false, lastSyncedAt: new Date().toISOString() });
+          saveOfflineIdentity({ userId: user.id, role: 'controller', organisationId: null, setupComplete: isComplete, lastSync: new Date().toISOString() });
         }
       } catch (error) {
         console.error('Error checking profile:', error);
@@ -80,8 +81,8 @@ export function useProfileComplete() {
         if (!navigator.onLine) {
           const cached = getOfflineIdentity();
           if (cached && cached.userId === user.id) {
-            setIsProfileComplete(cached.profileComplete);
-            setIsStaffMember(cached.isStaff);
+            setIsProfileComplete(cached.setupComplete);
+            setIsStaffMember(cached.role === 'employee');
             setLoading(false);
             return;
           }
