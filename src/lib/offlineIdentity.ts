@@ -8,10 +8,10 @@ const LAST_ROUTE_KEY = 'rrd_last_route';
 
 export interface OfflineIdentity {
   userId: string;
-  email: string | null;
-  profileComplete: boolean;
-  isStaff: boolean;
-  lastSyncedAt: string;
+  role: 'controller' | 'employee';
+  organisationId: string | null;
+  setupComplete: boolean;
+  lastSync: string;
 }
 
 export function saveOfflineIdentity(identity: OfflineIdentity): void {
