@@ -408,6 +408,10 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   };
 
   const handleDownload = async (doc: RideDocument) => {
+    if (!navigator.onLine) {
+      toast({ title: 'Requires connection', description: 'Downloads are unavailable while offline.' });
+      return;
+    }
     const url = await getSignedUrl(doc);
     if (!url) return;
     const a = document.createElement('a');

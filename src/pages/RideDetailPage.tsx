@@ -3,8 +3,9 @@ import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Settings } from 'lucide-react';
+import { ArrowLeft, Settings, WifiOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import RideDetail from '@/components/RideDetail';
@@ -27,6 +28,7 @@ const RideDetailPage = () => {
   const { user } = useAuth();
   const { isStaff } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
+  const { isOnline } = useOnlineStatus();
   const [ride, setRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -122,6 +124,12 @@ const RideDetailPage = () => {
   return (
     <div className="container mx-auto px-4 py-5 pb-28 md:pb-8">
       <StaffAccountBanner />
+      {!isOnline && (
+        <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-warning/10 border border-warning/20 text-warning text-xs">
+          <WifiOff className="h-3.5 w-3.5 shrink-0" />
+          <span>Limited offline data. Some sections may be missing until you reconnect.</span>
+        </div>
+      )}
       <Button
         variant="ghost"
         size="sm"

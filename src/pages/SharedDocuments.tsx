@@ -108,6 +108,10 @@ const SharedDocuments = () => {
   };
 
   const handleDownloadAll = async () => {
+    if (!navigator.onLine) {
+      toast.error('Requires connection', { description: 'Downloads are unavailable while offline.' });
+      return;
+    }
     toast.info(`Downloading ${documents.length} files...`);
     
     for (const doc of documents) {
