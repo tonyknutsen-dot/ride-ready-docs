@@ -55,22 +55,50 @@ export default defineConfig(({ mode }) => ({
         skipWaiting: true,
         clientsClaim: true,
         navigateFallback: '/index.html',
-        navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//],
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/functions\//],
+        globPatterns: ["**/*.{js,css,html,ico,png,jpg,svg,woff2,webmanifest}"],
+        cleanupOutdatedCaches: true,
         runtimeCaching: [
+          // Supabase REST API — network-first, fall back to cache
           {
             urlPattern: /^https:\/\/sbtldudgiskqfqqkrmaa\.supabase\.co\/rest\/v1\/.*/i,
             handler: "NetworkFirst",
             options: {
               cacheName: "supabase-api-cache",
+              networkTimeoutSeconds: 5,
               expiration: {
-                maxEntries: 100,
+                maxEntries: 150,
                 maxAgeSeconds: 60 * 60 * 24 // 24 hours
               },
               cacheableResponse: {
                 statuses: [0, 200]
               }
             }
+          },
+          // Supabase Auth — network-only (tokens must be fresh)
+          {
+            urlPattern: /^https:\/\/sbtldudgiskqfqqkrmaa\.supabase\.co\/auth\/.*/i,
+            handler: "NetworkOnly",
+          },
+          // Supabase Storage (PDFs, images) — cache-first after first fetch
+          {
+            urlPattern: /^https:\/\/sbtldudgiskqfqqkrmaa\.supabase\.co\/storage\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "supabase-storage-cache",
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 7 // 7 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          },
+          // Edge functions — network-only
+          {
+            urlPattern: /^https:\/\/sbtldudgiskqfqqkrmaa\.supabase\.co\/functions\/.*/i,
+            handler: "NetworkOnly",
           }
         ]
       }
