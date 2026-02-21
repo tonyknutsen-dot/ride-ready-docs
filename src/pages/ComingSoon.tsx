@@ -1,15 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Shield, FileText, Clock, Mail, Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { getEmailSuggestion } from "@/utils/emailSuggestion";
 import { toast } from "sonner";
 
+const isStandaloneMode = () =>
+  window.matchMedia('(display-mode: standalone)').matches ||
+  (window.navigator as any).standalone === true ||
+  document.referrer.includes('android-app://');
+
 const ComingSoon = () => {
+  const navigate = useNavigate();
+
+  // When opened as installed PWA, skip the landing page
+  useEffect(() => {
+    if (!isStandaloneMode()) return;
+    // Redirect to app — ProtectedRoute will handle auth check
+    navigate('/overview', { replace: true });
+  }, [navigate]);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [honeypot, setHoneypot] = useState(""); // Bot detection
