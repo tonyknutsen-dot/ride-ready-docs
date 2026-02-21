@@ -59,6 +59,7 @@ export default defineConfig(({ mode }) => ({
         navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/functions\//, /^\/rest\//],
         globPatterns: ["**/*.{js,css,html,ico,png,jpg,svg,woff2,webmanifest}"],
         cleanupOutdatedCaches: true,
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB — ensure large chunks are precached
         runtimeCaching: [
           // Navigation requests — NetworkFirst, fall back to cached app shell
           {
@@ -69,12 +70,36 @@ export default defineConfig(({ mode }) => ({
               networkTimeoutSeconds: 3,
             }
           },
-          // Static assets (JS/CSS/fonts/images) — StaleWhileRevalidate
+          // JS/CSS chunks — StaleWhileRevalidate so they load offline after first visit
           {
-            urlPattern: /\.(?:js|css|woff2?|ttf|otf|png|jpg|jpeg|svg|gif|webp|ico)$/i,
+            urlPattern: /\.(?:js|css)$/i,
             handler: "StaleWhileRevalidate",
             options: {
-              cacheName: "static-assets-cache",
+              cacheName: "js-css-cache",
+              expiration: {
+                maxEntries: 500,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
+          },
+          // Fonts — CacheFirst, long TTL
+          {
+            urlPattern: /\.(?:woff2?|ttf|otf|eot)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "fonts-cache",
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              }
+            }
+          },
+          // Images — CacheFirst with expiration
+          {
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp|ico)$/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "images-cache",
               expiration: {
                 maxEntries: 200,
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
@@ -91,7 +116,7 @@ export default defineConfig(({ mode }) => ({
             urlPattern: /^https:\/\/sbtldudgiskqfqqkrmaa\.supabase\.co\/auth\/.*/i,
             handler: "NetworkOnly",
           },
-          // Supabase Storage (PDFs, images) — cache-first after first fetch
+          // Supabase Storage (PDFs, images) — CacheFirst after first fetch
           {
             urlPattern: /^https:\/\/sbtldudgiskqfqqkrmaa\.supabase\.co\/storage\/.*/i,
             handler: "CacheFirst",

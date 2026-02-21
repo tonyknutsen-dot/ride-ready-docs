@@ -8,9 +8,11 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Settings, WifiOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
+import { setCache, getCache } from '@/lib/offlineCache';
 import RideDetail from '@/components/RideDetail';
 import PageBreadcrumb from '@/components/PageBreadcrumb';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
+import { OfflineDataPlaceholder } from '@/components/OfflineDataPlaceholder';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -31,6 +33,7 @@ const RideDetailPage = () => {
   const { isOnline } = useOnlineStatus();
   const [ride, setRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isOfflineData, setIsOfflineData] = useState(false);
 
   useEffect(() => {
     if (effectiveUserId && id) {
@@ -40,8 +43,6 @@ const RideDetailPage = () => {
 
   const loadRide = async () => {
     try {
-      // For staff, RLS handles access - just query by ID
-      // For owners, also filter by user_id
       let query = supabase
         .from('rides')
         .select(`
@@ -62,9 +63,22 @@ const RideDetailPage = () => {
 
       if (error) throw error;
       setRide(data as Ride);
+      setIsOfflineData(false);
+      // Cache individual ride for offline access
+      setCache(`ride:${id}`, data).catch(console.error);
     } catch (error) {
       console.error('Error loading ride:', error);
-      navigate('/rides');
+      // Try offline cache fallback
+      const cached = await getCache<Ride>(`ride:${id}`);
+      if (cached) {
+        setRide(cached.data);
+        setIsOfflineData(true);
+      } else if (!navigator.onLine) {
+        // Offline with no cache — don't navigate away, show placeholder
+        setRide(null);
+      } else {
+        navigate('/rides');
+      }
     } finally {
       setLoading(false);
     }
@@ -77,12 +91,11 @@ const RideDetailPage = () => {
       { label: ride?.ride_name || 'Loading...' }
     ];
     
-    // Add tab context if not on overview
     if (initialTab && initialTab !== 'overview' && ride) {
       const tabLabels: Record<string, string> = {
         documents: 'Documents',
         checks: 'Checks',
-        inspections: 'Checks' // legacy fallback
+        inspections: 'Checks'
       };
       
       if (tabLabels[initialTab]) {
@@ -108,6 +121,23 @@ const RideDetailPage = () => {
   }
 
   if (!ride) {
+    // If offline and no cache, show a clear message
+    if (!navigator.onLine) {
+      return (
+        <div className="container mx-auto px-4 py-8">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate('/rides')}
+            className="w-fit gap-1.5 -ml-2 mb-4 text-muted-foreground hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Equipment
+          </Button>
+          <OfflineDataPlaceholder message="This ride hasn't been cached yet. Open it once while online to access it offline." />
+        </div>
+      );
+    }
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="text-center space-y-4">
@@ -127,7 +157,11 @@ const RideDetailPage = () => {
       {!isOnline && (
         <div className="flex items-center gap-2 px-3 py-2 mb-3 rounded-lg bg-warning/10 border border-warning/20 text-warning text-xs">
           <WifiOff className="h-3.5 w-3.5 shrink-0" />
-          <span>Limited offline data. Some sections may be missing until you reconnect.</span>
+          <span>
+            {isOfflineData
+              ? 'Showing cached data. Some sections may be missing until you reconnect.'
+              : 'Limited offline data. Some sections may be missing until you reconnect.'}
+          </span>
         </div>
       )}
       <Button

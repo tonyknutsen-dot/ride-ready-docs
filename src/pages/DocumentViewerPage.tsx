@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -16,7 +16,7 @@ import {
 import {
   ArrowLeft, Download, History, Archive, RotateCcw,
   FileText, Calendar, Building2, Hash, Clock, Loader2,
-  MapPin, Eye, CheckCircle2, AlertTriangle, WifiOff,
+  MapPin, Eye, CheckCircle2, AlertTriangle, WifiOff, HardDrive,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatDateUK } from '@/utils/dateFormat';
@@ -54,6 +54,8 @@ const DocumentViewerPage = () => {
   const [loading, setLoading] = useState(true);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfSource, setPdfSource] = useState<'network' | 'cache' | null>(null);
+  const [isCachedLocally, setIsCachedLocally] = useState(false);
+  const [savingOffline, setSavingOffline] = useState(false);
   const [docTitle, setDocTitle] = useState('');
   const [docDisplayId, setDocDisplayId] = useState('');
   const [meta, setMeta] = useState<DocumentMeta | null>(null);
@@ -76,6 +78,32 @@ const DocumentViewerPage = () => {
     if (!documentId || !user) return;
     loadDocument(documentId);
   }, [documentId, user]);
+
+  // Check if this document is already cached locally
+  useEffect(() => {
+    if (!documentId) return;
+    getCachedPdf(documentId).then(cached => {
+      setIsCachedLocally(!!cached);
+    });
+  }, [documentId, pdfSource]);
+
+  const handleSaveOffline = useCallback(async () => {
+    if (!rideDoc || !navigator.onLine) return;
+    setSavingOffline(true);
+    try {
+      const signedUrl = await getSignedUrl(rideDoc.file_url);
+      if (!signedUrl) throw new Error('Failed to get URL');
+      const blob = await fetchPdfBlob(signedUrl);
+      if (!blob) throw new Error('Failed to download');
+      await cachePdf(rideDoc.document_id, rideDoc.version, rideDoc.file_url, blob, rideDoc.title);
+      setIsCachedLocally(true);
+      toast({ title: 'Saved for offline', description: 'This document is now available offline.' });
+    } catch (err) {
+      toast({ title: 'Failed to save offline', variant: 'destructive' });
+    } finally {
+      setSavingOffline(false);
+    }
+  }, [rideDoc, toast]);
 
   const loadDocument = async (id: string) => {
     setLoading(true);
@@ -531,6 +559,25 @@ const DocumentViewerPage = () => {
         </div>
 
         <div className="flex items-center gap-1.5 shrink-0">
+          {/* Save for offline */}
+          {rideDoc && navigator.onLine && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs"
+              onClick={handleSaveOffline}
+              disabled={savingOffline || isCachedLocally}
+            >
+              {savingOffline ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : isCachedLocally ? (
+                <CheckCircle2 className="h-3.5 w-3.5 text-success" />
+              ) : (
+                <HardDrive className="h-3.5 w-3.5" />
+              )}
+              {isCachedLocally ? 'Saved offline' : 'Save offline'}
+            </Button>
+          )}
           <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleDownload}>
             <Download className="h-3.5 w-3.5" />
             Download
@@ -546,7 +593,6 @@ const DocumentViewerPage = () => {
               )}
             </Button>
           )}
-          {/* Archive/Restore only on latest version */}
           {isLatest && rideDoc && !meta?.isArchived && (
             <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setArchiveDialogOpen(true)}>
               <Archive className="h-3.5 w-3.5" />

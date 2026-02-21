@@ -1,6 +1,6 @@
-import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffectiveUserId } from "./useEffectiveUserId";
+import { useOfflineQuery } from "./useOfflineQuery";
 
 export interface ChecksComplianceStats {
   overdueCount: number;
@@ -115,10 +115,11 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
 export function useChecksCompliance() {
   const { effectiveUserId, loading: staffLoading } = useEffectiveUserId();
 
-  return useQuery({
+  return useOfflineQuery({
     queryKey: ['checks-compliance', effectiveUserId],
     queryFn: () => fetchChecksCompliance(effectiveUserId!),
     enabled: !!effectiveUserId && !staffLoading,
     staleTime: 1000 * 60 * 2,
+    offlineCacheKey: `checks-compliance:${effectiveUserId}`,
   });
 }
