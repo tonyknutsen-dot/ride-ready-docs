@@ -194,40 +194,51 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   const [docsFallbackCache, setDocsFallbackCache] = useState<Record<string, { id: string; document_name: string; file_path: string; notes: string | null; document_type: string; ride_id: string }[]>>({});
 
   // Load offline completions from IndexedDB
-  useEffect(() => {
-    const loadOffline = async () => {
-      const completions = await getAllOfflineComplianceCompletions();
-      const pending = completions.filter(c => c.syncStatus !== 'synced');
-      setOfflineItems(pending.map(c => ({
-        id: c.eventId,
-        eventName: c.eventName,
-        eventType: c.eventType || '',
-        category: c.eventCategory,
-        rideName: c.rideName,
-        rideId: c.rideId,
-        dueDate: c.dueDate,
-        completedAt: c.createdAt,
-        inspectorCompany: c.inspectorCompany || null,
-        certificateReference: c.certificateReference || null,
-        completionNotes: c.notes || null,
-        evidenceUrls: [],
-        documentId: null,
-        fullDocumentId: null,
-        completedByName: null,
-        completedByRole: null,
-        isPendingSync: c.syncStatus === 'pending' || c.syncStatus === 'syncing',
-        syncFailed: c.syncStatus === 'failed',
-        syncError: c.syncError,
-      })));
-    };
-    loadOffline();
+  const refreshOfflineItems = useCallback(async () => {
+    const completions = await getAllOfflineComplianceCompletions();
+    const pending = completions.filter(c => c.syncStatus !== 'synced');
+    setOfflineItems(pending.map(c => ({
+      id: c.eventId,
+      eventName: c.eventName,
+      eventType: c.eventType || '',
+      category: c.eventCategory,
+      rideName: c.rideName,
+      rideId: c.rideId,
+      dueDate: c.dueDate,
+      completedAt: c.completionDate || c.createdAt,
+      inspectorCompany: c.inspectorCompany || null,
+      certificateReference: c.certificateReference || null,
+      completionNotes: c.notes || null,
+      evidenceUrls: [],
+      documentId: null,
+      fullDocumentId: null,
+      completedByName: null,
+      completedByRole: null,
+      isPendingSync: c.syncStatus === 'pending' || c.syncStatus === 'syncing',
+      syncFailed: c.syncStatus === 'failed',
+      syncError: c.syncError,
+    })));
   }, []);
+
+  useEffect(() => {
+    refreshOfflineItems();
+  }, [refreshOfflineItems]);
+
+  // Re-check offline items when coming back online (sync may have cleared them)
+  useEffect(() => {
+    if (isOnline) {
+      const timer = setTimeout(refreshOfflineItems, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOnline, refreshOfflineItems]);
 
   const { data, isLoading, refetch } = useQuery({
     queryKey: ['compliance-completed', effectiveUserId, daysFilter],
     queryFn: () => fetchCompletedEvents(effectiveUserId, daysFilter),
-    enabled: !!effectiveUserId,
+    enabled: !!effectiveUserId && isOnline,
     staleTime: 1000 * 60 * 2,
+    // Keep previous data when offline so cached results persist
+    placeholderData: (prev) => prev,
   });
 
   // Merge server items with offline-pending items (deduplicate by eventId)
@@ -505,7 +516,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
         </div>
       </div>
 
-      {isLoading && (
+      {isLoading && offlineItems.length === 0 && (
         <div className="space-y-1.5">
           {[1, 2, 3].map(i => (
             <div key={i} className="h-12 bg-muted rounded-lg animate-pulse" />
@@ -513,8 +524,18 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
         </div>
       )}
 
-      {/* Empty state */}
-      {!isLoading && filtered.length === 0 && (
+      {/* Offline banner when we have local items but no server data */}
+      {!isOnline && offlineItems.length > 0 && !data && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-warning/10 border border-warning/30 text-sm">
+          <CloudOff className="h-4 w-4 text-warning shrink-0" />
+          <span className="text-warning text-xs">
+            Showing offline data. Full history will load when back online.
+          </span>
+        </div>
+      )}
+
+      {/* Empty state - only when truly empty (no server data AND no offline items) */}
+      {(!isLoading || !isOnline) && filtered.length === 0 && (
         <div className="border border-border rounded-lg p-5 text-center space-y-1.5">
           <CheckCircle className="h-6 w-6 text-muted-foreground mx-auto" />
           <p className="text-sm font-semibold text-foreground">
@@ -546,7 +567,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
 
       {/* Ride groups */}
       <div className="space-y-1">
-        {!isLoading && rideGroups.map(group => {
+        {(!isLoading || offlineItems.length > 0 || !isOnline) && rideGroups.map(group => {
           const rideKey = group.rideId || 'global';
           const currentPage = ridePageMap[rideKey] || 1;
           const isRideOpen = openRides.has(rideKey);
