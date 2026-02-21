@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React, { lazy } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,7 +18,7 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 import { AppLayout } from "@/components/AppLayout";
 import { StartupUpdateCheck } from "@/components/StartupUpdateCheck";
 import { AuthenticatedAppShell } from "@/components/AuthenticatedAppShell";
-import { Loader2, FileText } from "lucide-react";
+import { OfflineSuspense } from "@/components/OfflineSuspense";
 
 // Eager load critical pages
 import ComingSoon from "./pages/ComingSoon";
@@ -74,15 +74,7 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 const Compliance = lazy(() => import("./pages/Compliance"));
 const DocumentViewerPage = lazy(() => import("./pages/DocumentViewerPage"));
 
-// Loading fallback component
-const PageLoader = () => (
-  <div className="min-h-screen bg-background flex items-center justify-center">
-    <div className="text-center space-y-4">
-      <FileText className="mx-auto h-12 w-12 text-primary" />
-      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
-    </div>
-  </div>
-);
+// PageLoader is now inside OfflineSuspense
 
 // Optimized QueryClient with aggressive caching
 const queryClient = new QueryClient({
@@ -112,7 +104,7 @@ const App = () => (
               <StaffProvider>
               {/* Authenticated user components loaded lazily */}
               <AuthenticatedAppShell />
-              <Suspense fallback={<PageLoader />}>
+              <OfflineSuspense>
               <Routes>
               <Route path="/" element={<ComingSoon />} />
               <Route path="/auth" element={<Auth />} />
@@ -541,7 +533,7 @@ const App = () => (
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
               </Routes>
-              </Suspense>
+              </OfflineSuspense>
               {/* Cookie consent shown globally (lightweight) */}
               <CookieConsentBanner />
               </StaffProvider>
