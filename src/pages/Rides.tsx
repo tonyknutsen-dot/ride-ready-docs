@@ -14,6 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store, Sparkles, ImageIcon, Camera, Loader2, Clock, AlertTriangle, CheckCircle, Share2 } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
+import { setCache, getCache } from '@/lib/offlineCache';
 import { Tables } from '@/integrations/supabase/types';
 import RideForm from '@/components/RideForm';
 import { SendDocumentsDialog } from '@/components/SendDocumentsDialog';
@@ -52,6 +53,7 @@ const Rides = () => {
     dueSoonCount: number;
   }>>({});
   const [loading, setLoading] = useState(true);
+  const [isOfflineData, setIsOfflineData] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [activeGroup, setActiveGroup] = useState<string>('All');
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
@@ -100,13 +102,23 @@ const Rides = () => {
 
       if (error) {
         console.error('Error loading rides:', error);
-        toast({
-          title: "Error loading rides",
-          description: error.message,
-          variant: "destructive"
-        });
+        // Try offline cache fallback
+        const cached = await getCache<Ride[]>(`rides:${effectiveUserId}`);
+        if (cached) {
+          setRides(cached.data);
+          setIsOfflineData(true);
+        } else {
+          toast({
+            title: "Error loading rides",
+            description: error.message,
+            variant: "destructive"
+          });
+        }
       } else {
         setRides(data as Ride[]);
+        setIsOfflineData(false);
+        // Cache for offline use
+        setCache(`rides:${effectiveUserId}`, data).catch(console.error);
         await Promise.all([
           loadRideStatistics(data as Ride[]),
           loadRidePhotos(data as Ride[])

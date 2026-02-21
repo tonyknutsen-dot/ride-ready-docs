@@ -1,4 +1,4 @@
-import { useQuery } from "@tanstack/react-query";
+import { useOfflineQuery } from './useOfflineQuery';
 import { supabase } from "@/integrations/supabase/client";
 import { useEffectiveUserId } from "./useEffectiveUserId";
 
@@ -259,10 +259,11 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
 export function useOverviewData() {
   const { effectiveUserId, loading: staffLoading } = useEffectiveUserId();
 
-  return useQuery({
+  return useOfflineQuery({
     queryKey: ['overview', effectiveUserId],
     queryFn: () => fetchOverviewData(effectiveUserId!),
     enabled: !!effectiveUserId && !staffLoading,
     staleTime: 1000 * 60 * 2,
+    offlineCacheKey: `overview:${effectiveUserId}`,
   });
 }

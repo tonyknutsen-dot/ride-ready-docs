@@ -127,6 +127,13 @@ export interface CachedPdf {
   cachedAt: string;
 }
 
+// Generic cache store for API responses
+export interface CacheStoreEntry {
+  key: string;
+  dataJson: string;
+  updatedAt: string;
+}
+
 // Dexie database class
 class OfflineDatabase extends Dexie {
   offlineChecks!: EntityTable<OfflineCheck, 'id'>;
@@ -136,6 +143,7 @@ class OfflineDatabase extends Dexie {
   cachedLocations!: EntityTable<CachedLocation, 'id'>;
   cachedPdfs!: EntityTable<CachedPdf, 'documentId'>;
   offlineComplianceCompletions!: EntityTable<OfflineComplianceCompletion, 'id'>;
+  cacheStore!: EntityTable<CacheStoreEntry, 'key'>;
 
   constructor() {
     super('RideReadyOfflineDB');
@@ -147,7 +155,6 @@ class OfflineDatabase extends Dexie {
       cachedTemplates: 'id, rideId, cachedAt'
     });
 
-    // Version 2: Add GPS coordinate fields for deferred address resolution
     this.version(2).stores({
       offlineChecks: '++id, localId, rideId, syncStatus, createdAt, needsAddressResolution',
       offlineDefects: '++id, localId, rideId, checkLocalId, syncStatus',
@@ -155,7 +162,6 @@ class OfflineDatabase extends Dexie {
       cachedTemplates: 'id, rideId, cachedAt'
     });
 
-    // Version 3: Add cached locations for offline address lookup
     this.version(3).stores({
       offlineChecks: '++id, localId, rideId, syncStatus, createdAt, needsAddressResolution',
       offlineDefects: '++id, localId, rideId, checkLocalId, syncStatus',
@@ -164,7 +170,6 @@ class OfflineDatabase extends Dexie {
       cachedLocations: '++id, latitude, longitude, lastUsed'
     });
 
-    // Version 4: Add cached PDFs for offline document viewing
     this.version(4).stores({
       offlineChecks: '++id, localId, rideId, syncStatus, createdAt, needsAddressResolution',
       offlineDefects: '++id, localId, rideId, checkLocalId, syncStatus',
@@ -174,7 +179,6 @@ class OfflineDatabase extends Dexie {
       cachedPdfs: 'documentId, version, cachedAt'
     });
 
-    // Version 5: Add offline compliance completions
     this.version(5).stores({
       offlineChecks: '++id, localId, rideId, syncStatus, createdAt, needsAddressResolution',
       offlineDefects: '++id, localId, rideId, checkLocalId, syncStatus',
@@ -183,6 +187,18 @@ class OfflineDatabase extends Dexie {
       cachedLocations: '++id, latitude, longitude, lastUsed',
       cachedPdfs: 'documentId, version, cachedAt',
       offlineComplianceCompletions: '++id, localId, eventId, syncStatus, createdAt'
+    });
+
+    // Version 6: Add generic cache store for offline API response caching
+    this.version(6).stores({
+      offlineChecks: '++id, localId, rideId, syncStatus, createdAt, needsAddressResolution',
+      offlineDefects: '++id, localId, rideId, checkLocalId, syncStatus',
+      cachedRides: 'id, cachedAt',
+      cachedTemplates: 'id, rideId, cachedAt',
+      cachedLocations: '++id, latitude, longitude, lastUsed',
+      cachedPdfs: 'documentId, version, cachedAt',
+      offlineComplianceCompletions: '++id, localId, eventId, syncStatus, createdAt',
+      cacheStore: 'key, updatedAt'
     });
   }
 }
