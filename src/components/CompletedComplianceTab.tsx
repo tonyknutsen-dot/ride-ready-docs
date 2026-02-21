@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
+import { useOfflineQuery } from '@/hooks/useOfflineQuery';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -238,13 +239,12 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
     }
   }, [isOnline, refreshOfflineItems]);
 
-  const { data, isLoading, refetch } = useQuery({
+  const { data, isLoading, refetch } = useOfflineQuery({
     queryKey: ['compliance-completed', effectiveUserId, daysFilter],
     queryFn: () => fetchCompletedEvents(effectiveUserId, daysFilter),
     enabled: !!effectiveUserId && isOnline,
     staleTime: 1000 * 60 * 2,
-    // Keep previous data when offline so cached results persist
-    placeholderData: (prev) => prev,
+    offlineCacheKey: `compliance_completed:${effectiveUserId}:${daysFilter}`,
   });
 
   // Merge server items with offline-pending items (deduplicate by eventId)

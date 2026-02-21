@@ -1,11 +1,18 @@
 import { CloudOff, Wifi, RefreshCw, Loader2 } from 'lucide-react';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { useEffect, useState } from 'react';
+import { getLastSyncTime } from '@/lib/offlineCache';
 
 export function OfflineBanner() {
   const { isOnline, isSyncing, pendingCount, syncAll } = useOfflineSync();
   const [showSynced, setShowSynced] = useState(false);
   const [wasOfflineOrPending, setWasOfflineOrPending] = useState(false);
+  const [lastSync, setLastSync] = useState<string | null>(null);
+
+  // Load last sync time
+  useEffect(() => {
+    getLastSyncTime().then(setLastSync).catch(() => {});
+  }, [isOnline, pendingCount]);
 
   // Track when we had pending items so we can show "All synced" after
   useEffect(() => {
@@ -25,6 +32,21 @@ export function OfflineBanner() {
       return () => clearTimeout(timer);
     }
   }, [isOnline, pendingCount, wasOfflineOrPending, isSyncing]);
+
+  const formatSyncTime = (iso: string | null) => {
+    if (!iso) return null;
+    try {
+      const d = new Date(iso);
+      const now = new Date();
+      const diffMs = now.getTime() - d.getTime();
+      const diffMins = Math.floor(diffMs / 60000);
+      if (diffMins < 1) return 'just now';
+      if (diffMins < 60) return `${diffMins}m ago`;
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours < 24) return `${diffHours}h ago`;
+      return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+    } catch { return null; }
+  };
 
   // Syncing state - online with pending items
   if (isOnline && isSyncing && pendingCount > 0) {
@@ -64,10 +86,13 @@ export function OfflineBanner() {
 
   // Offline state
   if (!isOnline) {
+    const syncLabel = formatSyncTime(lastSync);
     return (
       <div className="fixed top-0 left-0 right-0 z-50 bg-warning text-warning-foreground py-2 px-4 text-center text-sm font-medium flex items-center justify-center gap-2">
         <CloudOff className="h-4 w-4" />
-        Offline mode {pendingCount > 0 ? `• ${pendingCount} pending sync` : ''}
+        Offline mode — showing last saved data
+        {syncLabel && <span className="text-xs opacity-80">• last sync: {syncLabel}</span>}
+        {pendingCount > 0 && <span className="text-xs opacity-80">• {pendingCount} pending</span>}
       </div>
     );
   }

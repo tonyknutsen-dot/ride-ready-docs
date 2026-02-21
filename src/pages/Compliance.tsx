@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
+import { useOfflineQuery } from "@/hooks/useOfflineQuery";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffectiveUserId } from "@/hooks/useEffectiveUserId";
 import {
@@ -138,11 +139,12 @@ const Compliance = () => {
   const [markCompleteOpen, setMarkCompleteOpen] = useState(false);
   const [markCompleteEvent, setMarkCompleteEvent] = useState<ComplianceItem | null>(null);
 
-  const { data, isLoading, dataUpdatedAt } = useQuery({
+  const { data, isLoading, dataUpdatedAt, isOfflineData, cachedAt } = useOfflineQuery({
     queryKey: ["compliance", effectiveUserId],
     queryFn: () => fetchComplianceData(effectiveUserId!),
     enabled: !!effectiveUserId && !staffLoading,
     staleTime: 1000 * 60 * 2,
+    offlineCacheKey: `compliance_open:${effectiveUserId}`,
   });
 
   const items = data?.items ?? [];
