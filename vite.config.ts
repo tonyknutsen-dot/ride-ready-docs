@@ -81,21 +81,10 @@ export default defineConfig(({ mode }) => ({
               }
             }
           },
-          // Supabase REST API — network-first, fall back to cache
+          // Supabase REST API — network-only (use IndexedDB cache layer instead)
           {
             urlPattern: /^https:\/\/sbtldudgiskqfqqkrmaa\.supabase\.co\/rest\/v1\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "supabase-api-cache",
-              networkTimeoutSeconds: 5,
-              expiration: {
-                maxEntries: 150,
-                maxAgeSeconds: 60 * 60 * 24 // 24 hours
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
-              }
-            }
+            handler: "NetworkOnly",
           },
           // Supabase Auth — network-only (tokens must be fresh)
           {
