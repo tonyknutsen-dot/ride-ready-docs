@@ -18,6 +18,9 @@ import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter,
 } from '@/components/ui/dialog';
 import {
+  Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
+} from '@/components/ui/sheet';
+import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -178,6 +181,9 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
 
   // Edit sheet
   const [editingEvent, setEditingEvent] = useState<CompletedItem | null>(null);
+
+  // Local details drawer (for pending/offline items)
+  const [detailItem, setDetailItem] = useState<CompletedItem | null>(null);
 
   // Version history dialog
   const [versionDialogDoc, setVersionDialogDoc] = useState<RideDocument | null>(null);
@@ -620,6 +626,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
                                   key={item.id}
                                   item={item}
                                   doc={doc}
+                                  isOnline={isOnline}
                                   onEdit={doc?.archived_at ? undefined : () => setEditingEvent(item)}
                                   onViewPdf={doc ? () => handleViewPdf(doc) : undefined}
                                   onDownload={doc ? () => handleDownload(doc) : undefined}
@@ -627,6 +634,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
                                   onArchive={doc && !doc.archived_at ? () => setArchiveDialogDoc(doc) : undefined}
                                   onRestore={doc?.archived_at ? () => handleRestore(doc) : undefined}
                                   onOpenInDocs={item.fullDocumentId ? () => window.open(`/documents?highlight=${item.fullDocumentId}`, '_blank') : undefined}
+                                  onShowDetails={() => setDetailItem(item)}
                                 />
                               );
                             })}
@@ -650,6 +658,72 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
           );
         })}
       </div>
+
+      {/* Local Details Drawer for pending/offline items */}
+      <Sheet open={!!detailItem} onOpenChange={open => { if (!open) setDetailItem(null); }}>
+        <SheetContent side="bottom" className="max-h-[70vh] rounded-t-2xl">
+          <SheetHeader className="pb-2">
+            <SheetTitle className="text-base">{detailItem?.eventName}</SheetTitle>
+            <SheetDescription className="sr-only">Completion details</SheetDescription>
+          </SheetHeader>
+          {detailItem && (
+            <div className="space-y-3 px-1 pb-4">
+              {(detailItem.isPendingSync || detailItem.syncFailed) && (
+                <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs ${
+                  detailItem.syncFailed
+                    ? 'bg-destructive/10 border border-destructive/30 text-destructive'
+                    : 'bg-warning/10 border border-warning/30 text-warning'
+                }`}>
+                  <CloudOff className="h-3.5 w-3.5 shrink-0" />
+                  {detailItem.syncFailed
+                    ? 'Sync failed. Will retry when online.'
+                    : 'Pending sync – PDF will be generated when online.'}
+                </div>
+              )}
+              {!detailItem.isPendingSync && !detailItem.syncFailed && !isOnline && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted border border-border text-xs text-muted-foreground">
+                  <CloudOff className="h-3.5 w-3.5 shrink-0" />
+                  PDF not available offline. Connect to download.
+                </div>
+              )}
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Equipment</p>
+                  <p className="font-medium">{detailItem.rideName}</p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Completed</p>
+                  <p className="font-medium">{detailItem.completedAt ? formatDateUK(detailItem.completedAt) : '–'}</p>
+                </div>
+                {detailItem.certificateReference && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Reference</p>
+                    <p className="font-medium font-mono text-xs">{detailItem.certificateReference}</p>
+                  </div>
+                )}
+                {detailItem.inspectorCompany && (
+                  <div>
+                    <p className="text-[11px] text-muted-foreground uppercase tracking-wider">Inspector</p>
+                    <p className="font-medium">{detailItem.inspectorCompany}</p>
+                  </div>
+                )}
+              </div>
+              {detailItem.completionNotes && (
+                <div>
+                  <p className="text-[11px] text-muted-foreground uppercase tracking-wider mb-1">Notes</p>
+                  <p className="text-sm bg-muted/50 rounded-md p-2">{detailItem.completionNotes}</p>
+                </div>
+              )}
+              {detailItem.syncFailed && detailItem.syncError && (
+                <div>
+                  <p className="text-[11px] text-destructive uppercase tracking-wider mb-1">Error</p>
+                  <p className="text-xs text-destructive bg-destructive/5 rounded-md p-2">{detailItem.syncError}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
 
       {/* Edit Sheet */}
       {editingEvent && (
@@ -727,6 +801,7 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
 function CompletedItemRow({
   item,
   doc,
+  isOnline,
   onEdit,
   onViewPdf,
   onDownload,
@@ -734,9 +809,11 @@ function CompletedItemRow({
   onArchive,
   onRestore,
   onOpenInDocs,
+  onShowDetails,
 }: {
   item: CompletedItem;
   doc: RideDocument | null;
+  isOnline: boolean;
   onEdit?: () => void;
   onViewPdf?: () => void;
   onDownload?: () => void;
@@ -744,6 +821,7 @@ function CompletedItemRow({
   onArchive?: () => void;
   onRestore?: () => void;
   onOpenInDocs?: () => void;
+  onShowDetails: () => void;
 }) {
   const isArchived = doc?.archived_at;
   const isPending = item.isPendingSync;
@@ -752,7 +830,22 @@ function CompletedItemRow({
   const { toast } = useToast();
 
   const handleCardClick = () => {
-    if (isPending || isFailed || !onViewPdf || loading) return;
+    // Pending sync or failed -> show local details drawer
+    if (isPending || isFailed) {
+      onShowDetails();
+      return;
+    }
+    // No doc and offline -> show details with offline message
+    if (!onViewPdf && !isOnline) {
+      onShowDetails();
+      return;
+    }
+    // No doc at all -> show details as fallback
+    if (!onViewPdf) {
+      onShowDetails();
+      return;
+    }
+    if (loading) return;
     setLoading(true);
     try {
       onViewPdf();
@@ -764,10 +857,10 @@ function CompletedItemRow({
 
   return (
     <div
-      role={onViewPdf && !isPending && !isFailed ? "button" : undefined}
-      tabIndex={onViewPdf && !isPending && !isFailed ? 0 : undefined}
+      role="button"
+      tabIndex={0}
       onClick={handleCardClick}
-      onKeyDown={onViewPdf && !isPending && !isFailed ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(); } } : undefined}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleCardClick(); } }}
       className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md border ${
         isPending
           ? 'border-warning/40 bg-warning/5'
@@ -778,7 +871,7 @@ function CompletedItemRow({
               : isArchived
                 ? 'border-border/40 bg-muted/15 opacity-60'
                 : 'border-border/40 bg-background hover:bg-muted/40 active:bg-muted/60'
-      } ${onViewPdf && !loading && !isPending && !isFailed ? 'cursor-pointer' : ''}`}
+      } cursor-pointer`}
     >
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-1.5">
