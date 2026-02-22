@@ -99,6 +99,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [showMaintenanceForItem, setShowMaintenanceForItem] = useState<string | null>(null);
   const [declarationChecked, setDeclarationChecked] = useState(false);
   const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
+  const [itemDefectRaised, setItemDefectRaised] = useState<Record<string, boolean>>({});
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -1571,7 +1572,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                         <DefectReportDialog
                           rideId={ride.id}
                           rideName={ride.ride_name}
-                          onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
+                          onDefectReported={() => { setDefectRefreshKey(prev => prev + 1); setItemDefectRaised(prev => ({ ...prev, [item.id]: true })); }}
                           trigger={
                             <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
                               <AlertTriangle className="h-3 w-3 shrink-0" />
@@ -1616,7 +1617,19 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                     </div>
                   )}
 
-                  {/* Optional notes (non-fail) — collapsed link */}
+                  {/* Inline warning: fail without defect */}
+                  {isFail && !itemDefectRaised[item.id] && (
+                    <p className="mt-1.5 text-[11px] font-semibold text-red-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3 shrink-0" />
+                      Defect must be raised before completion
+                    </p>
+                  )}
+                  {isFail && itemDefectRaised[item.id] && (
+                    <p className="mt-1.5 text-[11px] font-semibold text-green-700 flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3 shrink-0" />
+                      Defect raised
+                    </p>
+                  )}
                   {!isFail && notes[item.id] !== undefined && (
                     <Textarea
                       placeholder="Add notes (optional)"
@@ -1697,26 +1710,38 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             </button>
           )}
 
-          {/* Warning: open failures without notes/defects */}
+          {/* Warning: fails without defect raised */}
           {getProgress() === 100 && (() => {
-            const failedItemIds = activeTemplate.daily_check_template_items
-              .filter(item => itemResults[item.id] === 'fail')
-              .map(item => item.id);
-            const unresolvedFails = failedItemIds.filter(id => !(notes[id] && notes[id].trim()));
-            return unresolvedFails.length > 0 ? unresolvedFails.length : 0;
-          })() > 0 && (
-            <p className="text-[12px] text-red-600 font-semibold leading-snug">
-              ⚠ Open failures must have notes or a defect raised before completion.
-            </p>
+            const failsWithoutDefect = activeTemplate.daily_check_template_items
+              .filter(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id]);
+            return failsWithoutDefect.length > 0 ? failsWithoutDefect : null;
+          })() !== null && (
+            <button
+              type="button"
+              className="w-full text-left"
+              onClick={() => {
+                const sorted = activeTemplate.daily_check_template_items
+                  .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+                const first = sorted.find(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id]);
+                if (first) {
+                  const el = document.querySelector(`[data-item-id="${first.id}"]`);
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setHighlightItemId(first.id);
+                    setTimeout(() => setHighlightItemId(null), 1500);
+                  }
+                }
+              }}
+            >
+              <p className="text-[12px] text-red-600 font-semibold leading-snug hover:underline">
+                ⚠ Failed items must have a defect raised before completion. Tap to view.
+              </p>
+            </button>
           )}
 
-          {getProgress() === 100 && (() => {
-            const failedItemIds = activeTemplate.daily_check_template_items
-              .filter(item => itemResults[item.id] === 'fail')
-              .map(item => item.id);
-            const unresolvedFails = failedItemIds.filter(id => !(notes[id] && notes[id].trim()));
-            return unresolvedFails.length === 0;
-          })() && (
+          {getProgress() === 100 && activeTemplate.daily_check_template_items
+            .filter(item => itemResults[item.id] === 'fail')
+            .every(item => itemDefectRaised[item.id]) && (
             <p className="text-[12px] text-green-700 font-semibold leading-snug">
               ✓ All items completed. Ready to confirm.
             </p>
@@ -1724,12 +1749,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
           <div className="border-t border-slate-100 pt-3">
             <label className={`flex items-start gap-2.5 group ${
-              getProgress() < 100 || (() => {
-                const failedItemIds = activeTemplate.daily_check_template_items
-                  .filter(item => itemResults[item.id] === 'fail')
-                  .map(item => item.id);
-                return failedItemIds.some(id => !(notes[id] && notes[id].trim()));
-              })()
+              getProgress() < 100 || activeTemplate.daily_check_template_items
+                .some(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id])
                 ? 'opacity-40 pointer-events-none'
                 : 'cursor-pointer'
             }`}>
@@ -1739,8 +1760,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                 }`}
                 onClick={() => {
                   const canConfirm = getProgress() === 100 && !activeTemplate.daily_check_template_items
-                    .filter(item => itemResults[item.id] === 'fail')
-                    .some(item => !(notes[item.id] && notes[item.id].trim()));
+                    .some(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id]);
                   if (canConfirm) setDeclarationChecked(prev => !prev);
                 }}
               >
@@ -1750,8 +1770,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                 className="text-[12px] text-slate-700 leading-snug select-none font-medium"
                 onClick={() => {
                   const canConfirm = getProgress() === 100 && !activeTemplate.daily_check_template_items
-                    .filter(item => itemResults[item.id] === 'fail')
-                    .some(item => !(notes[item.id] && notes[item.id].trim()));
+                    .some(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id]);
                   if (canConfirm) setDeclarationChecked(prev => !prev);
                 }}
               >
