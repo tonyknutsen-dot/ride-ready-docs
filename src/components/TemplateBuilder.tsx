@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, ArrowRight, Plus, Trash2, Save, Library, Pencil, Check, X, Sparkles, CheckSquare, ListChecks, AlertTriangle, Search } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -69,6 +70,10 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const [loading, setLoading] = useState(false);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editText, setEditText] = useState('');
+
+  // Start Notice state
+  const [startNoticeText, setStartNoticeText] = useState(template?.start_notice_text ?? '');
+  const [startNoticeRequired, setStartNoticeRequired] = useState(template?.start_notice_required ?? false);
 
   // Suggestions state
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
@@ -269,7 +274,11 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       if (template) {
         const { error: updateError } = await supabase
           .from('daily_check_templates')
-          .update({ template_name: templateName.trim() })
+          .update({
+            template_name: templateName.trim(),
+            start_notice_text: startNoticeText.trim() || null,
+            start_notice_required: startNoticeText.trim() ? startNoticeRequired : false,
+          } as any)
           .eq('id', template.id);
         if (updateError) throw updateError;
 
@@ -288,7 +297,9 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             check_frequency: frequency,
             template_type: frequency,
             is_active: true,
-          })
+            start_notice_text: startNoticeText.trim() || null,
+            start_notice_required: startNoticeText.trim() ? startNoticeRequired : false,
+          } as any)
           .select()
           .single();
         if (createError) throw createError;
@@ -736,6 +747,46 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   toast({ title: `${labels.length} item${labels.length > 1 ? 's' : ''} added` });
                 }}
               />
+            </CardContent>
+          </Card>
+
+          {/* Start Notice (optional) */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+                Start Notice (optional)
+              </CardTitle>
+              <CardDescription>
+                Add a notice that staff must acknowledge before starting this check.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="startNotice">Notice Text</Label>
+                <Textarea
+                  id="startNotice"
+                  value={startNoticeText}
+                  onChange={(e) => {
+                    setStartNoticeText(e.target.value);
+                    if (!e.target.value.trim()) setStartNoticeRequired(false);
+                    else setStartNoticeRequired(true);
+                  }}
+                  placeholder="e.g. Ensure all safety barriers are in place before commencing inspection…"
+                  rows={3}
+                />
+              </div>
+              {startNoticeText.trim() && (
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={startNoticeRequired}
+                    onChange={(e) => setStartNoticeRequired(e.target.checked)}
+                    className="h-4 w-4 rounded accent-primary"
+                  />
+                  <span className="text-sm">Require acknowledgement before starting</span>
+                </label>
+              )}
             </CardContent>
           </Card>
 

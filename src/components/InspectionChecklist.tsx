@@ -65,9 +65,11 @@ interface InspectionChecklistProps {
   frequency: string;
   onChecklistSaved?: () => void;
   startImmediately?: boolean;
+  startNoticeSnapshot?: string;
+  startNoticeAcknowledgedBy?: string;
 }
 
-const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediately = false }: InspectionChecklistProps) => {
+const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediately = false, startNoticeSnapshot, startNoticeAcknowledgedBy }: InspectionChecklistProps) => {
   const navigate = useNavigate();
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
   const [recentChecks, setRecentChecks] = useState<Check[]>([]);
@@ -909,6 +911,11 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         rawLatitude: rawGpsCoords?.lat,
         rawLongitude: rawGpsCoords?.lon,
         needsAddressResolution: needsAddressResolution,
+        // Start notice acknowledgement
+        startNoticeAcknowledged: !!startNoticeSnapshot,
+        startNoticeAcknowledgedAt: startNoticeSnapshot ? new Date().toISOString() : undefined,
+        startNoticeAcknowledgedBy: startNoticeAcknowledgedBy || undefined,
+        startNoticeSnapshot: startNoticeSnapshot || undefined,
         results: activeTemplate.daily_check_template_items.map(item => {
           const result = itemResults[item.id] || 'na';
           return {

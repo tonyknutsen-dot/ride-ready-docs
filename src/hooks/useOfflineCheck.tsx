@@ -29,6 +29,11 @@ interface CheckSubmission {
   rawLatitude?: number;
   rawLongitude?: number;
   needsAddressResolution?: boolean;
+  // Start notice acknowledgement
+  startNoticeAcknowledged?: boolean;
+  startNoticeAcknowledgedAt?: string;
+  startNoticeAcknowledgedBy?: string;
+  startNoticeSnapshot?: string;
   results: {
     templateItemId: string;
     isChecked: boolean;
@@ -50,23 +55,33 @@ export function useOfflineCheck() {
     if (isOnline) {
       try {
         // Use effectiveUserId (operator's ID) so staff data syncs with operator
+        const insertPayload: any = {
+          ride_id: check.rideId,
+          template_id: check.templateId,
+          inspector_name: check.inspectorName,
+          check_date: check.checkDate,
+          check_frequency: check.checkFrequency,
+          status: check.status,
+          notes: check.notes,
+          weather_conditions: check.weatherConditions,
+          location: check.location,
+          signature_data: check.signatureData,
+          compliance_officer: check.complianceOfficer,
+          environment_notes: check.environmentNotes,
+          user_id: effectiveUserId,
+        };
+
+        // Add start notice acknowledgement fields if present
+        if (check.startNoticeAcknowledged) {
+          insertPayload.start_notice_acknowledged = true;
+          insertPayload.start_notice_acknowledged_at = check.startNoticeAcknowledgedAt;
+          insertPayload.start_notice_acknowledged_by = check.startNoticeAcknowledgedBy;
+          insertPayload.start_notice_snapshot = check.startNoticeSnapshot;
+        }
+
         const { data: checkData, error: checkError } = await supabase
           .from('checks')
-          .insert({
-            ride_id: check.rideId,
-            template_id: check.templateId,
-            inspector_name: check.inspectorName,
-            check_date: check.checkDate,
-            check_frequency: check.checkFrequency,
-            status: check.status,
-            notes: check.notes,
-            weather_conditions: check.weatherConditions,
-            location: check.location,
-            signature_data: check.signatureData,
-            compliance_officer: check.complianceOfficer,
-            environment_notes: check.environmentNotes,
-            user_id: effectiveUserId,
-          })
+          .insert(insertPayload)
           .select()
           .single();
 
@@ -117,6 +132,11 @@ export function useOfflineCheck() {
         rawLatitude: check.rawLatitude,
         rawLongitude: check.rawLongitude,
         needsAddressResolution: check.needsAddressResolution,
+        // Start notice acknowledgement
+        startNoticeAcknowledged: check.startNoticeAcknowledged,
+        startNoticeAcknowledgedAt: check.startNoticeAcknowledgedAt,
+        startNoticeAcknowledgedBy: check.startNoticeAcknowledgedBy,
+        startNoticeSnapshot: check.startNoticeSnapshot,
         results: check.results.map(r => ({
           templateItemId: r.templateItemId,
           isChecked: r.isChecked,

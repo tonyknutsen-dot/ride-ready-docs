@@ -26,6 +26,11 @@ export interface OfflineCheck {
   rawLatitude?: number;
   rawLongitude?: number;
   needsAddressResolution?: boolean;
+  // Start notice acknowledgement
+  startNoticeAcknowledged?: boolean;
+  startNoticeAcknowledgedAt?: string;
+  startNoticeAcknowledgedBy?: string;
+  startNoticeSnapshot?: string;
 }
 
 export type CheckItemResult = 'pass' | 'fail' | 'na';
