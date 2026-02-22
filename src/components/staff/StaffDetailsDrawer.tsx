@@ -44,8 +44,7 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
 
   useEffect(() => {
     if (open && member && user) {
-      const hasAssignments = member.assigned_rides.length > 0;
-      setAccessMode(hasAssignments ? 'assigned' : 'all');
+      setAccessMode(member.equipment_access_mode || 'all');
       setSelectedRides(member.assigned_rides.map(r => r.id));
       fetchRides();
     }
@@ -97,7 +96,14 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
     if (!member || !user) return;
     setSaving(true);
     try {
-      // Delete existing
+      // Update equipment_access_mode on organisation_members
+      const { error: modeError } = await supabase
+        .from('organisation_members')
+        .update({ equipment_access_mode: accessMode } as any)
+        .eq('id', member.id);
+      if (modeError) throw modeError;
+
+      // Delete existing assignments
       await supabase.from('staff_equipment_assignments').delete().eq('member_id', member.id);
 
       // Insert new if assigned mode
