@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import { 
   ArrowLeft, FileText, CheckSquare, Mail, Wrench, Pencil, ImageIcon, Trash2,
-  ShieldCheck, ShieldAlert, Clock, Settings2
+  ShieldCheck, ShieldAlert, Clock, Settings2, BarChart3, Loader2
 } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -23,6 +23,8 @@ import { FeatureGate } from './FeatureGate';
 import RideForm from './RideForm';
 import ImageViewer from './ImageViewer';
 import { DeleteRideDialog } from './DeleteRideDialog';
+import { lazy, Suspense } from 'react';
+const Reports = lazy(() => import('@/pages/Reports'));
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -273,11 +275,12 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
       {/* Main Tabs — underline style */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
-          <TabsList className="grid w-full grid-cols-3 h-auto p-0 bg-transparent rounded-none">
+          <TabsList className="grid w-full grid-cols-4 h-auto p-0 bg-transparent rounded-none">
             {[
               { value: 'overview', label: 'Home', Icon: FileText },
               { value: 'checks',   label: 'Checks', Icon: CheckSquare },
               { value: 'documents', label: 'Docs', Icon: FileText },
+              { value: 'reports', label: 'Reports', Icon: BarChart3 },
             ].map(({ value, label, Icon }) => (
               <TabsTrigger
                 key={value}
@@ -581,6 +584,12 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           <FeatureGate feature="Safety Checks">
             <InspectionManager ride={ride} />
           </FeatureGate>
+        </TabsContent>
+
+        <TabsContent value="reports" className="animate-fade-in">
+          <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+            <Reports preFilterRideId={ride.id} preFilterRideName={ride.ride_name} />
+          </Suspense>
         </TabsContent>
       </Tabs>
     </div>

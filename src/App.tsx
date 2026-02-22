@@ -82,6 +82,7 @@ const Notifications = lazy(() => import("./pages/Notifications"));
 const Compliance = lazy(() => import("./pages/Compliance"));
 const DocumentViewerPage = lazy(() => import("./pages/DocumentViewerPage"));
 const InspectionRecordPage = lazy(() => import("./pages/InspectionRecordPage"));
+const Reports = lazy(() => import("./pages/Reports"));
 
 // PageLoader is now inside OfflineSuspense
 
@@ -524,6 +525,19 @@ const App = () => (
                     <ProfileGuard>
                       <AppLayout>
                         <Compliance />
+                      </AppLayout>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              {/* Reports */}
+              <Route 
+                path="/reports"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <AppLayout>
+                        <Reports />
                       </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
