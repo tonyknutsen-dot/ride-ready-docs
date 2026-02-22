@@ -1387,7 +1387,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                   setCheckStartedAt(new Date());
                   // Auto-set operating today for Daily/Pre-Opening checks
                   if (isDailyOrPreOpening) {
-                    autoSetOperating();
+                    autoSetOperating(frequency);
                   }
                 }}
               >
