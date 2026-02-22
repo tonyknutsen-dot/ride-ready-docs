@@ -131,7 +131,7 @@ const ChecklistExecutionPage = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#E8ECF0' }}>
+    <div className="min-h-screen" style={{ background: '#F3F4F6' }}>
       <StaffAccountBanner />
 
       {/* ── STICKY HEADER ─────────────────────────────────── */}
