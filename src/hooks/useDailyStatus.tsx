@@ -149,9 +149,10 @@ export function useDailyStatus(rideId: string) {
    * Auto-set operating to ON when a user starts a Daily/Pre-Opening check.
    * Does nothing if already operating. No role restriction — any user starting a check triggers this.
    */
-  const autoSetOperating = useCallback(async () => {
+  const autoSetOperating = useCallback(async (checkType?: string) => {
     if (isOperating) return; // already on
-    await setOperatingValue(true, undefined, 'Started check');
+    const label = checkType === 'preopening' ? 'Pre-Opening' : checkType === 'daily' ? 'Daily' : 'check';
+    await setOperatingValue(true, undefined, `Started ${label} check`);
   }, [isOperating, setOperatingValue]);
 
   return {
