@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles } from 'lucide-react';
+import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles, PauseCircle, Info } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import InspectionChecklist from './InspectionChecklist';
 import NDTScheduleManager from './NDTScheduleManager';
@@ -12,6 +12,7 @@ import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
+import { useRideOperatingToday } from '@/hooks/useRideOperatingToday';
 
 
 interface InspectionManagerProps {
@@ -44,6 +45,8 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const [checkCounts, setCheckCounts] = useState<CheckCounts>({ preopening: 0, daily: 0, weekly: 0, monthly: 0, yearly: 0, total: 0 });
   const [templateStatus, setTemplateStatus] = useState<Record<string, boolean>>({});
   const [showNextPrompt, setShowNextPrompt] = useState<string | null>(null);
+  const { isOperating, isLoading: opLoading, canToggle, toggleOperating, toggling } = useRideOperatingToday(ride.id);
+  const isDailyOrPreOpening = activeTab === 'daily' || activeTab === 'preopening';
 
   useEffect(() => {
     if (effectiveUserId && ride.id) {
@@ -273,11 +276,48 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
         {/* Pre-Opening Check */}
         <TabsContent value="preopening" className="relative">
+          {!opLoading && ride.requires_operational_checks && !isOperating && (
+            <div className="flex items-start gap-2.5 bg-muted/40 border border-border rounded-xl px-4 py-3 mb-4">
+              <PauseCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-muted-foreground">Ride not marked as operating today — pre-opening checks not required.</p>
+                {canToggle && (
+                  <button onClick={toggleOperating} disabled={toggling} className="text-xs font-semibold text-primary mt-1 hover:underline">
+                    {toggling ? 'Updating…' : 'Mark as operating today →'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+          {!opLoading && ride.requires_operational_checks && isOperating && (
+            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5 mb-4">
+              <PlayCircle className="h-4 w-4 text-green-600 shrink-0" />
+              <p className="text-sm font-medium text-green-700">Operating today — pre-opening checks due.</p>
+            </div>
+          )}
           {renderFrequencyContent('preopening', 'Pre-Opening')}
         </TabsContent>
 
-
         <TabsContent value="daily" className="relative">
+          {!opLoading && ride.requires_operational_checks && !isOperating && (
+            <div className="flex items-start gap-2.5 bg-muted/40 border border-border rounded-xl px-4 py-3 mb-4">
+              <PauseCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-muted-foreground">Ride not marked as operating today — daily checks not required.</p>
+                {canToggle && (
+                  <button onClick={toggleOperating} disabled={toggling} className="text-xs font-semibold text-primary mt-1 hover:underline">
+                    {toggling ? 'Updating…' : 'Mark as operating today →'}
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+          {!opLoading && ride.requires_operational_checks && isOperating && (
+            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5 mb-4">
+              <PlayCircle className="h-4 w-4 text-green-600 shrink-0" />
+              <p className="text-sm font-medium text-green-700">Operating today — daily checks due.</p>
+            </div>
+          )}
           {renderFrequencyContent('daily', 'Daily')}
         </TabsContent>
 

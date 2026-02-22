@@ -17,6 +17,7 @@ export interface CheckRideStatus {
   daysSinceLastCheck: number | null;
   status: 'overdue' | 'due_today' | 'due_soon' | 'ok';
   checksLast7d: number;
+  isOperatingToday: boolean;
 }
 
 export interface ChecksComplianceData {
@@ -32,10 +33,10 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
   const todayStr = today.toISOString().split('T')[0];
   const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
-  const [ridesResult, recentChecksResult] = await Promise.all([
+  const [ridesResult, recentChecksResult, operatingResult] = await Promise.all([
     supabase
       .from('rides')
-      .select('id, ride_name, ride_categories(name)')
+      .select('id, ride_name, ride_categories(name), requires_operational_checks')
       .eq('user_id', userId)
       .order('ride_name'),
     supabase
@@ -44,15 +45,27 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
       .eq('user_id', userId)
       .gte('check_date', sevenDaysAgo)
       .order('check_date', { ascending: false }),
+    // Fetch today's operation status for all rides
+    supabase
+      .from('ride_operation_days' as any)
+      .select('ride_id, is_operating')
+      .eq('operation_date', todayStr)
+      .eq('is_operating', true) as any,
   ]);
 
   const rides = (ridesResult.data || []) as Array<{
     id: string;
     ride_name: string;
     ride_categories: { name: string } | null;
+    requires_operational_checks: boolean;
   }>;
 
   const recentChecks = recentChecksResult.data || [];
+  
+  // Build set of rides operating today
+  const operatingRideIds = new Set<string>(
+    (operatingResult.data || []).map((r: any) => r.ride_id)
+  );
 
   // Build per-ride check history map
   const checksByRide = new Map<string, { date: string; status: string }[]>();
@@ -69,8 +82,17 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
       ? Math.floor((today.getTime() - new Date(lastCheckDate).getTime()) / (1000 * 60 * 60 * 24))
       : null;
 
+    const isOperatingToday = operatingRideIds.has(ride.id);
+    const requiresOpChecks = ride.requires_operational_checks;
+
+    // For rides that require operational checks but are NOT operating today,
+    // they should show as 'ok' (not due) for daily/pre-opening purposes
     let status: CheckRideStatus['status'] = 'ok';
-    if (daysSince === null || daysSince > 7) {
+    
+    if (requiresOpChecks && !isOperatingToday) {
+      // Not operating today — daily checks not required, show as ok
+      status = 'ok';
+    } else if (daysSince === null || daysSince > 7) {
       status = 'overdue';
     } else if (daysSince === 0) {
       status = 'ok'; // checked today
@@ -88,6 +110,7 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
       daysSinceLastCheck: daysSince,
       status,
       checksLast7d: rideChecks.length,
+      isOperatingToday,
     };
   });
 
