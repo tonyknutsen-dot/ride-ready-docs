@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Power, ChevronDown, Clock } from 'lucide-react';
+import { CheckCircle, Circle, ChevronDown, Clock } from 'lucide-react';
 import { useDailyStatus } from '@/hooks/useDailyStatus';
 import { format } from 'date-fns';
 
@@ -24,12 +24,10 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
     if (!canToggle || toggling) return;
 
     if (!checked && isOperating) {
-      // Toggling OFF — show confirm modal
       setShowConfirmOff(true);
       return;
     }
 
-    // Toggling ON — no reason needed
     toggleOperating();
   };
 
@@ -53,17 +51,23 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
     <>
       <Card className={`border-2 transition-colors ${
         isOperating
-          ? 'border-green-300 bg-green-50/50 dark:border-green-700 dark:bg-green-950/20'
-          : 'border-orange-200 bg-orange-50/30 dark:border-orange-800 dark:bg-orange-950/10'
+          ? 'border-green-300 bg-green-50/60 dark:border-green-700 dark:bg-green-950/20'
+          : 'border-border bg-muted/30 dark:bg-muted/10'
       }`}>
         <CardContent className="p-5 space-y-3">
           {/* Main row */}
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3 min-w-0">
-              <div className={`p-2 rounded-lg ${
-                isOperating ? 'bg-green-100 dark:bg-green-900/30' : 'bg-orange-100 dark:bg-orange-900/30'
+              <div className={`p-2.5 rounded-full ${
+                isOperating
+                  ? 'bg-green-100 dark:bg-green-900/30'
+                  : 'bg-muted dark:bg-muted/40'
               }`}>
-                <Power className={`h-5 w-5 ${isOperating ? 'text-green-600' : 'text-orange-500'}`} />
+                {isOperating ? (
+                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                ) : (
+                  <Circle className="h-5 w-5 text-muted-foreground" />
+                )}
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
@@ -73,16 +77,16 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
                     className={`text-xs font-semibold ${
                       isOperating
                         ? 'bg-green-100 text-green-700 border-green-300 dark:bg-green-900/40 dark:text-green-300'
-                        : 'bg-orange-100 text-orange-700 border-orange-300 dark:bg-orange-900/40 dark:text-orange-300'
+                        : 'bg-muted text-muted-foreground border-border'
                     }`}
                   >
-                    {isOperating ? 'Yes' : 'No'}
+                    {isOperating ? 'Operating' : 'Not Operating'}
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {isOperating
-                    ? 'Daily checks required'
-                    : 'Daily checks not required'}
+                    ? 'Daily checks required before operation.'
+                    : 'Daily checks not required today.'}
                 </p>
               </div>
             </div>
@@ -96,10 +100,7 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
                   className={isOperating ? 'data-[state=checked]:bg-green-600' : ''}
                 />
               ) : (
-                <Badge
-                  variant="secondary"
-                  className="text-xs"
-                >
+                <Badge variant="secondary" className="text-xs">
                   {isOperating ? 'Yes' : 'No'}
                 </Badge>
               )}
@@ -109,7 +110,7 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
           {/* Read-only hint for non-managers */}
           {!canToggle && (
             <p className="text-xs text-muted-foreground italic">
-              Only the Controller or Manager can change this.
+              Only Controller/Manager can change this.
             </p>
           )}
 
@@ -131,7 +132,7 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
                       <span>
                         <span className="font-medium text-foreground">{entry.changed_by_name || 'Unknown'}</span>
                         {' set Operating Today: '}
-                        <span className={entry.new_is_operating ? 'text-green-600 font-semibold' : 'text-orange-600 font-semibold'}>
+                        <span className={entry.new_is_operating ? 'text-green-600 font-semibold' : 'text-muted-foreground font-semibold'}>
                           {entry.new_is_operating ? 'ON' : 'OFF'}
                         </span>
                         {entry.reason && (
