@@ -104,7 +104,7 @@ const Checks = () => {
   const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(false);
   const { data: compliance, isLoading } = useChecksCompliance();
-  const { hasAnswered, isLoading: operatingLoading, confirmOperating, dismissOperating } = useOperatingToday();
+  const { hasAnswered, isLoading: operatingLoading, rides: operatingRides, submitting, confirmOperating, dismissOperating } = useOperatingToday();
   const handleRideSelect = (ride: Ride) => {
     navigate(`/rides/${ride.id}?tab=checks`);
   };
@@ -178,10 +178,12 @@ const Checks = () => {
         <OfflineStaleAlert />
 
         {/* ── OPERATING TODAY PROMPT ──────────── */}
-        {!operatingLoading && !hasAnswered && (
+        {!operatingLoading && !hasAnswered && operatingRides.length > 0 && (
           <OperatingTodayPrompt
-            onYes={confirmOperating}
-            onNo={dismissOperating}
+            rides={operatingRides}
+            onConfirm={confirmOperating}
+            onCancel={dismissOperating}
+            submitting={submitting}
           />
         )}
         {/* ── COMPLIANCE ALERT BANNER ───────────── */}
