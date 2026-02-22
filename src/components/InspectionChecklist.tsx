@@ -1410,21 +1410,21 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
           {/* Progress bar */}
           <div className="mx-4 mt-2">
-            <div className="flex items-center justify-between mb-1">
-              <p className="text-[11px] font-bold text-slate-600 tracking-wide uppercase">
-                Item {Math.min(Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length + 1, activeTemplate.daily_check_template_items.length)} of {activeTemplate.daily_check_template_items.length} · {Math.round(getProgress())}% complete
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-[12px] font-bold text-slate-700">
+                {Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} of {activeTemplate.daily_check_template_items.length} items completed
               </p>
               {getProgress() === 100 && (
                 <span className="text-[10px] font-bold bg-green-600 text-white px-2 py-0.5 rounded flex items-center gap-1"><CheckCircle className="h-3 w-3" />Done</span>
               )}
             </div>
-            <div className="h-1 rounded-full bg-slate-300 overflow-hidden">
-              <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${Math.round(getProgress())}%` }} />
+            <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
+              <div className={`h-full rounded-full transition-all duration-300 ${getProgress() === 100 ? 'bg-green-600' : 'bg-blue-600'}`} style={{ width: `${Math.round(getProgress())}%` }} />
             </div>
           </div>
 
       {/* ── Item cards ── */}
-      <div className="mx-4 mt-2 space-y-1">
+      <div className="mx-4 mt-2 space-y-2">
         {activeTemplate.daily_check_template_items
           .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
           .map((item, index) => {
@@ -1432,17 +1432,26 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             const isFail = v === 'fail';
             const isPass = v === 'pass';
             const isNA = v === 'na';
+            const hasResult = isPass || isFail || isNA;
+
+            const cardBorder = isFail
+              ? '4px solid #DC2626'
+              : isPass
+              ? '4px solid #16A34A'
+              : isNA
+              ? '4px solid #D97706'
+              : 'none';
 
             return (
               <div
                 key={item.id}
-                className="bg-white border border-slate-200 rounded-md overflow-hidden transition-all shadow-sm"
-                style={isFail ? { borderLeft: '4px solid #DC2626' } : undefined}
+                className={`border border-slate-200 rounded-2xl overflow-hidden transition-all shadow-sm ${isFail ? 'bg-[#FFF5F5]' : 'bg-white'}`}
+                style={{ borderLeft: cardBorder }}
               >
-                {/* Row 1: Number circle + Title + Tag */}
-                 <div className="px-3 pt-2.5 pb-1 flex items-start gap-2.5">
-                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 ${
-                     isPass ? 'bg-green-600 text-white' : isFail ? 'bg-red-600 text-white' : isNA ? 'bg-slate-600 text-white' : 'bg-slate-200 text-slate-600'
+                {/* Row 1: Number circle + Title + Status icon */}
+                 <div className="px-3 pt-3 pb-1.5 flex items-start gap-2.5">
+                   <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 ${
+                     isPass ? 'bg-green-600 text-white' : isFail ? 'bg-red-600 text-white' : isNA ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-600'
                    }`}>
                      {isPass ? '✓' : isFail ? '✗' : isNA ? '—' : index + 1}
                    </div>
@@ -1451,47 +1460,57 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                        <h3 className="font-bold text-slate-900 leading-snug break-words text-[13px]">
                          {item.check_item_text}
                        </h3>
-                       {item.category && item.category !== 'general' && (
-                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 shrink-0 mt-0.5">{item.category}</span>
-                       )}
+                       <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+                         {item.category && item.category !== 'general' && (
+                           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">{item.category}</span>
+                         )}
+                         {isPass && <CheckCircle className="h-4 w-4 text-green-600" />}
+                         {isFail && <AlertTriangle className="h-4 w-4 text-red-600" />}
+                       </div>
                      </div>
                    </div>
                  </div>
 
-                {/* Row 2: Pass / Fail / N/A segmented control */}
-                <div className="px-3 pb-2.5 pt-1">
-                  <div className="grid grid-cols-3 gap-1.5">
+                {/* Row 2: Segmented control (joined buttons) */}
+                <div className="px-3 pb-3 pt-0.5">
+                  <div className="flex rounded-lg overflow-hidden border border-slate-300">
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'pass')}
-                      className={`h-10 rounded-md border text-[13px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-ring ${
+                      className={`flex-1 h-11 text-[13px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] focus:outline-none ${
                         isPass
-                          ? 'bg-green-600 border-green-700 text-white shadow-sm'
-                          : 'bg-white border-slate-300 text-slate-700 hover:border-green-500'
+                          ? 'bg-green-600 text-white'
+                          : hasResult
+                          ? 'bg-slate-50 text-slate-400 border-r border-slate-300'
+                          : 'bg-white text-slate-700 hover:bg-slate-50 border-r border-slate-300'
                       }`}
                     >
-                      <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+                      <CheckCircle className="h-4 w-4 shrink-0" />
                       Pass
                     </button>
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'fail')}
-                      className={`h-10 rounded-md border text-[13px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-ring ${
+                      className={`flex-1 h-11 text-[13px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] focus:outline-none ${
                         isFail
-                          ? 'bg-red-600 border-red-700 text-white shadow-sm'
-                          : 'bg-white border-slate-300 text-slate-700 hover:border-red-500'
+                          ? 'bg-red-600 text-white'
+                          : hasResult
+                          ? 'bg-slate-50 text-slate-400 border-r border-slate-300'
+                          : 'bg-white text-slate-700 hover:bg-slate-50 border-r border-slate-300'
                       }`}
                     >
-                      <XCircle className="h-3.5 w-3.5 shrink-0" />
+                      <XCircle className="h-4 w-4 shrink-0" />
                       Fail
                     </button>
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'na')}
-                      className={`h-10 rounded-md border text-[13px] font-bold flex items-center justify-center transition-all active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-ring ${
+                      className={`flex-1 h-11 text-[13px] font-bold flex items-center justify-center transition-all active:scale-[0.98] focus:outline-none ${
                         isNA
-                          ? 'bg-slate-700 border-slate-800 text-white shadow-sm'
-                          : 'bg-white border-slate-300 text-slate-700 hover:border-slate-500'
+                          ? 'bg-amber-500 text-white'
+                          : hasResult
+                          ? 'bg-slate-50 text-slate-400'
+                          : 'bg-white text-slate-700 hover:bg-slate-50'
                       }`}
                     >
                       N/A
