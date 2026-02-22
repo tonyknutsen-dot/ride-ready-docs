@@ -181,7 +181,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             title: "Using cached template",
             description: "You're offline. Using previously cached template.",
           });
-        } else {
+        } else if (navigator.onLine) {
           toast({
             title: "Error",
             description: "Failed to load template. No cached version available.",
@@ -190,11 +190,13 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         }
       } catch (cacheError) {
         console.error('Error loading cached template:', cacheError);
-        toast({
-          title: "Error",
-          description: "Failed to load inspection template",
-          variant: "destructive"
-        });
+        if (navigator.onLine) {
+          toast({
+            title: "Error",
+            description: "Failed to load inspection template",
+            variant: "destructive"
+          });
+        }
       }
     } finally {
       setLoading(false);

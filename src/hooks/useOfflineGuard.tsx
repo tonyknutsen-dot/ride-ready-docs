@@ -43,7 +43,7 @@ export function showOfflineSyncToast(message?: string) {
 
 /** Toast for actions that are completely blocked offline */
 export function showOfflineToast(message?: string) {
-  toast.error('Not available offline', {
+  toast.info('Not available offline', {
     description:
       message ??
       "This item hasn't been saved on this device yet. Reconnect to view it.",
@@ -53,7 +53,7 @@ export function showOfflineToast(message?: string) {
 
 /** Toast for actions that need a connection (downloads etc.) */
 export function showRequiresConnectionToast() {
-  toast.error('Requires connection', {
+  toast.info('Requires connection', {
     description: 'This action is unavailable while offline.',
     duration: 3000,
   });

@@ -87,11 +87,13 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
       setEvents(data || []);
     } catch (error) {
       console.error('Error loading inspection events:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load inspection schedules",
-        variant: "destructive",
-      });
+      if (navigator.onLine) {
+        toast({
+          title: "Error",
+          description: "Failed to load inspection schedules",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

@@ -189,11 +189,13 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       setChecks(data as CheckWithResults[] || []);
     } catch (error) {
       console.error('Error loading checks:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load checks history",
-        variant: "destructive",
-      });
+      if (navigator.onLine) {
+        toast({
+          title: "Error",
+          description: "Failed to load checks history",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
