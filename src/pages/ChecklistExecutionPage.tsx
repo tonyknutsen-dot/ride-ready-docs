@@ -131,31 +131,31 @@ const ChecklistExecutionPage = () => {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: '#F2F4F7' }}>
+    <div className="min-h-screen" style={{ background: '#E8ECF0' }}>
       <StaffAccountBanner />
 
       {/* ── STICKY HEADER ─────────────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border">
-        <div className="max-w-xl mx-auto px-3 py-2.5 flex items-center gap-2.5">
+      <header className="sticky top-0 z-40 bg-white border-b border-slate-300 shadow-sm">
+        <div className="max-w-xl mx-auto px-3 py-2 flex items-center gap-2.5">
           <button
             onClick={handleBack}
-            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors"
+            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-md border border-slate-300 bg-white hover:bg-slate-50 transition-colors"
             aria-label="Back"
           >
-            <ArrowLeft className="h-4 w-4 text-foreground" />
+            <ArrowLeft className="h-4 w-4 text-slate-700" />
           </button>
 
           <div className="flex-1 min-w-0">
-            <h1 className="text-sm font-bold text-foreground leading-tight truncate">
+            <h1 className="text-[14px] font-bold text-slate-900 leading-tight truncate">
               {freqLabel}
             </h1>
-            <p className="text-[11px] text-muted-foreground truncate">
+            <p className="text-[11px] text-slate-500 truncate">
               {ride.ride_name}{ride.ride_code ? ` · ${ride.ride_code}` : ''}
             </p>
           </div>
 
           <button
-            className="shrink-0 h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+            className="shrink-0 h-8 w-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
             aria-label="Help"
           >
             <HelpCircle className="h-4 w-4" />

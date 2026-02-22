@@ -1292,7 +1292,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
 
   return (
-    <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32" style={{ background: '#F2F4F7' }}>
+    <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32" style={{ background: '#E8ECF0' }}>
 
       {/* ── Offline / sync banner ── */}
       {(!isOnline || usingCachedTemplate || pendingCount > 0) && (
@@ -1311,39 +1311,39 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         </div>
       )}
 
-      {/* ── Inspector Details (compact) ── */}
-      <div className="mx-4 mt-3">
-        <details open className="group bg-card border border-border rounded-xl overflow-hidden">
-          <summary className="px-3 py-2.5 flex items-center justify-between gap-2 cursor-pointer list-none">
+      {/* ── Inspector Details (auto-collapsed) ── */}
+      <div className="mx-4 mt-2">
+        <details className="group bg-white border border-slate-200 rounded-md overflow-hidden shadow-sm">
+          <summary className="px-3 py-2 flex items-center justify-between gap-2 cursor-pointer list-none">
             <div className="flex items-center gap-2 min-w-0">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold ${
-                inspectorName.trim() ? 'bg-green-100 text-green-800' : 'bg-primary/15 text-primary'
-              }`}>✓</div>
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                inspectorName.trim() ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-500'
+              }`}>{inspectorName.trim() ? '✓' : '?'}</div>
               <div className="min-w-0">
-                <p className="font-semibold text-xs text-foreground">Inspector Details</p>
-                <p className="text-[11px] text-muted-foreground truncate">
-                  {inspectorName.trim() ? `${inspectorName}${location ? ` · ${location}` : ''}` : 'Name & location'}
+                <p className="font-bold text-[12px] text-slate-900">Inspector Details</p>
+                <p className="text-[11px] text-slate-500 truncate">
+                  {inspectorName.trim() ? `${inspectorName}${location ? ` · ${location}` : ''}` : 'Name required'}
                 </p>
               </div>
             </div>
-            <ChevronDown className="h-3.5 w-3.5 text-muted-foreground shrink-0 group-open:rotate-180 transition-transform" />
+            <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0 group-open:rotate-180 transition-transform" />
           </summary>
-          <div className="px-3 pb-3 space-y-3 border-t border-border pt-3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="px-3 pb-3 space-y-2.5 border-t border-slate-200 pt-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <div className="space-y-1">
-                <Label htmlFor="checkedBy" className="text-xs">Checked By *</Label>
-                <Input id="checkedBy" value={inspectorName} onChange={(e) => setInspectorName(e.target.value)} placeholder="Staff name" className="h-10 text-sm" />
+                <Label htmlFor="checkedBy" className="text-[11px] font-bold text-slate-700">Checked By *</Label>
+                <Input id="checkedBy" value={inspectorName} onChange={(e) => setInspectorName(e.target.value)} placeholder="Staff name" className="h-10 text-sm border-slate-300" />
               </div>
               <div className="space-y-1">
-                <Label htmlFor="weather" className="text-xs">Weather</Label>
-                <Input id="weather" value={weatherConditions} onChange={(e) => setWeatherConditions(e.target.value)} placeholder="e.g. Sunny, 20°C" className="h-10 text-sm" />
+                <Label htmlFor="weather" className="text-[11px] font-bold text-slate-700">Weather</Label>
+                <Input id="weather" value={weatherConditions} onChange={(e) => setWeatherConditions(e.target.value)} placeholder="e.g. Sunny, 20°C" className="h-10 text-sm border-slate-300" />
               </div>
             </div>
             <div className="space-y-1">
-              <Label htmlFor="location" className="text-xs flex items-center gap-1"><MapPin className="h-3 w-3" />Location</Label>
+              <Label htmlFor="location" className="text-[11px] font-bold text-slate-700 flex items-center gap-1"><MapPin className="h-3 w-3" />Location</Label>
               <div className="flex gap-2">
-                <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Enter or use GPS" className="flex-1 h-10 text-sm" />
-                <Button type="button" variant="outline" size="icon" onClick={getGPSLocation} disabled={gettingLocation} title="Get GPS" className="h-10 w-10">
+                <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Enter or use GPS" className="flex-1 h-10 text-sm border-slate-300" />
+                <Button type="button" variant="outline" size="icon" onClick={getGPSLocation} disabled={gettingLocation} title="Get GPS" className="h-10 w-10 border-slate-300">
                   {gettingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}
                 </Button>
               </div>
@@ -1352,23 +1352,23 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         </details>
       </div>
 
-      {/* ── Thin progress bar ── */}
-      <div className="mx-4 mt-3">
-        <div className="flex items-center justify-between mb-1.5">
-          <p className="text-[11px] font-semibold text-muted-foreground">
-            Item {Math.min(Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length + 1, activeTemplate.daily_check_template_items.length)} of {activeTemplate.daily_check_template_items.length} · {Math.round(getProgress())}%
+      {/* ── Progress bar ── */}
+      <div className="mx-4 mt-2">
+        <div className="flex items-center justify-between mb-1">
+          <p className="text-[11px] font-bold text-slate-600 tracking-wide uppercase">
+            Item {Math.min(Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length + 1, activeTemplate.daily_check_template_items.length)} of {activeTemplate.daily_check_template_items.length} · {Math.round(getProgress())}% complete
           </p>
           {getProgress() === 100 && (
-            <Badge className="bg-success text-success-foreground text-[10px] px-2 py-0.5"><CheckCircle className="h-3 w-3 mr-1" />All done</Badge>
+            <span className="text-[10px] font-bold bg-green-600 text-white px-2 py-0.5 rounded flex items-center gap-1"><CheckCircle className="h-3 w-3" />Done</span>
           )}
         </div>
-        <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+        <div className="h-1 rounded-full bg-slate-300 overflow-hidden">
           <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${Math.round(getProgress())}%` }} />
         </div>
       </div>
 
       {/* ── Item cards ── */}
-      <div className="mx-4 mt-3 space-y-1.5">
+      <div className="mx-4 mt-2 space-y-1">
         {activeTemplate.daily_check_template_items
           .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
           .map((item, index) => {
@@ -1380,15 +1380,24 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             return (
               <div
                 key={item.id}
-                className="bg-white border border-slate-200 rounded-lg overflow-hidden transition-all shadow-sm"
+                className="bg-white border border-slate-200 rounded-md overflow-hidden transition-all shadow-sm"
                 style={isFail ? { borderLeft: '4px solid #DC2626' } : undefined}
               >
-                {/* Row 1: Title + status */}
-                <div className="px-3 pt-2.5 pb-1 flex items-start justify-between gap-2">
-                  <h3 className="font-bold text-slate-900 leading-snug break-words text-[13px] flex-1 min-w-0">
-                    <span className="text-slate-400 font-medium mr-1.5">{index + 1}.</span>
-                    {item.check_item_text}
-                  </h3>
+                {/* Row 1: Number circle + Title */}
+                <div className="px-3 pt-2.5 pb-1 flex items-start gap-2.5">
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 ${
+                    isPass ? 'bg-green-600 text-white' : isFail ? 'bg-red-600 text-white' : isNA ? 'bg-slate-600 text-white' : 'bg-slate-200 text-slate-600'
+                  }`}>
+                    {isPass ? '✓' : isFail ? '✗' : isNA ? '—' : index + 1}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-slate-900 leading-snug break-words text-[13px]">
+                      {item.check_item_text}
+                    </h3>
+                    {item.category && item.category !== 'general' && (
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{item.category}</span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Row 2: Pass / Fail / N/A segmented control */}
@@ -1501,7 +1510,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                       placeholder="Add notes (optional)"
                       value={notes[item.id] || ''}
                       onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                      className="mt-2 min-h-[48px] text-sm resize-none rounded-lg"
+                      className="mt-2 min-h-[48px] text-sm resize-none rounded-md border-slate-300"
                       rows={2}
                     />
                   )}
@@ -1520,17 +1529,17 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           })}
       </div>
 
-      {/* ── Defects (calm section) ── */}
-      <div className="mx-4 mt-3">
-        <div className="bg-card border border-border rounded-xl p-3">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs font-bold text-foreground">Defects</p>
+      {/* ── Defects (slim section) ── */}
+      <div className="mx-4 mt-2">
+        <div className="bg-white border border-slate-200 rounded-md p-3 shadow-sm">
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-[11px] font-bold text-slate-900 uppercase tracking-wide">Defects</p>
             <DefectReportDialog
               rideId={ride.id}
               rideName={ride.ride_name}
               onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
               trigger={
-                <button type="button" className="text-[11px] font-semibold text-primary hover:underline">
+                <button type="button" className="text-[11px] font-bold text-primary hover:underline">
                   + Raise defect
                 </button>
               }
@@ -1546,19 +1555,19 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         </div>
       </div>
 
-      {/* ── Inspector Declaration (compact) ── */}
-      <div className="mx-4 mt-3">
-        <div className="bg-card border border-border rounded-xl p-3 space-y-2">
+      {/* ── Declaration ── */}
+      <div className="mx-4 mt-2">
+        <div className="bg-white border border-slate-200 rounded-md p-3 shadow-sm">
           <label className="flex items-start gap-2.5 cursor-pointer group">
             <div
               className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                declarationChecked ? 'bg-primary border-primary' : 'border-border group-hover:border-primary/50'
+                declarationChecked ? 'bg-primary border-primary' : 'border-slate-400 group-hover:border-primary'
               }`}
               onClick={() => setDeclarationChecked(prev => !prev)}
             >
               {declarationChecked && <CheckCircle className="h-3.5 w-3.5 text-primary-foreground" />}
             </div>
-            <span className="text-xs text-muted-foreground leading-snug select-none" onClick={() => setDeclarationChecked(prev => !prev)}>
+            <span className="text-[12px] text-slate-700 leading-snug select-none font-medium" onClick={() => setDeclarationChecked(prev => !prev)}>
               I confirm this inspection is complete, accurate, and the equipment is safe to operate.
             </span>
           </label>
@@ -1567,26 +1576,26 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
       {/* ── Recent Checks (collapsed) ── */}
       {recentChecks.length > 0 && (
-        <div className="mx-4 mt-3 mb-2">
+        <div className="mx-4 mt-2 mb-2">
           <details className="group">
-            <summary className="text-[11px] font-semibold text-muted-foreground cursor-pointer hover:text-foreground list-none flex items-center gap-1.5">
+            <summary className="text-[10px] font-bold text-slate-500 uppercase tracking-wide cursor-pointer hover:text-slate-700 list-none flex items-center gap-1.5">
               <ChevronDown className="h-3 w-3 group-open:rotate-180 transition-transform shrink-0" />
-              Show recent checks ({recentChecks.length})
+              Recent checks ({recentChecks.length})
             </summary>
-            <div className="mt-2 space-y-1.5">
+            <div className="mt-1.5 space-y-1">
               {recentChecks.map((check) => (
                 <div
                   key={check.id}
-                  className="flex items-center justify-between rounded-lg border border-border bg-muted/30 px-3 py-2 cursor-pointer hover:bg-muted/60 transition-colors"
+                  className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 cursor-pointer hover:bg-slate-50 transition-colors shadow-sm"
                   onClick={() => { setSelectedCheck(check); setShowCheckDetail(true); }}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-xs truncate text-foreground">{check.inspector_name}</p>
-                    <p className="text-[11px] text-muted-foreground">
+                    <p className="font-bold text-[12px] truncate text-slate-900">{check.inspector_name}</p>
+                    <p className="text-[11px] text-slate-500">
                       {new Date(check.check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
                     </p>
                   </div>
-                  <Eye className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <Eye className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                 </div>
               ))}
             </div>
@@ -1594,15 +1603,14 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         </div>
       )}
 
-      {/* ── Sticky bottom bar ── */}
-      <div className="fixed left-0 right-0 bottom-0 z-30 border-t bg-card/95 backdrop-blur-sm">
-        <div className="max-w-xl mx-auto px-4 py-2.5 flex gap-2">
+      {/* ── Sticky footer ── */}
+      <div className="fixed left-0 right-0 bottom-0 z-30 border-t border-slate-300 bg-white/95 backdrop-blur-sm shadow-[0_-2px_8px_rgba(0,0,0,0.08)]">
+        <div className="max-w-xl mx-auto px-4 py-2 flex gap-2">
           <button
             type="button"
-            className="flex-1 rounded-lg border border-border py-2.5 text-sm font-bold bg-card hover:bg-muted/50 text-foreground"
+            className="flex-1 rounded-md border border-slate-300 py-2.5 text-[13px] font-bold bg-white hover:bg-slate-50 text-slate-700 transition-colors"
             onClick={() => {
               if (Object.keys(itemResults).length > 0) {
-                // Has progress — just go back to pre-start
                 setCheckStarted(false);
               } else {
                 navigate(`/rides/${ride.id}?tab=checks`);
@@ -1615,7 +1623,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             type="button"
             disabled={submitting || !inspectorName.trim() || !declarationChecked || getProgress() < 100}
             onClick={handleSubmitChecks}
-            className="flex-1 t-btn-primary rounded-lg py-2.5 text-sm"
+            className="flex-1 t-btn-primary rounded-md py-2.5 text-[13px]"
           >
             {submitting ? (
               <><Loader2 className="h-4 w-4 animate-spin shrink-0" />Saving…</>
