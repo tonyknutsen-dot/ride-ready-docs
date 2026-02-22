@@ -9,6 +9,7 @@ import {
   CheckSquare,
   Send,
   CreditCard,
+  BarChart3,
   Settings,
   HelpCircle,
   LogOut,
@@ -58,6 +59,7 @@ const mainNavItems = [
 const featureNavItems = [
   { title: 'Checks', url: '/checks', icon: CheckSquare, feature: 'checks' as const },
   { title: 'Maintenance', url: '/maintenance', icon: Wrench, feature: 'maintenance' as const },
+  { title: 'Reports', url: '/reports', icon: BarChart3 },
   { title: 'Risk Assessments', url: '/risk-assessments', icon: ShieldCheck, feature: 'risk_assessments' as const },
   { title: 'Send Documents', url: '/send-documents', icon: Send, feature: 'send_documents' as const },
 ];

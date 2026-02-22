@@ -2888,6 +2888,23 @@ export type Database = {
         }
         Relationships: []
       }
+      timeline_events: {
+        Row: {
+          created_by_name: string | null
+          description: string | null
+          event_datetime: string | null
+          event_type: string | null
+          pdf_url: string | null
+          reference_id: string | null
+          ride_code: string | null
+          ride_id: string | null
+          ride_name: string | null
+          status: string | null
+          title: string | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       admin_has_support_access: {
