@@ -36,9 +36,7 @@ interface UploadDocumentParams {
   versionNumber?: string;
   versionNotes?: string;
   replacingDocumentId?: string | null;
-  autoCreateEvent?: boolean;
-  recurrenceType?: string;
-  recurrenceIntervalDays?: number | null;
+  repeatAnnually?: boolean;
 }
 
 export function useOptimisticDocumentUpload() {
@@ -49,7 +47,7 @@ export function useOptimisticDocumentUpload() {
 
   return useMutation({
     mutationFn: async (params: UploadDocumentParams) => {
-      const { file, documentName, documentType, rideId, isGlobal, expiryDate, notes, versionNumber, versionNotes, replacingDocumentId, autoCreateEvent, recurrenceType, recurrenceIntervalDays } = params;
+      const { file, documentName, documentType, rideId, isGlobal, expiryDate, notes, versionNumber, versionNotes, replacingDocumentId, repeatAnnually } = params;
       
       if (!user || !effectiveUserId) throw new Error("Not authenticated");
 
@@ -85,9 +83,7 @@ export function useOptimisticDocumentUpload() {
         is_latest_version: true,
         version_notes: versionNotes || null,
         replaced_document_id: replacingDocumentId || null,
-        recurrence_type: recurrenceType || 'none',
-        recurrence_interval_days: recurrenceIntervalDays || null,
-        auto_create_event: autoCreateEvent || false,
+        repeat_annually: repeatAnnually || false,
       };
 
       const { data, error: dbError } = await supabase

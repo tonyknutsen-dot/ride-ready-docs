@@ -1,9 +1,9 @@
 /**
- * Auto-creates the next recurring compliance event when a document-linked event is completed.
- * Checks the linked document's recurrence settings and creates a future event if applicable.
+ * Auto-creates the next annual compliance event when a compliance event is completed.
+ * Simple: if the linked document has repeat_annually = true, create one event +1 year.
  */
 import { supabase } from '@/integrations/supabase/client';
-import { addMonths, addDays, addYears } from 'date-fns';
+import { addYears } from 'date-fns';
 
 interface AutoRecurrenceParams {
   completedEventId: string;
@@ -12,48 +12,9 @@ interface AutoRecurrenceParams {
 }
 
 /**
- * Calculate the next due date based on recurrence type.
- */
-function calculateNextDueDate(
-  fromDate: Date,
-  recurrenceType: string,
-  customDays?: number | null,
-): Date {
-  const now = new Date();
-  let next: Date;
-
-  switch (recurrenceType) {
-    case 'annual':
-      next = addYears(fromDate, 1);
-      break;
-    case '6_monthly':
-      next = addMonths(fromDate, 6);
-      break;
-    case 'quarterly':
-      next = addMonths(fromDate, 3);
-      break;
-    case 'monthly':
-      next = addMonths(fromDate, 1);
-      break;
-    case 'custom':
-      next = addDays(fromDate, customDays || 365);
-      break;
-    default:
-      next = addYears(fromDate, 1);
-  }
-
-  // If calculated date is in the past, shift forward from today
-  if (next <= now) {
-    return calculateNextDueDate(now, recurrenceType, customDays);
-  }
-
-  return next;
-}
-
-/**
  * After completing a compliance event, check if it's linked to a document with
- * auto_create_event enabled, and if so, create the next recurring event.
- * 
+ * repeat_annually enabled, and if so, create one next annual event.
+ *
  * Returns the new event ID if created, null otherwise.
  */
 export async function maybeCreateRecurringEvent(
@@ -62,26 +23,23 @@ export async function maybeCreateRecurringEvent(
   const { completedEventId, completionDate, userId } = params;
 
   try {
-    // 1. Fetch the completed event to get ride_id and event details
+    // 1. Fetch the completed event
     const { data: event, error: eventErr } = await supabase
       .from('compliance_events')
-      .select('ride_id, event_name, event_type, category, reminder_days, reminder_enabled, advance_notice_days')
+      .select('ride_id, event_name, event_type, category, reminder_days, reminder_enabled, advance_notice_days, due_date')
       .eq('id', completedEventId)
       .single();
 
     if (eventErr || !event) return null;
 
-    // 2. Find documents linked to this event's ride + type that have auto_create_event
-    //    We match by ride_id (or global) and document_type pattern
+    // 2. Find documents linked to this event that have repeat_annually = true
     let docQuery = supabase
       .from('documents')
-      .select('id, recurrence_type, recurrence_interval_days, auto_create_event, document_name, is_global, ride_id, expires_at')
-      .eq('auto_create_event', true)
-      .eq('is_latest_version', true)
-      .neq('recurrence_type', 'none');
+      .select('id, repeat_annually, document_name, is_global, ride_id')
+      .eq('repeat_annually', true)
+      .eq('is_latest_version', true);
 
     if (event.ride_id) {
-      // Check for ride-specific OR global docs
       docQuery = docQuery.or(`ride_id.eq.${event.ride_id},is_global.eq.true`);
     } else {
       docQuery = docQuery.eq('is_global', true);
@@ -90,18 +48,21 @@ export async function maybeCreateRecurringEvent(
     const { data: docs, error: docErr } = await docQuery;
     if (docErr || !docs || docs.length === 0) return null;
 
-    // 3. For each matching document, check if a future event already exists
-    let createdEventId: string | null = null;
-
+    // 3. For the first matching document, create one annual event if none exists
     for (const doc of docs) {
-      const nextDue = calculateNextDueDate(
-        completionDate,
-        doc.recurrence_type,
-        doc.recurrence_interval_days,
-      );
+      // Calculate next due: previous due date + 1 year (or from completion if no due_date)
+      const baseDateStr = event.due_date || completionDate.toISOString().split('T')[0];
+      const baseDate = new Date(baseDateStr);
+      let nextDue = addYears(baseDate, 1);
+
+      // If next due is in the past, shift from today
+      if (nextDue <= new Date()) {
+        nextDue = addYears(new Date(), 1);
+      }
+
       const nextDueStr = nextDue.toISOString().split('T')[0];
 
-      // Check for duplicate: same event_type, same ride, future due date
+      // Check for existing future scheduled event of same type — prevent duplicates
       const { data: existing } = await supabase
         .from('compliance_events')
         .select('id')
@@ -112,9 +73,9 @@ export async function maybeCreateRecurringEvent(
         .gte('due_date', new Date().toISOString().split('T')[0])
         .maybeSingle();
 
-      if (existing) continue; // Don't duplicate
+      if (existing) continue;
 
-      // 4. Create the next recurring event
+      // 4. Create ONE next event
       const { data: newEvent, error: insertErr } = await supabase
         .from('compliance_events')
         .insert({
@@ -136,25 +97,19 @@ export async function maybeCreateRecurringEvent(
         .single();
 
       if (!insertErr && newEvent) {
-        createdEventId = newEvent.id;
-
-        // Link the completed event to the next one
+        // Link completed → next
         await supabase
           .from('compliance_events')
           .update({ next_event_id: newEvent.id })
           .eq('id', completedEventId);
 
-        // Update document expiry to next due date
-        await supabase
-          .from('documents')
-          .update({ expires_at: nextDueStr })
-          .eq('id', doc.id);
+        return newEvent.id;
       }
 
-      break; // Only create one event per completion
+      break; // Only ever create one event
     }
 
-    return createdEventId;
+    return null;
   } catch (err) {
     console.error('Error creating recurring event:', err);
     return null;
