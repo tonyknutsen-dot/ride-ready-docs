@@ -1658,17 +1658,43 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
       {/* ── Declaration ── */}
       <div className="mx-4 mt-2">
-        <div className="bg-white border border-slate-200 rounded-md p-3 shadow-sm">
-          <label className="flex items-start gap-2.5 cursor-pointer group">
+        <div className="bg-white border border-slate-200 rounded-md p-3 shadow-sm space-y-2.5">
+          {/* Warning: unanswered items */}
+          {getProgress() < 100 && (
+            <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+              <p className="text-[12px] text-amber-800 font-medium leading-snug">
+                All items must be answered before you can confirm this inspection.
+              </p>
+            </div>
+          )}
+
+          {/* Warning: open failures without notes/defects */}
+          {getProgress() === 100 && (() => {
+            const failedItemIds = activeTemplate.daily_check_template_items
+              .filter(item => itemResults[item.id] === 'fail')
+              .map(item => item.id);
+            const unresolvedFails = failedItemIds.filter(id => !(notes[id] && notes[id].trim()));
+            return unresolvedFails.length > 0;
+          })() && (
+            <div className="flex items-start gap-2 rounded-md bg-red-50 border border-red-200 px-3 py-2">
+              <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
+              <p className="text-[12px] text-red-800 font-medium leading-snug">
+                Open failures must be resolved or raised as defects before completion. Add notes or raise a defect for each failed item.
+              </p>
+            </div>
+          )}
+
+          <label className={`flex items-start gap-2.5 group ${getProgress() < 100 ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}>
             <div
               className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
                 declarationChecked ? 'bg-primary border-primary' : 'border-slate-400 group-hover:border-primary'
               }`}
-              onClick={() => setDeclarationChecked(prev => !prev)}
+              onClick={() => { if (getProgress() === 100) setDeclarationChecked(prev => !prev); }}
             >
               {declarationChecked && <CheckCircle className="h-3.5 w-3.5 text-primary-foreground" />}
             </div>
-            <span className="text-[12px] text-slate-700 leading-snug select-none font-medium" onClick={() => setDeclarationChecked(prev => !prev)}>
+            <span className="text-[12px] text-slate-700 leading-snug select-none font-medium" onClick={() => { if (getProgress() === 100) setDeclarationChecked(prev => !prev); }}>
               I confirm this inspection is complete, accurate, and the equipment is safe to operate.
             </span>
           </label>
