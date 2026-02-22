@@ -4,7 +4,7 @@
  */
 import { supabase } from '@/integrations/supabase/client';
 
-export type RideDocType = 'CR' | 'MR' | 'TL' | 'CH' | 'IC' | 'RA';
+export type RideDocType = 'CR' | 'MR' | 'TL' | 'CH' | 'IC' | 'RA' | 'IR';
 
 export const RIDE_DOC_TYPE_LABELS: Record<RideDocType, string> = {
   CR: 'Compliance Records',
@@ -13,6 +13,7 @@ export const RIDE_DOC_TYPE_LABELS: Record<RideDocType, string> = {
   CH: 'Check Records',
   IC: 'Inspection Checklists',
   RA: 'Risk Assessments',
+  IR: 'Inspection Records',
 };
 
 export const RIDE_DOC_TYPE_ICONS: Record<RideDocType, string> = {
@@ -22,9 +23,10 @@ export const RIDE_DOC_TYPE_ICONS: Record<RideDocType, string> = {
   CH: '✅',
   IC: '📝',
   RA: '⚠️',
+  IR: '🔒',
 };
 
-export const RIDE_DOC_GROUP_ORDER: RideDocType[] = ['CR', 'MR', 'TL', 'CH', 'IC', 'RA'];
+export const RIDE_DOC_GROUP_ORDER: RideDocType[] = ['CR', 'MR', 'TL', 'CH', 'IC', 'RA', 'IR'];
 
 export interface RideDocument {
   id: string;

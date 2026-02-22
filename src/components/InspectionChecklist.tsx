@@ -46,6 +46,10 @@ import { useOfflineSync } from '@/hooks/useOfflineSync';
 import { getCachedTemplatesForRide, findCachedAddress, cacheLocationAddress, type CachedTemplate, type CheckItemResult } from '@/lib/offlineDb';
 import CheckDetailDialog from './CheckDetailDialog';
 import QuickMaintenanceLog from './QuickMaintenanceLog';
+import { createInspectionRecord, updateInspectionRecordPdf, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
+import InspectionRecordList from './InspectionRecordList';
+import CheckDetailDialog from './CheckDetailDialog';
+import QuickMaintenanceLog from './QuickMaintenanceLog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -954,18 +958,63 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       };
 
       // Use the offline-aware submit function
-      const { success, isOffline } = await submitCheck(checkSubmission);
+      const { success, isOffline, checkId } = await submitCheck(checkSubmission);
 
       if (!success) {
         throw new Error('Failed to submit check');
       }
 
-      // If submitted online, generate and save PDF (non-blocking)
-      if (!isOffline) {
+      // If submitted online, create inspection record and generate PDF (non-blocking)
+      if (!isOffline && checkId) {
         const savedInspectorName = inspectorName;
         const savedWeatherConditions = weatherConditions;
-        
-        generatePDFBlob().then(async (pdfBlob) => {
+
+        // Determine overall result
+        const failedCount = Object.values(itemResults).filter(r => r === 'fail').length;
+        const passedCount = Object.values(itemResults).filter(r => r === 'pass').length;
+        const totalCount = activeTemplate.daily_check_template_items.length;
+        const overallResult = failedCount > 0 ? 'failed' : passedCount === totalCount ? 'passed' : 'partial';
+
+        // Build item results snapshot
+        const itemResultSnapshots: ItemResultSnapshot[] = activeTemplate.daily_check_template_items.map(item => ({
+          template_item_id: item.id,
+          check_item_text: item.check_item_text,
+          category: item.category || null,
+          result: (itemResults[item.id] || 'na') as 'pass' | 'fail' | 'na',
+          notes: notes[item.id]?.trim() || null,
+          is_required: item.is_required ?? false,
+        }));
+
+        // Fetch defect IDs linked to this check
+        const { data: linkedDefects } = await supabase
+          .from('defects')
+          .select('id')
+          .eq('check_id', checkId);
+        const defectIds = (linkedDefects || []).map(d => d.id);
+
+        // Create immutable inspection record (v1)
+        const recordId = await createInspectionRecord({
+          checkId,
+          rideId: ride.id,
+          userId: effectiveUserId!,
+          inspectorName: savedInspectorName.trim(),
+          checkDate: new Date().toISOString().split('T')[0],
+          checkFrequency: frequency,
+          templateId: activeTemplate.id,
+          templateName: activeTemplate.template_name,
+          overallResult,
+          itemResults: itemResultSnapshots,
+          notes: inspectorNotes.trim() || null,
+          weatherConditions: savedWeatherConditions.trim() || null,
+          location: location.trim() || null,
+          environmentNotes: environmentNotes.trim() || null,
+          complianceOfficer: complianceOfficer.trim() || null,
+          signatureData: signatureData.trim() || null,
+          defectIds,
+        });
+
+        // Generate and save PDF (non-blocking)
+        generatePDFBlob(checkId).then(async (pdfBlob) => {
           if (pdfBlob) {
             const frequencyLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
             const dateStr = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -1008,8 +1057,14 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                 metadata: { inspector: savedInspectorName, frequency },
               });
 
+              // Update inspection record with PDF reference
+              if (recordId) {
+                await updateInspectionRecordPdf(recordId, filePath, docId);
+              }
+
               queryClient.invalidateQueries({ queryKey: ['overview'] });
               queryClient.invalidateQueries({ queryKey: ['documents'] });
+              queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
             }
           }
         });
@@ -1253,32 +1308,12 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
         />
 
-        {/* ── Recent Checks (minimal) ── */}
-        {recentChecks.length > 0 && (
-          <details className="group">
-            <summary className="text-[10px] font-medium text-muted-foreground uppercase cursor-pointer hover:text-foreground list-none flex items-center gap-1.5 select-none" style={{ letterSpacing: '0.5px' }}>
-              <ChevronDown className="h-3 w-3 group-open:rotate-180 transition-transform shrink-0" />
-              Recent Checks ({recentChecks.length})
-            </summary>
-            <div className="mt-1.5 divide-y divide-border">
-              {recentChecks.map((check) => (
-                <button
-                  key={check.id}
-                  className="flex items-center justify-between w-full text-left py-2 hover:bg-muted/50 transition-colors"
-                  onClick={() => { setSelectedCheck(check); setShowCheckDetail(true); }}
-                >
-                  <div className="min-w-0 flex-1">
-                    <span className="text-[12px] font-medium text-foreground">{check.inspector_name}</span>
-                    <span className="text-[11px] text-muted-foreground ml-2">
-                      {new Date(check.check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
-                    </span>
-                  </div>
-                  <Eye className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                </button>
-              ))}
-            </div>
-          </details>
-        )}
+        {/* ── Inspection Records ── */}
+        <InspectionRecordList
+          rideId={ride.id}
+          rideName={ride.ride_name}
+          frequency={frequency}
+        />
 
         <CheckDetailDialog
           check={selectedCheck}
