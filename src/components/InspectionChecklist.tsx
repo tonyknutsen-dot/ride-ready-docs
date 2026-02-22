@@ -1461,7 +1461,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                 style={{ borderLeft: cardBorder }}
               >
                 {/* Row 1: Number circle + Title + Status icon */}
-                 <div className="px-3 pt-3 pb-1.5 flex items-start gap-2.5">
+                 <div className="px-3 pt-2 pb-0.5 flex items-start gap-2.5">
                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 ${
                      isPass ? 'bg-green-600 text-white' : isFail ? 'bg-red-600 text-white' : isNA ? 'bg-amber-500 text-white' : 'bg-[#E5E7EB] text-slate-700 border border-slate-400 shadow-[inset_0_1px_2px_rgba(0,0,0,0.12)]'
                    }`}>
@@ -1484,7 +1484,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                  </div>
 
                 {/* Row 2: Segmented control (joined buttons) */}
-                <div className="px-3 pb-3 pt-0.5">
+                <div className="px-3 pb-2 pt-0">
                   <div className="flex rounded-lg overflow-hidden border border-slate-300">
                     <button
                       type="button"
@@ -1624,7 +1624,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                        <button
                          type="button"
                          onClick={() => handleNoteChange(item.id, '')}
-                         className="mt-1 text-[11px] font-semibold text-slate-400 hover:text-primary"
+                         className="mt-0.5 text-[11px] font-semibold text-slate-400 hover:text-primary"
                        >
                          + Add note
                        </button>
