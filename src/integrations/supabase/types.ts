@@ -466,6 +466,10 @@ export type Database = {
           notes: string | null
           ride_id: string
           signature_data: string | null
+          start_notice_acknowledged: boolean
+          start_notice_acknowledged_at: string | null
+          start_notice_acknowledged_by: string | null
+          start_notice_snapshot: string | null
           status: string
           template_id: string
           user_id: string
@@ -484,6 +488,10 @@ export type Database = {
           notes?: string | null
           ride_id: string
           signature_data?: string | null
+          start_notice_acknowledged?: boolean
+          start_notice_acknowledged_at?: string | null
+          start_notice_acknowledged_by?: string | null
+          start_notice_snapshot?: string | null
           status: string
           template_id: string
           user_id: string
@@ -502,6 +510,10 @@ export type Database = {
           notes?: string | null
           ride_id?: string
           signature_data?: string | null
+          start_notice_acknowledged?: boolean
+          start_notice_acknowledged_at?: string | null
+          start_notice_acknowledged_by?: string | null
+          start_notice_snapshot?: string | null
           status?: string
           template_id?: string
           user_id?: string
@@ -749,6 +761,8 @@ export type Database = {
           is_active: boolean | null
           is_archived: boolean
           ride_id: string
+          start_notice_required: boolean
+          start_notice_text: string | null
           template_name: string
           template_type: string | null
           updated_at: string
@@ -763,6 +777,8 @@ export type Database = {
           is_active?: boolean | null
           is_archived?: boolean
           ride_id: string
+          start_notice_required?: boolean
+          start_notice_text?: string | null
           template_name: string
           template_type?: string | null
           updated_at?: string
@@ -777,6 +793,8 @@ export type Database = {
           is_active?: boolean | null
           is_archived?: boolean
           ride_id?: string
+          start_notice_required?: boolean
+          start_notice_text?: string | null
           template_name?: string
           template_type?: string | null
           updated_at?: string

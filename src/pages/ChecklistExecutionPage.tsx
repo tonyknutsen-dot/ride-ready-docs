@@ -1,12 +1,15 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useStaff } from '@/contexts/StaffContext';
+import { useAuth } from '@/contexts/AuthContext';
 import InspectionChecklist from '@/components/InspectionChecklist';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -28,14 +31,22 @@ const ChecklistExecutionPage = () => {
   const navigate = useNavigate();
   const { effectiveUserId } = useEffectiveUserId();
   const { isStaff } = useStaff();
+  const { user } = useAuth();
   const [ride, setRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Start notice state
+  const [startNoticeText, setStartNoticeText] = useState<string | null>(null);
+  const [startNoticeRequired, setStartNoticeRequired] = useState(false);
+  const [noticeAcknowledged, setNoticeAcknowledged] = useState(false);
+  const [noticeDismissed, setNoticeDismissed] = useState(false);
 
   useEffect(() => {
     if (effectiveUserId && rideId) {
       loadRide();
+      loadStartNotice();
     }
-  }, [effectiveUserId, rideId]);
+  }, [effectiveUserId, rideId, frequency]);
 
   const loadRide = async () => {
     try {
@@ -59,11 +70,37 @@ const ChecklistExecutionPage = () => {
     }
   };
 
+  const loadStartNotice = async () => {
+    try {
+      let query = supabase
+        .from('daily_check_templates')
+        .select('start_notice_text, start_notice_required')
+        .eq('ride_id', rideId!)
+        .eq('check_frequency', frequency ?? 'daily')
+        .eq('is_active', true)
+        .eq('is_archived', false)
+        .maybeSingle();
+
+      const { data } = await query;
+      if (data) {
+        const noticeText = (data as any).start_notice_text;
+        const noticeReq = (data as any).start_notice_required;
+        setStartNoticeText(noticeText || null);
+        setStartNoticeRequired(!!noticeReq);
+      }
+    } catch (err) {
+      console.error('Error loading start notice:', err);
+    }
+  };
+
   const freqLabel = FREQUENCY_LABELS[frequency ?? ''] ?? (frequency ?? '');
 
   const handleBack = () => {
     navigate(`/rides/${rideId}?tab=checks`);
   };
+
+  // Determine if we need to show the notice gate
+  const showNoticeGate = startNoticeText && startNoticeRequired && !noticeDismissed;
 
   if (loading) {
     return (
@@ -119,15 +156,55 @@ const ChecklistExecutionPage = () => {
         </div>
       </header>
 
-      {/* ── MAIN CONTENT ──────────────────────────────────── */}
-      <main className="px-4 pt-4 pb-10 max-w-xl mx-auto">
-        <InspectionChecklist
-          ride={ride}
-          frequency={frequency ?? 'daily'}
-          onChecklistSaved={() => navigate(`/rides/${rideId}?tab=checks`)}
-          startImmediately
-        />
-      </main>
+      {/* ── START NOTICE GATE ─────────────────────────────── */}
+      {showNoticeGate ? (
+        <main className="px-4 pt-6 pb-10 max-w-xl mx-auto">
+          <div className="rounded-2xl border border-warning/30 bg-warning/5 p-5 space-y-4">
+            <div className="flex items-start gap-3">
+              <ShieldAlert className="h-6 w-6 text-warning shrink-0 mt-0.5" />
+              <div>
+                <h2 className="font-bold text-foreground text-base">Start Notice</h2>
+                <p className="text-xs text-muted-foreground mt-0.5">You must acknowledge before starting</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl bg-card border border-border p-4 text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+              {startNoticeText}
+            </div>
+
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox
+                checked={noticeAcknowledged}
+                onCheckedChange={(v) => setNoticeAcknowledged(v === true)}
+                className="mt-0.5"
+              />
+              <span className="text-sm font-medium text-foreground">
+                I have read and understood this notice
+              </span>
+            </label>
+
+            <Button
+              className="w-full"
+              disabled={!noticeAcknowledged}
+              onClick={() => setNoticeDismissed(true)}
+            >
+              Continue to Check
+            </Button>
+          </div>
+        </main>
+      ) : (
+        /* ── MAIN CONTENT ──────────────────────────────────── */
+        <main className="px-4 pt-4 pb-10 max-w-xl mx-auto">
+          <InspectionChecklist
+            ride={ride}
+            frequency={frequency ?? 'daily'}
+            onChecklistSaved={() => navigate(`/rides/${rideId}?tab=checks`)}
+            startImmediately
+            startNoticeSnapshot={startNoticeText && startNoticeRequired ? startNoticeText : undefined}
+            startNoticeAcknowledgedBy={startNoticeText && startNoticeRequired ? user?.id : undefined}
+          />
+        </main>
+      )}
     </div>
   );
 };
