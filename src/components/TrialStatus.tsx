@@ -3,6 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useSubscription, getTierLabel } from '@/hooks/useSubscription';
+import { useStaff } from '@/contexts/StaffContext';
 
 interface TrialStatusProps {
   onUpgrade?: () => void;
@@ -10,9 +11,9 @@ interface TrialStatusProps {
 
 export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
   const { subscription, loading } = useSubscription();
+  const { canAccessBilling } = useStaff();
 
   if (loading || !subscription) return null;
-
   const { isTrialActive, isExpired, daysRemaining, subscriptionStatus, isTesterAccount, currentTier, billableRideCount } = subscription;
 
   // TESTER BYPASS
@@ -67,9 +68,15 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
                 </p>
               </div>
             </div>
-            <Button onClick={onUpgrade} variant="destructive" size="sm" className="flex-shrink-0 self-start sm:self-center">
-              Subscribe Now
-            </Button>
+            {canAccessBilling ? (
+              <Button onClick={onUpgrade} variant="destructive" size="sm" className="flex-shrink-0 self-start sm:self-center">
+                Subscribe Now
+              </Button>
+            ) : (
+              <p className="text-xs text-muted-foreground flex-shrink-0 self-start sm:self-center">
+                Ask your Controller to manage the subscription.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -94,9 +101,15 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
                 </p>
               </div>
             </div>
-            <Button onClick={onUpgrade} variant={isLowTime ? "default" : "outline"} size="sm" className="flex-shrink-0 self-start sm:self-center">
-              Choose Plan
-            </Button>
+            {canAccessBilling ? (
+              <Button onClick={onUpgrade} variant={isLowTime ? "default" : "outline"} size="sm" className="flex-shrink-0 self-start sm:self-center">
+                Choose Plan
+              </Button>
+            ) : (
+              <p className="text-xs text-muted-foreground flex-shrink-0 self-start sm:self-center">
+                Ask your Controller to manage the subscription.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
