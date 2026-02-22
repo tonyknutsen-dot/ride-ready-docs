@@ -1292,7 +1292,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
 
   return (
-    <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32">
+    <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32" style={{ background: '#F2F4F7' }}>
 
       {/* ── Offline / sync banner ── */}
       {(!isOnline || usingCachedTemplate || pendingCount > 0) && (
@@ -1368,7 +1368,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       </div>
 
       {/* ── Item cards ── */}
-      <div className="mx-4 mt-3 space-y-2">
+      <div className="mx-4 mt-3 space-y-1.5">
         {activeTemplate.daily_check_template_items
           .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
           .map((item, index) => {
@@ -1377,35 +1377,30 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             const isPass = v === 'pass';
             const isNA = v === 'na';
 
-            const cardBorderClass = isFail
-              ? 'border-red-300'
-              : isPass
-              ? 'border-green-200'
-              : 'border-border';
-
             return (
               <div
                 key={item.id}
-                className={`bg-card border rounded-xl overflow-hidden transition-all ${cardBorderClass}`}
+                className="bg-white border border-slate-200 rounded-lg overflow-hidden transition-all shadow-sm"
+                style={isFail ? { borderLeft: '4px solid #DC2626' } : undefined}
               >
                 {/* Row 1: Title + status */}
-                <div className="px-3 pt-3 pb-1 flex items-start justify-between gap-2">
-                  <h3 className="font-semibold text-foreground leading-snug break-words text-[13px] flex-1 min-w-0">
-                    <span className="text-muted-foreground font-normal mr-1.5">{index + 1}.</span>
+                <div className="px-3 pt-2.5 pb-1 flex items-start justify-between gap-2">
+                  <h3 className="font-bold text-slate-900 leading-snug break-words text-[13px] flex-1 min-w-0">
+                    <span className="text-slate-400 font-medium mr-1.5">{index + 1}.</span>
                     {item.check_item_text}
                   </h3>
                 </div>
 
                 {/* Row 2: Pass / Fail / N/A segmented control */}
-                <div className="px-3 pb-3 pt-1">
-                  <div className="rounded-lg bg-slate-100 border border-slate-200 p-1 grid grid-cols-3 gap-1">
+                <div className="px-3 pb-2.5 pt-1">
+                  <div className="grid grid-cols-3 gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'pass')}
-                      className={`h-11 rounded-lg border text-[13px] font-semibold flex items-center justify-center gap-1 transition-all active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-ring ${
+                      className={`h-10 rounded-md border text-[13px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-ring ${
                         isPass
                           ? 'bg-green-600 border-green-700 text-white shadow-sm'
-                          : 'bg-white border-slate-200 text-slate-800 hover:border-green-400'
+                          : 'bg-white border-slate-300 text-slate-700 hover:border-green-500'
                       }`}
                     >
                       <CheckCircle className="h-3.5 w-3.5 shrink-0" />
@@ -1414,10 +1409,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'fail')}
-                      className={`h-11 rounded-lg border text-[13px] font-semibold flex items-center justify-center gap-1 transition-all active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-ring ${
+                      className={`h-10 rounded-md border text-[13px] font-bold flex items-center justify-center gap-1.5 transition-all active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-ring ${
                         isFail
                           ? 'bg-red-600 border-red-700 text-white shadow-sm'
-                          : 'bg-white border-slate-200 text-slate-800 hover:border-red-400'
+                          : 'bg-white border-slate-300 text-slate-700 hover:border-red-500'
                       }`}
                     >
                       <XCircle className="h-3.5 w-3.5 shrink-0" />
@@ -1426,10 +1421,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                     <button
                       type="button"
                       onClick={() => handleResultChange(item.id, 'na')}
-                      className={`h-11 rounded-lg border text-[13px] font-semibold flex items-center justify-center transition-all active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-ring ${
+                      className={`h-10 rounded-md border text-[13px] font-bold flex items-center justify-center transition-all active:scale-[0.97] focus:outline-none focus:ring-2 focus:ring-ring ${
                         isNA
                           ? 'bg-slate-700 border-slate-800 text-white shadow-sm'
-                          : 'bg-white border-slate-200 text-slate-800 hover:border-slate-400'
+                          : 'bg-white border-slate-300 text-slate-700 hover:border-slate-500'
                       }`}
                     >
                       N/A
@@ -1438,9 +1433,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
                   {/* Fail extras — auto-expanded */}
                   {isFail && (
-                    <div className="mt-2 rounded-lg border border-red-200 bg-red-50/60 p-3 space-y-2.5">
-                      <p className="font-semibold text-red-800 text-xs flex items-center gap-1.5">
-                        <AlertTriangle className="h-3 w-3 shrink-0" />
+                    <div className="mt-2 rounded-md border border-slate-200 bg-white p-3 space-y-2.5">
+                      <p className="font-bold text-red-700 text-xs flex items-center gap-1.5">
+                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                         Action required
                       </p>
 
@@ -1448,7 +1443,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                         placeholder="Describe the failure…"
                         value={notes[item.id] || ''}
                         onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                        className="min-h-[60px] text-sm resize-none rounded-lg bg-card border-red-200"
+                        className="min-h-[60px] text-sm resize-none rounded-md bg-white border-slate-300"
                         rows={2}
                       />
 
