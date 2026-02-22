@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ChevronRight, Home } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -21,6 +22,7 @@ interface PageBreadcrumbProps {
 }
 
 const PageBreadcrumb = ({ items, showHome = false, className }: PageBreadcrumbProps) => {
+  const isMobile = useIsMobile();
   if (items.length === 0) return null;
 
   return (
@@ -29,15 +31,22 @@ const PageBreadcrumb = ({ items, showHome = false, className }: PageBreadcrumbPr
         {showHome && (
           <>
             <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link 
-                  to="/overview" 
-                  className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
-                >
+              {isMobile ? (
+                <span className="flex items-center gap-1.5 text-muted-foreground">
                   <Home className="h-3.5 w-3.5" />
                   <span className="sr-only">Home</span>
-                </Link>
-              </BreadcrumbLink>
+                </span>
+              ) : (
+                <BreadcrumbLink asChild>
+                  <Link 
+                    to="/overview" 
+                    className="flex items-center gap-1.5 text-muted-foreground hover:text-primary transition-colors"
+                  >
+                    <Home className="h-3.5 w-3.5" />
+                    <span className="sr-only">Home</span>
+                  </Link>
+                </BreadcrumbLink>
+              )}
             </BreadcrumbItem>
             <BreadcrumbSeparator>
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground/50" />
@@ -51,7 +60,7 @@ const PageBreadcrumb = ({ items, showHome = false, className }: PageBreadcrumbPr
           return (
             <span key={index} className="contents">
               <BreadcrumbItem>
-                {!isLast && item.href ? (
+                {!isLast && item.href && !isMobile ? (
                   <BreadcrumbLink asChild>
                     <Link 
                       to={item.href}
@@ -60,6 +69,8 @@ const PageBreadcrumb = ({ items, showHome = false, className }: PageBreadcrumbPr
                       {item.label}
                     </Link>
                   </BreadcrumbLink>
+                ) : !isLast ? (
+                  <span className="text-muted-foreground font-medium">{item.label}</span>
                 ) : (
                   <BreadcrumbPage className="font-semibold text-foreground">
                     {item.label}
