@@ -8,7 +8,7 @@ import { Shield, FileText, Clock, Mail, Loader2, CheckCircle2 } from "lucide-rea
 import { supabase } from "@/integrations/supabase/client";
 import { getEmailSuggestion } from "@/utils/emailSuggestion";
 import { toast } from "sonner";
-import { getLastRoute, getOfflineIdentity } from "@/lib/offlineIdentity";
+import { getIdentityCache } from "@/lib/offlineDb";
 
 const isStandaloneMode = () =>
   window.matchMedia('(display-mode: standalone)').matches ||
@@ -21,11 +21,22 @@ const ComingSoon = () => {
   // When opened as installed PWA, skip the landing page
   useEffect(() => {
     if (!isStandaloneMode()) return;
-    // If offline with a cached identity, go to last visited route
-    const cached = getOfflineIdentity();
-    const lastRoute = getLastRoute();
-    const target = lastRoute || '/overview';
-    navigate(target, { replace: true });
+    // If opened as installed PWA, try to redirect to last visited route
+    const tryRedirect = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user) {
+          const cached = await getIdentityCache(session.user.id);
+          const target = cached?.lastVisitedRoute || '/overview';
+          navigate(target, { replace: true });
+        } else {
+          navigate('/auth', { replace: true });
+        }
+      } catch {
+        navigate('/overview', { replace: true });
+      }
+    };
+    tryRedirect();
   }, [navigate]);
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
