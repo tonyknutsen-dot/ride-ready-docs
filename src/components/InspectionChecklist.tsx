@@ -1665,17 +1665,16 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         </div>
       </div>
 
-      {/* ── Declaration ── */}
-      <div className="mx-4 mt-2">
-        <div className="bg-white border border-slate-200 rounded-md p-3 shadow-sm space-y-2.5">
+      {/* ── Confirmation Card ── */}
+      <div className="mx-4 mt-3">
+        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-[0_1px_4px_rgba(0,0,0,0.08)] space-y-3">
+          <h3 className="text-[13px] font-extrabold text-slate-900 uppercase tracking-wide">Confirmation</h3>
+
           {/* Warning: unanswered items */}
           {getProgress() < 100 && (
-            <div className="flex items-start gap-2 rounded-md bg-amber-50 border border-amber-200 px-3 py-2">
-              <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
-              <p className="text-[12px] text-amber-800 font-medium leading-snug">
-                All items must be answered before you can confirm this inspection.
-              </p>
-            </div>
+            <p className="text-[12px] text-red-600 font-semibold leading-snug">
+              ⚠ All {activeTemplate.daily_check_template_items.length - Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} remaining items must be answered before you can confirm.
+            </p>
           )}
 
           {/* Warning: open failures without notes/defects */}
@@ -1684,29 +1683,62 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               .filter(item => itemResults[item.id] === 'fail')
               .map(item => item.id);
             const unresolvedFails = failedItemIds.filter(id => !(notes[id] && notes[id].trim()));
-            return unresolvedFails.length > 0;
-          })() && (
-            <div className="flex items-start gap-2 rounded-md bg-red-50 border border-red-200 px-3 py-2">
-              <AlertTriangle className="h-4 w-4 text-red-600 shrink-0 mt-0.5" />
-              <p className="text-[12px] text-red-800 font-medium leading-snug">
-                Open failures must be resolved or raised as defects before completion. Add notes or raise a defect for each failed item.
-              </p>
-            </div>
+            return unresolvedFails.length > 0 ? unresolvedFails.length : 0;
+          })() > 0 && (
+            <p className="text-[12px] text-red-600 font-semibold leading-snug">
+              ⚠ Open failures must have notes or a defect raised before completion.
+            </p>
           )}
 
-          <label className={`flex items-start gap-2.5 group ${getProgress() < 100 ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}`}>
-            <div
-              className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                declarationChecked ? 'bg-primary border-primary' : 'border-slate-400 group-hover:border-primary'
-              }`}
-              onClick={() => { if (getProgress() === 100) setDeclarationChecked(prev => !prev); }}
-            >
-              {declarationChecked && <CheckCircle className="h-3.5 w-3.5 text-primary-foreground" />}
-            </div>
-            <span className="text-[12px] text-slate-700 leading-snug select-none font-medium" onClick={() => { if (getProgress() === 100) setDeclarationChecked(prev => !prev); }}>
-              I confirm this inspection is complete, accurate, and the equipment is safe to operate.
-            </span>
-          </label>
+          {getProgress() === 100 && (() => {
+            const failedItemIds = activeTemplate.daily_check_template_items
+              .filter(item => itemResults[item.id] === 'fail')
+              .map(item => item.id);
+            const unresolvedFails = failedItemIds.filter(id => !(notes[id] && notes[id].trim()));
+            return unresolvedFails.length === 0;
+          })() && (
+            <p className="text-[12px] text-green-700 font-semibold leading-snug">
+              ✓ All items completed. Ready to confirm.
+            </p>
+          )}
+
+          <div className="border-t border-slate-100 pt-3">
+            <label className={`flex items-start gap-2.5 group ${
+              getProgress() < 100 || (() => {
+                const failedItemIds = activeTemplate.daily_check_template_items
+                  .filter(item => itemResults[item.id] === 'fail')
+                  .map(item => item.id);
+                return failedItemIds.some(id => !(notes[id] && notes[id].trim()));
+              })()
+                ? 'opacity-40 pointer-events-none'
+                : 'cursor-pointer'
+            }`}>
+              <div
+                className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                  declarationChecked ? 'bg-primary border-primary' : 'border-slate-400 group-hover:border-primary'
+                }`}
+                onClick={() => {
+                  const canConfirm = getProgress() === 100 && !activeTemplate.daily_check_template_items
+                    .filter(item => itemResults[item.id] === 'fail')
+                    .some(item => !(notes[item.id] && notes[item.id].trim()));
+                  if (canConfirm) setDeclarationChecked(prev => !prev);
+                }}
+              >
+                {declarationChecked && <CheckCircle className="h-3.5 w-3.5 text-primary-foreground" />}
+              </div>
+              <span
+                className="text-[12px] text-slate-700 leading-snug select-none font-medium"
+                onClick={() => {
+                  const canConfirm = getProgress() === 100 && !activeTemplate.daily_check_template_items
+                    .filter(item => itemResults[item.id] === 'fail')
+                    .some(item => !(notes[item.id] && notes[item.id].trim()));
+                  if (canConfirm) setDeclarationChecked(prev => !prev);
+                }}
+              >
+                I confirm this inspection is complete, accurate, and the equipment is safe to operate.
+              </span>
+            </label>
+          </div>
         </div>
       </div>
 
