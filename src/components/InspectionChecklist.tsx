@@ -274,9 +274,15 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
   const getProgress = () => {
     if (!activeTemplate?.daily_check_template_items) return 0;
-    const totalItems = activeTemplate.daily_check_template_items.length;
-    const answeredCount = Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length;
-    return totalItems > 0 ? (answeredCount / totalItems) * 100 : 0;
+    const items = activeTemplate.daily_check_template_items;
+    const totalItems = items.length;
+    const completedCount = items.filter(item => {
+      const r = itemResults[item.id];
+      if (r === 'pass' || r === 'na') return true;
+      if (r === 'fail') return !!itemDefectRaised[item.id];
+      return false;
+    }).length;
+    return totalItems > 0 ? (completedCount / totalItems) * 100 : 0;
   };
 
   // State for raw GPS coordinates (for deferred resolution when offline)
@@ -1421,7 +1427,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               <div className="mt-2.5">
                 <div className="flex items-center justify-between mb-1">
                   <p className="text-[11px] font-bold text-slate-500">
-                    {Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} of {activeTemplate.daily_check_template_items.length} items completed
+                    {activeTemplate.daily_check_template_items.filter(item => { const r = itemResults[item.id]; return r === 'pass' || r === 'na' || (r === 'fail' && itemDefectRaised[item.id]); }).length} of {activeTemplate.daily_check_template_items.length} items completed
                   </p>
                   {getProgress() === 100 && (
                     <span className="text-[10px] font-bold text-green-700">✓ Done</span>
@@ -1668,97 +1674,66 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           <h3 className="text-[13px] font-extrabold text-slate-900 uppercase tracking-wide">Confirmation</h3>
 
           {/* Warning: unanswered items */}
-          {getProgress() < 100 && (
-            <button
-              type="button"
-              className="w-full text-left"
-              onClick={() => {
-                const sorted = activeTemplate.daily_check_template_items
-                  .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-                const firstUnanswered = sorted.find(item => !itemResults[item.id]);
-                if (firstUnanswered) {
-                  const el = document.querySelector(`[data-item-id="${firstUnanswered.id}"]`);
-                  if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    setHighlightItemId(firstUnanswered.id);
-                    setTimeout(() => setHighlightItemId(null), 1500);
-                  }
-                }
-              }}
-            >
-               <p className="text-[11px] text-red-600 font-semibold leading-snug hover:underline">
-                 ⚠ {activeTemplate.daily_check_template_items.length - Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} remaining items must be answered. Tap to view.
-              </p>
-            </button>
-          )}
+           {getProgress() < 100 && (
+             <button
+               type="button"
+               className="w-full text-left"
+               onClick={() => {
+                 const sorted = activeTemplate.daily_check_template_items
+                   .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+                 const firstIncomplete = sorted.find(item => {
+                   const r = itemResults[item.id];
+                   if (!r) return true;
+                   if (r === 'fail' && !itemDefectRaised[item.id]) return true;
+                   return false;
+                 });
+                 if (firstIncomplete) {
+                   const el = document.querySelector(`[data-item-id="${firstIncomplete.id}"]`);
+                   if (el) {
+                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                     setHighlightItemId(firstIncomplete.id);
+                     setTimeout(() => setHighlightItemId(null), 1500);
+                   }
+                 }
+               }}
+             >
+                <p className="text-[11px] text-red-600 font-semibold leading-snug hover:underline">
+                  ⚠ {activeTemplate.daily_check_template_items.filter(item => { const r = itemResults[item.id]; return !r || (r === 'fail' && !itemDefectRaised[item.id]); }).length} items remaining — answer all items and raise defects for failures. Tap to view.
+               </p>
+             </button>
+           )}
 
-          {/* Warning: fails without defect raised */}
-          {getProgress() === 100 && (() => {
-            const failsWithoutDefect = activeTemplate.daily_check_template_items
-              .filter(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id]);
-            return failsWithoutDefect.length > 0 ? failsWithoutDefect : null;
-          })() !== null && (
-            <button
-              type="button"
-              className="w-full text-left"
-              onClick={() => {
-                const sorted = activeTemplate.daily_check_template_items
-                  .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
-                const first = sorted.find(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id]);
-                if (first) {
-                  const el = document.querySelector(`[data-item-id="${first.id}"]`);
-                  if (el) {
-                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    setHighlightItemId(first.id);
-                    setTimeout(() => setHighlightItemId(null), 1500);
-                  }
-                }
-              }}
-            >
-               <p className="text-[11px] text-red-600 font-semibold leading-snug hover:underline">
-                 ⚠ Failed items must have a defect raised before completion. Tap to view.
+           {getProgress() === 100 && (
+              <p className="text-[11px] text-green-700 font-semibold leading-snug">
+                ✓ All items completed. Ready to confirm.
               </p>
-            </button>
-          )}
-
-          {getProgress() === 100 && activeTemplate.daily_check_template_items
-            .filter(item => itemResults[item.id] === 'fail')
-            .every(item => itemDefectRaised[item.id]) && (
-             <p className="text-[11px] text-green-700 font-semibold leading-snug">
-               ✓ All items completed. Ready to confirm.
-             </p>
-          )}
+           )}
 
           <div className="border-t border-slate-100 pt-3">
-            <label className={`flex items-start gap-2.5 group ${
-              getProgress() < 100 || activeTemplate.daily_check_template_items
-                .some(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id])
-                ? 'opacity-40 pointer-events-none'
-                : 'cursor-pointer'
-            }`}>
-               <div
-                 className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                   declarationChecked ? 'bg-primary border-primary' :
-                   getProgress() < 100 || activeTemplate.daily_check_template_items.some(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id])
-                     ? 'border-slate-300 bg-slate-100'
-                     : 'border-slate-400 group-hover:border-primary'
-                 }`}
-                onClick={() => {
-                  const canConfirm = getProgress() === 100 && !activeTemplate.daily_check_template_items
-                    .some(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id]);
-                  if (canConfirm) setDeclarationChecked(prev => !prev);
-                }}
-              >
-                {declarationChecked && <CheckCircle className="h-3.5 w-3.5 text-primary-foreground" />}
-              </div>
-              <span
-                className="text-[12px] text-slate-700 leading-snug select-none font-medium"
-                onClick={() => {
-                  const canConfirm = getProgress() === 100 && !activeTemplate.daily_check_template_items
-                    .some(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id]);
-                  if (canConfirm) setDeclarationChecked(prev => !prev);
-                }}
-              >
+             <label className={`flex items-start gap-2.5 group ${
+               getProgress() < 100
+                 ? 'opacity-40 pointer-events-none'
+                 : 'cursor-pointer'
+             }`}>
+                <div
+                  className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                    declarationChecked ? 'bg-primary border-primary' :
+                    getProgress() < 100
+                      ? 'border-slate-300 bg-slate-100'
+                      : 'border-slate-400 group-hover:border-primary'
+                  }`}
+                 onClick={() => {
+                   if (getProgress() === 100) setDeclarationChecked(prev => !prev);
+                 }}
+               >
+                 {declarationChecked && <CheckCircle className="h-3.5 w-3.5 text-primary-foreground" />}
+               </div>
+               <span
+                 className="text-[12px] text-slate-700 leading-snug select-none font-medium"
+                 onClick={() => {
+                   if (getProgress() === 100) setDeclarationChecked(prev => !prev);
+                 }}
+               >
                 I confirm this inspection is complete, accurate, and the equipment is safe to operate.
               </span>
             </label>
