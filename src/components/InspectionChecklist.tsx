@@ -1427,8 +1427,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                     <span className="text-[10px] font-bold text-green-700">✓ Done</span>
                   )}
                 </div>
-                <div className="h-1.5 rounded-full bg-slate-300/50 overflow-hidden">
-                  <div className={`h-full rounded-full transition-all duration-300 ${getProgress() === 100 ? 'bg-green-600' : 'bg-blue-600'}`} style={{ width: `${Math.round(getProgress())}%` }} />
+                <div className="h-2 rounded-full bg-[#E5E7EB] overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-300 ${getProgress() === 100 ? 'bg-green-600' : 'bg-[#2563EB]'}`} style={{ width: `${Math.round(getProgress())}%` }} />
                 </div>
               </div>
             </div>
