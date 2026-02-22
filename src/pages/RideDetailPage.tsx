@@ -127,12 +127,11 @@ const RideDetailPage = () => {
         <div className="container mx-auto px-4 py-8">
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={() => navigate('/rides')}
-            className="w-fit gap-1.5 -ml-2 mb-4 text-muted-foreground hover:text-foreground"
+            className="h-9 w-9 -ml-2 mb-4 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Equipment
           </Button>
           <OfflineDataPlaceholder message="This ride hasn't been cached yet. Open it once while online to access it offline." />
         </div>
@@ -144,7 +143,7 @@ const RideDetailPage = () => {
           <p className="text-muted-foreground">Equipment not found</p>
           <Button onClick={() => navigate('/rides')} className="h-11">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Equipment
+            Equipment
           </Button>
         </div>
       </div>
@@ -166,14 +165,13 @@ const RideDetailPage = () => {
       )}
       <Button
         variant="ghost"
-        size="sm"
+        size="icon"
         onClick={() => navigate('/rides')}
-        className="w-fit gap-1.5 -ml-2 mb-2 text-muted-foreground hover:text-foreground"
+        className="h-9 w-9 -ml-2 mb-1 text-muted-foreground hover:text-foreground"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to Equipment
       </Button>
-      <PageBreadcrumb items={getBreadcrumbItems()} showHome />
+      <PageBreadcrumb items={getBreadcrumbItems()} showHome className="text-[11px] opacity-60" />
       <RideDetail 
         ride={ride}
         onBack={() => navigate('/rides')}
