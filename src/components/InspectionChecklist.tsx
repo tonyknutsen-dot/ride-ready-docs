@@ -1463,7 +1463,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                 {/* Row 1: Number circle + Title + Status icon */}
                  <div className="px-3 pt-3 pb-1.5 flex items-start gap-2.5">
                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[12px] font-bold shrink-0 ${
-                     isPass ? 'bg-green-600 text-white' : isFail ? 'bg-red-600 text-white' : isNA ? 'bg-amber-500 text-white' : 'bg-slate-200 text-slate-600'
+                     isPass ? 'bg-green-600 text-white' : isFail ? 'bg-red-600 text-white' : isNA ? 'bg-amber-500 text-white' : 'bg-[#E5E7EB] text-slate-700 border border-slate-400 shadow-[inset_0_1px_2px_rgba(0,0,0,0.12)]'
                    }`}>
                      {isPass ? '✓' : isFail ? '✗' : isNA ? '—' : index + 1}
                    </div>
