@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Check, X, Shield, Package } from 'lucide-react';
+import { Loader2, Check, X, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -96,7 +95,7 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
     if (!member || !user) return;
     setSaving(true);
     try {
-      // Update equipment_access_mode on organisation_members
+      // Update equipment_access_mode
       const { error: modeError } = await supabase
         .from('organisation_members')
         .update({ equipment_access_mode: accessMode } as any)
@@ -118,10 +117,10 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
       }
 
       toast({
-        title: 'Equipment access updated',
+        title: 'Ride access updated',
         description: accessMode === 'all'
-          ? 'Now has access to all equipment'
-          : `Assigned to ${selectedRides.length} item${selectedRides.length !== 1 ? 's' : ''}`,
+          ? 'Access to all rides'
+          : `Assigned to ${selectedRides.length} ride${selectedRides.length !== 1 ? 's' : ''}`,
       });
       onRefresh();
     } catch (e: any) {
@@ -135,11 +134,11 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="h-[85vh] rounded-t-2xl flex flex-col">
-        <SheetHeader className="pb-2">
+      <SheetContent side="bottom" className="h-[80vh] rounded-t-2xl flex flex-col">
+        <SheetHeader className="pb-1">
           <div className="flex items-center gap-3">
             <div
-              className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
               style={{
                 background: ROLE_CONFIG[memberRole]?.bg || 'hsl(var(--muted))',
                 color: ROLE_CONFIG[memberRole]?.color || 'hsl(var(--foreground))',
@@ -147,33 +146,32 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
             >
               {(member.display_name || member.email || '?')[0]?.toUpperCase()}
             </div>
-            <div>
-              <SheetTitle className="text-left text-base">
+            <div className="min-w-0">
+              <SheetTitle className="text-left text-sm">
                 {member.display_name || member.email || 'Unknown'}
               </SheetTitle>
-              <SheetDescription className="text-left">
-                {member.email}
-              </SheetDescription>
+              {member.email && member.display_name && (
+                <SheetDescription className="text-left text-xs">
+                  {member.email}
+                </SheetDescription>
+              )}
             </div>
           </div>
         </SheetHeader>
 
-        <ScrollArea className="flex-1 -mx-6 px-6">
-          <div className="space-y-6 pb-6">
+        <div className="flex-1 overflow-y-auto -mx-6 px-6 space-y-5 pb-6 pt-2">
 
-            {/* 1) Role */}
-            <section className="space-y-2">
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-                <Shield className="h-3.5 w-3.5" />
-                Role
-              </h4>
-              {canEditRole && availableRoles.length > 0 ? (
+          {/* 1) Role */}
+          <section className="space-y-1.5">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Role</h4>
+            {canEditRole && availableRoles.length > 0 ? (
+              <>
                 <Select
                   value={member.permission_level}
                   onValueChange={handleRoleChange}
                   disabled={saving}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full h-10">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -184,99 +182,98 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
                     ))}
                   </SelectContent>
                 </Select>
-              ) : (
-                <StaffRoleBadge role={memberRole} size="md" />
-              )}
-            </section>
+                <p className="text-[11px] text-muted-foreground">
+                  {ROLE_CONFIG[memberRole]?.description}
+                </p>
+              </>
+            ) : (
+              <StaffRoleBadge role={memberRole} size="md" />
+            )}
+          </section>
 
-            {/* 2) Permissions Summary */}
-            <section className="space-y-2">
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Permissions
-              </h4>
-              <div className="rounded-xl border border-border p-3 space-y-1.5">
-                {permissions.map(p => (
-                  <div key={p.label} className="flex items-center gap-2">
-                    {p.granted ? (
-                      <Check className="h-3.5 w-3.5 text-green-600 flex-shrink-0" />
-                    ) : (
-                      <X className="h-3.5 w-3.5 text-muted-foreground/40 flex-shrink-0" />
-                    )}
-                    <span className={`text-sm ${p.granted ? 'text-foreground' : 'text-muted-foreground/50'}`}>
-                      {p.label}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </section>
-
-            {/* 3) Equipment Access */}
-            <section className="space-y-3">
-              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1.5">
-                <Package className="h-3.5 w-3.5" />
-                Equipment Access
-              </h4>
-
-              {/* Toggle */}
-              <div className="flex rounded-xl border border-border overflow-hidden">
-                {(['all', 'assigned'] as const).map(mode => (
-                  <button
-                    key={mode}
-                    type="button"
-                    onClick={() => setAccessMode(mode)}
-                    className="flex-1 py-2.5 text-xs font-semibold transition-colors"
-                    style={{
-                      background: accessMode === mode ? 'hsl(var(--primary))' : 'transparent',
-                      color: accessMode === mode ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
-                    }}
-                  >
-                    {mode === 'all' ? 'All Equipment' : 'Assigned Only'}
-                  </button>
-                ))}
-              </div>
-
-              {accessMode === 'assigned' && (
-                <>
-                  {loadingRides ? (
-                    <div className="flex justify-center py-4">
-                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                    </div>
+          {/* 2) Permissions */}
+          <section className="space-y-1.5">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Permissions</h4>
+            <div className="rounded-lg border border-border p-2.5 space-y-1">
+              {permissions.map(p => (
+                <div key={p.label} className="flex items-center gap-2">
+                  {p.granted ? (
+                    <Check className="h-3 w-3 text-green-600 flex-shrink-0" />
                   ) : (
-                    <div className="border rounded-xl p-2 max-h-[180px] overflow-y-auto space-y-0.5">
-                      {rides.map(ride => (
-                        <label
-                          key={ride.id}
-                          className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 cursor-pointer"
-                        >
-                          <Checkbox
-                            checked={selectedRides.includes(ride.id)}
-                            onCheckedChange={() => toggleRide(ride.id)}
-                          />
-                          <span className="text-sm">{ride.ride_name}</span>
-                        </label>
-                      ))}
-                    </div>
+                    <X className="h-3 w-3 text-muted-foreground/30 flex-shrink-0" />
                   )}
-                </>
-              )}
+                  <span className={`text-xs ${p.granted ? 'text-foreground' : 'text-muted-foreground/40'}`}>
+                    {p.label}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
 
-              <Button
-                size="sm"
-                onClick={saveEquipment}
-                disabled={saving || (accessMode === 'assigned' && selectedRides.length === 0)}
-                className="w-full"
-              >
-                {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
-                Save Equipment Access
-              </Button>
-            </section>
+          {/* 3) Ride Access */}
+          <section className="space-y-2.5">
+            <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+              <Package className="h-3 w-3" />
+              Ride Access
+            </h4>
 
-            {/* Audit note */}
-            <p className="text-[11px] text-muted-foreground text-center pt-2">
-              All changes are audit logged.
-            </p>
-          </div>
-        </ScrollArea>
+            <div className="flex rounded-lg border border-border overflow-hidden">
+              {(['all', 'assigned'] as const).map(mode => (
+                <button
+                  key={mode}
+                  type="button"
+                  onClick={() => setAccessMode(mode)}
+                  className="flex-1 py-2 text-xs font-semibold transition-colors"
+                  style={{
+                    background: accessMode === mode ? 'hsl(var(--primary))' : 'transparent',
+                    color: accessMode === mode ? 'hsl(var(--primary-foreground))' : 'hsl(var(--muted-foreground))',
+                  }}
+                >
+                  {mode === 'all' ? 'All Rides' : 'Assigned Only'}
+                </button>
+              ))}
+            </div>
+
+            {accessMode === 'assigned' && (
+              <>
+                {loadingRides ? (
+                  <div className="flex justify-center py-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                ) : (
+                  <div className="border rounded-lg p-1.5 max-h-[160px] overflow-y-auto space-y-0.5">
+                    {rides.map(ride => (
+                      <label
+                        key={ride.id}
+                        className="flex items-center gap-2.5 p-2 rounded-md hover:bg-muted/50 cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={selectedRides.includes(ride.id)}
+                          onCheckedChange={() => toggleRide(ride.id)}
+                        />
+                        <span className="text-sm">{ride.ride_name}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            <Button
+              size="sm"
+              onClick={saveEquipment}
+              disabled={saving || (accessMode === 'assigned' && selectedRides.length === 0)}
+              className="w-full h-10"
+            >
+              {saving ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : null}
+              Save Ride Access
+            </Button>
+          </section>
+
+          <p className="text-[10px] text-muted-foreground text-center">
+            All changes are audit logged.
+          </p>
+        </div>
       </SheetContent>
     </Sheet>
   );

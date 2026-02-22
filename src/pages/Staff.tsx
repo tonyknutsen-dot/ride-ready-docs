@@ -8,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { can_manage_staff } from '@/utils/permissions';
-import { StaffStatusChips } from '@/components/staff/StaffStatusChips';
 import { StaffFilters } from '@/components/staff/StaffFilters';
 import { StaffCard, PendingInviteCard, type StaffMemberData, type PendingInviteData } from '@/components/staff/StaffCard';
 import { StaffInviteModal } from '@/components/staff/StaffInviteModal';
@@ -91,7 +90,13 @@ const Staff = () => {
             .filter(a => a.rides)
             .map(a => ({ id: (a.rides as any).id, ride_name: (a.rides as any).ride_name }));
 
-          return { ...member, email, display_name, assigned_rides, equipment_access_mode: (member as any).equipment_access_mode || 'all' };
+          return {
+            ...member,
+            email,
+            display_name,
+            assigned_rides,
+            equipment_access_mode: (member as any).equipment_access_mode || 'all',
+          };
         })
       );
       setStaff(staffWithDetails);
@@ -184,7 +189,7 @@ const Staff = () => {
 
   if (!isOnline && staff.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 max-w-2xl">
         <div className="rounded-xl p-8 text-center border border-border">
           <WifiOff className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
           <p className="text-sm font-medium">Requires connection</p>
@@ -195,56 +200,43 @@ const Staff = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-5 max-w-4xl">
-      {/* Back Button */}
+    <div className="container mx-auto px-4 py-5 pb-28 md:pb-8 space-y-4 max-w-2xl">
+      {/* Back */}
       <Button
         variant="ghost"
         size="sm"
         onClick={() => navigate('/overview')}
-        className="w-fit gap-1.5 -ml-2 text-muted-foreground hover:text-foreground"
+        className="w-fit gap-1.5 -ml-2 text-muted-foreground hover:text-foreground h-8"
       >
         <ArrowLeft className="h-4 w-4" />
         Back
       </Button>
 
       {/* Header */}
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-            <Users className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold">Staff & Permissions</h1>
-            <p className="text-xs text-muted-foreground">Control access and ride assignments. All actions are audit-logged.</p>
-          </div>
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <h1 className="text-lg font-bold">Staff & Permissions</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {staff.length} member{staff.length !== 1 ? 's' : ''}
+            {invites.length > 0 && ` · ${invites.length} pending`}
+          </p>
         </div>
         {canManage && (
-          <Button size="sm" onClick={() => setInviteOpen(true)} className="gap-1.5 flex-shrink-0">
+          <Button size="sm" onClick={() => setInviteOpen(true)} className="gap-1.5 h-9">
             <UserPlus className="h-4 w-4" />
             <span className="hidden sm:inline">Invite</span>
           </Button>
         )}
       </div>
 
-      {/* Status chips */}
-      {!loading && (
-        <StaffStatusChips
-          total={counts.all}
-          managers={counts.manager}
-          supervisors={counts.supervisor}
-          staff={counts.staff}
-          pending={counts.pending}
-        />
-      )}
-
       {/* Loading */}
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="h-7 w-7 animate-spin text-primary" />
         </div>
       ) : (
         <>
-          {/* Search + Filters */}
+          {/* Search + Filter chips */}
           {(staff.length > 0 || invites.length > 0) && (
             <StaffFilters
               search={search}
@@ -257,16 +249,8 @@ const Staff = () => {
 
           {/* Empty state */}
           {staff.length === 0 && invites.length === 0 ? (
-            <div
-              className="rounded-xl p-8 text-center"
-              style={{ background: 'hsl(var(--muted) / 0.3)', border: '1px dashed hsl(var(--border))' }}
-            >
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-3"
-                style={{ background: 'hsl(var(--muted))' }}
-              >
-                <Users className="h-6 w-6 text-muted-foreground" />
-              </div>
+            <div className="rounded-xl p-8 text-center border border-dashed border-border">
+              <Users className="h-8 w-8 mx-auto mb-2 text-muted-foreground/50" />
               <p className="text-sm font-medium mb-1">No staff members yet</p>
               <p className="text-xs text-muted-foreground mb-4">Invite your first team member to get started.</p>
               {canManage && (
@@ -277,22 +261,18 @@ const Staff = () => {
               )}
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {/* Staff cards */}
-              {activeFilter !== 'pending' && filteredStaff.length > 0 && (
-                <div className="space-y-2">
-                  {filteredStaff.map(member => (
-                    <StaffCard
-                      key={member.id}
-                      member={member}
-                      canManage={canManage}
-                      onTap={() => setDrawerMember(member)}
-                      onEditAccess={() => setDrawerMember(member)}
-                      onRemove={() => setDeleteTarget(member)}
-                    />
-                  ))}
-                </div>
-              )}
+              {activeFilter !== 'pending' && filteredStaff.map(member => (
+                <StaffCard
+                  key={member.id}
+                  member={member}
+                  canManage={canManage}
+                  onTap={() => setDrawerMember(member)}
+                  onEditAccess={() => setDrawerMember(member)}
+                  onRemove={() => setDeleteTarget(member)}
+                />
+              ))}
 
               {activeFilter !== 'pending' && filteredStaff.length === 0 && search.trim() && (
                 <p className="text-sm text-muted-foreground text-center py-6">No staff match "{search}"</p>
@@ -300,9 +280,9 @@ const Staff = () => {
 
               {/* Pending invites */}
               {showInvites && invites.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground px-0.5 pt-2">
-                    Pending Invitations — {invites.length}
+                <div className="space-y-2 pt-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground px-0.5">
+                    Pending — {invites.length}
                   </p>
                   {invites.map(invite => (
                     <PendingInviteCard
@@ -318,10 +298,9 @@ const Staff = () => {
             </div>
           )}
 
-          {/* Compliance footer */}
           {(staff.length > 0 || invites.length > 0) && (
-            <p className="text-center text-[11px] text-muted-foreground pt-1">
-              All user actions are audit logged and traceable.
+            <p className="text-center text-[10px] text-muted-foreground pt-1">
+              All actions are audit logged.
             </p>
           )}
         </>
@@ -345,11 +324,11 @@ const Staff = () => {
 
       {/* Remove Confirmation */}
       <AlertDialog open={!!deleteTarget} onOpenChange={open => { if (!open) setDeleteTarget(null); }}>
-        <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
+        <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-sm">
           <AlertDialogHeader>
             <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will revoke {deleteTarget?.display_name || deleteTarget?.email || 'this person'}'s access. They can be re-invited later.
+              This will revoke {deleteTarget?.display_name || deleteTarget?.email || 'this person'}'s access.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

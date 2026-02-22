@@ -1,4 +1,3 @@
-import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MoreVertical, Settings2, Eye, Trash2, Mail, X, Clock } from 'lucide-react';
 import { StaffRoleBadge } from './StaffRoleBadge';
@@ -43,53 +42,26 @@ interface StaffCardProps {
 }
 
 export function StaffCard({ member, canManage, onTap, onEditAccess, onRemove }: StaffCardProps) {
-  const roleConfig = {
-    manager: { bg: 'hsl(142 76% 96%)', color: 'hsl(142 72% 25%)' },
-    supervisor: { bg: 'hsl(38 100% 97%)', color: 'hsl(32 95% 30%)' },
-    staff: { bg: 'hsl(214 100% 97%)', color: 'hsl(213 52% 24%)' },
-  };
-  const cfg = roleConfig[member.permission_level] || roleConfig.staff;
   const displayName = member.display_name || member.email || 'Unknown';
-  const initial = displayName[0]?.toUpperCase() || '?';
 
   return (
     <div
       onClick={onTap}
-      className="rounded-xl p-3.5 cursor-pointer transition-all hover:shadow-md active:scale-[0.99]"
-      style={{
-        background: 'hsl(var(--card))',
-        border: '1px solid hsl(var(--border))',
-        boxShadow: 'var(--shadow-card)',
-      }}
+      className="rounded-xl px-3.5 py-3 cursor-pointer transition-all hover:bg-muted/40 active:scale-[0.99] border border-border bg-card"
     >
-      <div className="flex items-center gap-3">
-        {/* Avatar */}
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold flex-shrink-0"
-          style={{ background: cfg.bg, color: cfg.color }}
-        >
-          {initial}
-        </div>
-
-        {/* Info */}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate">{displayName}</p>
-          <p className="text-[11px] text-muted-foreground">
-            Joined {format(new Date(member.joined_at), 'MMM d, yyyy')}
-          </p>
-        </div>
-
-        {/* Badges + kebab */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+      {/* Row 1: Name + Role pill */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-semibold truncate flex-1 min-w-0">{displayName}</p>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
           <StaffRoleBadge role={member.permission_level as AppRole} />
           {canManage && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild onClick={e => e.stopPropagation()}>
-                <button className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-muted transition-colors">
+                <button className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-muted transition-colors -mr-1">
                   <MoreVertical className="h-4 w-4 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-44">
+              <DropdownMenuContent align="end" className="w-40">
                 <DropdownMenuItem onClick={e => { e.stopPropagation(); onEditAccess(); }}>
                   <Settings2 className="h-3.5 w-3.5 mr-2" />
                   Edit access
@@ -103,7 +75,7 @@ export function StaffCard({ member, canManage, onTap, onEditAccess, onRemove }: 
                   className="text-destructive focus:text-destructive"
                 >
                   <Trash2 className="h-3.5 w-3.5 mr-2" />
-                  Remove staff
+                  Remove
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
@@ -111,23 +83,29 @@ export function StaffCard({ member, canManage, onTap, onEditAccess, onRemove }: 
         </div>
       </div>
 
-      {/* Equipment badge row */}
-      <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-        {member.equipment_access_mode === 'all' ? (
-          <span
-            className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-            style={{ background: 'hsl(214 100% 97%)', color: 'hsl(213 52% 24%)' }}
-          >
-            All equipment
-          </span>
-        ) : (
-          <span
-            className="text-[11px] font-medium px-2 py-0.5 rounded-full"
-            style={{ background: 'hsl(var(--muted))', color: 'hsl(var(--muted-foreground))' }}
-          >
-            Assigned: {member.assigned_rides.length} ride{member.assigned_rides.length !== 1 ? 's' : ''}
-          </span>
+      {/* Row 2: Email + Joined */}
+      <div className="flex items-center gap-2 mt-0.5">
+        {member.email && member.display_name && (
+          <span className="text-[11px] text-muted-foreground truncate">{member.email}</span>
         )}
+        <span className="text-[11px] text-muted-foreground whitespace-nowrap">
+          Joined {format(new Date(member.joined_at), 'MMM d, yyyy')}
+        </span>
+      </div>
+
+      {/* Row 3: Ride access pill */}
+      <div className="mt-2">
+        <span
+          className="text-[11px] font-medium px-2 py-0.5 rounded-full inline-block"
+          style={{
+            background: member.equipment_access_mode === 'all' ? 'hsl(214 100% 97%)' : 'hsl(var(--muted))',
+            color: member.equipment_access_mode === 'all' ? 'hsl(213 52% 24%)' : 'hsl(var(--muted-foreground))',
+          }}
+        >
+          {member.equipment_access_mode === 'all'
+            ? 'Ride access: All rides'
+            : `Ride access: ${member.assigned_rides.length} assigned`}
+        </span>
       </div>
     </div>
   );
@@ -142,38 +120,33 @@ interface PendingInviteCardProps {
 
 export function PendingInviteCard({ invite, canManage, onResend, onCancel }: PendingInviteCardProps) {
   return (
-    <div
-      className="rounded-xl p-3.5"
-      style={{ background: 'hsl(38 100% 97%)', border: '1px solid hsl(38 92% 80%)' }}
-    >
-      <div className="flex items-center gap-3">
-        <div
-          className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-          style={{ background: 'hsl(38 92% 90%)' }}
-        >
-          <Mail className="h-4 w-4" style={{ color: 'hsl(32 95% 30%)' }} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium truncate">{invite.email}</p>
-          <div className="flex items-center gap-2 mt-0.5">
-            <StaffRoleBadge role={invite.permission_level as AppRole} size="sm" />
-            <span className="text-[11px] text-muted-foreground flex items-center gap-1">
-              <Clock className="h-3 w-3" />
-              Expires {format(new Date(invite.expires_at), 'MMM d')}
-            </span>
-          </div>
-        </div>
-        {canManage && (
-          <div className="flex gap-1 flex-shrink-0">
+    <div className="rounded-xl px-3.5 py-3 border border-warning/40 bg-warning/5">
+      {/* Row 1: Email + Pending badge */}
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-sm font-medium truncate flex-1 min-w-0">{invite.email}</p>
+        <div className="flex items-center gap-1.5 flex-shrink-0">
+          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-warning/15 text-warning border border-warning/30">
+            Invite pending
+          </span>
+          {canManage && (
             <button
               onClick={onCancel}
-              className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-red-100 transition-colors"
+              className="w-7 h-7 rounded-lg flex items-center justify-center hover:bg-destructive/10 transition-colors -mr-1"
               title="Cancel invite"
             >
-              <X className="h-4 w-4 text-destructive" />
+              <X className="h-3.5 w-3.5 text-destructive" />
             </button>
-          </div>
-        )}
+          )}
+        </div>
+      </div>
+
+      {/* Row 2: Role + Expiry */}
+      <div className="flex items-center gap-2 mt-1">
+        <StaffRoleBadge role={invite.permission_level as AppRole} size="sm" />
+        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+          <Clock className="h-3 w-3" />
+          Expires {format(new Date(invite.expires_at), 'MMM d')}
+        </span>
       </div>
     </div>
   );
