@@ -110,7 +110,9 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       }
     } catch (error) {
       console.error('Error loading maintenance records:', error);
-      toast({ title: 'Error', description: 'Failed to load maintenance records', variant: 'destructive' });
+      if (navigator.onLine) {
+        toast({ title: 'Error', description: 'Failed to load maintenance records', variant: 'destructive' });
+      }
     } finally {
       setLoading(false);
     }
