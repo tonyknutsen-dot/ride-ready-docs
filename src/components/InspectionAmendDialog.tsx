@@ -80,7 +80,7 @@ export const InspectionAmendDialog = ({ record, open, onOpenChange, onAmended }:
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <AlertTriangle className="h-5 w-5 text-warning" />
-            Amend Inspection Record
+            Amend Check Record
           </DialogTitle>
           <DialogDescription>
             This will create a new version (v{record.version + 1}). The original record (v{record.version}) will be preserved and never deleted.
@@ -95,7 +95,7 @@ export const InspectionAmendDialog = ({ record, open, onOpenChange, onAmended }:
               <span className="font-semibold">v{record.version}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Inspector:</span>
+              <span className="text-muted-foreground">Checked By:</span>
               <span>{record.inspector_name}</span>
             </div>
             <div className="flex justify-between">
@@ -120,7 +120,7 @@ export const InspectionAmendDialog = ({ record, open, onOpenChange, onAmended }:
 
           {/* Editable fields */}
           <div className="space-y-1.5">
-            <Label htmlFor="amend-inspector" className="text-sm font-semibold">Inspector Name</Label>
+            <Label htmlFor="amend-inspector" className="text-sm font-semibold">Check Completed By</Label>
             <Input
               id="amend-inspector"
               value={inspectorName}

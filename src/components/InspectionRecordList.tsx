@@ -120,10 +120,10 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
 
   if (records.length === 0) {
     return (
-      <EmptyState
+              <EmptyState
         icon={FileText}
-        title="No inspection records"
-        description="Records will appear here once inspections are completed."
+        title="No check records"
+        description="Records will appear here once safety checks are completed."
         variant="compact"
       />
     );
@@ -135,7 +135,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
         <div className="flex items-center gap-1.5">
           <History className="h-3.5 w-3.5 text-muted-foreground" />
           <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
-            Inspection Records ({records.length})
+            Check Records ({records.length})
           </span>
         </div>
       </div>
@@ -151,7 +151,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
               className="rounded-xl border border-border bg-card p-3 flex items-start justify-between gap-3 min-w-0"
             >
               <div className="min-w-0 flex-1 space-y-1">
-                {/* Inspector + date */}
+                {/* Checked by + date */}
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="font-bold text-sm text-foreground truncate">{record.inspector_name}</span>
                   <span className="text-[11px] text-muted-foreground shrink-0">

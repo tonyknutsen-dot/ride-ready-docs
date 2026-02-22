@@ -353,7 +353,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       autoTable(doc, {
         startY: y,
         body: [
-          ['Date', format(parseISO(check.check_date), 'd MMM yyyy'), 'Inspector', check.inspector_name],
+          ['Date', format(parseISO(check.check_date), 'd MMM yyyy'), 'Checked By', check.inspector_name],
           ['Frequency', check.check_frequency, 'Status', check.status.toUpperCase()],
           ...(((check as any).weather_conditions || (check as any).location) ? [
             ['Weather', (check as any).weather_conditions || '-', 'Location', (check as any).location || '-'],
@@ -423,7 +423,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   };
 
   const exportToCSV = () => {
-    const headers = ['Date', 'Frequency', 'Inspector', 'Status', 'Weather', 'Location', 'Notes'];
+    const headers = ['Date', 'Frequency', 'Checked By', 'Status', 'Weather', 'Location', 'Notes'];
     const rows = filteredChecks.map(check => [
       format(parseISO(check.check_date), 'yyyy-MM-dd'),
       check.check_frequency,
@@ -535,7 +535,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <input
                 className="w-full rounded-xl border border-border bg-card pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                placeholder="Inspector or notes…"
+                placeholder="Name or notes…"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />

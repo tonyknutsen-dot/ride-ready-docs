@@ -104,7 +104,7 @@ export async function generateInspectionRecordPdf(
       { label: 'Document Reference', value: docId },
       { label: 'Check Frequency', value: frequencyLabel },
       { label: 'Version', value: `v${record.version}` },
-      { label: 'Inspector', value: record.inspector_name },
+      { label: 'Check Completed By', value: record.inspector_name },
       { label: 'Check Date', value: format(new Date(record.check_date), 'dd MMM yyyy') },
       { label: 'Completed At', value: format(new Date(record.completed_at), "dd MMM yyyy 'at' HH:mm") },
       { label: 'Location', value: record.location },
@@ -276,10 +276,10 @@ export async function generateInspectionRecordPdf(
       }
     }
 
-    // ── Inspector Notes ──
+    // ── Additional Notes ──
     if (record.notes) {
       y = checkOverflow(doc, y, 15);
-      y = drawSection(doc, 'Inspector Notes', y);
+      y = drawSection(doc, 'Additional Notes', y);
       y = drawNotesBox(doc, record.notes, y);
     }
 
@@ -307,7 +307,7 @@ export async function generateInspectionRecordPdf(
     doc.setFontSize(7);
     doc.setTextColor(...PDF_COLORS.navy);
     doc.text(
-      `Signed by: ${record.inspector_name}  ·  ${format(new Date(record.completed_at), "dd MMM yyyy 'at' HH:mm")}`,
+      `Confirmed by: ${record.inspector_name}  ·  ${format(new Date(record.completed_at), "dd MMM yyyy 'at' HH:mm")}`,
       mL + 4,
       signedY,
     );
@@ -356,9 +356,9 @@ export async function generateInspectionRecordPdf(
       documentType: 'IR',
       documentId: docId,
       fileUrl: filePath,
-      title: `${frequencyLabel} Inspection Record – ${rideName} – v${record.version}`,
+      title: `${frequencyLabel} Safety Check Record – ${rideName} – v${record.version}`,
       metadata: {
-        inspector: record.inspector_name,
+        checked_by: record.inspector_name,
         frequency: record.check_frequency,
         version: record.version,
         overall_result: record.overall_result,
