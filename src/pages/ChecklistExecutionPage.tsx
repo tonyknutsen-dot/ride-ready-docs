@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, AlertTriangle, CheckCircle2, ShieldAlert, HelpCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -19,11 +19,11 @@ type Ride = Tables<'rides'> & {
 };
 
 const FREQUENCY_LABELS: Record<string, string> = {
-  preopening: 'Pre-Opening',
-  daily: 'Daily',
-  weekly: 'Weekly',
-  monthly: 'Monthly',
-  yearly: 'Yearly',
+  preopening: 'Pre-Opening Safety Check',
+  daily: 'Daily Safety Check',
+  weekly: 'Weekly Safety Check',
+  monthly: 'Monthly Safety Check',
+  yearly: 'Yearly Safety Check',
 };
 
 const ChecklistExecutionPage = () => {
@@ -93,14 +93,13 @@ const ChecklistExecutionPage = () => {
     }
   };
 
-  const freqLabel = FREQUENCY_LABELS[frequency ?? ''] ?? (frequency ?? '');
+  const freqLabel = FREQUENCY_LABELS[frequency ?? ''] ?? `${frequency ?? ''} Safety Check`;
 
   const handleBack = () => {
     navigate(`/rides/${rideId}?tab=checks`);
   };
 
   // Determine if we need to show the notice gate
-  // Show gate if notice text exists and hasn't been dismissed yet
   const showNoticeGate = startNoticeText && !noticeDismissed;
 
   if (loading) {
@@ -137,41 +136,48 @@ const ChecklistExecutionPage = () => {
 
       {/* ── STICKY HEADER ─────────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border">
-        <div className="px-4 py-3 flex items-start gap-3">
+        <div className="max-w-xl mx-auto px-3 py-2.5 flex items-center gap-2.5">
           <button
             onClick={handleBack}
-            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-xl border border-border bg-card hover:bg-muted/40 transition-colors mt-0.5"
+            className="shrink-0 h-9 w-9 flex items-center justify-center rounded-lg border border-border bg-card hover:bg-muted/40 transition-colors"
             aria-label="Back"
           >
             <ArrowLeft className="h-4 w-4 text-foreground" />
           </button>
 
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-muted-foreground truncate">
-              {ride.ride_name} · {ride.ride_categories.name}
-            </p>
-            <h1 className="text-base font-bold text-foreground leading-tight truncate">
-              {freqLabel} Safety Check
+            <h1 className="text-sm font-bold text-foreground leading-tight truncate">
+              {freqLabel}
             </h1>
+            <p className="text-[11px] text-muted-foreground truncate">
+              {ride.ride_name}{ride.ride_code ? ` · ${ride.ride_code}` : ''}
+            </p>
           </div>
+
+          <button
+            className="shrink-0 h-8 w-8 flex items-center justify-center rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
+            aria-label="Help"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </button>
         </div>
       </header>
 
       {/* ── START NOTICE GATE ─────────────────────────────── */}
       {showNoticeGate ? (
         <main className="px-4 pt-6 pb-10 max-w-xl mx-auto">
-          <div className="rounded-2xl border border-warning/30 bg-warning/5 p-5 space-y-4">
+          <div className="rounded-xl border border-warning/30 bg-warning/5 p-5 space-y-4">
             <div className="flex items-start gap-3">
-              <ShieldAlert className="h-6 w-6 text-warning shrink-0 mt-0.5" />
+              <ShieldAlert className="h-5 w-5 text-warning shrink-0 mt-0.5" />
               <div>
-                <h2 className="font-bold text-foreground text-base">Start Notice</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
+                <h2 className="font-bold text-foreground text-sm">Start Notice</h2>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
                   {startNoticeRequired ? 'You must acknowledge before starting' : 'Please review before starting'}
                 </p>
               </div>
             </div>
 
-            <div className="rounded-xl bg-card border border-border p-4 text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+            <div className="rounded-lg bg-card border border-border p-3.5 text-sm text-foreground whitespace-pre-wrap leading-relaxed">
               {startNoticeText}
             </div>
 
@@ -186,18 +192,27 @@ const ChecklistExecutionPage = () => {
               </span>
             </label>
 
-            <Button
-              className="w-full"
-              disabled={startNoticeRequired && !noticeAcknowledged}
-              onClick={() => setNoticeDismissed(true)}
-            >
-              Continue to Check
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={handleBack}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="flex-1"
+                disabled={startNoticeRequired && !noticeAcknowledged}
+                onClick={() => setNoticeDismissed(true)}
+              >
+                Start Check
+              </Button>
+            </div>
           </div>
         </main>
       ) : (
         /* ── MAIN CONTENT ──────────────────────────────────── */
-        <main className="px-4 pt-4 pb-10 max-w-xl mx-auto">
+        <main className="max-w-xl mx-auto">
           <InspectionChecklist
             ride={ride}
             frequency={frequency ?? 'daily'}
