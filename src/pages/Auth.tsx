@@ -361,8 +361,8 @@ const Auth = () => {
     }
   };
 
-  // Show loading state while processing OAuth callback
-  if (isOAuthCallback || authLoading) {
+  // Show loading state while processing OAuth callback (but not when offline – just show the form)
+  if ((isOAuthCallback || authLoading) && navigator.onLine) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
         <div className="text-center space-y-4">
