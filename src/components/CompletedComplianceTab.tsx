@@ -242,8 +242,9 @@ const CompletedComplianceTab = ({ effectiveUserId }: CompletedComplianceTabProps
   const { data, isLoading, refetch } = useOfflineQuery({
     queryKey: ['compliance-completed', effectiveUserId, daysFilter],
     queryFn: () => fetchCompletedEvents(effectiveUserId, daysFilter),
-    enabled: !!effectiveUserId && isOnline,
+    enabled: !!effectiveUserId,
     staleTime: 1000 * 60 * 2,
+    retry: isOnline ? 3 : false,
     offlineCacheKey: `compliance_completed:${effectiveUserId}:${daysFilter}`,
   });
 

@@ -1,12 +1,14 @@
 import { useQuery, type UseQueryOptions, type QueryKey } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { setCache, getCache } from '@/lib/offlineCache';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 
 /**
  * Wraps useQuery with automatic IndexedDB offline caching.
  *
  * - On successful fetch: writes result to IndexedDB.
  * - Provides `placeholderData` from IndexedDB so lists render instantly when offline.
+ * - When offline, automatically sets retry: false to avoid pointless retries.
  * - Exposes `cachedAt` timestamp for UI display.
  */
 export function useOfflineQuery<TData>(
@@ -16,6 +18,7 @@ export function useOfflineQuery<TData>(
   },
 ) {
   const { offlineCacheKey, ...queryOptions } = options;
+  const isOnline = useOnlineStatus();
 
   // Load cached data via a separate query
   const cacheQuery = useQuery({
@@ -32,6 +35,10 @@ export function useOfflineQuery<TData>(
 
   const query = useQuery<TData, Error, TData, QueryKey>({
     ...queryOptions,
+    // When offline, don't retry failed fetches
+    retry: isOnline ? (queryOptions.retry ?? 3) : false,
+    // Suppress network errors when offline so they don't bubble as unhandled
+    ...(isOnline ? {} : { networkMode: 'always' as const }),
     placeholderData: (prev: TData | undefined) => prev ?? cached?.data ?? undefined,
   } as UseQueryOptions<TData, Error, TData, QueryKey>);
 
