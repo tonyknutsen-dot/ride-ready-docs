@@ -2,13 +2,12 @@ import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, FileText, FolderOpen } from 'lucide-react';
 import DocumentUpload from '@/components/DocumentUpload';
-import DocumentList from '@/components/DocumentList';
+import GlobalDocumentView from '@/components/GlobalDocumentView';
 import PageHeader from '@/components/PageHeader';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
 
 const GlobalDocumentsPage = () => {
   const [refreshKey, setRefreshKey] = useState(0);
-  
 
   const handleUploadSuccess = () => {
     setRefreshKey(prev => prev + 1);
@@ -26,8 +25,8 @@ const GlobalDocumentsPage = () => {
         <PageHeader
           icon={<FolderOpen className="h-5 w-5 text-info" />}
           iconBgClass="from-info/20 to-primary/10"
-          title="Global Documents"
-          subtitle="Insurance, licenses & business documents"
+          title="Company Documents"
+          subtitle="Applies across all rides"
           showBackButton
           backTo="/overview"
         />
@@ -47,15 +46,14 @@ const GlobalDocumentsPage = () => {
         </TabsList>
 
         <TabsContent value="documents">
-          <DocumentList 
-            key={refreshKey}
-            isGlobal={true}
+          <GlobalDocumentView
+            refreshKey={refreshKey}
             onDocumentDeleted={handleDocumentDeleted}
           />
         </TabsContent>
 
         <TabsContent value="upload">
-          <DocumentUpload 
+          <DocumentUpload
             onUploadSuccess={handleUploadSuccess}
           />
         </TabsContent>
