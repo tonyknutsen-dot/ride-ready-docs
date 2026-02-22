@@ -17,13 +17,14 @@ export interface BreadcrumbNavItem {
 interface PageBreadcrumbProps {
   items: BreadcrumbNavItem[];
   showHome?: boolean;
+  className?: string;
 }
 
-const PageBreadcrumb = ({ items, showHome = false }: PageBreadcrumbProps) => {
+const PageBreadcrumb = ({ items, showHome = false, className }: PageBreadcrumbProps) => {
   if (items.length === 0) return null;
 
   return (
-    <Breadcrumb className="mb-4">
+    <Breadcrumb className={`mb-4 ${className || ''}`}>
       <BreadcrumbList className="text-sm">
         {showHome && (
           <>
