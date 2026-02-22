@@ -13,6 +13,7 @@ export interface InspectionRecord {
   amended_from_id: string | null;
   amendment_reason: string | null;
   amended_by: string | null;
+  superseded_by_id: string | null;
   inspector_name: string;
   completed_at: string;
   check_date: string;
@@ -33,6 +34,14 @@ export interface InspectionRecord {
   document_id: string | null;
   is_locked: boolean;
   created_at: string;
+}
+
+/** Check if a record is still within its 24-hour amendment window */
+export function isWithinAmendmentWindow(record: InspectionRecord): boolean {
+  const completedAt = new Date(record.completed_at).getTime();
+  const now = Date.now();
+  const twentyFourHours = 24 * 60 * 60 * 1000;
+  return now <= completedAt + twentyFourHours;
 }
 
 export interface ItemResultSnapshot {
@@ -172,6 +181,14 @@ export async function createAmendment(
 
     const nextVersion = (versions?.[0]?.version || 1) + 1;
 
+    // Enforce 24-hour amendment window
+    const completedAt = new Date(original.completed_at).getTime();
+    const now = Date.now();
+    if (now > completedAt + 24 * 60 * 60 * 1000) {
+      console.error('Amendment window expired (24 hours)');
+      return null;
+    }
+
     const { data: newRecord, error: insertError } = await supabase
       .from('inspection_records')
       .insert({
@@ -205,6 +222,12 @@ export async function createAmendment(
       console.error('Failed to create amendment:', insertError);
       return null;
     }
+
+    // Set superseded_by_id on the original record
+    await supabase
+      .from('inspection_records')
+      .update({ superseded_by_id: newRecord.id } as any)
+      .eq('id', originalRecordId);
 
     return newRecord.id;
   } catch (err) {

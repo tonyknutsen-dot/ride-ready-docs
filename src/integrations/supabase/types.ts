@@ -1321,6 +1321,7 @@ export type Database = {
           photo_paths: string[] | null
           ride_id: string
           signature_data: string | null
+          superseded_by_id: string | null
           template_id: string
           template_name: string | null
           user_id: string
@@ -1351,6 +1352,7 @@ export type Database = {
           photo_paths?: string[] | null
           ride_id: string
           signature_data?: string | null
+          superseded_by_id?: string | null
           template_id: string
           template_name?: string | null
           user_id: string
@@ -1381,6 +1383,7 @@ export type Database = {
           photo_paths?: string[] | null
           ride_id?: string
           signature_data?: string | null
+          superseded_by_id?: string | null
           template_id?: string
           template_name?: string | null
           user_id?: string
@@ -1407,6 +1410,13 @@ export type Database = {
             columns: ["ride_id"]
             isOneToOne: false
             referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_records_superseded_by_id_fkey"
+            columns: ["superseded_by_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_records"
             referencedColumns: ["id"]
           },
           {
