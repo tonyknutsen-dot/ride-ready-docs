@@ -13,6 +13,7 @@ export interface OperatingRide {
 /**
  * Checks whether the user has already confirmed operating rides today.
  * Fetches all rides + checks for existing operational events today.
+ * Respects `requires_operational_checks` profile setting.
  */
 export function useOperatingToday() {
   const { effectiveUserId } = useEffectiveUserId();
@@ -24,9 +25,9 @@ export function useOperatingToday() {
   const { data, isLoading } = useQuery({
     queryKey: ['operating-today', effectiveUserId, todayStr],
     queryFn: async () => {
-      if (!effectiveUserId) return { operationalCount: 0, rides: [] as OperatingRide[] };
+      if (!effectiveUserId) return { operationalCount: 0, rides: [] as OperatingRide[], enabled: false };
 
-      const [eventsResult, ridesResult] = await Promise.all([
+      const [eventsResult, ridesResult, profileResult] = await Promise.all([
         supabase
           .from('compliance_events')
           .select('id', { count: 'exact', head: true })
@@ -38,6 +39,11 @@ export function useOperatingToday() {
           .select('id, ride_name, ride_categories(name)')
           .eq('user_id', effectiveUserId)
           .order('ride_name'),
+        supabase
+          .from('profiles')
+          .select('requires_operational_checks')
+          .eq('user_id', effectiveUserId)
+          .single(),
       ]);
 
       const rides: OperatingRide[] = (ridesResult.data || []).map((r: any) => ({
@@ -46,14 +52,17 @@ export function useOperatingToday() {
         categoryName: r.ride_categories?.name || 'Equipment',
       }));
 
-      return { operationalCount: eventsResult.count || 0, rides };
+      const enabled = (profileResult.data as any)?.requires_operational_checks ?? true;
+
+      return { operationalCount: eventsResult.count || 0, rides, enabled };
     },
     enabled: !!effectiveUserId,
     staleTime: 1000 * 60 * 5,
   });
 
+  const featureEnabled = data?.enabled ?? true;
   const hasOperationalEvents = (data?.operationalCount ?? 0) > 0;
-  const hasAnswered = hasOperationalEvents || dismissed;
+  const hasAnswered = !featureEnabled || hasOperationalEvents || dismissed;
   const rides = data?.rides || [];
 
   const confirmOperating = async (selectedRideIds: string[]) => {

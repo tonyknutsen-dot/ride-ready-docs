@@ -8,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Settings as SettingsIcon, User, FileText, Globe, ArrowRight, Mail, ArrowLeft, Info, Bug, Calendar, Building2, Shield, Users, CreditCard, Wrench, ChevronRight } from 'lucide-react';
+import { Settings as SettingsIcon, User, FileText, Globe, ArrowRight, Mail, ArrowLeft, Info, Bug, Calendar, Building2, Shield, Users, CreditCard, Wrench, ChevronRight, HardHat } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DateTimeSettings, COUNTRY_TIMEZONES, COUNTRY_DATE_FORMATS } from '@/components/DateTimeSettings';
 import {
@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import { COUNTRIES, getTerminologyForCountry } from '@/constants/profile';
+import { Switch } from '@/components/ui/switch';
 import { CustomTerminologyEditor, CustomTerminology } from '@/components/CustomTerminologyEditor';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
@@ -49,6 +50,8 @@ const Settings = () => {
   const [dateFormat, setDateFormat] = useState('DD/MM/YYYY');
   const [timezone, setTimezone] = useState('Europe/London');
   const [savingDateTime, setSavingDateTime] = useState(false);
+  const [requiresOperationalChecks, setRequiresOperationalChecks] = useState(true);
+  const [savingOperational, setSavingOperational] = useState(false);
 
   const fetchProfile = async () => {
     if (!user) return;
@@ -66,6 +69,7 @@ const Settings = () => {
       setCustomTerminology(data.custom_terminology as CustomTerminology | null);
       setDateFormat(data.date_format || COUNTRY_DATE_FORMATS[data.country || 'GB'] || 'DD/MM/YYYY');
       setTimezone(data.timezone || COUNTRY_TIMEZONES[data.country || 'GB'] || 'Europe/London');
+      setRequiresOperationalChecks((data as any).requires_operational_checks ?? true);
     }
     setLoading(false);
   };
@@ -477,6 +481,54 @@ const Settings = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Operational Checks */}
+        {!isStaff && (
+          <Card>
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                  <HardHat className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div>
+                  <CardTitle className="text-base">Operational Checks</CardTitle>
+                  <CardDescription className="text-sm mt-0.5">
+                    Daily &amp; pre-opening check prompts
+                  </CardDescription>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium">Require daily operating confirmation</p>
+                  <p className="text-xs text-muted-foreground">
+                    When enabled, the Checks page will ask which rides are operating today before creating daily checks. Disable if you operate every day.
+                  </p>
+                </div>
+                <Switch
+                  checked={requiresOperationalChecks}
+                  disabled={loading || savingOperational}
+                  onCheckedChange={async (checked) => {
+                    if (!user) return;
+                    setSavingOperational(true);
+                    const { error } = await supabase
+                      .from('profiles')
+                      .update({ requires_operational_checks: checked } as any)
+                      .eq('user_id', user.id);
+                    if (error) {
+                      toast({ title: 'Error', description: 'Failed to update setting', variant: 'destructive' });
+                    } else {
+                      setRequiresOperationalChecks(checked);
+                      toast({ title: checked ? 'Operating prompt enabled' : 'Operating prompt disabled' });
+                    }
+                    setSavingOperational(false);
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* ─── SECTION: USERS & ACCESS ─── */}
         <SectionLabel>Users &amp; Access</SectionLabel>
