@@ -45,11 +45,11 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
       .eq('user_id', userId)
       .gte('check_date', sevenDaysAgo)
       .order('check_date', { ascending: false }),
-    // Fetch today's operation status for all rides
+    // Fetch today's operation status for all rides from ride_daily_status
     supabase
-      .from('ride_operation_days' as any)
+      .from('ride_daily_status' as any)
       .select('ride_id, is_operating')
-      .eq('operation_date', todayStr)
+      .eq('status_date', todayStr)
       .eq('is_operating', true) as any,
   ]);
 

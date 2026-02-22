@@ -9,10 +9,11 @@ import InspectionScheduleManager from './InspectionScheduleManager';
 import ChecksHistory from './ChecksHistory';
 import EquipmentTimelineReport from './EquipmentTimelineReport';
 import { ChecksOnboardingModal } from './ChecksOnboardingModal';
+import OperatingTodayCard from './OperatingTodayCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
-import { useRideOperatingToday } from '@/hooks/useRideOperatingToday';
+import { useDailyStatus } from '@/hooks/useDailyStatus';
 
 
 interface InspectionManagerProps {
@@ -45,7 +46,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const [checkCounts, setCheckCounts] = useState<CheckCounts>({ preopening: 0, daily: 0, weekly: 0, monthly: 0, yearly: 0, total: 0 });
   const [templateStatus, setTemplateStatus] = useState<Record<string, boolean>>({});
   const [showNextPrompt, setShowNextPrompt] = useState<string | null>(null);
-  const { isOperating, isLoading: opLoading, canToggle, toggleOperating, toggling } = useRideOperatingToday(ride.id);
+  const { isOperating, isLoading: opLoading, canToggle, toggleOperating, toggling } = useDailyStatus(ride.id);
   const isDailyOrPreOpening = activeTab === 'daily' || activeTab === 'preopening';
 
   useEffect(() => {
@@ -180,6 +181,9 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   return (
     <div className="space-y-5">
       <ChecksOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
+
+      {/* Operating Today Status Card — prominent, above everything */}
+      <OperatingTodayCard rideId={ride.id} />
 
       {/* Check Count Summary Strip — muted, informational */}
       <div className="flex items-center justify-between gap-2 px-1">
