@@ -38,6 +38,8 @@ import { format, parseISO, isSameDay, addDays, startOfMonth, endOfMonth } from '
 import { z } from 'zod';
 import { Tables } from '@/integrations/supabase/types';
 import MarkCompleteSheet from '@/components/MarkCompleteSheet';
+import { useAppRole } from '@/hooks/useAppRole';
+import { can_create_calendar_event, can_complete_regulatory } from '@/utils/permissions';
 
 interface CalendarEvent {
   id: string;
@@ -121,6 +123,8 @@ function mapCategoryToType(category: string): CalendarEvent['type'] {
 const CalendarView = () => {
   const { user } = useAuth();
   const { isStaff } = useStaff();
+  const appRole = useAppRole();
+  const canCreateEvent = can_create_calendar_event(appRole);
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const { subscription } = useSubscription();
@@ -389,6 +393,10 @@ const CalendarView = () => {
   };
 
   const openQuickAdd = (date: Date) => {
+    if (!canCreateEvent) {
+      toast({ title: 'Permission denied', description: 'Only the Controller or Manager can add calendar events.', variant: 'destructive' });
+      return;
+    }
     setFormData(prev => ({ ...prev, due_date: date }));
     setAddDialogOpen(true);
   };
@@ -495,7 +503,7 @@ const CalendarView = () => {
           <p className="text-sm text-muted-foreground">Inspections, maintenance and expiry dates</p>
         </div>
         <Dialog open={addDialogOpen} onOpenChange={(open) => { setAddDialogOpen(open); if (!open) resetForm(); }}>
-          {!isStaff && (
+          {canCreateEvent && (
             <DialogTrigger asChild>
               <Button className="shrink-0">
                 <Plus className="h-4 w-4" />
@@ -841,7 +849,7 @@ const CalendarView = () => {
             mode="single"
             selected={selectedDate}
             onSelect={(date) => { if (date) setSelectedDate(date); }}
-            onDayClick={(date) => { if (getEventsForDate(date).length === 0) openQuickAdd(date); }}
+            onDayClick={(date) => { if (canCreateEvent && getEventsForDate(date).length === 0) openQuickAdd(date); }}
             month={currentMonth}
             onMonthChange={setCurrentMonth}
             className="rounded-xl border border-border bg-white w-full [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-day]:cursor-pointer [&_.rdp-day]:h-10 [&_.rdp-day]:sm:h-12 [&_.rdp-cell]:p-0.5 [&_.rdp-day:hover]:bg-primary/10 [&_.rdp-head_cell]:text-xs [&_.rdp-head_cell]:font-medium [&_.rdp-head_cell]:text-muted-foreground [&_.rdp-day_selected]:!bg-primary [&_.rdp-day_selected]:!text-primary-foreground [&_.rdp-day_selected]:!rounded-lg"
@@ -900,9 +908,11 @@ const CalendarView = () => {
                   : `${selectedDateEvents.length} event${selectedDateEvents.length > 1 ? 's' : ''}`}
               </p>
             </div>
-            <Button size="sm" onClick={() => openQuickAdd(selectedDate)}>
-              <Plus className="h-3.5 w-3.5" /> Add
-            </Button>
+            {canCreateEvent && (
+              <Button size="sm" onClick={() => openQuickAdd(selectedDate)}>
+                <Plus className="h-3.5 w-3.5" /> Add
+              </Button>
+            )}
           </div>
           <div className="flex-1 overflow-y-auto p-3">
             {selectedDateEvents.length === 0 ? (
@@ -1135,10 +1145,10 @@ const CalendarView = () => {
                 {/* Footer actions */}
                 {(() => {
                   const isRegulatory = selectedEvent.eventCategory === 'regulatory';
-                  const canWrite = !isStaff || !isRegulatory;
+                  const canComplete = isRegulatory ? can_complete_regulatory(appRole) : true;
                   return (
                     <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex gap-2">
-                      {!isStaff && !isCompleted && !deleteConfirmOpen && (
+                      {canCreateEvent && !isCompleted && !deleteConfirmOpen && (
                         <Button
                           variant="outline"
                           size="sm"
@@ -1148,12 +1158,12 @@ const CalendarView = () => {
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       )}
-                      {!isStaff && !isCompleted && (
+                      {canCreateEvent && !isCompleted && (
                         <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleEditEvent(selectedEvent)}>
                           <Pencil className="h-3.5 w-3.5" /> Edit
                         </Button>
                       )}
-                      {canWrite && !isCompleted ? (
+                      {canComplete && !isCompleted ? (
                         <Button
                           className="flex-1 gap-1.5"
                           onClick={() => handleMarkComplete(selectedEvent)}

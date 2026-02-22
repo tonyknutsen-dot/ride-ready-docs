@@ -2741,6 +2741,10 @@ export type Database = {
         Args: { _admin_id: string; _user_id: string }
         Returns: boolean
       }
+      can_create_calendar_event: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       check_rate_limit: {
         Args: { p_key: string; p_max_requests: number; p_window_ms: number }
         Returns: Json
