@@ -11,7 +11,8 @@ import { Button } from '@/components/ui/button';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
 import { useChecksCompliance, CheckRideStatus } from '@/hooks/useChecksCompliance';
 import { OfflineStaleAlert } from '@/components/OfflineStaleAlert';
-
+import { useOperatingToday } from '@/hooks/useOperatingToday';
+import { OperatingTodayPrompt } from '@/components/OperatingTodayPrompt';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -103,7 +104,7 @@ const Checks = () => {
   const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(false);
   const { data: compliance, isLoading } = useChecksCompliance();
-
+  const { hasAnswered, isLoading: operatingLoading, confirmOperating, dismissOperating } = useOperatingToday();
   const handleRideSelect = (ride: Ride) => {
     navigate(`/rides/${ride.id}?tab=checks`);
   };
@@ -176,6 +177,13 @@ const Checks = () => {
         {/* ── OFFLINE BANNER ──────────────────────── */}
         <OfflineStaleAlert />
 
+        {/* ── OPERATING TODAY PROMPT ──────────── */}
+        {!operatingLoading && !hasAnswered && (
+          <OperatingTodayPrompt
+            onYes={confirmOperating}
+            onNo={dismissOperating}
+          />
+        )}
         {/* ── COMPLIANCE ALERT BANNER ───────────── */}
         {!isLoading && hasAlerts && (
           <div className="flex items-start gap-3 bg-destructive/5 border border-destructive/20 text-destructive p-3 rounded-xl">

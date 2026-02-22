@@ -131,21 +131,23 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
       .lte('expires_at', thirtyDaysStr)
       .order('expires_at', { ascending: true })
       .limit(20),
-    // Overdue compliance events (due_date < today, not completed)
+    // Overdue compliance events (regulatory only – operational never escalate)
     supabase
       .from('compliance_events')
       .select('id, event_name, due_date, ride_id, category')
       .eq('user_id', userId)
       .eq('status', 'scheduled')
+      .eq('event_category', 'regulatory')
       .lt('due_date', todayStr)
       .order('due_date', { ascending: true })
       .limit(20),
-    // Due soon compliance events (due_date between today and 30 days)
+    // Due soon compliance events (regulatory only)
     supabase
       .from('compliance_events')
       .select('id, event_name, due_date, ride_id, category')
       .eq('user_id', userId)
       .eq('status', 'scheduled')
+      .eq('event_category', 'regulatory')
       .gte('due_date', todayStr)
       .lte('due_date', thirtyDaysStr)
       .order('due_date', { ascending: true })
