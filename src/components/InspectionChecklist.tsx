@@ -1181,129 +1181,105 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
   // Start Check gate — show a start button before revealing the full checklist
   if (!checkStarted && activeTemplate) {
+    const lastDoneLabel = recentChecks[0]
+      ? new Date(recentChecks[0].check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
+      : null;
+    const itemCount = activeTemplate.daily_check_template_items.length;
+
     return (
-      <div id="inspection-checklist-form" className="checksWrap -mx-4 px-4 pb-6 pt-2 space-y-4">
+      <div id="inspection-checklist-form" className="checksWrap -mx-4 px-4 pb-6 pt-2 space-y-3">
 
-        {/* ── Primary inspection card ── */}
-        <div className="t-card">
-          <div className="t-card-header flex items-center justify-between gap-2">
+        {/* ── Inspection header + CTA ── */}
+        <div className="space-y-3">
+          <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <div className="text-xs text-muted-foreground">Next check</div>
-              <div className="t-title text-lg truncate">{activeTemplate.template_name}</div>
+              <h2 className="text-[15px] font-semibold text-slate-900 leading-tight truncate" style={{ letterSpacing: '0.2px' }}>
+                {activeTemplate.template_name}
+              </h2>
+              <p className="text-[11px] font-normal text-[#9CA3AF] mt-0.5">Due Today</p>
             </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <span className="t-chip">
-                {activeTemplate.daily_check_template_items.length} items · PDF
-              </span>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
-                    <Settings className="h-4 w-4 mr-2" />
-                    Edit Checklist
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={generatePDF}>
-                    <Download className="h-4 w-4 mr-2" />
-                    Export PDF
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setShowTemplateBuilder(true)}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Edit Checklist
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={generatePDF}>
+                  <Download className="h-4 w-4 mr-2" />
+                  Export PDF
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
 
-          <div className="p-4 space-y-4">
-            {/* KPI mini-stats */}
-            <div className="kpiGrid text-center">
-              {[
-                { label: 'Items', value: activeTemplate.daily_check_template_items.length },
-                {
-                  label: 'Last done',
-                  value: recentChecks[0]
-                    ? new Date(recentChecks[0].check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })
-                    : '—',
-                },
-                { label: 'Due', value: 'Today' },
-              ].map(({ label, value }) => (
-                <div key={label} className="kpiCard rounded-2xl border border-border bg-[#f8fafc] p-3 overflow-hidden">
-                  <div className="text-[11px] font-semibold" style={{ color: '#64748b' }}>{label}</div>
-                  <div className="text-lg font-extrabold" style={{ color: '#0f172a' }}>{value}</div>
-                </div>
-              ))}
-            </div>
+          <button
+            className="t-btn-primary w-full py-3.5 text-sm"
+            type="button"
+            onClick={() => navigate(`/checks/${ride.id}/${frequency}/execute`)}
+          >
+            <PlayCircle className="h-4 w-4 shrink-0" />
+            Start Inspection
+          </button>
 
-            {/* Primary CTA */}
-            <button
-              className="t-btn-primary w-full py-3.5 text-sm"
-              type="button"
-              onClick={() => navigate(`/checks/${ride.id}/${frequency}/execute`)}
-            >
-              <PlayCircle className="h-4 w-4 shrink-0" />
-              Start Inspection
-            </button>
-
-            <p className="text-xs text-center" style={{ color: '#94a3b8' }}>
-              Any failed item automatically raises a defect.
-            </p>
-          </div>
+          <p className="text-[10px] text-center text-[#9CA3AF]">
+            {itemCount} items{lastDoneLabel ? ` • Last done ${lastDoneLabel}` : ''} • Due Today
+          </p>
         </div>
 
-        {/* ── Open Defects card ── */}
-        <div className="t-card">
-          <div className="t-card-header flex items-center justify-between gap-2">
-            <div>
-              <div className="text-xs text-muted-foreground">Defects</div>
-              <div className="t-title text-base">Open Defects</div>
-            </div>
-            <span className="t-chip">open</span>
-          </div>
-          <div className="p-4">
-            <DefectsList
-              key={defectRefreshKey}
+        {/* ── Open Defects ── */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <p className="text-[11px] font-semibold text-slate-900 uppercase" style={{ letterSpacing: '0.5px' }}>Open Defects</p>
+            <DefectReportDialog
               rideId={ride.id}
               rideName={ride.ride_name}
-              showResolved={false}
-              onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
+              onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
+              trigger={
+                <button type="button" className="text-[11px] font-semibold text-primary hover:underline">
+                  + Raise defect
+                </button>
+              }
             />
           </div>
+          <DefectsList
+            key={defectRefreshKey}
+            rideId={ride.id}
+            rideName={ride.ride_name}
+            showResolved={false}
+            onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
+          />
         </div>
 
-        {/* ── Recent Checks card ── */}
+        {/* ── Recent Checks (collapsed) ── */}
         {recentChecks.length > 0 && (
-          <div className="t-card">
-            <div className="t-card-header">
-              <div className="t-title text-base">Recent Checks</div>
-              <div className="text-xs mt-0.5" style={{ color: '#64748b' }}>
-                Most recent completions for this equipment
-              </div>
-            </div>
-            <div className="p-4 space-y-2">
+          <details className="group">
+            <summary className="text-[10px] font-semibold text-slate-500 uppercase cursor-pointer hover:text-slate-700 list-none flex items-center gap-1.5" style={{ letterSpacing: '0.5px' }}>
+              <ChevronDown className="h-3 w-3 group-open:rotate-180 transition-transform shrink-0" />
+              Recent Checks ({recentChecks.length})
+            </summary>
+            <div className="mt-1.5 space-y-1">
               {recentChecks.map((check) => (
                 <div
                   key={check.id}
-                  className="flex items-center justify-between rounded-2xl border border-border p-3 cursor-pointer transition-colors"
-                  style={{ background: '#f8fafc' }}
-                  onMouseEnter={e => (e.currentTarget.style.background = '#f1f5f9')}
-                  onMouseLeave={e => (e.currentTarget.style.background = '#f8fafc')}
+                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 cursor-pointer hover:bg-slate-50 transition-colors"
                   onClick={() => { setSelectedCheck(check); setShowCheckDetail(true); }}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-bold text-sm truncate" style={{ color: '#0f172a' }}>{check.inspector_name}</p>
-                    <p className="text-xs" style={{ color: '#64748b' }}>
+                    <p className="font-medium text-[12px] truncate text-slate-900">{check.inspector_name}</p>
+                    <p className="text-[11px] text-[#9CA3AF]">
                       {new Date(check.check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 shrink-0">
-                    <span className="t-chip">Done</span>
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  </div>
+                  <Eye className="h-3.5 w-3.5 text-slate-400 shrink-0" />
                 </div>
               ))}
             </div>
-          </div>
+          </details>
         )}
 
         <CheckDetailDialog
