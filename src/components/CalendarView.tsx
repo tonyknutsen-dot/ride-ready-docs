@@ -493,12 +493,14 @@ const CalendarView = () => {
           <p className="text-sm text-muted-foreground">Inspections, maintenance and expiry dates</p>
         </div>
         <Dialog open={addDialogOpen} onOpenChange={(open) => { setAddDialogOpen(open); if (!open) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button className="shrink-0">
-              <Plus className="h-4 w-4" />
-              Add
-            </Button>
-          </DialogTrigger>
+          {!isStaff && (
+            <DialogTrigger asChild>
+              <Button className="shrink-0">
+                <Plus className="h-4 w-4" />
+                Add
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="max-w-md p-0 gap-0 max-h-[92vh] flex flex-col overflow-hidden">
             {/* Header */}
             <div className="px-5 pt-5 pb-4 border-b border-border shrink-0">
@@ -1130,7 +1132,7 @@ const CalendarView = () => {
 
                 {/* Footer actions */}
                 <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex gap-2">
-                  {!isCompleted && !deleteConfirmOpen && (
+                  {!isStaff && !isCompleted && !deleteConfirmOpen && (
                     <Button
                       variant="outline"
                       size="sm"
@@ -1140,12 +1142,12 @@ const CalendarView = () => {
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   )}
-                  {!isCompleted && (
+                  {!isStaff && !isCompleted && (
                     <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleEditEvent(selectedEvent)}>
                       <Pencil className="h-3.5 w-3.5" /> Edit
                     </Button>
                   )}
-                  {!isCompleted ? (
+                  {!isStaff && !isCompleted ? (
                     <Button
                       className="flex-1 gap-1.5"
                       onClick={() => handleMarkComplete(selectedEvent)}
