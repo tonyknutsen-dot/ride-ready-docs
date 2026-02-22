@@ -1527,11 +1527,90 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                     >
                       N/A
                     </button>
-                  </div>
+                   </div>
 
-                   {/* Add note link for non-fail items */}
+                   {/* Fail: expanded action section */}
+                   {isFail && (
+                     <div className="mt-2 space-y-2">
+                       <p className="font-bold text-red-700 text-xs flex items-center gap-1.5">
+                         <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                         Action required
+                       </p>
+
+                       <Textarea
+                         placeholder="Describe the failure…"
+                         value={notes[item.id] || ''}
+                         onChange={(e) => handleNoteChange(item.id, e.target.value)}
+                         className="min-h-[56px] text-sm resize-none rounded-md bg-white border-slate-300"
+                         rows={2}
+                       />
+
+                       <div className="flex gap-2">
+                         <DefectReportDialog
+                           rideId={ride.id}
+                           rideName={ride.ride_name}
+                           onDefectReported={() => { setDefectRefreshKey(prev => prev + 1); setItemDefectRaised(prev => ({ ...prev, [item.id]: true })); }}
+                           trigger={
+                             <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
+                               <AlertTriangle className="h-3 w-3 shrink-0" />
+                               Raise Defect
+                             </button>
+                           }
+                         />
+                         <label className="h-9 rounded-md border border-slate-300 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer hover:border-slate-400 hover:text-slate-800 transition-colors flex-1">
+                           📷 Add Photo
+                           <input
+                             type="file"
+                             accept="image/*"
+                             capture="environment"
+                             className="hidden"
+                             onChange={(e) => {
+                               const files = Array.from(e.target.files || []);
+                               if (!files.length) return;
+                               setItemAttachments(prev => ({ ...prev, [item.id]: [...(prev[item.id] || []), ...files] }));
+                               e.currentTarget.value = '';
+                             }}
+                           />
+                         </label>
+                       </div>
+
+                       {(itemAttachments[item.id]?.length ?? 0) > 0 && (
+                         <div className="flex flex-wrap gap-1.5">
+                           {itemAttachments[item.id].map((f, idx) => (
+                             <div key={`${f.name}-${idx}`} className="flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px]">
+                               <span className="max-w-[100px] truncate text-slate-700">{f.name}</span>
+                               <button
+                                 type="button"
+                                 className="text-red-600 font-bold shrink-0"
+                                 onClick={() => setItemAttachments(prev => ({
+                                   ...prev,
+                                   [item.id]: (prev[item.id] || []).filter((_, i) => i !== idx)
+                                 }))}
+                               >×</button>
+                             </div>
+                           ))}
+                         </div>
+                       )}
+
+                       {/* Defect status */}
+                       {!itemDefectRaised[item.id] && (
+                         <p className="text-[11px] font-semibold text-red-600 flex items-center gap-1">
+                           <AlertTriangle className="h-3 w-3 shrink-0" />
+                           Defect must be raised before completion
+                         </p>
+                       )}
+                       {itemDefectRaised[item.id] && (
+                         <p className="text-[11px] font-semibold text-green-700 flex items-center gap-1">
+                           <CheckCircle className="h-3 w-3 shrink-0" />
+                           Defect raised
+                         </p>
+                       )}
+                     </div>
+                   )}
+
+                   {/* Pass/N/A: compact — optional note only */}
                    {!isFail && (
-                     notes[item.id] ? (
+                     notes[item.id] !== undefined ? (
                        <div className="mt-1.5">
                          <Textarea
                            placeholder="Add a note…"
@@ -1544,110 +1623,13 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                      ) : (
                        <button
                          type="button"
-                         onClick={() => handleNoteChange(item.id, ' ')}
-                         className="text-[11px] font-semibold text-slate-400 hover:text-primary mt-1"
+                         onClick={() => handleNoteChange(item.id, '')}
+                         className="mt-1 text-[11px] font-semibold text-slate-400 hover:text-primary"
                        >
                          + Add note
                        </button>
                      )
                    )}
-
-                   {/* Fail extras — auto-expanded */}
-                   {isFail && (
-                    <div className="mt-2 space-y-2">
-                      <p className="font-bold text-red-700 text-xs flex items-center gap-1.5">
-                        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-                        Action required
-                      </p>
-
-                      <Textarea
-                        placeholder="Describe the failure…"
-                        value={notes[item.id] || ''}
-                        onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                        className="min-h-[56px] text-sm resize-none rounded-md bg-white border-slate-300"
-                        rows={2}
-                      />
-
-                      <div className="flex gap-2">
-                        <DefectReportDialog
-                          rideId={ride.id}
-                          rideName={ride.ride_name}
-                          onDefectReported={() => { setDefectRefreshKey(prev => prev + 1); setItemDefectRaised(prev => ({ ...prev, [item.id]: true })); }}
-                          trigger={
-                            <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
-                              <AlertTriangle className="h-3 w-3 shrink-0" />
-                              Raise Defect
-                            </button>
-                          }
-                        />
-                        <label className="h-9 rounded-md border border-slate-300 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer hover:border-slate-400 hover:text-slate-800 transition-colors flex-1">
-                          📷 Add Photo
-                          <input
-                            type="file"
-                            accept="image/*"
-                            capture="environment"
-                            className="hidden"
-                            onChange={(e) => {
-                              const files = Array.from(e.target.files || []);
-                              if (!files.length) return;
-                              setItemAttachments(prev => ({ ...prev, [item.id]: [...(prev[item.id] || []), ...files] }));
-                              e.currentTarget.value = '';
-                            }}
-                          />
-                        </label>
-                      </div>
-
-                      {(itemAttachments[item.id]?.length ?? 0) > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {itemAttachments[item.id].map((f, idx) => (
-                            <div key={`${f.name}-${idx}`} className="flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px]">
-                              <span className="max-w-[100px] truncate text-slate-700">{f.name}</span>
-                              <button
-                                type="button"
-                                className="text-red-600 font-bold shrink-0"
-                                onClick={() => setItemAttachments(prev => ({
-                                  ...prev,
-                                  [item.id]: (prev[item.id] || []).filter((_, i) => i !== idx)
-                                }))}
-                              >×</button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Inline warning: fail without defect */}
-                  {isFail && !itemDefectRaised[item.id] && (
-                    <p className="mt-1.5 text-[11px] font-semibold text-red-600 flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3 shrink-0" />
-                      Defect must be raised before completion
-                    </p>
-                  )}
-                  {isFail && itemDefectRaised[item.id] && (
-                    <p className="mt-1.5 text-[11px] font-semibold text-green-700 flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3 shrink-0" />
-                      Defect raised
-                    </p>
-                  )}
-                  {!isFail && notes[item.id] !== undefined && (
-                    <Textarea
-                      placeholder="Add notes (optional)"
-                      value={notes[item.id] || ''}
-                      onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                      className="mt-2 min-h-[48px] text-sm resize-none rounded-md border-slate-300"
-                      rows={2}
-                    />
-                  )}
-                  {!isFail && notes[item.id] === undefined && (
-                    <button
-                      type="button"
-                      onClick={() => handleNoteChange(item.id, '')}
-                      className="mt-1.5 text-[11px] text-muted-foreground hover:text-foreground"
-                    >
-                      + note
-                    </button>
-                  )}
                 </div>
               </div>
             );
