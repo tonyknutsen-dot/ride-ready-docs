@@ -45,6 +45,7 @@ import { ContactSupportDialog } from '@/components/ContactSupportDialog';
 import { RequestFeatureDialog } from '@/components/RequestFeatureDialog';
 import { OfflineSyncIndicator } from '@/components/OfflineSyncIndicator';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
+import { useOverdueCompliance } from '@/hooks/useOverdueCompliance';
 import appLogo from '@/assets/app-logo.jpg';
 
 const mainNavItems = [
@@ -90,6 +91,8 @@ export function AppSidebar() {
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const unreadCount = useUnreadNotifications();
+
+  const overdueCount = useOverdueCompliance();
 
   // Feature permission check helper
   const hasFeatureAccess = (feature?: 'calendar' | 'documents' | 'checks' | 'maintenance' | 'risk_assessments' | 'send_documents') => {
@@ -146,7 +149,10 @@ export function AppSidebar() {
   const NavItem = ({ item }: { item: NavItem }) => {
     const active = isActive(item.url);
     const Icon = item.icon;
-    const showBadge = item.isNotification && unreadCount > 0;
+    const showNotificationBadge = item.isNotification && unreadCount > 0;
+    const showOverdueBadge = item.url === '/overview' && overdueCount > 0;
+    const badgeCount = showNotificationBadge ? unreadCount : showOverdueBadge ? overdueCount : 0;
+    const showBadge = showNotificationBadge || showOverdueBadge;
 
     return (
       <SidebarMenuItem>
@@ -162,8 +168,10 @@ export function AppSidebar() {
             <span className="relative flex-shrink-0">
               <Icon className="h-5 w-5" />
               {showBadge && (
-                <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground px-1">
-                  {unreadCount > 9 ? '9+' : unreadCount}
+                <span className={`absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold px-1 ${
+                  showOverdueBadge && !showNotificationBadge ? 'bg-destructive text-destructive-foreground' : 'bg-destructive text-destructive-foreground'
+                }`}>
+                  {badgeCount > 9 ? '9+' : badgeCount}
                 </span>
               )}
             </span>
