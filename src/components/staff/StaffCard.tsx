@@ -22,6 +22,7 @@ export interface StaffMemberData {
   email?: string;
   display_name?: string;
   assigned_rides: AssignedRide[];
+  equipment_access_mode: 'all' | 'assigned';
 }
 
 export interface PendingInviteData {
@@ -112,7 +113,7 @@ export function StaffCard({ member, canManage, onTap, onEditAccess, onRemove }: 
 
       {/* Equipment badge row */}
       <div className="mt-2.5 flex items-center gap-1.5 flex-wrap">
-        {member.assigned_rides.length === 0 ? (
+        {member.equipment_access_mode === 'all' ? (
           <span
             className="text-[11px] font-medium px-2 py-0.5 rounded-full"
             style={{ background: 'hsl(214 100% 97%)', color: 'hsl(213 52% 24%)' }}

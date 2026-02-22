@@ -66,7 +66,7 @@ const Staff = () => {
     try {
       const { data: members } = await supabase
         .from('organisation_members')
-        .select('id, user_id, permission_level, joined_at, is_active')
+        .select('id, user_id, permission_level, joined_at, is_active, equipment_access_mode')
         .eq('organisation_id', orgId)
         .eq('is_active', true);
 
@@ -91,7 +91,7 @@ const Staff = () => {
             .filter(a => a.rides)
             .map(a => ({ id: (a.rides as any).id, ride_name: (a.rides as any).ride_name }));
 
-          return { ...member, email, display_name, assigned_rides };
+          return { ...member, email, display_name, assigned_rides, equipment_access_mode: (member as any).equipment_access_mode || 'all' };
         })
       );
       setStaff(staffWithDetails);

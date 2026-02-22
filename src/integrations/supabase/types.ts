@@ -1626,6 +1626,7 @@ export type Database = {
           can_access_risk_assessments: boolean
           can_access_send_documents: boolean
           created_at: string
+          equipment_access_mode: string
           id: string
           invited_by: string
           is_active: boolean
@@ -1643,6 +1644,7 @@ export type Database = {
           can_access_risk_assessments?: boolean
           can_access_send_documents?: boolean
           created_at?: string
+          equipment_access_mode?: string
           id?: string
           invited_by: string
           is_active?: boolean
@@ -1660,6 +1662,7 @@ export type Database = {
           can_access_risk_assessments?: boolean
           can_access_send_documents?: boolean
           created_at?: string
+          equipment_access_mode?: string
           id?: string
           invited_by?: string
           is_active?: boolean
