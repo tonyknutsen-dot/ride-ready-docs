@@ -1,186 +1,158 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface UpdateState {
   needsUpdate: boolean;
   isUpdating: boolean;
-  isChecking: boolean;
-  lastChecked: Date | null;
+  isStale: boolean;
 }
 
-// Store the service worker registration globally
-let swRegistration: ServiceWorkerRegistration | null = null;
-
-// Check if we're in a dev/preview environment (not production)
+// Check if we're in a dev/preview environment
 const isDevEnvironment = () => {
   const hostname = window.location.hostname;
   return hostname === 'localhost' || hostname.includes('lovableproject.com');
 };
 
-// Check if app is installed as PWA (standalone mode)
-const isInstalledPWA = () => {
-  if (isDevEnvironment()) return false;
-  return window.matchMedia('(display-mode: standalone)').matches ||
-         (window.navigator as any).standalone === true;
-};
-
-// Check if we're on a production site (including lovable.app published sites)
-const isProductionSite = () => !isDevEnvironment();
-
 export const usePWAUpdate = () => {
   const [state, setState] = useState<UpdateState>({
     needsUpdate: false,
     isUpdating: false,
-    isChecking: false,
-    lastChecked: null,
+    isStale: false,
   });
+  const registrationRef = useRef<ServiceWorkerRegistration | null>(null);
 
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) {
-      return;
-    }
+    if (!('serviceWorker' in navigator) || isDevEnvironment()) return;
 
-    // Listen for service worker controller changes (only reload on production after user-initiated update)
-    const handleControllerChange = () => {
-      // Only reload if the user explicitly triggered an update via applyUpdate()
-      const userInitiatedUpdate = sessionStorage.getItem('pwa-user-update');
-      if (userInitiatedUpdate) {
-        sessionStorage.removeItem('pwa-user-update');
-        console.log('[PWA] User-initiated update, reloading...');
-        window.location.reload();
-      } else {
-        console.log('[PWA] Controller changed (background), skipping auto-reload');
-      }
-    };
+    let cancelled = false;
 
-    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
-
-    // Initial update check for installed PWA users
-    const performInitialCheck = async () => {
-      // Show checking indicator for production users (installed or browser)
-      if (isProductionSite() && navigator.onLine) {
-        setState(prev => ({ ...prev, isChecking: true }));
-        console.log('[PWA] Checking for updates...');
-      }
-
+    const setup = async () => {
       try {
         const registration = await navigator.serviceWorker.getRegistration();
-        if (!registration) {
-          setState(prev => ({ ...prev, isChecking: false }));
-          return;
-        }
-        
-        swRegistration = registration;
+        if (!registration || cancelled) return;
+        registrationRef.current = registration;
 
-        // Check if there's already a waiting worker
+        // If a waiting worker already exists, prompt immediately
         if (registration.waiting) {
-          setState(prev => ({ ...prev, needsUpdate: true, isChecking: false }));
+          setState(prev => ({ ...prev, needsUpdate: true }));
           return;
         }
 
-        // Listen for new waiting workers
+        // Listen for new service workers
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (!newWorker) return;
 
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              console.log('[PWA] New version available!');
-              setState(prev => ({ ...prev, needsUpdate: true, isChecking: false }));
+              // New version waiting to activate
+              if (!cancelled) {
+                setState(prev => ({ ...prev, needsUpdate: true }));
+              }
             }
           });
         });
 
-        // Trigger update check on production sites
-        if (isProductionSite() && navigator.onLine) {
-          await registration.update();
-          setState(prev => ({ ...prev, lastChecked: new Date(), isChecking: false }));
+        // Trigger an update check
+        if (navigator.onLine) {
+          await registration.update().catch(() => {});
         }
       } catch (err) {
-        console.log('[PWA] Update check failed:', err);
-        setState(prev => ({ ...prev, isChecking: false }));
+        console.log('[PWA] Setup failed:', err);
       }
     };
 
-    // Small delay to let the app render first
-    const timeoutId = setTimeout(performInitialCheck, 500);
+    // Reload when new SW takes control (after skipWaiting)
+    const handleControllerChange = () => {
+      if (sessionStorage.getItem('pwa-user-update')) {
+        sessionStorage.removeItem('pwa-user-update');
+        window.location.reload();
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+
+    // Small delay to not block initial render
+    const timeoutId = setTimeout(setup, 800);
 
     return () => {
+      cancelled = true;
       clearTimeout(timeoutId);
       navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
     };
   }, []);
 
-  // Check for updates when app regains focus (user returns to app)
+  // Check for updates on visibility change (user returns to tab)
   useEffect(() => {
-    if (!('serviceWorker' in navigator)) return;
+    if (!('serviceWorker' in navigator) || isDevEnvironment()) return;
+
+    let lastChecked = Date.now();
 
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isProductionSite()) {
-        // Only check if we haven't checked in the last 5 minutes
-        const now = new Date();
-        const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000);
-        
-        if (!state.lastChecked || state.lastChecked < fiveMinutesAgo) {
-          console.log('[PWA] App visible, checking for updates...');
-          navigator.serviceWorker.getRegistration().then((reg) => {
-            if (reg) {
-              reg.update().then(() => {
-                setState(prev => ({ ...prev, lastChecked: new Date() }));
-              }).catch(console.error);
-            }
-          });
-        }
-      }
+      if (document.visibilityState !== 'visible') return;
+      const now = Date.now();
+      // Only check every 5 minutes
+      if (now - lastChecked < 5 * 60 * 1000) return;
+      lastChecked = now;
+
+      registrationRef.current?.update().catch(() => {});
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
 
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, [state.lastChecked]);
+  // Stale tab detection: if open > 24h, suggest refresh
+  useEffect(() => {
+    if (isDevEnvironment()) return;
+
+    const STALE_THRESHOLD = 24 * 60 * 60 * 1000; // 24 hours
+    const openedAt = Date.now();
+
+    const interval = setInterval(() => {
+      if (Date.now() - openedAt >= STALE_THRESHOLD) {
+        setState(prev => {
+          if (prev.isStale) return prev;
+          return { ...prev, isStale: true };
+        });
+        clearInterval(interval);
+      }
+    }, 60 * 1000); // Check every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   const applyUpdate = useCallback(async () => {
     setState(prev => ({ ...prev, isUpdating: true }));
-    
+
     try {
-      const registration = swRegistration || await navigator.serviceWorker.getRegistration();
-      
+      const registration = registrationRef.current || await navigator.serviceWorker.getRegistration();
+
       if (registration?.waiting) {
-        // Mark as user-initiated so controllerchange handler knows to reload
         sessionStorage.setItem('pwa-user-update', 'true');
-        // Tell the waiting service worker to activate
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-        // The controllerchange event will trigger a reload
+        // controllerchange handler will reload
       } else {
-        // No waiting worker, just reload
+        // No waiting worker — just hard reload
         window.location.reload();
       }
     } catch (err) {
       console.error('[PWA] Update failed:', err);
-      setState(prev => ({ ...prev, isUpdating: false }));
-      // Fallback: just reload
       window.location.reload();
     }
   }, []);
 
   const dismissUpdate = useCallback(() => {
     setState(prev => ({ ...prev, needsUpdate: false }));
-    // Store dismissal in session so it doesn't keep appearing
-    sessionStorage.setItem('pwa-update-dismissed', 'true');
   }, []);
 
-  // Check if update was dismissed this session
-  useEffect(() => {
-    const wasDismissed = sessionStorage.getItem('pwa-update-dismissed');
-    if (wasDismissed && state.needsUpdate) {
-      setState(prev => ({ ...prev, needsUpdate: false }));
-    }
-  }, [state.needsUpdate]);
+  const dismissStale = useCallback(() => {
+    setState(prev => ({ ...prev, isStale: false }));
+  }, []);
 
   return {
     ...state,
     applyUpdate,
     dismissUpdate,
+    dismissStale,
   };
 };

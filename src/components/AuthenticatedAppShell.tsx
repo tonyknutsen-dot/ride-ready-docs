@@ -8,7 +8,7 @@ const InstallPromptBanner = lazy(() => import('./InstallPromptBanner').then(m =>
 const TestModeBanner = lazy(() => import('./TestModeBanner'));
 const TesterSessionTracker = lazy(() => import('./TesterSessionTracker'));
 const GlobalEventBridge = lazy(() => import('./GlobalEventBridge'));
-const PWAUpdateModal = lazy(() => import('./PWAUpdateModal').then(m => ({ default: m.PWAUpdateModal })));
+
 
 /**
  * Shell component that only loads authenticated user components when needed.
@@ -30,7 +30,6 @@ export const AuthenticatedAppShell = memo(function AuthenticatedAppShell() {
       <TesterSessionTracker />
       <GlobalEventBridge />
       <MobileBottomNav />
-      <PWAUpdateModal />
       <FloatingBugButton />
       <InstallPromptBanner />
     </Suspense>
