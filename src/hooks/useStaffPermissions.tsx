@@ -1,12 +1,12 @@
 import { useStaff } from '@/contexts/StaffContext';
 import { Database } from '@/integrations/supabase/types';
 
-type StaffPermission = Database['public']['Enums']['staff_permission'];
+type StaffRole = Database['public']['Enums']['staff_role'];
 
 export function useStaffPermissions() {
   const staff = useStaff();
 
-  const hasPermission = (required: StaffPermission | StaffPermission[]): boolean => {
+  const hasPermission = (required: StaffRole | StaffRole[]): boolean => {
     // Owners have all permissions
     if (staff.isOwner && !staff.isStaff) {
       return true;
@@ -19,11 +19,11 @@ export function useStaffPermissions() {
 
     const requiredPermissions = Array.isArray(required) ? required : [required];
     
-    // Permission hierarchy: full_access > checks_maintenance > checks_only
-    const permissionHierarchy: Record<StaffPermission, number> = {
-      'checks_only': 1,
-      'checks_maintenance': 2,
-      'full_access': 3,
+    // Permission hierarchy: manager > supervisor > staff
+    const permissionHierarchy: Record<StaffRole, number> = {
+      'staff': 1,
+      'supervisor': 2,
+      'manager': 3,
     };
 
     const userLevel = permissionHierarchy[staff.permissionLevel];
@@ -34,20 +34,20 @@ export function useStaffPermissions() {
     });
   };
 
-  const getPermissionLabel = (permission: StaffPermission): string => {
-    const labels: Record<StaffPermission, string> = {
-      'checks_only': 'Checks Only',
-      'checks_maintenance': 'Checks & Maintenance',
-      'full_access': 'Full Access',
+  const getPermissionLabel = (permission: StaffRole): string => {
+    const labels: Record<StaffRole, string> = {
+      'staff': 'Staff',
+      'supervisor': 'Supervisor',
+      'manager': 'Manager',
     };
     return labels[permission];
   };
 
-  const getPermissionDescription = (permission: StaffPermission): string => {
-    const descriptions: Record<StaffPermission, string> = {
-      'checks_only': 'Can perform pre-opening, daily, monthly, and yearly checks',
-      'checks_maintenance': 'Can perform checks and log maintenance activities',
-      'full_access': 'Can access checks, maintenance, documents, and risk assessments',
+  const getPermissionDescription = (permission: StaffRole): string => {
+    const descriptions: Record<StaffRole, string> = {
+      'staff': 'Can perform pre-opening, daily, monthly, and yearly checks',
+      'supervisor': 'Can perform checks, log maintenance, and view regulatory events',
+      'manager': 'Full access to checks, maintenance, documents, and risk assessments',
     };
     return descriptions[permission];
   };

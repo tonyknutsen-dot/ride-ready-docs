@@ -528,6 +528,7 @@ export type Database = {
         Row: {
           advance_notice_days: number
           auto_create_next: boolean
+          auto_generated: boolean
           category: string
           certificate_reference: string | null
           completed_at: string | null
@@ -567,6 +568,7 @@ export type Database = {
         Insert: {
           advance_notice_days?: number
           auto_create_next?: boolean
+          auto_generated?: boolean
           category: string
           certificate_reference?: string | null
           completed_at?: string | null
@@ -606,6 +608,7 @@ export type Database = {
         Update: {
           advance_notice_days?: number
           auto_create_next?: boolean
+          auto_generated?: boolean
           category?: string
           certificate_reference?: string | null
           completed_at?: string | null
@@ -1628,7 +1631,7 @@ export type Database = {
           is_active: boolean
           joined_at: string
           organisation_id: string
-          permission_level: Database["public"]["Enums"]["staff_permission"]
+          permission_level: Database["public"]["Enums"]["staff_role"]
           updated_at: string
           user_id: string
         }
@@ -1645,7 +1648,7 @@ export type Database = {
           is_active?: boolean
           joined_at?: string
           organisation_id: string
-          permission_level?: Database["public"]["Enums"]["staff_permission"]
+          permission_level?: Database["public"]["Enums"]["staff_role"]
           updated_at?: string
           user_id: string
         }
@@ -1662,7 +1665,7 @@ export type Database = {
           is_active?: boolean
           joined_at?: string
           organisation_id?: string
-          permission_level?: Database["public"]["Enums"]["staff_permission"]
+          permission_level?: Database["public"]["Enums"]["staff_role"]
           updated_at?: string
           user_id?: string
         }
@@ -2300,7 +2303,7 @@ export type Database = {
           invite_token: string
           invited_by: string
           organisation_id: string
-          permission_level: Database["public"]["Enums"]["staff_permission"]
+          permission_level: Database["public"]["Enums"]["staff_role"]
           status: string
           updated_at: string
         }
@@ -2321,7 +2324,7 @@ export type Database = {
           invite_token?: string
           invited_by: string
           organisation_id: string
-          permission_level?: Database["public"]["Enums"]["staff_permission"]
+          permission_level?: Database["public"]["Enums"]["staff_role"]
           status?: string
           updated_at?: string
         }
@@ -2342,7 +2345,7 @@ export type Database = {
           invite_token?: string
           invited_by?: string
           organisation_id?: string
-          permission_level?: Database["public"]["Enums"]["staff_permission"]
+          permission_level?: Database["public"]["Enums"]["staff_role"]
           status?: string
           updated_at?: string
         }
@@ -2791,7 +2794,7 @@ export type Database = {
       }
       get_staff_permission: {
         Args: { _org_id: string; _user_id: string }
-        Returns: Database["public"]["Enums"]["staff_permission"]
+        Returns: Database["public"]["Enums"]["staff_role"]
       }
       get_subscription_context: {
         Args: never
@@ -2883,7 +2886,7 @@ export type Database = {
       check_frequency: "daily" | "monthly" | "yearly" | "preopening" | "weekly"
       defect_severity: "non_urgent" | "urgent" | "stop_operation"
       defect_status: "open" | "acknowledged" | "in_progress" | "resolved"
-      staff_permission: "checks_only" | "checks_maintenance" | "full_access"
+      staff_role: "manager" | "supervisor" | "staff"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3015,7 +3018,7 @@ export const Constants = {
       check_frequency: ["daily", "monthly", "yearly", "preopening", "weekly"],
       defect_severity: ["non_urgent", "urgent", "stop_operation"],
       defect_status: ["open", "acknowledged", "in_progress", "resolved"],
-      staff_permission: ["checks_only", "checks_maintenance", "full_access"],
+      staff_role: ["manager", "supervisor", "staff"],
     },
   },
 } as const

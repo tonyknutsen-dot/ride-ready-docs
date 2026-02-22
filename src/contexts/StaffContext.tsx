@@ -3,7 +3,7 @@ import { useAuth } from './AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
-type StaffPermission = Database['public']['Enums']['staff_permission'];
+type StaffRole = Database['public']['Enums']['staff_role'];
 
 interface FeaturePermissions {
   calendar: boolean;
@@ -17,7 +17,7 @@ interface FeaturePermissions {
 interface StaffMembership {
   organisationId: string;
   organisationName: string;
-  permissionLevel: StaffPermission;
+  permissionLevel: StaffRole;
   memberId: string;
   ownerId: string;
   featurePermissions: FeaturePermissions;
@@ -27,7 +27,7 @@ interface StaffContextType {
   isStaff: boolean;
   isOwner: boolean;
   staffMembership: StaffMembership | null;
-  permissionLevel: StaffPermission | null;
+  permissionLevel: StaffRole | null;
   featurePermissions: FeaturePermissions | null;
   loading: boolean;
   // Permission check helpers
@@ -60,7 +60,7 @@ export function StaffProvider({ children }: { children: React.ReactNode }) {
   const [isStaff, setIsStaff] = useState(false);
   const [isOwner, setIsOwner] = useState(true); // Default to owner for non-staff
   const [staffMembership, setStaffMembership] = useState<StaffMembership | null>(null);
-  const [permissionLevel, setPermissionLevel] = useState<StaffPermission | null>(null);
+  const [permissionLevel, setPermissionLevel] = useState<StaffRole | null>(null);
   const [featurePermissions, setFeaturePermissions] = useState<FeaturePermissions | null>(null);
   const [loading, setLoading] = useState(true);
 

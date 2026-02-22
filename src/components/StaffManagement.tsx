@@ -12,12 +12,12 @@ import { StaffEquipmentDialog } from './StaffEquipmentDialog';
 import { Database } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
 
-type StaffPermission = Database['public']['Enums']['staff_permission'];
+type StaffRole = Database['public']['Enums']['staff_role'];
 
 interface StaffMember {
   id: string;
   user_id: string;
-  permission_level: StaffPermission;
+  permission_level: StaffRole;
   joined_at: string;
   is_active: boolean;
   email?: string;
@@ -27,13 +27,13 @@ interface StaffMember {
 interface PendingInvite {
   id: string;
   email: string;
-  permission_level: StaffPermission;
+  permission_level: StaffRole;
   created_at: string;
   expires_at: string;
   status: string;
 }
 
-const PERMISSION_CONFIG: Record<StaffPermission, {
+const PERMISSION_CONFIG: Record<StaffRole, {
   label: string;
   shortLabel: string;
   bg: string;
@@ -41,25 +41,25 @@ const PERMISSION_CONFIG: Record<StaffPermission, {
   border: string;
   icon: typeof Shield;
 }> = {
-  checks_only: {
-    label: 'Checks Only',
-    shortLabel: 'Checks',
+  staff: {
+    label: 'Staff',
+    shortLabel: 'Staff',
     bg: 'hsl(214 100% 97%)',
     text: 'hsl(213 52% 24%)',
     border: 'hsl(213 52% 80%)',
     icon: CheckCircle2,
   },
-  checks_maintenance: {
-    label: 'Checks & Maintenance',
-    shortLabel: 'Checks & Maint.',
+  supervisor: {
+    label: 'Supervisor',
+    shortLabel: 'Supervisor',
     bg: 'hsl(38 100% 97%)',
     text: 'hsl(32 95% 30%)',
     border: 'hsl(38 92% 75%)',
     icon: Wrench,
   },
-  full_access: {
-    label: 'Full Access',
-    shortLabel: 'Full Access',
+  manager: {
+    label: 'Manager',
+    shortLabel: 'Manager',
     bg: 'hsl(142 76% 96%)',
     text: 'hsl(142 72% 25%)',
     border: 'hsl(142 69% 70%)',
@@ -194,15 +194,15 @@ export function StaffManagement() {
     }
   };
 
-  const handlePermissionChange = (memberId: string, newPermission: StaffPermission, memberEmail: string) => {
-    if (newPermission === 'full_access') {
+  const handlePermissionChange = (memberId: string, newPermission: StaffRole, memberEmail: string) => {
+    if (newPermission === 'manager') {
       setPermissionWarning({ memberId, email: memberEmail });
     } else {
       updatePermission(memberId, newPermission);
     }
   };
 
-  const updatePermission = async (memberId: string, newPermission: StaffPermission) => {
+  const updatePermission = async (memberId: string, newPermission: StaffRole) => {
     try {
       const { error } = await supabase
         .from('organisation_members')
@@ -216,7 +216,7 @@ export function StaffManagement() {
     }
   };
 
-  const PermissionBadge = ({ permission }: { permission: StaffPermission }) => {
+  const PermissionBadge = ({ permission }: { permission: StaffRole }) => {
     const cfg = PERMISSION_CONFIG[permission];
     const Icon = cfg.icon;
     return (
@@ -231,9 +231,9 @@ export function StaffManagement() {
   };
 
   // Counts for authority summary
-  const fullAccessCount = staff.filter(s => s.permission_level === 'full_access').length;
-  const checksMaintenanceCount = staff.filter(s => s.permission_level === 'checks_maintenance').length;
-  const checksOnlyCount = staff.filter(s => s.permission_level === 'checks_only').length;
+  const managerCount = staff.filter(s => s.permission_level === 'manager').length;
+  const supervisorCount = staff.filter(s => s.permission_level === 'supervisor').length;
+  const staffCount = staff.filter(s => s.permission_level === 'staff').length;
 
   if (loading) {
     return (
@@ -253,9 +253,9 @@ export function StaffManagement() {
           style={{ background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))' }}
         >
           {[
-            { label: 'Full Access', count: fullAccessCount, color: 'hsl(142 72% 25%)', bg: 'hsl(142 76% 96%)' },
-            { label: 'Checks & Maint.', count: checksMaintenanceCount, color: 'hsl(32 95% 30%)', bg: 'hsl(38 100% 97%)' },
-            { label: 'Checks Only', count: checksOnlyCount, color: 'hsl(213 52% 24%)', bg: 'hsl(214 100% 97%)' },
+            { label: 'Managers', count: managerCount, color: 'hsl(142 72% 25%)', bg: 'hsl(142 76% 96%)' },
+            { label: 'Supervisors', count: supervisorCount, color: 'hsl(32 95% 30%)', bg: 'hsl(38 100% 97%)' },
+            { label: 'Staff', count: staffCount, color: 'hsl(213 52% 24%)', bg: 'hsl(214 100% 97%)' },
           ].map(({ label, count, color, bg }) => (
             <div key={label} className="text-center">
               <div
@@ -363,14 +363,14 @@ export function StaffManagement() {
                   <select
                     value={member.permission_level}
                     onChange={(e) =>
-                      handlePermissionChange(member.id, e.target.value as StaffPermission, member.email || 'this staff member')
+                      handlePermissionChange(member.id, e.target.value as StaffRole, member.email || 'this staff member')
                     }
                     className="w-full h-9 rounded-lg border text-xs px-2 bg-white"
                     style={{ borderColor: 'hsl(var(--border))' }}
                   >
-                    <option value="checks_only">Checks Only — Daily inspection sign-off</option>
-                    <option value="checks_maintenance">Checks & Maintenance — Logs and records</option>
-                    <option value="full_access">Full Access — All compliance modules</option>
+                    <option value="staff">Staff — Daily inspection sign-off</option>
+                    <option value="supervisor">Supervisor — Checks, maintenance & oversight</option>
+                    <option value="manager">Manager — All compliance modules</option>
                   </select>
                 </div>
 
@@ -501,10 +501,10 @@ export function StaffManagement() {
             <AlertDialogFooter>
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
-                onClick={() => { updatePermission(permissionWarning.memberId, 'full_access'); setPermissionWarning(null); }}
+                onClick={() => { updatePermission(permissionWarning.memberId, 'manager'); setPermissionWarning(null); }}
                 className="bg-amber-600 hover:bg-amber-700"
               >
-                Yes, Grant Full Access
+                Yes, Grant Manager Access
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

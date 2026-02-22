@@ -136,19 +136,18 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
         throw new Error('Not authenticated');
       }
 
-      // Map legacy permission level from granular permissions
-      // This maintains backwards compatibility
-      let legacyPermissionLevel = 'checks_only';
+      // Map role from granular permissions
+      let roleLevel = 'staff';
       if (permissions.documents || permissions.risk_assessments || permissions.send_documents) {
-        legacyPermissionLevel = 'full_access';
+        roleLevel = 'manager';
       } else if (permissions.maintenance) {
-        legacyPermissionLevel = 'checks_maintenance';
+        roleLevel = 'supervisor';
       }
 
       const response = await supabase.functions.invoke('send-staff-invite', {
         body: {
           email: email.trim().toLowerCase(),
-          permissionLevel: legacyPermissionLevel,
+          permissionLevel: roleLevel,
           assignedRides: selectedRides.length > 0 ? selectedRides : null,
           featurePermissions: permissions,
         },

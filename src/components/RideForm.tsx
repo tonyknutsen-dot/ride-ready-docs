@@ -187,13 +187,13 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     }
   };
 
-  // Staff with full_access can add rides, others cannot
-  const canAddRides = !isStaff || permissionLevel === 'full_access';
+  // Staff with manager role can add rides, others cannot
+  const canAddRides = !isStaff || permissionLevel === 'manager';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Only staff without full_access are blocked from adding equipment
+    // Only staff without manager role are blocked from adding equipment
     if (!canAddRides && !isEditMode) {
       toast({
         title: "Permission denied",
@@ -404,7 +404,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   };
 
 
-  // Staff members without full_access cannot add new equipment - show a blocking message
+  // Staff members without manager role cannot add new equipment - show a blocking message
   if (!canAddRides && !isEditMode) {
     return (
       <div className="max-w-3xl mx-auto p-4 md:p-6">

@@ -25,7 +25,7 @@ interface FeaturePermissions {
 
 interface StaffInviteRequest {
   email: string;
-  permissionLevel: "checks_only" | "checks_maintenance" | "full_access";
+  permissionLevel: "manager" | "supervisor" | "staff";
   assignedRides?: string[] | null;
   featurePermissions?: FeaturePermissions;
 }
@@ -102,7 +102,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    if (!permissionLevel || !["checks_only", "checks_maintenance", "full_access"].includes(permissionLevel)) {
+    if (!permissionLevel || !["manager", "supervisor", "staff"].includes(permissionLevel)) {
       return new Response(
         JSON.stringify({ error: "Valid permission level is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -155,10 +155,10 @@ const handler = async (req: Request): Promise<Response> => {
     const defaultPermissions: FeaturePermissions = {
       calendar: true,
       checks: true,
-      documents: permissionLevel === 'full_access',
-      maintenance: permissionLevel === 'checks_maintenance' || permissionLevel === 'full_access',
-      risk_assessments: permissionLevel === 'full_access',
-      send_documents: permissionLevel === 'full_access',
+      documents: permissionLevel === 'manager',
+      maintenance: permissionLevel === 'supervisor' || permissionLevel === 'manager',
+      risk_assessments: permissionLevel === 'manager',
+      send_documents: permissionLevel === 'manager',
     };
 
     const permissions = featurePermissions || defaultPermissions;
