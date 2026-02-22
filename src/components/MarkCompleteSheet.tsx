@@ -286,7 +286,7 @@ const MarkCompleteSheet = ({
         nextDueDate: result?.next_due_date,
       });
 
-      // Auto-create next recurring event if linked document has auto_create_event
+      // Auto-create next annual event if linked document has repeat_annually
       try {
         await maybeCreateRecurringEvent({
           completedEventId: eventId,

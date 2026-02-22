@@ -1028,7 +1028,6 @@ export type Database = {
       }
       documents: {
         Row: {
-          auto_create_event: boolean
           document_name: string
           document_type: string
           expires_at: string | null
@@ -1040,8 +1039,7 @@ export type Database = {
           is_test_data: boolean
           mime_type: string | null
           notes: string | null
-          recurrence_interval_days: number | null
-          recurrence_type: string
+          repeat_annually: boolean
           replaced_document_id: string | null
           ride_id: string | null
           uploaded_at: string
@@ -1050,7 +1048,6 @@ export type Database = {
           version_number: string | null
         }
         Insert: {
-          auto_create_event?: boolean
           document_name: string
           document_type: string
           expires_at?: string | null
@@ -1062,8 +1059,7 @@ export type Database = {
           is_test_data?: boolean
           mime_type?: string | null
           notes?: string | null
-          recurrence_interval_days?: number | null
-          recurrence_type?: string
+          repeat_annually?: boolean
           replaced_document_id?: string | null
           ride_id?: string | null
           uploaded_at?: string
@@ -1072,7 +1068,6 @@ export type Database = {
           version_number?: string | null
         }
         Update: {
-          auto_create_event?: boolean
           document_name?: string
           document_type?: string
           expires_at?: string | null
@@ -1084,8 +1079,7 @@ export type Database = {
           is_test_data?: boolean
           mime_type?: string | null
           notes?: string | null
-          recurrence_interval_days?: number | null
-          recurrence_type?: string
+          repeat_annually?: boolean
           replaced_document_id?: string | null
           ride_id?: string | null
           uploaded_at?: string
