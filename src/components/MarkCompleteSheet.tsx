@@ -223,7 +223,7 @@ const MarkCompleteSheet = ({
 
       const completedByName = profileData?.controller_name || user.email || 'Unknown';
       const completedByRole = memberData
-        ? (memberData.permission_level === 'full_access' ? 'Owner' : memberData.permission_level?.replace('_', ' ') || 'Staff')
+        ? (memberData.permission_level === 'manager' ? 'Manager' : memberData.permission_level || 'Staff')
         : 'Owner';
 
       const evidenceUrls = await uploadEvidence();

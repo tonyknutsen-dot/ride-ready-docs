@@ -3,12 +3,12 @@ import { useStaff } from '@/contexts/StaffContext';
 import { Loader2 } from 'lucide-react';
 import { Database } from '@/integrations/supabase/types';
 
-type StaffPermission = Database['public']['Enums']['staff_permission'];
+type StaffRole = Database['public']['Enums']['staff_role'];
 
 interface StaffRouteProps {
   children: React.ReactNode;
   /** Required permission level(s). If not provided, only owners can access */
-  requiredPermission?: StaffPermission | StaffPermission[];
+  requiredPermission?: StaffRole | StaffRole[];
   /** If true, only owners can access this route */
   ownerOnly?: boolean;
 }
@@ -46,10 +46,10 @@ export function StaffRoute({ children, requiredPermission, ownerOnly = false }: 
   if (isStaff && permissionLevel) {
     const requiredPermissions = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
     
-    const permissionHierarchy: Record<StaffPermission, number> = {
-      'checks_only': 1,
-      'checks_maintenance': 2,
-      'full_access': 3,
+    const permissionHierarchy: Record<StaffRole, number> = {
+      'staff': 1,
+      'supervisor': 2,
+      'manager': 3,
     };
 
     const userLevel = permissionHierarchy[permissionLevel];

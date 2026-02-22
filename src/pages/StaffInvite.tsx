@@ -13,15 +13,15 @@ import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicato
 type InviteStatus = 'loading' | 'valid' | 'invalid' | 'expired' | 'accepted' | 'already_accepted';
 
 const permissionLabels = {
-  checks_only: 'Checks Only',
-  checks_maintenance: 'Checks & Maintenance',
-  full_access: 'Full Access',
+  staff: 'Staff',
+  supervisor: 'Supervisor',
+  manager: 'Manager',
 };
 
 const permissionDescriptions = {
-  checks_only: 'You can perform safety checks on assigned equipment',
-  checks_maintenance: 'You can perform checks and log maintenance activities',
-  full_access: 'Full access to checks, maintenance, documents, and risk assessments',
+  staff: 'You can perform safety checks on assigned equipment',
+  supervisor: 'You can perform checks, log maintenance, and view regulatory events',
+  manager: 'Full access to checks, maintenance, documents, and risk assessments',
 };
 
 export default function StaffInvite() {
@@ -32,7 +32,7 @@ export default function StaffInvite() {
   const [status, setStatus] = useState<InviteStatus>('loading');
   const [inviteEmail, setInviteEmail] = useState('');
   const [organisationName, setOrganisationName] = useState('');
-  const [permissionLevel, setPermissionLevel] = useState<keyof typeof permissionLabels>('checks_only');
+  const [permissionLevel, setPermissionLevel] = useState<keyof typeof permissionLabels>('staff');
   const [errorMessage, setErrorMessage] = useState('');
   
   const [isSignUp, setIsSignUp] = useState(true);
@@ -64,7 +64,7 @@ export default function StaffInvite() {
           setStatus('valid');
           setInviteEmail(data.email);
           setOrganisationName(data.organisationName || 'the organisation');
-          setPermissionLevel(data.permissionLevel || 'checks_only');
+          setPermissionLevel(data.permissionLevel || 'staff');
         } else if (data.status === 'accepted') {
           setStatus('already_accepted');
         } else if (data.status === 'expired') {

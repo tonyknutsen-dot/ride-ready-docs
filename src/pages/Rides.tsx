@@ -59,8 +59,8 @@ const Rides = () => {
   const [activeGroup, setActiveGroup] = useState<string>('All');
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   
-  // Staff with full_access can add rides, others cannot
-  const canAddRides = !isStaff || permissionLevel === 'full_access';
+  // Staff with manager role can add rides, others cannot
+  const canAddRides = !isStaff || permissionLevel === 'manager';
   
   // Check for action parameter to auto-open add form (only for users who can add)
   useEffect(() => {
