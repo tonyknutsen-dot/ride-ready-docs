@@ -1415,21 +1415,20 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                   Edit
                 </button>
               </div>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="mx-4 mt-2">
-            <div className="flex items-center justify-between mb-1.5">
-              <p className="text-[12px] font-bold text-slate-700">
-                {Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} of {activeTemplate.daily_check_template_items.length} items completed
-              </p>
-              {getProgress() === 100 && (
-                <span className="text-[10px] font-bold bg-green-600 text-white px-2 py-0.5 rounded flex items-center gap-1"><CheckCircle className="h-3 w-3" />Done</span>
-              )}
-            </div>
-            <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
-              <div className={`h-full rounded-full transition-all duration-300 ${getProgress() === 100 ? 'bg-green-600' : 'bg-blue-600'}`} style={{ width: `${Math.round(getProgress())}%` }} />
+              {/* Progress bar */}
+              <div className="mt-2.5">
+                <div className="flex items-center justify-between mb-1">
+                  <p className="text-[11px] font-bold text-slate-500">
+                    {Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} of {activeTemplate.daily_check_template_items.length} items completed
+                  </p>
+                  {getProgress() === 100 && (
+                    <span className="text-[10px] font-bold text-green-700">✓ Done</span>
+                  )}
+                </div>
+                <div className="h-1.5 rounded-full bg-slate-300/50 overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-300 ${getProgress() === 100 ? 'bg-green-600' : 'bg-blue-600'}`} style={{ width: `${Math.round(getProgress())}%` }} />
+                </div>
+              </div>
             </div>
           </div>
 
