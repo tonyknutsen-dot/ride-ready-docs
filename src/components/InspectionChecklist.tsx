@@ -98,6 +98,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [checkStartedAt, setCheckStartedAt] = useState<Date | null>(startImmediately ? new Date() : null);
   const [showMaintenanceForItem, setShowMaintenanceForItem] = useState<string | null>(null);
   const [declarationChecked, setDeclarationChecked] = useState(false);
+  const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -1454,7 +1455,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             return (
               <div
                 key={item.id}
-                className={`border border-slate-200/80 rounded-2xl overflow-hidden transition-all shadow-[0_1px_4px_rgba(0,0,0,0.08)] ${isFail ? 'bg-[#FFF7F7]' : 'bg-white'}`}
+                data-item-id={item.id}
+                className={`border rounded-2xl overflow-hidden transition-all shadow-[0_1px_4px_rgba(0,0,0,0.08)] ${isFail ? 'bg-[#FFF7F7]' : 'bg-white'} ${highlightItemId === item.id ? 'border-blue-500 ring-2 ring-blue-400/50' : 'border-slate-200/80'}`}
                 style={{ borderLeft: cardBorder }}
               >
                 {/* Row 1: Number circle + Title + Status icon */}
@@ -1672,9 +1674,27 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
           {/* Warning: unanswered items */}
           {getProgress() < 100 && (
-            <p className="text-[12px] text-red-600 font-semibold leading-snug">
-              ⚠ All {activeTemplate.daily_check_template_items.length - Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} remaining items must be answered before you can confirm.
-            </p>
+            <button
+              type="button"
+              className="w-full text-left"
+              onClick={() => {
+                const sorted = activeTemplate.daily_check_template_items
+                  .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0));
+                const firstUnanswered = sorted.find(item => !itemResults[item.id]);
+                if (firstUnanswered) {
+                  const el = document.querySelector(`[data-item-id="${firstUnanswered.id}"]`);
+                  if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    setHighlightItemId(firstUnanswered.id);
+                    setTimeout(() => setHighlightItemId(null), 1500);
+                  }
+                }
+              }}
+            >
+              <p className="text-[12px] text-red-600 font-semibold leading-snug hover:underline">
+                ⚠ {activeTemplate.daily_check_template_items.length - Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} remaining items must be answered. Tap to view.
+              </p>
+            </button>
           )}
 
           {/* Warning: open failures without notes/defects */}
