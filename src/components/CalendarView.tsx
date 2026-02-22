@@ -45,6 +45,7 @@ interface CalendarEvent {
   eventName: string;
   date: string;
   type: 'inspection' | 'maintenance' | 'document_expiry' | 'ndt';
+  eventCategory: 'regulatory' | 'operational';
   status: 'open' | 'completed' | 'overdue' | 'cancelled';
   rideId?: string;
   rideName?: string;
@@ -246,6 +247,7 @@ const CalendarView = () => {
           eventName: ce.event_name,
           date: ce.due_date,
           type: mapCategoryToType(ce.category),
+          eventCategory: ce.event_category || 'regulatory',
           status,
           rideId: ce.ride_id,
           notes: ce.notes,
@@ -1131,36 +1133,42 @@ const CalendarView = () => {
                 </div>
 
                 {/* Footer actions */}
-                <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex gap-2">
-                  {!isStaff && !isCompleted && !deleteConfirmOpen && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-destructive border-destructive/30 hover:bg-destructive/10"
-                      onClick={() => setDeleteConfirmOpen(true)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                  {!isStaff && !isCompleted && (
-                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleEditEvent(selectedEvent)}>
-                      <Pencil className="h-3.5 w-3.5" /> Edit
-                    </Button>
-                  )}
-                  {!isStaff && !isCompleted ? (
-                    <Button
-                      className="flex-1 gap-1.5"
-                      onClick={() => handleMarkComplete(selectedEvent)}
-                    >
-                      <CheckCircle2 className="h-4 w-4" />
-                      Mark Complete
-                    </Button>
-                  ) : (
-                    <Button className="flex-1" onClick={() => { setEventDetailOpen(false); setDeleteConfirmOpen(false); }}>
-                      Close
-                    </Button>
-                  )}
-                </div>
+                {(() => {
+                  const isRegulatory = selectedEvent.eventCategory === 'regulatory';
+                  const canWrite = !isStaff || !isRegulatory;
+                  return (
+                    <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex gap-2">
+                      {!isStaff && !isCompleted && !deleteConfirmOpen && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                          onClick={() => setDeleteConfirmOpen(true)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {!isStaff && !isCompleted && (
+                        <Button variant="outline" size="sm" className="gap-1.5" onClick={() => handleEditEvent(selectedEvent)}>
+                          <Pencil className="h-3.5 w-3.5" /> Edit
+                        </Button>
+                      )}
+                      {canWrite && !isCompleted ? (
+                        <Button
+                          className="flex-1 gap-1.5"
+                          onClick={() => handleMarkComplete(selectedEvent)}
+                        >
+                          <CheckCircle2 className="h-4 w-4" />
+                          Mark Complete
+                        </Button>
+                      ) : (
+                        <Button className="flex-1" onClick={() => { setEventDetailOpen(false); setDeleteConfirmOpen(false); }}>
+                          Close
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })()}
               </>
             );
           })()}
