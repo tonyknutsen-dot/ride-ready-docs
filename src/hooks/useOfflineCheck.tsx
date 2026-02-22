@@ -48,7 +48,7 @@ export function useOfflineCheck() {
   const { isOnline } = useOnlineStatus();
   const { toast } = useToast();
 
-  const submitCheck = useCallback(async (check: CheckSubmission): Promise<{ success: boolean; isOffline: boolean }> => {
+  const submitCheck = useCallback(async (check: CheckSubmission): Promise<{ success: boolean; isOffline: boolean; checkId?: string }> => {
     if (!user || !effectiveUserId) return { success: false, isOffline: false };
 
     // If online, submit directly to Supabase
@@ -104,7 +104,7 @@ export function useOfflineCheck() {
           if (resultsError) throw resultsError;
         }
 
-        return { success: true, isOffline: false };
+        return { success: true, isOffline: false, checkId: checkData?.id };
       } catch (error: any) {
         console.error('Failed to submit check online:', error);
         // Fall through to offline storage

@@ -1296,6 +1296,128 @@ export type Database = {
         }
         Relationships: []
       }
+      inspection_records: {
+        Row: {
+          amended_by: string | null
+          amended_from_id: string | null
+          amendment_reason: string | null
+          check_date: string
+          check_frequency: string
+          check_id: string
+          completed_at: string
+          compliance_officer: string | null
+          created_at: string
+          defect_ids: string[] | null
+          document_id: string | null
+          environment_notes: string | null
+          id: string
+          inspector_name: string
+          is_locked: boolean
+          item_results: Json
+          location: string | null
+          notes: string | null
+          overall_result: string
+          pdf_file_path: string | null
+          photo_paths: string[] | null
+          ride_id: string
+          signature_data: string | null
+          template_id: string
+          template_name: string | null
+          user_id: string
+          version: number
+          weather_conditions: string | null
+        }
+        Insert: {
+          amended_by?: string | null
+          amended_from_id?: string | null
+          amendment_reason?: string | null
+          check_date: string
+          check_frequency: string
+          check_id: string
+          completed_at?: string
+          compliance_officer?: string | null
+          created_at?: string
+          defect_ids?: string[] | null
+          document_id?: string | null
+          environment_notes?: string | null
+          id?: string
+          inspector_name: string
+          is_locked?: boolean
+          item_results?: Json
+          location?: string | null
+          notes?: string | null
+          overall_result: string
+          pdf_file_path?: string | null
+          photo_paths?: string[] | null
+          ride_id: string
+          signature_data?: string | null
+          template_id: string
+          template_name?: string | null
+          user_id: string
+          version?: number
+          weather_conditions?: string | null
+        }
+        Update: {
+          amended_by?: string | null
+          amended_from_id?: string | null
+          amendment_reason?: string | null
+          check_date?: string
+          check_frequency?: string
+          check_id?: string
+          completed_at?: string
+          compliance_officer?: string | null
+          created_at?: string
+          defect_ids?: string[] | null
+          document_id?: string | null
+          environment_notes?: string | null
+          id?: string
+          inspector_name?: string
+          is_locked?: boolean
+          item_results?: Json
+          location?: string | null
+          notes?: string | null
+          overall_result?: string
+          pdf_file_path?: string | null
+          photo_paths?: string[] | null
+          ride_id?: string
+          signature_data?: string | null
+          template_id?: string
+          template_name?: string | null
+          user_id?: string
+          version?: number
+          weather_conditions?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inspection_records_amended_from_id_fkey"
+            columns: ["amended_from_id"]
+            isOneToOne: false
+            referencedRelation: "inspection_records"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_records_check_id_fkey"
+            columns: ["check_id"]
+            isOneToOne: false
+            referencedRelation: "checks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_records_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspection_records_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "daily_check_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inspection_schedules: {
         Row: {
           advance_notice_days: number
