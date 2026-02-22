@@ -246,12 +246,10 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
     return (
       <>
         {offlineBanner}
-        <Card>
-          <CardContent className="py-8 text-center text-muted-foreground">
-            <AlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>No {showResolved ? '' : 'open '}defects reported for this equipment</p>
-          </CardContent>
-        </Card>
+        <div className="py-3 text-center text-muted-foreground rounded-lg bg-slate-50 border border-slate-200">
+          <AlertTriangle className="h-6 w-6 mx-auto mb-1.5 opacity-40" />
+          <p className="text-[11px]">No {showResolved ? '' : 'open '}defects reported for this equipment.</p>
+        </div>
       </>
     );
   }
