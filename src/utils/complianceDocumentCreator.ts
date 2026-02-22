@@ -163,7 +163,7 @@ export async function createComplianceDocument(
   }
 
   const noteParts = [
-    inspectorCompany ? `Inspector: ${inspectorCompany}` : null,
+    inspectorCompany ? `Inspection Company: ${inspectorCompany}` : null,
     certificateReference ? `Ref: ${certificateReference}` : null,
     notes,
     `Compliance event: ${eventName}`,

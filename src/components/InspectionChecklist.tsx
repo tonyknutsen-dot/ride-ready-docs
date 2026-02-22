@@ -809,7 +809,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         }
       }
 
-      // === INSPECTOR NOTES SECTION ===
+      // === ADDITIONAL NOTES SECTION ===
       if (inspectorNotes || environmentNotes) {
         currentY += 5;
         checkPageOverflow(40);
@@ -830,7 +830,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
         if (inspectorNotes) {
           pdf.setFont('helvetica', 'bold');
-          pdf.text('Inspector Notes:', leftCol, currentY);
+          pdf.text('Additional Notes:', leftCol, currentY);
           currentY += 5;
           pdf.setFont('helvetica', 'normal');
           const splitNotes = pdf.splitTextToSize(inspectorNotes, pageWidth - 2 * margin);
@@ -1046,7 +1046,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                     document_type: 'inspection_record',
                     file_path: result.filePath,
                     mime_type: 'application/pdf',
-                    notes: `Inspector: ${inspectorName.trim()} | Doc ID: ${result.documentId} | Check ID: ${checkId}`,
+                    notes: `Checked by: ${inspectorName.trim()} | Doc ID: ${result.documentId} | Check ID: ${checkId}`,
                   });
 
                 queryClient.invalidateQueries({ queryKey: ['overview'] });
@@ -1333,13 +1333,13 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         </div>
       )}
 
-      {/* ── WIZARD STEP 1: Inspector Details ── */}
+      {/* ── WIZARD STEP 1: Check Details ── */}
       {wizardStep === 'details' && (
         <div className="mx-4 mt-3">
           <div className="bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden">
             <div className="px-4 pt-4 pb-1">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Step 1 of 2</p>
-              <h2 className="text-[15px] font-bold text-slate-900 mt-0.5">Inspector Details</h2>
+              <h2 className="text-[15px] font-bold text-slate-900 mt-0.5">Check Details</h2>
               <p className="text-[12px] text-slate-500 mt-0.5">Complete before starting the check.</p>
             </div>
             <div className="px-4 pb-4 pt-2 space-y-3">
@@ -1730,7 +1730,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                    if (getProgress() === 100) setDeclarationChecked(prev => !prev);
                  }}
                >
-                I confirm this inspection is complete, accurate, and the equipment is safe to operate.
+                I confirm this safety check is complete, accurate, and the results recorded truthfully.
               </span>
             </label>
           </div>

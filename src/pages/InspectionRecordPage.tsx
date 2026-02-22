@@ -168,7 +168,7 @@ const InspectionRecordPage = () => {
             </Button>
             <div className="min-w-0">
               <h1 className="text-sm font-bold text-foreground truncate">
-                {record.template_name || 'Inspection Record'}
+                {record.template_name || 'Safety Check Record'}
               </h1>
               <p className="text-[11px] text-muted-foreground truncate">
                 {ride?.ride_name || 'Loading...'} · v{record.version}
@@ -186,7 +186,7 @@ const InspectionRecordPage = () => {
         <div className="space-y-3">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <span className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold">Inspector</span>
+              <span className="text-[11px] text-muted-foreground uppercase tracking-wide font-semibold">Check Completed By</span>
               <p className="font-bold text-foreground mt-0.5">{record.inspector_name}</p>
             </div>
             <div>
@@ -251,10 +251,10 @@ const InspectionRecordPage = () => {
             <Shield className="h-3.5 w-3.5" /> Confirmation
           </h3>
           <p className="text-sm text-foreground">
-            I confirm that all items have been inspected and the results recorded accurately.
+            I confirm that all check items have been completed accurately and the results recorded truthfully.
           </p>
           <p className="text-[11px] text-muted-foreground">
-            Signed by <span className="font-semibold">{record.inspector_name}</span> on{' '}
+            Confirmed by <span className="font-semibold">{record.inspector_name}</span> on{' '}
             {format(parseISO(record.completed_at), 'd MMM yyyy \'at\' HH:mm')}
           </p>
         </div>
@@ -305,7 +305,7 @@ const InspectionRecordPage = () => {
                 className="flex-1"
                 onClick={() => setAmendRecord(record)}
               >
-                <Edit3 className="h-4 w-4 mr-2" /> Amend Inspection
+                <Edit3 className="h-4 w-4 mr-2" /> Amend Check Record
               </Button>
             ) : (
               <div className="flex items-center justify-center gap-1.5 text-sm text-muted-foreground py-2">
