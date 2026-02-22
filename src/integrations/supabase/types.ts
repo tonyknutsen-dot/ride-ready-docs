@@ -1974,6 +1974,7 @@ export type Database = {
           is_test_data: boolean
           manufacturer: string | null
           owner_name: string | null
+          requires_operational_checks: boolean
           ride_code: string | null
           ride_name: string
           serial_number: string | null
@@ -1988,6 +1989,7 @@ export type Database = {
           is_test_data?: boolean
           manufacturer?: string | null
           owner_name?: string | null
+          requires_operational_checks?: boolean
           ride_code?: string | null
           ride_name: string
           serial_number?: string | null
@@ -2002,6 +2004,7 @@ export type Database = {
           is_test_data?: boolean
           manufacturer?: string | null
           owner_name?: string | null
+          requires_operational_checks?: boolean
           ride_code?: string | null
           ride_name?: string
           serial_number?: string | null
