@@ -15,6 +15,7 @@ import { useStaff } from "@/contexts/StaffContext";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { useOverdueCompliance } from "@/hooks/useOverdueCompliance";
 
 // Routes where the mobile nav should NOT appear (public pages - landing/marketing only)
 const PUBLIC_ROUTES = ['/', '/auth', '/how-it-works', '/privacy', '/terms', '/security'];
@@ -41,6 +42,7 @@ export default function MobileBottomNav() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const unreadCount = useUnreadNotifications();
+  const overdueCount = useOverdueCompliance();
 
   // Don't show on public pages or if not logged in
   if (!user || PUBLIC_ROUTES.includes(loc.pathname)) return null;
@@ -131,15 +133,28 @@ export default function MobileBottomNav() {
     <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#E2E8F0] bg-white md:hidden safe-area-pb">
       <div className={`mx-auto max-w-screen-sm grid gap-1 px-2 py-1 ${canAccessChecks ? (canAccessCalendar ? 'grid-cols-5' : 'grid-cols-4') : (canAccessCalendar ? 'grid-cols-4' : 'grid-cols-3')}`}>
         {/* Overview */}
-        <NavButton 
+        <button
           onClick={() => {
             window.scrollTo({ top: 0, behavior: 'smooth' });
             go("/overview");
           }}
-          active={isActive(["/overview"])}
-          icon={Home}
-          label="Dashboard"
-        />
+          className={`flex flex-col items-center justify-center min-h-[56px] min-w-[56px] rounded-none text-[11px] font-medium transition-all active:scale-95 border-t-2 ${
+            isActive(["/overview"])
+              ? "text-[#1E3A5F] border-t-[#1E3A5F]"
+              : "text-[#64748B] border-t-transparent hover:text-foreground"
+          }`}
+          aria-label="Dashboard"
+        >
+          <span className="relative">
+            <Home className={`h-6 w-6 ${isActive(["/overview"]) ? 'text-[#1E3A5F]' : 'text-[#64748B]'}`} strokeWidth={2} />
+            {overdueCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-destructive-foreground px-1">
+                {overdueCount > 9 ? '9+' : overdueCount}
+              </span>
+            )}
+          </span>
+          <span className="mt-0.5">Dashboard</span>
+        </button>
 
         {/* Rides/Equipment */}
         <NavButton 
