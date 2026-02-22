@@ -1454,7 +1454,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             return (
               <div
                 key={item.id}
-                className={`border border-slate-200/80 rounded-2xl overflow-hidden transition-all shadow-[0_1px_4px_rgba(0,0,0,0.08)] ${isFail ? 'bg-[#FFF5F5]' : 'bg-white'}`}
+                className={`border border-slate-200/80 rounded-2xl overflow-hidden transition-all shadow-[0_1px_4px_rgba(0,0,0,0.08)] ${isFail ? 'bg-[#FFF7F7]' : 'bg-white'}`}
                 style={{ borderLeft: cardBorder }}
               >
                 {/* Row 1: Number circle + Title + Status icon */}
