@@ -48,8 +48,6 @@ import CheckDetailDialog from './CheckDetailDialog';
 import QuickMaintenanceLog from './QuickMaintenanceLog';
 import { createInspectionRecord, updateInspectionRecordPdf, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
 import InspectionRecordList from './InspectionRecordList';
-import CheckDetailDialog from './CheckDetailDialog';
-import QuickMaintenanceLog from './QuickMaintenanceLog';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
