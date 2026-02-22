@@ -7,11 +7,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, Clock, Wrench, AlertOctagon, ChevronDown, ChevronUp, Check, Eye, Loader2 } from 'lucide-react';
+import { AlertTriangle, Clock, Wrench, AlertOctagon, ChevronDown, ChevronUp, Check, Eye, Loader2, WifiOff } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
+import { setCache, getCache } from '@/lib/offlineCache';
 
 type DefectSeverity = 'non_urgent' | 'urgent' | 'stop_operation';
 type DefectStatus = 'open' | 'acknowledged' | 'in_progress' | 'resolved';
@@ -39,6 +40,7 @@ interface DefectsListProps {
 const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }: DefectsListProps) => {
   const [defects, setDefects] = useState<Defect[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isOfflineData, setIsOfflineData] = useState(false);
   const [expandedDefect, setExpandedDefect] = useState<string | null>(null);
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [selectedDefect, setSelectedDefect] = useState<Defect | null>(null);
@@ -51,11 +53,36 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
   const { toast } = useToast();
   const { user } = useAuth();
 
+  const cacheKey = `defects:${rideId}:${showResolved ? 'all' : 'open'}`;
+
   useEffect(() => {
     loadDefects();
   }, [rideId, showResolved]);
 
   const loadDefects = async () => {
+    const isOnline = navigator.onLine;
+
+    // If offline, try cache first and don't make network calls
+    if (!isOnline) {
+      try {
+        const cached = await getCache<Defect[]>(cacheKey);
+        if (cached) {
+          setDefects(cached.data);
+          setIsOfflineData(true);
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.warn('Failed to read defects cache:', e);
+      }
+      // No cache available offline
+      setDefects([]);
+      setIsOfflineData(true);
+      setLoading(false);
+      return;
+    }
+
+    // Online: fetch from Supabase
     try {
       let query = supabase
         .from('defects')
@@ -72,13 +99,17 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
 
       if (error) throw error;
       
-      // Type assertion since we know the structure
-      setDefects((data || []) as unknown as Defect[]);
+      const defectsData = (data || []) as unknown as Defect[];
+      setDefects(defectsData);
+      setIsOfflineData(false);
+      
+      // Write to cache on success
+      setCache(cacheKey, defectsData).catch(console.error);
       
       // Load photo URLs for defects with photos
       if (data) {
         const photosToLoad: { [key: string]: string[] } = {};
-        for (const defect of data as unknown as Defect[]) {
+        for (const defect of defectsData) {
           if (defect.photo_paths && defect.photo_paths.length > 0) {
             const urls: string[] = [];
             for (const path of defect.photo_paths) {
@@ -98,11 +129,23 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
       }
     } catch (error) {
       console.error('Error loading defects:', error);
-      toast({
-        title: "Error",
-        description: "Failed to load defects",
-        variant: "destructive"
-      });
+      // Only show error toast when online
+      if (navigator.onLine) {
+        toast({
+          title: "Error",
+          description: "Failed to load defects",
+          variant: "destructive"
+        });
+      } else {
+        // Went offline mid-request, try cache
+        try {
+          const cached = await getCache<Defect[]>(cacheKey);
+          if (cached) {
+            setDefects(cached.data);
+            setIsOfflineData(true);
+          }
+        } catch (_) { /* ignore */ }
+      }
     } finally {
       setLoading(false);
     }
@@ -192,19 +235,30 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
     );
   }
 
+  const offlineBanner = isOfflineData ? (
+    <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted text-muted-foreground text-xs mb-3">
+      <WifiOff className="h-3.5 w-3.5 flex-shrink-0" />
+      <span>Offline: showing cached defects{defects.length === 0 ? ' — none cached yet' : ''}</span>
+    </div>
+  ) : null;
+
   if (defects.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center text-muted-foreground">
-          <AlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
-          <p>No {showResolved ? '' : 'open '}defects reported for this equipment</p>
-        </CardContent>
-      </Card>
+      <>
+        {offlineBanner}
+        <Card>
+          <CardContent className="py-8 text-center text-muted-foreground">
+            <AlertTriangle className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <p>No {showResolved ? '' : 'open '}defects reported for this equipment</p>
+          </CardContent>
+        </Card>
+      </>
     );
   }
 
   return (
     <>
+      {offlineBanner}
       <div className="space-y-3">
         {defects.map((defect) => {
           const severityInfo = getSeverityInfo(defect.severity);
