@@ -1681,8 +1681,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       </div>
 
       {/* ── Confirmation Card ── */}
-      <div className="mx-4 mt-3">
-        <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-[0_1px_4px_rgba(0,0,0,0.08)] space-y-3">
+       <div className="mx-4 mt-4">
+         <div className="bg-white border border-slate-300 rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] space-y-3">
           <h3 className="text-[13px] font-extrabold text-slate-900 uppercase tracking-wide">Confirmation</h3>
 
           {/* Warning: unanswered items */}
@@ -1704,8 +1704,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                 }
               }}
             >
-              <p className="text-[12px] text-red-600 font-semibold leading-snug hover:underline">
-                ⚠ {activeTemplate.daily_check_template_items.length - Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} remaining items must be answered. Tap to view.
+               <p className="text-[11px] text-red-600 font-semibold leading-snug hover:underline">
+                 ⚠ {activeTemplate.daily_check_template_items.length - Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length} remaining items must be answered. Tap to view.
               </p>
             </button>
           )}
@@ -1733,8 +1733,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                 }
               }}
             >
-              <p className="text-[12px] text-red-600 font-semibold leading-snug hover:underline">
-                ⚠ Failed items must have a defect raised before completion. Tap to view.
+               <p className="text-[11px] text-red-600 font-semibold leading-snug hover:underline">
+                 ⚠ Failed items must have a defect raised before completion. Tap to view.
               </p>
             </button>
           )}
@@ -1742,9 +1742,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           {getProgress() === 100 && activeTemplate.daily_check_template_items
             .filter(item => itemResults[item.id] === 'fail')
             .every(item => itemDefectRaised[item.id]) && (
-            <p className="text-[12px] text-green-700 font-semibold leading-snug">
-              ✓ All items completed. Ready to confirm.
-            </p>
+             <p className="text-[11px] text-green-700 font-semibold leading-snug">
+               ✓ All items completed. Ready to confirm.
+             </p>
           )}
 
           <div className="border-t border-slate-100 pt-3">
@@ -1754,10 +1754,13 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                 ? 'opacity-40 pointer-events-none'
                 : 'cursor-pointer'
             }`}>
-              <div
-                className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
-                  declarationChecked ? 'bg-primary border-primary' : 'border-slate-400 group-hover:border-primary'
-                }`}
+               <div
+                 className={`mt-0.5 w-5 h-5 shrink-0 rounded border-2 flex items-center justify-center transition-colors ${
+                   declarationChecked ? 'bg-primary border-primary' :
+                   getProgress() < 100 || activeTemplate.daily_check_template_items.some(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id])
+                     ? 'border-slate-300 bg-slate-100'
+                     : 'border-slate-400 group-hover:border-primary'
+                 }`}
                 onClick={() => {
                   const canConfirm = getProgress() === 100 && !activeTemplate.daily_check_template_items
                     .some(item => itemResults[item.id] === 'fail' && !itemDefectRaised[item.id]);
