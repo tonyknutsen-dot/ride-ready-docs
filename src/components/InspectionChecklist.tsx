@@ -1390,21 +1390,32 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       {/* ── WIZARD STEP 2: Checklist ── */}
       {wizardStep === 'checklist' && (
         <>
-          {/* Compact sticky summary row */}
+          {/* Compact sticky header block */}
           <div className="sticky top-0 z-30 mx-4 mt-2">
-            <div className="bg-white border border-slate-200 rounded-md shadow-sm px-3 py-2 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-1.5 min-w-0 text-[11px] text-slate-600 truncate">
-                <span className="font-bold text-slate-900 truncate">{inspectorName}</span>
-                {weatherConditions && <><span className="text-slate-300">·</span><span className="truncate">{weatherConditions}</span></>}
-                {location && <><span className="text-slate-300">·</span><span className="truncate max-w-[100px]">{location}</span></>}
+            <div className="bg-white border border-slate-200 rounded-md shadow-sm px-3 py-2.5">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Inspection:</span>
+                    <span className="text-[12px] font-extrabold text-slate-900 truncate">{frequency === 'preopening' ? 'Pre-Opening Safety Check' : frequency === 'daily' ? 'Daily Safety Check' : frequency === 'weekly' ? 'Weekly Safety Check' : frequency === 'monthly' ? 'Monthly Safety Check' : frequency === 'yearly' ? 'Yearly Safety Check' : `${frequency} Safety Check`}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Ride:</span>
+                    <span className="text-[12px] font-bold text-slate-700 truncate">{ride.ride_name}{ride.ride_code ? ` – ${ride.ride_code}` : ''}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Checked by:</span>
+                    <span className="text-[12px] font-bold text-slate-700 truncate">{inspectorName}</span>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setWizardStep('details')}
+                  className="text-[11px] font-bold text-primary shrink-0 hover:underline mt-0.5"
+                >
+                  Edit
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setWizardStep('details')}
-                className="text-[11px] font-bold text-primary shrink-0 hover:underline"
-              >
-                Edit
-              </button>
             </div>
           </div>
 
