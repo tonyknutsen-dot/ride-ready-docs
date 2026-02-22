@@ -303,6 +303,11 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             onSuccess();
           }
       } else {
+        // Determine default for requires_operational_checks based on category group
+        const selectedCat = categories.find(c => c.id === validatedData.category_id);
+        const nonOperationalGroups = ['Food Stalls', 'Games', 'Equipment'];
+        const defaultRequiresChecks = selectedCat ? !nonOperationalGroups.includes(selectedCat.category_group) : true;
+
         // Insert new ride
         const { data: newRide, error } = await supabase
           .from('rides')
@@ -314,6 +319,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             year_manufactured: validatedData.year_manufactured || null,
             serial_number: validatedData.serial_number || null,
             owner_name: validatedData.owner_name || null,
+            requires_operational_checks: defaultRequiresChecks,
           })
           .select()
           .single();

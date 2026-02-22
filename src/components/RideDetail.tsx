@@ -5,8 +5,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import { 
   ArrowLeft, FileText, CheckSquare, Mail, Wrench, Pencil, ImageIcon, Trash2,
-  ShieldCheck, ShieldAlert, Clock
+  ShieldCheck, ShieldAlert, Clock, Settings2
 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -41,6 +44,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const { isStaff } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
   const { subscription } = useSubscription();
+  const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -51,6 +55,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   
   const [isEditing, setIsEditing] = useState(false);
   const [showChecksGuide, setShowChecksGuide] = useState(false);
+  const [requiresOpChecks, setRequiresOpChecks] = useState(ride.requires_operational_checks);
   const [rideStats, setRideStats] = useState({
     docCount: 0,
     todayChecks: 0,
@@ -350,7 +355,44 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             </div>
           </div>
 
-          {/* Overdue Compliance Escalation Block */}
+          {/* Operational Checks Setting */}
+          {!isStaff && (
+            <div className="bg-card rounded-2xl border border-border shadow-sm p-5">
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-start gap-3">
+                  <div className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                    <Settings2 className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <Label htmlFor="op-checks-toggle" className="text-sm font-semibold text-foreground">
+                      Requires daily / pre-opening checks
+                    </Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      When enabled, this asset appears in the daily operating prompt
+                    </p>
+                  </div>
+                </div>
+                <Switch
+                  id="op-checks-toggle"
+                  checked={requiresOpChecks}
+                  onCheckedChange={async (checked) => {
+                    setRequiresOpChecks(checked);
+                    const { error } = await supabase
+                      .from('rides')
+                      .update({ requires_operational_checks: checked })
+                      .eq('id', ride.id);
+                    if (error) {
+                      setRequiresOpChecks(!checked);
+                      toast({ title: 'Failed to update', description: error.message, variant: 'destructive' });
+                    } else {
+                      toast({ title: checked ? 'Operational checks enabled' : 'Operational checks disabled' });
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {rideStats.overdueEvents.length > 0 && (
             <div className="rounded-2xl p-4 space-y-2" style={{ backgroundColor: 'hsl(0 72% 96%)', border: '1px solid hsl(0 72% 80%)' }}>
               <div className="flex items-center gap-2">
