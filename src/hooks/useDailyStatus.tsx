@@ -75,10 +75,12 @@ export function useDailyStatus(rideId: string) {
   const isOperating = statusData ?? false;
   const [toggling, setToggling] = useState(false);
 
-  const toggleOperating = useCallback(async (reason?: string) => {
-    if (!effectiveUserId || !canToggle) return;
-
-    const newValue = !isOperating;
+  /**
+   * Internal helper to set operating status to a specific value.
+   * Used by both toggleOperating and autoSetOperating.
+   */
+  const setOperatingValue = useCallback(async (newValue: boolean, reason?: string, autoReason?: string) => {
+    if (!effectiveUserId) return;
     setToggling(true);
 
     // Optimistic update
@@ -88,11 +90,11 @@ export function useDailyStatus(rideId: string) {
       // Get the user's display name for the log
       const { data: profile } = await supabase
         .from('profiles')
-        .select('full_name')
+        .select('controller_name')
         .eq('user_id', effectiveUserId)
         .single();
 
-      const displayName = (profile as any)?.full_name || 'Unknown';
+      const displayName = (profile as any)?.controller_name || 'Unknown';
 
       // Upsert ride_daily_status
       const { error: upsertError } = await (supabase
@@ -120,7 +122,7 @@ export function useDailyStatus(rideId: string) {
           changed_by: effectiveUserId,
           changed_by_name: displayName,
           new_is_operating: newValue,
-          reason: reason || null,
+          reason: autoReason || reason || null,
         }) as any);
 
       // Invalidate related queries
@@ -129,14 +131,28 @@ export function useDailyStatus(rideId: string) {
       queryClient.invalidateQueries({ queryKey: ['all-rides-daily-status'] });
 
       toast({
-        title: newValue ? 'Ride marked as operating today' : 'Ride marked as not operating today',
+        title: newValue ? 'Ride marked as Operating Today' : 'Ride marked as not operating today',
       });
     } catch (err) {
       queryClient.setQueryData(['ride-daily-status', rideId, todayStr], !newValue);
     } finally {
       setToggling(false);
     }
-  }, [effectiveUserId, canToggle, isOperating, rideId, todayStr, queryClient, toast]);
+  }, [effectiveUserId, rideId, todayStr, queryClient, toast]);
+
+  const toggleOperating = useCallback(async (reason?: string) => {
+    if (!canToggle) return;
+    await setOperatingValue(!isOperating, reason);
+  }, [canToggle, isOperating, setOperatingValue]);
+
+  /**
+   * Auto-set operating to ON when a user starts a Daily/Pre-Opening check.
+   * Does nothing if already operating. No role restriction — any user starting a check triggers this.
+   */
+  const autoSetOperating = useCallback(async () => {
+    if (isOperating) return; // already on
+    await setOperatingValue(true, undefined, 'Started check');
+  }, [isOperating, setOperatingValue]);
 
   return {
     isOperating,
@@ -144,6 +160,7 @@ export function useDailyStatus(rideId: string) {
     canToggle,
     toggling,
     toggleOperating,
+    autoSetOperating,
     logEntries: logEntries || [],
   };
 }
