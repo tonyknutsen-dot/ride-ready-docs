@@ -2015,6 +2015,82 @@ export type Database = {
         }
         Relationships: []
       }
+      ride_daily_status: {
+        Row: {
+          id: string
+          is_operating: boolean
+          ride_id: string
+          status_date: string
+          updated_at: string
+          updated_by: string
+        }
+        Insert: {
+          id?: string
+          is_operating?: boolean
+          ride_id: string
+          status_date?: string
+          updated_at?: string
+          updated_by: string
+        }
+        Update: {
+          id?: string
+          is_operating?: boolean
+          ride_id?: string
+          status_date?: string
+          updated_at?: string
+          updated_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_daily_status_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ride_daily_status_log: {
+        Row: {
+          changed_at: string
+          changed_by: string
+          changed_by_name: string | null
+          id: string
+          new_is_operating: boolean
+          reason: string | null
+          ride_id: string
+          status_date: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by: string
+          changed_by_name?: string | null
+          id?: string
+          new_is_operating: boolean
+          reason?: string | null
+          ride_id: string
+          status_date: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string
+          changed_by_name?: string | null
+          id?: string
+          new_is_operating?: boolean
+          reason?: string | null
+          ride_id?: string
+          status_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_daily_status_log_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ride_documents: {
         Row: {
           archive_reason: string | null

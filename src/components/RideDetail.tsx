@@ -24,7 +24,7 @@ import RideForm from './RideForm';
 import ImageViewer from './ImageViewer';
 import { DeleteRideDialog } from './DeleteRideDialog';
 import { lazy, Suspense } from 'react';
-import { useRideOperatingToday } from '@/hooks/useRideOperatingToday';
+import { useDailyStatus } from '@/hooks/useDailyStatus';
 import { useAppRole } from '@/hooks/useAppRole';
 import { Badge } from '@/components/ui/badge';
 import { PlayCircle, PauseCircle } from 'lucide-react';
@@ -63,7 +63,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const [showChecksGuide, setShowChecksGuide] = useState(false);
   const [requiresOpChecks, setRequiresOpChecks] = useState(ride.requires_operational_checks);
   const role = useAppRole();
-  const { isOperating, isLoading: opLoading, canToggle, toggling, toggleOperating } = useRideOperatingToday(ride.id);
+  const { isOperating, isLoading: opLoading, canToggle, toggling, toggleOperating } = useDailyStatus(ride.id);
   const [rideStats, setRideStats] = useState({
     docCount: 0,
     todayChecks: 0,
