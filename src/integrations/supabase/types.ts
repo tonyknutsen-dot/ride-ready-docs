@@ -2080,6 +2080,41 @@ export type Database = {
           },
         ]
       }
+      ride_operation_days: {
+        Row: {
+          id: string
+          is_operating: boolean
+          operation_date: string
+          ride_id: string
+          set_at: string
+          set_by: string
+        }
+        Insert: {
+          id?: string
+          is_operating?: boolean
+          operation_date: string
+          ride_id: string
+          set_at?: string
+          set_by: string
+        }
+        Update: {
+          id?: string
+          is_operating?: boolean
+          operation_date?: string
+          ride_id?: string
+          set_at?: string
+          set_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_operation_days_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ride_type_requests: {
         Row: {
           additional_info: string | null

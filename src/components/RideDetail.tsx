@@ -24,6 +24,10 @@ import RideForm from './RideForm';
 import ImageViewer from './ImageViewer';
 import { DeleteRideDialog } from './DeleteRideDialog';
 import { lazy, Suspense } from 'react';
+import { useRideOperatingToday } from '@/hooks/useRideOperatingToday';
+import { useAppRole } from '@/hooks/useAppRole';
+import { Badge } from '@/components/ui/badge';
+import { PlayCircle, PauseCircle } from 'lucide-react';
 const Reports = lazy(() => import('@/pages/Reports'));
 
 type Ride = Tables<'rides'> & {
@@ -58,6 +62,8 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const [isEditing, setIsEditing] = useState(false);
   const [showChecksGuide, setShowChecksGuide] = useState(false);
   const [requiresOpChecks, setRequiresOpChecks] = useState(ride.requires_operational_checks);
+  const role = useAppRole();
+  const { isOperating, isLoading: opLoading, canToggle, toggling, toggleOperating } = useRideOperatingToday(ride.id);
   const [rideStats, setRideStats] = useState({
     docCount: 0,
     todayChecks: 0,
@@ -318,6 +324,38 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                 );
               })()}
             </div>
+
+            {/* Operating Today Status */}
+            {requiresOpChecks && (
+              <div className="flex items-center justify-between gap-3 bg-muted/30 rounded-xl border border-border px-4 py-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {isOperating ? (
+                    <PlayCircle className="h-5 w-5 text-green-600 shrink-0" />
+                  ) : (
+                    <PauseCircle className="h-5 w-5 text-muted-foreground shrink-0" />
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-foreground">
+                      {opLoading ? 'Checking…' : isOperating ? 'Operating Today' : 'Not Operating Today'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {isOperating ? 'Daily & pre-opening checks are due' : 'Daily checks not required today'}
+                    </p>
+                  </div>
+                </div>
+                {canToggle && (
+                  <Button
+                    variant={isOperating ? 'outline' : 'default'}
+                    size="sm"
+                    disabled={toggling || opLoading}
+                    onClick={toggleOperating}
+                    className="shrink-0 text-xs"
+                  >
+                    {toggling ? '…' : isOperating ? 'Set Not Operating' : 'Mark Operating'}
+                  </Button>
+                )}
+              </div>
+            )}
 
             {/* KPI Grid — increased contrast with text-lg */}
             <div className="grid grid-cols-2 gap-3">
