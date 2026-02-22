@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import { ArrowLeft, ArrowRight, Plus, Trash2, Save, Library, Pencil, Check, X, Sparkles, CheckSquare, ListChecks, AlertTriangle, Search } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
@@ -755,37 +756,38 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-warning" />
-                Start Notice (optional)
+                Start Notice (Optional Briefing Before Check)
               </CardTitle>
               <CardDescription>
-                Add a notice that staff must acknowledge before starting this check.
+                Add a notice shown to staff before this check starts.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               <div className="space-y-2">
-                <Label htmlFor="startNotice">Notice Text</Label>
+                <Label htmlFor="startNotice">Notice text shown before check starts</Label>
                 <Textarea
                   id="startNotice"
                   value={startNoticeText}
                   onChange={(e) => {
                     setStartNoticeText(e.target.value);
                     if (!e.target.value.trim()) setStartNoticeRequired(false);
-                    else setStartNoticeRequired(true);
+                    else if (!startNoticeRequired) setStartNoticeRequired(true);
                   }}
-                  placeholder="e.g. Ensure all safety barriers are in place before commencing inspection…"
+                  placeholder="Example: Ensure PPE is worn. Check ground stability. Confirm perimeter barriers are in place."
                   rows={3}
                 />
               </div>
               {startNoticeText.trim() && (
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="startNoticeToggle" className="text-sm cursor-pointer">
+                    Require acknowledgement before starting check
+                  </Label>
+                  <Switch
+                    id="startNoticeToggle"
                     checked={startNoticeRequired}
-                    onChange={(e) => setStartNoticeRequired(e.target.checked)}
-                    className="h-4 w-4 rounded accent-primary"
+                    onCheckedChange={setStartNoticeRequired}
                   />
-                  <span className="text-sm">Require acknowledgement before starting</span>
-                </label>
+                </div>
               )}
             </CardContent>
           </Card>

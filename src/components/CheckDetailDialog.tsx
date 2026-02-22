@@ -18,8 +18,10 @@ import {
   XCircle, 
   MinusCircle,
   FileText,
-  Clock
+  Clock,
+  ShieldCheck,
 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
@@ -200,6 +202,30 @@ const CheckDetailDialog = ({ check, open, onOpenChange }: CheckDetailDialogProps
                 <p className="text-sm font-medium mb-1">Notes:</p>
                 <p className="text-sm text-muted-foreground">{check.notes}</p>
               </div>
+            )}
+
+            {/* Start Notice Acknowledged badge */}
+            {check.start_notice_acknowledged && (
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <button className="w-full flex items-center gap-2 p-3 rounded-lg bg-primary/5 border border-primary/20 text-sm hover:bg-primary/10 transition-colors text-left">
+                    <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+                    <span className="font-medium text-primary">Start Notice Acknowledged</span>
+                    {check.start_notice_acknowledged_at && (
+                      <span className="ml-auto text-xs text-muted-foreground">
+                        {format(parseISO(check.start_notice_acknowledged_at), 'PPp')}
+                      </span>
+                    )}
+                  </button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2">
+                  {check.start_notice_snapshot && (
+                    <div className="rounded-lg bg-muted/50 p-3 text-sm whitespace-pre-wrap text-muted-foreground">
+                      {check.start_notice_snapshot}
+                    </div>
+                  )}
+                </CollapsibleContent>
+              </Collapsible>
             )}
 
             <Separator />
