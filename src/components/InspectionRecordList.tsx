@@ -6,8 +6,6 @@ import {
   Eye,
   Download,
   FileText,
-  User,
-  Calendar,
   AlertTriangle,
   CheckCircle2,
   XCircle,
@@ -15,6 +13,8 @@ import {
   Loader2,
   Edit3,
   History,
+  Clock,
+  Lock,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -28,6 +28,7 @@ import CheckDetailDialog from './CheckDetailDialog';
 import { InspectionAmendDialog } from './InspectionAmendDialog';
 import {
   fetchInspectionRecords,
+  isWithinAmendmentWindow,
   type InspectionRecord,
 } from '@/utils/inspectionRecordService';
 import { Tables } from '@/integrations/supabase/types';
@@ -160,8 +161,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
       <div className="space-y-1.5">
         {records.map((record) => {
           const defectCount = record.defect_ids?.length || 0;
-          const itemResults = record.item_results as any[];
-          const failedCount = itemResults?.filter((r: any) => r.result === 'fail').length || 0;
+          const canAmend = isController && isWithinAmendmentWindow(record) && !record.superseded_by_id;
 
           return (
             <div
@@ -173,7 +173,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
                 <div className="flex items-center gap-2 min-w-0">
                   <span className="font-bold text-sm text-foreground truncate">{record.inspector_name}</span>
                   <span className="text-[11px] text-muted-foreground shrink-0">
-                    {format(parseISO(record.check_date), 'd MMM yyyy')}
+                    {format(parseISO(record.completed_at), 'd MMM yyyy, HH:mm')}
                   </span>
                 </div>
 
@@ -192,7 +192,27 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
                   {record.amended_from_id && (
                     <span className="text-[10px] text-muted-foreground italic">Amended</span>
                   )}
+                  {record.superseded_by_id && (
+                    <span className="text-[10px] text-muted-foreground italic line-through">Superseded</span>
+                  )}
                 </div>
+
+                {/* Amendment window status for controllers */}
+                {isController && !record.superseded_by_id && (
+                  <div className="mt-0.5">
+                    {isWithinAmendmentWindow(record) ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <Clock className="h-2.5 w-2.5" />
+                        Amendment window open
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] text-muted-foreground/60">
+                        <Lock className="h-2.5 w-2.5" />
+                        Amendment window expired (24 hours)
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Actions */}
@@ -216,7 +236,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
                 >
                   <Download className="h-3.5 w-3.5" />
                 </Button>
-                {isController && (
+                {canAmend && (
                   <Button
                     variant="ghost"
                     size="icon"
