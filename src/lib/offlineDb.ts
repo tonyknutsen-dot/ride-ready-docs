@@ -134,6 +134,18 @@ export interface CacheStoreEntry {
   updatedAt: string;
 }
 
+// Identity cache for offline boot
+export interface IdentityCacheEntry {
+  userId: string; // PK
+  email: string;
+  role: string;
+  organisationId: string | null;
+  permissions: Record<string, boolean>;
+  setupComplete: boolean;
+  lastProfileSyncAt: string;
+  lastVisitedRoute: string;
+}
+
 // Dexie database class
 class OfflineDatabase extends Dexie {
   offlineChecks!: EntityTable<OfflineCheck, 'id'>;
@@ -144,6 +156,7 @@ class OfflineDatabase extends Dexie {
   cachedPdfs!: EntityTable<CachedPdf, 'documentId'>;
   offlineComplianceCompletions!: EntityTable<OfflineComplianceCompletion, 'id'>;
   cacheStore!: EntityTable<CacheStoreEntry, 'key'>;
+  identityCache!: EntityTable<IdentityCacheEntry, 'userId'>;
 
   constructor() {
     super('RideReadyOfflineDB');
@@ -199,6 +212,19 @@ class OfflineDatabase extends Dexie {
       cachedPdfs: 'documentId, version, cachedAt',
       offlineComplianceCompletions: '++id, localId, eventId, syncStatus, createdAt',
       cacheStore: 'key, updatedAt'
+    });
+
+    // Version 7: Add identity cache for offline boot
+    this.version(7).stores({
+      offlineChecks: '++id, localId, rideId, syncStatus, createdAt, needsAddressResolution',
+      offlineDefects: '++id, localId, rideId, checkLocalId, syncStatus',
+      cachedRides: 'id, cachedAt',
+      cachedTemplates: 'id, rideId, cachedAt',
+      cachedLocations: '++id, latitude, longitude, lastUsed',
+      cachedPdfs: 'documentId, version, cachedAt',
+      offlineComplianceCompletions: '++id, localId, eventId, syncStatus, createdAt',
+      cacheStore: 'key, updatedAt',
+      identityCache: 'userId'
     });
   }
 }
@@ -361,4 +387,28 @@ export async function getPendingComplianceCompletions(): Promise<OfflineComplian
 
 export async function getAllOfflineComplianceCompletions(): Promise<OfflineComplianceCompletion[]> {
   return offlineDb.offlineComplianceCompletions.toArray();
+}
+
+// ── Identity cache helpers for offline boot ──
+
+export async function saveIdentityCache(entry: IdentityCacheEntry): Promise<void> {
+  await offlineDb.identityCache.put(entry);
+}
+
+export async function getIdentityCache(userId: string): Promise<IdentityCacheEntry | undefined> {
+  return offlineDb.identityCache.get(userId);
+}
+
+export async function clearIdentityCache(): Promise<void> {
+  await offlineDb.identityCache.clear();
+}
+
+export async function updateLastVisitedRoute(userId: string, route: string): Promise<void> {
+  const skip = ['/', '/auth', '/profile-setup', '/staff-invite', '/tester-invite'];
+  if (skip.some(s => route === s || route.startsWith('/staff-invite/') || route.startsWith('/tester-invite/'))) return;
+  try {
+    await offlineDb.identityCache.update(userId, { lastVisitedRoute: route });
+  } catch {
+    // identity not cached yet – ignore
+  }
 }

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useMemo, useCallback } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { getOfflineIdentity, saveOfflineIdentity, clearOfflineIdentity } from '@/lib/offlineIdentity';
+import { getIdentityCache, clearIdentityCache, type IdentityCacheEntry } from '@/lib/offlineDb';
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +10,7 @@ interface AuthContextType {
   isSuspended: boolean;
   suspensionReason: string | null;
   isOfflineMode: boolean;
+  cachedIdentity: IdentityCacheEntry | null;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (email: string, password: string, country?: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
@@ -27,38 +28,32 @@ export const useAuth = () => {
 };
 
 // Sync subscription status with Stripe (debounced and deferred)
-// Skip for testers to avoid unnecessary API calls
-// This runs in the background AFTER the UI is interactive
 let syncTimeout: ReturnType<typeof setTimeout> | null = null;
 const syncSubscriptionStatus = async (userId: string) => {
-  // Debounce syncs to avoid excessive API calls
   if (syncTimeout) clearTimeout(syncTimeout);
-  
-  // Use requestIdleCallback for non-blocking background sync
+
   const scheduleSync = () => {
     syncTimeout = setTimeout(async () => {
       try {
-        // Check if user is a tester first - skip Stripe sync for testers
         const { data: testerRole } = await supabase
           .from('user_roles')
           .select('role')
           .eq('user_id', userId)
           .eq('role', 'tester')
           .maybeSingle();
-        
+
         if (testerRole) {
           console.log('[AUTH] Skipping Stripe sync for tester account');
           return;
         }
-        
+
         await supabase.functions.invoke('check-subscription');
       } catch (error) {
         console.error('Error syncing subscription:', error);
       }
-    }, 2000); // Increased delay for better initial page load
+    }, 2000);
   };
-  
-  // Schedule during idle time if available, otherwise use setTimeout
+
   if ('requestIdleCallback' in window) {
     (window as any).requestIdleCallback(scheduleSync, { timeout: 5000 });
   } else {
@@ -73,6 +68,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isSuspended, setIsSuspended] = useState(false);
   const [suspensionReason, setSuspensionReason] = useState<string | null>(null);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [cachedIdentity, setCachedIdentity] = useState<IdentityCacheEntry | null>(null);
 
   const checkSuspensionStatus = async (userId: string) => {
     try {
@@ -100,25 +96,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
     let initialLoadDone = false;
-    
-    console.log('[AUTH] Initializing auth', { 
+
+    console.log('[AUTH] Initializing auth', {
       pathname: window.location.pathname,
       hasHash: !!window.location.hash,
-      origin: window.location.origin 
+      origin: window.location.origin
     });
 
-    // Listener for ONGOING auth changes (does NOT control loading after initial load)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (!isMounted) return;
-        
-        // Always update session and user state synchronously
+
         setSession(session);
         setUser(session?.user ?? null);
-        setIsOfflineMode(false); // We got a real session, not offline
-        
-        // Handle suspension and subscription sync in a deferred callback
-        // to avoid Supabase deadlock issues
+        setIsOfflineMode(false);
+
         if (session?.user) {
           setTimeout(async () => {
             if (!isMounted) return;
@@ -126,12 +118,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (!isMounted) return;
             setIsSuspended(suspended);
             setSuspensionReason(reason);
-            
-            // If suspended, sign them out
+
             if (suspended) {
               await supabase.auth.signOut();
             } else {
-              // Sync subscription status with Stripe on login
               if (event === 'SIGNED_IN') {
                 syncSubscriptionStatus(session.user.id);
               }
@@ -141,8 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsSuspended(false);
           setSuspensionReason(null);
         }
-        
-        // Set loading false from the listener
+
         if (!initialLoadDone) {
           initialLoadDone = true;
           setLoading(false);
@@ -150,35 +139,67 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     );
 
-    // INITIAL load - let Supabase auto-detect hash tokens (detectSessionInUrl is enabled by default)
-    // then fall back to getSession for existing sessions
     const initializeAuth = async () => {
       try {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (!isMounted) return;
 
-        // Offline fallback: if getSession fails or returns null while offline,
-        // use cached identity to keep user signed in
-        if (!session && !navigator.onLine) {
-          const cached = getOfflineIdentity();
-          if (cached) {
-            console.log('[AUTH] Offline boot – using cached identity', cached.userId);
-            // Create a minimal User-like object so ProtectedRoute allows access
-            setUser({ id: cached.userId } as User);
-            setIsOfflineMode(true);
-            if (!initialLoadDone) {
-              initialLoadDone = true;
-              setLoading(false);
+        if (session?.user) {
+          // We have a valid Supabase session. Set user immediately.
+          setSession(session);
+          setUser(session.user);
+
+          // Try to load cached identity from IndexedDB
+          try {
+            const cached = await getIdentityCache(session.user.id);
+            if (cached) {
+              console.log('[AUTH] Loaded identity cache for', session.user.id);
+              setCachedIdentity(cached);
             }
-            return;
+          } catch (e) {
+            console.warn('[AUTH] Failed to load identity cache:', e);
           }
+
+          // If online, check suspension (profile fetch will happen in useProfileComplete)
+          if (navigator.onLine) {
+            try {
+              const { suspended, reason } = await checkSuspensionStatus(session.user.id);
+              if (!isMounted) return;
+              setIsSuspended(suspended);
+              setSuspensionReason(reason);
+            } catch {
+              // Suspension check failed but we have a session – continue
+            }
+          } else {
+            // Offline with session – mark offline mode
+            console.log('[AUTH] Offline boot with valid session');
+            setIsOfflineMode(true);
+          }
+
+          if (!initialLoadDone) {
+            initialLoadDone = true;
+            setLoading(false);
+          }
+          return;
         }
-        
+
+        // No session returned
+        if (!navigator.onLine) {
+          // Offline with no session – can't do anything
+          console.log('[AUTH] Offline boot with no session');
+          if (!initialLoadDone) {
+            initialLoadDone = true;
+            setLoading(false);
+          }
+          return;
+        }
+
+        // Online with no session – check for OAuth callback
         if (!initialLoadDone) {
           const hash = window.location.hash;
           const hasAuthCallback = hash.includes('access_token') || hash.includes('error_description');
-          
-          if (hasAuthCallback && !session) {
+
+          if (hasAuthCallback) {
             console.log('[AUTH] OAuth callback detected, waiting for session from hash...');
             setTimeout(() => {
               if (isMounted && !initialLoadDone) {
@@ -189,17 +210,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }, 5000);
             return;
           }
-          
-          setSession(session);
-          setUser(session?.user ?? null);
 
-          // Persist identity for offline boot
-          if (session?.user) {
-            const { suspended, reason } = await checkSuspensionStatus(session.user.id);
-            if (!isMounted) return;
-            setIsSuspended(suspended);
-            setSuspensionReason(reason);
-          }
+          setSession(null);
+          setUser(null);
         }
       } finally {
         if (isMounted && !initialLoadDone) {
@@ -224,26 +237,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     if (!error && data.user) {
-      // Check if user is suspended
       const { suspended, reason } = await checkSuspensionStatus(data.user.id);
       if (suspended) {
         setIsSuspended(true);
         setSuspensionReason(reason);
         await supabase.auth.signOut();
-        return { 
-          error: { 
-            message: `Your account has been suspended.${reason ? ` Reason: ${reason}` : ''} Please contact support@ridereadydocs.com to resolve this issue.` 
-          } 
+        return {
+          error: {
+            message: `Your account has been suspended.${reason ? ` Reason: ${reason}` : ''} Please contact support@ridereadydocs.com to resolve this issue.`
+          }
         };
       }
-      
-      // Log successful login to audit log
+
       try {
         await supabase.rpc('log_audit_event', {
           p_action: 'login',
           p_resource_type: 'session',
           p_resource_id: null,
-          p_details: { 
+          p_details: {
             method: 'password',
             user_agent: navigator.userAgent,
           }
@@ -258,7 +269,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = useCallback(async (email: string, password: string, country?: string) => {
     const redirectUrl = `${window.location.origin}/profile-setup`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -270,7 +281,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
-    // Send welcome email
     if (!error) {
       setTimeout(async () => {
         try {
@@ -287,7 +297,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signOut = useCallback(async () => {
-    // Log logout event before signing out
     try {
       await supabase.rpc('log_audit_event', {
         p_action: 'logout',
@@ -298,24 +307,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (auditError) {
       console.error('Failed to log logout event:', auditError);
     }
-    
+
     setIsSuspended(false);
     setSuspensionReason(null);
-    clearOfflineIdentity();
+    setCachedIdentity(null);
+    clearIdentityCache();
     const { error } = await supabase.auth.signOut();
     return { error };
   }, []);
 
   const resetPassword = useCallback(async (email: string) => {
     const redirectUrl = `${window.location.origin}/auth`;
-    
+
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: redirectUrl
     });
     return { error };
   }, []);
 
-  // Memoize the context value to prevent unnecessary re-renders
   const value = useMemo(() => ({
     user,
     session,
@@ -323,11 +332,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isSuspended,
     suspensionReason,
     isOfflineMode,
+    cachedIdentity,
     signIn,
     signUp,
     signOut,
     resetPassword,
-  }), [user, session, loading, isSuspended, suspensionReason, isOfflineMode, signIn, signUp, signOut, resetPassword]);
+  }), [user, session, loading, isSuspended, suspensionReason, isOfflineMode, cachedIdentity, signIn, signUp, signOut, resetPassword]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

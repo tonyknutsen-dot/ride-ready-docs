@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { getOfflineIdentity, saveOfflineIdentity } from '@/lib/offlineIdentity';
+import { saveIdentityCache, type IdentityCacheEntry } from '@/lib/offlineDb';
 
 export function useProfileComplete() {
-  const { user, isOfflineMode } = useAuth();
+  const { user, isOfflineMode, cachedIdentity } = useAuth();
   const [isProfileComplete, setIsProfileComplete] = useState<boolean | null>(null);
   const [isStaffMember, setIsStaffMember] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -17,24 +17,24 @@ export function useProfileComplete() {
       return;
     }
 
-    // Offline mode: use cached identity instead of querying Supabase
+    // Offline mode: use cached identity from IndexedDB (already loaded in AuthContext)
     if (isOfflineMode || !navigator.onLine) {
-      const cached = getOfflineIdentity();
-      if (cached && cached.userId === user.id) {
-        setIsProfileComplete(cached.setupComplete);
-        setIsStaffMember(cached.role === 'employee');
+      if (cachedIdentity && cachedIdentity.userId === user.id) {
+        setIsProfileComplete(cachedIdentity.setupComplete);
+        setIsStaffMember(cachedIdentity.role === 'employee');
         setLoading(false);
         return;
       }
       // No cached identity – treat as complete to avoid onboarding redirect
-      setIsProfileComplete(true);
+      // ProfileGuard will show the "needs internet" screen instead
+      setIsProfileComplete(null);
       setLoading(false);
       return;
     }
 
     const checkProfile = async () => {
       try {
-        // First check if user is a staff member (part of an organisation they don't own)
+        // First check if user is a staff member
         const { data: memberData } = await supabase
           .from('organisation_members')
           .select('id, organisation_id, permission_level, can_access_checks, can_access_documents, can_access_maintenance, can_access_calendar, can_access_risk_assessments, can_access_send_documents, organisations!inner(owner_id)')
@@ -42,11 +42,9 @@ export function useProfileComplete() {
           .eq('is_active', true)
           .maybeSingle();
 
-        // User is a staff member if they're in an org they don't own
         const isStaff = memberData && (memberData.organisations as any)?.owner_id !== user.id;
         setIsStaffMember(!!isStaff);
 
-        // Staff members don't need to complete profile setup - they're part of an existing company
         if (isStaff) {
           setIsProfileComplete(true);
           const orgId = memberData?.organisation_id ?? null;
@@ -58,7 +56,20 @@ export function useProfileComplete() {
             riskAssessments: memberData.can_access_risk_assessments,
             sendDocuments: memberData.can_access_send_documents,
           } : {};
-          saveOfflineIdentity({ userId: user.id, role: memberData?.permission_level ?? 'employee', organisationId: orgId, setupComplete: true, permissions: perms, lastSync: new Date().toISOString() });
+
+          // Write to IndexedDB identity cache
+          const cacheEntry: IdentityCacheEntry = {
+            userId: user.id,
+            email: user.email ?? '',
+            role: memberData?.permission_level ?? 'employee',
+            organisationId: orgId,
+            permissions: perms,
+            setupComplete: true,
+            lastProfileSyncAt: new Date().toISOString(),
+            lastVisitedRoute: cachedIdentity?.lastVisitedRoute ?? '/overview',
+          };
+          saveIdentityCache(cacheEntry).catch(console.warn);
+
           setLoading(false);
           return;
         }
@@ -74,26 +85,34 @@ export function useProfileComplete() {
           console.error('Error checking profile:', error);
           setIsProfileComplete(false);
         } else if (!data) {
-          // No profile exists yet
           setIsProfileComplete(false);
         } else {
-          // Profile exists - check if required fields are filled
           const isComplete = !!(data.company_name && data.controller_name);
           setIsProfileComplete(isComplete);
-          // Persist for offline boot
-          saveOfflineIdentity({ userId: user.id, role: 'controller', organisationId: null, setupComplete: isComplete, lastSync: new Date().toISOString() });
+
+          // Write to IndexedDB identity cache
+          if (isComplete) {
+            const cacheEntry: IdentityCacheEntry = {
+              userId: user.id,
+              email: user.email ?? '',
+              role: 'controller',
+              organisationId: null,
+              permissions: {},
+              setupComplete: true,
+              lastProfileSyncAt: new Date().toISOString(),
+              lastVisitedRoute: cachedIdentity?.lastVisitedRoute ?? '/overview',
+            };
+            saveIdentityCache(cacheEntry).catch(console.warn);
+          }
         }
       } catch (error) {
         console.error('Error checking profile:', error);
-        // If fetch failed (possibly offline), try cached identity
-        if (!navigator.onLine) {
-          const cached = getOfflineIdentity();
-          if (cached && cached.userId === user.id) {
-            setIsProfileComplete(cached.setupComplete);
-            setIsStaffMember(cached.role === 'employee');
-            setLoading(false);
-            return;
-          }
+        // If fetch failed (possibly offline), use cached identity
+        if (cachedIdentity && cachedIdentity.userId === user.id) {
+          setIsProfileComplete(cachedIdentity.setupComplete);
+          setIsStaffMember(cachedIdentity.role === 'employee');
+          setLoading(false);
+          return;
         }
         setIsProfileComplete(false);
       } finally {
@@ -102,7 +121,7 @@ export function useProfileComplete() {
     };
 
     checkProfile();
-  }, [user, isOfflineMode]);
+  }, [user, isOfflineMode, cachedIdentity]);
 
   return { isProfileComplete, isStaffMember, loading };
 }
