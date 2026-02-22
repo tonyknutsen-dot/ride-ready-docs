@@ -76,6 +76,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [itemResults, setItemResults] = useState<{ [key: string]: CheckItemResult }>({});
   const [notes, setNotes] = useState<{ [key: string]: string }>({});
   const [inspectorName, setInspectorName] = useState('');
+  const [inspectorNameError, setInspectorNameError] = useState(false);
+  const [wizardStep, setWizardStep] = useState<'details' | 'checklist'>(startImmediately ? 'details' : 'details');
   const [inspectorNotes, setInspectorNotes] = useState('');
   const [weatherConditions, setWeatherConditions] = useState('');
   const [environmentNotes, setEnvironmentNotes] = useState('');
@@ -103,6 +105,22 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const queryClient = useQueryClient();
   const { submitCheck, isOnline } = useOfflineCheck();
   const { pendingCount, isSyncing, syncAll } = useOfflineSync();
+
+  // Prefill inspector name from profile
+  useEffect(() => {
+    if (user && effectiveUserId && !inspectorName) {
+      supabase
+        .from('profiles')
+        .select('controller_name')
+        .eq('user_id', effectiveUserId)
+        .single()
+        .then(({ data }) => {
+          if (data?.controller_name && !inspectorName) {
+            setInspectorName(data.controller_name);
+          }
+        });
+    }
+  }, [user, effectiveUserId]);
 
   useEffect(() => {
     if (user) {
@@ -1311,61 +1329,99 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         </div>
       )}
 
-      {/* ── Inspector Details (auto-collapsed) ── */}
-      <div className="mx-4 mt-2">
-        <details className="group bg-white border border-slate-200 rounded-md overflow-hidden shadow-sm">
-          <summary className="px-3 py-2 flex items-center justify-between gap-2 cursor-pointer list-none">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                inspectorName.trim() ? 'bg-green-600 text-white' : 'bg-slate-200 text-slate-500'
-              }`}>{inspectorName.trim() ? '✓' : '?'}</div>
-              <div className="min-w-0">
-                <p className="font-bold text-[12px] text-slate-900">Inspector Details</p>
-                <p className="text-[11px] text-slate-500 truncate">
-                  {inspectorName.trim() ? `${inspectorName}${location ? ` · ${location}` : ''}` : 'Name required'}
-                </p>
-              </div>
+      {/* ── WIZARD STEP 1: Inspector Details ── */}
+      {wizardStep === 'details' && (
+        <div className="mx-4 mt-3">
+          <div className="bg-white border border-slate-200 rounded-md shadow-sm overflow-hidden">
+            <div className="px-4 pt-4 pb-1">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Step 1 of 2</p>
+              <h2 className="text-[15px] font-bold text-slate-900 mt-0.5">Inspector Details</h2>
+              <p className="text-[12px] text-slate-500 mt-0.5">Complete before starting the check.</p>
             </div>
-            <ChevronDown className="h-3.5 w-3.5 text-slate-400 shrink-0 group-open:rotate-180 transition-transform" />
-          </summary>
-          <div className="px-3 pb-3 space-y-2.5 border-t border-slate-200 pt-2.5">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="px-4 pb-4 pt-2 space-y-3">
               <div className="space-y-1">
-                <Label htmlFor="checkedBy" className="text-[11px] font-bold text-slate-700">Checked By *</Label>
-                <Input id="checkedBy" value={inspectorName} onChange={(e) => setInspectorName(e.target.value)} placeholder="Staff name" className="h-10 text-sm border-slate-300" />
+                <Label htmlFor="checkedBy" className="text-[11px] font-bold text-slate-700">Checked By <span className="text-red-500">*</span></Label>
+                <Input
+                  id="checkedBy"
+                  value={inspectorName}
+                  onChange={(e) => { setInspectorName(e.target.value); setInspectorNameError(false); }}
+                  placeholder="Staff name"
+                  className={`h-11 text-sm ${inspectorNameError ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                />
+                {inspectorNameError && (
+                  <p className="text-[11px] font-semibold text-red-600">Name is required to start this check.</p>
+                )}
               </div>
               <div className="space-y-1">
-                <Label htmlFor="weather" className="text-[11px] font-bold text-slate-700">Weather</Label>
-                <Input id="weather" value={weatherConditions} onChange={(e) => setWeatherConditions(e.target.value)} placeholder="e.g. Sunny, 20°C" className="h-10 text-sm border-slate-300" />
+                <Label htmlFor="weather" className="text-[11px] font-bold text-slate-700">Weather <span className="text-slate-400 font-normal">(optional)</span></Label>
+                <Input id="weather" value={weatherConditions} onChange={(e) => setWeatherConditions(e.target.value)} placeholder="e.g. Sunny, 20°C" className="h-11 text-sm border-slate-300" />
               </div>
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="location" className="text-[11px] font-bold text-slate-700 flex items-center gap-1"><MapPin className="h-3 w-3" />Location</Label>
-              <div className="flex gap-2">
-                <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Enter or use GPS" className="flex-1 h-10 text-sm border-slate-300" />
-                <Button type="button" variant="outline" size="icon" onClick={getGPSLocation} disabled={gettingLocation} title="Get GPS" className="h-10 w-10 border-slate-300">
-                  {gettingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}
-                </Button>
+              <div className="space-y-1">
+                <Label htmlFor="location" className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />Location <span className="text-slate-400 font-normal">(optional)</span>
+                </Label>
+                <div className="flex gap-2">
+                  <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Enter or use GPS" className="flex-1 h-11 text-sm border-slate-300" />
+                  <Button type="button" variant="outline" size="icon" onClick={getGPSLocation} disabled={gettingLocation} title="Use GPS" className="h-11 w-11 border-slate-300">
+                    {gettingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
+              <button
+                type="button"
+                className="t-btn-primary w-full rounded-md py-3 text-[13px] mt-1"
+                onClick={() => {
+                  if (!inspectorName.trim()) {
+                    setInspectorNameError(true);
+                    return;
+                  }
+                  setWizardStep('checklist');
+                  setCheckStarted(true);
+                  setCheckStartedAt(new Date());
+                }}
+              >
+                Start Check
+              </button>
             </div>
           </div>
-        </details>
-      </div>
+        </div>
+      )}
 
-      {/* ── Progress bar ── */}
-      <div className="mx-4 mt-2">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-[11px] font-bold text-slate-600 tracking-wide uppercase">
-            Item {Math.min(Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length + 1, activeTemplate.daily_check_template_items.length)} of {activeTemplate.daily_check_template_items.length} · {Math.round(getProgress())}% complete
-          </p>
-          {getProgress() === 100 && (
-            <span className="text-[10px] font-bold bg-green-600 text-white px-2 py-0.5 rounded flex items-center gap-1"><CheckCircle className="h-3 w-3" />Done</span>
-          )}
-        </div>
-        <div className="h-1 rounded-full bg-slate-300 overflow-hidden">
-          <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${Math.round(getProgress())}%` }} />
-        </div>
-      </div>
+      {/* ── WIZARD STEP 2: Checklist ── */}
+      {wizardStep === 'checklist' && (
+        <>
+          {/* Compact sticky summary row */}
+          <div className="sticky top-0 z-30 mx-4 mt-2">
+            <div className="bg-white border border-slate-200 rounded-md shadow-sm px-3 py-2 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 min-w-0 text-[11px] text-slate-600 truncate">
+                <span className="font-bold text-slate-900 truncate">{inspectorName}</span>
+                {weatherConditions && <><span className="text-slate-300">·</span><span className="truncate">{weatherConditions}</span></>}
+                {location && <><span className="text-slate-300">·</span><span className="truncate max-w-[100px]">{location}</span></>}
+              </div>
+              <button
+                type="button"
+                onClick={() => setWizardStep('details')}
+                className="text-[11px] font-bold text-primary shrink-0 hover:underline"
+              >
+                Edit
+              </button>
+            </div>
+          </div>
+
+          {/* Progress bar */}
+          <div className="mx-4 mt-2">
+            <div className="flex items-center justify-between mb-1">
+              <p className="text-[11px] font-bold text-slate-600 tracking-wide uppercase">
+                Item {Math.min(Object.values(itemResults).filter(r => r === 'pass' || r === 'fail' || r === 'na').length + 1, activeTemplate.daily_check_template_items.length)} of {activeTemplate.daily_check_template_items.length} · {Math.round(getProgress())}% complete
+              </p>
+              {getProgress() === 100 && (
+                <span className="text-[10px] font-bold bg-green-600 text-white px-2 py-0.5 rounded flex items-center gap-1"><CheckCircle className="h-3 w-3" />Done</span>
+              )}
+            </div>
+            <div className="h-1 rounded-full bg-slate-300 overflow-hidden">
+              <div className="h-full bg-primary rounded-full transition-all duration-300" style={{ width: `${Math.round(getProgress())}%` }} />
+            </div>
+          </div>
 
       {/* ── Item cards ── */}
       <div className="mx-4 mt-2 space-y-1">
@@ -1611,7 +1667,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             className="flex-1 rounded-md border border-slate-300 py-2.5 text-[13px] font-bold bg-white hover:bg-slate-50 text-slate-700 transition-colors"
             onClick={() => {
               if (Object.keys(itemResults).length > 0) {
-                setCheckStarted(false);
+                setWizardStep('details');
               } else {
                 navigate(`/rides/${ride.id}?tab=checks`);
               }
@@ -1635,6 +1691,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       </div>
 
       <CheckDetailDialog check={selectedCheck} open={showCheckDetail} onOpenChange={setShowCheckDetail} />
+        </>
+      )}
     </div>
   );
 };
