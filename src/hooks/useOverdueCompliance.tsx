@@ -17,12 +17,13 @@ export function useOverdueCompliance() {
       const today = format(new Date(), 'yyyy-MM-dd');
 
       const [eventsResult, docsResult] = await Promise.all([
-        // Overdue compliance events
+        // Overdue compliance events (regulatory only – operational never escalate)
         supabase
           .from('compliance_events')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('status', 'scheduled')
+          .eq('event_category', 'regulatory')
           .lt('due_date', today),
         // Expired documents (latest version, not archived)
         supabase

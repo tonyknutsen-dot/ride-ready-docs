@@ -539,6 +539,7 @@ export type Database = {
           completion_status: string
           created_at: string
           due_date: string
+          event_category: string
           event_name: string
           event_type: string
           evidence_urls: string[] | null
@@ -577,6 +578,7 @@ export type Database = {
           completion_status?: string
           created_at?: string
           due_date: string
+          event_category?: string
           event_name: string
           event_type: string
           evidence_urls?: string[] | null
@@ -615,6 +617,7 @@ export type Database = {
           completion_status?: string
           created_at?: string
           due_date?: string
+          event_category?: string
           event_name?: string
           event_type?: string
           evidence_urls?: string[] | null
