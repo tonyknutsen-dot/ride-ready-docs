@@ -1231,52 +1231,50 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           </p>
         </div>
 
-        {/* ── Open Defects ── */}
-        <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[11px] font-semibold text-slate-900 uppercase" style={{ letterSpacing: '0.5px' }}>Open Defects</p>
-            <DefectReportDialog
-              rideId={ride.id}
-              rideName={ride.ride_name}
-              onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
-              trigger={
-                <button type="button" className="text-[11px] font-semibold text-primary hover:underline">
-                  + Raise defect
-                </button>
-              }
-            />
-          </div>
-          <DefectsList
-            key={defectRefreshKey}
+        {/* ── Open Defects (compact) ── */}
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-medium text-muted-foreground">Open defects</p>
+          <DefectReportDialog
             rideId={ride.id}
             rideName={ride.ride_name}
-            showResolved={false}
-            onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
+            onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
+            trigger={
+              <button type="button" className="text-[11px] font-semibold text-primary hover:underline">
+                + Raise
+              </button>
+            }
           />
         </div>
+        <DefectsList
+          key={defectRefreshKey}
+          rideId={ride.id}
+          rideName={ride.ride_name}
+          showResolved={false}
+          onDefectUpdated={() => setDefectRefreshKey(prev => prev + 1)}
+        />
 
-        {/* ── Recent Checks (collapsed) ── */}
+        {/* ── Recent Checks (minimal) ── */}
         {recentChecks.length > 0 && (
           <details className="group">
-            <summary className="text-[10px] font-semibold text-slate-500 uppercase cursor-pointer hover:text-slate-700 list-none flex items-center gap-1.5" style={{ letterSpacing: '0.5px' }}>
+            <summary className="text-[10px] font-medium text-muted-foreground uppercase cursor-pointer hover:text-foreground list-none flex items-center gap-1.5 select-none" style={{ letterSpacing: '0.5px' }}>
               <ChevronDown className="h-3 w-3 group-open:rotate-180 transition-transform shrink-0" />
               Recent Checks ({recentChecks.length})
             </summary>
-            <div className="mt-1.5 space-y-1">
+            <div className="mt-1.5 divide-y divide-border">
               {recentChecks.map((check) => (
-                <div
+                <button
                   key={check.id}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-3 py-2 cursor-pointer hover:bg-slate-50 transition-colors"
+                  className="flex items-center justify-between w-full text-left py-2 hover:bg-muted/50 transition-colors"
                   onClick={() => { setSelectedCheck(check); setShowCheckDetail(true); }}
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-[12px] truncate text-slate-900">{check.inspector_name}</p>
-                    <p className="text-[11px] text-[#9CA3AF]">
-                      {new Date(check.check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </p>
+                    <span className="text-[12px] font-medium text-foreground">{check.inspector_name}</span>
+                    <span className="text-[11px] text-muted-foreground ml-2">
+                      {new Date(check.check_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}
+                    </span>
                   </div>
-                  <Eye className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                </div>
+                  <Eye className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                </button>
               ))}
             </div>
           </details>
