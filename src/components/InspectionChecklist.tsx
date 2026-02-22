@@ -15,6 +15,7 @@ import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, P
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { useDailyStatus } from '@/hooks/useDailyStatus';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -110,6 +111,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const queryClient = useQueryClient();
   const { submitCheck, isOnline } = useOfflineCheck();
   const { pendingCount, isSyncing, syncAll } = useOfflineSync();
+  const isDailyOrPreOpening = frequency === 'daily' || frequency === 'preopening';
+  const { autoSetOperating } = useDailyStatus(ride.id);
 
   // Prefill inspector name from profile
   useEffect(() => {
@@ -1382,6 +1385,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                   setWizardStep('checklist');
                   setCheckStarted(true);
                   setCheckStartedAt(new Date());
+                  // Auto-set operating today for Daily/Pre-Opening checks
+                  if (isDailyOrPreOpening) {
+                    autoSetOperating();
+                  }
                 }}
               >
                 Start Check
