@@ -121,16 +121,16 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     supabase
       .from('rides')
       .select('id, ride_name'),
-    // Documents with expiry for compliance alerts
+    // Documents with expiry for compliance alerts (ride + global)
     supabase
       .from('documents')
-      .select('document_name, expires_at, ride_id')
+      .select('document_name, expires_at, ride_id, is_global')
       .eq('user_id', userId)
       .not('expires_at', 'is', null)
       .eq('is_latest_version', true)
       .lte('expires_at', thirtyDaysStr)
       .order('expires_at', { ascending: true })
-      .limit(10),
+      .limit(20),
     // Upcoming inspections
     supabase
       .from('inspection_schedules')
@@ -198,10 +198,11 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     dueSoonItems.push({ label: insp.inspection_name, rideName, daysUntil, type: 'inspection' });
   });
 
-  // Document expiries
-  dueSoonDocs.slice(0, 3).forEach(doc => {
+  // Document expiries (ride-specific + global)
+  dueSoonDocs.slice(0, 5).forEach(doc => {
     const daysUntil = Math.ceil((new Date(doc.expires_at!).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    const rideName = doc.ride_id ? rideMap.get(doc.ride_id) || '' : '';
+    const isGlobal = (doc as any).is_global === true;
+    const rideName = isGlobal ? 'All rides (Global)' : (doc.ride_id ? rideMap.get(doc.ride_id) || '' : '');
     dueSoonItems.push({ label: doc.document_name, rideName, daysUntil, type: 'document' });
   });
 

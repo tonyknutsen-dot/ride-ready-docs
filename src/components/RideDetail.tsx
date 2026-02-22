@@ -75,6 +75,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const loadRideStatistics = async () => {
     if (!effectiveUserId) return;
     try {
+      // Ride-specific documents
       let docQuery = supabase
         .from('documents')
         .select('expires_at, document_type', { count: 'exact' })
@@ -84,10 +85,22 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
       if (!isStaff) docQuery = docQuery.eq('user_id', effectiveUserId);
       const { data: docData, count: docCount } = await docQuery;
 
+      // Global documents (apply to all rides)
+      let globalDocQuery = supabase
+        .from('documents')
+        .select('expires_at')
+        .eq('is_global', true)
+        .not('expires_at', 'is', null)
+        .neq('document_type', 'maintenance')
+        .neq('document_type', 'photo');
+      if (!isStaff) globalDocQuery = globalDocQuery.eq('user_id', effectiveUserId);
+      const { data: globalDocData } = await globalDocQuery;
+
       const thirtyDaysOut = new Date();
       thirtyDaysOut.setDate(thirtyDaysOut.getDate() + 30);
-      const hasExpiredDocs = (docData || []).some(d => d.expires_at && new Date(d.expires_at) < new Date());
-      const hasExpiringSoonDocs = !hasExpiredDocs && (docData || []).some(d => d.expires_at && new Date(d.expires_at) <= thirtyDaysOut);
+      const allDocsForExpiry = [...(docData || []), ...(globalDocData || [])];
+      const hasExpiredDocs = allDocsForExpiry.some(d => d.expires_at && new Date(d.expires_at) < new Date());
+      const hasExpiringSoonDocs = !hasExpiredDocs && allDocsForExpiry.some(d => d.expires_at && new Date(d.expires_at) <= thirtyDaysOut);
 
       const today = new Date().toISOString().split('T')[0];
       let checksQuery = supabase
