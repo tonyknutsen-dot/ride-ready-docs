@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, FileText, Mail, Download, ClipboardList } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import DocumentUpload from './DocumentUpload';
-import DocumentList from './DocumentList';
+import RideDocumentView from './RideDocumentView';
 import RideDocumentRegister from './RideDocumentRegister';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
 import { supabase } from '@/integrations/supabase/client';
@@ -204,34 +204,13 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="list" className="space-y-6">
-          {/* Section 1: Ride-specific documents */}
-          <DocumentList 
-            key={`ride-${refreshKey}`}
+        <TabsContent value="list">
+          <RideDocumentView
             rideId={ride.id}
             rideName={ride.ride_name}
             onDocumentDeleted={handleDocumentDeleted}
-            excludeGlobal
-            grouped
+            refreshKey={refreshKey}
           />
-
-          {/* Section 2: Global documents – visible but read-only from ride context */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 px-1">
-              <div className="h-px flex-1 bg-border" />
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <Globe className="h-3.5 w-3.5" />
-                Global Documents – Applies to All Rides
-              </span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            <DocumentList
-              key={`global-${refreshKey}`}
-              isGlobal
-              onDocumentDeleted={handleDocumentDeleted}
-              grouped
-            />
-          </div>
         </TabsContent>
 
         <TabsContent value="register">
