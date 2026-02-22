@@ -1403,14 +1403,14 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             <div className="rounded-xl px-4 py-3 shadow-sm border border-slate-200" style={{ background: '#EEF2F7' }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                   <h2 className="text-[15px] font-black text-slate-900 leading-tight truncate">
+                   <h2 className="text-[14.5px] font-semibold text-slate-900 leading-tight truncate" style={{ letterSpacing: '0.3px' }}>
                      {frequency === 'preopening' ? 'Pre-Opening Safety Check' : frequency === 'daily' ? 'Daily Safety Check' : frequency === 'weekly' ? 'Weekly Safety Check' : frequency === 'monthly' ? 'Monthly Safety Check' : frequency === 'yearly' ? 'Yearly Safety Check' : `${frequency} Safety Check`}
                    </h2>
                    <p className="text-[12px] font-normal text-slate-600 truncate mt-0.5">
                      {ride.ride_name}{ride.ride_code ? ` – ${ride.ride_code}` : ''}
                    </p>
-                   <p className="text-[10px] text-[#6B7280] mt-0.5">
-                     Checked by <span className="font-semibold text-[#6B7280]">{inspectorName}</span>
+                   <p className="text-[9.5px] font-normal text-[#9CA3AF] mt-0.5">
+                     Checked by <span className="font-medium text-[#9CA3AF]">{inspectorName}</span>
                      {weatherConditions ? ` · ${weatherConditions}` : ''}
                      {location ? ` · ${location}` : ''}
                    </p>
@@ -1426,7 +1426,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               {/* Progress bar */}
               <div className="mt-2.5">
                 <div className="flex items-center justify-between mb-1">
-                  <p className="text-[11px] font-bold text-slate-500">
+                  <p className="text-[10px] font-normal text-[#9CA3AF]">
                     {activeTemplate.daily_check_template_items.filter(item => { const r = itemResults[item.id]; return r === 'pass' || r === 'na' || (r === 'fail' && itemDefectRaised[item.id]); }).length} of {activeTemplate.daily_check_template_items.length} items completed
                   </p>
                   {getProgress() === 100 && (
@@ -1475,12 +1475,12 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                    </div>
                    <div className="flex-1 min-w-0">
                      <div className="flex items-start justify-between gap-2">
-                       <h3 className="font-extrabold text-slate-900 leading-snug break-words text-[13px]">
+                       <h3 className="font-medium text-slate-900 leading-relaxed break-words text-[12.5px]">
                          {item.check_item_text}
                        </h3>
                        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
                          {item.category && item.category !== 'general' && (
-                           <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5">{item.category}</span>
+                           <span className="text-[8.5px] font-normal text-[#9CA3AF] uppercase tracking-wider bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5">{item.category}</span>
                          )}
                          {isPass && <CheckCircle className="h-4 w-4 text-green-600" />}
                          {isFail && <AlertTriangle className="h-4 w-4 text-red-600" />}
@@ -1630,7 +1630,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                        <button
                          type="button"
                          onClick={() => handleNoteChange(item.id, '')}
-                         className="mt-0.5 text-[11px] font-semibold text-slate-400 hover:text-primary"
+                         className="mt-0.5 text-[11px] font-medium text-slate-500 hover:text-primary"
                        >
                          + Add note
                        </button>
@@ -1643,10 +1643,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       </div>
 
       {/* ── Defects (slim section) ── */}
-      <div className="mx-4 mt-2">
-        <div className="bg-white border border-slate-200 rounded-md p-3 shadow-sm">
-          <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[11px] font-bold text-slate-900 uppercase tracking-wide">Defects</p>
+       <div className="mx-4 mt-1.5">
+         <div className="bg-white border border-slate-200 rounded-md p-3 shadow-sm">
+           <div className="flex items-center justify-between mb-1.5">
+             <p className="text-[11px] font-semibold text-slate-900 uppercase" style={{ letterSpacing: '0.5px' }}>Defects</p>
             <DefectReportDialog
               rideId={ride.id}
               rideName={ride.ride_name}
@@ -1669,9 +1669,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       </div>
 
       {/* ── Confirmation Card ── */}
-       <div className="mx-4 mt-4">
-         <div className="bg-white border border-slate-300 rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] space-y-3">
-          <h3 className="text-[13px] font-extrabold text-slate-900 uppercase tracking-wide">Confirmation</h3>
+        <div className="mx-4 mt-3">
+          <div className="bg-white border border-slate-300 rounded-2xl p-4 shadow-[0_2px_8px_rgba(0,0,0,0.06)] space-y-3">
+           <h3 className="text-[13px] font-semibold text-slate-900 uppercase" style={{ letterSpacing: '0.5px' }}>Confirmation</h3>
 
           {/* Warning: unanswered items */}
            {getProgress() < 100 && (
