@@ -1439,22 +1439,24 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                 className="bg-white border border-slate-200 rounded-md overflow-hidden transition-all shadow-sm"
                 style={isFail ? { borderLeft: '4px solid #DC2626' } : undefined}
               >
-                {/* Row 1: Number circle + Title */}
-                <div className="px-3 pt-2.5 pb-1 flex items-start gap-2.5">
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 ${
-                    isPass ? 'bg-green-600 text-white' : isFail ? 'bg-red-600 text-white' : isNA ? 'bg-slate-600 text-white' : 'bg-slate-200 text-slate-600'
-                  }`}>
-                    {isPass ? '✓' : isFail ? '✗' : isNA ? '—' : index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-slate-900 leading-snug break-words text-[13px]">
-                      {item.check_item_text}
-                    </h3>
-                    {item.category && item.category !== 'general' && (
-                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">{item.category}</span>
-                    )}
-                  </div>
-                </div>
+                {/* Row 1: Number circle + Title + Tag */}
+                 <div className="px-3 pt-2.5 pb-1 flex items-start gap-2.5">
+                   <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 ${
+                     isPass ? 'bg-green-600 text-white' : isFail ? 'bg-red-600 text-white' : isNA ? 'bg-slate-600 text-white' : 'bg-slate-200 text-slate-600'
+                   }`}>
+                     {isPass ? '✓' : isFail ? '✗' : isNA ? '—' : index + 1}
+                   </div>
+                   <div className="flex-1 min-w-0">
+                     <div className="flex items-start justify-between gap-2">
+                       <h3 className="font-bold text-slate-900 leading-snug break-words text-[13px]">
+                         {item.check_item_text}
+                       </h3>
+                       {item.category && item.category !== 'general' && (
+                         <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider bg-slate-100 border border-slate-200 rounded px-1.5 py-0.5 shrink-0 mt-0.5">{item.category}</span>
+                       )}
+                     </div>
+                   </div>
+                 </div>
 
                 {/* Row 2: Pass / Fail / N/A segmented control */}
                 <div className="px-3 pb-2.5 pt-1">
@@ -1496,8 +1498,31 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                     </button>
                   </div>
 
-                  {/* Fail extras — auto-expanded */}
-                  {isFail && (
+                   {/* Add note link for non-fail items */}
+                   {!isFail && (
+                     notes[item.id] ? (
+                       <div className="mt-1.5">
+                         <Textarea
+                           placeholder="Add a note…"
+                           value={notes[item.id] || ''}
+                           onChange={(e) => handleNoteChange(item.id, e.target.value)}
+                           className="min-h-[44px] text-xs resize-none rounded-md bg-white border-slate-300"
+                           rows={1}
+                         />
+                       </div>
+                     ) : (
+                       <button
+                         type="button"
+                         onClick={() => handleNoteChange(item.id, ' ')}
+                         className="text-[11px] font-semibold text-slate-400 hover:text-primary mt-1"
+                       >
+                         + Add note
+                       </button>
+                     )
+                   )}
+
+                   {/* Fail extras — auto-expanded */}
+                   {isFail && (
                     <div className="mt-2 rounded-md border border-slate-200 bg-white p-3 space-y-2.5">
                       <p className="font-bold text-red-700 text-xs flex items-center gap-1.5">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
