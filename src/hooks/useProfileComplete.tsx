@@ -114,7 +114,12 @@ export function useProfileComplete() {
           setLoading(false);
           return;
         }
-        setIsProfileComplete(false);
+        // If offline with no cache, don't force onboarding – treat as null (unknown)
+        if (!navigator.onLine) {
+          setIsProfileComplete(null);
+        } else {
+          setIsProfileComplete(false);
+        }
       } finally {
         setLoading(false);
       }

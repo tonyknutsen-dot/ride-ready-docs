@@ -21,8 +21,25 @@ const ComingSoon = () => {
   // When opened as installed PWA, skip the landing page
   useEffect(() => {
     if (!isStandaloneMode()) return;
-    // If opened as installed PWA, try to redirect to last visited route
     const tryRedirect = async () => {
+      // When offline, skip getSession (it can hang) and use cached identity
+      if (!navigator.onLine) {
+        try {
+          // Try to find any cached identity in IndexedDB
+          const { db } = await import('@/lib/offlineDb');
+          const allCached = await db.table('identityCache').toArray();
+          if (allCached.length > 0) {
+            const cached = allCached[0];
+            const target = cached?.lastVisitedRoute || '/overview';
+            navigate(target, { replace: true });
+          } else {
+            navigate('/auth', { replace: true });
+          }
+        } catch {
+          navigate('/auth', { replace: true });
+        }
+        return;
+      }
       try {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {

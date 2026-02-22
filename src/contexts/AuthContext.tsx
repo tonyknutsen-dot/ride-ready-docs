@@ -109,24 +109,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setSession(session);
         setUser(session?.user ?? null);
-        setIsOfflineMode(false);
+
+        // Only clear offline mode if we're actually online
+        if (navigator.onLine) {
+          setIsOfflineMode(false);
+        }
 
         if (session?.user) {
-          setTimeout(async () => {
-            if (!isMounted) return;
-            const { suspended, reason } = await checkSuspensionStatus(session.user.id);
-            if (!isMounted) return;
-            setIsSuspended(suspended);
-            setSuspensionReason(reason);
+          // Only run network-dependent checks when online
+          if (navigator.onLine) {
+            setTimeout(async () => {
+              if (!isMounted) return;
+              try {
+                const { suspended, reason } = await checkSuspensionStatus(session.user.id);
+                if (!isMounted) return;
+                setIsSuspended(suspended);
+                setSuspensionReason(reason);
 
-            if (suspended) {
-              await supabase.auth.signOut();
-            } else {
-              if (event === 'SIGNED_IN') {
-                syncSubscriptionStatus(session.user.id);
+                if (suspended) {
+                  await supabase.auth.signOut();
+                } else if (event === 'SIGNED_IN') {
+                  syncSubscriptionStatus(session.user.id);
+                }
+              } catch {
+                // Network failed during check – ignore, don't block
               }
-            }
-          }, 0);
+            }, 0);
+          }
         } else {
           setIsSuspended(false);
           setSuspensionReason(null);
