@@ -1310,7 +1310,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
 
   return (
-    <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32" style={{ background: '#E8ECF0' }}>
+    <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32" style={{ background: '#F3F4F6' }}>
 
       {/* ── Offline / sync banner ── */}
       {(!isOnline || usingCachedTemplate || pendingCount > 0) && (
@@ -1445,7 +1445,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             return (
               <div
                 key={item.id}
-                className={`border border-slate-200 rounded-2xl overflow-hidden transition-all shadow-sm ${isFail ? 'bg-[#FFF5F5]' : 'bg-white'}`}
+                className={`border border-slate-200/80 rounded-2xl overflow-hidden transition-all shadow-[0_1px_4px_rgba(0,0,0,0.08)] ${isFail ? 'bg-[#FFF5F5]' : 'bg-white'}`}
                 style={{ borderLeft: cardBorder }}
               >
                 {/* Row 1: Number circle + Title + Status icon */}
@@ -1457,7 +1457,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                    </div>
                    <div className="flex-1 min-w-0">
                      <div className="flex items-start justify-between gap-2">
-                       <h3 className="font-bold text-slate-900 leading-snug break-words text-[13px]">
+                       <h3 className="font-extrabold text-slate-900 leading-snug break-words text-[13px]">
                          {item.check_item_text}
                        </h3>
                        <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
