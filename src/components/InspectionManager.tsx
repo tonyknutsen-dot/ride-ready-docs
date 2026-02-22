@@ -163,26 +163,11 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         </div>
       )}
 
-      <Tabs defaultValue="perform" className="space-y-3 relative z-10">
-         <TabsList className="grid grid-cols-2 w-full h-9 p-0.5 bg-slate-100 border border-slate-200">
-           <TabsTrigger value="perform" className="text-[12px] font-medium data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm rounded-md text-slate-500">
-             Perform
-           </TabsTrigger>
-           <TabsTrigger value="history" className="text-[12px] font-medium data-[state=active]:bg-white data-[state=active]:text-slate-900 data-[state=active]:shadow-sm rounded-md text-slate-500">
-             History
-           </TabsTrigger>
-         </TabsList>
-        <TabsContent value="perform">
-          <InspectionChecklist
-            ride={ride}
-            frequency={frequency}
-            onChecklistSaved={() => handleChecklistSaved(frequency)}
-          />
-        </TabsContent>
-        <TabsContent value="history">
-          <ChecksHistory rideId={ride.id} rideName={ride.ride_name} frequency={frequency} />
-        </TabsContent>
-      </Tabs>
+      <InspectionChecklist
+        ride={ride}
+        frequency={frequency}
+        onChecklistSaved={() => handleChecklistSaved(frequency)}
+      />
     </div>
   );
 
