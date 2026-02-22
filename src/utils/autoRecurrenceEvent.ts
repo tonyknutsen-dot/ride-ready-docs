@@ -1,26 +1,26 @@
 /**
  * Auto-creates the next annual compliance event when a compliance event is completed.
- * Simple: if the linked document has repeat_annually = true, create one event +1 year.
+ * Uses the linked document's EXPIRY DATE (not completion date) to calculate next due.
+ * Simple annual renewal: expiry + 1 year.
  */
 import { supabase } from '@/integrations/supabase/client';
 import { addYears } from 'date-fns';
 
 interface AutoRecurrenceParams {
   completedEventId: string;
-  completionDate: Date;
   userId: string;
 }
 
 /**
  * After completing a compliance event, check if it's linked to a document with
- * repeat_annually enabled, and if so, create one next annual event.
+ * repeat_annually enabled. If so, create one next event due = document expiry + 1 year.
  *
  * Returns the new event ID if created, null otherwise.
  */
 export async function maybeCreateRecurringEvent(
   params: AutoRecurrenceParams,
 ): Promise<string | null> {
-  const { completedEventId, completionDate, userId } = params;
+  const { completedEventId, userId } = params;
 
   try {
     // 1. Fetch the completed event
@@ -32,12 +32,13 @@ export async function maybeCreateRecurringEvent(
 
     if (eventErr || !event) return null;
 
-    // 2. Find documents linked to this event that have repeat_annually = true
+    // 2. Find documents with repeat_annually = true linked to this ride/global
     let docQuery = supabase
       .from('documents')
-      .select('id, repeat_annually, document_name, is_global, ride_id')
+      .select('id, repeat_annually, document_name, is_global, ride_id, expires_at')
       .eq('repeat_annually', true)
-      .eq('is_latest_version', true);
+      .eq('is_latest_version', true)
+      .not('expires_at', 'is', null);
 
     if (event.ride_id) {
       docQuery = docQuery.or(`ride_id.eq.${event.ride_id},is_global.eq.true`);
@@ -48,21 +49,16 @@ export async function maybeCreateRecurringEvent(
     const { data: docs, error: docErr } = await docQuery;
     if (docErr || !docs || docs.length === 0) return null;
 
-    // 3. For the first matching document, create one annual event if none exists
+    // 3. Use the first matching document's expiry date to calculate next due
     for (const doc of docs) {
-      // Calculate next due: previous due date + 1 year (or from completion if no due_date)
-      const baseDateStr = event.due_date || completionDate.toISOString().split('T')[0];
-      const baseDate = new Date(baseDateStr);
-      let nextDue = addYears(baseDate, 1);
+      if (!doc.expires_at) continue;
 
-      // If next due is in the past, shift from today
-      if (nextDue <= new Date()) {
-        nextDue = addYears(new Date(), 1);
-      }
-
+      // Next due = document expiry + 1 year
+      const expiryDate = new Date(doc.expires_at);
+      const nextDue = addYears(expiryDate, 1);
       const nextDueStr = nextDue.toISOString().split('T')[0];
 
-      // Check for existing future scheduled event of same type — prevent duplicates
+      // Prevent duplicates: check for existing future scheduled event of same type
       const { data: existing } = await supabase
         .from('compliance_events')
         .select('id')
@@ -102,6 +98,12 @@ export async function maybeCreateRecurringEvent(
           .from('compliance_events')
           .update({ next_event_id: newEvent.id })
           .eq('id', completedEventId);
+
+        // Update document expiry to the new due date
+        await supabase
+          .from('documents')
+          .update({ expires_at: nextDueStr })
+          .eq('id', doc.id);
 
         return newEvent.id;
       }

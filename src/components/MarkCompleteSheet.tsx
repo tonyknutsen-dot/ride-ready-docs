@@ -290,7 +290,6 @@ const MarkCompleteSheet = ({
       try {
         await maybeCreateRecurringEvent({
           completedEventId: eventId,
-          completionDate,
           userId: user.id,
         });
       } catch (e) {
