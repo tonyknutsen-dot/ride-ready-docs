@@ -17,8 +17,8 @@ import ScrollToTop from "@/components/ScrollToTop";
 import { LastRouteTracker } from "@/components/LastRouteTracker";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import { AppLayout } from "@/components/AppLayout";
-import { StartupUpdateCheck } from "@/components/StartupUpdateCheck";
 import { AuthenticatedAppShell } from "@/components/AuthenticatedAppShell";
+import { PWAUpdateModal } from "@/components/PWAUpdateModal";
 import { OfflineSuspense } from "@/components/OfflineSuspense";
 import { useLocation } from "react-router-dom";
 
@@ -101,11 +101,11 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <StartupUpdateCheck>
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <PWAUpdateModal />
       <BrowserRouter>
         <ScrollToTop />
         <AuthProvider>
@@ -578,7 +578,6 @@ const App = () => (
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
-  </StartupUpdateCheck>
 );
 
 export default App;

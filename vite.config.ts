@@ -17,8 +17,8 @@ export default defineConfig(({ mode }) => ({
     react(),
     mode === "development" && componentTagger(),
     mode !== "development" && VitePWA({
-      registerType: "autoUpdate",
-      injectRegister: "script-defer",
+      registerType: "prompt",
+      injectRegister: false,
       includeAssets: ["pwa-icon.jpg", "favicon.ico", "app-logo.jpg"],
       manifest: {
         name: "Ride Ready Docs",
@@ -53,7 +53,6 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
-        skipWaiting: true,
         clientsClaim: true,
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/~oauth/, /^\/api\//, /^\/functions\//, /^\/rest\//],

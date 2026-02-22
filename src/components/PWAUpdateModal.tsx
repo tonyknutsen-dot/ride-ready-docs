@@ -1,5 +1,5 @@
 import React from 'react';
-import { Download, Loader2, RefreshCw, X, CheckCircle } from 'lucide-react';
+import { Download, Loader2, RefreshCw, X, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { usePWAUpdate } from '@/hooks/usePWAUpdate';
 
@@ -7,12 +7,13 @@ export const PWAUpdateModal = () => {
   const { 
     needsUpdate, 
     isUpdating,
-    isChecking,
+    isStale,
     applyUpdate, 
-    dismissUpdate 
+    dismissUpdate,
+    dismissStale,
   } = usePWAUpdate();
 
-  // Show blocking overlay only during actual update
+  // Blocking overlay during update
   if (isUpdating) {
     return (
       <div className="fixed inset-0 z-[9999] bg-background/95 backdrop-blur-sm flex items-center justify-center">
@@ -29,22 +30,28 @@ export const PWAUpdateModal = () => {
     );
   }
 
-  // Show checking indicator for installed PWA users
-  if (isChecking) {
+  // Stale tab prompt (subtle top bar)
+  if (isStale && !needsUpdate) {
     return (
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
-        <div className="bg-card border rounded-full shadow-lg px-4 py-2 flex items-center gap-2">
-          <Loader2 className="h-4 w-4 text-primary animate-spin" />
-          <span className="text-sm text-muted-foreground">Checking for updates...</span>
+      <div className="fixed top-0 left-0 right-0 z-50 animate-in fade-in slide-in-from-top-2 duration-300">
+        <div className="bg-muted/90 backdrop-blur-sm border-b px-4 py-2 flex items-center justify-center gap-3">
+          <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+          <span className="text-sm text-muted-foreground">
+            Refresh recommended to ensure latest version.
+          </span>
+          <Button size="sm" variant="outline" onClick={() => window.location.reload()} className="h-7 text-xs">
+            Refresh
+          </Button>
+          <Button size="sm" variant="ghost" onClick={dismissStale} className="h-7 w-7 p-0">
+            <X className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
     );
   }
 
-  // Show non-blocking banner when update is available
-  if (!needsUpdate) {
-    return null;
-  }
+  // Update available banner
+  if (!needsUpdate) return null;
 
   return (
     <div className="fixed bottom-20 md:bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 z-50 animate-in slide-in-from-bottom-4 duration-300">
@@ -54,7 +61,7 @@ export const PWAUpdateModal = () => {
             <Download className="h-5 w-5 text-primary" />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-sm">Update Available</h3>
+            <h3 className="font-medium text-sm">App update available</h3>
             <p className="text-xs text-muted-foreground mt-0.5">
               A new version is ready to install
             </p>
@@ -73,7 +80,7 @@ export const PWAUpdateModal = () => {
                 className="h-8 text-xs"
               >
                 <RefreshCw className="h-3 w-3 mr-1.5" />
-                Update
+                Update now
               </Button>
             </div>
           </div>
