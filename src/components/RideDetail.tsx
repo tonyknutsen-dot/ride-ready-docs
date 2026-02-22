@@ -62,6 +62,8 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
     riskHigh: 0,
     hasExpiredDocs: false,
     hasExpiringSoonDocs: false,
+    overdueEvents: [] as Array<{ id: string; event_name: string; due_date: string; ride_id: string | null }>,
+    dueSoonEvents: [] as Array<{ id: string; event_name: string; due_date: string; ride_id: string | null }>,
     loading: true
   });
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
@@ -98,6 +100,8 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
       const thirtyDaysOut = new Date();
       thirtyDaysOut.setDate(thirtyDaysOut.getDate() + 30);
+      const todayDateStr = new Date().toISOString().split('T')[0];
+      const thirtyDaysStr = thirtyDaysOut.toISOString().split('T')[0];
       const allDocsForExpiry = [...(docData || []), ...(globalDocData || [])];
       const hasExpiredDocs = allDocsForExpiry.some(d => d.expires_at && new Date(d.expires_at) < new Date());
       const hasExpiringSoonDocs = !hasExpiredDocs && allDocsForExpiry.some(d => d.expires_at && new Date(d.expires_at) <= thirtyDaysOut);
@@ -134,6 +138,29 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         riskData = rItems || [];
       }
 
+      // Compliance events: overdue for this ride OR global
+      const { data: overdueEventsData } = await supabase
+        .from('compliance_events')
+        .select('id, event_name, due_date, ride_id')
+        .eq('user_id', effectiveUserId)
+        .eq('status', 'scheduled')
+        .lt('due_date', todayDateStr)
+        .or(`ride_id.eq.${ride.id},ride_id.is.null`)
+        .order('due_date', { ascending: true })
+        .limit(10);
+
+      // Compliance events: due soon for this ride OR global
+      const { data: dueSoonEventsData } = await supabase
+        .from('compliance_events')
+        .select('id, event_name, due_date, ride_id')
+        .eq('user_id', effectiveUserId)
+        .eq('status', 'scheduled')
+        .gte('due_date', todayDateStr)
+        .lte('due_date', thirtyDaysStr)
+        .or(`ride_id.eq.${ride.id},ride_id.is.null`)
+        .order('due_date', { ascending: true })
+        .limit(10);
+
       setRideStats({
         docCount: docCount || 0,
         todayChecks: todayChecks || 0,
@@ -145,6 +172,8 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         riskHigh: riskData.filter(r => r.risk_level === 'high').length,
         hasExpiredDocs,
         hasExpiringSoonDocs,
+        overdueEvents: (overdueEventsData || []) as any,
+        dueSoonEvents: (dueSoonEventsData || []) as any,
         loading: false,
       });
     } catch (error) {
@@ -177,10 +206,12 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
     loadRidePhoto();
   };
 
-  // Compliance status
+  // Compliance status — include overdue events
+  const hasOverdueEvents = rideStats.overdueEvents.length > 0;
+  const hasDueSoonEvents = rideStats.dueSoonEvents.length > 0;
   const complianceStatus = rideStats.loading ? null
-    : rideStats.hasExpiredDocs ? 'overdue'
-    : rideStats.hasExpiringSoonDocs ? 'expiring'
+    : (rideStats.hasExpiredDocs || hasOverdueEvents) ? 'overdue'
+    : (rideStats.hasExpiringSoonDocs || hasDueSoonEvents) ? 'expiring'
     : 'compliant';
 
   const complianceConfig = {
@@ -319,7 +350,51 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             </div>
           </div>
 
-          {/* Quick Actions */}
+          {/* Overdue Compliance Escalation Block */}
+          {rideStats.overdueEvents.length > 0 && (
+            <div className="rounded-2xl p-4 space-y-2" style={{ backgroundColor: 'hsl(0 72% 96%)', border: '1px solid hsl(0 72% 80%)' }}>
+              <div className="flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-destructive" strokeWidth={2} />
+                <span className="text-sm font-bold text-destructive">Overdue Compliance</span>
+              </div>
+              <div className="space-y-1.5 pl-6">
+                {rideStats.overdueEvents.map(evt => (
+                  <div key={evt.id} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-medium text-destructive truncate">{evt.event_name}</span>
+                      {!evt.ride_id && (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase" style={{ backgroundColor: 'hsl(213 52% 24% / 0.1)', color: 'hsl(213 52% 24%)' }}>Global</span>
+                      )}
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-destructive/10 text-destructive border border-destructive/20 shrink-0">OVERDUE</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Due Soon Compliance Block */}
+          {rideStats.overdueEvents.length === 0 && rideStats.dueSoonEvents.length > 0 && (
+            <div className="rounded-2xl p-4 space-y-2" style={{ backgroundColor: 'hsl(38 92% 96%)', border: '1px solid hsl(38 92% 70%)' }}>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4" style={{ color: 'hsl(38 80% 40%)' }} strokeWidth={2} />
+                <span className="text-sm font-bold" style={{ color: 'hsl(38 80% 30%)' }}>Compliance Due Soon</span>
+              </div>
+              <div className="space-y-1.5 pl-6">
+                {rideStats.dueSoonEvents.map(evt => (
+                  <div key={evt.id} className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-xs font-medium truncate" style={{ color: 'hsl(38 80% 30%)' }}>{evt.event_name}</span>
+                      {!evt.ride_id && (
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase" style={{ backgroundColor: 'hsl(213 52% 24% / 0.1)', color: 'hsl(213 52% 24%)' }}>Global</span>
+                      )}
+                    </div>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold border shrink-0" style={{ backgroundColor: 'hsl(38 92% 94%)', color: 'hsl(38 80% 30%)', borderColor: 'hsl(38 92% 70%)' }}>DUE SOON</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-3">
             <h2 className="text-sm font-semibold text-foreground">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-3">

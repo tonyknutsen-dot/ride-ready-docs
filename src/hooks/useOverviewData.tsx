@@ -64,11 +64,11 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     recentChecksResult,
     recentMaintenanceResult,
     ridesResult,
-    // New: compliance data
     allDocsWithExpiry,
-    upcomingInspectionsResult,
-    overdueInspectionsResult,
-    ndtSchedulesResult,
+    // Compliance events: overdue
+    overdueEventsResult,
+    // Compliance events: due soon (within 30 days)
+    dueSoonEventsResult,
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -131,32 +131,25 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
       .lte('expires_at', thirtyDaysStr)
       .order('expires_at', { ascending: true })
       .limit(20),
-    // Upcoming inspections
+    // Overdue compliance events (due_date < today, not completed)
     supabase
-      .from('inspection_schedules')
-      .select('inspection_name, due_date, ride_id, rides(ride_name)')
+      .from('compliance_events')
+      .select('id, event_name, due_date, ride_id, category')
       .eq('user_id', userId)
+      .eq('status', 'scheduled')
+      .lt('due_date', todayStr)
+      .order('due_date', { ascending: true })
+      .limit(20),
+    // Due soon compliance events (due_date between today and 30 days)
+    supabase
+      .from('compliance_events')
+      .select('id, event_name, due_date, ride_id, category')
+      .eq('user_id', userId)
+      .eq('status', 'scheduled')
       .gte('due_date', todayStr)
       .lte('due_date', thirtyDaysStr)
       .order('due_date', { ascending: true })
-      .limit(5),
-    // Overdue inspections
-    supabase
-      .from('inspection_schedules')
-      .select('inspection_name, due_date, ride_id')
-      .eq('user_id', userId)
-      .lt('due_date', todayStr)
-      .eq('is_active', true)
-      .limit(10),
-    // NDT schedules due soon
-    supabase
-      .from('ndt_schedules')
-      .select('schedule_name, next_inspection_due, ride_id, rides(ride_name)')
-      .eq('user_id', userId)
-      .not('next_inspection_due', 'is', null)
-      .lte('next_inspection_due', thirtyDaysStr)
-      .order('next_inspection_due', { ascending: true })
-      .limit(5),
+      .limit(20),
   ]);
 
   // Process stats
@@ -175,28 +168,26 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
   // --- Compliance Alerts ---
   const expiredDocs = allDocsWithExpiry.data?.filter(d => d.expires_at && d.expires_at < todayStr) || [];
   const dueSoonDocs = allDocsWithExpiry.data?.filter(d => d.expires_at && d.expires_at >= todayStr) || [];
-  const overdueInspCount = overdueInspectionsResult.data?.length || 0;
+  const overdueEvents = overdueEventsResult.data || [];
+  const dueSoonEvents = dueSoonEventsResult.data || [];
 
   const complianceAlerts: ComplianceAlert[] = [];
-  if (overdueInspCount > 0) {
-    complianceAlerts.push({ label: `${overdueInspCount} inspection${overdueInspCount > 1 ? 's' : ''} overdue`, type: 'overdue', count: overdueInspCount });
+
+  // Overdue compliance events
+  if (overdueEvents.length > 0) {
+    complianceAlerts.push({ label: `${overdueEvents.length} compliance event${overdueEvents.length > 1 ? 's' : ''} overdue`, type: 'overdue', count: overdueEvents.length });
   }
   if (expiredDocs.length > 0) {
     complianceAlerts.push({ label: `${expiredDocs.length} document${expiredDocs.length > 1 ? 's' : ''} expired`, type: 'expired', count: expiredDocs.length });
   }
-  if (dueSoonDocs.length > 0) {
-    complianceAlerts.push({ label: `${dueSoonDocs.length} document${dueSoonDocs.length > 1 ? 's' : ''} expiring soon`, type: 'due_soon', count: dueSoonDocs.length });
+  // Due soon items (amber, not in banner — just for KPI)
+  const totalDueSoon = dueSoonDocs.length + dueSoonEvents.length;
+  if (totalDueSoon > 0) {
+    complianceAlerts.push({ label: `${totalDueSoon} item${totalDueSoon > 1 ? 's' : ''} due within 30 days`, type: 'due_soon', count: totalDueSoon });
   }
 
-  // --- Due Soon Items (next 5 across all types, sorted by urgency) ---
+  // --- Due Soon Items (next items across all types, sorted by urgency) ---
   const dueSoonItems: DueSoonItem[] = [];
-
-  // Upcoming inspections
-  upcomingInspectionsResult.data?.forEach(insp => {
-    const daysUntil = Math.ceil((new Date(insp.due_date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    const rideName = (insp as any).rides?.ride_name || rideMap.get(insp.ride_id) || '';
-    dueSoonItems.push({ label: insp.inspection_name, rideName, daysUntil, type: 'inspection' });
-  });
 
   // Document expiries (ride-specific + global)
   dueSoonDocs.slice(0, 5).forEach(doc => {
@@ -206,11 +197,26 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     dueSoonItems.push({ label: doc.document_name, rideName, daysUntil, type: 'document' });
   });
 
-  // NDT schedules
-  ndtSchedulesResult.data?.forEach(ndt => {
-    const daysUntil = Math.ceil((new Date(ndt.next_inspection_due!).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    const rideName = (ndt as any).rides?.ride_name || rideMap.get(ndt.ride_id) || '';
-    dueSoonItems.push({ label: ndt.schedule_name, rideName, daysUntil, type: 'ndt' });
+  // Expired docs (show as negative days)
+  expiredDocs.slice(0, 5).forEach(doc => {
+    const daysUntil = Math.ceil((new Date(doc.expires_at!).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const isGlobal = (doc as any).is_global === true;
+    const rideName = isGlobal ? 'All rides (Global)' : (doc.ride_id ? rideMap.get(doc.ride_id) || '' : '');
+    dueSoonItems.push({ label: doc.document_name, rideName, daysUntil, type: 'document' });
+  });
+
+  // Overdue compliance events (negative days)
+  overdueEvents.forEach(evt => {
+    const daysUntil = Math.ceil((new Date(evt.due_date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const rideName = evt.ride_id ? rideMap.get(evt.ride_id) || '' : 'All rides (Global)';
+    dueSoonItems.push({ label: evt.event_name, rideName, daysUntil, type: 'inspection' });
+  });
+
+  // Due soon compliance events
+  dueSoonEvents.forEach(evt => {
+    const daysUntil = Math.ceil((new Date(evt.due_date).getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const rideName = evt.ride_id ? rideMap.get(evt.ride_id) || '' : 'All rides (Global)';
+    dueSoonItems.push({ label: evt.event_name, rideName, daysUntil, type: 'inspection' });
   });
 
   // Sort by urgency (overdue first, then soonest)
@@ -245,14 +251,16 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     });
   }
 
+  const totalOverdue = overdueEvents.length + expiredDocs.length;
+
   return {
     stats,
     recentDocs,
     recentActivity: activity.slice(0, 4),
     userPlan: profileResult.data?.subscription_status || 'trial',
-    dueSoonItems: dueSoonItems.slice(0, 5),
+    dueSoonItems: dueSoonItems.slice(0, 8),
     complianceAlerts,
-    overdueCount: overdueInspCount,
+    overdueCount: totalOverdue,
     expiredDocsCount: expiredDocs.length,
   };
 }

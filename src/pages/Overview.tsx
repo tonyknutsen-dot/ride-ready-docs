@@ -137,22 +137,51 @@ const Overview = () => {
 
           <ItemLimitWarning />
 
-          {/* ── COMPLIANCE ALERT BANNER ────────────── */}
-          {hasAlerts && (
+          {/* ── OVERDUE COMPLIANCE BANNER (red) ────── */}
+          {complianceAlerts.some(a => a.type === 'overdue' || a.type === 'expired') && (
             <button
               onClick={() => navigate('/compliance')}
-              className="w-full text-left bg-destructive/5 border border-destructive/30 rounded-2xl px-4 py-3.5 space-y-1.5 hover:border-destructive/50 hover:bg-destructive/10 transition-all shadow-sm"
+              className="w-full text-left rounded-2xl px-4 py-3.5 space-y-1.5 transition-all shadow-sm"
+              style={{
+                backgroundColor: 'hsl(0 72% 96%)',
+                border: '1px solid hsl(0 72% 80%)',
+              }}
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <AlertTriangle className="h-4 w-4 text-destructive" strokeWidth={2} />
-                  <span className="text-sm font-semibold text-destructive">Compliance Alerts</span>
+                  <span className="text-sm font-bold text-destructive">Overdue Compliance Items</span>
                 </div>
                 <ChevronRight className="h-4 w-4 text-destructive/70" />
               </div>
               <div className="space-y-0.5 pl-6">
-                {complianceAlerts.map((alert, i) => (
-                  <p key={i} className="text-xs text-destructive/80 font-medium">⚠ {alert.label}</p>
+                {complianceAlerts.filter(a => a.type === 'overdue' || a.type === 'expired').map((alert, i) => (
+                  <p key={i} className="text-xs font-medium" style={{ color: 'hsl(0 72% 40%)' }}>⚠ {alert.label}</p>
+                ))}
+              </div>
+            </button>
+          )}
+
+          {/* ── DUE SOON BANNER (amber, no red items) ── */}
+          {!complianceAlerts.some(a => a.type === 'overdue' || a.type === 'expired') && complianceAlerts.some(a => a.type === 'due_soon') && (
+            <button
+              onClick={() => navigate('/compliance')}
+              className="w-full text-left rounded-2xl px-4 py-3.5 space-y-1.5 transition-all shadow-sm"
+              style={{
+                backgroundColor: 'hsl(38 92% 96%)',
+                border: '1px solid hsl(38 92% 70%)',
+              }}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Clock className="h-4 w-4" style={{ color: 'hsl(38 80% 40%)' }} strokeWidth={2} />
+                  <span className="text-sm font-bold" style={{ color: 'hsl(38 80% 30%)' }}>Due Soon</span>
+                </div>
+                <ChevronRight className="h-4 w-4" style={{ color: 'hsl(38 80% 50%)' }} />
+              </div>
+              <div className="space-y-0.5 pl-6">
+                {complianceAlerts.filter(a => a.type === 'due_soon').map((alert, i) => (
+                  <p key={i} className="text-xs font-medium" style={{ color: 'hsl(38 80% 35%)' }}>{alert.label}</p>
                 ))}
               </div>
             </button>
