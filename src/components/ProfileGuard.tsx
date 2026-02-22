@@ -1,6 +1,7 @@
 import { ReactNode, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useProfileComplete } from '@/hooks/useProfileComplete';
+import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface ProfileGuardProps {
@@ -11,6 +12,7 @@ export function ProfileGuard({ children }: ProfileGuardProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { isProfileComplete, loading } = useProfileComplete();
+  const { isOfflineMode } = useAuth();
 
   useEffect(() => {
     // Don't redirect if we're already on the setup page or auth pages
@@ -20,17 +22,22 @@ export function ProfileGuard({ children }: ProfileGuardProps) {
       return;
     }
 
+    // Never redirect to onboarding while in offline mode
+    if (isOfflineMode || !navigator.onLine) {
+      return;
+    }
+
     // Staff members should never be on profile-setup - redirect them away
     if (location.pathname === '/profile-setup' && isProfileComplete) {
       navigate('/overview', { replace: true });
       return;
     }
 
-    // Redirect to profile setup if profile is incomplete (only for non-staff)
+    // Redirect to profile setup if profile is incomplete (only for non-staff, only when online)
     if (isProfileComplete === false) {
       navigate('/profile-setup', { replace: true });
     }
-  }, [isProfileComplete, loading, navigate, location.pathname]);
+  }, [isProfileComplete, loading, navigate, location.pathname, isOfflineMode]);
 
   // Show loading state while checking profile
   if (loading) {
