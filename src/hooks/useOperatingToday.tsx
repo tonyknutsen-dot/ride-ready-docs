@@ -38,6 +38,7 @@ export function useOperatingToday() {
           .from('rides')
           .select('id, ride_name, ride_categories(name)')
           .eq('user_id', effectiveUserId)
+          .eq('requires_operational_checks', true)
           .order('ride_name'),
         supabase
           .from('profiles')
