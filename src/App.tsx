@@ -81,6 +81,7 @@ const SharedDocuments = lazy(() => import("./pages/SharedDocuments"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const Compliance = lazy(() => import("./pages/Compliance"));
 const DocumentViewerPage = lazy(() => import("./pages/DocumentViewerPage"));
+const InspectionRecordPage = lazy(() => import("./pages/InspectionRecordPage"));
 
 // PageLoader is now inside OfflineSuspense
 
@@ -535,6 +536,17 @@ const App = () => (
                   <ProtectedRoute>
                     <ProfileGuard>
                       <DocumentViewerPage />
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              {/* Inspection Record - full page view */}
+              <Route 
+                path="/inspection-record/:recordId"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <InspectionRecordPage />
                     </ProfileGuard>
                   </ProtectedRoute>
                 } 

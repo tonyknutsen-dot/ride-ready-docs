@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import {
   Eye,
   Download,
@@ -24,16 +24,12 @@ import { useAppRole } from '@/hooks/useAppRole';
 import { useToast } from '@/hooks/use-toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { EmptyState } from '@/components/EmptyState';
-import CheckDetailDialog from './CheckDetailDialog';
 import { InspectionAmendDialog } from './InspectionAmendDialog';
 import {
   fetchInspectionRecords,
   isWithinAmendmentWindow,
   type InspectionRecord,
 } from '@/utils/inspectionRecordService';
-import { Tables } from '@/integrations/supabase/types';
-
-type Check = Tables<'checks'>;
 
 interface InspectionRecordListProps {
   rideId: string;
@@ -46,9 +42,8 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
   const role = useAppRole();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
-  const [selectedCheck, setSelectedCheck] = useState<Check | null>(null);
-  const [showCheckDetail, setShowCheckDetail] = useState(false);
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
 
   const { data: records = [], isLoading } = useQuery({
@@ -82,27 +77,14 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
     }
   };
 
-  const handleViewRecord = async (record: InspectionRecord) => {
-    // Load the check from DB to open in CheckDetailDialog
-    try {
-      const { data } = await supabase
-        .from('checks')
-        .select('*')
-        .eq('id', record.check_id)
-        .single();
-
-      if (data) {
-        setSelectedCheck(data);
-        setShowCheckDetail(true);
-      }
-    } catch (error) {
-      console.error('Error loading check:', error);
-    }
+  const handleViewRecord = (record: InspectionRecord) => {
+    navigate(`/inspection-record/${record.id}`);
   };
 
   const getResultBadge = (result: string) => {
     switch (result) {
       case 'passed':
+      case 'completed':
         return (
           <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold border bg-success/10 border-success/30 text-success">
             <CheckCircle2 className="h-3 w-3" />
@@ -252,12 +234,6 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
           );
         })}
       </div>
-
-      <CheckDetailDialog
-        check={selectedCheck}
-        open={showCheckDetail}
-        onOpenChange={setShowCheckDetail}
-      />
 
       {amendRecord && (
         <InspectionAmendDialog
