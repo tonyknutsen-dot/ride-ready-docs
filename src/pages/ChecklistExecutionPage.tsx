@@ -100,7 +100,8 @@ const ChecklistExecutionPage = () => {
   };
 
   // Determine if we need to show the notice gate
-  const showNoticeGate = startNoticeText && startNoticeRequired && !noticeDismissed;
+  // Show gate if notice text exists and hasn't been dismissed yet
+  const showNoticeGate = startNoticeText && !noticeDismissed;
 
   if (loading) {
     return (
@@ -164,7 +165,9 @@ const ChecklistExecutionPage = () => {
               <ShieldAlert className="h-6 w-6 text-warning shrink-0 mt-0.5" />
               <div>
                 <h2 className="font-bold text-foreground text-base">Start Notice</h2>
-                <p className="text-xs text-muted-foreground mt-0.5">You must acknowledge before starting</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {startNoticeRequired ? 'You must acknowledge before starting' : 'Please review before starting'}
+                </p>
               </div>
             </div>
 
@@ -185,7 +188,7 @@ const ChecklistExecutionPage = () => {
 
             <Button
               className="w-full"
-              disabled={!noticeAcknowledged}
+              disabled={startNoticeRequired && !noticeAcknowledged}
               onClick={() => setNoticeDismissed(true)}
             >
               Continue to Check
@@ -200,8 +203,8 @@ const ChecklistExecutionPage = () => {
             frequency={frequency ?? 'daily'}
             onChecklistSaved={() => navigate(`/rides/${rideId}?tab=checks`)}
             startImmediately
-            startNoticeSnapshot={startNoticeText && startNoticeRequired ? startNoticeText : undefined}
-            startNoticeAcknowledgedBy={startNoticeText && startNoticeRequired ? user?.id : undefined}
+            startNoticeSnapshot={startNoticeText ? startNoticeText : undefined}
+            startNoticeAcknowledgedBy={noticeAcknowledged ? user?.id : undefined}
           />
         </main>
       )}
