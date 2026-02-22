@@ -17,6 +17,7 @@ import { createComplianceDocument, categoryToDocTypeCode } from '@/utils/complia
 import { generateDocumentId } from '@/utils/pdfTemplate';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import { addOfflineComplianceCompletion } from '@/lib/offlineDb';
+import { maybeCreateRecurringEvent } from '@/utils/autoRecurrenceEvent';
 
 interface MarkCompleteSheetProps {
   open: boolean;
@@ -284,6 +285,17 @@ const MarkCompleteSheet = ({
         documentName: docResult.documentName,
         nextDueDate: result?.next_due_date,
       });
+
+      // Auto-create next recurring event if linked document has auto_create_event
+      try {
+        await maybeCreateRecurringEvent({
+          completedEventId: eventId,
+          completionDate,
+          userId: user.id,
+        });
+      } catch (e) {
+        console.warn('Auto-recurrence check failed:', e);
+      }
 
       queryClient.invalidateQueries({ queryKey: ['compliance'] });
       onCompleted?.();

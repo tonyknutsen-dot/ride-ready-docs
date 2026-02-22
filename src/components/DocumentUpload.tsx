@@ -4,7 +4,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Checkbox } from '@/components/ui/checkbox';
-import { ShieldCheck, FileText, Camera, FolderOpen, CalendarClock, Globe2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { ShieldCheck, FileText, Camera, FolderOpen, CalendarClock, Globe2, Repeat } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -96,6 +97,9 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
   const [uploading, setUploading] = useState(false);
   const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
   const [isGlobal, setIsGlobal] = useState(false);
+  const [autoCreateEvent, setAutoCreateEvent] = useState(false);
+  const [recurrenceType, setRecurrenceType] = useState('annual');
+  const [customIntervalDays, setCustomIntervalDays] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
@@ -197,6 +201,9 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
         versionNumber: autoVersionNumber,
         versionNotes: undefined,
         replacingDocumentId: null,
+        autoCreateEvent,
+        recurrenceType: autoCreateEvent ? recurrenceType : 'none',
+        recurrenceIntervalDays: autoCreateEvent && recurrenceType === 'custom' ? parseInt(customIntervalDays) || null : null,
       },
       {
         onSuccess: () => {
@@ -206,6 +213,9 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
           setExpiryDate('');
           setNotes('');
           setIsGlobal(false);
+          setAutoCreateEvent(false);
+          setRecurrenceType('annual');
+          setCustomIntervalDays('');
           setExistingDocuments([]);
           if (fileInputRef.current) fileInputRef.current.value = '';
           if (cameraInputRef.current) cameraInputRef.current.value = '';
@@ -388,6 +398,59 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess }: DocumentUploadPro
             className={`h-11 ${!expiryDate ? 'text-muted-foreground' : ''}`}
           />
           <p className="text-[11px]" style={{ color: 'hsl(var(--muted-foreground))' }}>Set expiry to receive automated alerts before the document lapses.</p>
+
+          {/* Auto-create recurring compliance event */}
+          {expiryDate && (
+            <div className="mt-3 space-y-2.5 rounded-xl p-3" style={{ background: 'hsl(var(--muted) / 0.3)', border: '1px solid hsl(var(--border))' }}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <Repeat className="h-4 w-4 flex-shrink-0" style={{ color: 'hsl(213 52% 24%)' }} />
+                  <div>
+                    <Label htmlFor="auto-create-event" className="text-xs font-semibold cursor-pointer">Auto-create recurring event</Label>
+                    <p className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))' }}>Creates a compliance reminder on expiry</p>
+                  </div>
+                </div>
+                <Switch
+                  id="auto-create-event"
+                  checked={autoCreateEvent}
+                  onCheckedChange={setAutoCreateEvent}
+                  disabled={uploading}
+                />
+              </div>
+
+              {autoCreateEvent && (
+                <div className="space-y-2 pt-1">
+                  <Select value={recurrenceType} onValueChange={setRecurrenceType} disabled={uploading}>
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="annual">Annual (every 12 months)</SelectItem>
+                      <SelectItem value="6_monthly">6 Monthly</SelectItem>
+                      <SelectItem value="quarterly">Quarterly (every 3 months)</SelectItem>
+                      <SelectItem value="monthly">Monthly</SelectItem>
+                      <SelectItem value="custom">Custom interval</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {recurrenceType === 'custom' && (
+                    <Input
+                      type="number"
+                      value={customIntervalDays}
+                      onChange={(e) => setCustomIntervalDays(e.target.value)}
+                      placeholder="Number of days"
+                      min={1}
+                      max={3650}
+                      className="h-9 text-sm"
+                      disabled={uploading}
+                    />
+                  )}
+                  <p className="text-[10px]" style={{ color: 'hsl(var(--muted-foreground))' }}>
+                    Next event will be created automatically after completion.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Notes */}
