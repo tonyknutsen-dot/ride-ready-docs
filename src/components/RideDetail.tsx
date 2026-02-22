@@ -27,8 +27,9 @@ import { lazy, Suspense } from 'react';
 import { useDailyStatus } from '@/hooks/useDailyStatus';
 import { useAppRole } from '@/hooks/useAppRole';
 import { Badge } from '@/components/ui/badge';
-import { PlayCircle, PauseCircle } from 'lucide-react';
+import { PlayCircle, PauseCircle, History } from 'lucide-react';
 const Reports = lazy(() => import('@/pages/Reports'));
+const RideActivityTimeline = lazy(() => import('@/components/RideActivityTimeline'));
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -281,11 +282,12 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
       {/* Main Tabs — underline style */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
-          <TabsList className="grid w-full grid-cols-4 h-auto p-0 bg-transparent rounded-none">
+          <TabsList className="grid w-full grid-cols-5 h-auto p-0 bg-transparent rounded-none">
             {[
               { value: 'overview', label: 'Home', Icon: FileText },
               { value: 'checks',   label: 'Checks', Icon: CheckSquare },
               { value: 'documents', label: 'Docs', Icon: FileText },
+              { value: 'activity', label: 'Activity', Icon: History },
               { value: 'reports', label: 'Reports', Icon: BarChart3 },
             ].map(({ value, label, Icon }) => (
               <TabsTrigger
@@ -622,6 +624,12 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           <FeatureGate feature="Safety Checks">
             <InspectionManager ride={ride} />
           </FeatureGate>
+        </TabsContent>
+
+        <TabsContent value="activity" className="animate-fade-in">
+          <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+            <RideActivityTimeline rideId={ride.id} />
+          </Suspense>
         </TabsContent>
 
         <TabsContent value="reports" className="animate-fade-in">
