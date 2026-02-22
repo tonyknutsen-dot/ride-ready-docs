@@ -1523,7 +1523,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
                    {/* Fail extras — auto-expanded */}
                    {isFail && (
-                    <div className="mt-2 rounded-md border border-slate-200 bg-white p-3 space-y-2.5">
+                    <div className="mt-2 space-y-2">
                       <p className="font-bold text-red-700 text-xs flex items-center gap-1.5">
                         <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                         Action required
@@ -1533,7 +1533,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                         placeholder="Describe the failure…"
                         value={notes[item.id] || ''}
                         onChange={(e) => handleNoteChange(item.id, e.target.value)}
-                        className="min-h-[60px] text-sm resize-none rounded-md bg-white border-slate-300"
+                        className="min-h-[56px] text-sm resize-none rounded-md bg-white border-slate-300"
                         rows={2}
                       />
 
@@ -1543,13 +1543,14 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                           rideName={ride.ride_name}
                           onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
                           trigger={
-                            <button type="button" className="h-9 rounded-lg border text-xs font-semibold flex items-center justify-center gap-1 text-destructive border-destructive/30 hover:bg-destructive/5 flex-1">
-                              <AlertTriangle className="h-3 w-3 shrink-0" />Raise Defect
+                            <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
+                              <AlertTriangle className="h-3 w-3 shrink-0" />
+                              Raise Defect
                             </button>
                           }
                         />
-                        <label className="h-9 rounded-lg border border-border flex items-center justify-center gap-1 text-xs font-medium text-muted-foreground cursor-pointer hover:border-primary/40 hover:text-primary transition-colors flex-1">
-                          📷 Photo
+                        <label className="h-9 rounded-md border border-slate-300 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer hover:border-slate-400 hover:text-slate-800 transition-colors flex-1">
+                          📷 Add Photo
                           <input
                             type="file"
                             accept="image/*"
@@ -1568,11 +1569,11 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                       {(itemAttachments[item.id]?.length ?? 0) > 0 && (
                         <div className="flex flex-wrap gap-1.5">
                           {itemAttachments[item.id].map((f, idx) => (
-                            <div key={`${f.name}-${idx}`} className="flex items-center gap-1 rounded border border-border bg-card px-2 py-0.5 text-[11px]">
-                              <span className="max-w-[100px] truncate text-foreground">{f.name}</span>
+                            <div key={`${f.name}-${idx}`} className="flex items-center gap-1 rounded border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px]">
+                              <span className="max-w-[100px] truncate text-slate-700">{f.name}</span>
                               <button
                                 type="button"
-                                className="text-destructive font-bold shrink-0"
+                                className="text-red-600 font-bold shrink-0"
                                 onClick={() => setItemAttachments(prev => ({
                                   ...prev,
                                   [item.id]: (prev[item.id] || []).filter((_, i) => i !== idx)
