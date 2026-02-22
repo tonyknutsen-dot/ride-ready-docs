@@ -1397,17 +1397,17 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             <div className="rounded-xl px-4 py-3 shadow-sm border border-slate-200" style={{ background: '#EEF2F7' }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="text-[15px] font-extrabold text-slate-900 leading-tight truncate">
-                    {frequency === 'preopening' ? 'Pre-Opening Safety Check' : frequency === 'daily' ? 'Daily Safety Check' : frequency === 'weekly' ? 'Weekly Safety Check' : frequency === 'monthly' ? 'Monthly Safety Check' : frequency === 'yearly' ? 'Yearly Safety Check' : `${frequency} Safety Check`}
-                  </h2>
-                  <p className="text-[12px] font-medium text-slate-600 truncate mt-0.5">
-                    {ride.ride_name}{ride.ride_code ? ` – ${ride.ride_code}` : ''}
-                  </p>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    Checked by <span className="font-semibold text-slate-500">{inspectorName}</span>
-                    {weatherConditions ? ` · ${weatherConditions}` : ''}
-                    {location ? ` · ${location}` : ''}
-                  </p>
+                   <h2 className="text-[15px] font-black text-slate-900 leading-tight truncate">
+                     {frequency === 'preopening' ? 'Pre-Opening Safety Check' : frequency === 'daily' ? 'Daily Safety Check' : frequency === 'weekly' ? 'Weekly Safety Check' : frequency === 'monthly' ? 'Monthly Safety Check' : frequency === 'yearly' ? 'Yearly Safety Check' : `${frequency} Safety Check`}
+                   </h2>
+                   <p className="text-[12px] font-normal text-slate-600 truncate mt-0.5">
+                     {ride.ride_name}{ride.ride_code ? ` – ${ride.ride_code}` : ''}
+                   </p>
+                   <p className="text-[10px] text-[#6B7280] mt-0.5">
+                     Checked by <span className="font-semibold text-[#6B7280]">{inspectorName}</span>
+                     {weatherConditions ? ` · ${weatherConditions}` : ''}
+                     {location ? ` · ${location}` : ''}
+                   </p>
                 </div>
                 <button
                   type="button"
