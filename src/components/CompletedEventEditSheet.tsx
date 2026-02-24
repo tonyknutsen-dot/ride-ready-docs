@@ -149,7 +149,7 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
             .maybeSingle();
 
           const userName = profile?.controller_name || "Unknown";
-          const userRole = membership?.permission_level || "owner";
+          const userRole = membership ? "Staff" : "Controller";
 
           const rideCode = await getRideCode(event.rideId);
           const docTypeCode = categoryToDocTypeCode(event.category, event.eventType);

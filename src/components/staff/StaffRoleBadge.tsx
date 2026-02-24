@@ -1,22 +1,22 @@
 import { ROLE_CONFIG, type AppRole } from '@/utils/permissions';
-import { Shield, Wrench, CheckCircle2, Crown } from 'lucide-react';
+import { CheckCircle2, Crown } from 'lucide-react';
 
 const ROLE_ICONS: Record<string, React.ElementType> = {
   controller: Crown,
-  manager: Shield,
-  supervisor: Wrench,
   staff: CheckCircle2,
 };
 
 interface StaffRoleBadgeProps {
-  role: AppRole;
+  role: AppRole | string;
   size?: 'sm' | 'md';
 }
 
 export function StaffRoleBadge({ role, size = 'sm' }: StaffRoleBadgeProps) {
-  const cfg = ROLE_CONFIG[role];
+  // Map legacy roles to staff
+  const effectiveRole = (role === 'manager' || role === 'supervisor') ? 'staff' : role;
+  const cfg = ROLE_CONFIG[effectiveRole];
   if (!cfg) return null;
-  const Icon = ROLE_ICONS[role] || Shield;
+  const Icon = ROLE_ICONS[effectiveRole] || CheckCircle2;
 
   return (
     <span

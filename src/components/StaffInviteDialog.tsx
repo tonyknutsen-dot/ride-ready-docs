@@ -136,13 +136,8 @@ export function StaffInviteDialog({ open, onOpenChange, onSuccess }: StaffInvite
         throw new Error('Not authenticated');
       }
 
-      // Map role from granular permissions
-      let roleLevel = 'staff';
-      if (permissions.documents || permissions.risk_assessments || permissions.send_documents) {
-        roleLevel = 'manager';
-      } else if (permissions.maintenance) {
-        roleLevel = 'supervisor';
-      }
+      // All staff get the same role level
+      const roleLevel = 'staff';
 
       const response = await supabase.functions.invoke('send-staff-invite', {
         body: {

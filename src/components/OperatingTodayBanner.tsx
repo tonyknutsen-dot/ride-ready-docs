@@ -39,7 +39,7 @@ const OperatingTodayBanner = ({ rideId }: OperatingTodayBannerProps) => {
     }
     // Block ON if critical defects
     if (checked && !isOperating && hasCriticalDefects) {
-      if (role === 'controller' || role === 'manager') {
+      if (role === 'controller') {
         setShowOverrideDialog(true);
       } else {
         toast({

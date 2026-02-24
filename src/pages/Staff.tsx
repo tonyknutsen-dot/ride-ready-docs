@@ -16,7 +16,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Database } from '@/integrations/supabase/types';
 
 type StaffRole = Database['public']['Enums']['staff_role'];
-type FilterRole = 'all' | 'manager' | 'supervisor' | 'staff' | 'pending';
+type FilterRole = 'all' | 'staff' | 'pending';
 
 const Staff = () => {
   const navigate = useNavigate();
@@ -163,9 +163,7 @@ const Staff = () => {
   // Counts
   const counts = useMemo(() => ({
     all: staff.length,
-    manager: staff.filter(s => s.permission_level === 'manager').length,
-    supervisor: staff.filter(s => s.permission_level === 'supervisor').length,
-    staff: staff.filter(s => s.permission_level === 'staff').length,
+    staff: staff.length,
     pending: invites.length,
   }), [staff, invites]);
 

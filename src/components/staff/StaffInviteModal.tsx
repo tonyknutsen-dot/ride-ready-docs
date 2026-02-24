@@ -3,16 +3,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, UserPlus, ArrowLeft, ArrowRight, Mail, Shield, Wrench, CheckCircle2, Package } from 'lucide-react';
+import { Loader2, UserPlus, ArrowLeft, ArrowRight, Mail, Package } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
-import { ROLE_CONFIG } from '@/utils/permissions';
-import { Database } from '@/integrations/supabase/types';
-
-type StaffRole = Database['public']['Enums']['staff_role'];
 
 interface Ride {
   id: string;
@@ -25,31 +20,12 @@ interface StaffInviteModalProps {
   onSuccess?: () => void;
 }
 
-const ROLE_OPTIONS: { value: StaffRole; icon: React.ElementType; capabilities: string[] }[] = [
-  {
-    value: 'manager',
-    icon: Shield,
-    capabilities: ['Full access except billing', 'Can create calendar events', 'Can manage compliance'],
-  },
-  {
-    value: 'supervisor',
-    icon: Wrench,
-    capabilities: ['Checks, maintenance & compliance', 'Cannot create calendar events', 'Operations lead'],
-  },
-  {
-    value: 'staff',
-    icon: CheckCircle2,
-    capabilities: ['Checks & maintenance only', 'No calendar or compliance admin'],
-  },
-];
-
 export function StaffInviteModal({ open, onOpenChange, onSuccess }: StaffInviteModalProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
-  const [role, setRole] = useState<StaffRole>('staff');
   const [accessMode, setAccessMode] = useState<'all' | 'assigned'>('assigned');
   const [selectedRides, setSelectedRides] = useState<string[]>([]);
   const [rides, setRides] = useState<Ride[]>([]);
@@ -61,7 +37,6 @@ export function StaffInviteModal({ open, onOpenChange, onSuccess }: StaffInviteM
       setStep(1);
       setEmail('');
       setName('');
-      setRole('staff');
       setAccessMode('assigned');
       setSelectedRides([]);
       fetchRides();
@@ -94,8 +69,7 @@ export function StaffInviteModal({ open, onOpenChange, onSuccess }: StaffInviteM
 
   const canProceed = () => {
     if (step === 1) return email.trim().length > 0;
-    if (step === 2) return true;
-    if (step === 3) {
+    if (step === 2) {
       if (accessMode === 'assigned' && selectedRides.length === 0) return false;
       return true;
     }
@@ -112,16 +86,16 @@ export function StaffInviteModal({ open, onOpenChange, onSuccess }: StaffInviteM
       const featurePermissions = {
         checks: true,
         calendar: true,
-        maintenance: role !== 'staff',
-        documents: role === 'manager',
-        risk_assessments: role === 'manager',
-        send_documents: role === 'manager',
+        maintenance: true,
+        documents: false,
+        risk_assessments: false,
+        send_documents: false,
       };
 
       const response = await supabase.functions.invoke('send-staff-invite', {
         body: {
           email: email.trim().toLowerCase(),
-          permissionLevel: role,
+          permissionLevel: 'staff',
           assignedRides: accessMode === 'assigned' ? selectedRides : null,
           featurePermissions,
           staffName: name.trim() || undefined,
@@ -146,18 +120,17 @@ export function StaffInviteModal({ open, onOpenChange, onSuccess }: StaffInviteM
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <UserPlus className="h-4 w-4 text-primary" />
-            Invite Staff — Step {step}/3
+            Invite Staff — Step {step}/2
           </DialogTitle>
           <DialogDescription className="text-xs">
             {step === 1 && 'Enter their email and optional name.'}
-            {step === 2 && 'Choose a role.'}
-            {step === 3 && 'Set ride access.'}
+            {step === 2 && 'Set ride access.'}
           </DialogDescription>
         </DialogHeader>
 
         {/* Progress */}
         <div className="flex gap-1">
-          {[1, 2, 3].map(s => (
+          {[1, 2].map(s => (
             <div
               key={s}
               className="h-0.5 flex-1 rounded-full transition-colors"
@@ -167,7 +140,7 @@ export function StaffInviteModal({ open, onOpenChange, onSuccess }: StaffInviteM
         </div>
 
         <div className="flex-1 overflow-y-auto py-1">
-          {/* Step 1 */}
+          {/* Step 1: Email & Name */}
           {step === 1 && (
             <div className="space-y-3">
               <div className="space-y-1.5">
@@ -199,42 +172,8 @@ export function StaffInviteModal({ open, onOpenChange, onSuccess }: StaffInviteM
             </div>
           )}
 
-          {/* Step 2 */}
+          {/* Step 2: Ride Access */}
           {step === 2 && (
-            <RadioGroup value={role} onValueChange={v => setRole(v as StaffRole)} className="space-y-2">
-              {ROLE_OPTIONS.map(opt => {
-                const cfg = ROLE_CONFIG[opt.value];
-                const Icon = opt.icon;
-                const isSelected = role === opt.value;
-                return (
-                  <label
-                    key={opt.value}
-                    className="flex items-start gap-2.5 p-3 rounded-xl border cursor-pointer transition-all"
-                    style={{
-                      borderColor: isSelected ? cfg.color : 'hsl(var(--border))',
-                      background: isSelected ? cfg.bg : 'transparent',
-                    }}
-                  >
-                    <RadioGroupItem value={opt.value} className="mt-0.5" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1.5">
-                        <Icon className="h-3.5 w-3.5" style={{ color: cfg.color }} />
-                        <span className="font-semibold text-sm">{cfg.label}</span>
-                      </div>
-                      <ul className="mt-1 space-y-0">
-                        {opt.capabilities.map((cap, i) => (
-                          <li key={i} className="text-[11px] text-muted-foreground">• {cap}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  </label>
-                );
-              })}
-            </RadioGroup>
-          )}
-
-          {/* Step 3 */}
-          {step === 3 && (
             <div className="space-y-3">
               <div className="flex rounded-lg border border-border overflow-hidden">
                 {(['all', 'assigned'] as const).map(mode => (
@@ -306,7 +245,7 @@ export function StaffInviteModal({ open, onOpenChange, onSuccess }: StaffInviteM
             </Button>
           )}
 
-          {step < 3 ? (
+          {step < 2 ? (
             <Button size="sm" onClick={() => setStep(s => s + 1)} disabled={!canProceed()} className="gap-1 h-9">
               Next
               <ArrowRight className="h-3.5 w-3.5" />

@@ -401,7 +401,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                         return;
                       }
                       if (!isOperating && hasCriticalDefects) {
-                        if (role === 'controller' || role === 'manager') {
+                        if (role === 'controller') {
                           setShowOverrideDialog(true);
                         } else {
                           toast({
@@ -755,7 +755,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         preselectReason={hasCriticalDefects ? 'Critical defect (pre-opening/daily check)' : undefined}
       />
 
-      {/* Override dialog — controller/manager only when critical defect blocks ON */}
+      {/* Override dialog — controller only when critical defect blocks ON */}
       <Dialog open={showOverrideDialog} onOpenChange={setShowOverrideDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

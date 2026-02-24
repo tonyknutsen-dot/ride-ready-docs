@@ -1,7 +1,7 @@
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 
-type FilterRole = 'all' | 'manager' | 'supervisor' | 'staff' | 'pending';
+type FilterRole = 'all' | 'staff' | 'pending';
 
 interface StaffFiltersProps {
   search: string;
@@ -13,8 +13,6 @@ interface StaffFiltersProps {
 
 const FILTER_CHIPS: { value: FilterRole; label: string }[] = [
   { value: 'all', label: 'All' },
-  { value: 'manager', label: 'Managers' },
-  { value: 'supervisor', label: 'Supervisors' },
   { value: 'staff', label: 'Staff' },
   { value: 'pending', label: 'Pending' },
 ];

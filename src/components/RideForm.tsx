@@ -187,8 +187,8 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     }
   };
 
-  // Staff with manager role can add rides, others cannot
-  const canAddRides = !isStaff || permissionLevel === 'manager';
+  // Only the controller can add rides
+  const canAddRides = !isStaff;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

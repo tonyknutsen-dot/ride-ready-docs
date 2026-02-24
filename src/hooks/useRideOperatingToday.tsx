@@ -21,7 +21,7 @@ export function useRideOperatingToday(rideId: string) {
   const queryClient = useQueryClient();
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-  const canToggle = role === 'controller' || role === 'manager';
+  const canToggle = role === 'controller';
 
   const { data: isOperating, isLoading } = useQuery({
     queryKey: ['ride-operating-today', rideId, todayStr],

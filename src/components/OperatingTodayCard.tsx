@@ -138,10 +138,10 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
             </div>
           </div>
 
-          {/* Read-only hint for non-managers */}
+          {/* Read-only hint for staff */}
           {!canToggle && (
             <p className="text-xs text-muted-foreground italic">
-              Only Controller/Manager can change this.
+              Only the Controller can change this.
             </p>
           )}
 
@@ -188,7 +188,7 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
         preselectReason={hasCriticalDefects ? 'Critical defect (pre-opening/daily check)' : undefined}
       />
 
-      {/* Override dialog — controller/manager only when critical defect blocks ON */}
+      {/* Override dialog — controller only when critical defect blocks ON */}
       <Dialog open={showOverrideDialog} onOpenChange={setShowOverrideDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
