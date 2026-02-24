@@ -84,22 +84,34 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
 
     const isOperatingToday = operatingRideIds.has(ride.id);
     const requiresOpChecks = ride.requires_operational_checks;
+    const checkedToday = daysSince === 0;
 
-    // For rides that require operational checks but are NOT operating today,
-    // they should show as 'ok' (not due) for daily/pre-opening purposes
+    // ── Showmen logic for daily/pre-opening checks ──
+    // Daily checks are same-day reminders, NOT accumulating tasks.
+    // - Not in use today → always 'ok' (no checks required)
+    // - In use today + checked today → 'ok'
+    // - In use today + NOT checked today → 'due_today' (never 'overdue')
     let status: CheckRideStatus['status'] = 'ok';
-    
-    if (requiresOpChecks && !isOperatingToday) {
-      // Not operating today — daily checks not required, show as ok
-      status = 'ok';
-    } else if (daysSince === null || daysSince > 7) {
-      status = 'overdue';
-    } else if (daysSince === 0) {
-      status = 'ok'; // checked today
-    } else if (daysSince >= 6) {
-      status = 'due_today';
-    } else if (daysSince >= 4) {
-      status = 'due_soon';
+
+    if (requiresOpChecks) {
+      if (!isOperatingToday) {
+        status = 'ok';
+      } else if (checkedToday) {
+        status = 'ok';
+      } else {
+        status = 'due_today';
+      }
+    } else {
+      // Non-operational rides (weekly/monthly/yearly) keep original accumulating logic
+      if (daysSince === null || daysSince > 7) {
+        status = 'overdue';
+      } else if (daysSince === 0) {
+        status = 'ok';
+      } else if (daysSince >= 6) {
+        status = 'due_today';
+      } else if (daysSince >= 4) {
+        status = 'due_soon';
+      }
     }
 
     return {
