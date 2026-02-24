@@ -203,9 +203,7 @@ export function useOfflineSync() {
         .maybeSingle();
 
       const completedByName = profileData?.controller_name || user.email || 'Unknown';
-      const completedByRole = memberData
-        ? (memberData.permission_level === 'manager' ? 'Manager' : memberData.permission_level || 'Staff')
-        : 'Owner';
+      const completedByRole = memberData ? 'Staff' : 'Controller';
 
       // 2. Upload evidence files from stored blobs
       const evidenceUrls: string[] = [];

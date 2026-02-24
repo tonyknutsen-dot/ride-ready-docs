@@ -164,31 +164,10 @@ export function StaffDetailsDrawer({ open, onOpenChange, member, actorRole, onRe
           {/* 1) Role */}
           <section className="space-y-1.5">
             <h4 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">Role</h4>
-            {canEditRole && availableRoles.length > 0 ? (
-              <>
-                <Select
-                  value={member.permission_level}
-                  onValueChange={handleRoleChange}
-                  disabled={saving}
-                >
-                  <SelectTrigger className="w-full h-10">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availableRoles.map(r => (
-                      <SelectItem key={r} value={r}>
-                        {ROLE_CONFIG[r]?.label || r}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-[11px] text-muted-foreground">
-                  {ROLE_CONFIG[memberRole]?.description}
-                </p>
-              </>
-            ) : (
-              <StaffRoleBadge role={memberRole} size="md" />
-            )}
+            <StaffRoleBadge role="staff" size="md" />
+            <p className="text-[11px] text-muted-foreground">
+              {ROLE_CONFIG['staff']?.description}
+            </p>
           </section>
 
           {/* 2) Permissions */}

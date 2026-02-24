@@ -4,13 +4,13 @@ import { AppRole } from '@/utils/permissions';
 /**
  * Returns the current user's AppRole based on StaffContext.
  * - Owner (not staff) → 'controller'
- * - Staff member → mapped from permission_level enum
+ * - Staff member → 'staff'
  */
 export function useAppRole(): AppRole {
-  const { isOwner, isStaff, permissionLevel } = useStaff();
+  const { isOwner, isStaff } = useStaff();
 
   if (isOwner && !isStaff) return 'controller';
-  if (isStaff && permissionLevel) return permissionLevel as AppRole;
+  if (isStaff) return 'staff';
 
   // Fallback: if user is owner with org membership, still controller
   if (isOwner) return 'controller';

@@ -33,7 +33,7 @@ interface PendingInvite {
   status: string;
 }
 
-const PERMISSION_CONFIG: Record<StaffRole, {
+const PERMISSION_CONFIG: Record<string, {
   label: string;
   shortLabel: string;
   bg: string;
@@ -48,22 +48,6 @@ const PERMISSION_CONFIG: Record<StaffRole, {
     text: 'hsl(213 52% 24%)',
     border: 'hsl(213 52% 80%)',
     icon: CheckCircle2,
-  },
-  supervisor: {
-    label: 'Supervisor',
-    shortLabel: 'Supervisor',
-    bg: 'hsl(38 100% 97%)',
-    text: 'hsl(32 95% 30%)',
-    border: 'hsl(38 92% 75%)',
-    icon: Wrench,
-  },
-  manager: {
-    label: 'Manager',
-    shortLabel: 'Manager',
-    bg: 'hsl(142 76% 96%)',
-    text: 'hsl(142 72% 25%)',
-    border: 'hsl(142 69% 70%)',
-    icon: Shield,
   },
 };
 
@@ -194,12 +178,8 @@ export function StaffManagement() {
     }
   };
 
-  const handlePermissionChange = (memberId: string, newPermission: StaffRole, memberEmail: string) => {
-    if (newPermission === 'manager') {
-      setPermissionWarning({ memberId, email: memberEmail });
-    } else {
-      updatePermission(memberId, newPermission);
-    }
+  const handlePermissionChange = (memberId: string, newPermission: StaffRole, _memberEmail: string) => {
+    updatePermission(memberId, newPermission);
   };
 
   const updatePermission = async (memberId: string, newPermission: StaffRole) => {
@@ -231,9 +211,7 @@ export function StaffManagement() {
   };
 
   // Counts for authority summary
-  const managerCount = staff.filter(s => s.permission_level === 'manager').length;
-  const supervisorCount = staff.filter(s => s.permission_level === 'supervisor').length;
-  const staffCount = staff.filter(s => s.permission_level === 'staff').length;
+  const totalStaffCount = staff.length;
 
   if (loading) {
     return (
@@ -246,25 +224,14 @@ export function StaffManagement() {
   return (
     <div className="space-y-5">
 
-      {/* Authority Summary Strip */}
+      {/* Staff Count */}
       {staff.length > 0 && (
         <div
-          className="rounded-xl p-4 grid grid-cols-3 gap-3"
+          className="rounded-xl p-4 text-center"
           style={{ background: 'hsl(var(--muted) / 0.5)', border: '1px solid hsl(var(--border))' }}
         >
-          {[
-            { label: 'Managers', count: managerCount, color: 'hsl(142 72% 25%)', bg: 'hsl(142 76% 96%)' },
-            { label: 'Supervisors', count: supervisorCount, color: 'hsl(32 95% 30%)', bg: 'hsl(38 100% 97%)' },
-            { label: 'Staff', count: staffCount, color: 'hsl(213 52% 24%)', bg: 'hsl(214 100% 97%)' },
-          ].map(({ label, count, color, bg }) => (
-            <div key={label} className="text-center">
-              <div
-                className="text-xl font-bold"
-                style={{ color }}
-              >{count}</div>
-              <div className="text-[10px] font-medium" style={{ color: 'hsl(var(--muted-foreground))' }}>{label}</div>
-            </div>
-          ))}
+          <div className="text-xl font-bold" style={{ color: 'hsl(213 52% 24%)' }}>{totalStaffCount}</div>
+          <div className="text-[10px] font-medium" style={{ color: 'hsl(var(--muted-foreground))' }}>Staff Members</div>
         </div>
       )}
 
@@ -478,38 +445,7 @@ export function StaffManagement() {
         />
       )}
 
-      {permissionWarning && (
-        <AlertDialog open onOpenChange={(open) => !open && setPermissionWarning(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2 text-amber-600">
-                <ShieldAlert className="h-5 w-5" />
-                Grant Full Access?
-              </AlertDialogTitle>
-              <AlertDialogDescription className="space-y-2">
-                <p>You are about to grant <strong>Full Access</strong> to {permissionWarning.email}.</p>
-                <p className="text-amber-600 font-medium">This will allow them to view and manage:</p>
-                <ul className="list-disc list-inside text-sm space-y-1 ml-2">
-                  <li>All checks and inspections</li>
-                  <li>Maintenance records</li>
-                  <li>Documents and certificates</li>
-                  <li>Risk assessments</li>
-                </ul>
-                <p className="text-sm text-muted-foreground mt-2">Only grant this level of access to trusted team members.</p>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={() => { updatePermission(permissionWarning.memberId, 'manager'); setPermissionWarning(null); }}
-                className="bg-amber-600 hover:bg-amber-700"
-              >
-                Yes, Grant Manager Access
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
+      {/* Permission warning dialog removed — only staff role exists */}
 
       {deleteTarget && (
         <AlertDialog

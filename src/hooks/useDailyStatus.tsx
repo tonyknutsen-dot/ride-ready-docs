@@ -27,7 +27,7 @@ export function useDailyStatus(rideId: string) {
   const queryClient = useQueryClient();
   const todayStr = format(new Date(), 'yyyy-MM-dd');
 
-  const canToggle = role === 'controller' || role === 'manager';
+  const canToggle = role === 'controller';
 
   // Fetch today's status
   const { data: statusData, isLoading } = useQuery({

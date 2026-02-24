@@ -12,10 +12,10 @@ import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicato
 
 type InviteStatus = 'loading' | 'valid' | 'invalid' | 'expired' | 'accepted' | 'already_accepted';
 
-const permissionLabels = {
+const permissionLabels: Record<string, string> = {
   staff: 'Staff',
-  supervisor: 'Supervisor',
-  manager: 'Manager',
+  supervisor: 'Staff',
+  manager: 'Staff',
 };
 
 const permissionDescriptions = {

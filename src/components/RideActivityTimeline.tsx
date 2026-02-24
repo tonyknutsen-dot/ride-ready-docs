@@ -46,7 +46,7 @@ interface RideActivityTimelineProps {
 export default function RideActivityTimeline({ rideId }: RideActivityTimelineProps) {
   const { effectiveUserId } = useEffectiveUserId();
   const role = useAppRole();
-  const isFullView = role === 'controller' || role === 'manager';
+  const isFullView = role === 'controller';
 
   const [entries, setEntries] = useState<ActivityEntry[]>([]);
   const [loading, setLoading] = useState(true);
