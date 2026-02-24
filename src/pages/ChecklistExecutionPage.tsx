@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useStaff } from '@/contexts/StaffContext';
+import { useAuth } from '@/contexts/AuthContext';
 import InspectionChecklist from '@/components/InspectionChecklist';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
 
