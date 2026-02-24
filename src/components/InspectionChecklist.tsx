@@ -51,7 +51,8 @@ import QuickMaintenanceLog from './QuickMaintenanceLog';
 import { createInspectionRecord, updateInspectionRecordPdf, type InspectionRecord, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
 import { generateInspectionRecordPdf } from '@/utils/inspectionRecordPdf';
 import InspectionRecordList from './InspectionRecordList';
-
+import CriticalDefectModal from './CriticalDefectModal';
+import { useQueryClient as useQueryClientImport } from '@tanstack/react-query';
 type Ride = Tables<'rides'> & {
   ride_categories: {
     name: string;
@@ -116,6 +117,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const { autoSetOperating, isOperating: rideIsOperating } = useDailyStatus(ride.id);
   const [showStartCheckModal, setShowStartCheckModal] = useState(false);
   const [showPostCompletionModal, setShowPostCompletionModal] = useState(false);
+  const [showCriticalDefectModal, setShowCriticalDefectModal] = useState(false);
 
   // Prefill inspector name from profile
   useEffect(() => {
@@ -993,9 +995,11 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         // Fetch defect IDs linked to this check
         const { data: linkedDefects } = await supabase
           .from('defects')
-          .select('id')
+          .select('id, severity')
           .eq('check_id', checkId);
         const defectIds = (linkedDefects || []).map(d => d.id);
+        const criticalDefectCount = (linkedDefects || []).filter((d: any) => d.severity === 'stop_operation').length;
+        const totalDefectCount = (linkedDefects || []).length;
 
         // Create immutable inspection record (v1)
         const recordId = await createInspectionRecord({
@@ -1062,13 +1066,29 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             });
         }
 
-        toast({
-          title: "Check completed ✓",
-          description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}`
-        });
+        // Show completion toast with defect summary
+        if (failedCount > 0) {
+          const defectSummary = totalDefectCount > 0 
+            ? `${totalDefectCount} defect${totalDefectCount !== 1 ? 's' : ''}${criticalDefectCount > 0 ? ` (${criticalDefectCount} critical)` : ''}`
+            : '';
+          toast({
+            title: failedCount > 0 ? "⚠️ Check completed with failures" : "Check completed ✓",
+            description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}. ${failedCount} failed item${failedCount !== 1 ? 's' : ''}${defectSummary ? ` • ${defectSummary}` : ''}`,
+            variant: criticalDefectCount > 0 ? 'destructive' : 'default',
+          });
+        } else {
+          toast({
+            title: "Check completed ✓",
+            description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}`
+          });
+        }
 
-        // Show post-completion prompt if daily/pre-opening and ride still not operating
-        if (isDailyOrPreOpening && !rideIsOperating) {
+        // Show critical defect modal if any critical defects were found
+        if (criticalDefectCount > 0 && isDailyOrPreOpening) {
+          setShowCriticalDefectModal(true);
+        }
+        // Show post-completion prompt if daily/pre-opening and ride still not operating (and no critical defects)
+        else if (isDailyOrPreOpening && !rideIsOperating) {
           setShowPostCompletionModal(true);
         }
       }
@@ -1290,7 +1310,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           <DefectReportDialog
             rideId={ride.id}
             rideName={ride.ride_name}
+            checkFrequency={frequency}
             onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
+            onCriticalDefectReported={() => setShowCriticalDefectModal(true)}
             trigger={
               <button type="button" className="text-[11px] font-semibold text-primary hover:underline">
                 + Raise
@@ -1566,17 +1588,19 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                        />
 
                        <div className="flex gap-2">
-                         <DefectReportDialog
-                           rideId={ride.id}
-                           rideName={ride.ride_name}
-                           onDefectReported={() => { setDefectRefreshKey(prev => prev + 1); setItemDefectRaised(prev => ({ ...prev, [item.id]: true })); }}
-                           trigger={
-                             <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
-                               <AlertTriangle className="h-3 w-3 shrink-0" />
-                               Raise Defect
-                             </button>
-                           }
-                         />
+                          <DefectReportDialog
+                            rideId={ride.id}
+                            rideName={ride.ride_name}
+                            checkFrequency={frequency}
+                            onDefectReported={() => { setDefectRefreshKey(prev => prev + 1); setItemDefectRaised(prev => ({ ...prev, [item.id]: true })); }}
+                            onCriticalDefectReported={() => setShowCriticalDefectModal(true)}
+                            trigger={
+                              <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
+                                <AlertTriangle className="h-3 w-3 shrink-0" />
+                                Raise Defect
+                              </button>
+                            }
+                          />
                          <label className="h-9 rounded-md border border-slate-300 flex items-center justify-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer hover:border-slate-400 hover:text-slate-800 transition-colors flex-1">
                            📷 Add Photo
                            <input
@@ -1661,16 +1685,18 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
          <div className="bg-white border border-slate-200 rounded-md p-3 shadow-sm">
            <div className="flex items-center justify-between mb-1.5">
              <p className="text-[11px] font-semibold text-slate-900 uppercase" style={{ letterSpacing: '0.5px' }}>Defects</p>
-            <DefectReportDialog
-              rideId={ride.id}
-              rideName={ride.ride_name}
-              onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
-              trigger={
-                <button type="button" className="text-[11px] font-bold text-primary hover:underline">
-                  + Raise defect
-                </button>
-              }
-            />
+             <DefectReportDialog
+               rideId={ride.id}
+               rideName={ride.ride_name}
+               checkFrequency={frequency}
+               onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
+               onCriticalDefectReported={() => setShowCriticalDefectModal(true)}
+               trigger={
+                 <button type="button" className="text-[11px] font-bold text-primary hover:underline">
+                   + Raise defect
+                 </button>
+               }
+             />
           </div>
           <DefectsList
             key={defectRefreshKey}
@@ -1894,6 +1920,14 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {/* Critical Defect Warning Modal */}
+    <CriticalDefectModal
+      open={showCriticalDefectModal}
+      onOpenChange={setShowCriticalDefectModal}
+      rideId={ride.id}
+      rideName={ride.ride_name}
+      checkFrequency={frequency}
+    />
     </>
   );
 };
