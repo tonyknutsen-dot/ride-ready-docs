@@ -401,10 +401,10 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
               <Link className="h-3.5 w-3.5" style={{ color: '#1E3A5F' }} />
               Linked Defect <span className="text-[11px] font-normal text-slate-400">(optional)</span>
             </Label>
-            <Select value={formData.linked_defect_id} onValueChange={(v) => setFormData({ ...formData, linked_defect_id: v })}>
+            <Select value={formData.linked_defect_id || "none"} onValueChange={(v) => setFormData({ ...formData, linked_defect_id: v === "none" ? "" : v })}>
               <SelectTrigger className={fieldClass}><SelectValue placeholder="Link to an open defect…" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 {openDefects.map((d) => (
                   <SelectItem key={d.id} value={d.id}>
                     <span className="capitalize text-xs font-medium text-destructive mr-2">[{d.severity.replace('_', ' ')}]</span>
