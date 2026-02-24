@@ -1,9 +1,10 @@
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { AlertOctagon, FileText, ClipboardCheck, Clock, CheckCircle, ChevronRight } from 'lucide-react';
+import { AlertOctagon, FileText, ClipboardCheck, Clock, CheckCircle, ChevronRight, ChevronDown } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
-import { format } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface AttentionItem {
   id: string;
@@ -13,6 +14,17 @@ interface AttentionItem {
   urgency: 'critical' | 'warning' | 'info';
   path?: string;
 }
+
+interface AttentionGroup {
+  type: AttentionItem['type'];
+  title: string;
+  icon: typeof AlertOctagon;
+  items: AttentionItem[];
+  defaultOpen: boolean;
+  headerStyle: { bg: string; border: string; iconColor: string; text: string };
+}
+
+const INITIAL_VISIBLE = 5;
 
 const NeedsAttentionPanel = () => {
   const navigate = useNavigate();
@@ -27,15 +39,13 @@ const NeedsAttentionPanel = () => {
       const thirtyDaysStr = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
 
       const [defectsRes, docsRes, eventsRes] = await Promise.all([
-        // Open stop-use defects
         supabase
           .from('defects')
           .select('id, description, ride_id, rides(ride_name)')
           .eq('severity', 'stop_operation')
           .neq('status', 'resolved')
           .order('reported_at', { ascending: false })
-          .limit(10),
-        // Documents expiring within 30 days or already expired
+          .limit(50),
         supabase
           .from('documents')
           .select('id, document_name, expires_at, ride_id, rides(ride_name)')
@@ -44,8 +54,7 @@ const NeedsAttentionPanel = () => {
           .not('expires_at', 'is', null)
           .lte('expires_at', thirtyDaysStr)
           .order('expires_at', { ascending: true })
-          .limit(10),
-        // Compliance events due within 30 days or overdue
+          .limit(50),
         supabase
           .from('compliance_events')
           .select('id, event_name, due_date, ride_id, event_type, category, rides(ride_name)')
@@ -53,12 +62,11 @@ const NeedsAttentionPanel = () => {
           .in('status', ['scheduled', 'open'])
           .lte('due_date', thirtyDaysStr)
           .order('due_date', { ascending: true })
-          .limit(10),
+          .limit(50),
       ]);
 
       const result: AttentionItem[] = [];
 
-      // Stop Use defects — always first, link to ride home where the critical banner shows
       (defectsRes.data || []).forEach((d: any) => {
         result.push({
           id: `defect-${d.id}`,
@@ -70,7 +78,6 @@ const NeedsAttentionPanel = () => {
         });
       });
 
-      // Expired / expiring documents
       (docsRes.data || []).forEach((doc: any) => {
         const isExpired = doc.expires_at < todayStr;
         const daysUntil = Math.ceil((new Date(doc.expires_at).getTime() - today.getTime()) / 86400000);
@@ -89,7 +96,6 @@ const NeedsAttentionPanel = () => {
         });
       });
 
-      // Compliance events (inspections due)
       (eventsRes.data || []).forEach((evt: any) => {
         const isOverdue = evt.due_date < todayStr;
         const daysUntil = Math.ceil((new Date(evt.due_date).getTime() - today.getTime()) / 86400000);
@@ -98,34 +104,29 @@ const NeedsAttentionPanel = () => {
           : daysUntil === 0 ? 'Due today'
           : daysUntil === 1 ? 'Due tomorrow'
           : `Due in ${daysUntil}d`;
-        // Route to the most actionable page by event type
         let path = '/calendar';
         const evtType = (evt.event_type as string) || '';
         const evtCategory = (evt.category as string) || '';
 
         if (evtType === 'pre_opening_check') {
-          // Direct action: open pre-opening checklist execution
           path = evt.ride_id ? `/checks/${evt.ride_id}/preopening/execute` : '/checks';
         } else if (evtType === 'daily_check') {
-          // Direct action: open daily checklist execution
           path = evt.ride_id ? `/checks/${evt.ride_id}/daily/execute` : '/checks';
         } else if (evtType === 'ndt') {
-          // NDT → ride checks tab, NDT sub-tab
           path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks&checksSubTab=ndt` : '/calendar';
         } else if (evtCategory === 'inspection' || evtType === 'in-service' || evtType === 'electrical') {
-          // Annual / in-service / electrical → ride checks tab, Annual sub-tab
           path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks&checksSubTab=annual` : '/calendar';
         } else if (evtCategory === 'doc_expiry') {
-          // Document expiry reminders
           path = evt.ride_id ? `/rides/${evt.ride_id}?tab=documents&eventId=${evt.id}` : '/documents';
         } else if (evt.ride_id) {
           path = `/rides/${evt.ride_id}?tab=overview`;
         }
 
+        const isCheckType = evtType === 'daily_check' || evtType === 'pre_opening_check';
         const rideName = (evt as any).rides?.ride_name;
         result.push({
           id: `event-${evt.id}`,
-          type: 'inspection_due',
+          type: isCheckType ? 'check_due' : 'inspection_due',
           label: evt.event_name,
           sublabel: `${dateLabel}${rideName ? ` • ${rideName}` : ''}`,
           urgency: isOverdue ? 'warning' : 'info',
@@ -139,9 +140,49 @@ const NeedsAttentionPanel = () => {
     staleTime: 1000 * 60 * 2,
   });
 
+  // Group items by type
+  const groups: AttentionGroup[] = useMemo(() => {
+    const groupDefs: { type: AttentionItem['type']; title: string; icon: typeof AlertOctagon; defaultOpen: boolean; headerStyle: AttentionGroup['headerStyle'] }[] = [
+      {
+        type: 'stop_use',
+        title: 'Stop Use Defects',
+        icon: AlertOctagon,
+        defaultOpen: true,
+        headerStyle: { bg: 'bg-destructive/5', border: 'border-destructive/30', iconColor: 'text-destructive', text: 'text-destructive' },
+      },
+      {
+        type: 'check_due',
+        title: 'Checks Due',
+        icon: ClipboardCheck,
+        defaultOpen: false,
+        headerStyle: { bg: 'bg-amber-50 dark:bg-amber-950/20', border: 'border-amber-200 dark:border-amber-800', iconColor: 'text-amber-600', text: 'text-foreground' },
+      },
+      {
+        type: 'doc_expiring',
+        title: 'Documents Expiring',
+        icon: FileText,
+        defaultOpen: false,
+        headerStyle: { bg: 'bg-card', border: 'border-border', iconColor: 'text-muted-foreground', text: 'text-foreground' },
+      },
+      {
+        type: 'inspection_due',
+        title: 'Inspections Due',
+        icon: Clock,
+        defaultOpen: false,
+        headerStyle: { bg: 'bg-card', border: 'border-border', iconColor: 'text-muted-foreground', text: 'text-foreground' },
+      },
+    ];
+
+    return groupDefs
+      .map((def) => ({
+        ...def,
+        items: items.filter((i) => i.type === def.type),
+      }))
+      .filter((g) => g.items.length > 0);
+  }, [items]);
+
   if (isLoading) return null;
 
-  // All clear
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-4 py-6 text-center">
@@ -152,36 +193,6 @@ const NeedsAttentionPanel = () => {
     );
   }
 
-  const getIcon = (type: AttentionItem['type']) => {
-    switch (type) {
-      case 'stop_use': return AlertOctagon;
-      case 'doc_expiring': return FileText;
-      case 'check_due': return ClipboardCheck;
-      case 'inspection_due': return Clock;
-    }
-  };
-
-  const getItemStyle = (item: AttentionItem) => {
-    if (item.type === 'stop_use') return {
-      bg: 'bg-destructive/5',
-      border: 'border-destructive/30',
-      iconColor: 'text-destructive',
-      label: 'Stop Use Defect',
-    };
-    if (item.urgency === 'warning') return {
-      bg: 'bg-amber-50 dark:bg-amber-950/20',
-      border: 'border-amber-200 dark:border-amber-800',
-      iconColor: 'text-amber-600',
-      label: item.type === 'doc_expiring' ? 'Document' : 'Inspection',
-    };
-    return {
-      bg: 'bg-card',
-      border: 'border-border',
-      iconColor: 'text-muted-foreground',
-      label: item.type === 'doc_expiring' ? 'Document' : 'Inspection',
-    };
-  };
-
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between">
@@ -190,32 +201,102 @@ const NeedsAttentionPanel = () => {
       </div>
       <div className="h-px bg-border" />
 
-      <div className="space-y-2">
-        {items.map((item) => {
-          const Icon = getIcon(item.type);
-          const style = getItemStyle(item);
-
-          return (
-            <button
-              key={item.id}
-              onClick={() => item.path && navigate(item.path)}
-              className={`w-full text-left flex items-start gap-3 p-3 rounded-xl border ${style.border} ${style.bg} hover:shadow-sm transition-all active:scale-[0.98]`}
-            >
-              <div className={`mt-0.5 shrink-0 ${style.iconColor}`}>
-                <Icon className="h-4 w-4" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">{item.label}</p>
-                {item.sublabel && (
-                  <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{item.sublabel}</p>
-                )}
-              </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
-            </button>
-          );
-        })}
+      <div className="space-y-3">
+        {groups.map((group) => (
+          <AttentionGroupSection key={group.type} group={group} navigate={navigate} />
+        ))}
       </div>
     </div>
+  );
+};
+
+/* ── Group Section ── */
+
+const AttentionGroupSection = ({
+  group,
+  navigate,
+}: {
+  group: AttentionGroup;
+  navigate: ReturnType<typeof useNavigate>;
+}) => {
+  const [open, setOpen] = useState(group.defaultOpen);
+  const [showAll, setShowAll] = useState(false);
+  const Icon = group.icon;
+  const hasMore = group.items.length > INITIAL_VISIBLE;
+  const visibleItems = showAll ? group.items : group.items.slice(0, INITIAL_VISIBLE);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="w-full">
+        <div className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border ${group.headerStyle.border} ${group.headerStyle.bg} transition-colors`}>
+          <Icon className={`h-4 w-4 shrink-0 ${group.headerStyle.iconColor}`} />
+          <span className={`text-sm font-semibold flex-1 text-left ${group.headerStyle.text}`}>
+            {group.title}
+          </span>
+          <span className={`text-xs font-bold tabular-nums ${group.headerStyle.iconColor}`}>
+            {group.items.length}
+          </span>
+          <ChevronDown className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+        </div>
+      </CollapsibleTrigger>
+
+      <CollapsibleContent>
+        <div className="space-y-1.5 pt-1.5">
+          {visibleItems.map((item) => (
+            <AttentionItemRow key={item.id} item={item} navigate={navigate} />
+          ))}
+
+          {hasMore && !showAll && (
+            <button
+              onClick={() => setShowAll(true)}
+              className="w-full text-center py-1.5 text-xs font-medium text-primary hover:underline"
+            >
+              Show all {group.items.length} items
+            </button>
+          )}
+          {hasMore && showAll && (
+            <button
+              onClick={() => setShowAll(false)}
+              className="w-full text-center py-1.5 text-xs font-medium text-muted-foreground hover:underline"
+            >
+              Show fewer
+            </button>
+          )}
+        </div>
+      </CollapsibleContent>
+    </Collapsible>
+  );
+};
+
+/* ── Single Item Row ── */
+
+const AttentionItemRow = ({
+  item,
+  navigate,
+}: {
+  item: AttentionItem;
+  navigate: ReturnType<typeof useNavigate>;
+}) => {
+  const rowStyle =
+    item.type === 'stop_use'
+      ? 'bg-destructive/5 border-destructive/20'
+      : item.urgency === 'warning'
+      ? 'bg-amber-50/50 dark:bg-amber-950/10 border-amber-200/60 dark:border-amber-800/40'
+      : 'bg-card border-border';
+
+  return (
+    <button
+      onClick={() => item.path && navigate(item.path)}
+      className={`w-full text-left flex items-start gap-3 px-3 py-2.5 rounded-lg border ${rowStyle} hover:shadow-sm transition-all active:scale-[0.98]`}
+    >
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-foreground truncate">{item.label}</p>
+        {item.sublabel && (
+          <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{item.sublabel}</p>
+        )}
+      </div>
+      <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+    </button>
   );
 };
 
