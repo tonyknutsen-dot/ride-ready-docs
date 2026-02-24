@@ -11,12 +11,12 @@ import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, Eye, MoreVertical, ChevronDown, ChevronUp, PlayCircle, Wrench } from 'lucide-react';
+import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, Eye, MoreVertical, ChevronDown, ChevronUp, PlayCircle, Wrench } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { useDailyStatus } from '@/hooks/useDailyStatus';
+// useDailyStatus removed in showmen simplification
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -51,7 +51,7 @@ import QuickMaintenanceLog from './QuickMaintenanceLog';
 import { createInspectionRecord, updateInspectionRecordPdf, type InspectionRecord, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
 import { generateInspectionRecordPdf } from '@/utils/inspectionRecordPdf';
 import InspectionRecordList from './InspectionRecordList';
-import CriticalDefectModal from './CriticalDefectModal';
+// CriticalDefectModal removed in showmen simplification
 import { useQueryClient as useQueryClientImport } from '@tanstack/react-query';
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -71,11 +71,9 @@ interface InspectionChecklistProps {
   frequency: string;
   onChecklistSaved?: () => void;
   startImmediately?: boolean;
-  startNoticeSnapshot?: string;
-  startNoticeAcknowledgedBy?: string;
 }
 
-const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediately = false, startNoticeSnapshot, startNoticeAcknowledgedBy }: InspectionChecklistProps) => {
+const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediately = false }: InspectionChecklistProps) => {
   const navigate = useNavigate();
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
   const [recentChecks, setRecentChecks] = useState<Check[]>([]);
@@ -85,12 +83,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [inspectorNameError, setInspectorNameError] = useState(false);
   const [wizardStep, setWizardStep] = useState<'details' | 'checklist'>(startImmediately ? 'details' : 'details');
   const [inspectorNotes, setInspectorNotes] = useState('');
-  const [weatherConditions, setWeatherConditions] = useState('');
-  const [environmentNotes, setEnvironmentNotes] = useState('');
-  const [complianceOfficer, setComplianceOfficer] = useState('');
-  const [signatureData, setSignatureData] = useState('');
   const [location, setLocation] = useState('');
-  const [gettingLocation, setGettingLocation] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
@@ -113,11 +106,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const queryClient = useQueryClient();
   const { submitCheck, isOnline } = useOfflineCheck();
   const { pendingCount, isSyncing, syncAll } = useOfflineSync();
-  const isDailyOrPreOpening = frequency === 'daily' || frequency === 'preopening';
-  const { autoSetOperating, isOperating: rideIsOperating } = useDailyStatus(ride.id);
-  const [showStartCheckModal, setShowStartCheckModal] = useState(false);
-  const [showPostCompletionModal, setShowPostCompletionModal] = useState(false);
-  const [showCriticalDefectModal, setShowCriticalDefectModal] = useState(false);
 
   // Prefill inspector name from profile
   useEffect(() => {
@@ -300,143 +288,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [rawGpsCoords, setRawGpsCoords] = useState<{ lat: number; lon: number } | null>(null);
   const [needsAddressResolution, setNeedsAddressResolution] = useState(false);
 
-  const getGPSLocation = async () => {
-    if (!navigator.geolocation) {
-      toast({
-        title: "GPS not available",
-        description: "Your device doesn't support GPS location",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setGettingLocation(true);
-    
-    // Helper to attempt GPS with specific accuracy settings
-    const attemptGPS = (highAccuracy: boolean, timeout: number): Promise<GeolocationPosition> => {
-      return new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: highAccuracy,
-          timeout: timeout,
-          maximumAge: 300000 // 5 minutes cache is fine for location
-        });
-      });
-    };
-
-    try {
-      let position: GeolocationPosition;
-      
-      try {
-        // First try: high accuracy with 30 second timeout
-        position = await attemptGPS(true, 30000);
-      } catch (firstError: any) {
-        // If high accuracy times out, try with low accuracy (faster, uses network/wifi)
-        if (firstError.code === 3) {
-          toast({
-            title: "Trying alternative location method...",
-            description: "High accuracy GPS timed out, using network location",
-          });
-          position = await attemptGPS(false, 15000);
-        } else {
-          throw firstError;
-        }
-      }
-
-      const { latitude, longitude } = position.coords;
-      
-      // Check if we're online - if offline, try cache first then store coordinates for deferred resolution
-      if (!navigator.onLine) {
-        // Try to find a cached address for this location
-        const cachedLocation = await findCachedAddress(latitude, longitude);
-        if (cachedLocation) {
-          setLocation(cachedLocation.address);
-          setRawGpsCoords(null);
-          setNeedsAddressResolution(false);
-          toast({
-            title: "📍 Location found (cached)",
-            description: cachedLocation.address,
-          });
-          setGettingLocation(false);
-          return;
-        }
-        
-        // No cached address - store raw coordinates for deferred resolution
-        setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
-        setRawGpsCoords({ lat: latitude, lon: longitude });
-        setNeedsAddressResolution(true);
-        toast({
-          title: "📍 GPS location captured",
-          description: "Address will resolve when online",
-        });
-        setGettingLocation(false);
-        return;
-      }
-      
-      // Online - try to get address using reverse geocoding
-      try {
-        const response = await fetch(
-          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`,
-          { headers: { 'Accept-Language': 'en' } }
-        );
-        const data = await response.json();
-        
-        if (data.display_name) {
-          // Extract a shorter, cleaner address
-          const parts = [];
-          if (data.address?.road) parts.push(data.address.road);
-          if (data.address?.village || data.address?.town || data.address?.city) {
-            parts.push(data.address.village || data.address.town || data.address.city);
-          }
-          if (data.address?.county) parts.push(data.address.county);
-          if (data.address?.postcode) parts.push(data.address.postcode);
-          
-          const shortAddress = parts.length > 0 ? parts.join(', ') : data.display_name;
-          setLocation(shortAddress);
-          setRawGpsCoords(null);
-          setNeedsAddressResolution(false);
-          
-          // Cache this address for future offline use
-          await cacheLocationAddress(latitude, longitude, shortAddress);
-          
-          toast({
-            title: "Location detected",
-            description: shortAddress,
-          });
-        } else {
-          // Fallback to coordinates
-          setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
-          setRawGpsCoords({ lat: latitude, lon: longitude });
-          setNeedsAddressResolution(true);
-          toast({
-            title: "Location captured",
-            description: "Coordinates saved (address lookup unavailable)",
-          });
-        }
-      } catch {
-        // Fallback to coordinates if geocoding fails - mark for deferred resolution
-        setLocation(`${latitude.toFixed(6)}, ${longitude.toFixed(6)}`);
-        setRawGpsCoords({ lat: latitude, lon: longitude });
-        setNeedsAddressResolution(true);
-        toast({
-          title: "📍 GPS location captured",
-          description: "Address will resolve when online",
-        });
-      }
-    } catch (error: any) {
-      let message = "Could not get your location";
-      if (error.code === 1) message = "Location access denied. Please enable GPS permissions in your browser/device settings.";
-      if (error.code === 2) message = "Location unavailable. Please check GPS is enabled on your device.";
-      if (error.code === 3) message = "Location request timed out. Please try again or enter location manually.";
-      
-      toast({
-        title: "GPS Error",
-        description: message,
-        variant: "destructive"
-      });
-    } finally {
-      setGettingLocation(false);
-    }
-  };
+  // GPS location removed in showmen simplification - location field is manual-only
 
   const generatePDFBlob = async (checkId?: string): Promise<Blob | null> => {
     if (!activeTemplate) return null;
@@ -608,33 +460,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       pdf.setFont('helvetica', 'normal');
       pdf.text(inspectorName || '-', leftCol + labelWidth, currentY);
       currentY += 6;
-
-      if (weatherConditions) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Weather:', leftCol, currentY);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(weatherConditions, leftCol + labelWidth, currentY);
-        currentY += 6;
-      }
-
-      // Location if available
-      const checkLocation = location;
-      if (checkLocation) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Location:', leftCol, currentY);
-        pdf.setFont('helvetica', 'normal');
-        const locationText = pdf.splitTextToSize(checkLocation, pageWidth - margin - labelWidth - 25);
-        pdf.text(locationText, leftCol + labelWidth, currentY);
-        currentY += Math.max(locationText.length * 4, 6);
-      }
-
-      if (complianceOfficer) {
-        pdf.setFont('helvetica', 'bold');
-        pdf.text('Compliance Officer:', leftCol, currentY);
-        pdf.setFont('helvetica', 'normal');
-        pdf.text(complianceOfficer, leftCol + labelWidth + 10, currentY);
-        currentY += 6;
-      }
 
       // Calculate pass/fail summary
       const totalItems = activeTemplate.daily_check_template_items.length;
@@ -817,44 +642,23 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         }
       }
 
-      // === ADDITIONAL NOTES SECTION ===
-      if (inspectorNotes || environmentNotes) {
+      if (inspectorNotes) {
         currentY += 5;
         checkPageOverflow(40);
-
         pdf.setDrawColor(200);
         pdf.line(margin, currentY, pageWidth - margin, currentY);
         currentY += 8;
-
         pdf.setFontSize(11);
         pdf.setFont('helvetica', 'bold');
         pdf.setTextColor(50, 50, 50);
         pdf.text('Additional Notes', margin, currentY);
         currentY += 8;
-
         pdf.setFontSize(9);
         pdf.setFont('helvetica', 'normal');
         pdf.setTextColor(0);
-
-        if (inspectorNotes) {
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('Additional Notes:', leftCol, currentY);
-          currentY += 5;
-          pdf.setFont('helvetica', 'normal');
-          const splitNotes = pdf.splitTextToSize(inspectorNotes, pageWidth - 2 * margin);
-          pdf.text(splitNotes, leftCol, currentY);
-          currentY += splitNotes.length * 4 + 5;
-        }
-
-        if (environmentNotes) {
-          pdf.setFont('helvetica', 'bold');
-          pdf.text('Environment Notes:', leftCol, currentY);
-          currentY += 5;
-          pdf.setFont('helvetica', 'normal');
-          const splitEnv = pdf.splitTextToSize(environmentNotes, pageWidth - 2 * margin);
-          pdf.text(splitEnv, leftCol, currentY);
-          currentY += splitEnv.length * 4 + 5;
-        }
+        const splitNotes = pdf.splitTextToSize(inspectorNotes, pageWidth - 2 * margin);
+        pdf.text(splitNotes, leftCol, currentY);
+        currentY += splitNotes.length * 4 + 5;
       }
 
       // Add standardised footers to all pages
@@ -945,20 +749,11 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         checkFrequency: frequency,
         status: checkStatus,
         notes: inspectorNotes.trim() || undefined,
-        weatherConditions: weatherConditions.trim() || undefined,
         location: location.trim() || undefined,
-        signatureData: signatureData.trim() || undefined,
-        complianceOfficer: complianceOfficer.trim() || undefined,
-        environmentNotes: environmentNotes.trim() || undefined,
         // GPS coordinate fields for deferred address resolution
         rawLatitude: rawGpsCoords?.lat,
         rawLongitude: rawGpsCoords?.lon,
         needsAddressResolution: needsAddressResolution,
-        // Start notice acknowledgement
-        startNoticeAcknowledged: !!startNoticeSnapshot,
-        startNoticeAcknowledgedAt: startNoticeSnapshot ? new Date().toISOString() : undefined,
-        startNoticeAcknowledgedBy: startNoticeAcknowledgedBy || undefined,
-        startNoticeSnapshot: startNoticeSnapshot || undefined,
         results: activeTemplate.daily_check_template_items.map(item => {
           const result = itemResults[item.id] || 'na';
           return {
@@ -980,7 +775,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       // If submitted online, create inspection record and generate PDF (non-blocking)
       if (!isOffline && checkId) {
         const savedInspectorName = inspectorName;
-        const savedWeatherConditions = weatherConditions;
 
         // Determine overall result
         const failedCount = Object.values(itemResults).filter(r => r === 'fail').length;
@@ -1020,11 +814,11 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           overallResult,
           itemResults: itemResultSnapshots,
           notes: inspectorNotes.trim() || null,
-          weatherConditions: savedWeatherConditions.trim() || null,
+          weatherConditions: null,
           location: location.trim() || null,
-          environmentNotes: environmentNotes.trim() || null,
-          complianceOfficer: complianceOfficer.trim() || null,
-          signatureData: signatureData.trim() || null,
+          environmentNotes: null,
+          complianceOfficer: null,
+          signatureData: null,
           defectIds,
         });
 
@@ -1089,14 +883,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           });
         }
 
-        // Show critical defect modal if any critical defects were found
-        if (criticalDefectCount > 0 && isDailyOrPreOpening) {
-          setShowCriticalDefectModal(true);
-        }
-        // Show post-completion prompt if daily/pre-opening and ride still not operating (and no critical defects)
-        else if (isDailyOrPreOpening && !rideIsOperating) {
-          setShowPostCompletionModal(true);
-        }
+        // Critical defect warning kept as simple toast (no complex modal)
       }
       // If offline, the useOfflineCheck hook already shows a toast
 
@@ -1105,10 +892,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       setNotes({});
       setInspectorName('');
       setInspectorNotes('');
-      setWeatherConditions('');
-      setEnvironmentNotes('');
-      setComplianceOfficer('');
-      setSignatureData('');
       setLocation('');
       setCheckStarted(false);
       setCheckStartedAt(null);
@@ -1318,7 +1101,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             rideName={ride.ride_name}
             checkFrequency={frequency}
             onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
-            onCriticalDefectReported={() => setShowCriticalDefectModal(true)}
             trigger={
               <button type="button" className="text-[11px] font-semibold text-primary hover:underline">
                 + Raise
@@ -1382,34 +1164,19 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               <h2 className="text-[15px] font-bold text-slate-900 mt-0.5">Check Details</h2>
               <p className="text-[12px] text-slate-500 mt-0.5">Complete before starting the check.</p>
             </div>
-            <div className="px-4 pb-4 pt-2 space-y-3">
+              <div className="px-4 pb-4 pt-2 space-y-3">
               <div className="space-y-1">
                 <Label htmlFor="checkedBy" className="text-[11px] font-bold text-slate-700">Checked By <span className="text-red-500">*</span></Label>
                 <Input
                   id="checkedBy"
                   value={inspectorName}
                   onChange={(e) => { setInspectorName(e.target.value); setInspectorNameError(false); }}
-                  placeholder="Staff name"
+                  placeholder="Your name"
                   className={`h-11 text-sm ${inspectorNameError ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
                 />
                 {inspectorNameError && (
                   <p className="text-[11px] font-semibold text-red-600">Name is required to start this check.</p>
                 )}
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="weather" className="text-[11px] font-bold text-slate-700">Weather <span className="text-slate-400 font-normal">(optional)</span></Label>
-                <Input id="weather" value={weatherConditions} onChange={(e) => setWeatherConditions(e.target.value)} placeholder="e.g. Sunny, 20°C" className="h-11 text-sm border-slate-300" />
-              </div>
-              <div className="space-y-1">
-                <Label htmlFor="location" className="text-[11px] font-bold text-slate-700 flex items-center gap-1">
-                  <MapPin className="h-3 w-3" />Location <span className="text-slate-400 font-normal">(optional)</span>
-                </Label>
-                <div className="flex gap-2">
-                  <Input id="location" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Enter or use GPS" className="flex-1 h-11 text-sm border-slate-300" />
-                  <Button type="button" variant="outline" size="icon" onClick={getGPSLocation} disabled={gettingLocation} title="Use GPS" className="h-11 w-11 border-slate-300">
-                    {gettingLocation ? <Loader2 className="h-4 w-4 animate-spin" /> : <Locate className="h-4 w-4" />}
-                  </Button>
-                </div>
               </div>
               <button
                 type="button"
@@ -1419,12 +1186,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                     setInspectorNameError(true);
                     return;
                   }
-                  // If daily/pre-opening and ride is NOT operating, show confirmation modal
-                  if (isDailyOrPreOpening && !rideIsOperating) {
-                    setShowStartCheckModal(true);
-                    return;
-                  }
-                  // Otherwise start immediately
                   setWizardStep('checklist');
                   setCheckStarted(true);
                   setCheckStartedAt(new Date());
@@ -1453,7 +1214,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                    </p>
                    <p className="text-[9.5px] font-normal text-[#9CA3AF] mt-0.5">
                      Checked by <span className="font-medium text-[#9CA3AF]">{inspectorName}</span>
-                     {weatherConditions ? ` · ${weatherConditions}` : ''}
                      {location ? ` · ${location}` : ''}
                    </p>
                 </div>
@@ -1599,7 +1359,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                             rideName={ride.ride_name}
                             checkFrequency={frequency}
                             onDefectReported={() => { setDefectRefreshKey(prev => prev + 1); setItemDefectRaised(prev => ({ ...prev, [item.id]: true })); }}
-                            onCriticalDefectReported={() => setShowCriticalDefectModal(true)}
                             trigger={
                               <button type="button" className="h-9 rounded-md border border-red-300 text-xs font-bold flex items-center justify-center gap-1.5 text-red-700 hover:bg-red-50 flex-1 transition-colors">
                                 <AlertTriangle className="h-3 w-3 shrink-0" />
@@ -1696,7 +1455,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                rideName={ride.ride_name}
                checkFrequency={frequency}
                onDefectReported={() => setDefectRefreshKey(prev => prev + 1)}
-               onCriticalDefectReported={() => setShowCriticalDefectModal(true)}
+               
                trigger={
                  <button type="button" className="text-[11px] font-bold text-primary hover:underline">
                    + Raise defect
@@ -1852,88 +1611,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       )}
     </div>
 
-    {/* Start Check confirmation modal — ride not operating */}
-    <Dialog open={showStartCheckModal} onOpenChange={setShowStartCheckModal}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Ride is marked not operating today</DialogTitle>
-          <DialogDescription>
-            You are starting a {frequency === 'preopening' ? 'pre-opening' : 'daily'} check while this ride is marked not operating. Do you want to mark it as operating today?
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="flex flex-col gap-2 sm:flex-col">
-          <Button
-            onClick={() => {
-              autoSetOperating(frequency);
-              setShowStartCheckModal(false);
-              setWizardStep('checklist');
-              setCheckStarted(true);
-              setCheckStartedAt(new Date());
-            }}
-            className="w-full"
-          >
-            Start check + mark operating
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setShowStartCheckModal(false);
-              setWizardStep('checklist');
-              setCheckStarted(true);
-              setCheckStartedAt(new Date());
-            }}
-            className="w-full"
-          >
-            Start check only
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={() => setShowStartCheckModal(false)}
-            className="w-full"
-          >
-            Cancel
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-
-    {/* Post-completion prompt — check done while ride still not operating */}
-    <Dialog open={showPostCompletionModal} onOpenChange={setShowPostCompletionModal}>
-      <DialogContent className="max-w-sm">
-        <DialogHeader>
-          <DialogTitle>Check completed while ride is still marked not operating</DialogTitle>
-          <DialogDescription>
-            Do you want to mark this ride as operating today now?
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter className="flex flex-col gap-2 sm:flex-col">
-          <Button
-            onClick={() => {
-              autoSetOperating(frequency);
-              setShowPostCompletionModal(false);
-            }}
-            className="w-full"
-          >
-            Yes, mark operating today
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => setShowPostCompletionModal(false)}
-            className="w-full"
-          >
-            Keep not operating
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-    {/* Critical Defect Warning Modal */}
-    <CriticalDefectModal
-      open={showCriticalDefectModal}
-      onOpenChange={setShowCriticalDefectModal}
-      rideId={ride.id}
-      rideName={ride.ride_name}
-      checkFrequency={frequency}
-    />
     </>
   );
 };
