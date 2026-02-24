@@ -60,16 +60,16 @@ const DashboardHelpPanel = ({ onClose }: { onClose: () => void }) => (
     <div className="space-y-2">
       <p className="text-[11px] font-semibold text-foreground">Exceptions Only</p>
       <p className="text-xs text-muted-foreground leading-relaxed">
-        When ON (default), only rides needing attention are shown: critical defects, outstanding checks, and not-operating rides. Toggle OFF to see all rides.
+        When ON (default), only rides needing attention are shown: critical defects, outstanding checks, and rides not in use. Toggle OFF to see all rides.
       </p>
     </div>
 
     <div className="space-y-1.5">
       <p className="text-[11px] font-semibold text-foreground">KPI Cards</p>
       <ul className="space-y-1 text-xs text-muted-foreground">
-        <li className="flex gap-1.5"><PlayCircle className="h-3 w-3 text-green-600 mt-0.5 shrink-0" /> <span><span className="font-medium text-foreground">Operating</span> — rides marked operating today.</span></li>
-        <li className="flex gap-1.5"><PauseCircle className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" /> <span><span className="font-medium text-foreground">Not Operating</span> — rides not running, with reason if provided.</span></li>
-        <li className="flex gap-1.5"><AlertTriangle className="h-3 w-3 text-amber-600 mt-0.5 shrink-0" /> <span><span className="font-medium text-foreground">Checks Due</span> — operating rides still needing a check today.</span></li>
+        <li className="flex gap-1.5"><PlayCircle className="h-3 w-3 text-green-600 mt-0.5 shrink-0" /> <span><span className="font-medium text-foreground">In Use</span> — rides marked in use today.</span></li>
+        <li className="flex gap-1.5"><PauseCircle className="h-3 w-3 text-muted-foreground mt-0.5 shrink-0" /> <span><span className="font-medium text-foreground">Not In Use</span> — rides not running, with reason if provided.</span></li>
+        <li className="flex gap-1.5"><AlertTriangle className="h-3 w-3 text-amber-600 mt-0.5 shrink-0" /> <span><span className="font-medium text-foreground">Checks Due</span> — rides in use still needing a check today.</span></li>
         <li className="flex gap-1.5"><AlertOctagon className="h-3 w-3 text-destructive mt-0.5 shrink-0" /> <span><span className="font-medium text-foreground">Critical</span> — rides with open stop-operation defects.</span></li>
         <li className="flex gap-1.5"><ShieldAlert className="h-3 w-3 text-orange-600 mt-0.5 shrink-0" /> <span><span className="font-medium text-foreground">High</span> — rides with open high-severity defects.</span></li>
         <li className="flex gap-1.5"><CheckSquare className="h-3 w-3 text-primary mt-0.5 shrink-0" /> <span><span className="font-medium text-foreground">Checks Done</span> — checks completed today vs checks due.</span></li>
@@ -80,8 +80,8 @@ const DashboardHelpPanel = ({ onClose }: { onClose: () => void }) => (
       <p className="text-[11px] font-semibold text-foreground">Priority Sections</p>
       <ul className="space-y-1 text-xs text-muted-foreground">
         <li><span className="font-medium text-destructive">Red</span> — Critical defects requiring immediate action.</li>
-        <li><span className="font-medium text-amber-600">Amber</span> — Operating rides with checks still outstanding.</li>
-        <li><span className="font-medium text-muted-foreground">Grey</span> — Not operating rides (informational).</li>
+        <li><span className="font-medium text-amber-600">Amber</span> — Rides in use with checks still outstanding.</li>
+        <li><span className="font-medium text-muted-foreground">Grey</span> — Rides not in use (informational).</li>
       </ul>
     </div>
 
@@ -183,8 +183,8 @@ const OperationsOverviewPanel = () => {
         {/* KPI strip */}
         <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
           {([
-            { key: 'operating' as const, label: 'Operating', value: data.operatingCount, icon: PlayCircle, accent: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950/30', borderActive: 'border-green-400', tooltip: KPI_TOOLTIPS.operating },
-            { key: 'not_operating' as const, label: 'Not Operating', value: data.notOperatingCount, icon: PauseCircle, accent: 'text-muted-foreground', bg: 'bg-muted/40', borderActive: 'border-muted-foreground', tooltip: KPI_TOOLTIPS.not_operating },
+            { key: 'operating' as const, label: 'In Use', value: data.operatingCount, icon: PlayCircle, accent: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950/30', borderActive: 'border-green-400', tooltip: KPI_TOOLTIPS.operating },
+            { key: 'not_operating' as const, label: 'Not In Use', value: data.notOperatingCount, icon: PauseCircle, accent: 'text-muted-foreground', bg: 'bg-muted/40', borderActive: 'border-muted-foreground', tooltip: KPI_TOOLTIPS.not_operating },
             { key: 'checks_outstanding' as const, label: 'Checks Due', value: data.operatingWithChecksOutstanding, icon: AlertTriangle, accent: data.operatingWithChecksOutstanding > 0 ? 'text-amber-600' : 'text-muted-foreground', bg: data.operatingWithChecksOutstanding > 0 ? 'bg-amber-50 dark:bg-amber-950/20' : 'bg-muted/40', borderActive: 'border-amber-400', tooltip: KPI_TOOLTIPS.checks_outstanding },
             { key: 'critical' as const, label: 'Critical', value: data.openCriticalDefects.length, icon: AlertOctagon, accent: data.openCriticalDefects.length > 0 ? 'text-destructive' : 'text-muted-foreground', bg: data.openCriticalDefects.length > 0 ? 'bg-destructive/5' : 'bg-muted/40', borderActive: 'border-destructive', tooltip: KPI_TOOLTIPS.critical },
             { key: 'high' as const, label: 'High', value: data.openHighDefects, icon: ShieldAlert, accent: data.openHighDefects > 0 ? 'text-orange-600' : 'text-muted-foreground', bg: data.openHighDefects > 0 ? 'bg-orange-50 dark:bg-orange-950/20' : 'bg-muted/40', borderActive: 'border-orange-400', tooltip: KPI_TOOLTIPS.high },
