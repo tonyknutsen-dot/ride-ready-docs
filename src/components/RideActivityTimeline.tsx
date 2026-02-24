@@ -64,21 +64,21 @@ export default function RideActivityTimeline({ rideId }: RideActivityTimelinePro
       const results: ActivityEntry[] = [];
 
       // 1. Operating status changes
-      const { data: statusLogs } = await supabase
-        .from('ride_daily_status_log')
-        .select('id, changed_at, new_is_operating, reason, changed_by_name, changed_by_role')
+      const { data: statusLogs } = await (supabase
+        .from('ride_daily_status_log' as any)
+        .select('id, changed_at, new_is_operating, reason, changed_by_name')
         .eq('ride_id', rideId)
         .order('changed_at', { ascending: false })
-        .limit(200);
+        .limit(200) as any);
 
-      (statusLogs || []).forEach(s => {
+      (statusLogs || []).forEach((s: any) => {
         results.push({
           id: `status-${s.id}`,
           timestamp: s.changed_at,
           event_type: 'operating_status',
           description: `Operating Today set to ${s.new_is_operating ? 'ON' : 'OFF'}${s.reason ? ` — ${s.reason}` : ''}`,
           user_name: s.changed_by_name || 'Unknown',
-          user_role: s.changed_by_role || '',
+          user_role: '',
         });
       });
 
