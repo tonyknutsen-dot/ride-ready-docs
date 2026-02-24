@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { CheckCircle, Circle, ChevronDown, Clock, AlertOctagon } from 'lucide-react';
 import { useDailyStatus } from '@/hooks/useDailyStatus';
 import { useOpenCriticalDefects } from '@/hooks/useOpenCriticalDefects';
-import { useAppRole } from '@/hooks/useAppRole';
+// canToggle from useDailyStatus is used as the controller/manager check
 import { useToast } from '@/hooks/use-toast';
 import NotOperatingReasonDialog from '@/components/NotOperatingReasonDialog';
 import { format } from 'date-fns';
@@ -22,14 +22,14 @@ interface OperatingTodayCardProps {
 const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
   const { isOperating, isLoading, canToggle, toggling, toggleOperating, logEntries } = useDailyStatus(rideId);
   const { hasCriticalDefects } = useOpenCriticalDefects(rideId);
-  const role = useAppRole();
   const { toast } = useToast();
   const [showConfirmOff, setShowConfirmOff] = useState(false);
   const [logOpen, setLogOpen] = useState(false);
   const [showOverrideDialog, setShowOverrideDialog] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
 
-  const isControllerOrManager = role === 'controller' || role === 'manager';
+  // Use canToggle from useDailyStatus as single source of truth for controller/manager check
+  const isControllerOrManager = canToggle;
 
   const handleToggle = (checked: boolean) => {
     if (!canToggle || toggling) return;
