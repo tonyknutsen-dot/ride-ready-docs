@@ -174,13 +174,13 @@ const ProfileEdit = ({ profile, onComplete }: ProfileEditProps) => {
         <div className="space-y-2">
           <Label htmlFor="controller_name" className="flex items-center gap-2 text-sm">
             <User className="h-4 w-4 text-muted-foreground" />
-            Controller Name *
+            Controller Name(s) *
           </Label>
           <Input
             id="controller_name"
             value={formData.controller_name}
             onChange={(e) => handleInputChange('controller_name', e.target.value)}
-            placeholder="Enter controller name"
+            placeholder="e.g. John Smith & Jane Smith"
             disabled={isLoading}
             className="h-11"
           />

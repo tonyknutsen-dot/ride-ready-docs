@@ -199,13 +199,13 @@ const ProfileSetup = ({ onComplete }: ProfileSetupProps) => {
             <div className="space-y-2">
               <Label htmlFor="controller_name" className="flex items-center space-x-2">
                 <User className="h-4 w-4" />
-                <span>Controller Name *</span>
+                <span>Controller Name(s) *</span>
               </Label>
               <Input
                 id="controller_name"
                 value={formData.controller_name}
                 onChange={(e) => setFormData({ ...formData, controller_name: e.target.value })}
-                placeholder="Enter the controller's name"
+                placeholder="e.g. John Smith & Jane Smith"
                 className={errors.controller_name ? "border-destructive" : ""}
               />
               {errors.controller_name && (
