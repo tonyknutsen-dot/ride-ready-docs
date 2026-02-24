@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useAppRole } from '@/hooks/useAppRole';
 import { formatDistanceToNow, isToday, isThisWeek } from 'date-fns';
 
 interface Notification {
@@ -109,7 +110,8 @@ const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
-
+  const role = useAppRole();
+  const isController = role === 'controller';
   useEffect(() => {
     if (user) {
       loadNotifications();
@@ -249,10 +251,10 @@ const NotificationCenter = () => {
           </button>
         ))}
 
-        {unreadCount > 0 && (
+        {isController && unreadCount > 0 && (
           <button
             onClick={markAllAsRead}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-[#475569] bg-[#F1F5F9] hover:bg-[#E2E8F0] transition-all"
+            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground bg-muted hover:bg-muted/80 transition-all"
           >
             <Check className="h-3.5 w-3.5" />
             Mark all read
@@ -312,28 +314,30 @@ const NotificationCenter = () => {
                         </p>
                       </div>
 
-                      {/* Actions — only dismiss for non-source-of-truth notifications */}
-                      <div className="flex items-center gap-1 flex-shrink-0">
-                        {!n.is_read && (
-                          <button
-                            onClick={e => { e.stopPropagation(); markAsRead(n.id); }}
-                            className="p-1 rounded-lg text-[#94A3B8] hover:text-[#475569] hover:bg-[#F1F5F9] transition-all"
-                            title="Mark as read"
-                          >
-                            <Check className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                        {/* Hide dismiss for compliance/document reminders tied to real unresolved data */}
-                        {getCategory(n) === 'system' && (
-                          <button
-                            onClick={e => { e.stopPropagation(); deleteNotification(n.id); }}
-                            className="p-1 rounded-lg text-[#94A3B8] hover:text-muted-foreground hover:bg-muted transition-all"
-                            title="Dismiss"
-                          >
-                            <X className="h-3.5 w-3.5" />
-                          </button>
-                        )}
-                      </div>
+                      {/* Actions — controller only */}
+                      {isController && (
+                        <div className="flex items-center gap-1 flex-shrink-0">
+                          {!n.is_read && (
+                            <button
+                              onClick={e => { e.stopPropagation(); markAsRead(n.id); }}
+                              className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                              title="Mark as read"
+                            >
+                              <Check className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                          {/* Only system/general notifications can be dismissed — source-of-truth reminders auto-clear */}
+                          {getCategory(n) === 'system' && (
+                            <button
+                              onClick={e => { e.stopPropagation(); deleteNotification(n.id); }}
+                              className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                              title="Dismiss"
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
