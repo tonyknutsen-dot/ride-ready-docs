@@ -109,9 +109,12 @@ const NeedsAttentionPanel = () => {
         } else if (evtType === 'daily_check') {
           // Direct action: open daily checklist execution
           path = evt.ride_id ? `/checks/${evt.ride_id}/daily/execute` : '/checks';
-        } else if (evtCategory === 'inspection' || evtType === 'ndt' || evtType === 'in-service' || evtType === 'electrical') {
-          // Compliance/inspection reminders: source of truth is calendar; include event id for future deep-link support
-          path = `/calendar?eventId=${evt.id}`;
+        } else if (evtType === 'ndt') {
+          // NDT → ride checks tab, NDT sub-tab
+          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks&checksSubTab=ndt` : '/calendar';
+        } else if (evtCategory === 'inspection' || evtType === 'in-service' || evtType === 'electrical') {
+          // Annual / in-service / electrical → ride checks tab, Annual sub-tab
+          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks&checksSubTab=annual` : '/calendar';
         } else if (evtCategory === 'doc_expiry') {
           // Document expiry reminders
           path = evt.ride_id ? `/rides/${evt.ride_id}?tab=documents&eventId=${evt.id}` : '/documents';
