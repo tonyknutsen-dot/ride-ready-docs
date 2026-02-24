@@ -38,7 +38,7 @@ const NeedsAttentionPanel = () => {
       const todayStr = today.toISOString().split('T')[0];
       const thirtyDaysStr = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
 
-      const [defectsRes, docsRes, eventsRes] = await Promise.all([
+      const [defectsRes, docsRes, eventsRes, operatingRes] = await Promise.all([
         supabase
           .from('defects')
           .select('id, description, ride_id, rides(ride_name)')
@@ -63,7 +63,18 @@ const NeedsAttentionPanel = () => {
           .lte('due_date', thirtyDaysStr)
           .order('due_date', { ascending: true })
           .limit(50),
+        // Fetch which rides are in use today
+        supabase
+          .from('ride_daily_status' as any)
+          .select('ride_id')
+          .eq('status_date', todayStr)
+          .eq('is_operating', true) as any,
       ]);
+
+      // Build set of rides operating today
+      const operatingRideIds = new Set<string>(
+        (operatingRes.data || []).map((r: any) => r.ride_id)
+      );
 
       const result: AttentionItem[] = [];
 
@@ -97,17 +108,29 @@ const NeedsAttentionPanel = () => {
       });
 
       (eventsRes.data || []).forEach((evt: any) => {
-        const isOverdue = evt.due_date < todayStr;
-        const daysUntil = Math.ceil((new Date(evt.due_date).getTime() - today.getTime()) / 86400000);
-        const dateLabel = isOverdue
-          ? `${Math.abs(daysUntil)}d overdue`
-          : daysUntil === 0 ? 'Due today'
-          : daysUntil === 1 ? 'Due tomorrow'
-          : `Due in ${daysUntil}d`;
-        let path = '/calendar';
         const evtType = (evt.event_type as string) || '';
         const evtCategory = (evt.category as string) || '';
+        const isOperationalCheck = evtType === 'daily_check' || evtType === 'pre_opening_check';
 
+        // ── Showmen logic: daily/pre-opening checks are same-day reminders only ──
+        // Skip operational checks from past days (don't accumulate overdue)
+        // Skip operational checks for today if the ride is NOT currently in use
+        if (isOperationalCheck) {
+          if (evt.due_date !== todayStr) return; // past-day → skip entirely
+          if (evt.ride_id && !operatingRideIds.has(evt.ride_id)) return; // not in use → skip
+        }
+
+        const isOverdue = evt.due_date < todayStr;
+        const daysUntil = Math.ceil((new Date(evt.due_date).getTime() - today.getTime()) / 86400000);
+        const dateLabel = isOperationalCheck
+          ? 'Due today'
+          : isOverdue
+            ? `${Math.abs(daysUntil)}d overdue`
+            : daysUntil === 0 ? 'Due today'
+            : daysUntil === 1 ? 'Due tomorrow'
+            : `Due in ${daysUntil}d`;
+
+        let path = '/calendar';
         if (evtType === 'pre_opening_check') {
           path = evt.ride_id ? `/checks/${evt.ride_id}/preopening/execute` : '/checks';
         } else if (evtType === 'daily_check') {
@@ -122,11 +145,10 @@ const NeedsAttentionPanel = () => {
           path = `/rides/${evt.ride_id}?tab=overview`;
         }
 
-        const isCheckType = evtType === 'daily_check' || evtType === 'pre_opening_check';
         const rideName = (evt as any).rides?.ride_name;
         result.push({
           id: `event-${evt.id}`,
-          type: isCheckType ? 'check_due' : 'inspection_due',
+          type: isOperationalCheck ? 'check_due' : 'inspection_due',
           label: evt.event_name,
           sublabel: `${dateLabel}${rideName ? ` • ${rideName}` : ''}`,
           urgency: isOverdue ? 'warning' : 'info',
@@ -152,7 +174,7 @@ const NeedsAttentionPanel = () => {
       },
       {
         type: 'check_due',
-        title: 'Checks Due',
+        title: 'Checks Due Today',
         icon: ClipboardCheck,
         defaultOpen: false,
         headerStyle: { bg: 'bg-amber-50 dark:bg-amber-950/20', border: 'border-amber-200 dark:border-amber-800', iconColor: 'text-amber-600', text: 'text-foreground' },
