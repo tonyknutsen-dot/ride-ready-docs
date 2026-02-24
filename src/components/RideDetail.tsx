@@ -5,8 +5,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import { 
   ArrowLeft, FileText, CheckSquare, Mail, Wrench, Pencil, ImageIcon, Trash2,
-  ShieldCheck, ShieldAlert, Clock, Settings2, BarChart3, Loader2
+  ShieldCheck, ShieldAlert, Clock, Settings2, BarChart3, Loader2, AlertTriangle
 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
@@ -63,8 +71,9 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const [isEditing, setIsEditing] = useState(false);
   const [showChecksGuide, setShowChecksGuide] = useState(false);
   const [requiresOpChecks, setRequiresOpChecks] = useState(ride.requires_operational_checks);
+  const [showStartCheckModal, setShowStartCheckModal] = useState(false);
   const role = useAppRole();
-  const { isOperating, isLoading: opLoading, canToggle, toggling, toggleOperating } = useDailyStatus(ride.id);
+  const { isOperating, isLoading: opLoading, canToggle, toggling, toggleOperating, autoSetOperating } = useDailyStatus(ride.id);
   const [rideStats, setRideStats] = useState({
     docCount: 0,
     todayChecks: 0,
@@ -234,6 +243,29 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
     compliant: { label: 'Compliant', sub: 'All documents current', bg: '#F0FDF4', border: '#86EFAC', text: '#166534', Icon: ShieldCheck },
   };
 
+  // Derived: should we show the outstanding check warning?
+  const showCheckWarning = isOperating && requiresOpChecks && rideStats.todayChecks === 0 && !rideStats.loading;
+
+  // Handle "Start Daily Check" with confirmation if not operating
+  const handleStartDailyCheck = () => {
+    if (!isOperating && requiresOpChecks) {
+      setShowStartCheckModal(true);
+    } else {
+      setActiveTab('checks');
+    }
+  };
+
+  const handleStartCheckAndMarkOperating = async () => {
+    setShowStartCheckModal(false);
+    await autoSetOperating('daily');
+    setActiveTab('checks');
+  };
+
+  const handleStartCheckOnly = () => {
+    setShowStartCheckModal(false);
+    setActiveTab('checks');
+  };
+
   if (isEditing) {
     return (
       <div className="space-y-4">
@@ -356,6 +388,25 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                   </Button>
                 )}
               </div>
+
+            {/* Outstanding Check Warning Banner */}
+            {showCheckWarning && (
+              <div className="flex items-center justify-between gap-3 rounded-xl border-2 border-amber-400 bg-amber-50 px-4 py-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 shrink-0" />
+                  <p className="text-sm font-semibold text-amber-900">
+                    Ride is marked operating today — pre-opening check still outstanding.
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  className="shrink-0 text-xs"
+                  onClick={() => setActiveTab('checks')}
+                >
+                  Start Daily Check
+                </Button>
+              </div>
+            )}
 
             {/* KPI Grid — increased contrast with text-lg */}
             <div className="grid grid-cols-2 gap-3">
@@ -483,7 +534,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             <div className="grid grid-cols-2 gap-3">
               <button
                 className="flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground py-3 px-3 min-h-[52px] font-semibold text-sm shadow hover:opacity-90 text-center break-words col-span-2"
-                onClick={() => setActiveTab('checks')}
+                onClick={handleStartDailyCheck}
               >
                 <CheckSquare className="h-4 w-4 shrink-0" />
                 <span className="leading-tight">Start Daily Check</span>
@@ -535,7 +586,13 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                   {rideStats.todayChecks > 0 ? 'DONE TODAY' : 'PENDING'}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">{rideStats.todayChecks > 0 ? `${rideStats.todayChecks} check${rideStats.todayChecks !== 1 ? 's' : ''} completed today` : 'No checks completed today'}</p>
+              <p className="text-xs text-muted-foreground">
+                {rideStats.todayChecks > 0
+                  ? `${rideStats.todayChecks} check${rideStats.todayChecks !== 1 ? 's' : ''} completed today`
+                  : isOperating && requiresOpChecks
+                    ? 'Pending: pre-opening check not completed today'
+                    : 'No checks completed today'}
+              </p>
               <div className="mt-1 h-2 w-full bg-muted rounded-full overflow-hidden">
                 <div className="h-2 bg-primary rounded-full transition-all" style={{ width: rideStats.todayChecks > 0 ? '100%' : '0%' }} />
               </div>
@@ -636,6 +693,29 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           </Suspense>
         </TabsContent>
       </Tabs>
+
+      {/* Confirmation modal: Start check when not operating */}
+      <Dialog open={showStartCheckModal} onOpenChange={setShowStartCheckModal}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Ride is marked not operating today</DialogTitle>
+            <DialogDescription>
+              Do you want to start the daily check and mark this ride as operating today?
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex flex-col gap-2 sm:flex-col">
+            <Button onClick={handleStartCheckAndMarkOperating} className="w-full">
+              Start check + mark operating
+            </Button>
+            <Button variant="outline" onClick={handleStartCheckOnly} className="w-full">
+              Start check only
+            </Button>
+            <Button variant="ghost" onClick={() => setShowStartCheckModal(false)} className="w-full">
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
