@@ -125,13 +125,26 @@ export function useDailyStatus(rideId: string) {
           reason: autoReason || reason || null,
         }) as any);
 
+      // If toggling OFF, clean up uncompleted operational compliance_events for today
+      if (!newValue) {
+        await supabase
+          .from('compliance_events')
+          .delete()
+          .eq('ride_id', rideId)
+          .eq('due_date', todayStr)
+          .eq('event_category', 'operational')
+          .in('status', ['scheduled', 'open']);
+      }
+
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['ride-daily-status-log', rideId, todayStr] });
       queryClient.invalidateQueries({ queryKey: ['checks-compliance'] });
       queryClient.invalidateQueries({ queryKey: ['all-rides-daily-status'] });
+      queryClient.invalidateQueries({ queryKey: ['operating-today'] });
 
       toast({
-        title: newValue ? 'Ride marked as Operating Today' : 'Ride marked as not operating today',
+        title: newValue ? 'Marked in use today' : 'Marked as not in use today',
+        description: newValue ? 'Daily and pre-opening checks are now due.' : 'Due check reminders cleared for today.',
       });
     } catch (err) {
       queryClient.setQueryData(['ride-daily-status', rideId, todayStr], !newValue);
