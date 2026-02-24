@@ -38,7 +38,7 @@ const NeedsAttentionPanel = () => {
       const todayStr = today.toISOString().split('T')[0];
       const thirtyDaysStr = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
 
-      const [defectsRes, docsRes, eventsRes, operatingRes] = await Promise.all([
+      const [defectsRes, docsRes, eventsRes, operatingRes, ridesRes, checksRes] = await Promise.all([
         supabase
           .from('defects')
           .select('id, description, ride_id, rides(ride_name)')
@@ -69,11 +69,33 @@ const NeedsAttentionPanel = () => {
           .select('ride_id')
           .eq('status_date', todayStr)
           .eq('is_operating', true) as any,
+        // Fetch ride settings for preopening_covers_daily
+        supabase
+          .from('rides')
+          .select('id, preopening_covers_daily')
+          .eq('user_id', effectiveUserId) as any,
+        // Fetch today's completed checks to know if preopening was done
+        supabase
+          .from('checks')
+          .select('ride_id, check_frequency')
+          .eq('user_id', effectiveUserId)
+          .eq('check_date', todayStr)
+          .eq('check_frequency', 'preopening'),
       ]);
 
       // Build set of rides operating today
       const operatingRideIds = new Set<string>(
         (operatingRes.data || []).map((r: any) => r.ride_id)
+      );
+
+      // Build set of rides where preopening covers daily
+      const preopeningCoversDailyIds = new Set<string>(
+        ((ridesRes.data || []) as any[]).filter((r: any) => r.preopening_covers_daily).map((r: any) => r.id)
+      );
+
+      // Build set of rides that have completed a preopening check today
+      const preopeningDoneTodayIds = new Set<string>(
+        (checksRes.data || []).map((c: any) => c.ride_id)
       );
 
       const result: AttentionItem[] = [];
@@ -115,9 +137,13 @@ const NeedsAttentionPanel = () => {
         // ── Showmen logic: daily/pre-opening checks are same-day reminders only ──
         // Skip operational checks from past days (don't accumulate overdue)
         // Skip operational checks for today if the ride is NOT currently in use
+        // Skip daily_check if preopening_covers_daily is ON and preopening was completed today
         if (isOperationalCheck) {
           if (evt.due_date !== todayStr) return; // past-day → skip entirely
           if (evt.ride_id && !operatingRideIds.has(evt.ride_id)) return; // not in use → skip
+          if (evtType === 'daily_check' && evt.ride_id
+            && preopeningCoversDailyIds.has(evt.ride_id)
+            && preopeningDoneTodayIds.has(evt.ride_id)) return; // daily satisfied by preopening
         }
 
         const isOverdue = evt.due_date < todayStr;

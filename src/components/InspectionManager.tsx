@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles, PauseCircle, Info, AlertOctagon } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import InspectionChecklist from './InspectionChecklist';
@@ -13,6 +14,7 @@ import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import OperatingTodayBanner from './OperatingTodayBanner';
 import CriticalDefectBanner from './CriticalDefectBanner';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useDailyStatus } from '@/hooks/useDailyStatus';
@@ -61,6 +63,22 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const { isOperating, isLoading: opLoading, canToggle, toggleOperating, toggling } = useDailyStatus(ride.id);
   const { hasCriticalDefects } = useOpenCriticalDefects(ride.id);
   const isDailyOrPreOpening = activeTab === 'daily' || activeTab === 'preopening';
+  const { toast } = useToast();
+  const [preopeningCoversDaily, setPreopeningCoversDaily] = useState((ride as any).preopening_covers_daily ?? false);
+
+  const handlePreopeningCoversDailyToggle = async (checked: boolean) => {
+    setPreopeningCoversDaily(checked);
+    const { error } = await (supabase
+      .from('rides')
+      .update({ preopening_covers_daily: checked } as any)
+      .eq('id', ride.id) as any);
+    if (error) {
+      setPreopeningCoversDaily(!checked);
+      toast({ title: 'Failed to update setting', variant: 'destructive' });
+    } else {
+      toast({ title: checked ? 'Pre-opening check now covers daily check' : 'Daily check required separately' });
+    }
+  };
 
   useEffect(() => {
     if (effectiveUserId && ride.id) {
@@ -315,6 +333,19 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
             <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5 mb-4">
               <PlayCircle className="h-4 w-4 text-green-600 shrink-0" />
               <p className="text-sm font-medium text-green-700">Operating today — pre-opening checks due.</p>
+            </div>
+          )}
+          {/* Pre-opening covers daily setting */}
+          {!isStaff && (
+            <div className="flex items-center justify-between gap-3 bg-muted/30 border border-border rounded-xl px-4 py-3 mb-4">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">Pre-opening check covers daily check</p>
+                <p className="text-xs text-muted-foreground mt-0.5">If switched on, completing a pre-opening check also counts as the daily check for that day.</p>
+              </div>
+              <Switch
+                checked={preopeningCoversDaily}
+                onCheckedChange={handlePreopeningCoversDailyToggle}
+              />
             </div>
           )}
           {renderFrequencyContent('preopening', 'Pre-Opening')}
