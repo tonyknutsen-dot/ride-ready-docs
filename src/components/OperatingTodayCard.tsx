@@ -54,13 +54,7 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
     }
 
     toggleOperating();
-    // Show helpful toast when toggling ON
-    if (checked) {
-      toast({
-        title: 'Marked in use today',
-        description: 'Daily and pre-opening checks are now due.',
-      });
-    }
+    // Toast is handled by useDailyStatus.toggleOperating
   };
 
   const handleConfirmOff = (reason: string) => {
@@ -123,7 +117,7 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {isOperating
-                    ? 'Daily checks required before operation.'
+                    ? 'Daily and pre-opening checks are now due.'
                     : 'Set this when the ride will be used today. The app will then show today\'s checks as due.'}
                 </p>
               </div>
