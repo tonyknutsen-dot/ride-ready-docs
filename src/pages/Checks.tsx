@@ -159,7 +159,7 @@ const Checks = () => {
             </span>
             <div>
               <h1 className="text-lg font-bold text-foreground leading-none">Safety Checks</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">Inspections &amp; compliance</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Daily, pre-opening &amp; periodic checks</p>
             </div>
           </div>
           <Button
@@ -196,7 +196,7 @@ const Checks = () => {
               <div className="font-semibold">
                 {stats!.overdueCount} ride{stats!.overdueCount !== 1 ? 's' : ''} need{stats!.overdueCount === 1 ? 's' : ''} a check
               </div>
-              <div className="text-destructive/70 text-xs mt-0.5">Daily safety checks are overdue.</div>
+              <div className="text-destructive/70 text-xs mt-0.5">Please complete outstanding checks.</div>
             </div>
           </div>
         )}

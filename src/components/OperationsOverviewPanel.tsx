@@ -18,9 +18,9 @@ type ActiveKpiFilter = 'all' | 'operating' | 'not_operating' | 'checks_outstandi
 
 /* ── Tooltip text constants ─────────────── */
 const KPI_TOOLTIPS: Record<string, string> = {
-  operating: 'Rides marked as operating today.',
-  not_operating: 'Rides not operating today (with reason if provided).',
-  checks_outstanding: 'Rides marked operating that still require a pre-opening/daily check today.',
+  operating: 'Rides marked as in use today.',
+  not_operating: 'Rides not in use today (with reason if provided).',
+  checks_outstanding: 'Rides in use that still require a pre-opening/daily check today.',
   critical: 'Count of rides with open critical/stop-operation defects.',
   high: 'Count of rides with open high-severity defects.',
   checks_done: 'Completed checks today compared with checks currently due.',

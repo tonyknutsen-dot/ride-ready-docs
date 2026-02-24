@@ -45,8 +45,8 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
         setShowOverrideDialog(true);
       } else {
         toast({
-          title: 'Cannot mark operating',
-          description: 'This ride cannot be marked operating while an open critical defect exists.',
+          title: 'Cannot mark in use',
+          description: 'This ride cannot be marked in use while an open critical defect exists.',
           variant: 'destructive',
         });
       }
@@ -103,7 +103,7 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
               </div>
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold text-base">Operating Today</h3>
+                  <h3 className="font-semibold text-base">In Use Today</h3>
                   <Badge
                     variant="outline"
                     className={`text-xs font-semibold ${
@@ -112,7 +112,7 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
                         : 'bg-muted text-muted-foreground border-border'
                     }`}
                   >
-                    {isOperating ? 'Operating' : 'Not Operating'}
+                    {isOperating ? 'In Use' : 'Not In Use'}
                   </Badge>
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -163,7 +163,7 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
                       </span>
                       <span>
                         <span className="font-medium text-foreground">{entry.changed_by_name || 'Unknown'}</span>
-                        {' set Operating Today: '}
+                        {' set In Use Today: '}
                         <span className={entry.new_is_operating ? 'text-green-600 font-semibold' : 'text-muted-foreground font-semibold'}>
                           {entry.new_is_operating ? 'ON' : 'OFF'}
                         </span>
@@ -198,7 +198,7 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
               <DialogTitle className="text-destructive">Override — Open critical defect</DialogTitle>
             </div>
             <DialogDescription>
-              You are overriding an open critical defect and marking this ride operating. This action must be justified and will be logged.
+             You are overriding an open critical defect and marking this ride in use. This action must be justified and will be logged.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5 py-2">
@@ -216,7 +216,7 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
               Cancel
             </Button>
             <Button onClick={handleOverrideConfirm} disabled={toggling || !overrideReason.trim()} className="bg-amber-600 hover:bg-amber-700 text-white">
-              {toggling ? 'Updating…' : 'Override and mark operating'}
+              {toggling ? 'Updating…' : 'Override and mark in use'}
             </Button>
           </DialogFooter>
         </DialogContent>
