@@ -9,7 +9,7 @@ import InspectionScheduleManager from './InspectionScheduleManager';
 import ChecksHistory from './ChecksHistory';
 import EquipmentTimelineReport from './EquipmentTimelineReport';
 import { ChecksOnboardingModal } from './ChecksOnboardingModal';
-import OperatingTodayCard from './OperatingTodayCard';
+import OperatingTodayBanner from './OperatingTodayBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -182,8 +182,8 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
     <div className="space-y-5">
       <ChecksOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
 
-      {/* Operating Today Status Card — prominent, above everything */}
-      <OperatingTodayCard rideId={ride.id} />
+      {/* Operating Today — compact secondary status banner */}
+      <OperatingTodayBanner rideId={ride.id} />
 
       {/* Check Count Summary Strip — muted, informational */}
       <div className="flex items-center justify-between gap-2 px-1">
