@@ -47,6 +47,13 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const [searchParams] = useSearchParams();
   const checksSubTab = searchParams.get('checksSubTab');
   const [activeTab, setActiveTab] = useState(checksSubTab || 'preopening');
+
+  // Sync tab when URL param changes (e.g. deep-link from Needs Attention)
+  useEffect(() => {
+    if (checksSubTab && checksSubTab !== activeTab) {
+      setActiveTab(checksSubTab);
+    }
+  }, [checksSubTab]);
   const [showGuide, setShowGuide] = useState(false);
   const [checkCounts, setCheckCounts] = useState<CheckCounts>({ preopening: 0, daily: 0, weekly: 0, monthly: 0, yearly: 0, total: 0 });
   const [templateStatus, setTemplateStatus] = useState<Record<string, boolean>>({});
