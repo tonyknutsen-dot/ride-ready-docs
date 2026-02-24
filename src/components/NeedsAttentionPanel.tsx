@@ -58,7 +58,7 @@ const NeedsAttentionPanel = () => {
 
       const result: AttentionItem[] = [];
 
-      // Stop Use defects — always first
+      // Stop Use defects — always first, link to the ride's checks tab
       (defectsRes.data || []).forEach((d: any) => {
         result.push({
           id: `defect-${d.id}`,
@@ -66,7 +66,7 @@ const NeedsAttentionPanel = () => {
           label: d.rides?.ride_name || 'Equipment',
           sublabel: d.description?.substring(0, 80),
           urgency: 'critical',
-          path: `/rides?rideId=${d.ride_id}`,
+          path: d.ride_id ? `/rides/${d.ride_id}?tab=checks` : '/rides',
         });
       });
 
@@ -85,7 +85,7 @@ const NeedsAttentionPanel = () => {
           label: doc.document_name,
           sublabel: `${dateLabel}${doc.rides?.ride_name ? ` • ${doc.rides.ride_name}` : ''}`,
           urgency: isExpired || daysUntil <= 7 ? 'warning' : 'info',
-          path: '/documents',
+          path: doc.ride_id ? `/rides/${doc.ride_id}?tab=documents` : '/documents',
         });
       });
 
@@ -104,7 +104,7 @@ const NeedsAttentionPanel = () => {
           label: evt.event_name,
           sublabel: dateLabel,
           urgency: isOverdue ? 'warning' : 'info',
-          path: '/compliance',
+          path: evt.ride_id ? `/rides/${evt.ride_id}?tab=overview` : '/calendar',
         });
       });
 
