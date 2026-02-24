@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Calendar, FileDown, FileText, Eye, AlertTriangle, History } from 'lucide-react';
-import DefectsList from './DefectsList';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+import { Calendar, FileDown, FileText, Eye } from 'lucide-react';
 import { format, parseISO, isWithinInterval, subMonths } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -417,6 +415,110 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
         yPos += 12;
       }
       
+      // === DEFECT HISTORY SECTION ===
+      const { data: defectsData } = await supabase
+        .from('defects')
+        .select('*')
+        .eq('ride_id', ride.id)
+        .eq('user_id', user.id)
+        .order('reported_at', { ascending: false });
+
+      const allDefects = defectsData || [];
+      if (allDefects.length > 0) {
+        doc.addPage();
+        yPos = 20;
+        yPos = drawSectionTitle(doc, 'Defect History', yPos, margin);
+
+        doc.setFontSize(8.5);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...PDF_COLORS.muted);
+        doc.text('Resolved defects represent completed repairs. Open defects require attention.', margin, yPos);
+        yPos += 10;
+
+        // Defects summary table
+        const defectTableData = allDefects.map((d, idx) => {
+          const severity = d.severity === 'stop_operation' ? 'Stop Use' : d.severity === 'urgent' ? 'Important' : 'Low';
+          const status = d.status === 'resolved' ? 'Closed' : 'Open';
+          const reportedDate = format(parseISO(d.reported_at), 'dd/MM/yyyy');
+          const resolvedDate = d.resolved_at ? format(parseISO(d.resolved_at), 'dd/MM/yyyy') : '-';
+          return [
+            (idx + 1).toString(),
+            reportedDate,
+            severity,
+            truncateText(d.description, 45),
+            status,
+            resolvedDate,
+          ];
+        });
+
+        autoTable(doc, {
+          startY: yPos,
+          head: [['#', 'Reported', 'Severity', 'Description', 'Status', 'Resolved']],
+          body: defectTableData,
+          headStyles: PDF_TABLE_HEAD_STYLES,
+          styles: PDF_TABLE_BODY_STYLES,
+          columnStyles: {
+            0: { cellWidth: 10, halign: 'center' },
+            1: { cellWidth: 24, halign: 'center' },
+            2: { cellWidth: 22 },
+            3: { cellWidth: 55 },
+            4: { cellWidth: 18, halign: 'center' },
+            5: { cellWidth: 24, halign: 'center' },
+          },
+          alternateRowStyles: PDF_TABLE_ALT_ROW,
+          margin: { bottom: 28 },
+        });
+        yPos = (doc as any).lastAutoTable.finalY + 10;
+
+        // Detailed defect records
+        for (let i = 0; i < allDefects.length; i++) {
+          const defect = allDefects[i];
+          if (yPos > 240) { doc.addPage(); yPos = 20; }
+
+          const severity = defect.severity === 'stop_operation' ? 'Stop Use' : defect.severity === 'urgent' ? 'Important' : 'Low';
+          const status = defect.status === 'resolved' ? 'CLOSED' : 'OPEN';
+
+          doc.setFillColor(...(defect.status === 'resolved' ? [34, 139, 34] as [number, number, number] : PDF_COLORS.navy));
+          doc.rect(margin, yPos - 5, pageWidth - margin * 2, 9, 'F');
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'bold');
+          doc.setTextColor(...PDF_COLORS.white);
+          doc.text(`${i + 1}.  ${format(parseISO(defect.reported_at), 'dd MMM yyyy')}  —  ${severity}  [${status}]`, margin + 4, yPos);
+          doc.setTextColor(0);
+          yPos += 11;
+
+          doc.setFontSize(9);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(...PDF_COLORS.body);
+
+          const defectFields: Array<[string, string | null | undefined]> = [
+            ['Description', defect.description],
+            ['Location', defect.location_on_ride],
+            ['Resolution', defect.resolution_notes],
+            ['Resolved by', defect.resolved_by],
+            ['Resolved date', defect.resolved_at ? format(parseISO(defect.resolved_at), 'dd MMM yyyy HH:mm') : null],
+          ];
+
+          for (const [label, value] of defectFields) {
+            if (!value) continue;
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...PDF_COLORS.muted);
+            doc.text(`${label}:`, margin + 5, yPos);
+            doc.setFont('helvetica', 'normal');
+            doc.setTextColor(...PDF_COLORS.body);
+            const lines = doc.splitTextToSize(String(value), pageWidth - margin - 50);
+            doc.text(lines, margin + 38, yPos);
+            yPos += Math.max(lines.length * 4, 5) + 2;
+          }
+
+          doc.setFontSize(7);
+          doc.setTextColor(160);
+          doc.text(`Reported: ${format(parseISO(defect.reported_at), 'dd/MM/yyyy HH:mm')}`, margin + 5, yPos);
+          doc.setTextColor(0);
+          yPos += 12;
+        }
+      }
+
       // === ATTACHMENTS APPENDIX ===
       if (attachmentsForAppendix.length > 0) {
         doc.addPage();
@@ -576,25 +678,6 @@ const MaintenanceReports = ({ ride }: MaintenanceReportsProps) => {
 
   return (
     <div className="space-y-5 pb-24">
-      {/* ── Defects ── */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          <h4 className="text-[13px] font-bold text-foreground tracking-[1px] uppercase">Defects</h4>
-        </div>
-        <div className="h-px bg-border" />
-        <DefectsList rideId={ride.id} rideName={ride.ride_name} showResolved={false} />
-        <Collapsible>
-          <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors py-1">
-            <History className="h-3.5 w-3.5" />
-            <span>Show closed defects</span>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-2">
-            <DefectsList rideId={ride.id} rideName={ride.ride_name} showResolved={true} />
-          </CollapsibleContent>
-        </Collapsible>
-      </div>
-
       {/* Generate Report Card */}
       <div className="bg-card rounded-2xl shadow-sm border border-border p-5 space-y-5">
         {/* Header */}
