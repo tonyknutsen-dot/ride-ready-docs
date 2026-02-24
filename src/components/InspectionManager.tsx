@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles, PauseCircle, Info, AlertOctagon } from 'lucide-react';
@@ -43,7 +44,9 @@ const FREQUENCY_LABELS: Record<string, string> = {
 const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const { user } = useAuth();
   const { effectiveUserId, isStaff } = useEffectiveUserId();
-  const [activeTab, setActiveTab] = useState('preopening');
+  const [searchParams] = useSearchParams();
+  const checksSubTab = searchParams.get('checksSubTab');
+  const [activeTab, setActiveTab] = useState(checksSubTab || 'preopening');
   const [showGuide, setShowGuide] = useState(false);
   const [checkCounts, setCheckCounts] = useState<CheckCounts>({ preopening: 0, daily: 0, weekly: 0, monthly: 0, yearly: 0, total: 0 });
   const [templateStatus, setTemplateStatus] = useState<Record<string, boolean>>({});
