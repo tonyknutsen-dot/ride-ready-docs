@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
   FileText, Cog, Calendar, Wrench, CheckSquare,
-  Settings, Bell, AlertTriangle, ChevronRight, Clock
+  Settings, Bell, AlertTriangle, ChevronRight, Clock, ShieldCheck
 } from "lucide-react";
 import { formatPlanWithDescription } from "@/utils/planFormatter";
 import { ItemLimitWarning } from "@/components/ItemLimitWarning";
@@ -195,6 +195,7 @@ const Overview = () => {
                 { icon: CheckSquare, label: "Checks",        path: "/checks" },
                 { icon: FileText,    label: "Documents",     path: "/documents" },
                 { icon: Wrench,      label: "Maintenance",   path: "/maintenance" },
+                { icon: ShieldCheck, label: "Assessments",   path: "/risk-assessments" },
                 { icon: Calendar,    label: "Calendar",      path: "/calendar" },
                 { icon: Bell,        label: "Notifications", path: "/notifications" },
                 { icon: Settings,    label: "Settings",      path: "/settings" },
