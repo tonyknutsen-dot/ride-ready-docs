@@ -48,7 +48,7 @@ const NeedsAttentionPanel = () => {
         // Compliance events due within 30 days or overdue
         supabase
           .from('compliance_events')
-          .select('id, event_name, due_date, ride_id, event_type, category')
+          .select('id, event_name, due_date, ride_id, event_type, category, rides(ride_name)')
           .eq('user_id', effectiveUserId)
           .in('status', ['scheduled', 'open'])
           .lte('due_date', thirtyDaysStr)
@@ -58,7 +58,7 @@ const NeedsAttentionPanel = () => {
 
       const result: AttentionItem[] = [];
 
-      // Stop Use defects — always first, link to the ride's checks tab
+      // Stop Use defects — always first, link to ride home where the critical banner shows
       (defectsRes.data || []).forEach((d: any) => {
         result.push({
           id: `defect-${d.id}`,
@@ -66,7 +66,7 @@ const NeedsAttentionPanel = () => {
           label: d.rides?.ride_name || 'Equipment',
           sublabel: d.description?.substring(0, 80),
           urgency: 'critical',
-          path: d.ride_id ? `/rides/${d.ride_id}?tab=checks` : '/rides',
+          path: d.ride_id ? `/rides/${d.ride_id}?tab=overview` : '/rides',
         });
       });
 
@@ -119,11 +119,12 @@ const NeedsAttentionPanel = () => {
           path = `/rides/${evt.ride_id}?tab=overview`;
         }
 
+        const rideName = (evt as any).rides?.ride_name;
         result.push({
           id: `event-${evt.id}`,
           type: 'inspection_due',
           label: evt.event_name,
-          sublabel: dateLabel,
+          sublabel: `${dateLabel}${rideName ? ` • ${rideName}` : ''}`,
           urgency: isOverdue ? 'warning' : 'info',
           path,
         });
