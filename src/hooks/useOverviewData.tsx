@@ -44,6 +44,7 @@ export interface OverviewData {
   complianceAlerts: ComplianceAlert[];
   overdueCount: number;
   expiredDocsCount: number;
+  openDefectsCount: number;
 }
 
 async function fetchOverviewData(userId: string): Promise<OverviewData> {
@@ -69,6 +70,8 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     overdueEventsResult,
     // Compliance events: due soon (within 30 days)
     dueSoonEventsResult,
+    // Open defects count
+    openDefectsResult,
   ] = await Promise.all([
     supabase
       .from('profiles')
@@ -152,6 +155,12 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
       .lte('due_date', thirtyDaysStr)
       .order('due_date', { ascending: true })
       .limit(20),
+    // Open defects (non-resolved)
+    supabase
+      .from('defects')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .neq('status', 'resolved'),
   ]);
 
   // Process stats
@@ -264,6 +273,7 @@ async function fetchOverviewData(userId: string): Promise<OverviewData> {
     complianceAlerts,
     overdueCount: totalOverdue,
     expiredDocsCount: expiredDocs.length,
+    openDefectsCount: openDefectsResult.count || 0,
   };
 }
 
