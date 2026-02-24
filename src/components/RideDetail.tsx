@@ -327,8 +327,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
               })()}
             </div>
 
-            {/* Operating Today Status */}
-            {requiresOpChecks && (
+            {/* Operating Today Status — always visible, independent of requires-checks */}
               <div className="flex items-center justify-between gap-3 bg-muted/30 rounded-xl border border-border px-4 py-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   {isOperating ? (
@@ -357,7 +356,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                   </Button>
                 )}
               </div>
-            )}
 
             {/* KPI Grid — increased contrast with text-lg */}
             <div className="grid grid-cols-2 gap-3">
