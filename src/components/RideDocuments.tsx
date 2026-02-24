@@ -2,15 +2,15 @@ import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Upload, FileText, Mail, Download, ClipboardList } from 'lucide-react';
+import { Upload, FileText, Mail, Download } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import DocumentUpload from './DocumentUpload';
 import RideDocumentView from './RideDocumentView';
-import RideDocumentRegister from './RideDocumentRegister';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import JSZip from 'jszip';
+
 interface RideDocumentsProps {
   ride: Ride;
 }
@@ -19,20 +19,42 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [downloading, setDownloading] = useState(false);
   const [activeTab, setActiveTab] = useState('list');
+  const [replaceDocId, setReplaceDocId] = useState<string | undefined>();
+  const [replaceDocType, setReplaceDocType] = useState<string | undefined>();
+  const [replaceDocName, setReplaceDocName] = useState<string | undefined>();
   const { toast } = useToast();
 
   // Listen for mobile nav "upload doc" event
   useEffect(() => {
     const handler = () => {
+      setReplaceDocId(undefined);
+      setReplaceDocType(undefined);
+      setReplaceDocName(undefined);
       setActiveTab('upload');
     };
     window.addEventListener("rrd:upload-doc", handler);
     return () => window.removeEventListener("rrd:upload-doc", handler);
   }, []);
 
+  // Listen for replace document events
+  useEffect(() => {
+    const handler = (e: CustomEvent) => {
+      const { docId, docType, docName } = e.detail;
+      setReplaceDocId(docId);
+      setReplaceDocType(docType);
+      setReplaceDocName(docName);
+      setActiveTab('upload');
+    };
+    window.addEventListener("rrd:replace-doc", handler as EventListener);
+    return () => window.removeEventListener("rrd:replace-doc", handler as EventListener);
+  }, []);
+
   const handleUploadSuccess = () => {
     setRefreshKey(prev => prev + 1);
-    setActiveTab('list'); // Switch back to list after upload
+    setReplaceDocId(undefined);
+    setReplaceDocType(undefined);
+    setReplaceDocName(undefined);
+    setActiveTab('list');
   };
 
   const handleDocumentDeleted = () => {
@@ -42,7 +64,6 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
   const handleDownloadAll = async () => {
     setDownloading(true);
     try {
-      // Fetch all documents for this ride
       const { data: documents, error } = await supabase
         .from('documents')
         .select('*')
@@ -53,7 +74,7 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
       if (!documents || documents.length === 0) {
         toast({
           title: "No documents",
-          description: "There are no documents to download for this ride",
+          description: "There are no documents to download",
           variant: "destructive",
         });
         return;
@@ -64,20 +85,14 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
         description: `Downloading ${documents.length} document(s)...`,
       });
 
-      // Create a zip file
       const zip = new JSZip();
-
-      // Download each file and add to zip
       await Promise.all(
         documents.map(async (doc) => {
           try {
             const { data, error } = await supabase.storage
               .from('ride-documents')
               .download(doc.file_path);
-
             if (error) throw error;
-
-            // Add file to zip
             zip.file(doc.document_name, data);
           } catch (err) {
             console.error(`Failed to download ${doc.document_name}:`, err);
@@ -85,10 +100,7 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
         })
       );
 
-      // Generate zip file
       const content = await zip.generateAsync({ type: 'blob' });
-
-      // Trigger download
       const url = window.URL.createObjectURL(content);
       const a = document.createElement('a');
       a.href = url;
@@ -98,7 +110,7 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
 
       toast({
         title: "Download complete",
-        description: `Downloaded ${documents.length} document(s) as a ZIP file`,
+        description: `Downloaded ${documents.length} document(s) as ZIP`,
       });
     } catch (error: any) {
       console.error('Download all error:', error);
@@ -112,7 +124,6 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
     }
   };
 
-  // HARD GATES (no uploads without ride or category)
   if (!ride) {
     return (
       <Card>
@@ -129,18 +140,8 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
         <CardContent className="py-6 space-y-2">
           <div className="text-lg font-semibold">Choose a category first</div>
           <div className="text-sm text-muted-foreground">
-            Technical bulletins need this. Pick one for this ride.
+            Pick a category for this ride to manage documents.
           </div>
-          <Button 
-            className="btn-bold-primary"
-            onClick={() => {
-              // TODO: Open edit flow for this ride to pick category
-              // Consider: navigate to edit form or open RideForm dialog
-              console.log('Edit ride to select category:', ride.id);
-            }}
-          >
-            Select category
-          </Button>
         </CardContent>
       </Card>
     );
@@ -148,12 +149,12 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
 
   return (
     <div className="space-y-4">
-      {/* Clean, modern header with context hint */}
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="space-y-1">
           <h2 className="text-2xl font-bold tracking-tight">Documents</h2>
           <p className="text-sm text-muted-foreground">
-            Manage files for {ride.ride_name}
+            Files for {ride.ride_name}
           </p>
         </div>
         
@@ -179,28 +180,23 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
         </div>
       </div>
 
-      {/* Contextual hint when on upload tab */}
-      {activeTab === 'upload' && (
-        <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-lg px-3 py-2">
-          <span>💡</span>
-          <span>Use the main tab bar above to switch back to <strong>Checks</strong> or other sections.</span>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3 gap-2 p-1.5 bg-muted border border-border/50 h-auto">
+      {/* Two tabs: Files and Upload */}
+      <Tabs value={activeTab} onValueChange={(v) => {
+        if (v !== 'upload') {
+          setReplaceDocId(undefined);
+          setReplaceDocType(undefined);
+          setReplaceDocName(undefined);
+        }
+        setActiveTab(v);
+      }} className="space-y-4">
+        <TabsList className="grid w-full grid-cols-2 gap-2 p-1.5 bg-muted border border-border/50 h-auto">
           <TabsTrigger value="list" className="flex items-center justify-center gap-2 py-2.5">
             <FileText className="h-4 w-4" />
             <span>Files</span>
           </TabsTrigger>
-          <TabsTrigger value="register" className="flex items-center justify-center gap-2 py-2.5">
-            <ClipboardList className="h-4 w-4" />
-            <span>Register</span>
-          </TabsTrigger>
           <TabsTrigger id="rrd-btn-upload-doc" value="upload" className="flex items-center justify-center gap-2 py-2.5">
             <Upload className="h-4 w-4" />
-            <span>Upload</span>
+            <span>{replaceDocId ? 'Replace' : 'Upload'}</span>
           </TabsTrigger>
         </TabsList>
 
@@ -213,18 +209,14 @@ const RideDocuments = ({ ride }: RideDocumentsProps) => {
           />
         </TabsContent>
 
-        <TabsContent value="register">
-          <RideDocumentRegister
-            rideId={ride.id}
-            rideName={ride.ride_name}
-          />
-        </TabsContent>
-
         <TabsContent value="upload">
           <DocumentUpload 
             rideId={ride.id}
             rideName={ride.ride_name}
             onUploadSuccess={handleUploadSuccess}
+            prefillDocType={replaceDocType}
+            prefillDocName={replaceDocName}
+            replacingDocumentId={replaceDocId}
           />
         </TabsContent>
       </Tabs>

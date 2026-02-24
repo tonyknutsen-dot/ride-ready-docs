@@ -257,25 +257,34 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
 
   /* ─── Render helpers ─── */
 
+  const getRelativeExpiry = (date: string) => {
+    const days = Math.ceil((new Date(date).getTime() - Date.now()) / 86400000);
+    if (days < 0) return `Expired ${Math.abs(days)} day${Math.abs(days) !== 1 ? 's' : ''} ago`;
+    if (days === 0) return 'Expires today';
+    if (days === 1) return 'Expires tomorrow';
+    return `Expires in ${days} days`;
+  };
+
   const ExpiryPill = ({ date }: { date: string }) => {
+    const label = getRelativeExpiry(date);
     if (isExpired(date)) {
       return (
         <Badge variant="destructive" className="text-[10px] h-5 gap-1">
-          <AlertTriangle className="h-3 w-3" /> Expired {formatDateUK(new Date(date))}
+          <AlertTriangle className="h-3 w-3" /> {label}
         </Badge>
       );
     }
     if (isExpiringSoon(date)) {
       return (
         <Badge className="text-[10px] h-5 gap-1 bg-warning/15 text-warning-foreground border-warning/30">
-          <AlertTriangle className="h-3 w-3" /> Due {formatDateUK(new Date(date))}
+          <AlertTriangle className="h-3 w-3" /> {label}
         </Badge>
       );
     }
     return (
-      <span className="text-[10px] text-muted-foreground">
-        Exp: {formatDateUK(new Date(date))}
-      </span>
+      <Badge variant="outline" className="text-[10px] h-5 text-green-700 border-green-200 bg-green-50">
+        Current
+      </Badge>
     );
   };
 
@@ -346,6 +355,14 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(doc); }}>
               <Download className="h-4 w-4 mr-2" /> Download
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => {
+              e.stopPropagation();
+              window.dispatchEvent(new CustomEvent('rrd:replace-doc', {
+                detail: { docId: doc.id, docType: doc.document_type, docName: doc.document_name }
+              }));
+            }}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Replace
             </DropdownMenuItem>
             {!showGlobalBadge && (
               <DropdownMenuItem
