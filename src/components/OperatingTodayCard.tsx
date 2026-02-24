@@ -197,7 +197,7 @@ const OperatingTodayCard = ({ rideId }: OperatingTodayCardProps) => {
               <DialogTitle className="text-destructive">Override — Open critical defect</DialogTitle>
             </div>
             <DialogDescription>
-              This ride has an open critical/stop-operation defect. Marking it operating requires a reason and will be logged.
+              You are overriding an open critical defect and marking this ride operating. This action must be justified and will be logged.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5 py-2">
