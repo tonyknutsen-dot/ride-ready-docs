@@ -37,6 +37,8 @@ import CriticalDefectBanner from './CriticalDefectBanner';
 import { useOpenCriticalDefects } from '@/hooks/useOpenCriticalDefects';
 import NotOperatingReasonDialog from '@/components/NotOperatingReasonDialog';
 import { Textarea } from '@/components/ui/textarea';
+import DefectsList from './DefectsList';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 const RideActivityTimeline = lazy(() => import('@/components/RideActivityTimeline'));
 
@@ -252,9 +254,11 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         key: 'open-defects',
         icon: AlertTriangle,
         label: `${rideStats.openDefects} open defect${rideStats.openDefects !== 1 ? 's' : ''}`,
-        detail: 'View in Checks tab',
+        detail: 'View defects below',
         color: 'hsl(38 80% 40%)',
-        action: () => setActiveTab('checks'),
+        action: () => {
+          document.getElementById('ride-defects-section')?.scrollIntoView({ behavior: 'smooth' });
+        },
       });
     }
   }
@@ -326,11 +330,13 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         {/* ─── HOME TAB ─── */}
         <TabsContent value="overview" className="space-y-4 animate-fade-in">
 
-          {/* Critical Defect Banner — top priority */}
+           {/* Critical Defect Banner — top priority */}
           <CriticalDefectBanner
             rideId={ride.id}
             rideName={ride.ride_name}
-            onViewDefects={() => setActiveTab('checks')}
+            onViewDefects={() => {
+              document.getElementById('ride-defects-section')?.scrollIntoView({ behavior: 'smooth' });
+            }}
           />
 
           {/* Ride Card — photo + details + operating status */}
@@ -483,10 +489,36 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
               <p className="text-lg font-bold text-foreground">{rideStats.loading ? '—' : rideStats.docCount}</p>
               <p className="text-[11px] text-muted-foreground">Documents</p>
             </button>
-            <button onClick={() => setActiveTab('checks')} className="bg-card rounded-xl border border-border p-3 text-center hover:bg-muted/30 transition-colors">
+            <button onClick={() => document.getElementById('ride-defects-section')?.scrollIntoView({ behavior: 'smooth' })} className="bg-card rounded-xl border border-border p-3 text-center hover:bg-muted/30 transition-colors">
               <p className={`text-lg font-bold ${rideStats.openDefects > 0 ? 'text-destructive' : 'text-foreground'}`}>{rideStats.loading ? '—' : rideStats.openDefects}</p>
               <p className="text-[11px] text-muted-foreground">Open defects</p>
             </button>
+          </div>
+
+          {/* ─── DEFECTS SECTION ─── */}
+          <div id="ride-defects-section" className="space-y-3">
+            <h3 className="text-[13px] font-bold text-foreground tracking-[1px] uppercase">Defects</h3>
+            <div className="h-px bg-border" />
+            <DefectsList
+              rideId={ride.id}
+              rideName={ride.ride_name}
+              showResolved={false}
+              onDefectUpdated={loadRideStats}
+            />
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors py-1">
+                <History className="h-3.5 w-3.5" />
+                <span>Show closed defects</span>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-2">
+                <DefectsList
+                  rideId={ride.id}
+                  rideName={ride.ride_name}
+                  showResolved={true}
+                  onDefectUpdated={loadRideStats}
+                />
+              </CollapsibleContent>
+            </Collapsible>
           </div>
 
         </TabsContent>
