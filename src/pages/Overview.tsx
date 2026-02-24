@@ -12,6 +12,7 @@ import { useCallback } from "react";
 import { PullToRefresh } from "@/components/PullToRefresh";
 import { WelcomeModal } from "@/components/WelcomeModal";
 import StaffAccountBanner from "@/components/StaffAccountBanner";
+import OperationsOverviewPanel from "@/components/OperationsOverviewPanel";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { Badge } from "@/components/ui/badge";
 import appLogo from "@/assets/app-logo.jpg";
@@ -186,6 +187,9 @@ const Overview = () => {
               </div>
             </button>
           )}
+
+          {/* ── OPERATIONS TODAY PANEL ─────────────── */}
+          <OperationsOverviewPanel />
 
           {/* ── COMPLIANCE OVERVIEW SECTION ────────── */}
           <div>

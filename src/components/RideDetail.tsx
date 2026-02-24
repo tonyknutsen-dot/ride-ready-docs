@@ -389,9 +389,16 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                   <Button
                     variant={isOperating ? 'outline' : 'default'}
                     size="sm"
-                    disabled={toggling || opLoading}
-                    onClick={() => toggleOperating()}
+                    disabled={toggling || opLoading || (!isOperating && hasCriticalDefects && role !== 'controller' && role !== 'manager')}
+                    onClick={() => {
+                      if (!isOperating && hasCriticalDefects) {
+                        // Show toast for non-controller/manager — button is disabled but just in case
+                        return;
+                      }
+                      toggleOperating();
+                    }}
                     className="shrink-0 text-xs"
+                    title={!isOperating && hasCriticalDefects ? 'Cannot mark operating — open critical defect exists' : undefined}
                   >
                     {toggling ? '…' : isOperating ? 'Set Not Operating' : 'Mark Operating'}
                   </Button>
