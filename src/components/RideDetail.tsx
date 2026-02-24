@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import { 
   ArrowLeft, FileText, CheckSquare, Mail, Wrench, Pencil, ImageIcon, Trash2,
-  ShieldCheck, ShieldAlert, Clock, Settings2, BarChart3, Loader2, AlertTriangle
+  ShieldCheck, ShieldAlert, Clock, Settings2, Loader2, AlertTriangle
 } from 'lucide-react';
 import {
   Dialog,
@@ -36,7 +36,7 @@ import { useDailyStatus } from '@/hooks/useDailyStatus';
 import { useAppRole } from '@/hooks/useAppRole';
 import { Badge } from '@/components/ui/badge';
 import { PlayCircle, PauseCircle, History } from 'lucide-react';
-const Reports = lazy(() => import('@/pages/Reports'));
+
 const RideActivityTimeline = lazy(() => import('@/components/RideActivityTimeline'));
 
 type Ride = Tables<'rides'> & {
@@ -314,13 +314,12 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
       {/* Main Tabs — underline style */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
-          <TabsList className="grid w-full grid-cols-5 h-auto p-0 bg-transparent rounded-none">
+          <TabsList className="grid w-full grid-cols-4 h-auto p-0 bg-transparent rounded-none">
             {[
               { value: 'overview', label: 'Home', Icon: FileText },
               { value: 'checks',   label: 'Checks', Icon: CheckSquare },
               { value: 'documents', label: 'Docs', Icon: FileText },
               { value: 'activity', label: 'Activity', Icon: History },
-              { value: 'reports', label: 'Reports', Icon: BarChart3 },
             ].map(({ value, label, Icon }) => (
               <TabsTrigger
                 key={value}
@@ -560,15 +559,13 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                 <FileText className="h-4 w-4 shrink-0" />
                 <span className="leading-tight">Upload Document</span>
               </button>
-              <button
-                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[52px] font-semibold text-sm text-foreground hover:bg-muted/40 text-center break-words"
-                onClick={() => navigate(`/maintenance?rideId=${ride.id}&tab=reports`)}
-              >
-                <FileText className="h-4 w-4 shrink-0" />
-                <span className="leading-tight">Generate Report</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground">Keep checks, maintenance and risks up to date.</p>
+              <button className="text-xs font-semibold text-primary hover:underline" onClick={() => navigate(`/maintenance?rideId=${ride.id}&tab=reports`)}>
+                View reports →
               </button>
             </div>
-            <p className="text-xs text-muted-foreground">Keep checks, maintenance and risks up to date so your generated PDFs are accurate.</p>
           </div>
 
           {/* Compliance Snapshot */}
@@ -687,11 +684,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           </Suspense>
         </TabsContent>
 
-        <TabsContent value="reports" className="animate-fade-in">
-          <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
-            <Reports preFilterRideId={ride.id} preFilterRideName={ride.ride_name} />
-          </Suspense>
-        </TabsContent>
       </Tabs>
 
       {/* Confirmation modal: Start check when not operating */}
