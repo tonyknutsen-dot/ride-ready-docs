@@ -312,7 +312,7 @@ const NotificationCenter = () => {
                         </p>
                       </div>
 
-                      {/* Actions */}
+                      {/* Actions — only dismiss for non-source-of-truth notifications */}
                       <div className="flex items-center gap-1 flex-shrink-0">
                         {!n.is_read && (
                           <button
@@ -323,13 +323,16 @@ const NotificationCenter = () => {
                             <Check className="h-3.5 w-3.5" />
                           </button>
                         )}
-                        <button
-                          onClick={e => { e.stopPropagation(); deleteNotification(n.id); }}
-                          className="p-1 rounded-lg text-[#94A3B8] hover:text-[#DC2626] hover:bg-red-50 transition-all"
-                          title="Dismiss"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
+                        {/* Hide dismiss for compliance/document reminders tied to real unresolved data */}
+                        {getCategory(n) === 'system' && (
+                          <button
+                            onClick={e => { e.stopPropagation(); deleteNotification(n.id); }}
+                            className="p-1 rounded-lg text-[#94A3B8] hover:text-muted-foreground hover:bg-muted transition-all"
+                            title="Dismiss"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
