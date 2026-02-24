@@ -14,8 +14,10 @@ const OperationsOverviewPanel = () => {
   const hasOutstandingChecks = data.checksOutstandingRides.length > 0;
   const hasNotOperating = data.notOperatingRides.length > 0;
 
-  // Don't show panel if there's nothing to report
-  if (!hasCritical && !hasOutstandingChecks && data.operatingCount === 0 && data.notOperatingCount === 0) return null;
+  const hasExceptions = hasCritical || hasOutstandingChecks || hasNotOperating;
+
+  // Don't show panel if no rides at all
+  if (data.operatingCount === 0 && data.notOperatingCount === 0) return null;
 
   return (
     <div className="space-y-4">
@@ -25,20 +27,16 @@ const OperationsOverviewPanel = () => {
         <div className="h-px bg-border mb-4" />
       </div>
 
-      {/* Summary counts strip */}
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          { label: 'Operating', value: data.operatingCount, color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-950/30', icon: PlayCircle },
-          { label: 'Not Operating', value: data.notOperatingCount, color: 'text-muted-foreground', bg: 'bg-muted/40', icon: PauseCircle },
-          { label: 'Critical Defects', value: data.openCriticalDefects.length, color: 'text-destructive', bg: 'bg-destructive/5', icon: AlertOctagon },
-        ].map(({ label, value, color, bg, icon: Icon }) => (
-          <div key={label} className={`flex flex-col items-center gap-1 p-3 rounded-xl border border-border ${bg}`}>
-            <Icon className={`h-4 w-4 ${color}`} strokeWidth={2} />
-            <span className={`text-xl font-bold ${color}`}>{value}</span>
-            <span className="text-[10px] font-medium text-muted-foreground text-center leading-tight">{label}</span>
-          </div>
-        ))}
-      </div>
+      {/* All-clear state */}
+      {!hasExceptions && (
+        <div className="flex items-center gap-2.5 rounded-xl border border-border bg-muted/20 px-4 py-3">
+          <PlayCircle className="h-4 w-4 text-green-600 shrink-0" />
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">{data.operatingCount} operating</span>
+            {data.notOperatingCount === 0 ? ' — no exceptions.' : ` · ${data.notOperatingCount} not operating — no exceptions.`}
+          </p>
+        </div>
+      )}
 
       {/* A) Critical defects list — red */}
       {hasCritical && (
