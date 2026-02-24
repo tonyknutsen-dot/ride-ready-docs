@@ -349,7 +349,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                     variant={isOperating ? 'outline' : 'default'}
                     size="sm"
                     disabled={toggling || opLoading}
-                    onClick={toggleOperating}
+                    onClick={() => toggleOperating()}
                     className="shrink-0 text-xs"
                   >
                     {toggling ? '…' : isOperating ? 'Set Not Operating' : 'Mark Operating'}
