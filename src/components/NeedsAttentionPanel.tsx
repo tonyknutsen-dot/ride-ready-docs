@@ -48,7 +48,7 @@ const NeedsAttentionPanel = () => {
         // Compliance events due within 30 days or overdue
         supabase
           .from('compliance_events')
-          .select('id, event_name, due_date, ride_id')
+          .select('id, event_name, due_date, ride_id, event_type, category')
           .eq('user_id', effectiveUserId)
           .in('status', ['scheduled', 'open'])
           .lte('due_date', thirtyDaysStr)
@@ -98,13 +98,34 @@ const NeedsAttentionPanel = () => {
           : daysUntil === 0 ? 'Due today'
           : daysUntil === 1 ? 'Due tomorrow'
           : `Due in ${daysUntil}d`;
+        // Route to the relevant page based on event type
+        let path = '/calendar';
+        const evtType = evt.event_type as string;
+        const evtCategory = evt.category as string;
+
+        if (evtType === 'pre_opening_check' || evtType === 'daily_check') {
+          // Operational checks → Checks page
+          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks` : '/checks';
+        } else if (evtType === 'ndt') {
+          // NDT → ride checks tab (NDT lives under inspections)
+          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks` : '/calendar';
+        } else if (evtCategory === 'inspection') {
+          // Annual / in-service / electrical inspections → ride checks tab
+          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks` : '/calendar';
+        } else if (evtCategory === 'doc_expiry') {
+          // Document expiry events → ride docs tab
+          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=documents` : '/documents';
+        } else if (evt.ride_id) {
+          path = `/rides/${evt.ride_id}?tab=overview`;
+        }
+
         result.push({
           id: `event-${evt.id}`,
           type: 'inspection_due',
           label: evt.event_name,
           sublabel: dateLabel,
           urgency: isOverdue ? 'warning' : 'info',
-          path: evt.ride_id ? `/rides/${evt.ride_id}?tab=overview` : '/calendar',
+          path,
         });
       });
 
