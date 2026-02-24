@@ -10,12 +10,13 @@ import { PlanSelection } from './PlanSelection';
 import { RestrictedFeatureCard } from '@/components/RestrictedFeatureCard';
 import { useSubscription } from '@/hooks/useSubscription';
 import DOCCertificateCard from '@/components/DOCCertificateCard';
+import DefectReportDialog from '@/components/DefectReportDialog';
 import { useNavigate } from 'react-router-dom';
 import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { 
   FileText, 
   Calendar, 
-  AlertTriangle, 
+  AlertTriangle,
   CheckCircle, 
   Clock,
   TrendingUp,
@@ -342,7 +343,7 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
           <CardDescription>Common tasks to keep your rides compliant</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-5">
             <Button variant="outline" className="justify-start h-auto p-4" onClick={() => onNavigate('inspections')}>
               <div className="flex flex-col items-start space-y-1">
                 <div className="flex items-center space-x-2">
@@ -382,6 +383,20 @@ const DashboardOverview = ({ onNavigate }: DashboardOverviewProps) => {
                 <span className="text-xs text-muted-foreground">See schedule</span>
               </div>
             </Button>
+
+            <DefectReportDialog
+              trigger={
+                <Button variant="outline" className="justify-start h-auto p-4">
+                  <div className="flex flex-col items-start space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <AlertTriangle className="h-4 w-4 text-orange-500" />
+                      <span className="font-medium">Report Defect</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">Log an issue</span>
+                  </div>
+                </Button>
+              }
+            />
           </div>
         </CardContent>
       </Card>
