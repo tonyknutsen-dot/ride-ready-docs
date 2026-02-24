@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import { 
   ArrowLeft, FileText, CheckSquare, Mail, Wrench, Pencil, ImageIcon, Trash2,
-  ShieldCheck, ShieldAlert, Clock, Settings2, Loader2, AlertTriangle
+  ShieldCheck, ShieldAlert, Clock, Settings2, Loader2, AlertTriangle, AlertOctagon
 } from 'lucide-react';
 import {
   Dialog,
@@ -38,6 +38,8 @@ import { Badge } from '@/components/ui/badge';
 import { PlayCircle, PauseCircle, History } from 'lucide-react';
 import CriticalDefectBanner from './CriticalDefectBanner';
 import { useOpenCriticalDefects } from '@/hooks/useOpenCriticalDefects';
+import NotOperatingReasonDialog from '@/components/NotOperatingReasonDialog';
+import { Textarea } from '@/components/ui/textarea';
 
 const RideActivityTimeline = lazy(() => import('@/components/RideActivityTimeline'));
 
@@ -74,6 +76,9 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const [showChecksGuide, setShowChecksGuide] = useState(false);
   const [requiresOpChecks, setRequiresOpChecks] = useState(ride.requires_operational_checks);
   const [showStartCheckModal, setShowStartCheckModal] = useState(false);
+  const [showConfirmOff, setShowConfirmOff] = useState(false);
+  const [showOverrideDialog, setShowOverrideDialog] = useState(false);
+  const [overrideReason, setOverrideReason] = useState('');
   const role = useAppRole();
   const { isOperating, isLoading: opLoading, canToggle, toggling, toggleOperating, autoSetOperating } = useDailyStatus(ride.id);
   const { hasCriticalDefects } = useOpenCriticalDefects(ride.id);
@@ -389,10 +394,22 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                   <Button
                     variant={isOperating ? 'outline' : 'default'}
                     size="sm"
-                    disabled={toggling || opLoading || (!isOperating && hasCriticalDefects && role !== 'controller' && role !== 'manager')}
+                    disabled={toggling || opLoading}
                     onClick={() => {
+                      if (isOperating) {
+                        setShowConfirmOff(true);
+                        return;
+                      }
                       if (!isOperating && hasCriticalDefects) {
-                        // Show toast for non-controller/manager — button is disabled but just in case
+                        if (role === 'controller' || role === 'manager') {
+                          setShowOverrideDialog(true);
+                        } else {
+                          toast({
+                            title: 'Cannot mark operating',
+                            description: 'This ride cannot be marked operating while an open critical defect exists.',
+                            variant: 'destructive',
+                          });
+                        }
                         return;
                       }
                       toggleOperating();
@@ -721,6 +738,56 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             </Button>
             <Button variant="ghost" onClick={() => setShowStartCheckModal(false)} className="w-full">
               Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm OFF modal with structured reason */}
+      <NotOperatingReasonDialog
+        open={showConfirmOff}
+        onOpenChange={setShowConfirmOff}
+        onConfirm={(reason) => {
+          toggleOperating(reason);
+          setShowConfirmOff(false);
+        }}
+        disabled={toggling}
+        preselectReason={hasCriticalDefects ? 'Critical defect (pre-opening/daily check)' : undefined}
+      />
+
+      {/* Override dialog — controller/manager only when critical defect blocks ON */}
+      <Dialog open={showOverrideDialog} onOpenChange={setShowOverrideDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-1">
+              <AlertOctagon className="h-5 w-5 text-destructive" />
+              <DialogTitle className="text-destructive">Override — Open critical defect</DialogTitle>
+            </div>
+            <DialogDescription>
+              You are overriding an open critical defect and marking this ride operating. This action must be justified and will be logged.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-1.5 py-2">
+            <Label className="text-sm font-medium">Reason for override *</Label>
+            <Textarea
+              value={overrideReason}
+              onChange={(e) => setOverrideReason(e.target.value)}
+              placeholder="Explain why the ride can operate despite the critical defect…"
+              rows={2}
+              className="text-sm"
+            />
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => { setShowOverrideDialog(false); setOverrideReason(''); }}>
+              Cancel
+            </Button>
+            <Button onClick={() => {
+              if (!overrideReason.trim()) return;
+              toggleOperating(`Override: ${overrideReason.trim()}`);
+              setShowOverrideDialog(false);
+              setOverrideReason('');
+            }} disabled={toggling || !overrideReason.trim()} className="bg-amber-600 hover:bg-amber-700 text-white">
+              {toggling ? 'Updating…' : 'Override and mark operating'}
             </Button>
           </DialogFooter>
         </DialogContent>
