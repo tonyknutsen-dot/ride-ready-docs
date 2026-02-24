@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Edit, Trash2, FileText, Camera, Download, Eye, Filter, Save, Clock, X, FolderOpen, AlertTriangle, History } from 'lucide-react';
+import { Calendar, Edit, Trash2, FileText, Camera, Download, Eye, Filter, Save, Clock, X, FolderOpen, AlertTriangle } from 'lucide-react';
 import DefectsList from './DefectsList';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -331,16 +330,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
           <h4 className="text-[13px] font-bold text-foreground tracking-[1px] uppercase">Defects</h4>
         </div>
         <div className="h-px bg-border" />
-        <DefectsList rideId={ride.id} rideName={ride.ride_name} showResolved={false} />
-        <Collapsible>
-          <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors py-1">
-            <History className="h-3.5 w-3.5" />
-            <span>Show closed defects</span>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="pt-2">
-            <DefectsList rideId={ride.id} rideName={ride.ride_name} showResolved={true} />
-          </CollapsibleContent>
-        </Collapsible>
+        <DefectsList rideId={ride.id} rideName={ride.ride_name} showResolved={true} />
       </div>
 
       {/* ── Records ── */}
