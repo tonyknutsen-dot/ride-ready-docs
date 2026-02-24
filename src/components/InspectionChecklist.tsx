@@ -13,6 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, MapPin, Locate, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, Eye, MoreVertical, ChevronDown, ChevronUp, PlayCircle, Wrench } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useDailyStatus } from '@/hooks/useDailyStatus';
@@ -112,7 +113,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const { submitCheck, isOnline } = useOfflineCheck();
   const { pendingCount, isSyncing, syncAll } = useOfflineSync();
   const isDailyOrPreOpening = frequency === 'daily' || frequency === 'preopening';
-  const { autoSetOperating } = useDailyStatus(ride.id);
+  const { autoSetOperating, isOperating: rideIsOperating } = useDailyStatus(ride.id);
+  const [showStartCheckModal, setShowStartCheckModal] = useState(false);
+  const [showPostCompletionModal, setShowPostCompletionModal] = useState(false);
 
   // Prefill inspector name from profile
   useEffect(() => {
@@ -1063,6 +1066,11 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           title: "Check completed ✓",
           description: `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} check saved for ${ride.ride_name}`
         });
+
+        // Show post-completion prompt if daily/pre-opening and ride still not operating
+        if (isDailyOrPreOpening && !rideIsOperating) {
+          setShowPostCompletionModal(true);
+        }
       }
       // If offline, the useOfflineCheck hook already shows a toast
 
@@ -1317,6 +1325,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
 
   return (
+    <>
     <div id="inspection-checklist-form" className="checksWrap -mx-4 pb-32" style={{ background: '#F3F4F6' }}>
 
       {/* ── Offline / sync banner ── */}
@@ -1382,13 +1391,15 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                     setInspectorNameError(true);
                     return;
                   }
+                  // If daily/pre-opening and ride is NOT operating, show confirmation modal
+                  if (isDailyOrPreOpening && !rideIsOperating) {
+                    setShowStartCheckModal(true);
+                    return;
+                  }
+                  // Otherwise start immediately
                   setWizardStep('checklist');
                   setCheckStarted(true);
                   setCheckStartedAt(new Date());
-                  // Auto-set operating today for Daily/Pre-Opening checks
-                  if (isDailyOrPreOpening) {
-                    autoSetOperating(frequency);
-                  }
                 }}
               >
                 Start Check
@@ -1808,6 +1819,82 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         </>
       )}
     </div>
+
+    {/* Start Check confirmation modal — ride not operating */}
+    <Dialog open={showStartCheckModal} onOpenChange={setShowStartCheckModal}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Ride is marked not operating today</DialogTitle>
+          <DialogDescription>
+            You are starting a {frequency === 'preopening' ? 'pre-opening' : 'daily'} check while this ride is marked not operating. Do you want to mark it as operating today?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-col">
+          <Button
+            onClick={() => {
+              autoSetOperating(frequency);
+              setShowStartCheckModal(false);
+              setWizardStep('checklist');
+              setCheckStarted(true);
+              setCheckStartedAt(new Date());
+            }}
+            className="w-full"
+          >
+            Start check + mark operating
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => {
+              setShowStartCheckModal(false);
+              setWizardStep('checklist');
+              setCheckStarted(true);
+              setCheckStartedAt(new Date());
+            }}
+            className="w-full"
+          >
+            Start check only
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={() => setShowStartCheckModal(false)}
+            className="w-full"
+          >
+            Cancel
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+
+    {/* Post-completion prompt — check done while ride still not operating */}
+    <Dialog open={showPostCompletionModal} onOpenChange={setShowPostCompletionModal}>
+      <DialogContent className="max-w-sm">
+        <DialogHeader>
+          <DialogTitle>Check completed while ride is still marked not operating</DialogTitle>
+          <DialogDescription>
+            Do you want to mark this ride as operating today now?
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter className="flex flex-col gap-2 sm:flex-col">
+          <Button
+            onClick={() => {
+              autoSetOperating(frequency);
+              setShowPostCompletionModal(false);
+            }}
+            className="w-full"
+          >
+            Yes, mark operating today
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => setShowPostCompletionModal(false)}
+            className="w-full"
+          >
+            Keep not operating
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
 
