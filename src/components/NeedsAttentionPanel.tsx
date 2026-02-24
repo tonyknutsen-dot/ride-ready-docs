@@ -98,23 +98,23 @@ const NeedsAttentionPanel = () => {
           : daysUntil === 0 ? 'Due today'
           : daysUntil === 1 ? 'Due tomorrow'
           : `Due in ${daysUntil}d`;
-        // Route to the relevant page based on event type
+        // Route to the most actionable page by event type
         let path = '/calendar';
-        const evtType = evt.event_type as string;
-        const evtCategory = evt.category as string;
+        const evtType = (evt.event_type as string) || '';
+        const evtCategory = (evt.category as string) || '';
 
-        if (evtType === 'pre_opening_check' || evtType === 'daily_check') {
-          // Operational checks → Checks page
-          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks` : '/checks';
-        } else if (evtType === 'ndt') {
-          // NDT → ride checks tab (NDT lives under inspections)
-          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks` : '/calendar';
-        } else if (evtCategory === 'inspection') {
-          // Annual / in-service / electrical inspections → ride checks tab
-          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks` : '/calendar';
+        if (evtType === 'pre_opening_check') {
+          // Direct action: open pre-opening checklist execution
+          path = evt.ride_id ? `/checks/${evt.ride_id}/preopening/execute` : '/checks';
+        } else if (evtType === 'daily_check') {
+          // Direct action: open daily checklist execution
+          path = evt.ride_id ? `/checks/${evt.ride_id}/daily/execute` : '/checks';
+        } else if (evtCategory === 'inspection' || evtType === 'ndt' || evtType === 'in-service' || evtType === 'electrical') {
+          // Compliance/inspection reminders: source of truth is calendar; include event id for future deep-link support
+          path = `/calendar?eventId=${evt.id}`;
         } else if (evtCategory === 'doc_expiry') {
-          // Document expiry events → ride docs tab
-          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=documents` : '/documents';
+          // Document expiry reminders
+          path = evt.ride_id ? `/rides/${evt.ride_id}?tab=documents&eventId=${evt.id}` : '/documents';
         } else if (evt.ride_id) {
           path = `/rides/${evt.ride_id}?tab=overview`;
         }
