@@ -3170,7 +3170,12 @@ export type Database = {
       app_role: "admin" | "user" | "tester"
       check_frequency: "daily" | "monthly" | "yearly" | "preopening" | "weekly"
       defect_severity: "non_urgent" | "urgent" | "stop_operation"
-      defect_status: "open" | "acknowledged" | "in_progress" | "resolved"
+      defect_status:
+        | "open"
+        | "acknowledged"
+        | "in_progress"
+        | "awaiting_review"
+        | "resolved"
       staff_role: "manager" | "supervisor" | "staff"
     }
     CompositeTypes: {
@@ -3302,7 +3307,13 @@ export const Constants = {
       app_role: ["admin", "user", "tester"],
       check_frequency: ["daily", "monthly", "yearly", "preopening", "weekly"],
       defect_severity: ["non_urgent", "urgent", "stop_operation"],
-      defect_status: ["open", "acknowledged", "in_progress", "resolved"],
+      defect_status: [
+        "open",
+        "acknowledged",
+        "in_progress",
+        "awaiting_review",
+        "resolved",
+      ],
       staff_role: ["manager", "supervisor", "staff"],
     },
   },

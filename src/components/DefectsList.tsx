@@ -1,23 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Textarea } from '@/components/ui/textarea';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, Clock, Wrench, AlertOctagon, ChevronDown, ChevronUp, Check, Eye, Loader2, WifiOff, PauseCircle } from 'lucide-react';
+import { AlertTriangle, Clock, Wrench, AlertOctagon, ChevronDown, ChevronUp, Check, Eye, WifiOff, PauseCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { setCache, getCache } from '@/lib/offlineCache';
 import { useDailyStatus } from '@/hooks/useDailyStatus';
+import DefectClosureDialog from '@/components/DefectClosureDialog';
 
 type DefectSeverity = 'non_urgent' | 'urgent' | 'stop_operation';
-type DefectStatus = 'open' | 'acknowledged' | 'in_progress' | 'resolved';
+type DefectStatus = 'open' | 'acknowledged' | 'in_progress' | 'awaiting_review' | 'resolved';
 
 interface Defect {
   id: string;
@@ -47,10 +45,6 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
   const [expandedDefect, setExpandedDefect] = useState<string | null>(null);
   const [resolveDialogOpen, setResolveDialogOpen] = useState(false);
   const [selectedDefect, setSelectedDefect] = useState<Defect | null>(null);
-  const [resolutionNotes, setResolutionNotes] = useState('');
-  const [resolvedBy, setResolvedBy] = useState('');
-  const [newStatus, setNewStatus] = useState<DefectStatus>('resolved');
-  const [updating, setUpdating] = useState(false);
   const [photoUrls, setPhotoUrls] = useState<{ [defectId: string]: string[] }>({});
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
   const { toast } = useToast();
@@ -156,55 +150,8 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
   };
 
   const openResolveDialog = (defect: Defect) => {
-    setSelectedDefect(defect);
-    setResolvedBy('');
-    setResolutionNotes('');
-    setNewStatus(defect.status === 'open' ? 'acknowledged' : 'resolved');
+    setSelectedDefect({ ...defect, ride_id: rideId } as any);
     setResolveDialogOpen(true);
-  };
-
-  const handleUpdateStatus = async () => {
-    if (!selectedDefect) return;
-
-    setUpdating(true);
-    try {
-      const updateData: any = {
-        status: newStatus
-      };
-
-      if (newStatus === 'resolved') {
-        updateData.resolved_at = new Date().toISOString();
-        updateData.resolved_by = resolvedBy.trim() || null;
-        updateData.resolution_notes = resolutionNotes.trim() || null;
-      }
-
-      const { error } = await supabase
-        .from('defects')
-        .update(updateData)
-        .eq('id', selectedDefect.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Defect updated",
-        description: newStatus === 'resolved' 
-          ? "Defect marked as resolved" 
-          : `Status changed to ${newStatus.replace('_', ' ')}`
-      });
-
-      setResolveDialogOpen(false);
-      loadDefects();
-      onDefectUpdated?.();
-    } catch (error: any) {
-      console.error('Error updating defect:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update defect",
-        variant: "destructive"
-      });
-    } finally {
-      setUpdating(false);
-    }
   };
 
   const getSeverityInfo = (severity: DefectSeverity) => {
@@ -226,6 +173,8 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
         return <Badge variant="secondary">Acknowledged</Badge>;
       case 'in_progress':
         return <Badge className="bg-blue-500 hover:bg-blue-600">In Progress</Badge>;
+      case 'awaiting_review':
+        return <Badge className="bg-purple-500 hover:bg-purple-600">Awaiting Review</Badge>;
       case 'resolved':
         return <Badge className="bg-green-500 hover:bg-green-600">Resolved</Badge>;
     }
@@ -393,13 +342,12 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
                             size="sm"
                             onClick={(e) => {
                               e.stopPropagation();
-                              setSelectedDefect(defect);
-                              setNewStatus('resolved');
+                              setSelectedDefect({ ...defect, ride_id: rideId } as any);
                               setResolveDialogOpen(true);
                             }}
                           >
                             <Check className="h-4 w-4 mr-2" />
-                            Mark Resolved
+                            {defect.severity === 'stop_operation' ? 'Close Defect' : 'Mark Resolved'}
                           </Button>
                         </div>
                       </div>
@@ -412,65 +360,17 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
         })}
       </div>
 
-      {/* Update Status Dialog */}
-      <Dialog open={resolveDialogOpen} onOpenChange={setResolveDialogOpen}>
-        <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Update Defect Status</DialogTitle>
-            <DialogDescription>
-              Change the status of this defect
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>New Status</Label>
-              <Select value={newStatus} onValueChange={(v) => setNewStatus(v as DefectStatus)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="acknowledged">Acknowledged</SelectItem>
-                  <SelectItem value="in_progress">In Progress</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {newStatus === 'resolved' && (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="resolved-by">Resolved By</Label>
-                  <Input
-                    id="resolved-by"
-                    value={resolvedBy}
-                    onChange={(e) => setResolvedBy(e.target.value)}
-                    placeholder="Name of person who fixed it"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="resolution-notes">Resolution Notes</Label>
-                  <Textarea
-                    id="resolution-notes"
-                    value={resolutionNotes}
-                    onChange={(e) => setResolutionNotes(e.target.value)}
-                    placeholder="What was done to fix the defect?"
-                    rows={3}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setResolveDialogOpen(false)} disabled={updating}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateStatus} disabled={updating}>
-              {updating ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
-              Update Status
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Defect Closure / Status Update Dialog */}
+      <DefectClosureDialog
+        open={resolveDialogOpen}
+        onOpenChange={setResolveDialogOpen}
+        defect={selectedDefect as any}
+        rideName={rideName}
+        onDefectUpdated={() => {
+          loadDefects();
+          onDefectUpdated?.();
+        }}
+      />
 
       {/* Photo Viewer */}
       <Dialog open={!!viewingPhoto} onOpenChange={() => setViewingPhoto(null)}>
