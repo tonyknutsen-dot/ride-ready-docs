@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import {
   FileText, Cog, Calendar, Wrench, CheckSquare,
   Settings, Bell, AlertTriangle, ChevronRight, Clock
@@ -13,6 +14,7 @@ import { PullToRefresh } from "@/components/PullToRefresh";
 import { WelcomeModal } from "@/components/WelcomeModal";
 import StaffAccountBanner from "@/components/StaffAccountBanner";
 import NeedsAttentionPanel from "@/components/NeedsAttentionPanel";
+import DefectReportDialog from "@/components/DefectReportDialog";
 import { Badge } from "@/components/ui/badge";
 import appLogo from "@/assets/app-logo.jpg";
 
@@ -129,25 +131,56 @@ const Overview = () => {
             <div className="h-px bg-border mb-4" />
 
             <div className="grid grid-cols-2 gap-3">
-              {[
-                { icon: CheckSquare, label: 'Start Check',      desc: 'Daily / pre-use check', path: '/checks' },
-                { icon: AlertTriangle, label: 'Log Defect',     desc: 'Report an issue',       path: '/rides' },
-                { icon: FileText,    label: 'Upload Document',  desc: 'Add a certificate',     path: '/documents' },
-                { icon: Wrench,      label: 'Log Maintenance',  desc: 'Record a repair',       path: '/maintenance' },
-              ].map(({ icon: Icon, label, desc, path }) => (
-                <button
-                  key={label}
-                  onClick={() => navigate(path)}
-                  className="flex items-start gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary active:scale-[0.97] transition-all text-left"
-                  style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
-                >
-                  <Icon className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" strokeWidth={2} />
-                  <div>
-                    <span className="text-sm font-medium text-foreground">{label}</span>
-                    <span className="text-[11px] text-muted-foreground block mt-0.5">{desc}</span>
-                  </div>
-                </button>
-              ))}
+              <button
+                onClick={() => navigate('/checks')}
+                className="flex items-start gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary active:scale-[0.97] transition-all text-left"
+                style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
+              >
+                <CheckSquare className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" strokeWidth={2} />
+                <div>
+                  <span className="text-sm font-medium text-foreground">Start Check</span>
+                  <span className="text-[11px] text-muted-foreground block mt-0.5">Daily / pre-use check</span>
+                </div>
+              </button>
+
+              <DefectReportDialog
+                trigger={
+                  <button
+                    className="flex items-start gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary active:scale-[0.97] transition-all text-left"
+                    style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
+                  >
+                    <AlertTriangle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" strokeWidth={2} />
+                    <div>
+                      <span className="text-sm font-medium text-foreground">Report Defect</span>
+                      <span className="text-[11px] text-muted-foreground block mt-0.5">Log an issue</span>
+                    </div>
+                  </button>
+                }
+              />
+
+              <button
+                onClick={() => navigate('/documents')}
+                className="flex items-start gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary active:scale-[0.97] transition-all text-left"
+                style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
+              >
+                <FileText className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" strokeWidth={2} />
+                <div>
+                  <span className="text-sm font-medium text-foreground">Upload Document</span>
+                  <span className="text-[11px] text-muted-foreground block mt-0.5">Add a certificate</span>
+                </div>
+              </button>
+
+              <button
+                onClick={() => navigate('/maintenance')}
+                className="flex items-start gap-3 p-4 rounded-2xl border border-border bg-card hover:border-primary active:scale-[0.97] transition-all text-left"
+                style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
+              >
+                <Wrench className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" strokeWidth={2} />
+                <div>
+                  <span className="text-sm font-medium text-foreground">Log Maintenance</span>
+                  <span className="text-[11px] text-muted-foreground block mt-0.5">Record a repair</span>
+                </div>
+              </button>
             </div>
           </div>
 

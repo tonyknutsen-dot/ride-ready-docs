@@ -25,6 +25,7 @@ import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import RideDocuments from './RideDocuments';
 import InspectionManager from './InspectionManager';
+import DefectReportDialog from './DefectReportDialog';
 import { FeatureGate } from './FeatureGate';
 import RideForm from './RideForm';
 import ImageViewer from './ImageViewer';
@@ -251,7 +252,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         key: 'open-defects',
         icon: AlertTriangle,
         label: `${rideStats.openDefects} open defect${rideStats.openDefects !== 1 ? 's' : ''}`,
-        detail: 'Review and resolve',
+        detail: 'View in Checks tab',
         color: 'hsl(38 80% 40%)',
         action: () => setActiveTab('checks'),
       });
@@ -442,13 +443,19 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                 <CheckSquare className="h-4 w-4 shrink-0" />
                 Start Check
               </button>
-              <button
-                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[48px] font-semibold text-sm text-foreground hover:bg-muted/40 active:scale-[0.98] transition-transform"
-                onClick={() => setActiveTab('checks')}
-              >
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                Log Defect
-              </button>
+              <DefectReportDialog
+                rideId={ride.id}
+                rideName={ride.ride_name}
+                onDefectReported={loadRideStats}
+                trigger={
+                  <button
+                    className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[48px] font-semibold text-sm text-foreground hover:bg-muted/40 active:scale-[0.98] transition-transform"
+                  >
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    Report Defect
+                  </button>
+                }
+              />
               <button
                 className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card py-3 px-3 min-h-[48px] font-semibold text-sm text-foreground hover:bg-muted/40 active:scale-[0.98] transition-transform"
                 onClick={() => setActiveTab('documents')}
