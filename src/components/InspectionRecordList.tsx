@@ -81,9 +81,27 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
     navigate(`/inspection-record/${record.id}`);
   };
 
-  const getResultBadge = (result: string) => {
+  const getResultBadge = (result: string, record?: InspectionRecord) => {
+    // Check if this record has critical/stop-operation defects
+    const hasCriticalDefects = record && (record.defect_ids?.length || 0) > 0 && result === 'failed';
+    
+    if (hasCriticalDefects) {
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold border bg-destructive/10 border-destructive/30 text-destructive">
+          <AlertTriangle className="h-3 w-3" />
+          Failed — Defect recorded
+        </span>
+      );
+    }
+
     switch (result) {
       case 'passed':
+        return (
+          <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold border bg-success/10 border-success/30 text-success">
+            <CheckCircle2 className="h-3 w-3" />
+            Passed
+          </span>
+        );
       case 'completed':
         return (
           <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-extrabold border bg-success/10 border-success/30 text-success">
@@ -161,7 +179,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
 
                 {/* Meta line */}
                 <div className="flex items-center gap-2 flex-wrap">
-                  {getResultBadge(record.overall_result)}
+                  {getResultBadge(record.overall_result, record)}
                   <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
                     v{record.version}
                   </span>

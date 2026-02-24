@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles, PauseCircle, Info } from 'lucide-react';
+import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles, PauseCircle, Info, AlertOctagon } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import InspectionChecklist from './InspectionChecklist';
 import NDTScheduleManager from './NDTScheduleManager';
@@ -10,10 +10,12 @@ import ChecksHistory from './ChecksHistory';
 import EquipmentTimelineReport from './EquipmentTimelineReport';
 import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import OperatingTodayBanner from './OperatingTodayBanner';
+import CriticalDefectBanner from './CriticalDefectBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useDailyStatus } from '@/hooks/useDailyStatus';
+import { useOpenCriticalDefects } from '@/hooks/useOpenCriticalDefects';
 
 
 interface InspectionManagerProps {
@@ -47,6 +49,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const [templateStatus, setTemplateStatus] = useState<Record<string, boolean>>({});
   const [showNextPrompt, setShowNextPrompt] = useState<string | null>(null);
   const { isOperating, isLoading: opLoading, canToggle, toggleOperating, toggling } = useDailyStatus(ride.id);
+  const { hasCriticalDefects } = useOpenCriticalDefects(ride.id);
   const isDailyOrPreOpening = activeTab === 'daily' || activeTab === 'preopening';
 
   useEffect(() => {
@@ -181,6 +184,11 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   return (
     <div className="space-y-5">
       <ChecksOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
+
+      {/* Critical defect banner — top priority, above everything */}
+      {hasCriticalDefects && (
+        <CriticalDefectBanner rideId={ride.id} rideName={ride.ride_name} />
+      )}
 
       {/* Operating Today — compact secondary status banner */}
       <OperatingTodayBanner rideId={ride.id} />

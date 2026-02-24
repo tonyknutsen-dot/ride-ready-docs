@@ -238,7 +238,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
     });
 
     return Object.entries(groups).map(([month, checks]) => {
-      const passedChecks = checks.filter(c => c.status === 'passed').length;
+      const passedChecks = checks.filter(c => c.status === 'passed' || c.status === 'completed').length;
       const totalChecks = checks.length;
       const passRate = totalChecks > 0 ? (passedChecks / totalChecks) * 100 : 0;
 
@@ -462,11 +462,11 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
 
   const overallStats = {
     total: filteredChecks.length,
-    passed: filteredChecks.filter(c => c.status === 'passed').length,
+    passed: filteredChecks.filter(c => c.status === 'passed' || c.status === 'completed').length,
     failed: filteredChecks.filter(c => c.status === 'failed').length,
     partial: filteredChecks.filter(c => c.status === 'partial').length,
     passRate: filteredChecks.length > 0 
-      ? Math.round((filteredChecks.filter(c => c.status === 'passed').length / filteredChecks.length) * 100)
+      ? Math.round((filteredChecks.filter(c => c.status === 'passed' || c.status === 'completed').length / filteredChecks.length) * 100)
       : 0
   };
 
@@ -730,12 +730,14 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
                   <div className="flex items-center gap-2 shrink-0">
                     <span className={cn(
                       "rounded-full px-2.5 py-1 text-[11px] font-extrabold border",
-                      check.status === 'passed'  ? 'bg-success/10 border-success/30 text-success' :
+                      (check.status === 'passed' || check.status === 'completed')  ? 'bg-success/10 border-success/30 text-success' :
                       check.status === 'failed'  ? 'bg-destructive/10 border-destructive/30 text-destructive' :
                       check.status === 'partial' ? 'bg-warning/10 border-warning/30 text-warning' :
                                                    'bg-muted border-border text-muted-foreground'
                     )}>
-                      {check.status.charAt(0).toUpperCase() + check.status.slice(1)}
+                      {check.status === 'completed' ? 'Passed' :
+                       check.status === 'failed' && check.check_results?.some(r => r.result === 'fail') ? 'Failed' :
+                       check.status.charAt(0).toUpperCase() + check.status.slice(1)}
                     </span>
                     <Eye className="h-4 w-4 text-muted-foreground hidden sm:block" />
                   </div>

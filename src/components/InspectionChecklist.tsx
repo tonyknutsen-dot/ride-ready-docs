@@ -930,6 +930,12 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
     });
 
     try {
+      // Determine check status based on item results
+      const failedItems = Object.values(itemResults).filter(r => r === 'fail').length;
+      const passedItems = Object.values(itemResults).filter(r => r === 'pass').length;
+      const totalItems = activeTemplate.daily_check_template_items.length;
+      const checkStatus = failedItems > 0 ? 'failed' : passedItems === totalItems ? 'passed' : 'partial';
+
       // Prepare the check submission data
       const checkSubmission = {
         rideId: ride.id,
@@ -937,7 +943,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         inspectorName: inspectorName.trim(),
         checkDate: new Date().toISOString().split('T')[0],
         checkFrequency: frequency,
-        status: 'completed',
+        status: checkStatus,
         notes: inspectorNotes.trim() || undefined,
         weatherConditions: weatherConditions.trim() || undefined,
         location: location.trim() || undefined,

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,12 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertTriangle, Clock, Wrench, AlertOctagon, ChevronDown, ChevronUp, Check, Eye, Loader2, WifiOff } from 'lucide-react';
+import { AlertTriangle, Clock, Wrench, AlertOctagon, ChevronDown, ChevronUp, Check, Eye, Loader2, WifiOff, PauseCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { setCache, getCache } from '@/lib/offlineCache';
+import { useDailyStatus } from '@/hooks/useDailyStatus';
 
 type DefectSeverity = 'non_urgent' | 'urgent' | 'stop_operation';
 type DefectStatus = 'open' | 'acknowledged' | 'in_progress' | 'resolved';
@@ -38,6 +40,7 @@ interface DefectsListProps {
 }
 
 const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }: DefectsListProps) => {
+  const navigate = useNavigate();
   const [defects, setDefects] = useState<Defect[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOfflineData, setIsOfflineData] = useState(false);
@@ -52,6 +55,7 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
   const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
+  const { isOperating, canToggle, toggleOperating, toggling } = useDailyStatus(rideId);
 
   const cacheKey = `defects:${rideId}:${showResolved ? 'all' : 'open'}`;
 
@@ -340,29 +344,64 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
 
                     {/* Actions */}
                     {defect.status !== 'resolved' && (
-                      <div className="flex gap-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openResolveDialog(defect);
-                          }}
-                        >
-                          Update Status
-                        </Button>
-                        <Button 
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedDefect(defect);
-                            setNewStatus('resolved');
-                            setResolveDialogOpen(true);
-                          }}
-                        >
-                          <Check className="h-4 w-4 mr-2" />
-                          Mark Resolved
-                        </Button>
+                      <div className="space-y-2">
+                        {/* Stop-operation specific actions */}
+                        {defect.severity === 'stop_operation' && (
+                          <div className="flex flex-wrap gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="gap-1.5 text-xs"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                navigate(`/maintenance?rideId=${rideId}`);
+                              }}
+                            >
+                              <Wrench className="h-3.5 w-3.5" />
+                              Go to maintenance
+                            </Button>
+                            {isOperating && canToggle && (
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1.5 text-xs border-destructive/30 text-destructive hover:bg-destructive/10"
+                                disabled={toggling}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggleOperating('Critical defect — marked not operating');
+                                }}
+                              >
+                                <PauseCircle className="h-3.5 w-3.5" />
+                                {toggling ? '…' : 'Mark not operating'}
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        
+                        <div className="flex gap-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openResolveDialog(defect);
+                            }}
+                          >
+                            Update Status
+                          </Button>
+                          <Button 
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedDefect(defect);
+                              setNewStatus('resolved');
+                              setResolveDialogOpen(true);
+                            }}
+                          >
+                            <Check className="h-4 w-4 mr-2" />
+                            Mark Resolved
+                          </Button>
+                        </div>
                       </div>
                     )}
                   </div>
