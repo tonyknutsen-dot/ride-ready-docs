@@ -75,6 +75,8 @@ const RideStatusRow = ({
     ? 'Due today'
     : ride.status === 'due_soon'
     ? 'Due soon'
+    : ride.dailyCoveredByPreopening
+    ? 'Daily check satisfied by pre-opening'
     : 'Up to date';
 
   return (

@@ -18,6 +18,7 @@ export interface CheckRideStatus {
   status: 'overdue' | 'due_today' | 'due_soon' | 'ok';
   checksLast7d: number;
   isOperatingToday: boolean;
+  dailyCoveredByPreopening: boolean;
 }
 
 export interface ChecksComplianceData {
@@ -126,6 +127,7 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
       status,
       checksLast7d: rideChecks.length,
       isOperatingToday,
+      dailyCoveredByPreopening,
     };
   });
 
