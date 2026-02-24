@@ -1,10 +1,11 @@
 import { CheckCircle, Circle } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { useDailyStatus } from '@/hooks/useDailyStatus';
+import { useOpenCriticalDefects } from '@/hooks/useOpenCriticalDefects';
+import { useAppRole } from '@/hooks/useAppRole';
+import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import NotOperatingReasonDialog from '@/components/NotOperatingReasonDialog';
 
 interface OperatingTodayBannerProps {
   rideId: string;
@@ -12,8 +13,10 @@ interface OperatingTodayBannerProps {
 
 const OperatingTodayBanner = ({ rideId }: OperatingTodayBannerProps) => {
   const { isOperating, isLoading, canToggle, toggling, toggleOperating } = useDailyStatus(rideId);
+  const { hasCriticalDefects } = useOpenCriticalDefects(rideId);
+  const role = useAppRole();
+  const { toast } = useToast();
   const [showConfirmOff, setShowConfirmOff] = useState(false);
-  const [reason, setReason] = useState('');
 
   const handleToggle = (checked: boolean) => {
     if (!canToggle || toggling) return;
@@ -21,13 +24,21 @@ const OperatingTodayBanner = ({ rideId }: OperatingTodayBannerProps) => {
       setShowConfirmOff(true);
       return;
     }
+    // Block ON if critical defects
+    if (checked && !isOperating && hasCriticalDefects) {
+      toast({
+        title: 'Cannot mark operating',
+        description: 'This ride cannot be marked operating while an open critical defect exists.',
+        variant: 'destructive',
+      });
+      return;
+    }
     toggleOperating();
   };
 
-  const handleConfirmOff = () => {
-    toggleOperating(reason.trim() || undefined);
+  const handleConfirmOff = (reason: string) => {
+    toggleOperating(reason);
     setShowConfirmOff(false);
-    setReason('');
   };
 
   if (isLoading) {
@@ -77,34 +88,13 @@ const OperatingTodayBanner = ({ rideId }: OperatingTodayBannerProps) => {
         )}
       </div>
 
-      {/* Confirm OFF modal — same logic as OperatingTodayCard */}
-      <Dialog open={showConfirmOff} onOpenChange={setShowConfirmOff}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Mark ride as NOT operating today?</DialogTitle>
-            <DialogDescription>
-              This will pause Daily check due/overdue tracking for today.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-2 py-2">
-            <label className="text-sm font-medium">Reason (optional)</label>
-            <Input
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              placeholder="e.g. Weather, Breakdown, Staffing"
-              className="h-10"
-            />
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => { setShowConfirmOff(false); setReason(''); }}>
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmOff} disabled={toggling}>
-              {toggling ? 'Updating…' : 'Confirm'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <NotOperatingReasonDialog
+        open={showConfirmOff}
+        onOpenChange={setShowConfirmOff}
+        onConfirm={handleConfirmOff}
+        disabled={toggling}
+        preselectReason={hasCriticalDefects ? 'Critical defect (pre-opening/daily check)' : undefined}
+      />
     </>
   );
 };
