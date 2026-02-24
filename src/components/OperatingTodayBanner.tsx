@@ -51,6 +51,12 @@ const OperatingTodayBanner = ({ rideId }: OperatingTodayBannerProps) => {
       return;
     }
     toggleOperating();
+    if (checked) {
+      toast({
+        title: 'Marked in use today',
+        description: 'Daily and pre-opening checks are now due.',
+      });
+    }
   };
 
   const handleConfirmOff = (reason: string) => {
@@ -87,7 +93,9 @@ const OperatingTodayBanner = ({ rideId }: OperatingTodayBannerProps) => {
             {isOperating ? 'Operating Today' : 'Not Operating Today'}
           </p>
           <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">
-            Status shared with Ride Home page.
+            {isOperating
+              ? 'Daily checks are now due.'
+              : 'Set this when the ride will be used today.'}
           </p>
         </div>
 
