@@ -13,6 +13,8 @@ import RideDetail from './RideDetail';
 import { SendDocumentsDialog } from './SendDocumentsDialog';
 import { RequestRideTypeDialog } from './RequestRideTypeDialog';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
+import { useAllRidesCriticalDefects } from '@/hooks/useOpenCriticalDefects';
+import { AlertOctagon } from 'lucide-react';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -32,6 +34,7 @@ const RideManagement = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
   const [showRequestDialog, setShowRequestDialog] = useState(false);
+  const { data: criticalDefectsMap } = useAllRidesCriticalDefects();
 
   useEffect(() => {
     if (effectiveUserId) {
@@ -249,8 +252,19 @@ const RideManagement = () => {
         </Card>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {rides.map((ride) => (
-            <Card key={ride.id} className="hover:shadow-md transition-all cursor-pointer border-muted/50">
+          {rides.map((ride) => {
+            const criticalCount = criticalDefectsMap?.get(ride.id) || 0;
+            return (
+            <Card key={ride.id} className={`hover:shadow-md transition-all cursor-pointer ${criticalCount > 0 ? 'border-destructive/50 bg-destructive/5' : 'border-muted/50'}`}>
+              {/* Critical defect indicator */}
+              {criticalCount > 0 && (
+                <div className="flex items-center gap-2 px-4 pt-3 pb-0">
+                  <AlertOctagon className="h-4 w-4 text-destructive shrink-0" />
+                  <span className="text-xs font-bold text-destructive">
+                    Critical defect — do not operate
+                  </span>
+                </div>
+              )}
               <CardHeader className="pb-3 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <CardTitle className="text-base sm:text-lg leading-tight flex-1 min-w-0 break-words line-clamp-2">
@@ -330,7 +344,8 @@ const RideManagement = () => {
                 </div>
               </CardContent>
             </Card>
-          ))}
+            );
+          })}
         </div>
       )}
 

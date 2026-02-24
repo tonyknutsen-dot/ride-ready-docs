@@ -21,15 +21,19 @@ interface DefectReportDialogProps {
   rideId: string;
   rideName: string;
   checkId?: string;
+  checkFrequency?: string;
   onDefectReported?: () => void;
+  onCriticalDefectReported?: () => void;
   trigger?: React.ReactNode;
 }
 
 const DefectReportDialog = ({ 
   rideId, 
   rideName, 
-  checkId, 
+  checkId,
+  checkFrequency,
   onDefectReported,
+  onCriticalDefectReported,
   trigger 
 }: DefectReportDialogProps) => {
   const [open, setOpen] = useState(false);
@@ -192,6 +196,11 @@ const DefectReportDialog = ({
       setOpen(false);
 
       onDefectReported?.();
+
+      // Trigger critical defect flow if stop_operation
+      if (severity === 'stop_operation') {
+        onCriticalDefectReported?.();
+      }
     } catch (error: any) {
       console.error('Error reporting defect:', error);
       toast({

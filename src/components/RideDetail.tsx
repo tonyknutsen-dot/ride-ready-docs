@@ -36,6 +36,8 @@ import { useDailyStatus } from '@/hooks/useDailyStatus';
 import { useAppRole } from '@/hooks/useAppRole';
 import { Badge } from '@/components/ui/badge';
 import { PlayCircle, PauseCircle, History } from 'lucide-react';
+import CriticalDefectBanner from './CriticalDefectBanner';
+import { useOpenCriticalDefects } from '@/hooks/useOpenCriticalDefects';
 
 const RideActivityTimeline = lazy(() => import('@/components/RideActivityTimeline'));
 
@@ -74,6 +76,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const [showStartCheckModal, setShowStartCheckModal] = useState(false);
   const role = useAppRole();
   const { isOperating, isLoading: opLoading, canToggle, toggling, toggleOperating, autoSetOperating } = useDailyStatus(ride.id);
+  const { hasCriticalDefects } = useOpenCriticalDefects(ride.id);
   const [rideStats, setRideStats] = useState({
     docCount: 0,
     todayChecks: 0,
@@ -334,6 +337,13 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         </div>
 
         <TabsContent value="overview" className="space-y-4 animate-fade-in">
+
+          {/* Critical Defect Banner — highest priority alert */}
+          <CriticalDefectBanner
+            rideId={ride.id}
+            rideName={ride.ride_name}
+            onViewDefects={() => setActiveTab('checks')}
+          />
 
           {/* Top Summary Card */}
           <div className="bg-card rounded-2xl border border-border shadow-sm p-5 space-y-4">
