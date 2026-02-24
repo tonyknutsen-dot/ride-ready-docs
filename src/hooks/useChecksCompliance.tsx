@@ -36,12 +36,12 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
   const [ridesResult, recentChecksResult, operatingResult] = await Promise.all([
     supabase
       .from('rides')
-      .select('id, ride_name, ride_categories(name), requires_operational_checks')
+      .select('id, ride_name, ride_categories(name), requires_operational_checks, preopening_covers_daily')
       .eq('user_id', userId)
       .order('ride_name'),
     supabase
       .from('checks')
-      .select('ride_id, check_date, status')
+      .select('ride_id, check_date, status, check_frequency')
       .eq('user_id', userId)
       .gte('check_date', sevenDaysAgo)
       .order('check_date', { ascending: false }),
@@ -58,6 +58,7 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
     ride_name: string;
     ride_categories: { name: string } | null;
     requires_operational_checks: boolean;
+    preopening_covers_daily: boolean;
   }>;
 
   const recentChecks = recentChecksResult.data || [];
@@ -67,11 +68,11 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
     (operatingResult.data || []).map((r: any) => r.ride_id)
   );
 
-  // Build per-ride check history map
-  const checksByRide = new Map<string, { date: string; status: string }[]>();
+  // Build per-ride check history map (with frequency info)
+  const checksByRide = new Map<string, { date: string; status: string; frequency: string }[]>();
   for (const check of recentChecks) {
     if (!checksByRide.has(check.ride_id)) checksByRide.set(check.ride_id, []);
-    checksByRide.get(check.ride_id)!.push({ date: check.check_date, status: check.status });
+    checksByRide.get(check.ride_id)!.push({ date: check.check_date, status: check.status, frequency: check.check_frequency });
   }
 
   const rideStatuses: CheckRideStatus[] = rides.map(ride => {
@@ -84,19 +85,21 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
 
     const isOperatingToday = operatingRideIds.has(ride.id);
     const requiresOpChecks = ride.requires_operational_checks;
-    const checkedToday = daysSince === 0;
+    const todayChecks = rideChecks.filter(c => c.date === todayStr);
+    const checkedToday = todayChecks.length > 0;
+
+    // If preopening_covers_daily is ON, a preopening check today satisfies both
+    const preopeningDoneToday = todayChecks.some(c => c.frequency === 'preopening');
+    const dailyCoveredByPreopening = ride.preopening_covers_daily && preopeningDoneToday;
 
     // ── Showmen logic for daily/pre-opening checks ──
     // Daily checks are same-day reminders, NOT accumulating tasks.
-    // - Not in use today → always 'ok' (no checks required)
-    // - In use today + checked today → 'ok'
-    // - In use today + NOT checked today → 'due_today' (never 'overdue')
     let status: CheckRideStatus['status'] = 'ok';
 
     if (requiresOpChecks) {
       if (!isOperatingToday) {
         status = 'ok';
-      } else if (checkedToday) {
+      } else if (checkedToday || dailyCoveredByPreopening) {
         status = 'ok';
       } else {
         status = 'due_today';

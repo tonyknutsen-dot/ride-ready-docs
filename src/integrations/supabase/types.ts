@@ -2241,6 +2241,7 @@ export type Database = {
           is_test_data: boolean
           manufacturer: string | null
           owner_name: string | null
+          preopening_covers_daily: boolean
           requires_operational_checks: boolean
           ride_code: string | null
           ride_name: string
@@ -2256,6 +2257,7 @@ export type Database = {
           is_test_data?: boolean
           manufacturer?: string | null
           owner_name?: string | null
+          preopening_covers_daily?: boolean
           requires_operational_checks?: boolean
           ride_code?: string | null
           ride_name: string
@@ -2271,6 +2273,7 @@ export type Database = {
           is_test_data?: boolean
           manufacturer?: string | null
           owner_name?: string | null
+          preopening_covers_daily?: boolean
           requires_operational_checks?: boolean
           ride_code?: string | null
           ride_name?: string
