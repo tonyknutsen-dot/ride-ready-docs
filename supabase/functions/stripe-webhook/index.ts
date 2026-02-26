@@ -135,12 +135,23 @@ serve(async (req) => {
         
         if (invoice.subscription) {
           const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
-          await supabaseAdmin
+          const productId = subscription.items.data[0]?.price.product as string;
+          const tier = PRODUCT_TO_TIER[productId] || 'starter';
+
+          const { error } = await supabaseAdmin
             .from("profiles")
             .update({
+              subscription_status: 'active',
+              subscription_plan: tier,
               current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
             })
-            .eq("stripe_subscription_id", invoice.subscription);
+            .eq("stripe_subscription_id", invoice.subscription as string);
+
+          if (error) {
+            logStep("Error restoring active status on invoice.paid", { error: error.message });
+          } else {
+            logStep("Profile restored to active on invoice.paid", { tier });
+          }
         }
         break;
       }
