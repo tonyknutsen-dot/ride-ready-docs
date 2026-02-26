@@ -3025,6 +3025,7 @@ export type Database = {
         Args: { _admin_id: string; _user_id: string }
         Returns: boolean
       }
+      can_add_billable_ride: { Args: { _user_id: string }; Returns: boolean }
       can_create_calendar_event: {
         Args: { _user_id: string }
         Returns: boolean
@@ -3151,6 +3152,10 @@ export type Database = {
         Returns: boolean
       }
       start_tester_session: { Args: { p_user_id: string }; Returns: string }
+      subscription_allows_writes: {
+        Args: { _user_id: string }
+        Returns: boolean
+      }
       update_tester_heartbeat: {
         Args: { p_session_id: string }
         Returns: undefined

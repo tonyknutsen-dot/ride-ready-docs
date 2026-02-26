@@ -45,10 +45,13 @@ interface UserWithProfile {
     is_suspended: boolean;
     suspended_at: string | null;
     suspended_reason: string | null;
+    stripe_customer_id: string | null;
+    stripe_subscription_id: string | null;
   } | null;
   isAdmin: boolean;
   isTester: boolean;
   testerExpiresAt: string | null;
+  rideCount: number;
 }
 
 interface RoleChangeAudit {
@@ -382,6 +385,18 @@ export default function UserManagement() {
         }
       }
 
+      // Fetch ride counts per user
+      const userIds = (profiles || []).map(p => p.user_id);
+      const { data: rideCounts } = await supabase
+        .from('rides')
+        .select('user_id')
+        .in('user_id', userIds);
+      
+      const rideCountMap = new Map<string, number>();
+      for (const r of rideCounts || []) {
+        rideCountMap.set(r.user_id, (rideCountMap.get(r.user_id) || 0) + 1);
+      }
+
       const adminUserIds = new Set(userRoles?.filter(r => r.role === 'admin').map(r => r.user_id) || []);
       const testerRoles = new Map(
         userRoles?.filter(r => r.role === 'tester').map(r => [r.user_id, r.expires_at]) || []
@@ -407,10 +422,13 @@ export default function UserManagement() {
             is_suspended: profile.is_suspended ?? false,
             suspended_at: profile.suspended_at,
             suspended_reason: profile.suspended_reason,
+            stripe_customer_id: profile.stripe_customer_id || null,
+            stripe_subscription_id: profile.stripe_subscription_id || null,
           },
           isAdmin: adminUserIds.has(profile.user_id),
           isTester: testerRoles.has(profile.user_id) && !isTesterExpired,
           testerExpiresAt: testerExpiresAt,
+          rideCount: rideCountMap.get(profile.user_id) || 0,
         };
       });
 
@@ -823,6 +841,8 @@ export default function UserManagement() {
                   <TableHead className="hidden md:table-cell">Company</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="hidden sm:table-cell">Plan</TableHead>
+                  <TableHead className="hidden lg:table-cell">Rides</TableHead>
+                  <TableHead className="hidden xl:table-cell">Stripe</TableHead>
                   <TableHead className="hidden lg:table-cell">Country</TableHead>
                   <TableHead className="hidden sm:table-cell">Joined</TableHead>
                   <TableHead>Role</TableHead>
@@ -862,6 +882,25 @@ export default function UserManagement() {
                       <span className="capitalize">
                         {user.profile?.subscription_plan || '-'}
                       </span>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                      <span className="font-mono text-sm">{user.rideCount}</span>
+                    </TableCell>
+                    <TableCell className="hidden xl:table-cell">
+                      {user.profile?.stripe_customer_id ? (
+                        <div className="space-y-0.5">
+                          <div className="text-[10px] font-mono text-muted-foreground truncate max-w-[120px]" title={user.profile.stripe_customer_id}>
+                            {user.profile.stripe_customer_id}
+                          </div>
+                          {user.profile.stripe_subscription_id && (
+                            <div className="text-[10px] font-mono text-muted-foreground truncate max-w-[120px]" title={user.profile.stripe_subscription_id}>
+                              {user.profile.stripe_subscription_id}
+                            </div>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">-</span>
+                      )}
                     </TableCell>
                     <TableCell className="hidden lg:table-cell">
                       {user.profile?.country || '-'}

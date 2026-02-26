@@ -34,23 +34,13 @@ export const STRIPE_PRODUCT_IDS: Record<RideTier, string> = {
   enterprise: "prod_TzSQUajo9gq5iY",
 };
 
-// ── Product ID → tier reverse lookup (includes legacy products) ─────────────
+// ── Product ID → tier reverse lookup ────────────────────────────────────────
 
 export const PRODUCT_TO_TIER: Record<string, RideTier> = {
-  // Current products
   [STRIPE_PRODUCT_IDS.starter]: "starter",
   [STRIPE_PRODUCT_IDS.operator]: "operator",
   [STRIPE_PRODUCT_IDS.professional]: "professional",
   [STRIPE_PRODUCT_IDS.enterprise]: "enterprise",
-  // Legacy products (kept for existing subscribers only)
-  "prod_TlWvelEK6GafPH": "starter",
-  "prod_TlWvGM8f7f2mRa": "starter",
-  "prod_TlWvaItiHUq1PZ": "operator",
-  "prod_TlWv8lD3Q4BCIX": "operator",
-  "prod_SXfMmvFhJCpgPz": "starter",
-  "prod_SXfOT7Wm2qkLzI": "starter",
-  "prod_SXfOIqB5fXfmOi": "operator",
-  "prod_SXfPx1nMO9nxbA": "operator",
 };
 
 // ── Tier helpers ────────────────────────────────────────────────────────────
