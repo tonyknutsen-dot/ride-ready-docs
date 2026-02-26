@@ -27,7 +27,7 @@ import {
 export interface SubscriptionData {
   trialStartedAt: string | null;
   trialEndsAt: string | null;
-  subscriptionStatus: 'trial' | 'active' | 'expired' | 'tester';
+  subscriptionStatus: 'trial' | 'active' | 'expired' | 'tester' | 'past_due';
   subscriptionPlan: string | null;
   billingCycle: 'monthly' | null;
   daysRemaining: number;
@@ -139,11 +139,14 @@ export const useSubscription = () => {
           return;
         }
 
-        // Map old basic/advanced status and past_due to appropriate states
+        // Map old basic/advanced status to appropriate states
+        // past_due is now treated as a distinct restricted state
         let status = data.subscription_status as string;
         let mappedStatus: SubscriptionData['subscriptionStatus'];
-        if (status === 'basic' || status === 'advanced' || status === 'active' || status === 'past_due') {
+        if (status === 'basic' || status === 'advanced' || status === 'active') {
           mappedStatus = 'active';
+        } else if (status === 'past_due') {
+          mappedStatus = 'past_due';
         } else if (status === 'trial') {
           mappedStatus = daysRemaining > 0 ? 'trial' : 'expired';
         } else {
@@ -168,8 +171,8 @@ export const useSubscription = () => {
           canAddRide: mappedStatus === 'trial' || (mappedStatus === 'active' && billableRideCount < (RIDE_TIERS[currentTier].max === Infinity ? 999 : RIDE_TIERS[currentTier].max)),
           extraItemsCount: data.extra_items_count || 0,
           currentPeriodEnd: data.current_period_end,
-          hasStripeCustomer: mappedStatus === 'active',
-          hasStripeSubscription: mappedStatus === 'active',
+          hasStripeCustomer: mappedStatus === 'active' || mappedStatus === 'past_due',
+          hasStripeSubscription: mappedStatus === 'active' || mappedStatus === 'past_due',
           isTesterAccount: false,
           isStaffMember: isStaff,
           currentTier,

@@ -1,4 +1,4 @@
-import { AlertTriangle, Clock, FlaskConical } from 'lucide-react';
+import { AlertTriangle, Clock, FlaskConical, CreditCard } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,7 @@ interface TrialStatusProps {
 }
 
 export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
-  const { subscription, loading } = useSubscription();
+  const { subscription, loading, openCustomerPortal } = useSubscription();
   const { canAccessBilling } = useStaff();
 
   if (loading || !subscription) return null;
@@ -31,6 +31,41 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
                 All features unlocked
               </span>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  // PAST DUE — payment failed, read-only mode
+  if (subscriptionStatus === 'past_due') {
+    return (
+      <Card className="mb-4 md:mb-6 border-destructive/50 bg-destructive/5">
+        <CardContent className="p-3 md:p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <CreditCard className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-destructive">Payment Failed</p>
+                <p className="text-sm text-muted-foreground">
+                  Please update your billing to continue using RideReadyDocs. Your data is safe; you can still view it.
+                </p>
+              </div>
+            </div>
+            {canAccessBilling ? (
+              <Button
+                onClick={() => openCustomerPortal()}
+                variant="destructive"
+                size="sm"
+                className="flex-shrink-0 self-start sm:self-center"
+              >
+                Manage Billing
+              </Button>
+            ) : (
+              <p className="text-xs text-muted-foreground flex-shrink-0 self-start sm:self-center">
+                Ask your Controller to update payment details.
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
