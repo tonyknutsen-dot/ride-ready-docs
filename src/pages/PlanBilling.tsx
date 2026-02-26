@@ -25,13 +25,12 @@ const PLAN_FEATURES = [
   { icon: Bell, label: "Inspection Scheduling & Reminders" },
 ];
 
-// Tier ride limits
-const TIER_LIMITS: Record<string, number> = {
-  starter: 5,
-  operator: 12,
-  professional: 25,
-  enterprise: Infinity,
-};
+import { RIDE_TIERS } from '@/config/stripePricing';
+
+// Derive tier limits from single source of truth
+const TIER_LIMITS: Record<string, number> = Object.fromEntries(
+  Object.entries(RIDE_TIERS).map(([key, val]) => [key, val.max])
+);
 
 export default function PlanBilling() {
   const { user } = useAuth();

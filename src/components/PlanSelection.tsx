@@ -126,11 +126,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
                     </div>
                   </div>
                   <div className="text-right">
-                    {key === 'enterprise' ? (
-                      <span className="font-semibold text-muted-foreground">Contact us</span>
-                    ) : (
-                      <span className="font-bold text-lg">£{tier.monthly}<span className="text-sm font-normal text-muted-foreground">/mo</span></span>
-                    )}
+                    <span className="font-bold text-lg">£{tier.monthly}<span className="text-sm font-normal text-muted-foreground">/mo</span></span>
                   </div>
                 </div>
               );

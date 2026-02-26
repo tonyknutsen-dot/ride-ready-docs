@@ -88,14 +88,10 @@ const Pricing = () => {
                     <div className="text-sm text-muted-foreground">{rides}</div>
                   </div>
                   <div className="text-center">
-                    {key === "enterprise" ? (
-                      <span className="text-muted-foreground font-medium">Contact us</span>
-                    ) : (
-                      <span className="text-2xl font-bold">
-                        £{tier.monthly}
-                        <span className="text-sm font-normal text-muted-foreground">/mo</span>
-                      </span>
-                    )}
+                    <span className="text-2xl font-bold">
+                      £{tier.monthly}
+                      <span className="text-sm font-normal text-muted-foreground">/mo</span>
+                    </span>
                   </div>
                   <div className="text-right text-sm text-muted-foreground">
                     Full system access

@@ -3,14 +3,7 @@ import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
 import { checkRateLimit, getClientIdentifier, createRateLimitResponse, getSecureHeaders, getClientIp, checkIpBlocked, createBlockedIpResponse } from "../_shared/rate-limit.ts";
-
-// Ride-based pricing tiers - single product, priced by ride count
-const TIER_PRICE_IDS: Record<string, string> = {
-  starter: "price_1T1TVLAG8uIRefcZ1nMRWRVV",      // £9.99/mo (1-5 rides)
-  operator: "price_1T1TVMAG8uIRefcZKyL8XcLz",     // £19.99/mo (6-12 rides)
-  professional: "price_1T1TVNAG8uIRefcZviQXUgrA",  // £34.99/mo (13-25 rides)
-  enterprise: "price_1T1TVOAG8uIRefcZKAcqeqNw",    // £49.99/mo (25+ rides)
-};
+import { TIER_PRICE_IDS, type RideTier } from "../_shared/stripe-pricing.ts";
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -18,7 +11,6 @@ const logStep = (step: string, details?: Record<string, unknown>) => {
 };
 
 serve(async (req) => {
-  // Handle CORS preflight
   const preflightResponse = handleCorsPreflightRequest(req);
   if (preflightResponse) return preflightResponse;
 
@@ -26,7 +18,6 @@ serve(async (req) => {
   const corsHeaders = getCorsHeaders(origin);
 
   try {
-    // Check if IP is blocked
     const clientIp = getClientIp(req);
     const blockResult = await checkIpBlocked(clientIp);
     if (blockResult.isBlocked) {
@@ -68,7 +59,6 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Rate limiting
     const rateLimitKey = getClientIdentifier(req, "create-checkout", user.id);
     const rateLimitResult = await checkRateLimit(rateLimitKey, "payment");
     if (!rateLimitResult.allowed) {
@@ -76,7 +66,6 @@ serve(async (req) => {
       return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
-    // Parse request body - now expects tier instead of plan/billingCycle
     const { tier, returnUrl } = await req.json();
     logStep("Request params", { tier, returnUrl });
 
@@ -84,8 +73,7 @@ serve(async (req) => {
       throw new Error("Missing required parameter: tier");
     }
 
-    // Determine price ID from tier
-    const priceId = TIER_PRICE_IDS[tier];
+    const priceId = TIER_PRICE_IDS[tier as RideTier];
     if (!priceId) {
       throw new Error(`Invalid tier: ${tier}. Valid tiers: starter, operator, professional, enterprise`);
     }
@@ -93,7 +81,6 @@ serve(async (req) => {
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2023-10-16" });
 
-    // Check if customer exists
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     let customerId: string | undefined;
     if (customers.data.length > 0) {
@@ -101,12 +88,10 @@ serve(async (req) => {
       logStep("Existing customer found", { customerId });
     }
 
-    // Build line items - single tier price
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
       { price: priceId, quantity: 1 }
     ];
 
-    // Use returnUrl from request body, fallback to origin header
     const baseUrl = returnUrl || req.headers.get("origin") || req.headers.get("referer")?.split('/').slice(0, 3).join('/') || "https://ride-ready-docs.lovable.app";
     logStep("Using base URL for redirects", { baseUrl });
     
