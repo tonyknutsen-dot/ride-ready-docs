@@ -11,7 +11,7 @@ export const RIDE_TIERS = {
   starter: { min: 1, max: 5, monthly: 9.99, label: 'Starter' },
   operator: { min: 6, max: 12, monthly: 19.99, label: 'Operator' },
   professional: { min: 13, max: 25, monthly: 34.99, label: 'Professional' },
-  enterprise: { min: 26, max: Infinity, monthly: 49.99, label: 'Enterprise' },
+  enterprise: { min: 26, max: Infinity, monthly: 44.99, label: 'Enterprise' },
 } as const;
 
 export type RideTier = keyof typeof RIDE_TIERS;
