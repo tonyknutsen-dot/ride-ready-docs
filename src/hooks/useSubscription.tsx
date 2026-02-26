@@ -4,73 +4,38 @@ import { useTester } from '@/contexts/TesterContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { supabase } from '@/integrations/supabase/client';
 
-// Ride-based pricing tiers
-export const RIDE_TIERS = {
-  starter: { min: 1, max: 5, monthly: 9.99, label: 'Starter' },
-  operator: { min: 6, max: 12, monthly: 19.99, label: 'Operator' },
-  professional: { min: 13, max: 25, monthly: 34.99, label: 'Professional' },
-  enterprise: { min: 26, max: Infinity, monthly: 49.99, label: 'Enterprise' },
-} as const;
+// Re-export everything from the centralised config so existing imports keep working
+export {
+  RIDE_TIERS,
+  STRIPE_PRICE_IDS,
+  STRIPE_PRODUCT_IDS,
+  getRideTier,
+  getTierPrice,
+  getTierLabel,
+  getTierForRideCount,
+} from '@/config/stripePricing';
+export type { RideTier } from '@/config/stripePricing';
 
-export type RideTier = keyof typeof RIDE_TIERS;
-
-// Legacy RIDE_LIMITS export for backward compat
-export const RIDE_LIMITS = {
-  trial: 5,
-  active: 999,
-  tester: 999,
-} as const;
-
-// Stripe price IDs for ride-based tiers
-export const STRIPE_PRICE_IDS = {
-  starter_monthly: "price_1T1TVLAG8uIRefcZ1nMRWRVV",      // Starter £9.99/mo (1-5 rides)
-  operator_monthly: "price_1T1TVMAG8uIRefcZKyL8XcLz",     // Operator £19.99/mo (6-12 rides)
-  professional_monthly: "price_1T1TVNAG8uIRefcZviQXUgrA",  // Professional £34.99/mo (13-25 rides)
-  enterprise_monthly: "price_1T1TVOAG8uIRefcZKAcqeqNw",    // Enterprise £49.99/mo (25+ rides)
-} as const;
-
-export const STRIPE_PRODUCT_IDS = {
-  starter: "prod_TzSQ7dF4G0dKJD",
-  operator: "prod_TzSQDJ4tk7rqMD",
-  professional: "prod_TzSQRtud9y5adH",
-  enterprise: "prod_TzSQUajo9gq5iY",
-} as const;
-
-export const getRideTier = (billableRideCount: number): RideTier => {
-  if (billableRideCount <= 5) return 'starter';
-  if (billableRideCount <= 12) return 'operator';
-  if (billableRideCount <= 25) return 'professional';
-  return 'enterprise';
-};
-
-export const getTierPrice = (tier: RideTier): number => {
-  return RIDE_TIERS[tier].monthly;
-};
-
-export const getTierLabel = (tier: RideTier): string => {
-  return RIDE_TIERS[tier].label;
-};
-
-export const getTierForRideCount = (count: number) => {
-  const tier = getRideTier(count);
-  return {
-    tier,
-    ...RIDE_TIERS[tier],
-  };
-};
+import {
+  RIDE_TIERS,
+  getRideTier,
+  getTierLabel,
+  getTierPrice,
+  type RideTier,
+} from '@/config/stripePricing';
 
 export interface SubscriptionData {
   trialStartedAt: string | null;
   trialEndsAt: string | null;
   subscriptionStatus: 'trial' | 'active' | 'expired' | 'tester';
-  subscriptionPlan: string | null; // No longer used for feature gating
-  billingCycle: 'monthly' | 'yearly' | null;
+  subscriptionPlan: string | null;
+  billingCycle: 'monthly' | null;
   daysRemaining: number;
   isTrialActive: boolean;
   isExpired: boolean;
-  rideCount: number; // Total equipment count
-  billableRideCount: number; // Only rides/inflatables that count toward pricing
-  freeAssetCount: number; // Stalls, generators etc
+  rideCount: number;
+  billableRideCount: number;
+  freeAssetCount: number;
   rideLimit: number;
   canAddRide: boolean;
   extraItemsCount: number;
@@ -174,10 +139,10 @@ export const useSubscription = () => {
           return;
         }
 
-        // Map old basic/advanced status to new 'active' status
+        // Map old basic/advanced status and past_due to appropriate states
         let status = data.subscription_status as string;
         let mappedStatus: SubscriptionData['subscriptionStatus'];
-        if (status === 'basic' || status === 'advanced' || status === 'active') {
+        if (status === 'basic' || status === 'advanced' || status === 'active' || status === 'past_due') {
           mappedStatus = 'active';
         } else if (status === 'trial') {
           mappedStatus = daysRemaining > 0 ? 'trial' : 'expired';
@@ -192,7 +157,7 @@ export const useSubscription = () => {
           trialEndsAt: data.trial_ends_at,
           subscriptionStatus: mappedStatus,
           subscriptionPlan: data.subscription_plan,
-          billingCycle: data.billing_cycle as SubscriptionData['billingCycle'],
+          billingCycle: data.billing_cycle === 'monthly' ? 'monthly' : null,
           daysRemaining,
           isTrialActive: mappedStatus === 'trial' && daysRemaining > 0,
           isExpired: mappedStatus === 'expired',

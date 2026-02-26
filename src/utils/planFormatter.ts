@@ -8,6 +8,8 @@ export const formatPlanName = (plan: string | null | undefined): string => {
     case 'basic':
     case 'advanced':
       return 'Ride Ready Docs';
+    case 'past_due':
+      return 'Payment Issue';
     case 'expired':
       return 'Expired';
     default:
@@ -23,6 +25,8 @@ export const formatPlanWithDescription = (plan: string | null | undefined): stri
     case 'basic':
     case 'advanced':
       return 'Active Plan';
+    case 'past_due':
+      return 'Payment Issue';
     case 'expired':
       return 'Expired';
     default:

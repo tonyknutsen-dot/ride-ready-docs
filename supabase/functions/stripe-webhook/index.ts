@@ -2,23 +2,7 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.4";
 import { getCorsHeaders, handleCorsPreflightRequest } from "../_shared/cors.ts";
-
-// Product ID to tier mapping (ride-based pricing)
-const PRODUCT_TO_TIER: Record<string, string> = {
-  "prod_TzSQ7dF4G0dKJD": "starter",
-  "prod_TzSQDJ4tk7rqMD": "operator",
-  "prod_TzSQRtud9y5adH": "professional",
-  "prod_TzSQUajo9gq5iY": "enterprise",
-  // Legacy products
-  "prod_TlWvelEK6GafPH": "starter",
-  "prod_TlWvGM8f7f2mRa": "starter",
-  "prod_TlWvaItiHUq1PZ": "operator",
-  "prod_TlWv8lD3Q4BCIX": "operator",
-  "prod_SXfMmvFhJCpgPz": "starter",
-  "prod_SXfOT7Wm2qkLzI": "starter",
-  "prod_SXfOIqB5fXfmOi": "operator",
-  "prod_SXfPx1nMO9nxbA": "operator",
-};
+import { PRODUCT_TO_TIER } from "../_shared/stripe-pricing.ts";
 
 const logStep = (step: string, details?: Record<string, unknown>) => {
   const detailsStr = details ? ` - ${JSON.stringify(details)}` : '';
@@ -163,7 +147,23 @@ serve(async (req) => {
 
       case "invoice.payment_failed": {
         const invoice = event.data.object as Stripe.Invoice;
-        logStep("Invoice payment failed", { invoiceId: invoice.id });
+        logStep("Invoice payment failed", { invoiceId: invoice.id, attempt: invoice.attempt_count });
+
+        // Mark profile so the app can show a payment-failed warning
+        if (invoice.subscription) {
+          const { error } = await supabaseAdmin
+            .from("profiles")
+            .update({
+              subscription_status: 'past_due',
+            })
+            .eq("stripe_subscription_id", invoice.subscription);
+
+          if (error) {
+            logStep("Error updating profile to past_due", { error: error.message });
+          } else {
+            logStep("Profile marked as past_due");
+          }
+        }
         break;
       }
 
