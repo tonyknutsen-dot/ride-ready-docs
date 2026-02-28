@@ -16,8 +16,9 @@ import { useToast } from "@/hooks/use-toast";
 import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
 import { useOverdueCompliance } from "@/hooks/useOverdueCompliance";
 
-// Routes where the mobile nav should NOT appear (public pages - landing/marketing only)
+// Routes where the mobile nav should NOT appear (public pages + full-screen workflows)
 const PUBLIC_ROUTES = ['/', '/auth', '/how-it-works', '/privacy', '/terms', '/security'];
+const HIDDEN_ROUTE_PATTERNS = ['/execute'];
 
 export default function MobileBottomNav() {
   const nav = useNavigate();
@@ -44,7 +45,7 @@ export default function MobileBottomNav() {
   const overdueCount = useOverdueCompliance();
 
   // Don't show on public pages or if not logged in
-  if (!user || PUBLIC_ROUTES.includes(loc.pathname)) return null;
+  if (!user || PUBLIC_ROUTES.includes(loc.pathname) || HIDDEN_ROUTE_PATTERNS.some(p => loc.pathname.includes(p))) return null;
 
   const go = (path: string) => {
     nav(path);
