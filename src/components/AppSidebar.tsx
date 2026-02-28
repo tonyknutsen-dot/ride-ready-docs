@@ -139,7 +139,8 @@ export function AppSidebar() {
   const filteredToolsNav = filterNavItems(toolsNavItems);
   const filteredAccountNav = filterNavItems(accountNavItems);
 
-  const NavItem = ({ item }: { item: NavItemDef }) => {
+  // Primary nav item — full size for Main/Tools
+  const NavItem = ({ item, secondary = false }: { item: NavItemDef; secondary?: boolean }) => {
     const active = isActive(item.url);
     const Icon = item.icon;
     const showNotificationBadge = item.isNotification && unreadCount > 0;
@@ -152,14 +153,18 @@ export function AppSidebar() {
         <SidebarMenuButton asChild isActive={active}>
           <Link
             to={item.url}
-            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm ${
+            className={`flex items-center gap-3 px-3 rounded-lg transition-all ${
+              secondary ? 'py-1.5 text-[13px]' : 'py-2 text-sm'
+            } ${
               active
                 ? 'bg-primary text-primary-foreground font-medium'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                : secondary
+                  ? 'text-muted-foreground/70 hover:text-foreground hover:bg-muted'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             }`}
           >
             <span className="relative flex-shrink-0">
-              <Icon className="h-[18px] w-[18px]" />
+              <Icon className={secondary ? 'h-4 w-4' : 'h-[18px] w-[18px]'} />
               {showBadge && (
                 <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
                   {badgeCount > 9 ? '9+' : badgeCount}
@@ -173,9 +178,13 @@ export function AppSidebar() {
     );
   };
 
-  const SectionLabel = ({ children }: { children: React.ReactNode }) =>
+  const SectionLabel = ({ children, secondary = false }: { children: React.ReactNode; secondary?: boolean }) =>
     !collapsed ? (
-      <SidebarGroupLabel className="text-[9px] uppercase tracking-[0.08em] font-medium text-muted-foreground/40 px-3 mb-0.5 mt-0">
+      <SidebarGroupLabel className={`uppercase tracking-[0.08em] font-medium px-3 mb-0.5 mt-0 ${
+        secondary
+          ? 'text-[8px] text-muted-foreground/30'
+          : 'text-[9px] text-muted-foreground/40'
+      }`}>
         {children}
       </SidebarGroupLabel>
     ) : null;
@@ -198,8 +207,8 @@ export function AppSidebar() {
           </Link>
         </SidebarHeader>
 
-        {/* Navigation */}
-        <SidebarContent className="px-2 py-0.5 overflow-y-auto">
+        {/* Primary Navigation: Main + Tools */}
+        <SidebarContent className="px-2 py-0.5 overflow-y-auto flex-1">
           {/* Main */}
           <SidebarGroup className="py-0">
             <SectionLabel>Main</SectionLabel>
@@ -225,25 +234,28 @@ export function AppSidebar() {
               </SidebarGroupContent>
             </SidebarGroup>
           )}
+        </SidebarContent>
 
+        {/* Secondary Navigation: Account + Admin — visually separated */}
+        <div className="px-2 pb-1 border-t border-border/20 pt-2">
           {/* Account */}
-          <SidebarGroup className="py-0 mt-3">
-            <SectionLabel>Account</SectionLabel>
+          <SidebarGroup className="py-0">
+            <SectionLabel secondary>Account</SectionLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="gap-0.5">
+              <SidebarMenu className="gap-0">
                 {filteredAccountNav.map(item => (
-                  <NavItem key={item.url} item={item} />
+                  <NavItem key={item.url} item={item} secondary />
                 ))}
                 {canManageStaff && (
-                  <NavItem item={{ title: 'Staff', url: '/staff', icon: Users }} />
+                  <NavItem item={{ title: 'Staff', url: '/staff', icon: Users }} secondary />
                 )}
-                <NavItem item={{ title: 'Install App', url: '/install', icon: Download }} />
+                <NavItem item={{ title: 'Install App', url: '/install', icon: Download }} secondary />
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => setFeatureDialogOpen(true)}
-                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
+                    className="flex items-center gap-3 px-3 py-1.5 rounded-lg text-[13px] text-muted-foreground/70 hover:text-foreground hover:bg-muted transition-all cursor-pointer"
                   >
-                    <Lightbulb className="h-[18px] w-[18px] flex-shrink-0" />
+                    <Lightbulb className="h-4 w-4 flex-shrink-0" />
                     {!collapsed && <span>Request Feature</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -253,21 +265,21 @@ export function AppSidebar() {
 
           {/* Admin */}
           {isAdmin && (
-            <SidebarGroup className="py-0 mt-3">
-              <SectionLabel>Admin</SectionLabel>
+            <SidebarGroup className="py-0 mt-1.5">
+              <SectionLabel secondary>Admin</SectionLabel>
               <SidebarGroupContent>
-                <SidebarMenu className="gap-0.5">
+                <SidebarMenu className="gap-0">
                   <SidebarMenuItem>
                     <SidebarMenuButton asChild isActive={location.pathname.startsWith('/admin')}>
                       <Link
                         to="/admin"
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm ${
+                        className={`flex items-center gap-3 px-3 py-1.5 rounded-lg transition-all text-[13px] ${
                           location.pathname.startsWith('/admin')
                             ? 'bg-primary text-primary-foreground font-medium'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                            : 'text-muted-foreground/70 hover:text-foreground hover:bg-muted'
                         }`}
                       >
-                        <Shield className="h-[18px] w-[18px] flex-shrink-0" />
+                        <Shield className="h-4 w-4 flex-shrink-0" />
                         {!collapsed && <span>Admin Dashboard</span>}
                       </Link>
                     </SidebarMenuButton>
@@ -276,14 +288,14 @@ export function AppSidebar() {
               </SidebarGroupContent>
             </SidebarGroup>
           )}
-        </SidebarContent>
+        </div>
 
-        {/* Footer */}
-        <SidebarFooter className="px-2 py-1.5 border-t border-border/30">
+        {/* Footer utility strip */}
+        <SidebarFooter className="px-2 py-1.5 border-t border-border/20 bg-muted/20">
           <SidebarMenu className="gap-0">
-            {/* Sync status — integrated as first footer row */}
+            {/* Sync status */}
             <SidebarMenuItem>
-              <div className="px-3 py-1">
+              <div className="px-1 py-0.5">
                 <OfflineSyncIndicator compact={collapsed} />
               </div>
             </SidebarMenuItem>
@@ -292,9 +304,9 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={() => setContactDialogOpen(true)}
-                className="flex items-center gap-3 px-3 py-1.5 rounded-md text-xs text-muted-foreground/60 hover:text-foreground hover:bg-muted transition-all cursor-pointer"
+                className="flex items-center gap-3 px-3 py-1 rounded-md text-xs text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-all cursor-pointer"
               >
-                <MessageCircle className="h-4 w-4 flex-shrink-0" />
+                <MessageCircle className="h-3.5 w-3.5 flex-shrink-0" />
                 {!collapsed && <span>Contact Support</span>}
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -303,9 +315,9 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={handleSignOut}
-                className="flex items-center gap-3 px-3 py-1.5 rounded-md text-xs text-destructive/60 hover:text-destructive hover:bg-destructive/10 transition-all cursor-pointer"
+                className="flex items-center gap-3 px-3 py-1 rounded-md text-xs text-destructive/50 hover:text-destructive hover:bg-destructive/10 transition-all cursor-pointer"
               >
-                <LogOut className="h-4 w-4 flex-shrink-0" />
+                <LogOut className="h-3.5 w-3.5 flex-shrink-0" />
                 {!collapsed && <span>Sign Out</span>}
               </SidebarMenuButton>
             </SidebarMenuItem>
@@ -314,13 +326,13 @@ export function AppSidebar() {
             <SidebarMenuItem>
               <SidebarMenuButton
                 onClick={toggleSidebar}
-                className="flex items-center gap-3 px-3 py-1.5 rounded-md text-xs text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted transition-all cursor-pointer"
+                className="flex items-center gap-3 px-3 py-1 rounded-md text-xs text-muted-foreground/35 hover:text-muted-foreground hover:bg-muted transition-all cursor-pointer"
               >
                 {collapsed ? (
-                  <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                  <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" />
                 ) : (
                   <>
-                    <ChevronLeft className="h-4 w-4 flex-shrink-0" />
+                    <ChevronLeft className="h-3.5 w-3.5 flex-shrink-0" />
                     <span>Collapse</span>
                   </>
                 )}
