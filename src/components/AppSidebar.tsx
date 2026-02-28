@@ -9,8 +9,6 @@ import {
   CheckSquare,
   Send,
   CreditCard,
-  BarChart3,
-  Settings,
   HelpCircle,
   LogOut,
   Shield,
@@ -36,8 +34,6 @@ import {
   SidebarFooter,
   useSidebar,
 } from '@/components/ui/sidebar';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAdmin } from '@/contexts/AdminContext';
 import { useStaff } from '@/contexts/StaffContext';
@@ -49,22 +45,32 @@ import { useUnreadNotifications } from '@/hooks/useUnreadNotifications';
 import { useOverdueCompliance } from '@/hooks/useOverdueCompliance';
 import appLogo from '@/assets/app-logo.jpg';
 
-const mainNavItems = [
+type FeatureKey = 'calendar' | 'documents' | 'checks' | 'maintenance' | 'risk_assessments' | 'send_documents';
+
+interface NavItemDef {
+  title: string;
+  url: string;
+  icon: any;
+  feature?: FeatureKey;
+  ownerOnly?: boolean;
+  isNotification?: boolean;
+}
+
+const mainNavItems: NavItemDef[] = [
   { title: 'Overview', url: '/overview', icon: Home },
   { title: 'Rides', url: '/rides', icon: FolderOpen },
-  { title: 'Calendar', url: '/calendar', icon: CalendarIcon, feature: 'calendar' as const },
-  { title: 'Documents', url: '/documents', icon: FileText, feature: 'documents' as const },
+  { title: 'Calendar', url: '/calendar', icon: CalendarIcon, feature: 'calendar' },
+  { title: 'Documents', url: '/documents', icon: FileText, feature: 'documents' },
 ];
 
-const featureNavItems = [
-  { title: 'Checks', url: '/checks', icon: CheckSquare, feature: 'checks' as const },
-  { title: 'Maintenance', url: '/maintenance', icon: Wrench, feature: 'maintenance' as const },
-  { title: 'Reports', url: '/reports', icon: BarChart3 },
-  { title: 'Risk Assessments', url: '/risk-assessments', icon: ShieldCheck, feature: 'risk_assessments' as const },
-  { title: 'Send Documents', url: '/send-documents', icon: Send, feature: 'send_documents' as const },
+const toolsNavItems: NavItemDef[] = [
+  { title: 'Checks', url: '/checks', icon: CheckSquare, feature: 'checks' },
+  { title: 'Maintenance', url: '/maintenance', icon: Wrench, feature: 'maintenance' },
+  { title: 'Risk Assessments', url: '/risk-assessments', icon: ShieldCheck, feature: 'risk_assessments' },
+  { title: 'Send Documents', url: '/send-documents', icon: Send, feature: 'send_documents' },
 ];
 
-const accountNavItems = [
+const accountNavItems: NavItemDef[] = [
   { title: 'Notifications', url: '/notifications', icon: Bell, ownerOnly: true, isNotification: true },
   { title: 'Plan & Billing', url: '/billing', icon: CreditCard, ownerOnly: true },
   { title: 'Help & Support', url: '/help', icon: HelpCircle },
@@ -74,17 +80,15 @@ export function AppSidebar() {
   const location = useLocation();
   const { signOut } = useAuth();
   const { isAdmin } = useAdmin();
-  const { 
-    isStaff, 
-    isOwner, 
+  const {
+    isStaff,
+    isOwner,
     canAccessCalendar,
     canAccessChecks,
     canAccessMaintenance,
     canAccessDocuments,
     canAccessRiskAssessments,
     canAccessSendDocuments,
-    canAccessBilling,
-    canAccessSettings,
     canManageStaff,
   } = useStaff();
   const { toast } = useToast();
@@ -93,15 +97,12 @@ export function AppSidebar() {
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
   const unreadCount = useUnreadNotifications();
-
   const overdueCount = useOverdueCompliance();
 
-  // Feature permission check helper
-  const hasFeatureAccess = (feature?: 'calendar' | 'documents' | 'checks' | 'maintenance' | 'risk_assessments' | 'send_documents') => {
+  const hasFeatureAccess = (feature?: FeatureKey) => {
     if (!feature) return true;
     if (isOwner && !isStaff) return true;
-    
-    const featureMap = {
+    const featureMap: Record<FeatureKey, boolean> = {
       calendar: canAccessCalendar,
       documents: canAccessDocuments,
       checks: canAccessChecks,
@@ -115,11 +116,7 @@ export function AppSidebar() {
   const handleSignOut = async () => {
     const { error } = await signOut();
     if (error && !error.message?.includes('session')) {
-      toast({
-        title: 'Error signing out',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Error signing out', description: error.message, variant: 'destructive' });
     } else {
       toast({ title: 'Signed out successfully' });
       window.location.href = '/';
@@ -127,28 +124,22 @@ export function AppSidebar() {
   };
 
   const isActive = (path: string) => {
-    if (path === '/rides') {
-      return location.pathname === '/rides' || location.pathname.startsWith('/rides/');
-    }
+    if (path === '/rides') return location.pathname === '/rides' || location.pathname.startsWith('/rides/');
     return location.pathname === path;
   };
 
-  // Filter nav items based on permissions
-  type NavItem = { title: string; url: string; icon: any; feature?: 'calendar' | 'documents' | 'checks' | 'maintenance' | 'risk_assessments' | 'send_documents'; ownerOnly?: boolean; isNotification?: boolean };
-  
-  const filterNavItems = (items: NavItem[]) => {
-    return items.filter(item => {
+  const filterNavItems = (items: NavItemDef[]) =>
+    items.filter(item => {
       if (item.ownerOnly && isStaff) return false;
       if (item.feature && !hasFeatureAccess(item.feature)) return false;
       return true;
     });
-  };
 
-  const filteredMainNav = filterNavItems(mainNavItems as NavItem[]);
-  const filteredFeatureNav = filterNavItems(featureNavItems as NavItem[]);
-  const filteredAccountNav = filterNavItems(accountNavItems as NavItem[]);
+  const filteredMainNav = filterNavItems(mainNavItems);
+  const filteredToolsNav = filterNavItems(toolsNavItems);
+  const filteredAccountNav = filterNavItems(accountNavItems);
 
-  const NavItem = ({ item }: { item: NavItem }) => {
+  const NavItem = ({ item }: { item: NavItemDef }) => {
     const active = isActive(item.url);
     const Icon = item.icon;
     const showNotificationBadge = item.isNotification && unreadCount > 0;
@@ -161,30 +152,33 @@ export function AppSidebar() {
         <SidebarMenuButton asChild isActive={active}>
           <Link
             to={item.url}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
+            className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm ${
               active
                 ? 'bg-primary text-primary-foreground font-medium'
                 : 'text-muted-foreground hover:text-foreground hover:bg-muted'
             }`}
           >
             <span className="relative flex-shrink-0">
-              <Icon className="h-5 w-5" />
+              <Icon className="h-[18px] w-[18px]" />
               {showBadge && (
-                <span className={`absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full text-[10px] font-bold px-1 ${
-                  showOverdueBadge && !showNotificationBadge ? 'bg-destructive text-destructive-foreground' : 'bg-destructive text-destructive-foreground'
-                }`}>
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold px-1">
                   {badgeCount > 9 ? '9+' : badgeCount}
                 </span>
               )}
             </span>
-            {!collapsed && (
-              <span className="flex-1">{item.title}</span>
-            )}
+            {!collapsed && <span className="flex-1">{item.title}</span>}
           </Link>
         </SidebarMenuButton>
       </SidebarMenuItem>
     );
   };
+
+  const SectionLabel = ({ children }: { children: React.ReactNode }) =>
+    !collapsed ? (
+      <SidebarGroupLabel className="text-[10px] uppercase tracking-widest font-semibold text-muted-foreground/60 px-3 mb-1">
+        {children}
+      </SidebarGroupLabel>
+    ) : null;
 
   return (
     <>
@@ -192,7 +186,8 @@ export function AppSidebar() {
         collapsible="icon"
         className="border-r border-border/40 bg-background hidden md:flex"
       >
-        <SidebarHeader className="p-4">
+        {/* Header */}
+        <SidebarHeader className="px-4 py-3">
           <Link to="/overview" className="flex items-center gap-3 group">
             <img src={appLogo} alt="Ride Ready Docs" className="h-8 w-8 rounded-full" />
             {!collapsed && (
@@ -203,36 +198,27 @@ export function AppSidebar() {
           </Link>
         </SidebarHeader>
 
-        <SidebarContent className="px-3">
-          {/* Main Navigation */}
-          <SidebarGroup>
-            {!collapsed && (
-              <SidebarGroupLabel className="text-xs font-medium text-muted-foreground mb-2">
-                Navigation
-              </SidebarGroupLabel>
-            )}
+        {/* Navigation */}
+        <SidebarContent className="px-2 py-1 overflow-y-auto">
+          {/* Main */}
+          <SidebarGroup className="py-0">
+            <SectionLabel>Main</SectionLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {filteredMainNav.map((item) => (
+              <SidebarMenu className="gap-0.5">
+                {filteredMainNav.map(item => (
                   <NavItem key={item.url} item={item} />
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
 
-          <Separator className="my-3" />
-
-          {/* Features */}
-          {filteredFeatureNav.length > 0 && (
-            <SidebarGroup>
-              {!collapsed && (
-                <SidebarGroupLabel className="text-xs font-medium text-muted-foreground mb-2">
-                  Features
-                </SidebarGroupLabel>
-              )}
+          {/* Tools */}
+          {filteredToolsNav.length > 0 && (
+            <SidebarGroup className="py-0 mt-4">
+              <SectionLabel>Tools</SectionLabel>
               <SidebarGroupContent>
-                <SidebarMenu>
-                  {filteredFeatureNav.map((item) => (
+                <SidebarMenu className="gap-0.5">
+                  {filteredToolsNav.map(item => (
                     <NavItem key={item.url} item={item} />
                   ))}
                 </SidebarMenu>
@@ -240,59 +226,24 @@ export function AppSidebar() {
             </SidebarGroup>
           )}
 
-          <Separator className="my-3" />
-
           {/* Account */}
-          <SidebarGroup>
-            {!collapsed && (
-              <SidebarGroupLabel className="text-xs font-medium text-muted-foreground mb-2">
-                Account
-              </SidebarGroupLabel>
-            )}
+          <SidebarGroup className="py-0 mt-4">
+            <SectionLabel>Account</SectionLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                {filteredAccountNav.map((item) => (
+              <SidebarMenu className="gap-0.5">
+                {filteredAccountNav.map(item => (
                   <NavItem key={item.url} item={item} />
                 ))}
-                {/* Staff Management - owners only */}
                 {canManageStaff && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton asChild isActive={location.pathname === '/staff'}>
-                      <Link
-                        to="/staff"
-                        className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                          location.pathname === '/staff'
-                            ? 'bg-primary text-primary-foreground font-medium'
-                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                        }`}
-                      >
-                        <Users className="h-5 w-5 flex-shrink-0" />
-                        {!collapsed && <span>Staff</span>}
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  <NavItem item={{ title: 'Staff', url: '/staff', icon: Users }} />
                 )}
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild isActive={location.pathname === '/install'}>
-                    <Link
-                      to="/install"
-                      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                        location.pathname === '/install'
-                          ? 'bg-primary text-primary-foreground font-medium'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      <Download className="h-5 w-5 flex-shrink-0" />
-                      {!collapsed && <span>Install App</span>}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <NavItem item={{ title: 'Install App', url: '/install', icon: Download }} />
                 <SidebarMenuItem>
                   <SidebarMenuButton
                     onClick={() => setFeatureDialogOpen(true)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
+                    className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
                   >
-                    <Lightbulb className="h-5 w-5 flex-shrink-0" />
+                    <Lightbulb className="h-[18px] w-[18px] flex-shrink-0" />
                     {!collapsed && <span>Request Feature</span>}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -300,86 +251,82 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          {/* Admin Section */}
+          {/* Admin */}
           {isAdmin && (
-            <>
-              <Separator className="my-3" />
-              <SidebarGroup>
-                {!collapsed && (
-                  <SidebarGroupLabel className="text-xs font-medium text-muted-foreground mb-2">
-                    Admin
-                  </SidebarGroupLabel>
-                )}
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    <SidebarMenuItem>
-                      <SidebarMenuButton asChild isActive={location.pathname.startsWith('/admin')}>
-                        <Link
-                          to="/admin"
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all ${
-                            location.pathname.startsWith('/admin')
-                              ? 'bg-primary text-primary-foreground font-medium'
-                              : 'text-primary hover:bg-primary/10'
-                          }`}
-                        >
-                          <Shield className="h-5 w-5 flex-shrink-0" />
-                          {!collapsed && <span>Admin Dashboard</span>}
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            </>
+            <SidebarGroup className="py-0 mt-4">
+              <SectionLabel>Admin</SectionLabel>
+              <SidebarGroupContent>
+                <SidebarMenu className="gap-0.5">
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild isActive={location.pathname.startsWith('/admin')}>
+                      <Link
+                        to="/admin"
+                        className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all text-sm ${
+                          location.pathname.startsWith('/admin')
+                            ? 'bg-primary text-primary-foreground font-medium'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                        }`}
+                      >
+                        <Shield className="h-[18px] w-[18px] flex-shrink-0" />
+                        {!collapsed && <span>Admin Dashboard</span>}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
           )}
         </SidebarContent>
 
-        <SidebarFooter className="p-3 space-y-2">
-          {/* Offline Sync Status */}
+        {/* Footer */}
+        <SidebarFooter className="px-2 py-2 space-y-0.5">
+          {/* Sync status — quiet inline */}
           <OfflineSyncIndicator compact={collapsed} />
-          
-          {/* Contact Support */}
-          <Button
-            variant="outline"
-            size="sm"
-            className={`w-full ${collapsed ? 'px-2' : 'justify-start gap-2'}`}
-            onClick={() => setContactDialogOpen(true)}
-          >
-            <MessageCircle className="h-4 w-4" />
-            {!collapsed && <span>Contact Support</span>}
-          </Button>
 
-          {/* Sign Out */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`w-full text-destructive hover:text-destructive hover:bg-destructive/10 ${collapsed ? 'px-2' : 'justify-start gap-2'}`}
-            onClick={handleSignOut}
-          >
-            <LogOut className="h-4 w-4" />
-            {!collapsed && <span>Sign Out</span>}
-          </Button>
+          {/* Contact Support — ghost nav item */}
+          <SidebarMenu className="gap-0.5">
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setContactDialogOpen(true)}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer"
+              >
+                <MessageCircle className="h-[18px] w-[18px] flex-shrink-0" />
+                {!collapsed && <span>Contact Support</span>}
+              </SidebarMenuButton>
+            </SidebarMenuItem>
 
-          {/* Collapse Toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`w-full text-muted-foreground ${collapsed ? 'px-2' : 'justify-start gap-2'}`}
-            onClick={toggleSidebar}
-          >
-            {collapsed ? (
-              <ChevronRight className="h-4 w-4" />
-            ) : (
-              <>
-                <ChevronLeft className="h-4 w-4" />
-                <span>Collapse</span>
-              </>
-            )}
-          </Button>
+            {/* Sign Out */}
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={handleSignOut}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-all cursor-pointer"
+              >
+                <LogOut className="h-[18px] w-[18px] flex-shrink-0" />
+                {!collapsed && <span>Sign Out</span>}
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+
+            {/* Collapse */}
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={toggleSidebar}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted transition-all cursor-pointer"
+              >
+                {collapsed ? (
+                  <ChevronRight className="h-[18px] w-[18px] flex-shrink-0" />
+                ) : (
+                  <>
+                    <ChevronLeft className="h-[18px] w-[18px] flex-shrink-0" />
+                    <span>Collapse</span>
+                  </>
+                )}
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
 
-      {/* Dialogs - mounted outside sidebar */}
+      {/* Dialogs */}
       {featureDialogOpen && (
         <RequestFeatureDialog
           open={featureDialogOpen}

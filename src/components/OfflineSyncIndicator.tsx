@@ -21,9 +21,9 @@ export function OfflineSyncIndicator({ compact = false }: OfflineSyncIndicatorPr
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <div className={`flex items-center gap-1.5 text-success px-2 py-1 rounded-md bg-success/10 ${compact ? 'justify-center' : ''}`}>
-              <CheckCircle2 className="h-4 w-4" />
-              {!compact && <span className="text-xs font-medium">Synced</span>}
+            <div className={`flex items-center gap-2 px-3 py-1.5 ${compact ? 'justify-center' : ''}`}>
+              <span className="h-2 w-2 rounded-full bg-emerald-500/70 flex-shrink-0" />
+              {!compact && <span className="text-[11px] text-muted-foreground/60">Synced</span>}
             </div>
           </TooltipTrigger>
           <TooltipContent>
