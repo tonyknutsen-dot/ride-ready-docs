@@ -82,10 +82,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [notes, setNotes] = useState<{ [key: string]: string }>({});
   const [inspectorName, setInspectorName] = useState('');
   const [inspectorNameError, setInspectorNameError] = useState(false);
+  const [locationError, setLocationError] = useState(false);
   const [wizardStep, setWizardStep] = useState<'details' | 'checklist'>(startImmediately ? 'details' : 'details');
   const [inspectorNotes, setInspectorNotes] = useState('');
   const [location, setLocation] = useState('');
-  const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [showTemplateBuilder, setShowTemplateBuilder] = useState(false);
   const [defectRefreshKey, setDefectRefreshKey] = useState(0);
@@ -464,6 +464,12 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       pdf.text(inspectorName || '-', leftCol + labelWidth, currentY);
       currentY += 6;
 
+      pdf.setFont('helvetica', 'bold');
+      pdf.text('Location:', leftCol, currentY);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text(location || '-', leftCol + labelWidth, currentY);
+      currentY += 6;
+
       // Calculate pass/fail summary
       const totalItems = activeTemplate.daily_check_template_items.length;
       const passedItems = Object.values(itemResults).filter(r => r === 'pass').length;
@@ -707,6 +713,17 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       toast({
         title: "Name required",
         description: "Please enter the name of the person performing this check",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!location.trim()) {
+      setWizardStep('details');
+      setLocationError(true);
+      toast({
+        title: "Location required",
+        description: "Please enter the location before completing this check",
         variant: "destructive"
       });
       return;
@@ -1186,12 +1203,31 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                   <p className="text-[11px] font-semibold text-red-600">Name is required to start this check.</p>
                 )}
               </div>
+
+              <div className="space-y-1">
+                <Label htmlFor="checkLocation" className="text-[11px] font-bold text-slate-700">Location <span className="text-red-500">*</span></Label>
+                <Input
+                  id="checkLocation"
+                  value={location}
+                  onChange={(e) => { setLocation(e.target.value); setLocationError(false); }}
+                  placeholder="e.g. Main fairground, Gate A"
+                  className={`h-11 text-sm ${locationError ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-300'}`}
+                />
+                {locationError && (
+                  <p className="text-[11px] font-semibold text-red-600">Location is required to start this check.</p>
+                )}
+              </div>
               <button
                 type="button"
                 className="t-btn-primary w-full rounded-md py-3 text-[13px] mt-1"
                 onClick={() => {
-                  if (!inspectorName.trim()) {
-                    setInspectorNameError(true);
+                  const hasName = !!inspectorName.trim();
+                  const hasLocation = !!location.trim();
+
+                  setInspectorNameError(!hasName);
+                  setLocationError(!hasLocation);
+
+                  if (!hasName || !hasLocation) {
                     return;
                   }
                   setWizardStep('checklist');
