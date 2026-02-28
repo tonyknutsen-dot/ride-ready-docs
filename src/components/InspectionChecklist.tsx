@@ -49,7 +49,7 @@ import { getCachedTemplatesForRide, findCachedAddress, cacheLocationAddress, typ
 import CheckDetailDialog from './CheckDetailDialog';
 import QuickMaintenanceLog from './QuickMaintenanceLog';
 import { createInspectionRecord, updateInspectionRecordPdf, type InspectionRecord, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
-import { generateInspectionRecordPdf } from '@/utils/inspectionRecordPdf';
+
 import InspectionRecordList from './InspectionRecordList';
 // CriticalDefectModal removed in showmen simplification
 import { useQueryClient as useQueryClientImport } from '@tanstack/react-query';
@@ -842,48 +842,10 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           defectIds,
         });
 
-        // Generate formal Inspection Record PDF (non-blocking)
+        // Inspection record saved to checks log — PDF generation is on-demand from the Checks Log
         if (recordId) {
-          // Fetch the created record to pass to PDF generator
-          supabase
-            .from('inspection_records')
-            .select('*')
-            .eq('id', recordId)
-            .single()
-            .then(async ({ data: createdRecord }) => {
-              if (!createdRecord) return;
-              const irRecord = createdRecord as InspectionRecord;
-              
-              const result = await generateInspectionRecordPdf({
-                record: irRecord,
-                rideName: ride.ride_name,
-                rideCategory: ride.ride_categories?.name,
-                rideManufacturer: ride.manufacturer || undefined,
-                rideSerialNumber: ride.serial_number || undefined,
-                effectiveUserId: effectiveUserId!,
-              });
-
-              if (result) {
-                // Also save a reference in the documents table for the ride's doc view
-                const frequencyLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
-                const dateStr = format(new Date(), 'dd MMM yyyy');
-                await supabase
-                  .from('documents')
-                  .insert({
-                    user_id: effectiveUserId,
-                    ride_id: ride.id,
-                    document_name: `${frequencyLabel} Inspection Record – ${ride.ride_name} – ${dateStr}`,
-                    document_type: 'inspection_record',
-                    file_path: result.filePath,
-                    mime_type: 'application/pdf',
-                    notes: `Checked by: ${inspectorName.trim()} | Doc ID: ${result.documentId} | Check ID: ${checkId}`,
-                  });
-
-                queryClient.invalidateQueries({ queryKey: ['overview'] });
-                queryClient.invalidateQueries({ queryKey: ['documents'] });
-                queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
-              }
-            });
+          queryClient.invalidateQueries({ queryKey: ['overview'] });
+          queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
         }
 
         // Show completion toast with defect summary
@@ -1146,6 +1108,9 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           rideId={ride.id}
           rideName={ride.ride_name}
           frequency={frequency}
+          rideCategory={ride.ride_categories?.name}
+          rideManufacturer={ride.manufacturer || undefined}
+          rideSerialNumber={ride.serial_number || undefined}
         />
 
         <CheckDetailDialog

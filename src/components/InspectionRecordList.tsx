@@ -15,6 +15,7 @@ import {
   History,
   Clock,
   Lock,
+  Save,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -30,14 +31,19 @@ import {
   isWithinAmendmentWindow,
   type InspectionRecord,
 } from '@/utils/inspectionRecordService';
+import { generateInspectionRecordPdf } from '@/utils/inspectionRecordPdf';
+import { format as formatDateFns } from 'date-fns';
 
 interface InspectionRecordListProps {
   rideId: string;
   rideName: string;
   frequency?: string;
+  rideCategory?: string;
+  rideManufacturer?: string;
+  rideSerialNumber?: string;
 }
 
-const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: InspectionRecordListProps) => {
+const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCategory, rideManufacturer, rideSerialNumber }: InspectionRecordListProps) => {
   const { effectiveUserId } = useEffectiveUserId();
   const role = useAppRole();
   const { toast } = useToast();
@@ -45,6 +51,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
   const navigate = useNavigate();
 
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
+  const [savingDocId, setSavingDocId] = useState<string | null>(null);
 
   const { data: records = [], isLoading } = useQuery({
     queryKey: ['inspection-records', rideId, frequency],
@@ -79,6 +86,62 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
 
   const handleViewRecord = (record: InspectionRecord) => {
     navigate(`/inspection-record/${record.id}`);
+  };
+
+  const handleSaveToDocuments = async (record: InspectionRecord) => {
+    if (!effectiveUserId) return;
+    setSavingDocId(record.id);
+    try {
+      let filePath = record.pdf_file_path;
+
+      // Generate PDF on-demand if not already generated
+      if (!filePath) {
+        const result = await generateInspectionRecordPdf({
+          record,
+          rideName,
+          rideCategory,
+          rideManufacturer,
+          rideSerialNumber,
+          effectiveUserId,
+        });
+        if (!result) throw new Error('PDF generation failed');
+        filePath = result.filePath;
+      }
+
+      // Check if already saved to documents
+      const { data: existing } = await supabase
+        .from('documents')
+        .select('id')
+        .eq('ride_id', rideId)
+        .eq('file_path', filePath)
+        .maybeSingle();
+
+      if (existing) {
+        toast({ title: 'Already saved', description: 'This record is already in the ride documents.' });
+        return;
+      }
+
+      const freqLabel = record.check_frequency === 'preopening' ? 'Pre-Opening' : record.check_frequency.charAt(0).toUpperCase() + record.check_frequency.slice(1);
+      const dateStr = formatDateFns(parseISO(record.check_date), 'dd MMM yyyy');
+
+      await supabase.from('documents').insert({
+        user_id: effectiveUserId,
+        ride_id: rideId,
+        document_name: `${freqLabel} Inspection Record – ${rideName} – ${dateStr}`,
+        document_type: 'inspection_record',
+        file_path: filePath,
+        mime_type: 'application/pdf',
+        notes: `Checked by: ${record.inspector_name} | v${record.version}`,
+      });
+
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      toast({ title: 'Saved to documents', description: 'Inspection record saved to this ride\'s document area.' });
+    } catch (err: any) {
+      console.error('Save to documents failed:', err);
+      toast({ title: 'Save failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setSavingDocId(null);
+    }
   };
 
   const getResultBadge = (result: string, record?: InspectionRecord) => {
@@ -235,6 +298,20 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily' }: Inspect
                   title="Download PDF"
                 >
                   <Download className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={() => handleSaveToDocuments(record)}
+                  disabled={savingDocId === record.id}
+                  title="Save to ride documents"
+                >
+                  {savingDocId === record.id ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <Save className="h-3.5 w-3.5" />
+                  )}
                 </Button>
                 {canAmend && (
                   <Button
