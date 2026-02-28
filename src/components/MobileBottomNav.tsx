@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home, FolderOpen, CheckSquare, MoreHorizontal, Bell,
-  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut, Send, Wrench, Shield, Lightbulb, Users, Download
+  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut, Send, Wrench, Shield, Lightbulb, Users, Download, MessageCircle
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
@@ -253,8 +253,13 @@ export default function MobileBottomNav() {
               )}
 
               {/* Footer */}
-              <div className="space-y-0.5 pt-2">
-                <ContactSupportDialog />
+              <div className="space-y-0.5 mt-3 pt-3 border-t border-border/30">
+                <ContactSupportDialog trigger={
+                  <button className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all active:scale-[0.98]">
+                    <MessageCircle className="h-[18px] w-[18px] flex-shrink-0" />
+                    <span>Contact Support</span>
+                  </button>
+                } />
                 <button
                   onClick={handleSignOut}
                   className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-destructive/70 hover:text-destructive hover:bg-destructive/10 transition-all active:scale-[0.98]"
