@@ -364,6 +364,7 @@ export type Database = {
         Row: {
           category: string | null
           created_at: string
+          equipment_group: string
           frequency: Database["public"]["Enums"]["check_frequency"]
           hint: string | null
           id: string
@@ -376,6 +377,7 @@ export type Database = {
         Insert: {
           category?: string | null
           created_at?: string
+          equipment_group?: string
           frequency: Database["public"]["Enums"]["check_frequency"]
           hint?: string | null
           id?: string
@@ -388,6 +390,7 @@ export type Database = {
         Update: {
           category?: string | null
           created_at?: string
+          equipment_group?: string
           frequency?: Database["public"]["Enums"]["check_frequency"]
           hint?: string | null
           id?: string
