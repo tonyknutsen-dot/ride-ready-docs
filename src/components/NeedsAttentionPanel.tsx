@@ -38,7 +38,7 @@ const NeedsAttentionPanel = () => {
       const todayStr = today.toISOString().split('T')[0];
       const thirtyDaysStr = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
 
-      const [defectsRes, docsRes, eventsRes, operatingRes, ridesRes, checksRes] = await Promise.all([
+      const [defectsRes, docsRes, eventsRes, operatingRes, checksRes] = await Promise.all([
         supabase
           .from('defects')
           .select('id, description, ride_id, rides(ride_name)')
@@ -69,18 +69,13 @@ const NeedsAttentionPanel = () => {
           .select('ride_id')
           .eq('status_date', todayStr)
           .eq('is_operating', true) as any,
-        // Fetch ride settings for preopening_covers_daily
-        supabase
-          .from('rides')
-          .select('id, preopening_covers_daily')
-          .eq('user_id', effectiveUserId) as any,
-        // Fetch today's completed checks to know if preopening was done
+        // Fetch today's completed checks (daily or preopening) to know if operational check was done
         supabase
           .from('checks')
           .select('ride_id, check_frequency')
           .eq('user_id', effectiveUserId)
           .eq('check_date', todayStr)
-          .eq('check_frequency', 'preopening'),
+          .in('check_frequency', ['daily', 'preopening']),
       ]);
 
       // Build set of rides operating today
@@ -88,13 +83,8 @@ const NeedsAttentionPanel = () => {
         (operatingRes.data || []).map((r: any) => r.ride_id)
       );
 
-      // Build set of rides where preopening covers daily
-      const preopeningCoversDailyIds = new Set<string>(
-        ((ridesRes.data || []) as any[]).filter((r: any) => r.preopening_covers_daily).map((r: any) => r.id)
-      );
-
-      // Build set of rides that have completed a preopening check today
-      const preopeningDoneTodayIds = new Set<string>(
+      // Build set of rides that have completed any operational check today
+      const operationalCheckDoneTodayIds = new Set<string>(
         (checksRes.data || []).map((c: any) => c.ride_id)
       );
 
@@ -137,13 +127,11 @@ const NeedsAttentionPanel = () => {
         // ── Showmen logic: daily/pre-opening checks are same-day reminders only ──
         // Skip operational checks from past days (don't accumulate overdue)
         // Skip operational checks for today if the ride is NOT currently in use
-        // Skip daily_check if preopening_covers_daily is ON and preopening was completed today
+        // Skip if an operational check was already completed today for this ride
         if (isOperationalCheck) {
           if (evt.due_date !== todayStr) return; // past-day → skip entirely
           if (evt.ride_id && !operatingRideIds.has(evt.ride_id)) return; // not in use → skip
-          if (evtType === 'daily_check' && evt.ride_id
-            && preopeningCoversDailyIds.has(evt.ride_id)
-            && preopeningDoneTodayIds.has(evt.ride_id)) return; // daily satisfied by preopening
+          if (evt.ride_id && operationalCheckDoneTodayIds.has(evt.ride_id)) return; // already checked today
         }
 
         const isOverdue = evt.due_date < todayStr;
@@ -157,9 +145,7 @@ const NeedsAttentionPanel = () => {
             : `Due in ${daysUntil}d`;
 
         let path = '/calendar';
-        if (evtType === 'pre_opening_check') {
-          path = evt.ride_id ? `/checks/${evt.ride_id}/preopening/execute` : '/checks';
-        } else if (evtType === 'daily_check') {
+        if (evtType === 'pre_opening_check' || evtType === 'daily_check') {
           path = evt.ride_id ? `/checks/${evt.ride_id}/daily/execute` : '/checks';
         } else if (evtType === 'ndt') {
           path = evt.ride_id ? `/rides/${evt.ride_id}?tab=checks&checksSubTab=ndt` : '/calendar';

@@ -71,10 +71,9 @@ export function useOperatingToday() {
     setSubmitting(true);
 
     try {
-      const events = selectedRideIds.flatMap(rideId => [
-        {
+      const events = selectedRideIds.map(rideId => ({
           user_id: effectiveUserId,
-          event_name: 'Daily Safety Check',
+          event_name: 'Daily / Pre-Opening Check',
           event_type: 'daily_check',
           category: 'operational',
           event_category: 'operational',
@@ -84,21 +83,7 @@ export function useOperatingToday() {
           is_recurring: false,
           advance_notice_days: 0,
           reminder_enabled: false,
-        },
-        {
-          user_id: effectiveUserId,
-          event_name: 'Pre-Opening Check',
-          event_type: 'pre_opening_check',
-          category: 'operational',
-          event_category: 'operational',
-          due_date: todayStr,
-          ride_id: rideId,
-          status: 'scheduled',
-          is_recurring: false,
-          advance_notice_days: 0,
-          reminder_enabled: false,
-        },
-      ]);
+        }));
 
       await supabase.from('compliance_events').insert(events);
       queryClient.invalidateQueries({ queryKey: ['operating-today'] });

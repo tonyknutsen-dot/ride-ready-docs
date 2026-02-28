@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import { Clock, Calendar, FileText, CalendarDays, TestTube, Building, PlayCircle, HelpCircle, CalendarRange, ArrowRight, Sparkles, PauseCircle, Info, AlertOctagon } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import InspectionChecklist from './InspectionChecklist';
@@ -26,7 +25,6 @@ interface InspectionManagerProps {
 }
 
 interface CheckCounts {
-  preopening: number;
   daily: number;
   weekly: number;
   monthly: number;
@@ -34,10 +32,9 @@ interface CheckCounts {
   total: number;
 }
 
-const FREQUENCY_ORDER = ['preopening', 'daily', 'weekly', 'monthly', 'yearly'] as const;
+const FREQUENCY_ORDER = ['daily', 'weekly', 'monthly', 'yearly'] as const;
 const FREQUENCY_LABELS: Record<string, string> = {
-  preopening: 'Pre-Opening',
-  daily: 'Daily',
+  daily: 'Daily / Pre-Opening',
   weekly: 'Weekly',
   monthly: 'Monthly',
   yearly: 'Yearly',
@@ -48,7 +45,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const { effectiveUserId, isStaff } = useEffectiveUserId();
   const [searchParams] = useSearchParams();
   const checksSubTab = searchParams.get('checksSubTab');
-  const [activeTab, setActiveTab] = useState(checksSubTab || 'preopening');
+  const [activeTab, setActiveTab] = useState(checksSubTab || 'daily');
 
   // Sync tab when URL param changes (e.g. deep-link from Needs Attention)
   useEffect(() => {
@@ -57,28 +54,13 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
     }
   }, [checksSubTab]);
   const [showGuide, setShowGuide] = useState(false);
-  const [checkCounts, setCheckCounts] = useState<CheckCounts>({ preopening: 0, daily: 0, weekly: 0, monthly: 0, yearly: 0, total: 0 });
+  const [checkCounts, setCheckCounts] = useState<CheckCounts>({ daily: 0, weekly: 0, monthly: 0, yearly: 0, total: 0 });
   const [templateStatus, setTemplateStatus] = useState<Record<string, boolean>>({});
   const [showNextPrompt, setShowNextPrompt] = useState<string | null>(null);
   const { isOperating, isLoading: opLoading, canToggle, toggleOperating, toggling } = useDailyStatus(ride.id);
   const { hasCriticalDefects } = useOpenCriticalDefects(ride.id);
-  const isDailyOrPreOpening = activeTab === 'daily' || activeTab === 'preopening';
+  const isDailyOrPreOpening = activeTab === 'daily';
   const { toast } = useToast();
-  const [preopeningCoversDaily, setPreopeningCoversDaily] = useState((ride as any).preopening_covers_daily ?? false);
-
-  const handlePreopeningCoversDailyToggle = async (checked: boolean) => {
-    setPreopeningCoversDaily(checked);
-    const { error } = await (supabase
-      .from('rides')
-      .update({ preopening_covers_daily: checked } as any)
-      .eq('id', ride.id) as any);
-    if (error) {
-      setPreopeningCoversDaily(!checked);
-      toast({ title: 'Failed to update setting', variant: 'destructive' });
-    } else {
-      toast({ title: checked ? 'Pre-opening check now covers daily check' : 'Daily check required separately' });
-    }
-  };
 
   useEffect(() => {
     if (effectiveUserId && ride.id) {
@@ -90,7 +72,8 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const loadCheckCounts = async () => {
     try {
       const counts = await Promise.all(
-        FREQUENCY_ORDER.map(async (freq) => {
+        // Count both daily and preopening for the merged daily tab
+        [...FREQUENCY_ORDER, 'preopening' as const].map(async (freq) => {
           let query = supabase
             .from('checks')
             .select('*', { count: 'exact', head: true })
@@ -107,9 +90,13 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         })
       );
       
-      const result: CheckCounts = { preopening: 0, daily: 0, weekly: 0, monthly: 0, yearly: 0, total: 0 };
+      const result: CheckCounts = { daily: 0, weekly: 0, monthly: 0, yearly: 0, total: 0 };
       counts.forEach(({ freq, count }) => {
-        result[freq] = count;
+        // Merge preopening counts into daily
+        const key = freq === 'preopening' ? 'daily' : freq;
+        if (key in result) {
+          result[key as keyof Omit<CheckCounts, 'total'>] += count;
+        }
         result.total += count;
       });
       setCheckCounts(result);
@@ -137,7 +124,11 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
       
       const status: Record<string, boolean> = {};
       FREQUENCY_ORDER.forEach(f => { status[f] = false; });
-      (data || []).forEach(t => { status[t.check_frequency] = true; });
+      (data || []).forEach(t => {
+        // Merge preopening template status into daily
+        const key = t.check_frequency === 'preopening' ? 'daily' : t.check_frequency;
+        if (key in status) status[key] = true;
+      });
       setTemplateStatus(status);
     } catch (error) {
       console.error('Error loading template status:', error);
@@ -262,8 +253,7 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         <div className="overflow-x-auto -mx-4 px-4 pb-1">
           <div className="inline-flex gap-2 min-w-max">
             {[
-              { value: 'preopening', label: 'Pre-Opening', Icon: PlayCircle },
-              { value: 'daily',      label: 'Daily',       Icon: Clock },
+              { value: 'daily',      label: 'Daily / Pre-Opening', Icon: Clock },
               { value: 'weekly',     label: 'Weekly',      Icon: CalendarRange },
               { value: 'monthly',    label: 'Monthly',     Icon: Calendar },
               { value: 'yearly',     label: 'Yearly',      Icon: CalendarDays },
@@ -314,64 +304,28 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
           </div>
         </div>
 
-        {/* Pre-Opening Check */}
-        <TabsContent value="preopening" className="relative">
-          {!opLoading && ride.requires_operational_checks && !isOperating && (
-            <div className="flex items-start gap-2.5 bg-muted/40 border border-border rounded-xl px-4 py-3 mb-4">
-              <PauseCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground">Ride not marked as operating today — pre-opening checks not required.</p>
-                {canToggle && (
-                  <button onClick={toggleOperating} disabled={toggling} className="text-xs font-semibold text-primary mt-1 hover:underline">
-                    {toggling ? 'Updating…' : 'Mark as operating today →'}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-          {!opLoading && ride.requires_operational_checks && isOperating && (
-            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5 mb-4">
-              <PlayCircle className="h-4 w-4 text-green-600 shrink-0" />
-              <p className="text-sm font-medium text-green-700">Operating today — pre-opening checks due.</p>
-            </div>
-          )}
-          {/* Pre-opening covers daily setting */}
-          {!isStaff && (
-            <div className="flex items-center justify-between gap-3 bg-muted/30 border border-border rounded-xl px-4 py-3 mb-4">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-foreground">Pre-opening check covers daily check</p>
-                <p className="text-xs text-muted-foreground mt-0.5">If switched on, completing a pre-opening check also counts as the daily check for that day.</p>
-              </div>
-              <Switch
-                checked={preopeningCoversDaily}
-                onCheckedChange={handlePreopeningCoversDailyToggle}
-              />
-            </div>
-          )}
-          {renderFrequencyContent('preopening', 'Pre-Opening')}
-        </TabsContent>
-
+        {/* Daily / Pre-Opening Check (merged) */}
         <TabsContent value="daily" className="relative">
           {!opLoading && ride.requires_operational_checks && !isOperating && (
             <div className="flex items-start gap-2.5 bg-muted/40 border border-border rounded-xl px-4 py-3 mb-4">
               <PauseCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground">Ride not marked as operating today — daily checks not required.</p>
+                <p className="text-sm font-medium text-muted-foreground">Not marked as in use today — checks not required.</p>
                 {canToggle && (
                   <button onClick={toggleOperating} disabled={toggling} className="text-xs font-semibold text-primary mt-1 hover:underline">
-                    {toggling ? 'Updating…' : 'Mark as operating today →'}
+                    {toggling ? 'Updating…' : 'Mark as in use today →'}
                   </button>
                 )}
               </div>
             </div>
           )}
           {!opLoading && ride.requires_operational_checks && isOperating && (
-            <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-2.5 mb-4">
-              <PlayCircle className="h-4 w-4 text-green-600 shrink-0" />
-              <p className="text-sm font-medium text-green-700">Operating today — daily checks due.</p>
+            <div className="flex items-center gap-2 bg-success/5 border border-success/30 rounded-xl px-4 py-2.5 mb-4">
+              <PlayCircle className="h-4 w-4 text-success shrink-0" />
+              <p className="text-sm font-medium text-success">In use today — checks due.</p>
             </div>
           )}
-          {renderFrequencyContent('daily', 'Daily')}
+          {renderFrequencyContent('daily', 'Daily / Pre-Opening')}
         </TabsContent>
 
         <TabsContent value="weekly" className="relative">

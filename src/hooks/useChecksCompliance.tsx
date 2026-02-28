@@ -18,7 +18,6 @@ export interface CheckRideStatus {
   status: 'overdue' | 'due_today' | 'due_soon' | 'ok';
   checksLast7d: number;
   isOperatingToday: boolean;
-  dailyCoveredByPreopening: boolean;
 }
 
 export interface ChecksComplianceData {
@@ -37,7 +36,7 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
   const [ridesResult, recentChecksResult, operatingResult] = await Promise.all([
     supabase
       .from('rides')
-      .select('id, ride_name, ride_categories(name), requires_operational_checks, preopening_covers_daily')
+      .select('id, ride_name, ride_categories(name), requires_operational_checks')
       .eq('user_id', userId)
       .order('ride_name'),
     supabase
@@ -59,7 +58,6 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
     ride_name: string;
     ride_categories: { name: string } | null;
     requires_operational_checks: boolean;
-    preopening_covers_daily: boolean;
   }>;
 
   const recentChecks = recentChecksResult.data || [];
@@ -87,20 +85,16 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
     const isOperatingToday = operatingRideIds.has(ride.id);
     const requiresOpChecks = ride.requires_operational_checks;
     const todayChecks = rideChecks.filter(c => c.date === todayStr);
-    const checkedToday = todayChecks.length > 0;
-
-    // If preopening_covers_daily is ON, a preopening check today satisfies both
-    const preopeningDoneToday = todayChecks.some(c => c.frequency === 'preopening');
-    const dailyCoveredByPreopening = ride.preopening_covers_daily && preopeningDoneToday;
+    // Any daily or preopening check today satisfies the requirement (merged)
+    const checkedToday = todayChecks.some(c => c.frequency === 'daily' || c.frequency === 'preopening');
 
     // ── Showmen logic for daily/pre-opening checks ──
-    // Daily checks are same-day reminders, NOT accumulating tasks.
     let status: CheckRideStatus['status'] = 'ok';
 
     if (requiresOpChecks) {
       if (!isOperatingToday) {
         status = 'ok';
-      } else if (checkedToday || dailyCoveredByPreopening) {
+      } else if (checkedToday) {
         status = 'ok';
       } else {
         status = 'due_today';
@@ -127,7 +121,6 @@ async function fetchChecksCompliance(userId: string): Promise<ChecksComplianceDa
       status,
       checksLast7d: rideChecks.length,
       isOperatingToday,
-      dailyCoveredByPreopening,
     };
   });
 
