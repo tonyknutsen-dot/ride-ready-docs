@@ -207,8 +207,8 @@ export function AppSidebar() {
           </Link>
         </SidebarHeader>
 
-        {/* Primary Navigation: Main + Tools */}
-        <SidebarContent className="px-2 py-0.5 overflow-y-auto flex-1">
+        {/* Single continuous scroll area */}
+        <SidebarContent className="px-2 py-0.5 overflow-y-auto">
           {/* Main */}
           <SidebarGroup className="py-0">
             <SectionLabel>Main</SectionLabel>
@@ -234,11 +234,12 @@ export function AppSidebar() {
               </SidebarGroupContent>
             </SidebarGroup>
           )}
-        </SidebarContent>
 
-        {/* Secondary Navigation: Account + Admin — visually separated */}
-        <div className="px-2 pb-1 border-t border-border/20 pt-2">
-          {/* Account */}
+          {/* Visual break — hierarchy shift to secondary nav */}
+          {!collapsed && <div className="mx-3 my-3 border-t border-border/20" />}
+          {collapsed && <div className="my-2" />}
+
+          {/* Account — secondary treatment */}
           <SidebarGroup className="py-0">
             <SectionLabel secondary>Account</SectionLabel>
             <SidebarGroupContent>
@@ -263,7 +264,7 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
 
-          {/* Admin */}
+          {/* Admin — secondary treatment */}
           {isAdmin && (
             <SidebarGroup className="py-0 mt-1.5">
               <SectionLabel secondary>Admin</SectionLabel>
@@ -288,58 +289,60 @@ export function AppSidebar() {
               </SidebarGroupContent>
             </SidebarGroup>
           )}
-        </div>
 
-        {/* Footer utility strip */}
-        <SidebarFooter className="px-2 py-1.5 border-t border-border/20 bg-muted/20">
-          <SidebarMenu className="gap-0">
-            {/* Sync status */}
-            <SidebarMenuItem>
-              <div className="px-1 py-0.5">
-                <OfflineSyncIndicator compact={collapsed} />
-              </div>
-            </SidebarMenuItem>
+          {/* Footer utility block — inside scroll, docked feel */}
+          <div className="mt-auto pt-3">
+            <div className="mx-1 rounded-md bg-muted/20 px-1 py-1.5">
+              <SidebarMenu className="gap-0">
+                {/* Sync status */}
+                <SidebarMenuItem>
+                  <div className="px-1 py-0.5">
+                    <OfflineSyncIndicator compact={collapsed} />
+                  </div>
+                </SidebarMenuItem>
 
-            {/* Contact Support */}
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => setContactDialogOpen(true)}
-                className="flex items-center gap-3 px-3 py-1 rounded-md text-xs text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-all cursor-pointer"
-              >
-                <MessageCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                {!collapsed && <span>Contact Support</span>}
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+                {/* Contact Support */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => setContactDialogOpen(true)}
+                    className="flex items-center gap-3 px-3 py-1 rounded-md text-xs text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-all cursor-pointer"
+                  >
+                    <MessageCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                    {!collapsed && <span>Contact Support</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
-            {/* Sign Out */}
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={handleSignOut}
-                className="flex items-center gap-3 px-3 py-1 rounded-md text-xs text-destructive/50 hover:text-destructive hover:bg-destructive/10 transition-all cursor-pointer"
-              >
-                <LogOut className="h-3.5 w-3.5 flex-shrink-0" />
-                {!collapsed && <span>Sign Out</span>}
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+                {/* Sign Out */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={handleSignOut}
+                    className="flex items-center gap-3 px-3 py-1 rounded-md text-xs text-destructive/50 hover:text-destructive hover:bg-destructive/10 transition-all cursor-pointer"
+                  >
+                    <LogOut className="h-3.5 w-3.5 flex-shrink-0" />
+                    {!collapsed && <span>Sign Out</span>}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
 
-            {/* Collapse */}
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={toggleSidebar}
-                className="flex items-center gap-3 px-3 py-1 rounded-md text-xs text-muted-foreground/35 hover:text-muted-foreground hover:bg-muted transition-all cursor-pointer"
-              >
-                {collapsed ? (
-                  <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" />
-                ) : (
-                  <>
-                    <ChevronLeft className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>Collapse</span>
-                  </>
-                )}
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
+                {/* Collapse */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={toggleSidebar}
+                    className="flex items-center gap-3 px-3 py-1 rounded-md text-xs text-muted-foreground/35 hover:text-muted-foreground hover:bg-muted transition-all cursor-pointer"
+                  >
+                    {collapsed ? (
+                      <ChevronRight className="h-3.5 w-3.5 flex-shrink-0" />
+                    ) : (
+                      <>
+                        <ChevronLeft className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span>Collapse</span>
+                      </>
+                    )}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </div>
+          </div>
+        </SidebarContent>
       </Sidebar>
 
       {/* Dialogs */}
