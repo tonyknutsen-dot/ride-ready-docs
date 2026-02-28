@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useTester } from '@/contexts/TesterContext';
@@ -25,6 +25,9 @@ import { LoadingState } from '@/components/LoadingState';
 import { PullToRefresh } from '@/components/PullToRefresh';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
 import { OfflineStaleAlert } from '@/components/OfflineStaleAlert';
+import EquipmentViewToggle, { type ViewMode } from '@/components/equipment/EquipmentViewToggle';
+import EquipmentListView from '@/components/equipment/EquipmentListView';
+import { useAllRidesCriticalDefects } from '@/hooks/useOpenCriticalDefects';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -58,6 +61,21 @@ const Rides = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [activeGroup, setActiveGroup] = useState<string>('All');
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
+  const { data: criticalDefectsMap } = useAllRidesCriticalDefects();
+
+  // View toggle with localStorage persistence
+  const VIEW_PREF_KEY = 'rrd-equipment-view';
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      const saved = localStorage.getItem(VIEW_PREF_KEY);
+      if (saved === 'cards' || saved === 'list') return saved;
+    } catch {}
+    return 'cards';
+  });
+  const handleViewChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    try { localStorage.setItem(VIEW_PREF_KEY, mode); } catch {}
+  };
   
   // Only the controller (owner) can add rides
   const canAddRides = !isStaff;
@@ -492,10 +510,15 @@ const Rides = () => {
       <ItemLimitWarning />
 
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="space-y-0.5">
-          <h1 className="text-xl font-bold tracking-tight">My Equipment</h1>
-          <p className="text-sm text-muted-foreground">Manage your rides, stalls, and equipment</p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="space-y-0.5">
+            <h1 className="text-xl font-bold tracking-tight">My Equipment</h1>
+            <p className="text-sm text-muted-foreground">{rides.length} {rides.length === 1 ? 'item' : 'items'}</p>
+          </div>
+          {rides.length > 0 && (
+            <EquipmentViewToggle view={viewMode} onViewChange={handleViewChange} />
+          )}
         </div>
         {canAddRides && (
           <Button 
@@ -582,6 +605,13 @@ const Rides = () => {
           title={`No ${activeGroup.toLowerCase()} found`}
           description="Add your first item to get started"
           variant="compact"
+        />
+      ) : viewMode === 'list' ? (
+        <EquipmentListView
+          rides={filteredRides as any}
+          rideStats={rideStats}
+          criticalDefectsMap={criticalDefectsMap}
+          onSelectRide={(ride) => navigate(`/rides/${ride.id}`)}
         />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -732,35 +762,26 @@ const Rides = () => {
                   </div>
                 )}
 
-                {/* Actions — sleeker */}
-                <div className="flex gap-2 mt-auto pt-1">
+                {/* Actions — fixed: separated SendDocumentsDialog from Tooltip to prevent ref issues */}
+                <div className="flex gap-2 mt-auto pt-1" onClick={e => e.stopPropagation()}>
                   <Button 
-                    onClick={e => {
-                      e.stopPropagation();
-                      navigate(`/rides/${ride.id}`);
-                    }} 
+                    onClick={() => navigate(`/rides/${ride.id}`)} 
                     className="flex-1 h-10 rounded-xl font-semibold text-sm"
                   >
                     View Details
                   </Button>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <SendDocumentsDialog 
-                        ride={ride} 
-                        trigger={
-                          <Button 
-                            variant="outline" 
-                            size="icon"
-                            className="h-10 w-10 shrink-0 rounded-xl"
-                            onClick={e => e.stopPropagation()}
-                          >
-                            <Share2 className="h-4 w-4" />
-                          </Button>
-                        } 
-                      />
-                    </TooltipTrigger>
-                    <TooltipContent>Share Documents</TooltipContent>
-                  </Tooltip>
+                  <SendDocumentsDialog 
+                    ride={ride} 
+                    trigger={
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        className="h-10 w-10 shrink-0 rounded-xl"
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                    } 
+                  />
                 </div>
               </div>
             </Card>
