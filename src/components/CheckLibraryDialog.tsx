@@ -23,11 +23,13 @@ export default function CheckLibraryDialog({
   trigger,
   frequency,
   rideCategoryId,
+  equipmentGroup,
   onAdd
 }: {
   trigger: React.ReactNode;
   frequency: Frequency;
   rideCategoryId?: string | null;
+  equipmentGroup?: string | null;
   onAdd: (labels: string[]) => Promise<void> | void;
 }) {
   const [open, setOpen] = useState(false);
@@ -37,6 +39,9 @@ export default function CheckLibraryDialog({
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
+  // Determine which equipment group to query
+  const resolvedGroup = equipmentGroup || 'rides';
+
   useEffect(() => {
     if (!open) return;
     (async () => {
@@ -44,12 +49,13 @@ export default function CheckLibraryDialog({
       try {
         const cat = (rideCategoryId && rideCategoryId !== "null") ? rideCategoryId : null;
         
-        // Load generic items (ride_category_id is null) + category-specific for this frequency
+        // Load items matching this equipment group and frequency
         let query = supabase
           .from("check_library_items")
           .select("id,label,frequency,ride_category_id,hint,risk_level,sort_index,is_active")
           .eq("frequency", frequency)
           .eq("is_active", true)
+          .eq("equipment_group", resolvedGroup)
           .order("sort_index", { ascending: true });
 
         // Filter to get generic items OR items matching this ride's category
@@ -78,7 +84,7 @@ export default function CheckLibraryDialog({
         setLoading(false);
       }
     })();
-  }, [open, frequency, rideCategoryId, toast]);
+  }, [open, frequency, rideCategoryId, resolvedGroup, toast]);
 
   const filtered = useMemo(() => {
     if (!q.trim()) return rows;

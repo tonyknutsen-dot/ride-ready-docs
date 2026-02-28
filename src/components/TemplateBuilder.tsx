@@ -18,6 +18,7 @@ type Ride = Tables<'rides'> & {
   ride_categories: {
     name: string;
     description: string | null;
+    category_group: string;
   };
 };
 
@@ -56,10 +57,19 @@ const STEPS = [
   { label: 'Review', icon: ListChecks },
 ];
 
+/** Map ride category_group to the check library equipment_group */
+const getEquipmentGroup = (categoryGroup: string): string | null => {
+  const g = categoryGroup.toLowerCase();
+  if (g === 'rides' || g === 'attractions') return 'rides';
+  if (g === 'inflatables') return 'inflatables';
+  return null; // stalls, games, kiosks, etc. — no library
+};
+
 const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCancel }: TemplateBuilderProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
   const freqLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
+  const equipmentGroup = getEquipmentGroup(ride.ride_categories?.category_group ?? '');
   const defaultTemplateName = `${freqLabel} Safety Check`;
   const isEditing = !!template;
 
@@ -530,6 +540,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {equipmentGroup && (
               <CheckLibraryDialog
                 trigger={
                   <Button className="w-full font-medium" variant="outline">
@@ -539,6 +550,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                 }
                 frequency={frequency as "daily" | "weekly" | "monthly" | "yearly" | "preopening"}
                 rideCategoryId={ride.category_id}
+                equipmentGroup={equipmentGroup}
                 onAdd={async (labels: string[]) => {
                   const newItems: BuilderItem[] = labels.map((label, i) => ({
                     check_item_text: label,
@@ -551,6 +563,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   toast({ title: `${labels.length} item${labels.length > 1 ? 's' : ''} added` });
                 }}
               />
+              )}
 
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
@@ -727,6 +740,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   <Plus className="h-4 w-4" />
                 </Button>
               </div>
+              {equipmentGroup && (
               <CheckLibraryDialog
                 trigger={
                   <Button variant="ghost" size="sm" className="w-full text-xs">
@@ -736,6 +750,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                 }
                 frequency={frequency as "daily" | "weekly" | "monthly" | "yearly" | "preopening"}
                 rideCategoryId={ride.category_id}
+                equipmentGroup={equipmentGroup}
                 onAdd={async (labels: string[]) => {
                   const newItems: BuilderItem[] = labels.map((label, i) => ({
                     check_item_text: label,
@@ -748,6 +763,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   toast({ title: `${labels.length} item${labels.length > 1 ? 's' : ''} added` });
                 }}
               />
+              )}
             </CardContent>
           </Card>
 
