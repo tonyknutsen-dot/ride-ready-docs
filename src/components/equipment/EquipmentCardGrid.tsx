@@ -26,8 +26,7 @@ const EquipmentCardGrid = ({ rides, rideStats, criticalDefectsMap, onSelectRide 
         return (
           <Card
             key={ride.id}
-            className={`hover:shadow-md transition-all cursor-pointer ${criticalCount > 0 ? 'border-destructive/50 bg-destructive/5' : 'border-muted/50'}`}
-            onClick={() => onSelectRide(ride)}
+            className={`hover:shadow-md transition-all ${criticalCount > 0 ? 'border-destructive/50 bg-destructive/5' : 'border-muted/50'}`}
           >
             {criticalCount > 0 && (
               <div className="flex items-center gap-2 px-4 pt-3 pb-0">
@@ -76,7 +75,7 @@ const EquipmentCardGrid = ({ rides, rideStats, criticalDefectsMap, onSelectRide 
                   </p>
                 </div>
               )}
-              <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+              <div className="flex gap-2">
                 <Button
                   onClick={() => onSelectRide(ride)}
                   className="flex-1 text-xs sm:text-sm"
