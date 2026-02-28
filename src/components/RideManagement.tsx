@@ -1,28 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Settings, FileText, CheckSquare, Calendar, Mail, HelpCircle } from 'lucide-react';
+import { Plus, Settings, HelpCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
-import { Tables } from '@/integrations/supabase/types';
 import RideForm from './RideForm';
 import RideDetail from './RideDetail';
-import { SendDocumentsDialog } from './SendDocumentsDialog';
 import { RequestRideTypeDialog } from './RequestRideTypeDialog';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useAllRidesCriticalDefects } from '@/hooks/useOpenCriticalDefects';
-import { AlertOctagon } from 'lucide-react';
+import EquipmentFilters, { type SortOption } from './equipment/EquipmentFilters';
+import EquipmentViewToggle, { type ViewMode } from './equipment/EquipmentViewToggle';
+import EquipmentCardGrid from './equipment/EquipmentCardGrid';
+import EquipmentListView from './equipment/EquipmentListView';
+import type { Ride } from '@/types/ride';
 
-type Ride = Tables<'rides'> & {
-  ride_categories: {
-    name: string;
-    description: string | null;
-    category_group: string;
-  };
-};
+const VIEW_PREF_KEY = 'rrd-equipment-view';
 
 const RideManagement = () => {
   const { user } = useAuth();
@@ -36,6 +30,95 @@ const RideManagement = () => {
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const { data: criticalDefectsMap } = useAllRidesCriticalDefects();
 
+  // View toggle with localStorage persistence
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    try {
+      const saved = localStorage.getItem(VIEW_PREF_KEY);
+      if (saved === 'cards' || saved === 'list') return saved;
+    } catch {}
+    return 'cards';
+  });
+
+  const handleViewChange = (mode: ViewMode) => {
+    setViewMode(mode);
+    try { localStorage.setItem(VIEW_PREF_KEY, mode); } catch {}
+  };
+
+  // Filters
+  const [search, setSearch] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [sort, setSort] = useState<SortOption>('attention');
+
+  // Derived: unique categories from user's rides
+  const categories = useMemo(
+    () => [...new Set(rides.map((r) => r.ride_categories.name))].sort(),
+    [rides]
+  );
+
+  // Auto-switch to list view when >6 rides (only on first load)
+  useEffect(() => {
+    if (!loading && rides.length > 6) {
+      try {
+        const saved = localStorage.getItem(VIEW_PREF_KEY);
+        if (!saved) handleViewChange('list');
+      } catch {}
+    }
+  }, [loading, rides.length]);
+
+  // Filter + sort
+  const filteredRides = useMemo(() => {
+    let result = rides;
+
+    // Search
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter((r) =>
+        r.ride_name.toLowerCase().includes(q) ||
+        r.manufacturer?.toLowerCase().includes(q)
+      );
+    }
+
+    // Category
+    if (categoryFilter !== 'all') {
+      result = result.filter((r) => r.ride_categories.name === categoryFilter);
+    }
+
+    // Sort
+    result = [...result].sort((a, b) => {
+      const critA = criticalDefectsMap?.get(a.id) || 0;
+      const critB = criticalDefectsMap?.get(b.id) || 0;
+      const dueA = rideStats[a.id]?.nextDue;
+      const dueB = rideStats[b.id]?.nextDue;
+
+      switch (sort) {
+        case 'attention': {
+          // Critical first, then has due date, then rest
+          if (critA !== critB) return critB - critA;
+          if (dueA && !dueB) return -1;
+          if (!dueA && dueB) return 1;
+          if (dueA && dueB) return new Date(dueA).getTime() - new Date(dueB).getTime();
+          return a.ride_name.localeCompare(b.ride_name);
+        }
+        case 'next-due': {
+          if (dueA && !dueB) return -1;
+          if (!dueA && dueB) return 1;
+          if (dueA && dueB) return new Date(dueA).getTime() - new Date(dueB).getTime();
+          return a.ride_name.localeCompare(b.ride_name);
+        }
+        case 'name-asc':
+          return a.ride_name.localeCompare(b.ride_name);
+        case 'name-desc':
+          return b.ride_name.localeCompare(a.ride_name);
+        case 'recent':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    return result;
+  }, [rides, search, categoryFilter, sort, criticalDefectsMap, rideStats]);
+
   useEffect(() => {
     if (effectiveUserId) {
       loadRides();
@@ -46,27 +129,15 @@ const RideManagement = () => {
     try {
       const { data, error } = await supabase
         .from('rides')
-        .select(`
-          *,
-          ride_categories (
-            name,
-            description,
-            category_group
-          )
-        `)
+        .select(`*, ride_categories (name, description, category_group)`)
         .eq('user_id', effectiveUserId)
         .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error loading rides:', error);
-        toast({
-          title: "Error loading rides",
-          description: error.message,
-          variant: "destructive",
-        });
+        toast({ title: "Error loading rides", description: error.message, variant: "destructive" });
       } else {
         setRides(data as Ride[]);
-        // Load statistics for each ride
         await loadRideStatistics(data as Ride[]);
       }
     } catch (error) {
@@ -78,17 +149,15 @@ const RideManagement = () => {
 
   const loadRideStatistics = async (ridesData: Ride[]) => {
     const stats: Record<string, { docCount: number; checkCount: number; nextDue: string | null }> = {};
-    
+
     for (const ride of ridesData) {
       try {
-        // Get document count for this ride - use effectiveUserId
         const { count: docCount } = await supabase
           .from('documents')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', effectiveUserId)
           .eq('ride_id', ride.id);
 
-        // Get daily check count for this ride - use effectiveUserId, exclude test data
         const { count: checkCount } = await supabase
           .from('checks')
           .select('*', { count: 'exact', head: true })
@@ -96,84 +165,40 @@ const RideManagement = () => {
           .eq('ride_id', ride.id)
           .eq('is_test_data', false);
 
-        // Get next due date from various sources - use effectiveUserId
         const [maintenanceQuery, inspectionQuery, ndtQuery] = await Promise.all([
-          supabase
-            .from('maintenance_records')
-            .select('next_maintenance_due')
-            .eq('user_id', effectiveUserId)
-            .eq('ride_id', ride.id)
-            .not('next_maintenance_due', 'is', null)
-            .order('next_maintenance_due', { ascending: true })
-            .limit(1)
-            .maybeSingle(),
-          supabase
-            .from('annual_inspection_reports')
-            .select('next_inspection_due')
-            .eq('user_id', effectiveUserId)
-            .eq('ride_id', ride.id)
-            .not('next_inspection_due', 'is', null)
-            .order('next_inspection_due', { ascending: true })
-            .limit(1)
-            .maybeSingle(),
-          supabase
-            .from('ndt_reports')
-            .select('next_inspection_due')
-            .eq('user_id', effectiveUserId)
-            .eq('ride_id', ride.id)
-            .not('next_inspection_due', 'is', null)
-            .order('next_inspection_due', { ascending: true })
-            .limit(1)
-            .maybeSingle()
+          supabase.from('maintenance_records').select('next_maintenance_due').eq('user_id', effectiveUserId).eq('ride_id', ride.id).not('next_maintenance_due', 'is', null).order('next_maintenance_due', { ascending: true }).limit(1).maybeSingle(),
+          supabase.from('annual_inspection_reports').select('next_inspection_due').eq('user_id', effectiveUserId).eq('ride_id', ride.id).not('next_inspection_due', 'is', null).order('next_inspection_due', { ascending: true }).limit(1).maybeSingle(),
+          supabase.from('ndt_reports').select('next_inspection_due').eq('user_id', effectiveUserId).eq('ride_id', ride.id).not('next_inspection_due', 'is', null).order('next_inspection_due', { ascending: true }).limit(1).maybeSingle(),
         ]);
 
-        // Find the earliest due date
         const dueDates = [
           maintenanceQuery.data?.next_maintenance_due,
           inspectionQuery.data?.next_inspection_due,
-          ndtQuery.data?.next_inspection_due
+          ndtQuery.data?.next_inspection_due,
         ].filter(Boolean).sort();
 
-        stats[ride.id] = {
-          docCount: docCount || 0,
-          checkCount: checkCount || 0,
-          nextDue: dueDates[0] || null
-        };
+        stats[ride.id] = { docCount: docCount || 0, checkCount: checkCount || 0, nextDue: dueDates[0] || null };
       } catch (error) {
         console.error(`Error loading stats for ride ${ride.id}:`, error);
         stats[ride.id] = { docCount: 0, checkCount: 0, nextDue: null };
       }
     }
-    
+
     setRideStats(stats);
   };
 
   const handleRideAdded = () => {
     setShowAddForm(false);
     loadRides();
-    toast({
-      title: "Ride added successfully",
-      description: "Your new ride has been added to your inventory.",
-    });
+    toast({ title: "Ride added successfully", description: "Your new ride has been added to your inventory." });
   };
 
   if (selectedRide) {
-    return (
-      <RideDetail 
-        ride={selectedRide} 
-        onBack={() => setSelectedRide(null)}
-        onUpdate={loadRides}
-      />
-    );
+    return <RideDetail ride={selectedRide} onBack={() => setSelectedRide(null)} onUpdate={loadRides} />;
   }
 
   if (showAddForm) {
-    return (
-      <RideForm 
-        onSuccess={handleRideAdded}
-        onCancel={() => setShowAddForm(false)}
-      />
-    );
+    return <RideForm onSuccess={handleRideAdded} onCancel={() => setShowAddForm(false)} />;
   }
 
   if (loading) {
@@ -187,172 +212,97 @@ const RideManagement = () => {
     );
   }
 
+  const showFilters = rides.length >= 4;
+
   return (
-    <div className="space-y-6">
-      <Alert>
-        <AlertDescription>
-          Add and manage your rides, stalls, and equipment. Track documents and certificates for each item. Use the action buttons to view details, send documents, or manage settings.
-        </AlertDescription>
-      </Alert>
-      {/* Mobile-friendly header */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-bold">My Rides & Equipment</h2>
-            <p className="text-sm sm:text-base text-muted-foreground">
-              Manage your rides, stalls, games, inflatables, attractions, and equipment
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div>
+            <h2 className="text-2xl sm:text-3xl font-bold">My Equipment</h2>
+            <p className="text-sm text-muted-foreground">
+              {rides.length} {rides.length === 1 ? 'item' : 'items'}
             </p>
           </div>
-          
-          {/* Mobile: Full-width buttons */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:items-center sm:space-x-2">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowRequestDialog(true)}
-              className="flex items-center justify-center space-x-2 w-full sm:w-auto"
-            >
-              <HelpCircle className="h-4 w-4" />
-              <span>Request New Type</span>
-            </Button>
-            <Button 
-              id="rrd-btn-add-ride"
-              onClick={() => setShowAddForm(true)} 
-              className="flex items-center justify-center space-x-2 w-full sm:w-auto bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Add Ride/Stall</span>
-            </Button>
-          </div>
+          {rides.length > 0 && (
+            <EquipmentViewToggle view={viewMode} onViewChange={handleViewChange} />
+          )}
         </div>
-        
-        {/* Mobile: Quick stats if rides exist */}
-        {rides.length > 0 && (
-          <div className="block sm:hidden bg-muted/50 rounded-lg p-3">
-            <div className="text-center">
-              <div className="text-lg font-semibold text-primary">{rides.length}</div>
-              <div className="text-xs text-muted-foreground">Total Items</div>
-            </div>
-          </div>
-        )}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setShowRequestDialog(true)}
+            className="flex items-center gap-1.5"
+            size="sm"
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span className="hidden sm:inline">Request Type</span>
+          </Button>
+          <Button
+            id="rrd-btn-add-ride"
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center gap-1.5"
+            size="sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Add Equipment</span>
+          </Button>
+        </div>
       </div>
 
+      {/* Filters */}
+      {showFilters && (
+        <EquipmentFilters
+          search={search}
+          onSearchChange={setSearch}
+          category={categoryFilter}
+          onCategoryChange={setCategoryFilter}
+          sort={sort}
+          onSortChange={setSort}
+          categories={categories}
+        />
+      )}
+
+      {/* Content */}
       {rides.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center space-y-4">
               <Settings className="mx-auto h-16 w-16 text-muted-foreground" />
               <div className="space-y-2">
-                <h3 className="text-xl font-semibold">No rides, stalls, or equipment added yet</h3>
+                <h3 className="text-xl font-semibold">No equipment added yet</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  Start by adding your first ride, food stall, game, or equipment using the "Add Ride/Stall" button above.
+                  Add your first ride, stall, or equipment using the button above.
                 </p>
               </div>
             </div>
           </CardContent>
         </Card>
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
-          {rides.map((ride) => {
-            const criticalCount = criticalDefectsMap?.get(ride.id) || 0;
-            return (
-            <Card key={ride.id} className={`hover:shadow-md transition-all cursor-pointer ${criticalCount > 0 ? 'border-destructive/50 bg-destructive/5' : 'border-muted/50'}`}>
-              {/* Critical defect indicator */}
-              {criticalCount > 0 && (
-                <div className="flex items-center gap-2 px-4 pt-3 pb-0">
-                  <AlertOctagon className="h-4 w-4 text-destructive shrink-0" />
-                  <span className="text-xs font-bold text-destructive">
-                    Critical defect — do not operate
-                  </span>
-                </div>
-              )}
-              <CardHeader className="pb-3 space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <CardTitle className="text-base sm:text-lg leading-tight flex-1 min-w-0 break-words line-clamp-2">
-                    {ride.ride_name}
-                  </CardTitle>
-                  <Badge 
-                    variant="outline" 
-                    className="text-[10px] sm:text-xs px-1.5 sm:px-2 py-0.5 bg-primary/10 text-primary border-primary/20 flex-shrink-0 whitespace-nowrap"
-                  >
-                    {ride.ride_categories.name}
-                  </Badge>
-                </div>
-                
-                {/* Simplified details for mobile */}
-                {(ride.manufacturer || ride.year_manufactured) && (
-                  <div className="text-xs text-muted-foreground space-y-0.5">
-                    {ride.manufacturer && (
-                      <div className="truncate">Make: {ride.manufacturer}</div>
-                    )}
-                    {ride.year_manufactured && (
-                      <div>Year: {ride.year_manufactured}</div>
-                    )}
-                  </div>
-                )}
-              </CardHeader>
-              
-              <CardContent className="pt-0 space-y-3">
-                {/* Clean 2-column stats for mobile */}
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="p-2 rounded-md bg-muted/50 text-center">
-                    <FileText className="h-3 w-3 sm:h-4 sm:w-4 mx-auto text-primary mb-1" />
-                    <p className="text-xs sm:text-sm font-medium">
-                      {rideStats[ride.id]?.docCount ?? 0}
-                    </p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">Documents</p>
-                  </div>
-                  <div className="p-2 rounded-md bg-muted/50 text-center">
-                    <CheckSquare className="h-3 w-3 sm:h-4 sm:w-4 mx-auto text-accent mb-1" />
-                    <p className="text-xs sm:text-sm font-medium">
-                      {rideStats[ride.id]?.checkCount ?? 0}
-                    </p>
-                    <p className="text-[10px] sm:text-xs text-muted-foreground">Checks</p>
-                  </div>
-                </div>
-
-                {/* Next due - if exists */}
-                {rideStats[ride.id]?.nextDue && (
-                  <div className="text-center p-2 rounded-md bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
-                    <p className="text-xs text-amber-700 dark:text-amber-400 font-medium">
-                      Due: {new Date(rideStats[ride.id].nextDue!).toLocaleDateString('en-GB', { 
-                        day: '2-digit', 
-                        month: 'short',
-                        year: '2-digit'
-                      })}
-                    </p>
-                  </div>
-                )}
-
-                {/* Simplified action buttons */}
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => setSelectedRide(ride)}
-                    className="flex-1 text-xs sm:text-sm"
-                    variant="outline"
-                    size="sm"
-                  >
-                    Manage
-                  </Button>
-                  <SendDocumentsDialog 
-                    ride={ride} 
-                    trigger={
-                      <Button variant="ghost" size="sm" className="px-2">
-                        <Mail className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </Button>
-                    }
-                  />
-                </div>
-              </CardContent>
-            </Card>
-            );
-          })}
+      ) : filteredRides.length === 0 ? (
+        <div className="text-center py-8 text-muted-foreground">
+          <p className="text-sm">No equipment matches your search.</p>
+          <Button variant="link" size="sm" onClick={() => { setSearch(''); setCategoryFilter('all'); }}>
+            Clear filters
+          </Button>
         </div>
+      ) : viewMode === 'cards' ? (
+        <EquipmentCardGrid
+          rides={filteredRides}
+          rideStats={rideStats}
+          criticalDefectsMap={criticalDefectsMap}
+          onSelectRide={setSelectedRide}
+        />
+      ) : (
+        <EquipmentListView
+          rides={filteredRides}
+          rideStats={rideStats}
+          criticalDefectsMap={criticalDefectsMap}
+          onSelectRide={setSelectedRide}
+        />
       )}
 
-      <RequestRideTypeDialog 
-        open={showRequestDialog} 
-        onOpenChange={setShowRequestDialog} 
-      />
+      <RequestRideTypeDialog open={showRequestDialog} onOpenChange={setShowRequestDialog} />
     </div>
   );
 };
