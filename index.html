@@ -30,8 +30,9 @@
     <link rel="dns-prefetch" href="https://fonts.googleapis.com" />
     <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
     
-    <!-- Preload critical font -->
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" />
+    <!-- Load fonts non-render-blocking -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" /></noscript>
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website" />
@@ -166,7 +167,30 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Inline critical skeleton for faster FCP — removed by React on hydration -->
+      <style>
+        .fcp-skeleton{min-height:100vh;display:flex;flex-direction:column;background:#0a0a0f;color:#fff;font-family:system-ui,-apple-system,sans-serif}
+        .fcp-header{position:fixed;top:0;left:0;right:0;height:64px;display:flex;align-items:center;padding:0 24px;background:rgba(10,10,15,.8);border-bottom:1px solid rgba(255,255,255,.1);z-index:50;backdrop-filter:blur(12px)}
+        .fcp-header-title{font-weight:700;font-size:1.25rem}
+        .fcp-main{flex:1;display:flex;align-items:center;justify-content:center;padding-top:64px}
+        .fcp-card{max-width:560px;text-align:center;padding:0 16px}
+        .fcp-icon{width:80px;height:80px;border-radius:16px;background:rgba(255,255,255,.06);margin:0 auto 32px}
+        .fcp-badge{display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:9999px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);color:#f59e0b;font-size:.875rem;font-weight:500;margin-bottom:16px}
+        .fcp-h1{font-size:2.25rem;font-weight:700;letter-spacing:-.025em;margin:0 0 16px}
+        .fcp-p{font-size:1.125rem;color:rgba(255,255,255,.6);line-height:1.6;margin:0}
+        @media(min-width:768px){.fcp-h1{font-size:3rem}}
+      </style>
+      <div class="fcp-skeleton" aria-hidden="true">
+        <div class="fcp-header"><span class="fcp-header-title">Ride Ready Docs</span></div>
+        <div class="fcp-main"><div class="fcp-card">
+          <div class="fcp-icon"></div>
+          <div class="fcp-badge">Coming Soon</div>
+          <h1 class="fcp-h1">Ride Ready Docs</h1>
+          <p class="fcp-p">The complete documentation management platform for amusement ride operators.</p>
+        </div></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
