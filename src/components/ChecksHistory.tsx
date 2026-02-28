@@ -98,7 +98,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const [filteredChecks, setFilteredChecks] = useState<CheckWithResults[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [frequencyFilter, setFrequencyFilter] = useState<'all' | 'daily' | 'monthly' | 'yearly'>('all');
+  const [frequencyFilter, setFrequencyFilter] = useState<'all' | 'daily' | 'preopening' | 'monthly' | 'yearly'>('all');
   const [statusFilter, setStatusFilter] = useState<'all' | 'passed' | 'failed' | 'partial'>('all');
   const [dateRange, setDateRange] = useState<'7' | '30' | '90' | 'thisMonth' | 'thisYear' | 'custom'>('30');
   const [customStartDate, setCustomStartDate] = useState<Date | undefined>();
@@ -178,7 +178,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         `)
         .eq('user_id', effectiveUserId)
         .eq('ride_id', rideId)
-        .eq('check_frequency', frequency)
+        .in('check_frequency', frequency === 'daily' ? ['daily', 'preopening'] : [frequency])
         .eq('is_test_data', false) // Exclude test data
         .gte('check_date', startDate)
         .lte('check_date', endDate)
@@ -314,7 +314,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
 
     const { startDate, endDate } = getDateRange();
     const companyName = profile?.company_name || profile?.showmen_name || 'Safety Checks Report';
-    const frequencyLabel = frequency === 'daily' ? 'DAILY' : frequency === 'monthly' ? 'MONTHLY' : frequency === 'yearly' ? 'YEARLY' : frequency.toUpperCase();
+    const frequencyLabel = frequency === 'daily' ? 'DAILY / PRE-OPENING' : frequency === 'monthly' ? 'MONTHLY' : frequency === 'yearly' ? 'YEARLY' : frequency.toUpperCase();
     const templateOpts = { doc, title: `${frequencyLabel} SAFETY CHECKS`, documentId: docId, docType: 'CH' as const };
 
     // Standard header
@@ -487,7 +487,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
 
       {/* ── KPI cards ── */}
       <div className="kpiGrid">
-        <KpiCard title={`${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Checks`} value={overallStats.total} tone="neutral" />
+        <KpiCard title={frequency === 'daily' ? 'Daily / Pre-Opening Checks' : `${frequency.charAt(0).toUpperCase() + frequency.slice(1)} Checks`} value={overallStats.total} tone="neutral" />
         <KpiCard title="Passed" value={overallStats.passed} tone="good" />
         <KpiCard title="Failed" value={overallStats.failed} tone="bad" />
         <KpiCard title="Partial" value={overallStats.partial} tone="warn" />
@@ -551,8 +551,8 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
                 onChange={(e) => setFrequencyFilter(e.target.value as any)}
               >
                 <option value="all">All Frequencies</option>
-                <option value="preopening">Pre-Opening</option>
-                <option value="daily">Daily</option>
+                <option value="daily">Daily only (historical)</option>
+                <option value="preopening">Pre-Opening only (historical)</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
                 <option value="yearly">Yearly</option>

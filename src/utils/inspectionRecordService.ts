@@ -255,7 +255,12 @@ export async function fetchInspectionRecords(
     .order('completed_at', { ascending: false });
 
   if (options.frequency) {
-    query = query.eq('check_frequency', options.frequency);
+    // Merged daily/preopening: fetch both when requesting 'daily'
+    if (options.frequency === 'daily') {
+      query = query.in('check_frequency', ['daily', 'preopening']);
+    } else {
+      query = query.eq('check_frequency', options.frequency);
+    }
   }
 
   if (options.limit) {
