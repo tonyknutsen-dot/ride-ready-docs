@@ -54,7 +54,9 @@ export async function generateInspectionRecordPdf(
     const docId = await generateDocumentId(record.ride_id, 'IR');
     const frequencyLabel = record.check_frequency === 'preopening'
       ? 'PRE-OPENING'
-      : record.check_frequency.toUpperCase();
+      : record.check_frequency === 'daily'
+        ? 'DAILY / PRE-OPENING'
+        : record.check_frequency.toUpperCase();
 
     const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
     const mL = 15;
