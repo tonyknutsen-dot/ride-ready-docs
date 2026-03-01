@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import { 
   ArrowLeft, FileText, CheckSquare, Wrench, Pencil, ImageIcon, Trash2,
-  AlertTriangle, AlertOctagon, Clock, PlayCircle, PauseCircle, History,
+  AlertTriangle, AlertOctagon, Clock, History,
   Loader2, Camera, AlertCircle
 } from 'lucide-react';
 import {
@@ -31,12 +31,8 @@ import RideForm from './RideForm';
 import ImageViewer from './ImageViewer';
 import { DeleteRideDialog } from './DeleteRideDialog';
 import { lazy, Suspense } from 'react';
-import { useDailyStatus } from '@/hooks/useDailyStatus';
-import { useAppRole } from '@/hooks/useAppRole';
 import CriticalDefectBanner from './CriticalDefectBanner';
 import { useOpenCriticalDefects } from '@/hooks/useOpenCriticalDefects';
-import NotOperatingReasonDialog from '@/components/NotOperatingReasonDialog';
-import { Textarea } from '@/components/ui/textarea';
 import DefectsList from './DefectsList';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
@@ -73,11 +69,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const [isEditing, setIsEditing] = useState(false);
   const [showChecksGuide, setShowChecksGuide] = useState(false);
   
-  const [showConfirmOff, setShowConfirmOff] = useState(false);
-  const [showOverrideDialog, setShowOverrideDialog] = useState(false);
-  const [overrideReason, setOverrideReason] = useState('');
-  const role = useAppRole();
-  const { isOperating, isLoading: opLoading, canToggle, toggling, toggleOperating, autoSetOperating } = useDailyStatus(ride.id);
   const { hasCriticalDefects } = useOpenCriticalDefects(ride.id);
   
   const [rideStats, setRideStats] = useState({
@@ -342,48 +333,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                 ))}
               </div>
 
-              {/* Operating Today */}
-              <div className="flex items-center justify-between gap-3 bg-muted/30 rounded-xl border border-border px-3 py-2.5">
-                <div className="flex items-center gap-2 min-w-0">
-                  {isOperating ? (
-                    <PlayCircle className="h-5 w-5 text-green-600 shrink-0" />
-                  ) : (
-                    <PauseCircle className="h-5 w-5 text-muted-foreground shrink-0" />
-                  )}
-                  <p className="text-sm font-semibold">
-                    {opLoading ? 'Checking…' : isOperating ? 'In use today' : 'Not in use today'}
-                  </p>
-                </div>
-                {canToggle && (
-                  <Button
-                    variant={isOperating ? 'outline' : 'default'}
-                    size="sm"
-                    disabled={toggling || opLoading}
-                    onClick={() => {
-                      if (isOperating) {
-                        setShowConfirmOff(true);
-                        return;
-                      }
-                      if (!isOperating && hasCriticalDefects) {
-                        if (role === 'controller') {
-                          setShowOverrideDialog(true);
-                        } else {
-                          toast({
-                            title: 'Cannot mark in use',
-                            description: 'Open critical defect — resolve it first.',
-                            variant: 'destructive',
-                          });
-                        }
-                        return;
-                      }
-                      toggleOperating();
-                    }}
-                    className="shrink-0 text-xs"
-                  >
-                    {toggling ? '…' : isOperating ? 'Set not in use' : 'Mark in use'}
-                  </Button>
-                )}
-              </div>
             </div>
           </div>
 
@@ -516,56 +465,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
       </Tabs>
 
-
-      {/* Confirm OFF modal */}
-      <NotOperatingReasonDialog
-        open={showConfirmOff}
-        onOpenChange={setShowConfirmOff}
-        onConfirm={(reason) => {
-          toggleOperating(reason);
-          setShowConfirmOff(false);
-        }}
-        disabled={toggling}
-        preselectReason={hasCriticalDefects ? 'Critical defect (pre-opening/daily check)' : undefined}
-      />
-
-      {/* Override dialog — controller only */}
-      <Dialog open={showOverrideDialog} onOpenChange={setShowOverrideDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="flex items-center gap-2 mb-1">
-              <AlertOctagon className="h-5 w-5 text-destructive" />
-              <DialogTitle className="text-destructive">Override — open critical defect</DialogTitle>
-            </div>
-            <DialogDescription>
-              This ride has an open critical defect. Explain why it can still be used.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-1.5 py-2">
-            <Label className="text-sm font-medium">Reason *</Label>
-            <Textarea
-              value={overrideReason}
-              onChange={(e) => setOverrideReason(e.target.value)}
-              placeholder="Explain why the ride can be used despite the defect…"
-              rows={2}
-              className="text-sm"
-            />
-          </div>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => { setShowOverrideDialog(false); setOverrideReason(''); }}>
-              Cancel
-            </Button>
-            <Button onClick={() => {
-              if (!overrideReason.trim()) return;
-              toggleOperating(`Override: ${overrideReason.trim()}`);
-              setShowOverrideDialog(false);
-              setOverrideReason('');
-            }} disabled={toggling || !overrideReason.trim()} className="bg-amber-600 hover:bg-amber-700 text-white">
-              {toggling ? 'Updating…' : 'Override and mark in use'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
