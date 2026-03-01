@@ -189,8 +189,8 @@ const WindLog = () => {
     setActionTaken('');
     setActionNotes('');
     setNotes('');
-    // Default to all inflatables selected
-    setSelectedRideIds(inflatables.map(r => r.id));
+    // Default to none selected — user picks which inflatables apply
+    setSelectedRideIds([]);
     setSheetOpen(true);
   };
 
