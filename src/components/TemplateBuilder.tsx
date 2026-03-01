@@ -657,22 +657,22 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                 {selectedItems.map((item, index) => (
                   <div key={index} className="group flex items-center gap-1.5 py-1.5 px-2 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
                     {/* Reorder controls */}
-                    <div className="flex flex-col shrink-0">
+                    <div className="flex flex-col shrink-0 -my-0.5">
                       <button
                         onClick={() => handleMoveItem(index, 'up')}
                         disabled={index === 0 || editingIndex !== null}
-                        className="text-muted-foreground hover:text-foreground disabled:opacity-20 p-0 h-3.5 flex items-center"
+                        className="text-muted-foreground hover:text-foreground active:text-foreground disabled:opacity-20 min-h-[22px] min-w-[36px] flex items-center justify-center rounded-md hover:bg-muted/60 active:bg-muted transition-colors"
                         aria-label="Move up"
                       >
-                        <ChevronUp className="h-3.5 w-3.5" />
+                        <ChevronUp className="h-4.5 w-4.5" />
                       </button>
                       <button
                         onClick={() => handleMoveItem(index, 'down')}
                         disabled={index === selectedItems.length - 1 || editingIndex !== null}
-                        className="text-muted-foreground hover:text-foreground disabled:opacity-20 p-0 h-3.5 flex items-center"
+                        className="text-muted-foreground hover:text-foreground active:text-foreground disabled:opacity-20 min-h-[22px] min-w-[36px] flex items-center justify-center rounded-md hover:bg-muted/60 active:bg-muted transition-colors"
                         aria-label="Move down"
                       >
-                        <ChevronDown className="h-3.5 w-3.5" />
+                        <ChevronDown className="h-4.5 w-4.5" />
                       </button>
                     </div>
 
