@@ -506,100 +506,81 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         </div>
       )}
 
-      {/* Step 1: Add Custom Items */}
+      {/* Step 1: Add Custom Items — flat layout */}
       {step === 1 && (
         <div className="space-y-4">
           {selectedItems.length > 0 && (
-            <div className="flex items-center gap-2 p-3 rounded-lg bg-success/10 border border-success/20">
+            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-success/10 border border-success/20">
               <CheckSquare className="h-4 w-4 text-success shrink-0" />
               <span className="text-sm font-medium">{selectedItems.length} item{selectedItems.length !== 1 ? 's' : ''} added so far</span>
             </div>
           )}
 
-          <Card className="border-primary/20 bg-primary/5">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">Add More Items</CardTitle>
-              <CardDescription>
-                Browse our library or type your own custom checks
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {equipmentGroup && (
-              <CheckLibraryDialog
-                trigger={
-                  <Button className="w-full font-medium" variant="outline">
-                    <Library className="w-4 h-4 mr-2" />
-                    Browse Full Library
-                  </Button>
-                }
-                frequency={frequency as "daily" | "weekly" | "monthly" | "yearly" | "preopening"}
-                rideCategoryId={ride.category_id}
-                equipmentGroup={equipmentGroup}
-                categoryGroupLabel={ride.ride_categories?.category_group}
-                onAdd={async (labels: string[]) => {
-                  const newItems: BuilderItem[] = labels.map((label, i) => ({
-                    check_item_text: label,
-                    is_required: true,
-                    category: 'library',
-                    sort_order: selectedItems.length + i,
-                    isNew: true,
-                  }));
-                  setSelectedItems(prev => [...prev, ...newItems]);
-                  toast({ title: `${labels.length} item${labels.length > 1 ? 's' : ''} added` });
+          {/* Library button */}
+          {equipmentGroup && (
+            <CheckLibraryDialog
+              trigger={
+                <Button className="w-full font-medium" variant="outline">
+                  <Library className="w-4 h-4 mr-2" />
+                  Browse Check Library
+                </Button>
+              }
+              frequency={frequency as "daily" | "weekly" | "monthly" | "yearly" | "preopening"}
+              rideCategoryId={ride.category_id}
+              equipmentGroup={equipmentGroup}
+              categoryGroupLabel={ride.ride_categories?.category_group}
+              onAdd={async (labels: string[]) => {
+                const newItems: BuilderItem[] = labels.map((label, i) => ({
+                  check_item_text: label,
+                  is_required: true,
+                  category: 'library',
+                  sort_order: selectedItems.length + i,
+                  isNew: true,
+                }));
+                setSelectedItems(prev => [...prev, ...newItems]);
+                toast({ title: `${labels.length} item${labels.length > 1 ? 's' : ''} added` });
+              }}
+            />
+          )}
+
+          {/* Custom item input */}
+          <div className="space-y-1.5">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Add your own</p>
+            <div className="flex gap-2">
+              <Input
+                value={customItemText}
+                onChange={(e) => setCustomItemText(e.target.value)}
+                placeholder="e.g., Check hydraulic fluid levels"
+                className="bg-background"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddCustomItem();
+                  }
                 }}
               />
-              )}
+              <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()} size="icon" variant="outline" className="shrink-0">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
 
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-primary/5 px-2 text-muted-foreground">or add your own</span>
-                </div>
-              </div>
-
-              <div className="flex gap-2">
-                <Input
-                  value={customItemText}
-                  onChange={(e) => setCustomItemText(e.target.value)}
-                  placeholder="e.g., Check hydraulic fluid levels"
-                  className="bg-background"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddCustomItem();
-                    }
-                  }}
-                />
-                <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()} size="icon" variant="outline" className="shrink-0">
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">Press Enter to add.</p>
-            </CardContent>
-          </Card>
-
-          {/* Quick preview of items */}
+          {/* Item list preview */}
           {selectedItems.length > 0 && (
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm">Your Items ({selectedItems.length})</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-1">
-                  {selectedItems.map((item, index) => (
-                    <div key={index} className="flex items-center gap-2 text-sm py-1.5 border-b last:border-0">
-                      <CheckSquare className="h-3.5 w-3.5 text-success shrink-0" />
-                      <span className="truncate flex-1">{item.check_item_text}</span>
-                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0 text-destructive" onClick={() => handleRemoveItem(index)}>
-                        <X className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            <div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-2">Your items ({selectedItems.length})</p>
+              <div className="space-y-1">
+                {selectedItems.map((item, index) => (
+                  <div key={index} className="flex items-center gap-2 text-sm py-1.5 border-b border-border/50 last:border-0">
+                    <CheckSquare className="h-3.5 w-3.5 text-success shrink-0" />
+                    <span className="truncate flex-1">{item.check_item_text}</span>
+                    <button onClick={() => handleRemoveItem(index)} className="text-muted-foreground hover:text-destructive p-2 -mr-1" aria-label="Remove">
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
           )}
 
           <Button onClick={() => setStep(2)} className="w-full gap-2" disabled={selectedItems.length === 0}>
@@ -641,22 +622,22 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                 {selectedItems.map((item, index) => (
                   <div key={index} className="group flex items-center gap-1.5 py-1.5 px-2 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
                     {/* Reorder controls */}
-                    <div className="flex flex-col shrink-0 -my-0.5">
+                    <div className="flex flex-col shrink-0 -my-1">
                       <button
                         onClick={() => handleMoveItem(index, 'up')}
                         disabled={index === 0 || editingIndex !== null}
-                        className="text-muted-foreground hover:text-foreground active:text-foreground disabled:opacity-20 min-h-[22px] min-w-[36px] flex items-center justify-center rounded-md hover:bg-muted/60 active:bg-muted transition-colors"
+                        className="text-muted-foreground hover:text-foreground active:text-foreground disabled:opacity-20 min-h-[28px] min-w-[40px] flex items-center justify-center rounded-md hover:bg-muted/60 active:bg-muted transition-colors"
                         aria-label="Move up"
                       >
-                        <ChevronUp className="h-4.5 w-4.5" />
+                        <ChevronUp className="h-5 w-5" />
                       </button>
                       <button
                         onClick={() => handleMoveItem(index, 'down')}
                         disabled={index === selectedItems.length - 1 || editingIndex !== null}
-                        className="text-muted-foreground hover:text-foreground active:text-foreground disabled:opacity-20 min-h-[22px] min-w-[36px] flex items-center justify-center rounded-md hover:bg-muted/60 active:bg-muted transition-colors"
+                        className="text-muted-foreground hover:text-foreground active:text-foreground disabled:opacity-20 min-h-[28px] min-w-[40px] flex items-center justify-center rounded-md hover:bg-muted/60 active:bg-muted transition-colors"
                         aria-label="Move down"
                       >
-                        <ChevronDown className="h-4.5 w-4.5" />
+                        <ChevronDown className="h-5 w-5" />
                       </button>
                     </div>
 
@@ -667,18 +648,18 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                           <Input
                             value={editText}
                             onChange={(e) => setEditText(e.target.value)}
-                            className="flex-1 h-7 text-sm"
+                            className="flex-1 h-8 text-sm"
                             autoFocus
                             onKeyDown={(e) => {
                               if (e.key === 'Enter') handleSaveEdit();
                               if (e.key === 'Escape') handleCancelEdit();
                             }}
                           />
-                          <button onClick={handleSaveEdit} className="text-primary p-1" aria-label="Save">
-                            <Check className="h-3.5 w-3.5" />
+                          <button onClick={handleSaveEdit} className="text-primary p-2" aria-label="Save">
+                            <Check className="h-4 w-4" />
                           </button>
-                          <button onClick={handleCancelEdit} className="text-muted-foreground p-1" aria-label="Cancel">
-                            <X className="h-3.5 w-3.5" />
+                          <button onClick={handleCancelEdit} className="text-muted-foreground p-2" aria-label="Cancel">
+                            <X className="h-4 w-4" />
                           </button>
                         </div>
                       ) : (
@@ -689,11 +670,11 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                     {/* Actions */}
                     {editingIndex !== index && (
                       <div className="flex items-center shrink-0">
-                        <button onClick={() => handleStartEdit(index)} className="text-muted-foreground hover:text-foreground p-1.5" aria-label="Edit">
-                          <Pencil className="h-3 w-3" />
+                        <button onClick={() => handleStartEdit(index)} className="text-muted-foreground hover:text-foreground p-2" aria-label="Edit">
+                          <Pencil className="h-4 w-4" />
                         </button>
-                        <button onClick={() => handleRemoveItem(index)} className="text-muted-foreground hover:text-destructive p-1.5" aria-label="Remove">
-                          <Trash2 className="h-3 w-3" />
+                        <button onClick={() => handleRemoveItem(index)} className="text-muted-foreground hover:text-destructive p-2" aria-label="Remove">
+                          <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
                     )}
