@@ -529,8 +529,8 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
         {/* ── Section 1: Essential Information ── */}
         <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
-          <div className="px-4 py-3 bg-[hsl(213,52%,24%)] border-b border-foreground/10">
-            <h3 className="text-[13px] font-bold text-white tracking-tight">Essential Information</h3>
+          <div className="px-4 pt-4 pb-3 border-b border-border">
+            <h3 className="text-sm font-bold text-foreground">Essential Information</h3>
           </div>
           <div className="p-4 space-y-4">
             <div className="space-y-1.5">
@@ -622,8 +622,8 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
         {/* ── Section 2: Technical Details ── */}
         <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
-          <div className="px-4 py-3 bg-[hsl(213,52%,24%)] border-b border-foreground/10">
-            <h3 className="text-[13px] font-bold text-white tracking-tight">Technical Details <span className="font-normal text-white/60">(optional)</span></h3>
+          <div className="px-4 pt-4 pb-3 border-b border-border">
+            <h3 className="text-sm font-bold text-foreground">Technical Details <span className="font-normal text-muted-foreground">(optional)</span></h3>
           </div>
           <div className="p-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -677,8 +677,8 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
         {/* ── Section 3: Controller ── */}
         <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
-          <div className="px-4 py-3 bg-[hsl(213,52%,24%)] border-b border-foreground/10">
-            <h3 className="text-[13px] font-bold text-white tracking-tight">Controller <span className="font-normal text-white/60">(optional)</span></h3>
+          <div className="px-4 pt-4 pb-3 border-b border-border">
+            <h3 className="text-sm font-bold text-foreground">Controller <span className="font-normal text-muted-foreground">(optional)</span></h3>
           </div>
           <div className="p-4 space-y-1.5">
             <Label htmlFor="owner_name" className="text-[13px] font-semibold text-foreground">Controller Name(s)</Label>
@@ -700,8 +700,8 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
         {/* ── Section 4: Photo ── */}
         <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
-          <div className="px-4 py-3 bg-[hsl(213,52%,24%)] border-b border-foreground/10">
-            <h3 className="text-[13px] font-bold text-white tracking-tight">Photo <span className="font-normal text-white/60">(optional)</span></h3>
+          <div className="px-4 pt-4 pb-3 border-b border-border">
+            <h3 className="text-sm font-bold text-foreground">Photo <span className="font-normal text-muted-foreground">(optional)</span></h3>
           </div>
           <div className="p-4 space-y-3">
             {/* New photo preview (takes priority) */}
