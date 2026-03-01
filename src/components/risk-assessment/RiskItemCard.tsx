@@ -1,5 +1,9 @@
 import { useState } from 'react';
 import { Pencil, Trash2, ChevronDown, ChevronUp, User, CalendarDays } from 'lucide-react';
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { format } from 'date-fns';
 
 interface RiskItemCardProps {
@@ -92,13 +96,30 @@ export function RiskItemCard({
             >
               <Pencil className="h-3.5 w-3.5 text-slate-500" />
             </button>
-            <button
-              onClick={onDelete}
-              className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-red-50 transition-colors"
-              aria-label="Delete"
-            >
-              <Trash2 className="h-3.5 w-3.5 text-red-500" />
-            </button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  className="h-8 w-8 flex items-center justify-center rounded-lg hover:bg-red-50 transition-colors"
+                  aria-label="Delete"
+                >
+                  <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete this risk item?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will remove this hazard and its controls from this risk assessment.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={onDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
 

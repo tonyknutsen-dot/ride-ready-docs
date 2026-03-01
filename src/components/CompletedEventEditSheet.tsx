@@ -247,7 +247,7 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
             <Input
               value={inspectorCompany}
               onChange={(e) => setInspectorCompany(e.target.value)}
-              placeholder="e.g. ADIPS Inspector, LEAPS"
+              placeholder="e.g. Independent Inspector, LEAPS"
               className="text-sm"
             />
           </div>

@@ -97,6 +97,7 @@ const RideDetailPage = () => {
         checks: 'Checks',
         inspections: 'Checks',
         activity: 'Activity',
+        windlog: 'Wind Log',
       };
       
       if (tabLabels[initialTab]) {

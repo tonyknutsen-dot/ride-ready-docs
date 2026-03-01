@@ -451,7 +451,7 @@ const MarkCompleteSheet = ({
               <Input
                 value={inspectorCompany}
                 onChange={(e) => setInspectorCompany(e.target.value)}
-                placeholder="e.g. ADIPS Inspector, LEAPS, DMG Technical"
+                placeholder="e.g. Independent Inspector, LEAPS, DMG Technical"
                 className="pl-9"
                 maxLength={200}
               />
