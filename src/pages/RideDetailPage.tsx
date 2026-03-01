@@ -164,14 +164,6 @@ const RideDetailPage = () => {
           </span>
         </div>
       )}
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => navigate('/rides')}
-        className="h-9 w-9 -ml-2 mb-1 text-muted-foreground hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-      </Button>
       <PageBreadcrumb items={getBreadcrumbItems()} showHome className="text-[11px] opacity-60 hidden md:flex" />
       <RideDetail 
         ride={ride}
