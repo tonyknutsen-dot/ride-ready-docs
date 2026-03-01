@@ -220,8 +220,11 @@ const WindLog = () => {
 
     setSaving(true);
     try {
-      // Insert the wind log entry (ride_id null since linked via junction)
-      const { data: inserted, error } = await supabase.from('wind_speed_logs').insert({
+      const windLogId = crypto.randomUUID();
+
+      // Insert the shared wind log entry (ride linkage is in wind_log_rides)
+      const { error } = await supabase.from('wind_speed_logs').insert({
+        id: windLogId,
         user_id: effectiveUserId,
         ride_id: null,
         log_date: logDate,
@@ -235,13 +238,13 @@ const WindLog = () => {
         anemometer_serial: anemometerSerial || null,
         action_taken: finalAction,
         notes: notes || null,
-      }).select('id').single();
+      });
 
       if (error) throw error;
 
-      // Insert junction rows
+      // Insert junction rows linking this reading to selected inflatables
       const junctionRows = selectedRideIds.map(rideId => ({
-        wind_log_id: inserted.id,
+        wind_log_id: windLogId,
         ride_id: rideId,
       }));
       const { error: jError } = await supabase.from('wind_log_rides').insert(junctionRows);
@@ -262,17 +265,17 @@ const WindLog = () => {
     entry.anemometer_make || entry.anemometer_model || entry.anemometer_serial;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-4">
       <PageHeader title="Wind Log" />
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Wind className="h-5 w-5 text-primary" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex items-start gap-2">
+          <Wind className="h-5 w-5 text-primary mt-0.5 shrink-0" />
           <p className="text-sm text-muted-foreground">
-            Log wind readings and link them to your inflatables.
+            Log one site/session reading, then link it to selected inflatables.
           </p>
         </div>
-        <Button onClick={handleOpenSheet} size="sm" className="gap-1.5" disabled={inflatables.length === 0}>
+        <Button onClick={handleOpenSheet} size="sm" className="gap-1.5 w-full sm:w-auto" disabled={inflatables.length === 0}>
           <Plus className="h-4 w-4" />
           Add Reading
         </Button>
@@ -423,31 +426,36 @@ const WindLog = () => {
             </div>
 
             {/* Inflatable selector */}
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="space-y-2 rounded-xl border border-border bg-card p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <Label className="text-xs">Applies to *</Label>
-                <button
-                  type="button"
-                  className="text-[11px] text-primary font-medium hover:underline"
-                  onClick={() => {
-                    if (selectedRideIds.length === inflatables.length) {
-                      setSelectedRideIds([]);
-                    } else {
-                      setSelectedRideIds(inflatables.map(r => r.id));
-                    }
-                  }}
-                >
-                  {selectedRideIds.length === inflatables.length ? 'Deselect all' : 'Select all'}
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    className="text-[11px] text-primary font-medium hover:underline"
+                    onClick={() => setSelectedRideIds(inflatables.map(r => r.id))}
+                  >
+                    Select all
+                  </button>
+                  <span className="text-[11px] text-muted-foreground">•</span>
+                  <button
+                    type="button"
+                    className="text-[11px] text-primary font-medium hover:underline"
+                    onClick={() => setSelectedRideIds([])}
+                  >
+                    Clear all
+                  </button>
+                </div>
               </div>
-              <div className="space-y-1.5 max-h-40 overflow-y-auto rounded-lg border border-border p-2">
+              <p className="text-[11px] text-muted-foreground">Starts with none selected. Choose the inflatables this reading applies to.</p>
+              <div className="space-y-1.5 max-h-44 overflow-y-auto rounded-lg border border-border p-2">
                 {inflatables.map((ride) => (
                   <label key={ride.id} className="flex items-center gap-2.5 py-1 px-1 rounded hover:bg-muted/50 cursor-pointer">
                     <Checkbox
                       checked={selectedRideIds.includes(ride.id)}
                       onCheckedChange={() => toggleRide(ride.id)}
                     />
-                    <span className="text-sm">{ride.ride_name}</span>
+                    <span className="text-sm truncate">{ride.ride_name}</span>
                   </label>
                 ))}
               </div>
@@ -502,9 +510,11 @@ const WindLog = () => {
               <Textarea placeholder="Any additional notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="min-h-[60px]" maxLength={500} />
             </div>
 
-            <Button onClick={handleSave} disabled={saving} className="w-full h-12">
-              {saving ? 'Saving...' : 'Save Reading'}
-            </Button>
+            <div className="sticky bottom-0 -mx-6 px-6 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-background border-t border-border">
+              <Button onClick={handleSave} disabled={saving || selectedRideIds.length === 0} className="w-full h-12">
+                {saving ? 'Saving...' : selectedRideIds.length === 0 ? 'Select inflatables to save' : 'Save reading to selected inflatables'}
+              </Button>
+            </div>
           </div>
         </SheetContent>
       </Sheet>
