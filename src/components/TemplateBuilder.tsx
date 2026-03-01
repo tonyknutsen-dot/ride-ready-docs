@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, ArrowRight, Plus, Trash2, Save, Library, Pencil, Check, X, Sparkles, CheckSquare, ListChecks, AlertTriangle, Search } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ArrowLeft, ArrowRight, Plus, Trash2, Save, Library, Pencil, Check, X, Sparkles, CheckSquare, ListChecks, AlertTriangle, Search, ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -74,7 +75,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   const isEditing = !!template;
 
   // Wizard state
-  const [step, setStep] = useState(isEditing ? 2 : 0); // Skip to review if editing
+  const [step, setStep] = useState(isEditing ? 2 : 0);
   const [templateName, setTemplateName] = useState(template?.template_name || defaultTemplateName);
   const [selectedItems, setSelectedItems] = useState<BuilderItem[]>([]);
   const [customItemText, setCustomItemText] = useState('');
@@ -85,6 +86,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   // Start Notice state
   const [startNoticeText, setStartNoticeText] = useState(template?.start_notice_text ?? '');
   const [startNoticeRequired, setStartNoticeRequired] = useState(template?.start_notice_required ?? false);
+  const [startNoticeOpen, setStartNoticeOpen] = useState(!!(template?.start_notice_text?.trim()));
 
   // Suggestions state
   const [suggestions, setSuggestions] = useState<SuggestionItem[]>([]);
@@ -137,12 +139,10 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
       const { data, error } = await query;
       if (error) throw error;
 
-      // Sort: category-specific first, then generic
       const specific = (data || []).filter(r => r.ride_category_id === cat);
       const generic = (data || []).filter(r => !r.ride_category_id);
       setSuggestions([...specific, ...generic]);
 
-      // Auto-select ride-specific items
       const autoSelect: Record<string, boolean> = {};
       specific.forEach(item => { autoSelect[item.id] = true; });
       setSelectedSuggestions(autoSelect);
@@ -375,39 +375,37 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
           <h3 className="font-semibold truncate">
             {isEditing ? 'Edit' : 'Build'} {freqLabel} Checklist
           </h3>
-          <p className="text-sm text-muted-foreground truncate">{ride.ride_name}</p>
+          <p className="text-xs text-muted-foreground truncate">{ride.ride_name}</p>
         </div>
       </div>
 
-      {/* Progress stepper */}
-      <div className="space-y-2">
-        <Progress value={progressValue} className="h-1.5" />
-        <div className="flex justify-between">
-          {STEPS.map((s, i) => {
-            const Icon = s.icon;
-            const isActive = i === step;
-            const isDone = i < step;
-            return (
+      {/* Compact progress stepper */}
+      <div className="flex items-center gap-1">
+        {STEPS.map((s, i) => {
+          const isActive = i === step;
+          const isDone = i < step;
+          return (
+            <div key={i} className="flex items-center flex-1">
               <button
-                key={i}
-                onClick={() => {
-                  if (isDone && !isEditing) setStep(i);
-                }}
+                onClick={() => { if (isDone && !isEditing) setStep(i); }}
                 disabled={i > step || isEditing}
-                className={`flex items-center gap-1.5 text-xs font-medium transition-colors ${
-                  isActive ? 'text-primary' : isDone ? 'text-success' : 'text-muted-foreground'
-                } ${isDone && !isEditing ? 'cursor-pointer hover:text-primary' : ''}`}
+                className={`flex items-center gap-1.5 text-xs font-medium transition-colors w-full ${
+                  isActive ? 'text-primary' : isDone ? 'text-muted-foreground' : 'text-muted-foreground/50'
+                } ${isDone && !isEditing ? 'cursor-pointer' : ''}`}
               >
-                <div className={`h-6 w-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  isActive ? 'bg-primary text-primary-foreground' : isDone ? 'bg-success text-success-foreground' : 'bg-muted text-muted-foreground'
+                <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                  isActive ? 'bg-primary text-primary-foreground' : isDone ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                 }`}>
-                  {isDone ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                  {isDone ? <Check className="h-3 w-3" /> : i + 1}
                 </div>
-                <span className="hidden sm:inline">{s.label}</span>
+                <span className="truncate">{s.label}</span>
               </button>
-            );
-          })}
-        </div>
+              {i < STEPS.length - 1 && (
+                <div className={`h-px w-4 shrink-0 mx-1 ${isDone ? 'bg-primary/30' : 'bg-muted'}`} />
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {/* Step 0: Smart Suggestions */}
@@ -488,7 +486,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                       />
                       <div className="min-w-0 flex-1">
                         <div className="text-sm font-medium flex items-start gap-1.5">
-                          {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-red-600 shrink-0 mt-0.5" />}
+                          {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
                           {item.label}
                         </div>
                         {item.hint && (
@@ -628,127 +626,119 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
 
       {/* Step 2: Review & Save */}
       {step === 2 && (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {/* Checklist name */}
-          <Card>
-            <CardContent className="pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-sm font-medium">Checklist Name</Label>
-                <Input
-                  id="name"
-                  value={templateName}
-                  onChange={(e) => setTemplateName(e.target.value)}
-                  placeholder="e.g., Morning Safety Checks"
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-1.5">
+            <Label htmlFor="name" className="text-sm font-medium">Checklist Name</Label>
+            <Input
+              id="name"
+              value={templateName}
+              onChange={(e) => setTemplateName(e.target.value)}
+              placeholder="e.g., Morning Safety Checks"
+              className="h-9"
+            />
+          </div>
 
           {/* Final item list */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">
-                  Check Items ({selectedItems.length})
-                </CardTitle>
-                {!isEditing && (
-                  <Button variant="ghost" size="sm" className="text-xs" onClick={() => setStep(1)}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> Add more
-                  </Button>
-                )}
-              </div>
-              {selectedItems.length === 0 && (
-                <CardDescription>No items yet — go back to add some.</CardDescription>
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold">Check Items ({selectedItems.length})</span>
+              {!isEditing && (
+                <Button variant="ghost" size="sm" className="text-xs h-7" onClick={() => setStep(1)}>
+                  <Plus className="h-3 w-3 mr-1" /> Add more
+                </Button>
               )}
-            </CardHeader>
-            {selectedItems.length > 0 && (
-              <CardContent>
-                <div className="space-y-2">
-                  {selectedItems.map((item, index) => (
-                    <div key={index} className="flex items-center gap-2 p-2.5 border rounded-lg bg-muted/30">
-                      <div className="flex flex-col gap-0.5">
-                        <Button
-                          size="sm" variant="ghost"
-                          onClick={() => handleMoveItem(index, 'up')}
-                          disabled={index === 0 || editingIndex !== null}
-                          className="h-5 w-5 p-0 text-xs"
-                        >↑</Button>
-                        <Button
-                          size="sm" variant="ghost"
-                          onClick={() => handleMoveItem(index, 'down')}
-                          disabled={index === selectedItems.length - 1 || editingIndex !== null}
-                          className="h-5 w-5 p-0 text-xs"
-                        >↓</Button>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        {editingIndex === index ? (
-                          <div className="flex gap-2 items-center">
-                            <Input
-                              value={editText}
-                              onChange={(e) => setEditText(e.target.value)}
-                              className="flex-1 h-8 text-sm"
-                              autoFocus
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleSaveEdit();
-                                if (e.key === 'Escape') handleCancelEdit();
-                              }}
-                            />
-                            <Button size="sm" variant="ghost" onClick={handleSaveEdit} className="h-7 w-7 p-0 text-success">
-                              <Check className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={handleCancelEdit} className="h-7 w-7 p-0">
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <>
-                            <p className="text-sm truncate">{item.check_item_text}</p>
-                            <Badge variant="outline" className="text-[10px] mt-1">
-                              {item.category === 'custom' ? 'Custom' : item.category === 'library' ? 'Library' : item.category}
-                            </Badge>
-                          </>
-                        )}
-                      </div>
-                      {editingIndex !== index && (
-                        <>
-                          <Button size="sm" variant="ghost" onClick={() => handleStartEdit(index)} className="text-muted-foreground hover:text-foreground h-8 w-8 p-0">
-                            <Pencil className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button size="sm" variant="ghost" onClick={() => handleRemoveItem(index)} className="text-destructive hover:text-destructive h-8 w-8 p-0">
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
-                        </>
+            </div>
+
+            {selectedItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground py-4 text-center">No items yet — go back to add some.</p>
+            ) : (
+              <div className="space-y-1">
+                {selectedItems.map((item, index) => (
+                  <div key={index} className="group flex items-center gap-1.5 py-1.5 px-2 rounded-lg border bg-card hover:bg-muted/30 transition-colors">
+                    {/* Reorder controls */}
+                    <div className="flex flex-col shrink-0">
+                      <button
+                        onClick={() => handleMoveItem(index, 'up')}
+                        disabled={index === 0 || editingIndex !== null}
+                        className="text-muted-foreground hover:text-foreground disabled:opacity-20 p-0 h-3.5 flex items-center"
+                        aria-label="Move up"
+                      >
+                        <ChevronUp className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleMoveItem(index, 'down')}
+                        disabled={index === selectedItems.length - 1 || editingIndex !== null}
+                        className="text-muted-foreground hover:text-foreground disabled:opacity-20 p-0 h-3.5 flex items-center"
+                        aria-label="Move down"
+                      >
+                        <ChevronDown className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Item content */}
+                    <div className="flex-1 min-w-0">
+                      {editingIndex === index ? (
+                        <div className="flex gap-1.5 items-center">
+                          <Input
+                            value={editText}
+                            onChange={(e) => setEditText(e.target.value)}
+                            className="flex-1 h-7 text-sm"
+                            autoFocus
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleSaveEdit();
+                              if (e.key === 'Escape') handleCancelEdit();
+                            }}
+                          />
+                          <button onClick={handleSaveEdit} className="text-primary p-1" aria-label="Save">
+                            <Check className="h-3.5 w-3.5" />
+                          </button>
+                          <button onClick={handleCancelEdit} className="text-muted-foreground p-1" aria-label="Cancel">
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-sm leading-snug">{item.check_item_text}</p>
                       )}
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            )}
-          </Card>
 
-          {/* Add items on review step too */}
-          <Card className="border-dashed">
-            <CardContent className="pt-4 space-y-3">
-              <div className="flex gap-2">
-                <Input
-                  value={customItemText}
-                  onChange={(e) => setCustomItemText(e.target.value)}
-                  placeholder="Add another check item…"
-                  className="bg-background"
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); handleAddCustomItem(); }
-                  }}
-                />
-                <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()} size="icon" variant="outline" className="shrink-0">
-                  <Plus className="h-4 w-4" />
-                </Button>
+                    {/* Actions */}
+                    {editingIndex !== index && (
+                      <div className="flex items-center shrink-0">
+                        <button onClick={() => handleStartEdit(index)} className="text-muted-foreground hover:text-foreground p-1.5" aria-label="Edit">
+                          <Pencil className="h-3 w-3" />
+                        </button>
+                        <button onClick={() => handleRemoveItem(index)} className="text-muted-foreground hover:text-destructive p-1.5" aria-label="Remove">
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              {equipmentGroup && (
+            )}
+          </div>
+
+          {/* Add items — compact inline */}
+          <div className="flex gap-2 items-center">
+            <Input
+              value={customItemText}
+              onChange={(e) => setCustomItemText(e.target.value)}
+              placeholder="Add custom item…"
+              className="bg-background h-8 text-sm flex-1"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); handleAddCustomItem(); }
+              }}
+            />
+            <Button onClick={handleAddCustomItem} disabled={!customItemText.trim()} size="sm" variant="outline" className="shrink-0 h-8 px-2.5">
+              <Plus className="h-3.5 w-3.5" />
+            </Button>
+            {equipmentGroup && (
               <CheckLibraryDialog
                 trigger={
-                  <Button variant="ghost" size="sm" className="w-full text-xs">
-                    <Library className="w-3.5 h-3.5 mr-1.5" />
-                    Browse Library
+                  <Button variant="outline" size="sm" className="shrink-0 h-8 px-2.5 gap-1">
+                    <Library className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline text-xs">Library</span>
                   </Button>
                 }
                 frequency={frequency as "daily" | "weekly" | "monthly" | "yearly" | "preopening"}
@@ -767,40 +757,36 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   toast({ title: `${labels.length} item${labels.length > 1 ? 's' : ''} added` });
                 }}
               />
-              )}
-            </CardContent>
-          </Card>
+            )}
+          </div>
 
-          {/* Start Notice (optional) */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-warning" />
-                Start Notice (Optional Briefing Before Check)
-              </CardTitle>
-              <CardDescription>
-                Add a notice shown to staff before this check starts.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-2">
-                <Label htmlFor="startNotice">Notice text shown before check starts</Label>
-                <Textarea
-                  id="startNotice"
-                  value={startNoticeText}
-                  onChange={(e) => {
-                    setStartNoticeText(e.target.value);
-                    if (!e.target.value.trim()) setStartNoticeRequired(false);
-                    else if (!startNoticeRequired) setStartNoticeRequired(true);
-                  }}
-                  placeholder="Example: Ensure PPE is worn. Check ground stability. Confirm perimeter barriers are in place."
-                  rows={3}
-                />
-              </div>
+          {/* Start Notice — collapsed by default */}
+          <Collapsible open={startNoticeOpen} onOpenChange={setStartNoticeOpen}>
+            <CollapsibleTrigger asChild>
+              <button className="flex items-center gap-2 w-full text-sm text-muted-foreground hover:text-foreground transition-colors py-2">
+                <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                <span className="font-medium">Start Notice</span>
+                {startNoticeText.trim() && <Badge variant="outline" className="text-[10px] ml-1">Set</Badge>}
+                <ChevronDown className={`h-3.5 w-3.5 ml-auto transition-transform ${startNoticeOpen ? 'rotate-180' : ''}`} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-3 pt-1 pb-2">
+              <p className="text-xs text-muted-foreground">Optional notice shown to staff before this check starts.</p>
+              <Textarea
+                value={startNoticeText}
+                onChange={(e) => {
+                  setStartNoticeText(e.target.value);
+                  if (!e.target.value.trim()) setStartNoticeRequired(false);
+                  else if (!startNoticeRequired) setStartNoticeRequired(true);
+                }}
+                placeholder="e.g., Ensure PPE is worn. Check ground stability."
+                rows={2}
+                className="text-sm"
+              />
               {startNoticeText.trim() && (
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="startNoticeToggle" className="text-sm cursor-pointer">
-                    Require acknowledgement before starting check
+                <div className="flex items-center justify-between gap-2">
+                  <Label htmlFor="startNoticeToggle" className="text-xs cursor-pointer">
+                    Require acknowledgement
                   </Label>
                   <Switch
                     id="startNoticeToggle"
@@ -809,21 +795,18 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
                   />
                 </div>
               )}
-            </CardContent>
-          </Card>
+            </CollapsibleContent>
+          </Collapsible>
 
-          {/* Save */}
-          <div className="flex gap-2">
-            <Button
-              onClick={handleSaveTemplate}
-              disabled={loading || selectedItems.length === 0}
-              className="flex-1 gap-2"
-            >
-              <Save className="h-4 w-4" />
-              {loading ? 'Saving…' : isEditing ? 'Save Changes' : 'Save & Start Using'}
-            </Button>
-            <Button variant="outline" onClick={onCancel}>Cancel</Button>
-          </div>
+          {/* Save — single action */}
+          <Button
+            onClick={handleSaveTemplate}
+            disabled={loading || selectedItems.length === 0}
+            className="w-full gap-2"
+          >
+            <Save className="h-4 w-4" />
+            {loading ? 'Saving…' : isEditing ? 'Save Changes' : 'Save & Start Using'}
+          </Button>
         </div>
       )}
     </div>
