@@ -379,146 +379,130 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
         </div>
       </div>
 
-      {/* Compact progress stepper */}
-      <div className="flex items-center gap-1">
+      {/* Compact mobile stepper — dots + active label */}
+      <div className="flex items-center gap-2">
         {STEPS.map((s, i) => {
           const isActive = i === step;
           const isDone = i < step;
           return (
-            <div key={i} className="flex items-center flex-1">
+            <div key={i} className="flex items-center gap-2">
+              {i > 0 && <div className={`h-px w-3 ${isDone ? 'bg-primary/30' : 'bg-muted'}`} />}
               <button
                 onClick={() => { if (isDone && !isEditing) setStep(i); }}
                 disabled={i > step || isEditing}
-                className={`flex items-center gap-1.5 text-xs font-medium transition-colors w-full ${
-                  isActive ? 'text-primary' : isDone ? 'text-muted-foreground' : 'text-muted-foreground/50'
+                className={`h-6 w-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 transition-colors ${
+                  isActive ? 'bg-primary text-primary-foreground' : isDone ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
                 } ${isDone && !isEditing ? 'cursor-pointer' : ''}`}
               >
-                <div className={`h-5 w-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${
-                  isActive ? 'bg-primary text-primary-foreground' : isDone ? 'bg-primary/20 text-primary' : 'bg-muted text-muted-foreground'
-                }`}>
-                  {isDone ? <Check className="h-3 w-3" /> : i + 1}
-                </div>
-                <span className="truncate">{s.label}</span>
+                {isDone ? <Check className="h-3 w-3" /> : i + 1}
               </button>
-              {i < STEPS.length - 1 && (
-                <div className={`h-px w-4 shrink-0 mx-1 ${isDone ? 'bg-primary/30' : 'bg-muted'}`} />
-              )}
             </div>
           );
         })}
+        <span className="text-xs font-medium text-foreground ml-1">
+          {STEPS[step].label}
+        </span>
+        <span className="text-xs text-muted-foreground">
+          — Step {step + 1} of {STEPS.length}
+        </span>
       </div>
 
-      {/* Step 0: Smart Suggestions */}
+      {/* Step 0: Smart Suggestions — flat layout */}
       {step === 0 && (
-        <div className="space-y-4">
-          <Card className="border-primary/20">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                Suggested Check Items
-              </CardTitle>
-              <CardDescription>
-                We've selected items relevant to your {ride.ride_categories?.name || 'equipment'}. Tick the ones you want.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {suggestions.length > 8 && (
-                <div className="relative">
-                  <Input
-                    placeholder="Search suggestions…"
-                    value={suggestionSearch}
-                    onChange={(e) => setSuggestionSearch(e.target.value)}
-                    className="pl-8 h-9"
-                  />
-                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                </div>
-              )}
+        <div className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Tick the items relevant to your {ride.ride_categories?.name || 'equipment'}.
+          </p>
 
-              {suggestionsLoading ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">Loading suggestions…</div>
-              ) : filteredSuggestions.length === 0 ? (
-                <div className="py-8 text-center text-sm text-muted-foreground">
-                  No suggestions available for this frequency. You can add your own in the next step.
-                </div>
-              ) : (
-                <div className="space-y-1.5 max-h-[50vh] overflow-y-auto">
-                  {/* Select all / none */}
-                  <div className="flex items-center gap-2 pb-2 border-b mb-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={() => {
-                        const all: Record<string, boolean> = {};
-                        filteredSuggestions.forEach(s => { all[s.id] = true; });
-                        setSelectedSuggestions(prev => ({ ...prev, ...all }));
-                      }}
-                    >
-                      Select all
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-xs h-7"
-                      onClick={() => setSelectedSuggestions({})}
-                    >
-                      Clear
-                    </Button>
-                    <span className="text-xs text-muted-foreground ml-auto">
-                      {selectedSuggestionCount} selected
-                    </span>
-                  </div>
+          {suggestions.length > 8 && (
+            <div className="relative">
+              <Input
+                placeholder="Search suggestions…"
+                value={suggestionSearch}
+                onChange={(e) => setSuggestionSearch(e.target.value)}
+                className="pl-8 h-9"
+              />
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
 
-                  {filteredSuggestions.map((item) => (
-                    <label
-                      key={item.id}
-                      className={`flex items-start gap-3 rounded-lg p-3 cursor-pointer transition-colors border ${
-                        selectedSuggestions[item.id]
-                          ? 'border-primary/40 bg-primary/5'
-                          : 'border-transparent hover:bg-muted/40'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={!!selectedSuggestions[item.id]}
-                        onChange={(e) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: e.target.checked }))}
-                        className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-primary"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="text-sm font-medium flex items-start gap-1.5">
-                          {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
-                          {item.label}
-                        </div>
-                        {item.hint && (
-                          <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>
-                        )}
-                        <div className="flex gap-1.5 mt-1.5">
-                          {item.risk_level && (
-                            <Badge className={`text-[10px] ${getRiskBadgeClass(item.risk_level)}`}>
-                              {item.risk_level.toUpperCase()}
-                            </Badge>
-                          )}
-                          {item.ride_category_id && (
-                            <Badge variant="default" className="text-[10px]">For your equipment</Badge>
-                          )}
-                        </div>
+          {suggestionsLoading ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">Loading suggestions…</div>
+          ) : filteredSuggestions.length === 0 ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              No suggestions available for this frequency. You can add your own in the next step.
+            </div>
+          ) : (
+            <>
+              <div className="flex items-center gap-2 pb-2 border-b">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => {
+                    const all: Record<string, boolean> = {};
+                    filteredSuggestions.forEach(s => { all[s.id] = true; });
+                    setSelectedSuggestions(prev => ({ ...prev, ...all }));
+                  }}
+                >
+                  Select all
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-7"
+                  onClick={() => setSelectedSuggestions({})}
+                >
+                  Clear
+                </Button>
+                <span className="text-xs text-muted-foreground ml-auto">
+                  {selectedSuggestionCount} selected
+                </span>
+              </div>
+
+              <div className="space-y-1">
+                {filteredSuggestions.map((item) => (
+                  <label
+                    key={item.id}
+                    className={`flex items-start gap-3 rounded-lg p-2.5 cursor-pointer transition-colors border ${
+                      selectedSuggestions[item.id]
+                        ? 'border-primary/40 bg-primary/5'
+                        : 'border-transparent hover:bg-muted/40'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={!!selectedSuggestions[item.id]}
+                      onChange={(e) => setSelectedSuggestions(prev => ({ ...prev, [item.id]: e.target.checked }))}
+                      className="mt-0.5 h-4 w-4 rounded cursor-pointer accent-primary"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm font-medium flex items-start gap-1.5">
+                        {item.risk_level === 'high' && <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />}
+                        {item.label}
                       </div>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                      {item.hint && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>
+                      )}
+                      {item.risk_level && (
+                        <Badge className={`text-[10px] mt-1 ${getRiskBadgeClass(item.risk_level)}`}>
+                          {item.risk_level.toUpperCase()}
+                        </Badge>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
 
-          <div className="flex gap-2">
-            <Button onClick={handleAcceptSuggestions} className="flex-1 gap-2">
-              {selectedSuggestionCount > 0 ? (
-                <>Add {selectedSuggestionCount} & Continue <ArrowRight className="h-4 w-4" /></>
-              ) : (
-                <>Skip & Continue <ArrowRight className="h-4 w-4" /></>
-              )}
-            </Button>
-          </div>
+          <Button onClick={handleAcceptSuggestions} className="w-full gap-2 mt-2">
+            {selectedSuggestionCount > 0 ? (
+              <>Add {selectedSuggestionCount} & Continue <ArrowRight className="h-4 w-4" /></>
+            ) : (
+              <>Skip & Continue <ArrowRight className="h-4 w-4" /></>
+            )}
+          </Button>
         </div>
       )}
 
