@@ -19,11 +19,13 @@ interface PageBreadcrumbProps {
   items: BreadcrumbNavItem[];
   showHome?: boolean;
   className?: string;
+  hideOnMobile?: boolean;
 }
 
-const PageBreadcrumb = ({ items, showHome = false, className }: PageBreadcrumbProps) => {
+const PageBreadcrumb = ({ items, showHome = false, className, hideOnMobile = true }: PageBreadcrumbProps) => {
   const isMobile = useIsMobile();
   if (items.length === 0) return null;
+  if (hideOnMobile && isMobile) return null;
 
   return (
     <Breadcrumb className={`mb-4 ${className || ''}`}>
