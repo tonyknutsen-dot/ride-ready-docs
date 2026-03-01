@@ -2450,6 +2450,53 @@ export type Database = {
         }
         Relationships: []
       }
+      risk_library_items: {
+        Row: {
+          category: string
+          created_at: string
+          equipment_group: string
+          hint: string | null
+          id: string
+          is_active: boolean
+          item_type: string
+          label: string
+          ride_category_id: string | null
+          sort_index: number
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          equipment_group?: string
+          hint?: string | null
+          id?: string
+          is_active?: boolean
+          item_type: string
+          label: string
+          ride_category_id?: string | null
+          sort_index?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          equipment_group?: string
+          hint?: string | null
+          id?: string
+          is_active?: boolean
+          item_type?: string
+          label?: string
+          ride_category_id?: string | null
+          sort_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "risk_library_items_ride_category_id_fkey"
+            columns: ["ride_category_id"]
+            isOneToOne: false
+            referencedRelation: "ride_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_change_audit: {
         Row: {
           changed_at: string
@@ -2867,6 +2914,7 @@ export type Database = {
           admin_notes: string | null
           category: string | null
           created_at: string
+          equipment_group: string
           id: string
           item_type: string
           label: string
@@ -2881,6 +2929,7 @@ export type Database = {
           admin_notes?: string | null
           category?: string | null
           created_at?: string
+          equipment_group?: string
           id?: string
           item_type: string
           label: string
@@ -2895,6 +2944,7 @@ export type Database = {
           admin_notes?: string | null
           category?: string | null
           created_at?: string
+          equipment_group?: string
           id?: string
           item_type?: string
           label?: string
