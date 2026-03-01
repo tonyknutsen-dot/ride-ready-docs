@@ -119,11 +119,13 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     setSuggestionsLoading(true);
     try {
       const cat = ride.category_id || null;
+      const resolvedGroup = equipmentGroup || 'rides';
       let query = supabase
         .from('check_library_items')
         .select('id,label,hint,risk_level,ride_category_id')
         .eq('frequency', frequency as "daily" | "weekly" | "monthly" | "yearly" | "preopening")
         .eq('is_active', true)
+        .eq('equipment_group', resolvedGroup)
         .order('sort_index', { ascending: true });
 
       if (cat) {
