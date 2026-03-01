@@ -172,7 +172,7 @@ const RideDetailPage = () => {
       >
         <ArrowLeft className="h-4 w-4" />
       </Button>
-      <PageBreadcrumb items={getBreadcrumbItems()} showHome className="text-[11px] opacity-60" />
+      <PageBreadcrumb items={getBreadcrumbItems()} showHome className="text-[11px] opacity-60 hidden md:flex" />
       <RideDetail 
         ride={ride}
         onBack={() => navigate('/rides')}
