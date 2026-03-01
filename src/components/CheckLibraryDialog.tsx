@@ -2,11 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { CheckSquare, Plus, Search, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
 type Frequency = "daily" | "weekly" | "monthly" | "yearly" | "preopening";
+type FilterTab = "all" | "general" | "specific";
 
 interface CheckLibraryItem {
   id: string;
@@ -24,12 +26,14 @@ export default function CheckLibraryDialog({
   frequency,
   rideCategoryId,
   equipmentGroup,
+  categoryGroupLabel,
   onAdd
 }: {
   trigger: React.ReactNode;
   frequency: Frequency;
   rideCategoryId?: string | null;
   equipmentGroup?: string | null;
+  categoryGroupLabel?: string;
   onAdd: (labels: string[]) => Promise<void> | void;
 }) {
   const [open, setOpen] = useState(false);
@@ -37,10 +41,11 @@ export default function CheckLibraryDialog({
   const [rows, setRows] = useState<CheckLibraryItem[]>([]);
   const [sel, setSel] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
+  const [tab, setTab] = useState<FilterTab>("all");
   const { toast } = useToast();
 
-  // Determine which equipment group to query
   const resolvedGroup = equipmentGroup || 'rides';
+  const specificLabel = categoryGroupLabel || (resolvedGroup === 'inflatables' ? 'Inflatables' : 'Equipment-specific');
 
   useEffect(() => {
     if (!open) return;
@@ -49,7 +54,6 @@ export default function CheckLibraryDialog({
       try {
         const cat = (rideCategoryId && rideCategoryId !== "null") ? rideCategoryId : null;
         
-        // Load items matching this equipment group and frequency
         let query = supabase
           .from("check_library_items")
           .select("id,label,frequency,ride_category_id,hint,risk_level,sort_index,is_active")
@@ -58,7 +62,6 @@ export default function CheckLibraryDialog({
           .eq("equipment_group", resolvedGroup)
           .order("sort_index", { ascending: true });
 
-        // Filter to get generic items OR items matching this ride's category
         if (cat) {
           query = query.or(`ride_category_id.is.null,ride_category_id.eq.${cat}`);
         } else {
@@ -68,7 +71,6 @@ export default function CheckLibraryDialog({
         const { data, error } = await query;
         if (error) throw error;
 
-        // Sort: category-specific items first, then generic
         const specific = (data || []).filter((r: CheckLibraryItem) => r.ride_category_id === cat);
         const generic = (data || []).filter((r: CheckLibraryItem) => !r.ride_category_id);
         setRows([...specific, ...generic]);
@@ -86,24 +88,33 @@ export default function CheckLibraryDialog({
     })();
   }, [open, frequency, rideCategoryId, resolvedGroup, toast]);
 
+  const generalCount = useMemo(() => rows.filter(r => !r.ride_category_id).length, [rows]);
+  const specificCount = useMemo(() => rows.filter(r => r.ride_category_id).length, [rows]);
+  const hasSpecific = specificCount > 0;
+
+  const tabFiltered = useMemo(() => {
+    if (tab === "general") return rows.filter(r => !r.ride_category_id);
+    if (tab === "specific") return rows.filter(r => r.ride_category_id);
+    return rows;
+  }, [tab, rows]);
+
   const filtered = useMemo(() => {
-    if (!q.trim()) return rows;
+    if (!q.trim()) return tabFiltered;
     const s = q.trim().toLowerCase();
-    return rows.filter(r =>
+    return tabFiltered.filter(r =>
       (r.label || "").toLowerCase().includes(s)
       || (r.hint || "").toLowerCase().includes(s)
       || (r.risk_level || "").toLowerCase().includes(s)
     );
-  }, [q, rows]);
+  }, [q, tabFiltered]);
 
   const selectedLabels = useMemo(
-    () => filtered.filter(r => sel[r.id]).map(r => r.label),
-    [sel, filtered]
+    () => rows.filter(r => sel[r.id]).map(r => r.label),
+    [sel, rows]
   );
 
   const handleAddSelected = async () => {
     if (selectedLabels.length === 0) return;
-    
     try {
       await onAdd(selectedLabels);
       toast({
@@ -113,6 +124,7 @@ export default function CheckLibraryDialog({
       setOpen(false);
       setSel({});
       setQ("");
+      setTab("all");
     } catch (error: any) {
       console.error("Error adding items:", error);
       toast({
@@ -132,67 +144,65 @@ export default function CheckLibraryDialog({
     }
   };
 
+  const tabs: { key: FilterTab; label: string; count: number }[] = [
+    { key: "all", label: "All", count: rows.length },
+    { key: "general", label: "General", count: generalCount },
+    ...(hasSpecific ? [{ key: "specific" as FilterTab, label: specificLabel, count: specificCount }] : []),
+  ];
+
   return (
     <Dialog open={open} onOpenChange={(v) => { 
       setOpen(v); 
       if (!v) { 
         setSel({}); 
         setQ(""); 
+        setTab("all");
       } 
     }}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="w-[95vw] max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CheckSquare className="h-5 w-5" />
-            Add from library — {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Checks
+        <DialogHeader className="pb-0">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <CheckSquare className="h-5 w-5 flex-shrink-0" />
+            {frequency.charAt(0).toUpperCase() + frequency.slice(1)} Check Items
           </DialogTitle>
-          <DialogDescription>
-            Select pre-built safety check items to add to your template
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1">
-              <Input
-                placeholder="Search items (e.g., restraints, fencing, electrics)…"
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                className="pl-8"
-              />
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            </div>
+        <div className="space-y-3">
+          {/* Search */}
+          <div className="relative">
+            <Input
+              placeholder="Search items…"
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              className="pl-8 h-9"
+            />
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           </div>
 
-          <div className="rounded-md border p-3 bg-muted/20">
-            <div className="text-xs text-muted-foreground">
-              <b>Tip:</b> Select multiple items and add them all at once.
-              <div className="flex flex-wrap gap-2 mt-2">
-                <Badge variant="outline" className="text-[10px]">Generic</Badge>
-                <span>= General safety checks for all equipment</span>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-1">
-                <Badge variant="default" className="text-[10px]">Ride-specific</Badge>
-                <span>= Tailored to your equipment type</span>
-              </div>
-            </div>
-          </div>
+          {/* Helper line */}
+          <p className="text-xs text-muted-foreground">Select items to add to your checklist</p>
 
-          {/* Summary counts */}
+          {/* Segmented tabs */}
           {!loading && rows.length > 0 && (
-            <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-              <span>
-                <strong className="text-foreground">{rows.filter(r => !r.ride_category_id).length}</strong> generic items
-              </span>
-              {rows.filter(r => r.ride_category_id).length > 0 && (
-                <span>
-                  • <strong className="text-foreground">{rows.filter(r => r.ride_category_id).length}</strong> ride-specific items
-                </span>
-              )}
+            <div className="flex gap-1 p-0.5 rounded-lg bg-muted/50">
+              {tabs.map(t => (
+                <button
+                  key={t.key}
+                  onClick={() => setTab(t.key)}
+                  className={`flex-1 text-xs font-medium py-1.5 px-2 rounded-md transition-colors ${
+                    tab === t.key
+                      ? 'bg-background text-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {t.label} ({t.count})
+                </button>
+              ))}
             </div>
           )}
 
+          {/* Item list */}
           <div className="space-y-2 max-h-[50vh] overflow-y-auto">
             {loading ? (
               <div className="text-sm text-muted-foreground py-8 text-center">Loading check items…</div>
@@ -222,24 +232,20 @@ export default function CheckLibraryDialog({
                     {r.hint && (
                       <div className="text-xs text-muted-foreground mt-1 break-any">{r.hint}</div>
                     )}
-                    <div className="flex flex-wrap items-center gap-2 mt-2">
-                      {r.risk_level && (
+                    {r.risk_level && (
+                      <div className="mt-2">
                         <Badge className={`text-xs ${getRiskBadgeColor(r.risk_level)}`}>
                           {r.risk_level.toUpperCase()} RISK
                         </Badge>
-                      )}
-                      {r.ride_category_id ? (
-                        <Badge variant="default" className="text-xs">Ride-specific</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-xs">Generic</Badge>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </label>
               ))
             )}
           </div>
 
+          {/* Footer */}
           <div className="flex flex-wrap items-center justify-between gap-2 pt-3 border-t">
             <div className="text-sm text-muted-foreground">
               {selectedLabels.length ? (
@@ -247,7 +253,7 @@ export default function CheckLibraryDialog({
                   {selectedLabels.length} item{selectedLabels.length > 1 ? 's' : ''} selected
                 </span>
               ) : (
-                "Choose items to add to your template"
+                "Choose items to add"
               )}
             </div>
             <Button
