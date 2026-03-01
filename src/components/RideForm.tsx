@@ -32,7 +32,8 @@ interface RideFormProps {
 
 const rideSchema = z.object({
   ride_name: z.string().trim().min(1, "Ride name is required").max(100, "Ride name must be less than 100 characters"),
-  category_id: z.string().min(1, "Please select an equipment group and type"),
+  category_group: z.string().min(1, "Please select an equipment group"),
+  category_id: z.string().optional(),
   manufacturer: z.string().trim().max(100, "Manufacturer must be less than 100 characters").optional(),
   year_manufactured: z.number().int().min(1800).max(new Date().getFullYear() + 1).optional(),
   serial_number: z.string().trim().max(50, "Serial number must be less than 50 characters").optional(),
@@ -262,9 +263,19 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     setErrors({});
 
     try {
+      // Resolve category_id: if not explicitly selected, use first type in group
+      let resolvedCategoryId = formData.category_id;
+      if (!resolvedCategoryId && formData.category_group) {
+        const groupTypes = categories.filter(c => c.category_group === formData.category_group);
+        if (groupTypes.length > 0) {
+          resolvedCategoryId = groupTypes[0].id;
+        }
+      }
+
       // Prepare data for validation
       const validationData = {
         ...formData,
+        category_id: resolvedCategoryId || undefined,
         year_manufactured: formData.year_manufactured ? parseInt(formData.year_manufactured) : undefined,
         manufacturer: formData.manufacturer || undefined,
         serial_number: formData.serial_number || undefined,
@@ -273,6 +284,13 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
       // Validate form data
       const validatedData = rideSchema.parse(validationData);
+      
+      // Ensure we have a resolved category_id for the DB
+      const finalCategoryId = resolvedCategoryId || '';
+      if (!finalCategoryId) {
+        setErrors({ category_group: 'Please select an equipment group' });
+        return;
+      }
 
       setLoading(true);
 
@@ -282,7 +300,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           .from('rides')
           .update({
             ride_name: validatedData.ride_name,
-            category_id: validatedData.category_id,
+            category_id: finalCategoryId,
             manufacturer: validatedData.manufacturer || null,
             year_manufactured: validatedData.year_manufactured || null,
             serial_number: validatedData.serial_number || null,
@@ -349,7 +367,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           }
       } else {
         // Determine default for requires_operational_checks based on category group
-        const selectedCat = categories.find(c => c.id === validatedData.category_id);
+        const selectedCat = categories.find(c => c.id === finalCategoryId);
         const nonOperationalGroups = ['Food Stalls', 'Games', 'Equipment'];
         const defaultRequiresChecks = selectedCat ? !nonOperationalGroups.includes(selectedCat.category_group) : true;
 
@@ -359,7 +377,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           .insert({
             user_id: user!.id,
             ride_name: validatedData.ride_name,
-            category_id: validatedData.category_id,
+            category_id: finalCategoryId,
             manufacturer: validatedData.manufacturer || null,
             year_manufactured: validatedData.year_manufactured || null,
             serial_number: validatedData.serial_number || null,
@@ -537,7 +555,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                   setFormData({ ...formData, category_group: value, category_id: autoId });
                 }}
               >
-                <SelectTrigger className={errors.category_id && !formData.category_group ? "border-destructive" : ""}>
+                <SelectTrigger className={errors.category_group ? "border-destructive" : ""}>
                   <SelectValue placeholder="Select equipment group" />
                 </SelectTrigger>
                 <SelectContent>
@@ -555,12 +573,12 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
             {formData.category_group && filteredTypes.length > 1 && (
               <div className="space-y-2">
-                <Label htmlFor="category_id">Equipment Type *</Label>
+                <Label htmlFor="category_id">Equipment Type (optional)</Label>
                 <Select
                   value={formData.category_id}
                   onValueChange={(value) => setFormData({ ...formData, category_id: value })}
                 >
-                  <SelectTrigger className={errors.category_id ? "border-destructive" : ""}>
+                  <SelectTrigger>
                     <SelectValue placeholder="Select a specific type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -571,9 +589,9 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                     ))}
                   </SelectContent>
                 </Select>
-                {errors.category_id && (
-                  <p className="text-sm text-destructive">{errors.category_id}</p>
-                )}
+                <p className="text-xs text-muted-foreground">
+                  If you can't find the exact type, leave blank or request a new one below
+                </p>
               </div>
             )}
 
@@ -583,8 +601,8 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               </p>
             )}
 
-            {errors.category_id && !formData.category_group && (
-              <p className="text-sm text-destructive">{errors.category_id}</p>
+            {errors.category_group && (
+              <p className="text-sm text-destructive">{errors.category_group}</p>
             )}
 
             <Button 
@@ -595,7 +613,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               className="h-auto py-1 px-2 text-xs w-fit"
             >
               <Plus className="w-3 h-3 mr-1" />
-              Request new type
+              Can't find your type? Request one
             </Button>
           </div>
         </div>
@@ -801,7 +819,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           </Button>
           <Button 
             type="submit" 
-            disabled={loading || !formData.category_id}
+            disabled={loading || !formData.category_group}
           >
             <Save className="h-4 w-4" />
             {loading ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update Equipment' : 'Add Equipment')}
