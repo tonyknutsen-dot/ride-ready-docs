@@ -525,10 +525,10 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
         </div>
       </div>
 
-      <form id="ride-form-root" onSubmit={handleSubmit} className="space-y-8">
+      <form id="ride-form-root" onSubmit={handleSubmit} className="space-y-7">
         {/* Essential Information */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Essential Information</h3>
+          <h3 className="text-xs font-bold text-foreground/70 uppercase tracking-widest">Essential Information</h3>
           
           <div className="space-y-4">
             <div className="space-y-2">
@@ -566,7 +566,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground/80">
                 The broad category of your equipment
               </p>
             </div>
@@ -589,7 +589,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-muted-foreground/80">
                   If you can't find the exact type, leave blank or request a new one below
                 </p>
               </div>
@@ -620,7 +620,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
         {/* Technical Details */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Technical Details (Optional)</h3>
+          <h3 className="text-xs font-bold text-foreground/70 uppercase tracking-widest">Technical Details (Optional)</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -672,7 +672,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
         {/* Controller */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Controller (Optional)</h3>
+          <h3 className="text-xs font-bold text-foreground/70 uppercase tracking-widest">Controller (Optional)</h3>
           
           <div className="space-y-2">
             <Label htmlFor="owner_name">Controller Name(s)</Label>
@@ -686,7 +686,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             {errors.owner_name && (
               <p className="text-sm text-destructive">{errors.owner_name}</p>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground/80">
               The person(s) responsible for this equipment's safety and compliance
             </p>
           </div>
@@ -694,7 +694,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
         {/* Photo Upload */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Photo (Optional)</h3>
+          <h3 className="text-xs font-bold text-foreground/70 uppercase tracking-widest">Photo (Optional)</h3>
           
           <div className="space-y-3">
             {/* New photo preview (takes priority) */}
@@ -788,25 +788,25 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#1E3A5F] hover:bg-[#F1F5F9] rounded-2xl transition-all group"
+                    className="h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border bg-muted/40 hover:border-primary/50 hover:bg-muted/60 rounded-2xl transition-all group shadow-sm"
                     onClick={() => document.getElementById('ride-photo-camera')?.click()}
                   >
-                    <Camera className="h-8 w-8 text-[#475569] group-hover:text-primary transition-colors" strokeWidth={2} />
+                    <Camera className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={2} />
                     <span className="text-sm font-medium">Take Photo</span>
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#1E3A5F] hover:bg-[#F1F5F9] rounded-2xl transition-all group"
+                    className="h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border bg-muted/40 hover:border-primary/50 hover:bg-muted/60 rounded-2xl transition-all group shadow-sm"
                     onClick={() => document.getElementById('ride-photo')?.click()}
                   >
-                    <FolderOpen className="h-8 w-8 text-[#475569] group-hover:text-primary transition-colors" strokeWidth={2} />
+                    <FolderOpen className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={2} />
                     <span className="text-sm font-medium">Choose File</span>
                   </Button>
                 </div>
               </>
             )}
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground/80">
               Tip: Include the whole device and ID plate if possible
             </p>
           </div>
