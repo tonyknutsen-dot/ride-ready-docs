@@ -505,11 +505,11 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
         <div>
           <h2 className="text-2xl font-bold tracking-tight">{isEditMode ? 'Edit Equipment' : 'Add Equipment'}</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            {isEditMode ? 'Update the details for your ride or generator' : 'Enter the details for your new ride or generator'}
+            {isEditMode ? 'Update the details for this equipment' : 'Add a new item to your equipment register'}
           </p>
           {subscription && !isEditMode && subscription.subscriptionStatus === 'active' && (
             <p className="text-xs text-muted-foreground mt-2">
-              {subscription.billableRideCount} of {subscription.rideLimit} billable rides on {subscription.tierLabel} tier
+              {subscription.billableRideCount} of {subscription.rideLimit} billable items on {subscription.tierLabel} tier
             </p>
           )}
           {wouldExceedTier && (
@@ -517,7 +517,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               <AlertTriangle className="h-4 w-4 text-warning" />
               <AlertTitle className="text-warning">Tier limit reached</AlertTitle>
               <AlertDescription>
-                You have {subscription!.billableRideCount} of {subscription!.rideLimit} billable rides on the {subscription!.tierLabel} tier. 
+                You have {subscription!.billableRideCount} of {subscription!.rideLimit} billable items on the {subscription!.tierLabel} tier. 
                 To add more, <button type="button" className="underline font-medium" onClick={() => navigate('/billing')}>upgrade your plan</button>.
               </AlertDescription>
             </Alert>
@@ -613,7 +613,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               className="h-auto py-1 px-2 text-xs w-fit"
             >
               <Plus className="w-3 h-3 mr-1" />
-              Can't find your type? Request one
+              Request a new type
             </Button>
           </div>
         </div>
