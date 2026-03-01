@@ -2972,6 +2972,68 @@ export type Database = {
           },
         ]
       }
+      wind_speed_logs: {
+        Row: {
+          action_taken: string | null
+          anemometer_make: string | null
+          anemometer_model: string | null
+          anemometer_serial: string | null
+          created_at: string
+          id: string
+          location: string | null
+          log_date: string
+          log_time: string
+          notes: string | null
+          recorded_by: string
+          ride_id: string
+          user_id: string
+          wind_speed: number
+          wind_unit: string
+        }
+        Insert: {
+          action_taken?: string | null
+          anemometer_make?: string | null
+          anemometer_model?: string | null
+          anemometer_serial?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          log_date?: string
+          log_time?: string
+          notes?: string | null
+          recorded_by: string
+          ride_id: string
+          user_id: string
+          wind_speed: number
+          wind_unit?: string
+        }
+        Update: {
+          action_taken?: string | null
+          anemometer_make?: string | null
+          anemometer_model?: string | null
+          anemometer_serial?: string | null
+          created_at?: string
+          id?: string
+          location?: string | null
+          log_date?: string
+          log_time?: string
+          notes?: string | null
+          recorded_by?: string
+          ride_id?: string
+          user_id?: string
+          wind_speed?: number
+          wind_unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wind_speed_logs_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       profiles_safe: {

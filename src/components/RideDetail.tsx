@@ -6,7 +6,7 @@ import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import { 
   ArrowLeft, FileText, CheckSquare, Wrench, Pencil, ImageIcon, Trash2,
   AlertTriangle, AlertOctagon, Clock, History,
-  Loader2, Camera, AlertCircle
+  Loader2, Camera, AlertCircle, Wind
 } from 'lucide-react';
 import {
   Dialog,
@@ -37,6 +37,7 @@ import DefectsList from './DefectsList';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 
 const RideActivityTimeline = lazy(() => import('@/components/RideActivityTimeline'));
+const WindSpeedLog = lazy(() => import('@/components/WindSpeedLog'));
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -270,25 +271,32 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
       {/* Tab Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-          <TabsList className="grid w-full grid-cols-4 h-auto p-0 bg-transparent rounded-none">
-            {[
-              { value: 'overview', label: 'Home', Icon: FileText },
-              { value: 'checks',   label: 'Checks', Icon: CheckSquare },
-              { value: 'documents', label: 'Docs', Icon: FileText },
-              { value: 'activity', label: 'Activity', Icon: History },
-            ].map(({ value, label, Icon }) => (
-              <TabsTrigger
-                key={value}
-                value={value}
-                className="flex flex-col items-center gap-1 py-3.5 text-xs font-semibold rounded-none border-b-2 data-[state=active]:border-b-primary data-[state=inactive]:border-b-transparent data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent transition-all"
-              >
-                <Icon className="h-4 w-4" strokeWidth={2} />
-                {label}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </div>
+        {(() => {
+          const isInflatable = ride.ride_categories.category_group === 'Inflatables';
+          const tabs = [
+            { value: 'overview', label: 'Home', Icon: FileText },
+            { value: 'checks',   label: 'Checks', Icon: CheckSquare },
+            { value: 'documents', label: 'Docs', Icon: FileText },
+            { value: 'activity', label: 'Activity', Icon: History },
+            ...(isInflatable ? [{ value: 'windlog', label: 'Wind Log', Icon: Wind }] : []),
+          ];
+          return (
+            <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+              <TabsList className={`w-full h-auto p-0 bg-transparent rounded-none ${isInflatable ? 'flex overflow-x-auto' : 'grid grid-cols-4'}`}>
+                {tabs.map(({ value, label, Icon }) => (
+                  <TabsTrigger
+                    key={value}
+                    value={value}
+                    className={`flex flex-col items-center gap-1 py-3.5 text-xs font-semibold rounded-none border-b-2 data-[state=active]:border-b-primary data-[state=inactive]:border-b-transparent data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent transition-all ${isInflatable ? 'flex-1 min-w-[72px]' : ''}`}
+                  >
+                    <Icon className="h-4 w-4" strokeWidth={2} />
+                    {label}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </div>
+          );
+        })()}
 
         {/* ─── HOME TAB ─── */}
         <TabsContent value="overview" className="space-y-4 animate-fade-in">
@@ -462,6 +470,15 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             <RideActivityTimeline rideId={ride.id} />
           </Suspense>
         </TabsContent>
+
+        {/* ─── WIND LOG TAB (inflatables only) ─── */}
+        {ride.ride_categories.category_group === 'Inflatables' && (
+          <TabsContent value="windlog" className="animate-fade-in">
+            <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              <WindSpeedLog rideId={ride.id} rideName={ride.ride_name} />
+            </Suspense>
+          </TabsContent>
+        )}
 
       </Tabs>
 
