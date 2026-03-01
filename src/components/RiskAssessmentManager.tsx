@@ -497,6 +497,21 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
   const handleStatusChange = async (newStatus: string) => {
     if (!selectedAssessment) return;
 
+    // Block completion if any items are still open or in progress
+    if (newStatus === 'completed') {
+      const openItems = assessmentItems.filter(
+        (item) => item.status === 'open' || item.status === 'in_progress'
+      );
+      if (openItems.length > 0) {
+        toast({
+          title: 'Cannot mark as completed',
+          description: `${openItems.length} item${openItems.length > 1 ? 's' : ''} still ${openItems.length > 1 ? 'have' : 'has'} open or in-progress actions. Resolve all items before completing.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+    }
+
     const oldStatus = selectedAssessment.overall_status;
     
     const { error } = await supabase
