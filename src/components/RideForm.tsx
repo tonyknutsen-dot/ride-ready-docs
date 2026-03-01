@@ -491,7 +491,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   }
 
   return (
-    <div className="max-w-3xl mx-auto p-4 md:p-6 pb-32 md:pb-6">
+    <div className="max-w-3xl mx-auto p-4 md:p-6 pb-32 md:pb-6 bg-[hsl(210,30%,95%)] -mx-4 md:mx-auto px-4 md:px-6 min-h-full">
       {/* Header */}
       <div className="mb-6">
         <Button 
@@ -528,9 +528,9 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       <form id="ride-form-root" onSubmit={handleSubmit} className="space-y-5">
 
         {/* ── Section 1: Essential Information ── */}
-        <section className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-          <div className="px-4 py-3 bg-muted/50 border-b border-border">
-            <h3 className="text-[13px] font-semibold text-foreground tracking-tight">Essential Information</h3>
+        <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+          <div className="px-4 py-3 bg-[hsl(213,52%,24%)] border-b border-foreground/10">
+            <h3 className="text-[13px] font-bold text-white tracking-tight">Essential Information</h3>
           </div>
           <div className="p-4 space-y-4">
             <div className="space-y-1.5">
@@ -568,7 +568,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-foreground/45">
+              <p className="text-xs text-foreground/55">
                 The broad category of your equipment
               </p>
             </div>
@@ -591,7 +591,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-foreground/45">
+                <p className="text-xs text-foreground/55">
                   If you can't find the exact type, leave blank or request a new one below
                 </p>
               </div>
@@ -621,9 +621,9 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
         </section>
 
         {/* ── Section 2: Technical Details ── */}
-        <section className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-          <div className="px-4 py-3 bg-muted/50 border-b border-border">
-            <h3 className="text-[13px] font-semibold text-foreground tracking-tight">Technical Details <span className="font-normal text-foreground/45">(optional)</span></h3>
+        <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+          <div className="px-4 py-3 bg-[hsl(213,52%,24%)] border-b border-foreground/10">
+            <h3 className="text-[13px] font-bold text-white tracking-tight">Technical Details <span className="font-normal text-white/60">(optional)</span></h3>
           </div>
           <div className="p-4 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -676,9 +676,9 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
         </section>
 
         {/* ── Section 3: Controller ── */}
-        <section className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-          <div className="px-4 py-3 bg-muted/50 border-b border-border">
-            <h3 className="text-[13px] font-semibold text-foreground tracking-tight">Controller <span className="font-normal text-foreground/45">(optional)</span></h3>
+        <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+          <div className="px-4 py-3 bg-[hsl(213,52%,24%)] border-b border-foreground/10">
+            <h3 className="text-[13px] font-bold text-white tracking-tight">Controller <span className="font-normal text-white/60">(optional)</span></h3>
           </div>
           <div className="p-4 space-y-1.5">
             <Label htmlFor="owner_name" className="text-[13px] font-semibold text-foreground">Controller Name(s)</Label>
@@ -692,16 +692,16 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             {errors.owner_name && (
               <p className="text-sm text-destructive">{errors.owner_name}</p>
             )}
-            <p className="text-xs text-foreground/45 pt-0.5">
+            <p className="text-xs text-foreground/55 pt-0.5">
               The person(s) responsible for this equipment's safety and compliance
             </p>
           </div>
         </section>
 
         {/* ── Section 4: Photo ── */}
-        <section className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-          <div className="px-4 py-3 bg-muted/50 border-b border-border">
-            <h3 className="text-[13px] font-semibold text-foreground tracking-tight">Photo <span className="font-normal text-foreground/45">(optional)</span></h3>
+        <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
+          <div className="px-4 py-3 bg-[hsl(213,52%,24%)] border-b border-foreground/10">
+            <h3 className="text-[13px] font-bold text-white tracking-tight">Photo <span className="font-normal text-white/60">(optional)</span></h3>
           </div>
           <div className="p-4 space-y-3">
             {/* New photo preview (takes priority) */}
@@ -794,35 +794,35 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    className="h-28 flex flex-col items-center justify-center gap-2.5 rounded-xl border border-border bg-muted/60 hover:bg-primary/5 hover:border-primary/40 transition-all group active:scale-[0.98]"
+                    className="h-28 flex flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-foreground/12 bg-[hsl(210,30%,96%)] hover:bg-primary/8 hover:border-primary/40 transition-all group active:scale-[0.98] shadow-sm"
                     onClick={() => document.getElementById('ride-photo-camera')?.click()}
                   >
-                    <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                      <Camera className="h-5 w-5 text-primary" strokeWidth={2} />
+                    <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center group-hover:bg-primary/20 transition-colors shadow-sm">
+                      <Camera className="h-5 w-5 text-primary" strokeWidth={2.2} />
                     </div>
-                    <span className="text-[13px] font-semibold text-foreground/70 group-hover:text-foreground/90">Take Photo</span>
+                    <span className="text-[13px] font-bold text-foreground/65 group-hover:text-foreground/85">Take Photo</span>
                   </button>
                   <button
                     type="button"
-                    className="h-28 flex flex-col items-center justify-center gap-2.5 rounded-xl border border-border bg-muted/60 hover:bg-primary/5 hover:border-primary/40 transition-all group active:scale-[0.98]"
+                    className="h-28 flex flex-col items-center justify-center gap-2.5 rounded-xl border-2 border-foreground/12 bg-[hsl(210,30%,96%)] hover:bg-primary/8 hover:border-primary/40 transition-all group active:scale-[0.98] shadow-sm"
                     onClick={() => document.getElementById('ride-photo')?.click()}
                   >
-                    <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                      <FolderOpen className="h-5 w-5 text-primary" strokeWidth={2} />
+                    <div className="w-12 h-12 rounded-full bg-primary/15 flex items-center justify-center group-hover:bg-primary/20 transition-colors shadow-sm">
+                      <FolderOpen className="h-5 w-5 text-primary" strokeWidth={2.2} />
                     </div>
-                    <span className="text-[13px] font-semibold text-foreground/70 group-hover:text-foreground/90">Choose File</span>
+                    <span className="text-[13px] font-bold text-foreground/65 group-hover:text-foreground/85">Choose File</span>
                   </button>
                 </div>
               </>
             )}
-            <p className="text-xs text-foreground/45">
+            <p className="text-xs text-foreground/55">
               Tip: Include the whole device and ID plate if possible
             </p>
           </div>
         </section>
 
         {/* ── Sticky Action Bar ── */}
-        <div className="flex items-center justify-end gap-3 pt-4 md:pt-6 md:relative fixed bottom-[calc(env(safe-area-inset-bottom)+72px)] md:bottom-auto left-0 right-0 md:left-auto md:right-auto bg-card md:bg-transparent px-4 md:px-0 py-3 md:py-0 z-30 border-t-2 border-border md:border-t md:border-border shadow-[0_-6px_20px_rgba(0,0,0,0.12)] md:shadow-none">
+        <div className="flex items-center justify-end gap-3 pt-4 md:pt-6 md:relative fixed bottom-[calc(env(safe-area-inset-bottom)+72px)] md:bottom-auto left-0 right-0 md:left-auto md:right-auto bg-card md:bg-transparent px-4 md:px-0 py-3 md:py-0 z-30 border-t-2 border-foreground/12 md:border-t md:border-foreground/10 shadow-[0_-8px_24px_rgba(0,0,0,0.15)] md:shadow-none">
           <Button type="button" variant="outline" onClick={onCancel} className="min-w-[80px]">
             Cancel
           </Button>
