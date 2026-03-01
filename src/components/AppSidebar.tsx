@@ -20,6 +20,7 @@ import {
   Users,
   Download,
   Bell,
+  Wind,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -66,6 +67,7 @@ const mainNavItems: NavItemDef[] = [
 const toolsNavItems: NavItemDef[] = [
   { title: 'Checks', url: '/checks', icon: CheckSquare, feature: 'checks' },
   { title: 'Maintenance', url: '/maintenance', icon: Wrench, feature: 'maintenance' },
+  { title: 'Wind Log', url: '/wind-log', icon: Wind },
   { title: 'Risk Assessments', url: '/risk-assessments', icon: ShieldCheck, feature: 'risk_assessments' },
   { title: 'Send Documents', url: '/send-documents', icon: Send, feature: 'send_documents' },
 ];
