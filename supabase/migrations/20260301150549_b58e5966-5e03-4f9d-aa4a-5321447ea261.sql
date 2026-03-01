@@ -1,0 +1,1 @@
+UPDATE risk_library_items SET label = 'Operate within manufacturer''s wind-speed limit; where unavailable, do not operate above 24 mph (38 km/h), Force 5 Beaufort, per BS EN 14960-1' WHERE id = 'e453b64b-4b58-4284-bf67-324bada8e0a3';
