@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
+import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Download, FileText, CheckCircle, Clock, AlertTriangle, Mail, Printer, Plus, Settings, Trash2, Archive, Loader2, WifiOff, CloudOff, RefreshCw, XCircle, MinusCircle, Eye, MoreVertical, ChevronDown, ChevronUp, PlayCircle, Wrench } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
@@ -101,6 +102,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
   const [itemDefectRaised, setItemDefectRaised] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [startNoticeAcknowledged, setStartNoticeAcknowledged] = useState(false);
+  const [startNoticeAcknowledgedAt, setStartNoticeAcknowledgedAt] = useState<string | null>(null);
 
   const { toast } = useToast();
   const { user } = useAuth();
@@ -775,6 +778,11 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         rawLatitude: rawGpsCoords?.lat,
         rawLongitude: rawGpsCoords?.lon,
         needsAddressResolution: needsAddressResolution,
+        // Start notice acknowledgement
+        startNoticeAcknowledged: startNoticeAcknowledged || undefined,
+        startNoticeAcknowledgedAt: startNoticeAcknowledgedAt || undefined,
+        startNoticeAcknowledgedBy: startNoticeAcknowledged ? inspectorName.trim() : undefined,
+        startNoticeSnapshot: startNoticeAcknowledged ? (activeTemplate as any).start_notice_text : undefined,
         results: activeTemplate.daily_check_template_items.map(item => {
           const result = itemResults[item.id] || 'na';
           return {
@@ -880,7 +888,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       setCheckStartedAt(null);
       setShowMaintenanceForItem(null);
       setDeclarationChecked(false);
-
+      setStartNoticeAcknowledged(false);
+      setStartNoticeAcknowledgedAt(null);
       // Auto-mark ride as "In Use Today" when completing an operational check
       if (isOperationalFrequency) {
         await autoSetOperating(frequency);
@@ -1200,6 +1209,60 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                   if (!hasName || !hasLocation) {
                     return;
                   }
+
+                  // If template has a start notice, show it before proceeding
+                  const tmpl = activeTemplate as any;
+                  if (tmpl?.start_notice_required && tmpl?.start_notice_text?.trim()) {
+                    setWizardStep('start-notice' as any);
+                  } else {
+                    setWizardStep('checklist');
+                    setCheckStarted(true);
+                    setCheckStartedAt(new Date());
+                  }
+                }}
+              >
+                {(() => {
+                  const tmpl = activeTemplate as any;
+                  return tmpl?.start_notice_required && tmpl?.start_notice_text?.trim() ? 'Continue' : 'Start Check';
+                })()}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── START NOTICE GATE ── */}
+      {wizardStep === ('start-notice' as any) && activeTemplate && (
+        <div className="mx-4 mt-3">
+          <div className="bg-white border border-warning/40 rounded-md shadow-sm overflow-hidden">
+            <div className="px-4 pt-4 pb-1">
+              <p className="text-[10px] font-bold text-warning uppercase tracking-widest">⚠️ Important Notice</p>
+              <h2 className="text-[15px] font-bold text-slate-900 mt-0.5">Start Notice</h2>
+              <p className="text-[12px] text-slate-500 mt-0.5">You must acknowledge the following before starting this check.</p>
+            </div>
+            <div className="px-4 pb-4 pt-3 space-y-4">
+              <div className="rounded-lg bg-warning/5 border border-warning/20 p-4">
+                <p className="text-sm text-foreground whitespace-pre-wrap leading-relaxed">
+                  {(activeTemplate as any).start_notice_text}
+                </p>
+              </div>
+              <div className="flex items-start gap-3">
+                <Checkbox
+                  id="startNoticeAck"
+                  checked={startNoticeAcknowledged}
+                  onCheckedChange={(checked) => setStartNoticeAcknowledged(!!checked)}
+                  className="mt-0.5"
+                />
+                <label htmlFor="startNoticeAck" className="text-[12px] text-slate-700 cursor-pointer leading-relaxed">
+                  I have read and understood this notice and confirm I will comply with the above requirements.
+                </label>
+              </div>
+              <button
+                type="button"
+                className="t-btn-primary w-full rounded-md py-3 text-[13px] disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!startNoticeAcknowledged}
+                onClick={() => {
+                  setStartNoticeAcknowledgedAt(new Date().toISOString());
                   setWizardStep('checklist');
                   setCheckStarted(true);
                   setCheckStartedAt(new Date());
