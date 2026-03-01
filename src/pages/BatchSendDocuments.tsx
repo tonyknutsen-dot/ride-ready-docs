@@ -785,11 +785,11 @@ const BatchSendDocuments = () => {
           <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
             {/* Left Column - Document Selection */}
             <div className="space-y-4">
-              <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
-                <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-2">
-                  <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Select Documents</p>
+              <div className="bg-white border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.08)', borderColor: 'hsl(215 19% 85%)' }}>
+                <div className="px-5 py-4 border-b flex items-center justify-between gap-2" style={{ borderColor: 'hsl(215 19% 88%)', backgroundColor: 'hsl(210 30% 97%)' }}>
+                  <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Select Documents</p>
                   {selectedDocuments.length > 0 && (
-                    <Badge variant="secondary" className="text-xs shrink-0">{selectedDocuments.length} selected</Badge>
+                    <Badge variant="secondary" className="text-xs shrink-0 font-semibold">{selectedDocuments.length} selected</Badge>
                   )}
                 </div>
                 <div className="space-y-3 p-4">
@@ -939,7 +939,7 @@ const BatchSendDocuments = () => {
                   {/* Ride Documents */}
                   {currentRideDocuments.length > 0 && (
                     <Collapsible defaultOpen>
-                      <div className="border border-border rounded-xl overflow-hidden">
+                      <div className="border rounded-xl overflow-hidden" style={{ borderColor: 'hsl(215 19% 85%)' }}>
                         <CollapsibleTrigger className="w-full px-4 py-3 flex items-center justify-between hover:bg-secondary/50 transition-colors gap-2 bg-white">
                           <div className="flex items-center gap-2 min-w-0">
                             <span className="flex items-center justify-center w-6 h-6 rounded-lg" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
@@ -1009,7 +1009,7 @@ const BatchSendDocuments = () => {
                   {/* Global Documents - always available */}
                   {globalDocuments.length > 0 && (
                     <Collapsible defaultOpen={currentRideDocuments.length === 0}>
-                      <div className="border border-border rounded-xl overflow-hidden" style={{ backgroundColor: 'hsl(210 40% 98%)' }}>
+                      <div className="border rounded-xl overflow-hidden" style={{ backgroundColor: 'hsl(210 40% 98%)', borderColor: 'hsl(215 19% 85%)' }}>
                         <CollapsibleTrigger className="w-full px-4 py-3 flex items-center justify-between hover:bg-secondary/50 transition-colors gap-2">
                           <div className="flex items-center gap-2 min-w-0">
                             <span className="flex items-center justify-center w-6 h-6 rounded-lg" style={{ backgroundColor: 'hsl(213 52% 24% / 0.1)' }}>
@@ -1091,12 +1091,12 @@ const BatchSendDocuments = () => {
             {/* Right Column - Recipient & Send */}
             <div className="space-y-4">
               {/* Sender Info */}
-              <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
-                <div className="px-5 py-4 border-b border-border flex items-center gap-3">
-                  <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+              <div className="bg-white border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.08)', borderColor: 'hsl(215 19% 85%)' }}>
+                <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: 'hsl(215 19% 88%)', backgroundColor: 'hsl(210 30% 97%)' }}>
+                  <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.12)' }}>
                     <Users className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
                   </span>
-                  <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Your Information</p>
+                  <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Your Information</p>
                 </div>
                 <div className="px-5 py-4">
                   <div className="text-xs space-y-1.5" style={{ color: 'hsl(215 19% 40%)' }}>
@@ -1118,12 +1118,12 @@ const BatchSendDocuments = () => {
 
               {/* Saved Recipients */}
               {savedRecipients.length > 0 && (
-                <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
-                  <div className="px-5 py-4 border-b border-border flex items-center gap-3">
-                    <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+                <div className="bg-white border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.08)', borderColor: 'hsl(215 19% 85%)' }}>
+                  <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: 'hsl(215 19% 88%)', backgroundColor: 'hsl(210 30% 97%)' }}>
+                    <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.12)' }}>
                       <BookUser className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
                     </span>
-                    <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Saved Recipients</p>
+                    <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Saved Recipients</p>
                   </div>
                   <div className="px-5 py-4">
                     <div className="space-y-2 max-h-48 overflow-y-auto">
@@ -1166,13 +1166,13 @@ const BatchSendDocuments = () => {
               )}
 
               {/* Recipient Form */}
-              <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}>
-                <div className="px-5 py-4 border-b border-border flex items-center justify-between gap-2">
+              <div className="bg-white border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.08)', borderColor: 'hsl(215 19% 85%)' }}>
+                <div className="px-5 py-4 border-b flex items-center justify-between gap-2" style={{ borderColor: 'hsl(215 19% 88%)', backgroundColor: 'hsl(210 30% 97%)' }}>
                   <div className="flex items-center gap-3">
-                    <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
+                    <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.12)' }}>
                       <Mail className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
                     </span>
-                    <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Recipient Details</p>
+                    <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Recipient Details</p>
                   </div>
                 <Dialog open={showSaveRecipientDialog} onOpenChange={setShowSaveRecipientDialog}>
                   <DialogTrigger asChild>
@@ -1225,7 +1225,7 @@ const BatchSendDocuments = () => {
                 </div>
                 <div className="space-y-4 px-5 py-4">
               <div>
-                <Label htmlFor="recipientEmail" className="text-xs sm:text-sm">Email Address *</Label>
+                <Label htmlFor="recipientEmail" className="text-[13px] font-semibold">Email Address *</Label>
                 <Input
                   id="recipientEmail"
                   type="email"
@@ -1237,7 +1237,7 @@ const BatchSendDocuments = () => {
                 />
               </div>
               <div>
-                <Label htmlFor="recipientName" className="text-xs sm:text-sm">Name / Organization</Label>
+                <Label htmlFor="recipientName" className="text-[13px] font-semibold">Name / Organization</Label>
                 <Input
                   id="recipientName"
                   value={recipientName}
@@ -1248,7 +1248,7 @@ const BatchSendDocuments = () => {
               </div>
               <div>
                 <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <Label htmlFor="message" className="text-xs sm:text-sm">Message (Optional)</Label>
+                  <Label htmlFor="message" className="text-[13px] font-semibold">Message (Optional)</Label>
                   <div className="flex items-center gap-1">
                     {emailTemplates.length > 0 && (
                       <Select onValueChange={handleSelectTemplate}>
