@@ -1,51 +1,77 @@
 
 
-# Plan: Risk Assessment Library UI Refactor
+# Implementation Plan
 
-## What Changes
+## Tasks
 
-### 1. New file: `src/components/risk-assessment/RiskLibraryDialog.tsx`
+1. **Database migration** — Create `wind_speed_logs` table + update 3 library items removing PIPA/ADIPS/RPII
+2. **PIPA/ADIPS code edits** — Update placeholder text in `MarkCompleteSheet.tsx`, `CompletedEventEditSheet.tsx`, and help-chat system prompt
+3. **RA delete confirmation** — Wrap trash button in `RiskItemCard.tsx` with `AlertDialog`
+4. **Wind Log component** — Create `src/components/WindSpeedLog.tsx`
+5. **RideDetail tab update** — Add conditional "Wind Log" tab for inflatables with mobile-safe flex layout
 
-A dialog component modelled on `CheckLibraryDialog` that:
+## 1. Migration: `wind_speed_logs` table + library wording
 
-- Accepts props: `trigger` (ReactNode), `itemType` ("hazard" | "control"), `equipmentGroup` (string), `onSelect` (callback returning selected label)
-- On open, fetches from `risk_library_items` where `item_type = itemType` AND `equipment_group IN ('general', equipmentGroup)` AND `is_active = true`, ordered by `category, sort_index`
-- Displays three segmented filter tabs in this order: **[Group-Specific]** (default) | **General** | **All**
-  - Default tab is the group-specific tab; falls back to General if the group has 0 items
-- Within each tab, items are grouped by `category` with bold section headers (e.g. "Mechanical Safety", "Rider Safety")
-- Search bar filters items by label within the active tab
-- Single-select: clicking an item calls `onSelect(label)` and closes the dialog
-- Shows item counts in each tab label
+Single migration with two clean sections:
 
-### 2. Edit: `src/components/RiskAssessmentManager.tsx`
+**Section A — Wording updates (3 UPDATEs):**
 
-- Expand `RiskAssessmentManagerProps.ride` to include `ride_categories?: { category_group: string }` 
-- Add a `categoryGroupToEquipmentGroup` mapping function (e.g. "Food Stalls" → "food_stalls", "Rides" → "rides", "Inflatables" → "inflatables")
-- **Hazard section** (lines ~1768-1957): Replace the `<Collapsible>` category browser + `<Select>` with hardcoded `<SelectItem>` entries (~175 lines) with a `<RiskLibraryDialog>` component. Keep the "Enter Custom Hazard" / "Browse Library" toggle as-is, but the "Browse Library" path now opens the dialog instead of showing the dropdown
-- **Control section** (lines ~2019-2154): Same replacement — remove the `<Collapsible>` + `<Select>` with ~120 hardcoded `<SelectItem>` entries, replace with `<RiskLibraryDialog>`
-- This removes all remaining "Patron" terminology from the codebase (lines 1924, 1928, 2078)
-- Import `RiskLibraryDialog` at the top of the file
+| Table | ID | New label |
+|-------|-----|-----------|
+| `risk_library_items` | `22cf1f9d-...` | "Minimum anchor points and anchorage arrangement in accordance with the applicable standard and manufacturer guidance" |
+| `check_library_items` | `ce41a7a4-...` | "Annual inspection certificate valid" |
+| `check_library_items` | `34127147-...` | "Annual independent inspection" |
 
-### 3. Edit: `src/pages/RiskAssessments.tsx`
+**Section B — `wind_speed_logs` table:**
 
-- No changes needed. The page already passes the full `Ride` object (which includes `ride_categories.category_group`) to `RiskAssessmentManager`. The expanded prop interface will accept it.
+Columns: `id` (uuid PK), `user_id`, `ride_id` (FK → rides CASCADE), `log_date` (date, default CURRENT_DATE), `log_time` (time), `wind_speed` (numeric, NOT NULL), `wind_unit` (text, default 'mph'), `recorded_by` (text, NOT NULL), `location` (text), `anemometer_make/model/serial` (text), `action_taken` (text), `notes` (text), `created_at` (timestamptz).
 
-### No database changes
+Index on `(ride_id, log_date DESC)`. RLS: deny anonymous, owner ALL, staff SELECT+INSERT for assigned rides.
 
-Reads from existing `risk_library_items` table with existing RLS policy (`is_active = true` for SELECT).
+## 2. PIPA/ADIPS code edits
 
-### Category sections that will appear in the dialog
+- **`MarkCompleteSheet.tsx`** line 454: placeholder → `"e.g. Independent Inspector, LEAPS, DMG Technical"`
+- **`CompletedEventEditSheet.tsx`** line 250: placeholder → `"e.g. Independent Inspector, LEAPS"`
+- **`help-chat/index.ts`** line 158: → `NEVER mention "ADIPS", "PIPA", or "RPII" - use "Annual Inspection Certificate" or "Annual Independent Inspection" instead`
 
-Based on the seeded data:
+## 3. RA delete confirmation — `RiskItemCard.tsx`
 
-| equipment_group | Categories |
-|----------------|------------|
-| general (84h/83c) | Electrical Safety, Structural Integrity, Fire Safety, Public Safety, Weather & Environment, Operational Safety, Site Safety, Emergency Procedures, Chemical & Substance, Manual Handling, Access & Egress, Noise & Vibration, PPE |
-| rides (39h/11c) | Mechanical Safety, Rider Safety, Hydraulic & Pneumatic, Control Systems, Restraint Systems, Speed & Motion |
-| inflatables (9h/7c) | Inflatable Safety |
-| food_stalls (8h/6c) | Food Safety |
-| equipment (5h/6c) | Generator & Equipment Safety |
-| games (4h/3c) | Game Safety |
-| stalls (3h/3c) | Stall Safety |
-| attractions (3h/3c) | Attraction Safety |
+Replace the bare trash button (lines 95-101) with an `AlertDialog`:
+- Title: "Delete this risk item?"
+- Description: "This will remove this hazard and its controls from this risk assessment."
+- Cancel + destructive Continue button calling `onDelete`
+
+## 4. Wind Log component — `WindSpeedLog.tsx`
+
+Props: `rideId`, `rideName`
+
+**Log list** — Card-based, each entry shows (in order): date, time, speed + unit, recorded by, location (if present). Anemometer details are secondary — shown only in an expandable/collapsible section per entry.
+
+**Add Reading form** (Sheet/Dialog):
+- Date (default today), Time (default now), Wind speed (numeric), Unit selector (mph / km/h / m/s, default mph)
+- Recorded by, Location
+- Collapsible "Anemometer Details": make, model, serial
+- Action taken (optional), Notes (optional)
+
+No enforcement logic — purely a recording tool.
+
+## 5. RideDetail tab update
+
+- Lazy-import `WindSpeedLog`, import `Wind` icon from lucide
+- Determine `isInflatable = ride.ride_categories.category_group === 'Inflatables'`
+- Build tabs array conditionally; append `{ value: 'windlog', label: 'Wind Log', Icon: Wind }` when inflatable
+- **Mobile-safe layout**: When inflatable (5 tabs), switch `TabsList` from `grid grid-cols-4` to `flex w-full overflow-x-auto` with each trigger getting `flex-1 min-w-[72px]` so tabs scroll horizontally on narrow screens. Non-inflatable (4 tabs) keeps the existing grid layout.
+- Add `<TabsContent value="windlog">` rendering `<WindSpeedLog />`
+
+## File change summary
+
+| Action | File |
+|--------|------|
+| Migration | New migration — 3 UPDATEs + CREATE TABLE + RLS |
+| Edit | `MarkCompleteSheet.tsx` — placeholder text |
+| Edit | `CompletedEventEditSheet.tsx` — placeholder text |
+| Edit | `help-chat/index.ts` — system prompt |
+| Edit | `RiskItemCard.tsx` — AlertDialog delete confirmation |
+| Create | `WindSpeedLog.tsx` — wind log component |
+| Edit | `RideDetail.tsx` — conditional Wind Log tab + mobile layout |
 
