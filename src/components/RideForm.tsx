@@ -36,7 +36,7 @@ const rideSchema = z.object({
   manufacturer: z.string().trim().max(100, "Manufacturer must be less than 100 characters").optional(),
   year_manufactured: z.number().int().min(1800).max(new Date().getFullYear() + 1).optional(),
   serial_number: z.string().trim().max(50, "Serial number must be less than 50 characters").optional(),
-  owner_name: z.string().trim().max(100, "Owner name must be less than 100 characters").optional(),
+  owner_name: z.string().trim().max(100, "Controller name must be less than 100 characters").optional(),
 });
 
 const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
@@ -571,24 +571,24 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           </div>
         </div>
 
-        {/* Ownership */}
+        {/* Controller */}
         <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Ownership (Optional)</h3>
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Controller (Optional)</h3>
           
           <div className="space-y-2">
-            <Label htmlFor="owner_name">Owner Name</Label>
+            <Label htmlFor="owner_name">Controller Name(s)</Label>
             <Input
               id="owner_name"
               value={formData.owner_name}
               onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
-              placeholder="If different from controller"
+              placeholder="e.g. John & Jane Smith"
               className={errors.owner_name ? "border-destructive" : ""}
             />
             {errors.owner_name && (
               <p className="text-sm text-destructive">{errors.owner_name}</p>
             )}
             <p className="text-xs text-muted-foreground">
-              May differ from the controller (safety) or showmen (operator) in your profile
+              The person(s) responsible for this equipment's safety and compliance
             </p>
           </div>
         </div>

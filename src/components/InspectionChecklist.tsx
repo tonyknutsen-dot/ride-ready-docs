@@ -438,7 +438,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
           { label: 'Manufacturer', value: ride.manufacturer },
           { label: 'Serial No', value: ride.serial_number },
           { label: 'Year', value: ride.year_manufactured?.toString() },
-          { label: 'Owner', value: ride.owner_name },
+          { label: 'Controller', value: ride.owner_name },
         ],
         imageDataUrl: rideImageDataUrl,
       });
