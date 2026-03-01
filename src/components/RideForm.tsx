@@ -32,7 +32,7 @@ interface RideFormProps {
 
 const rideSchema = z.object({
   ride_name: z.string().trim().min(1, "Ride name is required").max(100, "Ride name must be less than 100 characters"),
-  category_id: z.string().min(1, "Please select a ride category"),
+  category_id: z.string().min(1, "Please select an equipment group and type"),
   manufacturer: z.string().trim().max(100, "Manufacturer must be less than 100 characters").optional(),
   year_manufactured: z.number().int().min(1800).max(new Date().getFullYear() + 1).optional(),
   serial_number: z.string().trim().max(50, "Serial number must be less than 50 characters").optional(),
@@ -51,6 +51,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [openRequest, setOpenRequest] = useState(false);
   const [formData, setFormData] = useState({
     ride_name: ride?.ride_name || '',
+    category_group: '',
     category_id: ride?.category_id || '',
     manufacturer: ride?.manufacturer || '',
     year_manufactured: ride?.year_manufactured?.toString() || '',
@@ -84,9 +85,15 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [existingPhotoUrl, setExistingPhotoUrl] = useState<string | null>(null);
   const [existingPhotoPath, setExistingPhotoPath] = useState<string | null>(null);
   const [deletingPhoto, setDeletingPhoto] = useState(false);
+  // Derive groups and filtered types
+  const categoryGroups = [...new Set(categories.map(c => c.category_group))].sort();
+  const filteredTypes = formData.category_group
+    ? categories.filter(c => c.category_group === formData.category_group)
+    : [];
+
   // Check if adding a billable ride would exceed the current tier
   const selectedCategory = categories.find(c => c.id === formData.category_id);
-  const isSelectedCategoryBillable = selectedCategory?.is_billable !== false; // Default to billable if unknown
+  const isSelectedCategoryBillable = selectedCategory?.is_billable !== false;
   const wouldExceedTier = !isEditMode && subscription && isSelectedCategoryBillable && !subscription.canAddRide && subscription.subscriptionStatus === 'active';
 
   useEffect(() => {
@@ -95,6 +102,23 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       loadExistingPhoto();
     }
   }, []);
+
+  // In edit mode, set category_group from loaded categories once available
+  useEffect(() => {
+    if (isEditMode && ride?.category_id && categories.length > 0 && !formData.category_group) {
+      const existingCat = categories.find(c => c.id === ride.category_id);
+      if (existingCat) {
+        setFormData(prev => ({ ...prev, category_group: existingCat.category_group }));
+      }
+    }
+  }, [categories, isEditMode, ride]);
+
+  // Auto-select category_id when group has only one type
+  useEffect(() => {
+    if (formData.category_group && filteredTypes.length === 1 && formData.category_id !== filteredTypes[0].id) {
+      setFormData(prev => ({ ...prev, category_id: filteredTypes[0].id }));
+    }
+  }, [formData.category_group, filteredTypes]);
 
   const loadExistingPhoto = async () => {
     if (!user || !ride) return;
@@ -504,39 +528,75 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category_id">Category *</Label>
+              <Label htmlFor="category_group">Equipment Group *</Label>
               <Select
-                value={formData.category_id}
-                onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                value={formData.category_group}
+                onValueChange={(value) => {
+                  const typesInGroup = categories.filter(c => c.category_group === value);
+                  const autoId = typesInGroup.length === 1 ? typesInGroup[0].id : '';
+                  setFormData({ ...formData, category_group: value, category_id: autoId });
+                }}
               >
-                <SelectTrigger className={errors.category_id ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Select a category" />
+                <SelectTrigger className={errors.category_id && !formData.category_group ? "border-destructive" : ""}>
+                  <SelectValue placeholder="Select equipment group" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
+                  {categoryGroups.map((group) => (
+                    <SelectItem key={group} value={group}>
+                      {group}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              {errors.category_id && (
-                <p className="text-sm text-destructive">{errors.category_id}</p>
-              )}
               <p className="text-xs text-muted-foreground">
-                Categories help match relevant bulletins
+                The broad category of your equipment
               </p>
-              <Button 
-                type="button" 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setOpenRequest(true)}
-                className="h-auto py-1 px-2 text-xs w-fit"
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                Request category
-              </Button>
             </div>
+
+            {formData.category_group && filteredTypes.length > 1 && (
+              <div className="space-y-2">
+                <Label htmlFor="category_id">Equipment Type *</Label>
+                <Select
+                  value={formData.category_id}
+                  onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                >
+                  <SelectTrigger className={errors.category_id ? "border-destructive" : ""}>
+                    <SelectValue placeholder="Select a specific type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredTypes.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {errors.category_id && (
+                  <p className="text-sm text-destructive">{errors.category_id}</p>
+                )}
+              </div>
+            )}
+
+            {formData.category_group && filteredTypes.length === 1 && (
+              <p className="text-xs text-muted-foreground">
+                Type auto-selected: <span className="font-medium">{filteredTypes[0].name}</span>
+              </p>
+            )}
+
+            {errors.category_id && !formData.category_group && (
+              <p className="text-sm text-destructive">{errors.category_id}</p>
+            )}
+
+            <Button 
+              type="button" 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setOpenRequest(true)}
+              className="h-auto py-1 px-2 text-xs w-fit"
+            >
+              <Plus className="w-3 h-3 mr-1" />
+              Request new type
+            </Button>
           </div>
         </div>
 
