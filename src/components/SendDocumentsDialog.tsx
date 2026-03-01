@@ -188,22 +188,22 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
         )}
       </DialogTrigger>
       
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-hidden flex flex-col p-0 gap-0 bg-muted/60">
         {/* Header */}
-        <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b border-border flex-shrink-0">
+        <div className="flex items-start justify-between px-5 pt-5 pb-4 border-b-2 border-border bg-card flex-shrink-0">
           <div>
-            <DialogTitle className="text-base font-semibold text-foreground">
+            <DialogTitle className="text-base font-bold text-foreground">
               Send Documents
             </DialogTitle>
             <p className="text-xs text-muted-foreground mt-0.5">{rideInfo}</p>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto space-y-5 px-5 py-4">
-          {/* Sender Information — muted card */}
-          <div className="bg-muted/40 border border-border rounded-xl p-3 space-y-1">
-            <p className="text-xs font-semibold text-foreground">Sender Information</p>
-            <div className="text-xs text-muted-foreground space-y-0.5">
+        <div className="flex-1 overflow-y-auto space-y-4 px-5 py-4">
+          {/* Sender Information — stronger card */}
+          <div className="bg-card border-2 border-border rounded-xl p-4 space-y-1.5 shadow-sm">
+            <p className="text-[13px] font-bold text-foreground">Sender Information</p>
+            <div className="text-xs text-foreground/70 space-y-0.5">
               {profile?.company_name && <p>{profile.company_name}</p>}
               {profile?.controller_name && <p>{profile.controller_name}</p>}
               {user?.email && <p>{user.email}</p>}
@@ -214,11 +214,11 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
           </div>
 
           {/* Recipient */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-semibold text-foreground">Recipient</h3>
+          <div className="bg-card border-2 border-border rounded-xl p-4 space-y-3 shadow-sm">
+            <h3 className="text-[13px] font-bold text-foreground">Recipient</h3>
             <div className="space-y-2">
               <div>
-                <Label htmlFor="recipientEmail" className="text-xs font-medium text-foreground mb-1.5 block">
+                <Label htmlFor="recipientEmail" className="text-[13px] font-semibold text-foreground mb-1.5 block">
                   Email Address *
                 </Label>
                 <Input
@@ -231,7 +231,7 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
                 />
               </div>
               <div>
-                <Label htmlFor="recipientName" className="text-xs font-medium text-foreground mb-1.5 block">
+                <Label htmlFor="recipientName" className="text-[13px] font-semibold text-foreground mb-1.5 block">
                   Name / Organisation
                 </Label>
                 <Input
@@ -245,9 +245,9 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
           </div>
 
           {/* Message — single instance */}
-          <div className="space-y-2">
-            <Label htmlFor="message" className="text-xs font-medium text-foreground block">
-              Message <span className="text-muted-foreground font-normal">(optional)</span>
+          <div className="bg-card border-2 border-border rounded-xl p-4 space-y-2 shadow-sm">
+            <Label htmlFor="message" className="text-[13px] font-bold text-foreground block">
+              Message <span className="text-muted-foreground font-normal text-xs">(optional)</span>
             </Label>
             <Textarea
               id="message"
@@ -259,11 +259,11 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
             />
           </div>
 
-          {/* Documents — single instance */}
-          <div className="space-y-3">
+          {/* Documents section */}
+          <div className="bg-card border-2 border-border rounded-xl p-4 space-y-3 shadow-sm">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold text-foreground">Documents</h3>
-              <span className="text-xs text-muted-foreground">{totalSelectedDocs} selected</span>
+              <h3 className="text-[13px] font-bold text-foreground">Documents</h3>
+              <span className="text-xs font-semibold text-primary">{totalSelectedDocs} selected</span>
             </div>
 
             {/* Size bar */}
@@ -400,7 +400,7 @@ export const SendDocumentsDialog: React.FC<SendDocumentsDialogProps> = ({ ride, 
         </div>
 
         {/* Sticky footer */}
-        <div className="flex-shrink-0 flex gap-3 px-5 py-4 border-t border-border bg-background">
+        <div className="flex-shrink-0 flex gap-3 px-5 py-4 border-t-2 border-border bg-card shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
           <Button variant="outline" className="flex-1" onClick={() => setOpen(false)}>
             Cancel
           </Button>
