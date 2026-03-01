@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useToast } from '@/hooks/use-toast';
+import { useDateTimeSettings } from '@/hooks/useDateTimeSettings';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -41,16 +42,36 @@ const UNIT_OPTIONS = [
   { value: 'm/s', label: 'm/s' },
 ];
 
+const ACTION_OPTIONS = [
+  { value: 'continue', label: 'Continue operating' },
+  { value: 'monitoring', label: 'Increased monitoring' },
+  { value: 'restricted', label: 'Restricted use' },
+  { value: 'ceased', label: 'Ceased operation' },
+  { value: 'other', label: 'Other' },
+];
+
+const ACTION_LABEL_MAP: Record<string, string> = {
+  continue: 'Continue operating',
+  monitoring: 'Increased monitoring',
+  restricted: 'Restricted use',
+  ceased: 'Ceased operation',
+};
+
 const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
   const { user } = useAuth();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
+  const { formatDate } = useDateTimeSettings();
 
   const [logs, setLogs] = useState<WindLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Defaults loaded from profile / last entry
+  const [defaultRecordedBy, setDefaultRecordedBy] = useState('');
+  const [defaultLocation, setDefaultLocation] = useState('');
 
   // Form state
   const now = new Date();
@@ -64,7 +85,28 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
   const [anemometerModel, setAnemometerModel] = useState('');
   const [anemometerSerial, setAnemometerSerial] = useState('');
   const [actionTaken, setActionTaken] = useState('');
+  const [actionNotes, setActionNotes] = useState('');
   const [notes, setNotes] = useState('');
+
+  // Load user name for default "Recorded By"
+  useEffect(() => {
+    const loadDefaults = async () => {
+      if (!effectiveUserId) return;
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('controller_name')
+          .eq('user_id', effectiveUserId)
+          .maybeSingle();
+        if (data?.controller_name) {
+          setDefaultRecordedBy(data.controller_name);
+        }
+      } catch (err) {
+        console.error('Error loading profile for wind log:', err);
+      }
+    };
+    loadDefaults();
+  }, [effectiveUserId]);
 
   useEffect(() => {
     loadLogs();
@@ -82,7 +124,13 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
         .limit(100);
 
       if (error) throw error;
-      setLogs((data as WindLogEntry[]) || []);
+      const entries = (data as WindLogEntry[]) || [];
+      setLogs(entries);
+
+      // Prefill location from most recent entry for this ride
+      if (entries.length > 0 && entries[0].location) {
+        setDefaultLocation(entries[0].location);
+      }
     } catch (err) {
       console.error('Error loading wind logs:', err);
     } finally {
@@ -96,19 +144,47 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
     setLogTime(format(n, 'HH:mm'));
     setWindSpeed('');
     setWindUnit('mph');
-    setRecordedBy('');
-    setLocation('');
+    setRecordedBy(defaultRecordedBy);
+    setLocation(defaultLocation);
     setAnemometerMake('');
     setAnemometerModel('');
     setAnemometerSerial('');
     setActionTaken('');
+    setActionNotes('');
     setNotes('');
+  };
+
+  // When opening the sheet, prefill defaults
+  const handleOpenSheet = () => {
+    const n = new Date();
+    setLogDate(format(n, 'yyyy-MM-dd'));
+    setLogTime(format(n, 'HH:mm'));
+    setWindSpeed('');
+    setWindUnit('mph');
+    setRecordedBy(defaultRecordedBy);
+    setLocation(defaultLocation);
+    setAnemometerMake('');
+    setAnemometerModel('');
+    setAnemometerSerial('');
+    setActionTaken('');
+    setActionNotes('');
+    setNotes('');
+    setSheetOpen(true);
   };
 
   const handleSave = async () => {
     if (!effectiveUserId || !windSpeed || !recordedBy) {
       toast({ title: 'Missing fields', description: 'Wind speed and recorded by are required.', variant: 'destructive' });
       return;
+    }
+
+    // Build action_taken string from structured selection
+    let finalAction: string | null = null;
+    if (actionTaken === 'other') {
+      finalAction = actionNotes || null;
+    } else if (actionTaken) {
+      const label = ACTION_LABEL_MAP[actionTaken] || actionTaken;
+      finalAction = actionNotes ? `${label} — ${actionNotes}` : label;
     }
 
     setSaving(true);
@@ -125,7 +201,7 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
         anemometer_make: anemometerMake || null,
         anemometer_model: anemometerModel || null,
         anemometer_serial: anemometerSerial || null,
-        action_taken: actionTaken || null,
+        action_taken: finalAction,
         notes: notes || null,
       });
 
@@ -154,7 +230,7 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
           <Wind className="h-5 w-5 text-primary" />
           <h2 className="text-base font-semibold text-foreground">Wind Log</h2>
         </div>
-        <Button onClick={() => setSheetOpen(true)} size="sm" className="gap-1.5">
+        <Button onClick={handleOpenSheet} size="sm" className="gap-1.5">
           <Plus className="h-4 w-4" />
           Add Reading
         </Button>
@@ -180,7 +256,7 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
                 <div className="space-y-1 flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-semibold text-foreground">
-                      {format(new Date(entry.log_date), 'dd MMM yyyy')}
+                      {formatDate(entry.log_date)}
                     </span>
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
                       <Clock className="h-3 w-3" />
@@ -322,10 +398,28 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
               </CollapsibleContent>
             </Collapsible>
 
-            {/* Action taken */}
+            {/* Action taken — structured */}
             <div className="space-y-1.5">
               <Label className="text-xs">Action Taken</Label>
-              <Textarea placeholder="e.g. Continued operation, Closed ride, Increased monitoring" value={actionTaken} onChange={(e) => setActionTaken(e.target.value)} className="min-h-[60px]" maxLength={500} />
+              <Select value={actionTaken} onValueChange={setActionTaken}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select action..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {ACTION_OPTIONS.map((a) => (
+                    <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {actionTaken && (
+                <Textarea
+                  placeholder={actionTaken === 'other' ? 'Describe action taken...' : 'Additional notes on action (optional)'}
+                  value={actionNotes}
+                  onChange={(e) => setActionNotes(e.target.value)}
+                  className="min-h-[60px] mt-1.5"
+                  maxLength={500}
+                />
+              )}
             </div>
 
             {/* Notes */}

@@ -278,7 +278,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             { value: 'checks',   label: 'Checks', Icon: CheckSquare },
             { value: 'documents', label: 'Docs', Icon: FileText },
             { value: 'activity', label: 'Activity', Icon: History },
-            ...(isInflatable ? [{ value: 'windlog', label: 'Wind Log', Icon: Wind }] : []),
+            ...(isInflatable ? [{ value: 'windlog', label: 'Wind', Icon: Wind }] : []),
           ];
           return (
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
