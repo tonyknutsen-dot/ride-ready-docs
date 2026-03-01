@@ -164,7 +164,7 @@ const RideDetailPage = () => {
           </span>
         </div>
       )}
-      <PageBreadcrumb items={getBreadcrumbItems()} showHome className="text-[11px] opacity-60 hidden md:flex" />
+      <PageBreadcrumb items={getBreadcrumbItems()} showHome className="text-[11px] opacity-60" />
       <RideDetail 
         ride={ride}
         onBack={() => navigate('/rides')}
