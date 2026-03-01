@@ -528,7 +528,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       <form id="ride-form-root" onSubmit={handleSubmit} className="space-y-7">
         {/* Essential Information */}
         <div className="space-y-4">
-          <h3 className="text-xs font-bold text-foreground/70 uppercase tracking-widest">Essential Information</h3>
+          <h3 className="text-xs font-bold text-foreground/60 uppercase tracking-widest border-b border-border pb-2">Essential Information</h3>
           
           <div className="space-y-4">
             <div className="space-y-2">
@@ -566,7 +566,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-muted-foreground/80">
+              <p className="text-xs text-foreground/50">
                 The broad category of your equipment
               </p>
             </div>
@@ -589,7 +589,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground/80">
+                <p className="text-xs text-foreground/50">
                   If you can't find the exact type, leave blank or request a new one below
                 </p>
               </div>
@@ -620,7 +620,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
         {/* Technical Details */}
         <div className="space-y-4">
-          <h3 className="text-xs font-bold text-foreground/70 uppercase tracking-widest">Technical Details (Optional)</h3>
+          <h3 className="text-xs font-bold text-foreground/60 uppercase tracking-widest border-b border-border pb-2">Technical Details (Optional)</h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
@@ -672,7 +672,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
         {/* Controller */}
         <div className="space-y-4">
-          <h3 className="text-xs font-bold text-foreground/70 uppercase tracking-widest">Controller (Optional)</h3>
+          <h3 className="text-xs font-bold text-foreground/60 uppercase tracking-widest border-b border-border pb-2">Controller (Optional)</h3>
           
           <div className="space-y-2">
             <Label htmlFor="owner_name">Controller Name(s)</Label>
@@ -686,7 +686,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             {errors.owner_name && (
               <p className="text-sm text-destructive">{errors.owner_name}</p>
             )}
-            <p className="text-xs text-muted-foreground/80">
+            <p className="text-xs text-foreground/50">
               The person(s) responsible for this equipment's safety and compliance
             </p>
           </div>
@@ -694,7 +694,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
         {/* Photo Upload */}
         <div className="space-y-4">
-          <h3 className="text-xs font-bold text-foreground/70 uppercase tracking-widest">Photo (Optional)</h3>
+          <h3 className="text-xs font-bold text-foreground/60 uppercase tracking-widest border-b border-border pb-2">Photo (Optional)</h3>
           
           <div className="space-y-3">
             {/* New photo preview (takes priority) */}
@@ -788,32 +788,32 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border bg-muted/40 hover:border-primary/50 hover:bg-muted/60 rounded-2xl transition-all group shadow-sm"
+                    className="h-28 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-foreground/20 bg-card hover:border-primary/60 hover:bg-primary/5 rounded-2xl transition-all group shadow-[0_1px_4px_0_hsl(var(--foreground)/0.06)]"
                     onClick={() => document.getElementById('ride-photo-camera')?.click()}
                   >
-                    <Camera className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={2} />
-                    <span className="text-sm font-medium">Take Photo</span>
+                    <Camera className="h-8 w-8 text-foreground/40 group-hover:text-primary transition-colors" strokeWidth={1.8} />
+                    <span className="text-sm font-semibold text-foreground/70">Take Photo</span>
                   </Button>
                   <Button
                     type="button"
                     variant="outline"
-                    className="h-24 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-border bg-muted/40 hover:border-primary/50 hover:bg-muted/60 rounded-2xl transition-all group shadow-sm"
+                    className="h-28 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-foreground/20 bg-card hover:border-primary/60 hover:bg-primary/5 rounded-2xl transition-all group shadow-[0_1px_4px_0_hsl(var(--foreground)/0.06)]"
                     onClick={() => document.getElementById('ride-photo')?.click()}
                   >
-                    <FolderOpen className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" strokeWidth={2} />
-                    <span className="text-sm font-medium">Choose File</span>
+                    <FolderOpen className="h-8 w-8 text-foreground/40 group-hover:text-primary transition-colors" strokeWidth={1.8} />
+                    <span className="text-sm font-semibold text-foreground/70">Choose File</span>
                   </Button>
                 </div>
               </>
             )}
-            <p className="text-xs text-muted-foreground/80">
+            <p className="text-xs text-foreground/50">
               Tip: Include the whole device and ID plate if possible
             </p>
           </div>
         </div>
 
         {/* Actions - sticky on mobile to stay above bottom nav */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t md:relative fixed bottom-[calc(env(safe-area-inset-bottom)+72px)] md:bottom-auto left-0 right-0 md:left-auto md:right-auto bg-background md:bg-transparent px-4 md:px-0 pb-3 md:pb-0 z-30 shadow-[0_-2px_8px_rgba(0,0,0,0.08)] md:shadow-none">
+        <div className="flex items-center justify-end gap-3 pt-4 border-t border-foreground/10 md:relative fixed bottom-[calc(env(safe-area-inset-bottom)+72px)] md:bottom-auto left-0 right-0 md:left-auto md:right-auto bg-card md:bg-transparent px-4 md:px-0 pb-3 md:pb-0 z-30 shadow-[0_-4px_12px_rgba(0,0,0,0.1)] md:shadow-none">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
