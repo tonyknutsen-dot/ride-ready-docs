@@ -2972,6 +2972,42 @@ export type Database = {
           },
         ]
       }
+      wind_log_rides: {
+        Row: {
+          created_at: string
+          id: string
+          ride_id: string
+          wind_log_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ride_id: string
+          wind_log_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ride_id?: string
+          wind_log_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wind_log_rides_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wind_log_rides_wind_log_id_fkey"
+            columns: ["wind_log_id"]
+            isOneToOne: false
+            referencedRelation: "wind_speed_logs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       wind_speed_logs: {
         Row: {
           action_taken: string | null
@@ -2985,7 +3021,7 @@ export type Database = {
           log_time: string
           notes: string | null
           recorded_by: string
-          ride_id: string
+          ride_id: string | null
           user_id: string
           wind_speed: number
           wind_unit: string
@@ -3002,7 +3038,7 @@ export type Database = {
           log_time?: string
           notes?: string | null
           recorded_by: string
-          ride_id: string
+          ride_id?: string | null
           user_id: string
           wind_speed: number
           wind_unit?: string
@@ -3019,7 +3055,7 @@ export type Database = {
           log_time?: string
           notes?: string | null
           recorded_by?: string
-          ride_id?: string
+          ride_id?: string | null
           user_id?: string
           wind_speed?: number
           wind_unit?: string

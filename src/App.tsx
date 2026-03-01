@@ -78,6 +78,7 @@ const MyBugReports = lazy(() => import("./pages/MyBugReports"));
 const Install = lazy(() => import("./pages/Install"));
 const DataIndependence = lazy(() => import("./pages/DataIndependence"));
 const SharedDocuments = lazy(() => import("./pages/SharedDocuments"));
+const WindLog = lazy(() => import("./pages/WindLog"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const Compliance = lazy(() => import("./pages/Compliance"));
 const DocumentViewerPage = lazy(() => import("./pages/DocumentViewerPage"));
@@ -294,6 +295,18 @@ const App = () => (
                         <Marketing />
                       </AppLayout>
                     </AdminRoute>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/wind-log"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <AppLayout>
+                        <WindLog />
+                      </AppLayout>
+                    </ProfileGuard>
                   </ProtectedRoute>
                 } 
               />
