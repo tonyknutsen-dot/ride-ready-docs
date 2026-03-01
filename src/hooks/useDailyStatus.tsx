@@ -138,9 +138,8 @@ export function useDailyStatus(rideId: string) {
 
       // Invalidate related queries
       queryClient.invalidateQueries({ queryKey: ['ride-daily-status-log', rideId, todayStr] });
-      queryClient.invalidateQueries({ queryKey: ['checks-compliance'] });
+      queryClient.invalidateQueries({ queryKey: ['recent-checks-summary'] });
       queryClient.invalidateQueries({ queryKey: ['all-rides-daily-status'] });
-      queryClient.invalidateQueries({ queryKey: ['operating-today'] });
 
       toast({
         title: newValue ? 'Marked in use today' : 'Marked as not in use today',
