@@ -7,8 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft, Save, Plus, ImagePlus, AlertTriangle, Camera, FolderOpen, Trash2, Loader2, ShieldAlert, ClipboardCheck } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
+import { ArrowLeft, Save, Plus, ImagePlus, AlertTriangle, Camera, FolderOpen, Trash2, Loader2, ShieldAlert } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { z } from 'zod';
@@ -60,7 +59,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     serial_number: ride?.serial_number || '',
     owner_name: ride?.owner_name || '',
   });
-  const [requiresDailyChecks, setRequiresDailyChecks] = useState(ride?.requires_operational_checks ?? true);
+  
 
   // Pre-fill controller name from profile for new rides
   useEffect(() => {
@@ -123,12 +122,6 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     }
   }, [formData.category_group, filteredTypes]);
 
-  // Auto-set daily checks default based on category group for new rides
-  useEffect(() => {
-    if (isEditMode || !formData.category_group) return;
-    const nonOperationalGroups = ['Food Stalls', 'Games', 'Equipment'];
-    setRequiresDailyChecks(!nonOperationalGroups.includes(formData.category_group));
-  }, [formData.category_group, isEditMode]);
 
   const loadExistingPhoto = async () => {
     if (!user || !ride) return;
@@ -314,7 +307,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             year_manufactured: validatedData.year_manufactured || null,
             serial_number: validatedData.serial_number || null,
             owner_name: validatedData.owner_name || null,
-            requires_operational_checks: requiresDailyChecks,
+            
           })
           .eq('id', ride.id)
           .eq('user_id', user!.id);
@@ -392,7 +385,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             year_manufactured: validatedData.year_manufactured || null,
             serial_number: validatedData.serial_number || null,
             owner_name: validatedData.owner_name || null,
-            requires_operational_checks: requiresDailyChecks !== undefined ? requiresDailyChecks : defaultRequiresChecks,
+            requires_operational_checks: defaultRequiresChecks,
           })
           .select()
           .single();
@@ -708,37 +701,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           </div>
         </section>
 
-        {/* ── Section 4: Safety Checks ── */}
-        <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
-          <div className="px-4 pt-4 pb-3 border-b border-border">
-            <h3 className="text-sm font-bold text-foreground">Safety Checks</h3>
-          </div>
-          <div className="p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex items-start gap-3 min-w-0">
-                <div className="mt-0.5 w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <ClipboardCheck className="h-4 w-4 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <Label htmlFor="requires-daily-checks" className="text-[13px] font-semibold text-foreground leading-tight block">
-                    Uses daily / pre-opening checks
-                  </Label>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    When enabled, this equipment will appear in the daily "In Use Today" prompt and require safety checks before operating.
-                  </p>
-                </div>
-              </div>
-              <Switch
-                id="requires-daily-checks"
-                checked={requiresDailyChecks}
-                onCheckedChange={setRequiresDailyChecks}
-                className="shrink-0 mt-1"
-              />
-            </div>
-          </div>
-        </section>
-
-        {/* ── Section 5: Photo ── */}
+        {/* ── Section 4: Photo ── */}
         <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
           <div className="px-4 pt-4 pb-3 border-b border-border">
             <h3 className="text-sm font-bold text-foreground">Photo <span className="font-normal text-muted-foreground">(optional)</span></h3>

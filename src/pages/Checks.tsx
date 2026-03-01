@@ -1,18 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  CheckSquare, HelpCircle, AlertTriangle, Clock, CheckCircle2,
-  Calendar, ClipboardList
-} from 'lucide-react';
+import { CheckSquare, HelpCircle, ClipboardList, Clock } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import RideSelector from '@/components/RideSelector';
 import { ChecksOnboardingModal } from '@/components/ChecksOnboardingModal';
 import { Button } from '@/components/ui/button';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
-import { useChecksCompliance, CheckRideStatus } from '@/hooks/useChecksCompliance';
 import { OfflineStaleAlert } from '@/components/OfflineStaleAlert';
-import { useOperatingToday } from '@/hooks/useOperatingToday';
-import { OperatingTodayPrompt } from '@/components/OperatingTodayPrompt';
+import { useRecentChecksSummary } from '@/hooks/useRecentChecksSummary';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -21,127 +16,14 @@ type Ride = Tables<'rides'> & {
   };
 };
 
-const statusConfig = {
-  overdue: {
-    label: 'Overdue',
-    icon: AlertTriangle,
-    dotColor: 'bg-destructive',
-    textColor: 'text-destructive',
-    badgeBg: 'bg-destructive/10 text-destructive border-destructive/20',
-    accentColor: 'hsl(0 72% 51%)',
-  },
-  due_today: {
-    label: 'Due Today',
-    icon: Clock,
-    dotColor: 'bg-warning',
-    textColor: 'text-warning',
-    badgeBg: 'bg-warning/10 text-warning border-warning/20',
-    accentColor: 'hsl(38 92% 50%)',
-  },
-  due_soon: {
-    label: 'Due Soon',
-    icon: Calendar,
-    dotColor: 'bg-info',
-    textColor: 'text-info',
-    badgeBg: 'bg-info/10 text-info border-info/20',
-    accentColor: 'hsl(221 83% 53%)',
-  },
-  ok: {
-    label: 'Up to Date',
-    icon: CheckCircle2,
-    dotColor: 'bg-success',
-    textColor: 'text-success',
-    badgeBg: 'bg-success/10 text-success border-success/20',
-    accentColor: 'hsl(142 76% 36%)',
-  },
-};
-
-const RideStatusRow = ({
-  ride,
-  onNavigate,
-}: {
-  ride: CheckRideStatus;
-  onNavigate: (rideId: string) => void;
-}) => {
-  const isOverdue = ride.status === 'overdue';
-  const isDueToday = ride.status === 'due_today';
-  const cfg = statusConfig[ride.status];
-
-  const sublabel = isOverdue
-    ? ride.daysSinceLastCheck === null
-      ? 'No checks recorded'
-      : `Last check ${ride.daysSinceLastCheck}d ago`
-    : isDueToday
-    ? 'Due today'
-    : ride.status === 'due_soon'
-    ? 'Due soon'
-    : 'Up to date';
-
-  return (
-    <div
-      className="flex items-center justify-between bg-card p-4 rounded-xl border border-border"
-      style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
-    >
-      <div className="flex-1 min-w-0 mr-3">
-        <p className="text-sm font-semibold text-foreground truncate">{ride.rideName}</p>
-        <p className={`text-xs mt-0.5 ${cfg.textColor}`}>{sublabel}</p>
-      </div>
-      <button
-        onClick={() => onNavigate(ride.rideId)}
-        className={`shrink-0 px-3 py-2 rounded-lg text-xs font-semibold ${
-          isOverdue || isDueToday
-            ? 'bg-destructive text-white'
-            : 'bg-primary text-primary-foreground'
-        }`}
-      >
-        Perform Check
-      </button>
-    </div>
-  );
-};
-
 const Checks = () => {
   const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(false);
-  const { data: compliance, isLoading } = useChecksCompliance();
-  const { hasAnswered, isLoading: operatingLoading, rides: operatingRides, submitting, confirmOperating, dismissOperating } = useOperatingToday();
+  const { data: summary, isLoading } = useRecentChecksSummary();
+
   const handleRideSelect = (ride: Ride) => {
     navigate(`/rides/${ride.id}?tab=checks`);
   };
-
-  const handleNavigateToRide = (rideId: string) => {
-    navigate(`/rides/${rideId}?tab=checks`);
-  };
-
-  const stats = compliance?.stats;
-  const hasAlerts = (stats?.overdueCount ?? 0) > 0;
-
-  const kpiCards = [
-    {
-      label: 'Overdue',
-      value: stats?.overdueCount ?? 0,
-      accentColor: 'hsl(0 72% 51%)',
-      icon: AlertTriangle,
-    },
-    {
-      label: 'Due Today',
-      value: stats?.dueTodayCount ?? 0,
-      accentColor: 'hsl(38 92% 50%)',
-      icon: Clock,
-    },
-    {
-      label: 'Due Soon',
-      value: stats?.dueSoonCount ?? 0,
-      accentColor: 'hsl(221 83% 53%)',
-      icon: Calendar,
-    },
-    {
-      label: 'Done (7d)',
-      value: stats?.completedLast7dCount ?? 0,
-      accentColor: 'hsl(142 76% 36%)',
-      icon: CheckCircle2,
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-background pb-28 md:pb-8">
@@ -177,89 +59,56 @@ const Checks = () => {
         {/* ── OFFLINE BANNER ──────────────────────── */}
         <OfflineStaleAlert />
 
-        {/* ── OPERATING TODAY PROMPT ──────────── */}
-        {!operatingLoading && !hasAnswered && operatingRides.length > 0 && (
-          <OperatingTodayPrompt
-            rides={operatingRides}
-            onConfirm={confirmOperating}
-            onCancel={dismissOperating}
-            submitting={submitting}
-          />
-        )}
-        {/* ── COMPLIANCE ALERT BANNER ───────────── */}
-        {!isLoading && hasAlerts && (
-          <div className="flex items-start gap-3 bg-destructive/5 border border-destructive/20 text-destructive p-3 rounded-xl">
-            <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" strokeWidth={2} />
-            <div className="text-sm">
-              <div className="font-semibold">
-                {stats!.overdueCount} ride{stats!.overdueCount !== 1 ? 's' : ''} need{stats!.overdueCount === 1 ? 's' : ''} a check
+        {/* ── RECENT ACTIVITY SUMMARY ─────────────── */}
+        {!isLoading && summary && (
+          <div className="grid grid-cols-2 gap-2">
+            <div
+              className="flex flex-col gap-1 p-3 rounded-2xl border border-border bg-card"
+              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+            >
+              <div className="text-2xl font-bold text-foreground leading-none">
+                {summary.checksToday}
               </div>
-              <div className="text-destructive/70 text-xs mt-0.5">Please complete outstanding checks.</div>
+              <div className="text-[10px] text-muted-foreground font-medium leading-tight">Completed Today</div>
+            </div>
+            <div
+              className="flex flex-col gap-1 p-3 rounded-2xl border border-border bg-card"
+              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+            >
+              <div className="text-2xl font-bold text-foreground leading-none">
+                {summary.checksLast7d}
+              </div>
+              <div className="text-[10px] text-muted-foreground font-medium leading-tight">Last 7 Days</div>
             </div>
           </div>
         )}
 
-        {/* ── KPI STRIP ────────────────────────── */}
-        <div>
-          <h2 className="text-xs font-semibold text-muted-foreground mb-3 tracking-widest uppercase">Check Status</h2>
-          <div className="grid grid-cols-4 gap-2">
-            {kpiCards.map(({ label, value, accentColor }) => (
+        {/* ── RECENT CHECKS PER RIDE ───────────────── */}
+        {!isLoading && summary && summary.rides.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="text-xs font-semibold text-muted-foreground tracking-widest uppercase flex items-center gap-1.5">
+              <Clock className="h-3 w-3" strokeWidth={2} />
+              Recent Activity
+            </h2>
+            {summary.rides.map(ride => (
               <div
-                key={label}
-                className="flex flex-col gap-1 p-3 rounded-2xl border border-border bg-card"
-                style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
+                key={ride.rideId}
+                className="flex items-center justify-between bg-card p-4 rounded-xl border border-border"
+                style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}
               >
-                <div className="text-2xl font-bold text-foreground leading-none" style={{ color: accentColor }}>
-                  {isLoading ? '–' : value}
+                <div className="flex-1 min-w-0 mr-3">
+                  <p className="text-sm font-semibold text-foreground truncate">{ride.rideName}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{ride.lastCheckLabel}</p>
                 </div>
-                <div className="text-[10px] text-muted-foreground font-medium leading-tight">{label}</div>
+                <button
+                  onClick={() => navigate(`/rides/${ride.rideId}?tab=checks`)}
+                  className="shrink-0 px-3 py-2 rounded-lg text-xs font-semibold bg-primary text-primary-foreground"
+                >
+                  Open Checks
+                </button>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* ── PRIORITY LISTS ───────────────────── */}
-        {!isLoading && (
-          <>
-            {/* Overdue */}
-            {(compliance?.overdueRides.length ?? 0) > 0 && (
-              <div className="space-y-2">
-                <h2 className="text-xs font-semibold text-destructive tracking-widest uppercase flex items-center gap-1.5">
-                  <AlertTriangle className="h-3 w-3" strokeWidth={2} />
-                  Overdue ({compliance!.overdueRides.length})
-                </h2>
-                {compliance!.overdueRides.map(ride => (
-                  <RideStatusRow key={ride.rideId} ride={ride} onNavigate={handleNavigateToRide} />
-                ))}
-              </div>
-            )}
-
-            {/* Due Today */}
-            {(compliance?.dueTodayRides.length ?? 0) > 0 && (
-              <div className="space-y-2">
-                <h2 className="text-xs font-semibold text-warning tracking-widest uppercase flex items-center gap-1.5">
-                  <Clock className="h-3 w-3" strokeWidth={2} />
-                  Due Today ({compliance!.dueTodayRides.length})
-                </h2>
-                {compliance!.dueTodayRides.map(ride => (
-                  <RideStatusRow key={ride.rideId} ride={ride} onNavigate={handleNavigateToRide} />
-                ))}
-              </div>
-            )}
-
-            {/* Due Soon */}
-            {(compliance?.dueSoonRides.length ?? 0) > 0 && (
-              <div className="space-y-2">
-                <h2 className="text-xs font-semibold text-info tracking-widest uppercase flex items-center gap-1.5">
-                  <Calendar className="h-3 w-3" strokeWidth={2} />
-                  Due Soon ({compliance!.dueSoonRides.length})
-                </h2>
-                {compliance!.dueSoonRides.map(ride => (
-                  <RideStatusRow key={ride.rideId} ride={ride} onNavigate={handleNavigateToRide} />
-                ))}
-              </div>
-            )}
-          </>
         )}
 
         {/* ── SELECT EQUIPMENT SECTION ─────────── */}
