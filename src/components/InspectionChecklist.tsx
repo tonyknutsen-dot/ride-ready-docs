@@ -891,7 +891,11 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         await loadRecentChecks();
         queryClient.invalidateQueries({ queryKey: ['overview'] });
         queryClient.invalidateQueries({ queryKey: ['checks'] });
+        queryClient.invalidateQueries({ queryKey: ['inspection-records'] });
       }
+
+      // Notify parent (e.g. navigate back from execute page)
+      onChecklistSaved?.();
     } catch (error) {
       // Rollback optimistic update
       if (previousOverview) {
