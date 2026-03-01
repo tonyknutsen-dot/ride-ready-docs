@@ -100,6 +100,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const [declarationChecked, setDeclarationChecked] = useState(false);
   const [highlightItemId, setHighlightItemId] = useState<string | null>(null);
   const [itemDefectRaised, setItemDefectRaised] = useState<Record<string, boolean>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   const { toast } = useToast();
   const { user } = useAuth();
