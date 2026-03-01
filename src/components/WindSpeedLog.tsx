@@ -213,7 +213,7 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
       loadLogs();
     } catch (err: any) {
       console.error('Error saving wind log:', err);
-      toast({ title: 'Error saving reading', description: err.message, variant: 'destructive' });
+      toast({ title: "Couldn't save wind reading", description: 'Please try again.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
