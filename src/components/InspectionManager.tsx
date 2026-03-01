@@ -306,25 +306,6 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
 
         {/* Daily / Pre-Opening Check (merged) */}
         <TabsContent value="daily" className="relative">
-          {!opLoading && ride.requires_operational_checks && !isOperating && (
-            <div className="flex items-start gap-2.5 bg-muted/40 border border-border rounded-xl px-4 py-3 mb-4">
-              <PauseCircle className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-muted-foreground">Not marked as in use today — checks not required.</p>
-                {canToggle && (
-                  <button onClick={toggleOperating} disabled={toggling} className="text-xs font-semibold text-primary mt-1 hover:underline">
-                    {toggling ? 'Updating…' : 'Mark as in use today →'}
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-          {!opLoading && ride.requires_operational_checks && isOperating && (
-            <div className="flex items-center gap-2 bg-success/5 border border-success/30 rounded-xl px-4 py-2.5 mb-4">
-              <PlayCircle className="h-4 w-4 text-success shrink-0" />
-              <p className="text-sm font-medium text-success">In use today — checks due.</p>
-            </div>
-          )}
           {renderFrequencyContent('daily', 'Daily / Pre-Opening')}
         </TabsContent>
 

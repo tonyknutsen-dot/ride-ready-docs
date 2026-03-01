@@ -76,8 +76,7 @@ export function useRideOperatingToday(rideId: string) {
         toast({ title: 'Failed to update', description: error.message, variant: 'destructive' });
       } else {
         // Invalidate related queries
-        queryClient.invalidateQueries({ queryKey: ['checks-compliance'] });
-        queryClient.invalidateQueries({ queryKey: ['operating-today'] });
+        queryClient.invalidateQueries({ queryKey: ['recent-checks-summary'] });
         toast({ title: newValue ? 'Ride marked as operating today' : 'Ride marked as not operating today' });
       }
     } catch (err) {

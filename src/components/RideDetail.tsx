@@ -72,7 +72,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   
   const [isEditing, setIsEditing] = useState(false);
   const [showChecksGuide, setShowChecksGuide] = useState(false);
-  const [showStartCheckModal, setShowStartCheckModal] = useState(false);
+  
   const [showConfirmOff, setShowConfirmOff] = useState(false);
   const [showOverrideDialog, setShowOverrideDialog] = useState(false);
   const [overrideReason, setOverrideReason] = useState('');
@@ -184,25 +184,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
     loadRidePhoto();
   };
 
-  const requiresOpChecks = ride.requires_operational_checks;
-  const showCheckWarning = isOperating && requiresOpChecks && rideStats.todayChecks === 0 && !rideStats.loading;
-
   const handleStartDailyCheck = () => {
-    if (!isOperating && requiresOpChecks) {
-      setShowStartCheckModal(true);
-    } else {
-      setActiveTab('checks');
-    }
-  };
-
-  const handleStartCheckAndMarkOperating = async () => {
-    setShowStartCheckModal(false);
-    await autoSetOperating('daily');
-    setActiveTab('checks');
-  };
-
-  const handleStartCheckOnly = () => {
-    setShowStartCheckModal(false);
     setActiveTab('checks');
   };
 
@@ -210,16 +192,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const needsAttention: Array<{ key: string; icon: React.ElementType; label: string; detail: string; color: string; action?: () => void }> = [];
   
   if (!rideStats.loading) {
-    if (showCheckWarning) {
-      needsAttention.push({
-        key: 'check-due',
-        icon: AlertTriangle,
-        label: 'Check outstanding',
-        detail: 'In use today but no check completed',
-        color: 'hsl(38 80% 40%)',
-        action: () => setActiveTab('checks'),
-      });
-    }
     if (rideStats.hasExpiredDocs) {
       needsAttention.push({
         key: 'expired-docs',
@@ -544,28 +516,6 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
       </Tabs>
 
-      {/* Confirmation modal: Start check when not operating */}
-      <Dialog open={showStartCheckModal} onOpenChange={setShowStartCheckModal}>
-        <DialogContent className="max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Not marked in use today</DialogTitle>
-            <DialogDescription>
-              Do you want to start the check and mark this ride as in use today?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="flex flex-col gap-2 sm:flex-col">
-            <Button onClick={handleStartCheckAndMarkOperating} className="w-full">
-              Start check + mark in use
-            </Button>
-            <Button variant="outline" onClick={handleStartCheckOnly} className="w-full">
-              Start check only
-            </Button>
-            <Button variant="ghost" onClick={() => setShowStartCheckModal(false)} className="w-full">
-              Cancel
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Confirm OFF modal */}
       <NotOperatingReasonDialog
