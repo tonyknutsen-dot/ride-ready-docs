@@ -10,13 +10,11 @@ import InspectionScheduleManager from './InspectionScheduleManager';
 import ChecksHistory from './ChecksHistory';
 import EquipmentTimelineReport from './EquipmentTimelineReport';
 import { ChecksOnboardingModal } from './ChecksOnboardingModal';
-import OperatingTodayBanner from './OperatingTodayBanner';
 import CriticalDefectBanner from './CriticalDefectBanner';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
-import { useDailyStatus } from '@/hooks/useDailyStatus';
 import { useOpenCriticalDefects } from '@/hooks/useOpenCriticalDefects';
 
 
@@ -57,7 +55,6 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
   const [checkCounts, setCheckCounts] = useState<CheckCounts>({ daily: 0, weekly: 0, monthly: 0, yearly: 0, total: 0 });
   const [templateStatus, setTemplateStatus] = useState<Record<string, boolean>>({});
   const [showNextPrompt, setShowNextPrompt] = useState<string | null>(null);
-  const { isOperating, isLoading: opLoading, canToggle, toggleOperating, toggling } = useDailyStatus(ride.id);
   const { hasCriticalDefects } = useOpenCriticalDefects(ride.id);
   const isDailyOrPreOpening = activeTab === 'daily';
   const { toast } = useToast();
@@ -209,8 +206,6 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
         <CriticalDefectBanner rideId={ride.id} rideName={ride.ride_name} />
       )}
 
-      {/* Operating Today — compact secondary status banner */}
-      <OperatingTodayBanner rideId={ride.id} />
 
       {/* Check Count Summary Strip — muted, informational */}
       <div className="flex items-center justify-between gap-2 px-1">

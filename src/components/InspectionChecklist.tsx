@@ -17,7 +17,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { useDailyStatus } from '@/hooks/useDailyStatus';
+
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -111,8 +111,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   const queryClient = useQueryClient();
   const { submitCheck, isOnline } = useOfflineCheck();
   const { pendingCount, isSyncing, syncAll } = useOfflineSync();
-  const { autoSetOperating } = useDailyStatus(ride.id);
-  const isOperationalFrequency = frequency === 'daily' || frequency === 'preopening';
 
   // Prefill inspector name from profile
   useEffect(() => {
@@ -890,10 +888,6 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       setDeclarationChecked(false);
       setStartNoticeAcknowledged(false);
       setStartNoticeAcknowledgedAt(null);
-      // Auto-mark ride as "In Use Today" when completing an operational check
-      if (isOperationalFrequency) {
-        await autoSetOperating(frequency);
-      }
 
       // Reload recent checks (will be empty if offline but that's expected)
       if (!isOffline) {
