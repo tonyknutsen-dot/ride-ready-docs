@@ -525,14 +525,16 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
         </div>
       </div>
 
-      <form id="ride-form-root" onSubmit={handleSubmit} className="space-y-7">
-        {/* Essential Information */}
-        <div className="space-y-4">
-          <h3 className="text-xs font-bold text-foreground/60 uppercase tracking-widest border-b border-border pb-2">Essential Information</h3>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="ride_name">Equipment Name *</Label>
+      <form id="ride-form-root" onSubmit={handleSubmit} className="space-y-5">
+
+        {/* ── Section 1: Essential Information ── */}
+        <section className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="px-4 py-3 bg-muted/50 border-b border-border">
+            <h3 className="text-[13px] font-semibold text-foreground tracking-tight">Essential Information</h3>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="ride_name" className="text-[13px] font-semibold text-foreground">Equipment Name *</Label>
               <Input
                 id="ride_name"
                 value={formData.ride_name}
@@ -545,8 +547,8 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="category_group">Equipment Group *</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="category_group" className="text-[13px] font-semibold text-foreground">Equipment Group *</Label>
               <Select
                 value={formData.category_group}
                 onValueChange={(value) => {
@@ -566,14 +568,14 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                   ))}
                 </SelectContent>
               </Select>
-              <p className="text-xs text-foreground/50">
+              <p className="text-xs text-foreground/45">
                 The broad category of your equipment
               </p>
             </div>
 
             {formData.category_group && filteredTypes.length > 1 && (
-              <div className="space-y-2">
-                <Label htmlFor="category_id">Equipment Type (optional)</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="category_id" className="text-[13px] font-semibold text-foreground">Equipment Type (optional)</Label>
                 <Select
                   value={formData.category_id}
                   onValueChange={(value) => setFormData({ ...formData, category_id: value })}
@@ -589,15 +591,15 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-foreground/50">
+                <p className="text-xs text-foreground/45">
                   If you can't find the exact type, leave blank or request a new one below
                 </p>
               </div>
             )}
 
             {formData.category_group && filteredTypes.length === 1 && (
-              <p className="text-xs text-muted-foreground">
-                Type auto-selected: <span className="font-medium">{filteredTypes[0].name}</span>
+              <p className="text-xs text-foreground/55">
+                Type auto-selected: <span className="font-semibold text-foreground/70">{filteredTypes[0].name}</span>
               </p>
             )}
 
@@ -610,72 +612,76 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               variant="ghost" 
               size="sm" 
               onClick={() => setOpenRequest(true)}
-              className="h-auto py-1 px-2 text-xs w-fit"
+              className="h-auto py-1 px-2 text-xs w-fit text-primary"
             >
               <Plus className="w-3 h-3 mr-1" />
               Request a new type
             </Button>
           </div>
-        </div>
+        </section>
 
-        {/* Technical Details */}
-        <div className="space-y-4">
-          <h3 className="text-xs font-bold text-foreground/60 uppercase tracking-widest border-b border-border pb-2">Technical Details (Optional)</h3>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="manufacturer">Manufacturer</Label>
-              <Input
-                id="manufacturer"
-                value={formData.manufacturer}
-                onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
-                placeholder="e.g., Wisdom Rides"
-                className={errors.manufacturer ? "border-destructive" : ""}
-              />
-              {errors.manufacturer && (
-                <p className="text-sm text-destructive">{errors.manufacturer}</p>
-              )}
+        {/* ── Section 2: Technical Details ── */}
+        <section className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="px-4 py-3 bg-muted/50 border-b border-border">
+            <h3 className="text-[13px] font-semibold text-foreground tracking-tight">Technical Details <span className="font-normal text-foreground/45">(optional)</span></h3>
+          </div>
+          <div className="p-4 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="manufacturer" className="text-[13px] font-semibold text-foreground">Manufacturer</Label>
+                <Input
+                  id="manufacturer"
+                  value={formData.manufacturer}
+                  onChange={(e) => setFormData({ ...formData, manufacturer: e.target.value })}
+                  placeholder="e.g., Wisdom Rides"
+                  className={errors.manufacturer ? "border-destructive" : ""}
+                />
+                {errors.manufacturer && (
+                  <p className="text-sm text-destructive">{errors.manufacturer}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="year_manufactured" className="text-[13px] font-semibold text-foreground">Year Manufactured</Label>
+                <Input
+                  id="year_manufactured"
+                  type="number"
+                  value={formData.year_manufactured}
+                  onChange={(e) => setFormData({ ...formData, year_manufactured: e.target.value })}
+                  placeholder={new Date().getFullYear().toString()}
+                  min="1800"
+                  max={new Date().getFullYear() + 1}
+                  className={errors.year_manufactured ? "border-destructive" : ""}
+                />
+                {errors.year_manufactured && (
+                  <p className="text-sm text-destructive">{errors.year_manufactured}</p>
+                )}
+              </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="year_manufactured">Year Manufactured</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="serial_number" className="text-[13px] font-semibold text-foreground">Serial Number</Label>
               <Input
-                id="year_manufactured"
-                type="number"
-                value={formData.year_manufactured}
-                onChange={(e) => setFormData({ ...formData, year_manufactured: e.target.value })}
-                placeholder={new Date().getFullYear().toString()}
-                min="1800"
-                max={new Date().getFullYear() + 1}
-                className={errors.year_manufactured ? "border-destructive" : ""}
+                id="serial_number"
+                value={formData.serial_number}
+                onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
+                placeholder="Device serial or identification number"
+                className={errors.serial_number ? "border-destructive" : ""}
               />
-              {errors.year_manufactured && (
-                <p className="text-sm text-destructive">{errors.year_manufactured}</p>
+              {errors.serial_number && (
+                <p className="text-sm text-destructive">{errors.serial_number}</p>
               )}
             </div>
           </div>
+        </section>
 
-          <div className="space-y-2">
-            <Label htmlFor="serial_number">Serial Number</Label>
-            <Input
-              id="serial_number"
-              value={formData.serial_number}
-              onChange={(e) => setFormData({ ...formData, serial_number: e.target.value })}
-              placeholder="Device serial or identification number"
-              className={errors.serial_number ? "border-destructive" : ""}
-            />
-            {errors.serial_number && (
-              <p className="text-sm text-destructive">{errors.serial_number}</p>
-            )}
+        {/* ── Section 3: Controller ── */}
+        <section className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="px-4 py-3 bg-muted/50 border-b border-border">
+            <h3 className="text-[13px] font-semibold text-foreground tracking-tight">Controller <span className="font-normal text-foreground/45">(optional)</span></h3>
           </div>
-        </div>
-
-        {/* Controller */}
-        <div className="space-y-4">
-          <h3 className="text-xs font-bold text-foreground/60 uppercase tracking-widest border-b border-border pb-2">Controller (Optional)</h3>
-          
-          <div className="space-y-2">
-            <Label htmlFor="owner_name">Controller Name(s)</Label>
+          <div className="p-4 space-y-1.5">
+            <Label htmlFor="owner_name" className="text-[13px] font-semibold text-foreground">Controller Name(s)</Label>
             <Input
               id="owner_name"
               value={formData.owner_name}
@@ -686,24 +692,25 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             {errors.owner_name && (
               <p className="text-sm text-destructive">{errors.owner_name}</p>
             )}
-            <p className="text-xs text-foreground/50">
+            <p className="text-xs text-foreground/45 pt-0.5">
               The person(s) responsible for this equipment's safety and compliance
             </p>
           </div>
-        </div>
+        </section>
 
-        {/* Photo Upload */}
-        <div className="space-y-4">
-          <h3 className="text-xs font-bold text-foreground/60 uppercase tracking-widest border-b border-border pb-2">Photo (Optional)</h3>
-          
-          <div className="space-y-3">
+        {/* ── Section 4: Photo ── */}
+        <section className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+          <div className="px-4 py-3 bg-muted/50 border-b border-border">
+            <h3 className="text-[13px] font-semibold text-foreground tracking-tight">Photo <span className="font-normal text-foreground/45">(optional)</span></h3>
+          </div>
+          <div className="p-4 space-y-3">
             {/* New photo preview (takes priority) */}
             {photoPreview ? (
               <div className="relative inline-block">
                 <img 
                   src={photoPreview} 
                   alt="New photo preview" 
-                  className="h-40 max-w-full rounded-lg object-contain border-2 bg-muted/30"
+                  className="h-40 max-w-full rounded-lg object-contain border border-border bg-muted/30"
                 />
                 <Button
                   type="button"
@@ -717,7 +724,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                 >
                   ×
                 </Button>
-                <p className="text-xs text-muted-foreground mt-2">New photo (will replace existing on save)</p>
+                <p className="text-xs text-foreground/50 mt-2">New photo (will replace existing on save)</p>
               </div>
             ) : existingPhotoUrl ? (
               /* Existing photo in edit mode */
@@ -726,7 +733,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                   <img 
                     src={existingPhotoUrl} 
                     alt="Current device photo" 
-                    className="h-40 max-w-full rounded-lg object-contain border-2 bg-muted/30"
+                    className="h-40 max-w-full rounded-lg object-contain border border-border bg-muted/30"
                   />
                 </div>
                 <div className="flex gap-2">
@@ -783,43 +790,46 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                   className="hidden"
                 />
                 
-                {/* Dual Upload Buttons */}
+                {/* Dual Upload Tiles */}
                 <div className="grid grid-cols-2 gap-3">
-                  <Button
+                  <button
                     type="button"
-                    variant="outline"
-                    className="h-28 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-foreground/20 bg-card hover:border-primary/60 hover:bg-primary/5 rounded-2xl transition-all group shadow-[0_1px_4px_0_hsl(var(--foreground)/0.06)]"
+                    className="h-28 flex flex-col items-center justify-center gap-2.5 rounded-xl border border-border bg-muted/60 hover:bg-primary/5 hover:border-primary/40 transition-all group active:scale-[0.98]"
                     onClick={() => document.getElementById('ride-photo-camera')?.click()}
                   >
-                    <Camera className="h-8 w-8 text-foreground/40 group-hover:text-primary transition-colors" strokeWidth={1.8} />
-                    <span className="text-sm font-semibold text-foreground/70">Take Photo</span>
-                  </Button>
-                  <Button
+                    <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                      <Camera className="h-5 w-5 text-primary" strokeWidth={2} />
+                    </div>
+                    <span className="text-[13px] font-semibold text-foreground/70 group-hover:text-foreground/90">Take Photo</span>
+                  </button>
+                  <button
                     type="button"
-                    variant="outline"
-                    className="h-28 flex flex-col items-center justify-center gap-2 border-2 border-dashed border-foreground/20 bg-card hover:border-primary/60 hover:bg-primary/5 rounded-2xl transition-all group shadow-[0_1px_4px_0_hsl(var(--foreground)/0.06)]"
+                    className="h-28 flex flex-col items-center justify-center gap-2.5 rounded-xl border border-border bg-muted/60 hover:bg-primary/5 hover:border-primary/40 transition-all group active:scale-[0.98]"
                     onClick={() => document.getElementById('ride-photo')?.click()}
                   >
-                    <FolderOpen className="h-8 w-8 text-foreground/40 group-hover:text-primary transition-colors" strokeWidth={1.8} />
-                    <span className="text-sm font-semibold text-foreground/70">Choose File</span>
-                  </Button>
+                    <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
+                      <FolderOpen className="h-5 w-5 text-primary" strokeWidth={2} />
+                    </div>
+                    <span className="text-[13px] font-semibold text-foreground/70 group-hover:text-foreground/90">Choose File</span>
+                  </button>
                 </div>
               </>
             )}
-            <p className="text-xs text-foreground/50">
+            <p className="text-xs text-foreground/45">
               Tip: Include the whole device and ID plate if possible
             </p>
           </div>
-        </div>
+        </section>
 
-        {/* Actions - sticky on mobile to stay above bottom nav */}
-        <div className="flex items-center justify-end gap-3 pt-4 border-t border-foreground/10 md:relative fixed bottom-[calc(env(safe-area-inset-bottom)+72px)] md:bottom-auto left-0 right-0 md:left-auto md:right-auto bg-card md:bg-transparent px-4 md:px-0 pb-3 md:pb-0 z-30 shadow-[0_-4px_12px_rgba(0,0,0,0.1)] md:shadow-none">
-          <Button type="button" variant="outline" onClick={onCancel}>
+        {/* ── Sticky Action Bar ── */}
+        <div className="flex items-center justify-end gap-3 pt-4 md:pt-6 md:relative fixed bottom-[calc(env(safe-area-inset-bottom)+72px)] md:bottom-auto left-0 right-0 md:left-auto md:right-auto bg-card md:bg-transparent px-4 md:px-0 py-3 md:py-0 z-30 border-t-2 border-border md:border-t md:border-border shadow-[0_-6px_20px_rgba(0,0,0,0.12)] md:shadow-none">
+          <Button type="button" variant="outline" onClick={onCancel} className="min-w-[80px]">
             Cancel
           </Button>
           <Button 
             type="submit" 
             disabled={loading || !formData.category_group}
+            className="min-w-[140px]"
           >
             <Save className="h-4 w-4" />
             {loading ? (isEditMode ? 'Updating...' : 'Adding...') : (isEditMode ? 'Update Equipment' : 'Add Equipment')}
