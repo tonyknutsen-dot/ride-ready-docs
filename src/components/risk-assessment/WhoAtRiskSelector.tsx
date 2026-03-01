@@ -4,11 +4,11 @@ import { Info, Users } from 'lucide-react';
 
 const RISK_GROUPS = [
   { id: 'Public',                label: 'Public' },
-  { id: 'Staff',                 label: 'Staff' },
+  { id: 'Staff',                 label: 'Other Staff' },
   { id: 'Contractors',           label: 'Contractors' },
   { id: 'Spectators',            label: 'Spectators' },
   { id: 'Operators',             label: 'Operators' },
-  { id: 'Maintenance personnel', label: 'Maintenance' },
+  { id: 'Maintenance personnel', label: 'Maintenance Staff' },
 ] as const;
 
 interface WhoAtRiskSelectorProps {
