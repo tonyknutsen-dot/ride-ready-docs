@@ -44,6 +44,8 @@ import {
   type FetchRecordsFilters,
 } from '@/utils/inspectionRecordService';
 import { generateInspectionRecordPdf } from '@/utils/inspectionRecordPdf';
+import { generateCheckRecordsPdf, generateCheckRecordsCsv } from '@/utils/checkRecordsReport';
+import { useAuth } from '@/contexts/AuthContext';
 import { format as formatDateFns } from 'date-fns';
 
 const PAGE_SIZE = 25;
@@ -58,6 +60,7 @@ interface InspectionRecordListProps {
 }
 
 const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCategory, rideManufacturer, rideSerialNumber }: InspectionRecordListProps) => {
+  const { user } = useAuth();
   const { effectiveUserId } = useEffectiveUserId();
   const role = useAppRole();
   const { toast } = useToast();
@@ -66,6 +69,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
 
   const [amendRecord, setAmendRecord] = useState<InspectionRecord | null>(null);
   const [savingDocId, setSavingDocId] = useState<string | null>(null);
+  const [exporting, setExporting] = useState<'pdf' | 'csv' | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
   // Filter state
@@ -124,6 +128,82 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
     setDateFrom(undefined);
     setDateTo(undefined);
   }, []);
+
+  // ── Export handlers ──
+  const handleExportPdf = async () => {
+    if (!user?.id || !effectiveUserId || records.length === 0) return;
+    setExporting('pdf');
+    try {
+      // Fetch ALL filtered records (not just paginated page) for the report
+      const { fetchInspectionRecords } = await import('@/utils/inspectionRecordService');
+      const allRecords = await fetchInspectionRecords(rideId, {
+        ...filters,
+        limit: 5000,
+        offset: 0,
+      });
+
+      const periodLabel = dateFrom && dateTo
+        ? `${format(dateFrom, 'dd MMM yyyy')} – ${format(dateTo, 'dd MMM yyyy')}`
+        : dateFrom
+          ? `From ${format(dateFrom, 'dd MMM yyyy')}`
+          : dateTo
+            ? `To ${format(dateTo, 'dd MMM yyyy')}`
+            : 'All records';
+
+      const { blob, fileName } = await generateCheckRecordsPdf({
+        rideId,
+        rideName,
+        userId: user.id,
+        effectiveUserId,
+        filters,
+        records: allRecords,
+        periodLabel,
+      });
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({ title: 'Report exported', description: `Check Records report with ${allRecords.length} records exported as PDF.` });
+    } catch (err: any) {
+      console.error('PDF export failed:', err);
+      toast({ title: 'Export failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setExporting(null);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    if (records.length === 0) return;
+    setExporting('csv');
+    try {
+      const { fetchInspectionRecords } = await import('@/utils/inspectionRecordService');
+      const allRecords = await fetchInspectionRecords(rideId, {
+        ...filters,
+        limit: 5000,
+        offset: 0,
+      });
+
+      const { blob, fileName } = generateCheckRecordsCsv(allRecords, rideName);
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      toast({ title: 'Export complete', description: `${allRecords.length} check records exported as CSV.` });
+    } catch (err: any) {
+      console.error('CSV export failed:', err);
+      toast({ title: 'Export failed', description: err.message, variant: 'destructive' });
+    } finally {
+      setExporting(null);
+    }
+  };
 
   const applyDatePreset = useCallback((preset: string) => {
     const now = new Date();
@@ -368,6 +448,32 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
           </div>
         </CollapsibleContent>
       </Collapsible>
+
+      {/* Export buttons */}
+      {records.length > 0 && (
+        <div className="flex gap-2 px-1">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-[11px] gap-1.5 flex-1"
+            onClick={handleExportPdf}
+            disabled={!!exporting}
+          >
+            {exporting === 'pdf' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+            Export PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-7 text-[11px] gap-1.5 flex-1"
+            onClick={handleExportCsv}
+            disabled={!!exporting}
+          >
+            {exporting === 'csv' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+            Export CSV
+          </Button>
+        </div>
+      )}
 
       {/* Empty state */}
       {records.length === 0 && !isLoading && (
