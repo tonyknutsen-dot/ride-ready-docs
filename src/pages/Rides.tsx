@@ -443,18 +443,22 @@ const Rides = () => {
   }
 
   const categoryGroups = ['All', 'Rides', 'Food Stalls', 'Stalls', 'Games', 'Inflatables', 'Attractions', 'Equipment'] as const;
-  const complianceGroups = ['Overdue', 'Due Soon', 'Attention', 'Compliant'] as const;
+  const complianceGroups = ['Documents Overdue', 'Inspections Overdue', 'Due Soon', 'Attention', 'Compliant'] as const;
 
-  const getComplianceStatus = (rideId: string): 'stop_use' | 'attention' | 'overdue' | 'due_soon' | 'compliant' | 'no_docs' => {
+  const getComplianceStatus = (rideId: string): 'stop_use' | 'attention' | 'documents_overdue' | 'inspection_overdue' | 'due_soon' | 'compliant' | 'no_docs' => {
     // Stop-use defects take absolute priority
     const defects = openDefectsMap?.get(rideId);
     if (defects?.critical && defects.critical > 0) return 'stop_use';
-    // Any open defect means attention needed
+    // Any open non-stop defect means attention needed
     if (defects?.nonCritical && defects.nonCritical > 0) return 'attention';
-    
+
     const s = rideStats[rideId];
     if (!s) return 'compliant';
-    if (s.overdueCount > 0 || s.expiredDocCount > 0) return 'overdue';
+
+    // Specific overdue reasons (no generic overdue badge)
+    if (s.expiredDocCount > 0) return 'documents_overdue';
+    if (s.overdueCount > 0) return 'inspection_overdue';
+
     if (s.dueSoonCount > 0) return 'due_soon';
     if (s.docCount === 0) return 'no_docs';
     return 'compliant';
@@ -478,9 +482,10 @@ const Rides = () => {
       complianceGroups.includes(activeGroup as any)
         ? rides.filter(r => {
             const s = getComplianceStatus(r.id);
-            if (activeGroup === 'Overdue') return s === 'overdue' || s === 'stop_use';
+            if (activeGroup === 'Documents Overdue') return s === 'documents_overdue';
+            if (activeGroup === 'Inspections Overdue') return s === 'inspection_overdue';
             if (activeGroup === 'Due Soon') return s === 'due_soon';
-            if (activeGroup === 'Attention') return s === 'attention';
+            if (activeGroup === 'Attention') return s === 'attention' || s === 'stop_use';
             if (activeGroup === 'Compliant') return s === 'compliant' || s === 'no_docs';
             return true;
           })
@@ -488,9 +493,10 @@ const Rides = () => {
     return base;
   })();
 
-  const overdueTotal = rides.filter(r => ['overdue', 'stop_use'].includes(getComplianceStatus(r.id))).length;
+  const docsOverdueTotal = rides.filter(r => (rideStats[r.id]?.expiredDocCount ?? 0) > 0).length;
+  const inspectionsOverdueTotal = rides.filter(r => (rideStats[r.id]?.overdueCount ?? 0) > 0).length;
   const dueSoonTotal = rides.filter(r => getComplianceStatus(r.id) === 'due_soon').length;
-  const attentionTotal = rides.filter(r => getComplianceStatus(r.id) === 'attention').length;
+  const attentionTotal = rides.filter(r => ['attention', 'stop_use'].includes(getComplianceStatus(r.id))).length;
   const compliantTotal = rides.filter(r => ['compliant', 'no_docs'].includes(getComplianceStatus(r.id))).length;
 
   const groupCounts: Record<string, number> = {
@@ -502,7 +508,8 @@ const Rides = () => {
     Inflatables: rides.filter(r => r.ride_categories.category_group === 'Inflatables').length,
     Attractions: rides.filter(r => r.ride_categories.category_group === 'Attractions').length,
     Equipment: rides.filter(r => r.ride_categories.category_group === 'Equipment').length,
-    Overdue: overdueTotal,
+    'Documents Overdue': docsOverdueTotal,
+    'Inspections Overdue': inspectionsOverdueTotal,
     'Due Soon': dueSoonTotal,
     Attention: attentionTotal,
     Compliant: compliantTotal,
@@ -544,13 +551,20 @@ const Rides = () => {
 
       {/* Compliance KPI Strip */}
       {rides.length > 0 && (
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
           <button
-            onClick={() => setActiveGroup('Overdue')}
-            className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'Overdue' ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-card hover:border-destructive/30'}`}
+            onClick={() => setActiveGroup('Documents Overdue')}
+            className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'Documents Overdue' ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-card hover:border-destructive/30'}`}
           >
-            <span className="text-xl font-bold text-destructive">{overdueTotal}</span>
-            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Overdue</span>
+            <span className="text-xl font-bold text-destructive">{docsOverdueTotal}</span>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Docs Overdue</span>
+          </button>
+          <button
+            onClick={() => setActiveGroup('Inspections Overdue')}
+            className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'Inspections Overdue' ? 'border-warning/50 bg-warning/5' : 'border-border bg-card hover:border-warning/30'}`}
+          >
+            <span className="text-xl font-bold text-warning">{inspectionsOverdueTotal}</span>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Insp. Overdue</span>
           </button>
           <button
             onClick={() => setActiveGroup('Due Soon')}
@@ -708,9 +722,14 @@ const Rides = () => {
                       <AlertOctagon className="h-2.5 w-2.5" /> Do not operate
                     </button>
                   );
-                  if (s === 'overdue') return (
+                  if (s === 'documents_overdue') return (
                     <button onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=documents&filter=expired`); }} className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
-                      <AlertTriangle className="h-2.5 w-2.5" /> Overdue
+                      <AlertTriangle className="h-2.5 w-2.5" /> Documents overdue
+                    </button>
+                  );
+                  if (s === 'inspection_overdue') return (
+                    <button onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=checks&checksSubTab=annual&filter=overdue`); }} className="absolute bottom-3 left-3 flex items-center gap-1 bg-warning text-warning-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
+                      <AlertTriangle className="h-2.5 w-2.5" /> Inspection overdue
                     </button>
                   );
                   if (s === 'attention') return (

@@ -8,6 +8,8 @@ interface RideStats {
   docCount: number;
   checkCount: number;
   nextDue: string | null;
+  overdueCount?: number;
+  expiredDocCount?: number;
 }
 
 interface EquipmentListViewProps {
@@ -27,7 +29,19 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
         const hasCritical = (defects?.critical ?? 0) > 0;
         const hasNonCritical = (defects?.nonCritical ?? 0) > 0;
         const stats = rideStats[ride.id];
-        const hasDue = !!stats?.nextDue;
+        const hasDocsOverdue = (stats?.expiredDocCount ?? 0) > 0;
+        const hasInspectionsOverdue = (stats?.overdueCount ?? 0) > 0;
+
+        const status: 'stop_use' | 'attention' | 'documents_overdue' | 'inspection_overdue' | 'compliant' =
+          hasCritical
+            ? 'stop_use'
+            : hasNonCritical
+              ? 'attention'
+              : hasDocsOverdue
+                ? 'documents_overdue'
+                : hasInspectionsOverdue
+                  ? 'inspection_overdue'
+                  : 'compliant';
 
         return (
           <button
@@ -36,10 +50,11 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
             className={cn(
               'w-full flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-3 text-left transition-colors hover:bg-muted/50',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-              hasCritical && 'border-l-4 border-l-destructive bg-destructive/5',
-              !hasCritical && hasNonCritical && 'border-l-4 border-l-amber-500',
-              !hasCritical && !hasNonCritical && hasDue && 'border-l-4 border-l-amber-500',
-              !hasCritical && !hasNonCritical && !hasDue && 'border-l-4 border-l-transparent'
+              status === 'stop_use' && 'border-l-4 border-l-destructive bg-destructive/5',
+              status === 'attention' && 'border-l-4 border-l-amber-500',
+              status === 'documents_overdue' && 'border-l-4 border-l-destructive/70',
+              status === 'inspection_overdue' && 'border-l-4 border-l-warning',
+              status === 'compliant' && 'border-l-4 border-l-transparent'
             )}
           >
             {/* Thumbnail placeholder */}
@@ -79,8 +94,8 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
               </div>
 
               {/* Status */}
-              <div className="sm:w-[140px]">
-              {hasCritical ? (
+              <div className="sm:w-[180px]">
+                {status === 'stop_use' ? (
                   <button
                     onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview&section=defects`); }}
                     className="inline-flex items-center gap-1 text-xs font-bold text-destructive hover:underline"
@@ -89,7 +104,7 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
                     <span className="hidden sm:inline">Do not operate</span>
                     <span className="sm:hidden">Stop use</span>
                   </button>
-                ) : hasNonCritical ? (
+                ) : status === 'attention' ? (
                   <button
                     onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview&section=defects`); }}
                     className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
@@ -98,12 +113,21 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
                     <span className="hidden sm:inline">Attention needed</span>
                     <span className="sm:hidden">Attention</span>
                   </button>
-                ) : hasDue ? (
+                ) : status === 'documents_overdue' ? (
                   <button
-                    onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=documents`); }}
-                    className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline"
+                    onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=documents&filter=expired`); }}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-destructive hover:underline"
                   >
-                    Due {new Date(stats!.nextDue!).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    <span>Documents overdue</span>
+                  </button>
+                ) : status === 'inspection_overdue' ? (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=checks&checksSubTab=annual&filter=overdue`); }}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-warning hover:underline"
+                  >
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    <span>Inspection overdue</span>
                   </button>
                 ) : (
                   <span className="text-xs text-success font-medium">Compliant</span>
@@ -130,5 +154,6 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
     </div>
   );
 };
+
 
 export default EquipmentListView;
