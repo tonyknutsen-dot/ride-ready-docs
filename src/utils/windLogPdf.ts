@@ -137,19 +137,33 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
   if (location) detailFields.push({ label: 'Location / Site', value: location });
   if (period) detailFields.push({ label: 'Period', value: period });
 
-  // Recorder / anemometer status lines (not detailed per-reading data)
+  // Recorder logic — show name only if single recorder across all entries
   const recorders = [...new Set(entries.map(e => e.recorded_by))];
-  detailFields.push({
-    label: 'Recorders',
-    value: recorders.length === 1 ? recorders[0] : `${recorders.length} staff members`,
-  });
+  if (recorders.length === 1) {
+    detailFields.push({ label: 'Recorded By', value: recorders[0] });
+  } else {
+    detailFields.push({ label: 'Recorders', value: `Multiple (${recorders.length} staff)` });
+  }
 
+  // Anemometer logic — show detail only if consistent across all entries
   const anemEntries = entries.filter(e => e.anemometer_make || e.anemometer_model);
   const missingAnem = entries.length - anemEntries.length;
-  detailFields.push({
-    label: 'Anemometer Records',
-    value: missingAnem === 0 ? 'Complete' : `Incomplete — ${missingAnem} reading${missingAnem !== 1 ? 's' : ''} without data`,
-  });
+  if (anemEntries.length > 0) {
+    const uniqueAnems = [...new Set(anemEntries.map(e => {
+      const parts = [e.anemometer_make, e.anemometer_model, e.anemometer_serial ? `S/N: ${e.anemometer_serial}` : null].filter(Boolean);
+      return parts.join(' · ');
+    }))];
+    if (uniqueAnems.length === 1 && missingAnem === 0) {
+      // All readings use the same anemometer — show it prominently
+      detailFields.push({ label: 'Anemometer', value: uniqueAnems[0] });
+    } else if (missingAnem === 0) {
+      detailFields.push({ label: 'Anemometer', value: `Various (${uniqueAnems.length} instruments)` });
+    } else {
+      detailFields.push({ label: 'Anemometer Records', value: `Incomplete — ${missingAnem} reading${missingAnem !== 1 ? 's' : ''} without data` });
+    }
+  } else {
+    detailFields.push({ label: 'Anemometer Records', value: 'Incomplete — no anemometer data recorded' });
+  }
 
   detailFields.push({ label: 'Generated', value: format(new Date(), 'd MMM yyyy HH:mm') });
   detailFields.push({ label: 'Document ID', value: docId });
@@ -194,6 +208,7 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     if (e.anemometer_make) anemParts.push(e.anemometer_make);
     if (e.anemometer_model) anemParts.push(e.anemometer_model);
     if (e.anemometer_serial) anemParts.push(`S/N: ${e.anemometer_serial}`);
+    const anemText = anemParts.length > 0 ? anemParts.join(' / ') : '⚠ Missing';
 
     return [
       e.log_date,
@@ -203,7 +218,7 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
       e.recorded_by,
       ...(showAppliesTo ? [(e.linked_rides || []).join(', ') || '—'] : []),
       e.action_taken || '—',
-      anemParts.join(' / ') || '—',
+      anemText,
       e.notes || '—',
     ];
   });
@@ -215,10 +230,16 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     2: { cellWidth: 22 },   // Speed
   };
 
-  // High-wind row indices
-  const highWindRows = new Set(
-    entries.map((e, i) => toMph(e.wind_speed, e.wind_unit) >= HIGH_WIND_MPH ? i : -1).filter(i => i >= 0)
-  );
+  // Pre-compute row flags
+  const highWindRows = new Set<number>();
+  const missingAnemRows = new Set<number>();
+  // Anemometer column index depends on whether "Applies To" is shown
+  const anemColIdx = showAppliesTo ? 7 : 6;
+
+  entries.forEach((e, i) => {
+    if (toMph(e.wind_speed, e.wind_unit) >= HIGH_WIND_MPH) highWindRows.add(i);
+    if (!e.anemometer_make && !e.anemometer_model) missingAnemRows.add(i);
+  });
 
   autoTable(doc, {
     startY: y,
@@ -241,9 +262,16 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     margin: { left: mL, right: mL },
     showHead: 'everyPage',
     didParseCell: (data) => {
-      if (data.section === 'body' && highWindRows.has(data.row.index)) {
+      if (data.section !== 'body') return;
+      // High-wind: entire row red
+      if (highWindRows.has(data.row.index)) {
         data.cell.styles.fillColor = [254, 226, 226];
         data.cell.styles.textColor = [153, 27, 27];
+        data.cell.styles.fontStyle = 'bold';
+      }
+      // Missing anemometer: flag just the anemometer cell
+      if (missingAnemRows.has(data.row.index) && data.column.index === anemColIdx) {
+        data.cell.styles.textColor = [185, 28, 28];
         data.cell.styles.fontStyle = 'bold';
       }
     },
