@@ -132,20 +132,25 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
 
   // Recorded by
   const recorders = [...new Set(entries.map(e => e.recorded_by))];
-  if (recorders.length <= 3) {
+  if (recorders.length <= 5) {
     detailFields.push({ label: 'Recorded By', value: recorders.join(', ') });
+  } else {
+    detailFields.push({ label: 'Recorded By', value: `${recorders.length} staff members` });
   }
 
   // Anemometer used (if consistent)
   const anemometers = entries.filter(e => e.anemometer_make || e.anemometer_model);
+  const missingAnemCount = entries.length - anemometers.length;
   if (anemometers.length > 0) {
     const uniqueAnems = new Set(anemometers.map(e => {
       const parts = [e.anemometer_make, e.anemometer_model, e.anemometer_serial ? `S/N: ${e.anemometer_serial}` : null].filter(Boolean);
       return parts.join(' · ');
     }));
-    if (uniqueAnems.size <= 2) {
-      detailFields.push({ label: 'Anemometer Used', value: [...uniqueAnems].join(' | ') });
-    }
+    const anemValue = [...uniqueAnems].slice(0, 3).join(' | ');
+    detailFields.push({ label: 'Anemometer Used', value: anemValue });
+  }
+  if (missingAnemCount > 0) {
+    detailFields.push({ label: 'Incomplete Readings', value: `${missingAnemCount} reading${missingAnemCount !== 1 ? 's' : ''} without anemometer data` });
   }
 
   detailFields.push({ label: 'Generated', value: format(new Date(), 'd MMM yyyy HH:mm') });
