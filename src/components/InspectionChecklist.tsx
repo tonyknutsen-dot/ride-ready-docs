@@ -433,7 +433,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
       const docId = await generateDocumentId(ride.id, 'IC');
       const frequencyLabel = frequency === 'preopening' ? 'PRE-OPENING' : frequency.toUpperCase();
-      const templateOpts = { doc: pdf, title: `${frequencyLabel} INSPECTION CHECKLIST`, documentId: docId, docType: 'IC' as const };
+      const templateOpts = { doc: pdf, title: `${frequencyLabel} SAFETY CHECK`, documentId: docId, docType: 'IC' as const };
 
       currentY = drawTemplateHeader(templateOpts);
 
@@ -453,7 +453,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         imageDataUrl: rideImageDataUrl,
       });
 
-      // === INSPECTION DETAILS SECTION ===
+      // === CHECK DETAILS SECTION ===
       pdf.setDrawColor(200);
       pdf.line(margin, currentY, pageWidth - margin, currentY);
       currentY += 8;
@@ -461,7 +461,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       pdf.setFontSize(11);
       pdf.setFont('helvetica', 'bold');
       pdf.setTextColor(50, 50, 50);
-      pdf.text('Inspection Details', margin, currentY);
+      pdf.text('Check Details', margin, currentY);
       currentY += 8;
 
       pdf.setFontSize(10);
@@ -1054,7 +1054,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
     return (
       <div id="inspection-checklist-form" className="checksWrap -mx-4 px-4 pb-6 pt-2 space-y-3">
 
-        {/* ── Inspection header + CTA ── */}
+        {/* ── Check header + CTA ── */}
         <div className="space-y-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">

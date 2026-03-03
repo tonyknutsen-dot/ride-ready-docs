@@ -66,7 +66,7 @@ export async function generateInspectionRecordPdf(
 
     const templateOpts = {
       doc,
-      title: `${frequencyLabel} INSPECTION RECORD`,
+      title: `${frequencyLabel} SAFETY CHECK RECORD`,
       documentId: docId,
       docType: 'IR' as const,
     };
@@ -100,8 +100,8 @@ export async function generateInspectionRecordPdf(
       { label: 'Serial Number', value: rideSerialNumber },
     ], y);
 
-    // ── Inspection Details ──
-    y = drawSection(doc, 'Inspection Details', y);
+    // ── Check Details ──
+    y = drawSection(doc, 'Check Details', y);
     y = drawMetadataRows(doc, [
       { label: 'Document Reference', value: docId },
       { label: 'Check Frequency', value: frequencyLabel },
@@ -226,7 +226,7 @@ export async function generateInspectionRecordPdf(
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.5);
         doc.setTextColor(...PDF_COLORS.red);
-        doc.text(`${failedItems.length} item(s) failed inspection:`, mL + 2, y);
+        doc.text(`${failedItems.length} item(s) failed this check:`, mL + 2, y);
         y += 5;
 
         for (const item of failedItems) {
@@ -250,7 +250,7 @@ export async function generateInspectionRecordPdf(
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(7.5);
         doc.setTextColor(...PDF_COLORS.red);
-        doc.text(`${defectCount} defect(s) raised during this inspection.`, mL + 2, y);
+        doc.text(`${defectCount} defect(s) raised during this check.`, mL + 2, y);
         y += 5;
 
         // List defect IDs
@@ -273,7 +273,7 @@ export async function generateInspectionRecordPdf(
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(6.5);
         doc.setTextColor(...PDF_COLORS.muted);
-        doc.text(`📷 ${record.photo_paths.length} photo(s) attached to this inspection record.`, mL + 2, y);
+        doc.text(`📷 ${record.photo_paths.length} photo(s) attached to this check record.`, mL + 2, y);
         y += 6;
       }
     }
