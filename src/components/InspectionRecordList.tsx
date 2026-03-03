@@ -374,7 +374,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
             onClick={() => setFiltersOpen(!filtersOpen)}
           >
             <Filter className="h-3 w-3" />
-            {hasActiveFilters ? 'Filtered' : 'Filter'}
+            {hasActiveFilters ? 'Filters applied' : 'Filters'}
             {filtersOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
           </Button>
         </div>
@@ -460,37 +460,36 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         </div>
       )}
 
-      {/* ── Summary strip + export buttons ── */}
+      {/* ── Summary strip + export toolbar ── */}
       {records.length > 0 && (
-        <div className="space-y-1.5 py-1.5 border-t border-b border-border/50">
-          <p className="text-[10px] text-muted-foreground leading-tight">
-            Showing <span className="font-semibold text-foreground">{totalCount}</span> record{totalCount !== 1 ? 's' : ''}
-            {scopeLabel && <span> for {scopeLabel}</span>}
+        <div className="rounded-lg border border-border bg-card p-3 space-y-2.5">
+          <p className="text-xs text-muted-foreground leading-snug">
+            Showing <span className="font-bold text-foreground">{totalCount}</span> record{totalCount !== 1 ? 's' : ''}
+            {scopeLabel && <span className="text-foreground font-medium"> for {scopeLabel}</span>}
             {hasActiveFilters && <span> · filters applied</span>}
           </p>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2.5">
             <Button
-              variant="outline"
-              size="sm"
-              className="h-8 px-3 text-xs gap-1.5 font-semibold"
+              size="default"
+              className="h-10 px-5 text-sm gap-2 font-semibold shadow-sm"
               onClick={handleExportPdf}
               disabled={!!exporting}
             >
-              {exporting === 'pdf' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
+              {exporting === 'pdf' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
               Export PDF ({totalCount})
             </Button>
             <Button
               variant="outline"
-              size="sm"
-              className="h-8 px-3 text-xs gap-1.5 font-semibold"
+              size="default"
+              className="h-10 px-5 text-sm gap-2 font-semibold shadow-sm"
               onClick={handleExportCsv}
               disabled={!!exporting}
             >
-              {exporting === 'csv' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Table2 className="h-3.5 w-3.5" />}
+              {exporting === 'csv' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Table2 className="h-4 w-4" />}
               Export CSV ({totalCount})
             </Button>
           </div>
-          <p className="text-[9px] text-muted-foreground">Exports include the current filters and date range</p>
+          <p className="text-[10px] text-muted-foreground">Exports include the current filters and date range</p>
         </div>
       )}
 
@@ -533,7 +532,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     {getResultBadge(record.overall_result, record)}
                     {record.template_name && (
-                      <span className="text-[9px] text-muted-foreground truncate max-w-[120px]">{record.template_name}</span>
+                      <span className="text-[9px] text-muted-foreground truncate max-w-[120px]">{record.template_name.replace(/\bSafety\s+Check\b/gi, 'Check')}</span>
                     )}
                     {record.version > 1 && (
                       <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-1 py-0.5 rounded">v{record.version}</span>

@@ -4,7 +4,8 @@
  * Produces a formal, defensible Check Records report for sharing with
  * insurers, regulators, clients, and internal review.
  *
- * Uses the unified PDF template system (pdfUtils + pdfTemplate).
+ * Uses the unified PDF template system (pdfTemplate) — same header,
+ * section, footer, and typography as all other app reports.
  */
 
 import jsPDF from 'jspdf';
@@ -16,12 +17,8 @@ import {
   PDF_COLORS,
   buildFileName,
   blobToDataUrl,
-  drawPDFHeader,
-  drawSectionTitle,
   drawEquipmentDetails,
   drawSummaryBox,
-  drawAllPageFooters,
-  drawComplianceStatement,
   PDF_TABLE_HEAD_STYLES,
   PDF_TABLE_BODY_STYLES,
   PDF_TABLE_ALT_ROW,
@@ -29,6 +26,12 @@ import {
 import {
   generateDocumentId,
   checkOverflow,
+  drawTemplateHeader,
+  drawTemplateFooters,
+  drawSection,
+  drawMetadataRows,
+  type DocTypeCode,
+  type PdfTemplateOptions,
 } from './pdfTemplate';
 import { storeRideDocument, getRideCode } from './rideDocumentService';
 
@@ -132,6 +135,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
   const docId = await generateDocumentId(rideId, 'CH');
   const stats = computeStats(records);
   const generatedAt = format(new Date(), "dd MMM yyyy 'at' HH:mm");
+  const docType: DocTypeCode = 'CH';
 
   // Fetch profile
   const { data: profile } = await supabase
@@ -143,32 +147,6 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
   const companyName = profile?.company_name || profile?.showmen_name || '';
   const controllerName = profile?.controller_name || null;
 
-  // Fetch logo
-  let logoDataUrl: string | null = null;
-  if (profile?.company_logo_path) {
-    try {
-      const { data: blob } = await supabase.storage.from('ride-documents').download(profile.company_logo_path);
-      if (blob) logoDataUrl = await blobToDataUrl(blob);
-    } catch (_) { /* skip */ }
-  }
-
-  // Fetch equipment photo
-  const { data: rideImageDoc } = await supabase
-    .from('documents')
-    .select('file_path')
-    .eq('ride_id', rideId)
-    .like('mime_type', 'image/%')
-    .limit(1)
-    .maybeSingle();
-
-  let rideImageDataUrl: string | null = null;
-  if (rideImageDoc) {
-    try {
-      const { data: blob } = await supabase.storage.from('ride-documents').download(rideImageDoc.file_path);
-      if (blob) rideImageDataUrl = await blobToDataUrl(blob);
-    } catch (_) { /* skip */ }
-  }
-
   // Period label
   const periodLabel = opts.periodLabel ||
     (filters.dateFrom && filters.dateTo
@@ -179,75 +157,72 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
           ? `To ${filters.dateTo}`
           : 'All records');
 
-  // ── Page 1: Header ──
-  let y = drawPDFHeader({
+  // ── Template options (shared for header + footer) ──
+  const templateOpts: PdfTemplateOptions = {
     doc,
-    logoDataUrl,
-    companyName,
-    controllerName,
-    reportTitle: 'CHECK RECORDS',
-    period: periodLabel,
-    generatedDate: generatedAt,
-    docId,
-  });
+    title: 'CHECK RECORDS',
+    documentId: docId,
+    docType,
+  };
 
-  // ── Equipment details ──
-  y = drawSectionTitle(doc, 'Equipment Details', y);
-  y = await drawEquipmentDetails({
-    doc,
-    y,
-    fields: [
-      { label: 'Equipment', value: rideName },
-      { label: 'Report Period', value: periodLabel },
-      { label: 'Document ID', value: docId },
-      { label: 'Generated', value: generatedAt },
-    ],
-    imageDataUrl: rideImageDataUrl,
-  });
+  // ── Page 1: Unified header (same as all other reports) ──
+  let y = drawTemplateHeader(templateOpts);
+
+  // ── Metadata section ──
+  y = drawSection(doc, 'Report Details', y);
+  y = drawMetadataRows(doc, [
+    { label: 'Company', value: companyName },
+    { label: 'Controller / Duty Holder', value: controllerName },
+    { label: 'Equipment', value: rideName },
+    { label: 'Report Period', value: periodLabel },
+    { label: 'Generated', value: generatedAt },
+    { label: 'Document ID', value: docId },
+  ], y);
 
   // ── Summary metrics ──
+  y = drawSection(doc, 'Summary', y);
+
   y = drawSummaryBox(doc, [
     { label: 'Total Records', value: String(stats.total) },
     { label: 'Passed', value: String(stats.passed), accent: true },
     { label: 'Failed', value: String(stats.failed) },
     { label: 'Partial', value: String(stats.partial) },
-  ], y);
+  ], y, 15);
 
   y = drawSummaryBox(doc, [
     { label: 'With Defects', value: String(stats.withDefects) },
     { label: 'With Notes', value: String(stats.withNotes) },
     { label: 'With Attachments', value: String(stats.withPhotos) },
     { label: 'Pass Rate', value: `${stats.passRate}%`, accent: true },
-  ], y);
+  ], y, 15);
 
   // Templates used
   if (stats.templateNames.length > 0) {
-    y += 1;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(...PDF_COLORS.muted);
-    doc.text(`Templates used: ${stats.templateNames.join(', ')}`, 14, y);
+    doc.text(`Templates: ${stats.templateNames.join(', ')}`, 17, y);
     y += 5;
   }
 
-  // ── Filters applied ──
+  // ── Filters applied (only if non-default filters) ──
   const filterLines = buildFiltersSummary(filters);
   if (filterLines.length > 0) {
-    y = drawSectionTitle(doc, 'Filters Applied', y);
+    y = drawSection(doc, 'Filters Applied', y);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(...PDF_COLORS.body);
     for (const line of filterLines) {
       y = checkOverflow(doc, y, 5);
-      doc.text(`• ${line}`, 16, y);
+      doc.text(`• ${line}`, 17, y);
       y += 4.5;
     }
     y += 2;
   }
 
-  // ── Records summary table ──
+  // ── Records overview table ──
   y = checkOverflow(doc, y, 30);
-  y = drawSectionTitle(doc, 'Records Summary', y);
+  y = drawSection(doc, 'Records Overview', y);
 
   const tableBody = records.map(record => {
     const defectCount = record.defect_ids?.length || 0;
@@ -264,7 +239,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
 
   autoTable(doc, {
     startY: y,
-    head: [['Date', 'Time', 'Check Type', 'Template', 'Result', 'Recorded By', 'Defects', 'Notes', 'Attach.']],
+    head: [['Date', 'Time', 'Type', 'Template', 'Result', 'Recorded By', 'Defects', 'Notes', 'Attach.']],
     body: tableBody,
     headStyles: PDF_TABLE_HEAD_STYLES,
     styles: { ...PDF_TABLE_BODY_STYLES, fontSize: 7 },
@@ -280,7 +255,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
       7: { cellWidth: 12, halign: 'center' as const },
       8: { cellWidth: 13, halign: 'center' as const },
     },
-    margin: { left: 13, right: 13 },
+    margin: { left: 15, right: 15 },
     didParseCell: (data: any) => {
       if (data.section === 'body' && data.column.index === 4) {
         const val = data.cell.text?.[0]?.toLowerCase();
@@ -300,9 +275,10 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
 
   y = (doc as any).lastAutoTable.finalY + 10;
 
-  // ── Detailed Record Sections ──
+  // ── Detailed Check Records ──
+  // This is the key defensible section — shows every checklist item for each record
   y = checkOverflow(doc, y, 30);
-  y = drawSectionTitle(doc, 'Detailed Check Records', y);
+  y = drawSection(doc, 'Detailed Check Records', y);
 
   for (let i = 0; i < records.length; i++) {
     const record = records[i];
@@ -313,42 +289,49 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     const template = record.template_name ? neutraliseTemplateName(record.template_name) : '—';
     const freq = formatFrequency(record.check_frequency);
 
-    // Need at least ~40pt for the record header + a few item rows
+    // Need at least ~45pt for the record header + a few item rows
     y = checkOverflow(doc, y, 45);
 
-    // Record header bar
+    // Record header bar — styled panel
     const pageW = doc.internal.pageSize.getWidth();
-    doc.setFillColor(...PDF_COLORS.panelBg);
-    doc.roundedRect(13, y - 1, pageW - 26, 14, 1.5, 1.5, 'F');
+    const mL = 15;
+    const mR = 15;
+    const barW = pageW - mL - mR;
+
+    doc.setFillColor(240, 242, 245);
+    doc.rect(mL, y - 1, barW, 14, 'F');
     doc.setDrawColor(...PDF_COLORS.border);
-    doc.roundedRect(13, y - 1, pageW - 26, 14, 1.5, 1.5, 'S');
+    doc.setLineWidth(0.3);
+    doc.rect(mL, y - 1, barW, 14, 'S');
 
     // Record number
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
-    doc.setTextColor(...PDF_COLORS.navy);
-    doc.text(`Record ${i + 1} of ${records.length}`, 16, y + 4);
+    doc.setTextColor(30, 58, 95);
+    doc.text(`Record ${i + 1} of ${records.length}`, mL + 3, y + 4);
 
     // Result badge
     if (result === 'Passed') doc.setTextColor(...PDF_COLORS.green);
     else if (result === 'Failed') doc.setTextColor(...PDF_COLORS.red);
     else doc.setTextColor(...PDF_COLORS.amber);
-    doc.text(result, pageW - 16, y + 4, { align: 'right' });
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text(result.toUpperCase(), pageW - mR - 3, y + 4, { align: 'right' });
 
     // Date/time/details row
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7);
     doc.setTextColor(...PDF_COLORS.body);
-    doc.text(`${dateStr}  ${timeStr}  ·  ${freq}  ·  ${template}  ·  Recorded by: ${record.inspector_name}`, 16, y + 10);
+    doc.text(`${dateStr}  ${timeStr}  ·  ${freq}  ·  ${template}  ·  Recorded by: ${record.inspector_name}`, mL + 3, y + 10);
 
-    y += 16;
+    y += 17;
 
     // Defects indicator
     if (defectCount > 0) {
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(7);
       doc.setTextColor(...PDF_COLORS.red);
-      doc.text(`⚠ ${defectCount} defect${defectCount !== 1 ? 's' : ''} raised`, 16, y);
+      doc.text(`⚠ ${defectCount} defect${defectCount !== 1 ? 's' : ''} raised`, mL + 3, y);
       y += 5;
     }
 
@@ -358,8 +341,8 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
       doc.setFont('helvetica', 'italic');
       doc.setFontSize(7);
       doc.setTextColor(...PDF_COLORS.muted);
-      const noteLines = doc.splitTextToSize(`Notes: ${record.notes}`, pageW - 32);
-      doc.text(noteLines, 16, y);
+      const noteLines = doc.splitTextToSize(`Notes: ${record.notes}`, barW - 6);
+      doc.text(noteLines, mL + 3, y);
       y += noteLines.length * 3.5 + 2;
     }
 
@@ -369,23 +352,20 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(7);
       doc.setTextColor(...PDF_COLORS.muted);
-      doc.text(`📎 ${photoCount} attachment${photoCount !== 1 ? 's' : ''}`, 16, y);
+      doc.text(`📎 ${photoCount} attachment${photoCount !== 1 ? 's' : ''}`, mL + 3, y);
       y += 4;
     }
 
-    // ── Check items table ──
+    // ── Check items table — the core defensible evidence ──
     const items = (record.item_results || []) as ItemResultSnapshot[];
     if (items.length > 0) {
       y = checkOverflow(doc, y, 15);
 
-      const itemRows = items.map(item => {
-        const itemNote = item.notes || '';
-        return [
-          item.check_item_text || '',
-          itemResultLabel(item.result),
-          itemNote,
-        ];
-      });
+      const itemRows = items.map(item => [
+        item.check_item_text || '',
+        itemResultLabel(item.result),
+        item.notes || '',
+      ]);
 
       autoTable(doc, {
         startY: y,
@@ -393,13 +373,13 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
         body: itemRows,
         headStyles: {
           ...PDF_TABLE_HEAD_STYLES,
-          fontSize: 6.5,
-          cellPadding: 1.5,
+          fontSize: 7,
+          cellPadding: 2,
         },
         styles: {
           ...PDF_TABLE_BODY_STYLES,
-          fontSize: 6.5,
-          cellPadding: 1.5,
+          fontSize: 7,
+          cellPadding: 2,
         },
         alternateRowStyles: PDF_TABLE_ALT_ROW,
         columnStyles: {
@@ -407,7 +387,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
           1: { cellWidth: 18, halign: 'center' as const },
           2: { cellWidth: 62 },
         },
-        margin: { left: 16, right: 16 },
+        margin: { left: mL, right: mR },
         didParseCell: (data: any) => {
           if (data.section === 'body' && data.column.index === 1) {
             const val = data.cell.text?.[0];
@@ -426,7 +406,12 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
 
       y = (doc as any).lastAutoTable.finalY + 6;
     } else {
-      y += 2;
+      // No items recorded
+      doc.setFont('helvetica', 'italic');
+      doc.setFontSize(7);
+      doc.setTextColor(...PDF_COLORS.muted);
+      doc.text('No individual check items recorded for this check.', mL + 3, y);
+      y += 6;
     }
 
     // Separator between records (except last)
@@ -434,17 +419,13 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
       y = checkOverflow(doc, y, 8);
       doc.setDrawColor(...PDF_COLORS.border);
       doc.setLineWidth(0.3);
-      doc.line(13, y, pageW - 13, y);
+      doc.line(mL, y, pageW - mR, y);
       y += 5;
     }
   }
 
-  // ── Compliance statement ──
-  y = checkOverflow(doc, y, 30);
-  y = drawComplianceStatement(doc, y);
-
-  // ── Footers on all pages ──
-  drawAllPageFooters(doc, docId);
+  // ── Unified footer on all pages (same as all other reports) ──
+  drawTemplateFooters(templateOpts);
 
   // ── Save to storage ──
   const pdfBlob = doc.output('blob');
