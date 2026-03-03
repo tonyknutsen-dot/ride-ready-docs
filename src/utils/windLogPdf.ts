@@ -137,32 +137,36 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
   if (location) detailFields.push({ label: 'Location / Site', value: location });
   if (period) detailFields.push({ label: 'Period', value: period });
 
-  // Recorder logic — show name only if single recorder across all entries
+  // Recorder logic
   const recorders = [...new Set(entries.map(e => e.recorded_by))];
   if (recorders.length === 1) {
     detailFields.push({ label: 'Recorded By', value: recorders[0] });
+  } else if (recorders.length <= 3) {
+    detailFields.push({ label: 'Recorders', value: `${recorders.length} (${recorders.join(', ')})` });
   } else {
     detailFields.push({ label: 'Recorders', value: `Multiple (${recorders.length} staff)` });
   }
 
-  // Anemometer logic — show detail only if consistent across all entries
+  // Anemometer logic
   const anemEntries = entries.filter(e => e.anemometer_make || e.anemometer_model);
   const missingAnem = entries.length - anemEntries.length;
-  if (anemEntries.length > 0) {
+  if (anemEntries.length === 0) {
+    detailFields.push({ label: 'Anemometer Records', value: 'Missing — no anemometer data recorded' });
+  } else {
     const uniqueAnems = [...new Set(anemEntries.map(e => {
       const parts = [e.anemometer_make, e.anemometer_model, e.anemometer_serial ? `S/N: ${e.anemometer_serial}` : null].filter(Boolean);
       return parts.join(' · ');
     }))];
     if (uniqueAnems.length === 1 && missingAnem === 0) {
-      // All readings use the same anemometer — show it prominently
       detailFields.push({ label: 'Anemometer', value: uniqueAnems[0] });
     } else if (missingAnem === 0) {
-      detailFields.push({ label: 'Anemometer', value: `Various (${uniqueAnems.length} instruments)` });
+      detailFields.push({ label: 'Anemometer Records', value: `Complete — ${uniqueAnems.length} instruments used` });
     } else {
-      detailFields.push({ label: 'Anemometer Records', value: `Incomplete — ${missingAnem} reading${missingAnem !== 1 ? 's' : ''} without data` });
+      detailFields.push({
+        label: 'Anemometer Records',
+        value: `Partial — ${missingAnem} of ${entries.length} reading${entries.length !== 1 ? 's' : ''} without data`,
+      });
     }
-  } else {
-    detailFields.push({ label: 'Anemometer Records', value: 'Incomplete — no anemometer data recorded' });
   }
 
   detailFields.push({ label: 'Generated', value: format(new Date(), 'd MMM yyyy HH:mm') });

@@ -512,19 +512,20 @@ const WindLog = () => {
 
   const isEntryHighWind = (entry: WindLogEntry) => toMph(entry.wind_speed, entry.wind_unit) >= HIGH_WIND_MPH;
 
-  // ─── Desktop row — slim 6-column main + expandable details ───
+  // ─── Desktop row — 7-column: Date, Time, Speed, Location, Applies To, Action, Expand ───
   const renderDesktopRow = (entry: WindLogEntry) => {
     const isExpanded = expandedId === entry.id;
     const anemStr = formatAnemometer(entry);
     const missingAnem = hasMissingAnemometer(entry);
     const highWind = isEntryHighWind(entry);
+    const rides = entry.linked_rides || [];
 
     return (
-      <div key={entry.id} className="group">
+      <div key={entry.id}>
         <div
           className={cn(
-            "grid grid-cols-[80px_50px_76px_1fr_1.3fr_1.2fr] items-center px-4 py-2 text-[13px] border-b border-border hover:bg-muted/30 transition-colors cursor-pointer gap-x-3",
-            isExpanded && "bg-muted/20"
+            "grid grid-cols-[78px_48px_74px_1fr_1.2fr_1.4fr_32px] items-center px-4 py-2 text-[13px] border-b border-border hover:bg-muted/30 transition-colors cursor-pointer gap-x-3",
+            isExpanded && "bg-muted/20 border-b-0"
           )}
           onClick={() => setExpandedId(isExpanded ? null : entry.id)}
         >
@@ -543,80 +544,95 @@ const WindLog = () => {
           </div>
           <span className="text-muted-foreground truncate" title={entry.location || undefined}>{entry.location || '—'}</span>
           <div className="flex flex-wrap items-center gap-1 min-w-0">
-            {entry.linked_rides && entry.linked_rides.length > 0 ? (
+            {rides.length > 0 ? (
               <>
-                {entry.linked_rides.slice(0, 3).map((name, i) => (
-                  <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 font-medium whitespace-nowrap">
-                    {name}
-                  </Badge>
+                {rides.slice(0, 2).map((name, i) => (
+                  <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 font-medium whitespace-nowrap">{name}</Badge>
                 ))}
-                {entry.linked_rides.length > 3 && (
-                  <span className="text-[10px] text-muted-foreground shrink-0">+{entry.linked_rides.length - 3}</span>
+                {rides.length > 2 && (
+                  <Badge variant="outline" className="text-[10px] px-1 py-0 text-muted-foreground">+{rides.length - 2}</Badge>
                 )}
               </>
             ) : (
               <span className="text-xs text-muted-foreground">—</span>
             )}
           </div>
-          <div className="flex items-center justify-between gap-1 min-w-0">
-            <span className="text-muted-foreground truncate text-xs" title={entry.action_taken || undefined}>
-              {entry.action_taken || '—'}
-            </span>
+          <div className="flex items-center gap-1.5 min-w-0">
             {missingAnem && (
               <Badge variant="destructive" className="text-[9px] px-1 py-0 opacity-70 shrink-0">No anem.</Badge>
             )}
-            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/40 shrink-0 transition-transform", isExpanded && "rotate-180")} />
+            <span className="text-muted-foreground break-words text-xs leading-snug" title={entry.action_taken || undefined}>
+              {entry.action_taken || '—'}
+            </span>
           </div>
+          <button
+            type="button"
+            className="flex items-center justify-center h-7 w-7 rounded hover:bg-muted/60 transition-colors mx-auto"
+            onClick={(e) => { e.stopPropagation(); setExpandedId(isExpanded ? null : entry.id); }}
+            aria-label={isExpanded ? 'Collapse details' : 'Expand details'}
+          >
+            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isExpanded && "rotate-180")} />
+          </button>
         </div>
         {isExpanded && (
-          <div className="px-4 py-2.5 bg-muted/10 border-b border-border text-xs grid grid-cols-3 gap-x-6 gap-y-1.5">
-            <div>
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Recorded By</span>
-              <p className="text-foreground mt-0.5">{entry.recorded_by}</p>
-            </div>
-            <div>
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Anemometer</span>
-              <p className="text-foreground mt-0.5">{missingAnem ? <Badge variant="destructive" className="text-[9px] px-1 py-0 opacity-70">No anemometer</Badge> : anemStr}</p>
-            </div>
-            {entry.notes && (
+          <div className="px-6 py-3 bg-muted/5 border-b border-border">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-3 text-xs">
               <div>
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Notes</span>
-                <p className="text-muted-foreground mt-0.5 break-words">{entry.notes}</p>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Recorded By</span>
+                <p className="text-foreground">{entry.recorded_by}</p>
               </div>
-            )}
-            {entry.linked_rides && entry.linked_rides.length > 3 && (
-              <div className="col-span-3">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">All Linked</span>
-                <p className="text-muted-foreground mt-0.5">{entry.linked_rides.join(', ')}</p>
+              <div>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Anemometer</span>
+                {missingAnem ? (
+                  <Badge variant="destructive" className="text-[9px] px-1.5 py-0 opacity-80">No anemometer recorded</Badge>
+                ) : (
+                  <p className="text-foreground break-words">{anemStr}</p>
+                )}
               </div>
-            )}
+              {entry.notes && (
+                <div className="lg:col-span-2">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Notes</span>
+                  <p className="text-muted-foreground break-words">{entry.notes}</p>
+                </div>
+              )}
+              {rides.length > 2 && (
+                <div className="col-span-2 lg:col-span-4">
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">All Linked Inflatables</span>
+                  <div className="flex flex-wrap gap-1 mt-0.5">
+                    {rides.map((name, i) => (
+                      <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">{name}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
     );
   };
 
-  // ─── Mobile row — stacked register card with expandable details ───
+  // ─── Mobile row — compact summary with tap-to-expand ───
   const renderMobileRow = (entry: WindLogEntry) => {
     const anemStr = formatAnemometer(entry);
     const missingAnem = hasMissingAnemometer(entry);
     const highWind = isEntryHighWind(entry);
     const isExpanded = expandedId === entry.id;
+    const rides = entry.linked_rides || [];
 
     return (
       <div
         key={entry.id}
-        className="border-b border-border px-3 py-2.5 space-y-1.5 cursor-pointer"
+        className={cn("border-b border-border px-3 py-2.5 cursor-pointer active:bg-muted/20 transition-colors", isExpanded && "bg-muted/5")}
         onClick={() => setExpandedId(isExpanded ? null : entry.id)}
       >
-        {/* Row 1: Date + Time + Speed badge */}
+        {/* Row 1: Date + Time + Speed + expand chevron */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-[13px] font-medium text-foreground tabular-nums">{formatDate(entry.log_date)}</span>
             <span className="text-[11px] text-muted-foreground tabular-nums">{entry.log_time.slice(0, 5)}</span>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            {missingAnem && <Badge variant="destructive" className="text-[8px] px-1 py-0 opacity-70">No anem.</Badge>}
             {highWind ? (
               <Badge variant="destructive" className="text-[12px] px-2 py-0.5 font-bold tabular-nums">
                 {entry.wind_speed} {entry.wind_unit}
@@ -627,48 +643,60 @@ const WindLog = () => {
                 <span className="text-[10px] text-primary/60">{entry.wind_unit}</span>
               </div>
             )}
-            <ChevronDown className={cn("h-3 w-3 text-muted-foreground/40 transition-transform", isExpanded && "rotate-180")} />
+            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/50 transition-transform", isExpanded && "rotate-180")} />
           </div>
         </div>
 
-        {/* Row 2: Location */}
-        {entry.location && (
-          <p className="text-[12px] text-muted-foreground break-words leading-snug">{entry.location}</p>
-        )}
+        {/* Row 2: Location + action (compact) */}
+        <div className="flex items-center justify-between gap-2 mt-1">
+          <span className="text-[11px] text-muted-foreground truncate">{entry.location || '—'}</span>
+          {entry.action_taken && (
+            <span className="text-[10px] text-muted-foreground truncate shrink-0 max-w-[45%]">{entry.action_taken}</span>
+          )}
+        </div>
 
-        {/* Row 3: Applies to */}
-        {entry.linked_rides && entry.linked_rides.length > 0 && (
-          <div className="flex flex-wrap gap-1">
-            {entry.linked_rides.map((name, i) => (
+        {/* Row 3: 1–2 inflatable badges + warnings */}
+        {(rides.length > 0 || missingAnem) && (
+          <div className="flex flex-wrap items-center gap-1 mt-1">
+            {rides.slice(0, 2).map((name, i) => (
               <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">{name}</Badge>
             ))}
+            {rides.length > 2 && (
+              <Badge variant="outline" className="text-[10px] px-1 py-0 text-muted-foreground">+{rides.length - 2}</Badge>
+            )}
+            {missingAnem && <Badge variant="destructive" className="text-[8px] px-1 py-0 opacity-70">No anem.</Badge>}
           </div>
         )}
 
-        {/* Row 4: Action taken */}
-        {entry.action_taken && (
-          <p className="text-[11px] text-muted-foreground break-words leading-snug">{entry.action_taken}</p>
-        )}
-
-        {/* Expandable details */}
+        {/* Expanded detail panel */}
         {isExpanded && (
-          <div className="pt-1 space-y-1.5 border-t border-border/50 mt-1.5">
+          <div className="pt-2 mt-2 space-y-2 border-t border-border/50">
             <div className="flex items-start gap-1.5">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 shrink-0 pt-px">Recorded by</span>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-[72px] shrink-0 pt-px">Recorded by</span>
               <span className="text-[12px] text-foreground break-words">{entry.recorded_by}</span>
             </div>
             <div className="flex items-start gap-1.5">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 shrink-0 pt-px">Anemometer</span>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-[72px] shrink-0 pt-px">Anemometer</span>
               {missingAnem ? (
-                <Badge variant="destructive" className="text-[9px] px-1 py-0 opacity-70">No anemometer</Badge>
+                <Badge variant="destructive" className="text-[9px] px-1.5 py-0 opacity-80">No anemometer recorded</Badge>
               ) : (
                 <span className="text-[11px] text-muted-foreground break-words leading-snug">{anemStr}</span>
               )}
             </div>
             {entry.notes && (
               <div className="flex items-start gap-1.5">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 shrink-0 pt-px">Notes</span>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-[72px] shrink-0 pt-px">Notes</span>
                 <span className="text-[11px] text-muted-foreground break-words leading-snug">{entry.notes}</span>
+              </div>
+            )}
+            {rides.length > 2 && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-[72px] shrink-0 pt-px">Applies to</span>
+                <div className="flex flex-wrap gap-1">
+                  {rides.map((name, i) => (
+                    <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">{name}</Badge>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -801,9 +829,9 @@ const WindLog = () => {
           <div className="bg-card rounded-lg border border-border overflow-hidden">
             {/* Desktop column headers */}
             {!isMobile && (
-              <div className="grid grid-cols-[80px_50px_76px_1fr_1.3fr_1.2fr] items-center px-4 py-2 bg-muted/50 border-b border-border gap-x-3">
-                {['Date', 'Time', 'Speed', 'Location', 'Applies To', 'Action / Status'].map(h => (
-                  <span key={h} className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">{h}</span>
+              <div className="grid grid-cols-[78px_48px_74px_1fr_1.2fr_1.4fr_32px] items-center px-4 py-2 bg-muted/50 border-b border-border gap-x-3">
+                {['Date', 'Time', 'Speed', 'Location', 'Applies To', 'Action / Status', ''].map((h, i) => (
+                  <span key={i} className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">{h}</span>
                 ))}
               </div>
             )}
