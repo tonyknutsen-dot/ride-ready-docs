@@ -79,7 +79,7 @@ function computeStats(records: InspectionRecord[]): ReportStats {
   return { total, passed, failed, partial, withDefects, withNotes, withPhotos, passRate, templateNames: Array.from(templateSet) };
 }
 
-/** Neutralise legacy "Safety Check" naming in template names */
+/** Neutralise and normalise legacy template names for consistent display */
 function neutraliseTemplateName(name: string): string {
   return name
     .replace(/\bSafety\s+Check\b/gi, 'Check')
@@ -87,7 +87,12 @@ function neutraliseTemplateName(name: string): string {
     .replace(/\bPre-?opening\s+Safety\s+Check\b/gi, 'Pre-Opening Check')
     .replace(/\bWeekly\s+Safety\s+Check\b/gi, 'Weekly Check')
     .replace(/\bMonthly\s+Safety\s+Check\b/gi, 'Monthly Check')
-    .replace(/\bYearly\s+Safety\s+Check\b/gi, 'Yearly Check');
+    .replace(/\bYearly\s+Safety\s+Check\b/gi, 'Yearly Check')
+    .replace(/\bPre-?opening\b/gi, 'Pre-Opening')
+    .replace(/\bdaily check\b/gi, 'Daily Check')
+    .replace(/\bweekly check\b/gi, 'Weekly Check')
+    .replace(/\bmonthly check\b/gi, 'Monthly Check')
+    .replace(/\byearly check\b/gi, 'Yearly Check');
 }
 
 function formatFrequency(freq: string): string {
@@ -248,7 +253,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     const freq = formatFrequency(record.check_frequency);
     const result = formatResult(deriveOverallResult(record));
     const template = record.template_name ? neutraliseTemplateName(record.template_name) : '—';
-    const location = record.location || '—';
+    const location = record.location || 'Not recorded';
 
     return [dateStr, timeStr, freq, result, record.inspector_name, location, defectCount > 0 ? String(defectCount) : '—'];
   });
@@ -302,7 +307,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     const result = formatResult(deriveOverallResult(record));
     const template = record.template_name ? neutraliseTemplateName(record.template_name) : '—';
     const freq = formatFrequency(record.check_frequency);
-    const location = record.location || '';
+    const location = record.location || 'Location not recorded';
 
     // Need at least ~50pt for the record header + a few item rows
     y = checkOverflow(doc, y, 50);
@@ -339,10 +344,8 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     doc.setTextColor(...PDF_COLORS.body);
     doc.text(`${dateStr}  ${timeStr}  ·  ${freq}  ·  ${template}  ·  Recorded by: ${record.inspector_name}`, mL + 3, y + 10);
 
-    // Location row
-    if (location) {
-      doc.text(`Location: ${location}`, mL + 3, y + 14.5);
-    }
+    // Location row — always shown
+    doc.text(`Location: ${location}`, mL + 3, y + 14.5);
 
     y += 21;
 
@@ -495,7 +498,7 @@ export function generateCheckRecordsCsv(records: InspectionRecord[], rideName: s
     String(record.defect_ids?.length || 0),
     record.notes || '',
     record.weather_conditions || '',
-    record.location || '',
+    record.location || 'Not recorded',
     `v${record.version}`,
     record.id,
   ]);

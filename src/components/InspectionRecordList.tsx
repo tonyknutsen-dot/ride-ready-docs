@@ -50,6 +50,17 @@ import { generateCheckRecordsPdf, generateCheckRecordsCsv } from '@/utils/checkR
 import { useAuth } from '@/contexts/AuthContext';
 import { format as formatDateFns } from 'date-fns';
 
+/** Normalise template/check names for consistent display */
+function normaliseCheckName(name: string): string {
+  return name
+    .replace(/\bSafety\s+Check\b/gi, 'Check')
+    .replace(/\bPre-?opening\b/gi, 'Pre-Opening')
+    .replace(/\bdaily\s+check\b/gi, 'Daily Check')
+    .replace(/\bweekly\s+check\b/gi, 'Weekly Check')
+    .replace(/\bmonthly\s+check\b/gi, 'Monthly Check')
+    .replace(/\byearly\s+check\b/gi, 'Yearly Check');
+}
+
 const PAGE_SIZE = 25;
 
 interface InspectionRecordListProps {
@@ -527,15 +538,15 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                       {format(parseISO(record.completed_at), 'HH:mm')}
                     </span>
                     <span className="font-semibold text-xs text-foreground truncate">{record.inspector_name}</span>
-                    {record.location && (
-                      <span className="text-[10px] text-muted-foreground truncate max-w-[140px]">· {record.location}</span>
-                    )}
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     {getResultBadge(record.overall_result, record)}
                     {record.template_name && (
-                      <span className="text-[9px] text-muted-foreground truncate max-w-[120px]">{record.template_name.replace(/\bSafety\s+Check\b/gi, 'Check')}</span>
+                      <span className="text-[9px] text-muted-foreground truncate max-w-[120px]">{normaliseCheckName(record.template_name)}</span>
                     )}
+                    <span className="text-[9px] text-muted-foreground truncate max-w-[160px]">
+                      {record.location ? record.location : 'Location not recorded'}
+                    </span>
                     {record.version > 1 && (
                       <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-1 py-0.5 rounded">v{record.version}</span>
                     )}
