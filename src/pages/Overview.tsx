@@ -98,7 +98,7 @@ const Overview = () => {
                 label: 'Open Defects',
                 value: data?.openDefectsCount ?? 0,
                 icon: AlertTriangle,
-                path: '/rides',
+                path: '/defects?status=open',
                 accent: (data?.openDefectsCount ?? 0) > 0,
               },
               {
