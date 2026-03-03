@@ -236,26 +236,53 @@ export async function createAmendment(
   }
 }
 
+export interface FetchRecordsFilters {
+  frequency?: string;
+  allVersions?: boolean;
+  limit?: number;
+  offset?: number;
+  dateFrom?: string;
+  dateTo?: string;
+  result?: string;
+  inspectorName?: string;
+  hasDefects?: boolean;
+  searchQuery?: string;
+}
+
+export interface PaginatedRecords {
+  records: InspectionRecord[];
+  totalCount: number;
+  hasMore: boolean;
+}
+
 /**
- * Fetch inspection records for a ride, optionally filtered by frequency.
- * Returns the latest version of each check by default.
+ * Fetch inspection records for a ride with server-side pagination and filtering.
  */
 export async function fetchInspectionRecords(
   rideId: string,
-  options: {
-    frequency?: string;
-    allVersions?: boolean;
-    limit?: number;
-  } = {}
+  options: FetchRecordsFilters = {}
 ): Promise<InspectionRecord[]> {
+  const result = await fetchInspectionRecordsPaginated(rideId, options);
+  return result.records;
+}
+
+/**
+ * Fetch inspection records with pagination metadata.
+ */
+export async function fetchInspectionRecordsPaginated(
+  rideId: string,
+  options: FetchRecordsFilters = {}
+): Promise<PaginatedRecords> {
+  const limit = options.limit || 1000;
+  const offset = options.offset || 0;
+
   let query = supabase
     .from('inspection_records')
-    .select('*')
+    .select('*', { count: 'exact' })
     .eq('ride_id', rideId)
     .order('completed_at', { ascending: false });
 
   if (options.frequency) {
-    // Merged daily/preopening: fetch both when requesting 'daily'
     if (options.frequency === 'daily') {
       query = query.in('check_frequency', ['daily', 'preopening']);
     } else {
@@ -263,18 +290,54 @@ export async function fetchInspectionRecords(
     }
   }
 
-  if (options.limit) {
-    query = query.limit(options.limit);
+  if (options.dateFrom) {
+    query = query.gte('check_date', options.dateFrom);
+  }
+  if (options.dateTo) {
+    query = query.lte('check_date', options.dateTo);
   }
 
-  const { data, error } = await query;
+  if (options.result && options.result !== 'all') {
+    if (options.result === 'passed') {
+      query = query.in('overall_result', ['passed', 'completed']);
+    } else {
+      query = query.eq('overall_result', options.result);
+    }
+  }
+
+  if (options.inspectorName) {
+    query = query.ilike('inspector_name', `%${options.inspectorName}%`);
+  }
+
+  // Apply range for pagination
+  query = query.range(offset, offset + limit - 1);
+
+  const { data, error, count } = await query;
 
   if (error) {
     console.error('Error fetching inspection records:', error);
-    return [];
+    return { records: [], totalCount: 0, hasMore: false };
   }
 
-  const records = (data || []) as InspectionRecord[];
+  let records = (data || []) as InspectionRecord[];
+  const totalCount = count || 0;
+
+  // Filter by defects client-side (can't do array length check in PostgREST easily)
+  if (options.hasDefects === true) {
+    records = records.filter(r => (r.defect_ids?.length || 0) > 0);
+  } else if (options.hasDefects === false) {
+    records = records.filter(r => (r.defect_ids?.length || 0) === 0);
+  }
+
+  // Search query - client side for notes/inspector
+  if (options.searchQuery) {
+    const q = options.searchQuery.toLowerCase();
+    records = records.filter(r =>
+      r.inspector_name.toLowerCase().includes(q) ||
+      (r.notes?.toLowerCase().includes(q)) ||
+      (r.template_name?.toLowerCase().includes(q))
+    );
+  }
 
   // If not showing all versions, only return the latest version per check
   if (!options.allVersions) {
@@ -285,12 +348,16 @@ export async function fetchInspectionRecords(
         latestByCheck.set(record.check_id, record);
       }
     }
-    return Array.from(latestByCheck.values()).sort(
+    records = Array.from(latestByCheck.values()).sort(
       (a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()
     );
   }
 
-  return records;
+  return {
+    records,
+    totalCount,
+    hasMore: offset + limit < totalCount,
+  };
 }
 
 /**
