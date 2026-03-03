@@ -11,7 +11,6 @@ import {
   drawSectionTitle,
   drawSummaryBox,
   drawAllPageFooters,
-  drawComplianceStatement,
   drawEquipmentDetails,
   generateDocId,
   buildFileName,
@@ -90,10 +89,10 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     period = `To ${dateRange.to}`;
   }
 
-  // Report title: single inflatable = "Wind Log – [Name]", multi = "Wind Speed Register"
+  // Report title: single inflatable = "WIND LOG", multi = "WIND SPEED REGISTER"
   const reportTitle = isSingleAsset ? 'WIND LOG' : 'WIND SPEED REGISTER';
 
-  // ─── Header (same shell as checks/maintenance/risk) ───
+  // ─── Header ───
   let y = drawPDFHeader({
     doc,
     logoDataUrl,
@@ -113,13 +112,11 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
   if (companyName) detailFields.push({ label: 'Company', value: companyName });
   if (controllerName) detailFields.push({ label: 'Controller / Duty Holder', value: controllerName });
 
-  // Report scope
   if (isSingleAsset && inflatableName) {
     detailFields.push({ label: 'Report Scope', value: 'Single Inflatable' });
     detailFields.push({ label: 'Inflatable', value: inflatableName });
   } else {
     detailFields.push({ label: 'Report Scope', value: 'Shared Register' });
-    // List all unique inflatables covered
     const allRides = new Set<string>();
     entries.forEach(e => (e.linked_rides || []).forEach(r => allRides.add(r)));
     if (allRides.size > 0) {
@@ -130,7 +127,6 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
   if (location) detailFields.push({ label: 'Location / Site', value: location });
   if (period) detailFields.push({ label: 'Period', value: period });
 
-  // Recorded by
   const recorders = [...new Set(entries.map(e => e.recorded_by))];
   if (recorders.length <= 5) {
     detailFields.push({ label: 'Recorded By', value: recorders.join(', ') });
@@ -138,7 +134,7 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     detailFields.push({ label: 'Recorded By', value: `${recorders.length} staff members` });
   }
 
-  // Anemometer used (if consistent)
+  // Anemometer used
   const anemometers = entries.filter(e => e.anemometer_make || e.anemometer_model);
   const missingAnemCount = entries.length - anemometers.length;
   if (anemometers.length > 0) {
@@ -146,8 +142,7 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
       const parts = [e.anemometer_make, e.anemometer_model, e.anemometer_serial ? `S/N: ${e.anemometer_serial}` : null].filter(Boolean);
       return parts.join(' · ');
     }));
-    const anemValue = [...uniqueAnems].slice(0, 3).join(' | ');
-    detailFields.push({ label: 'Anemometer Used', value: anemValue });
+    detailFields.push({ label: 'Anemometer Used', value: [...uniqueAnems].slice(0, 3).join(' | ') });
   }
   if (missingAnemCount > 0) {
     detailFields.push({ label: 'Incomplete Readings', value: `${missingAnemCount} reading${missingAnemCount !== 1 ? 's' : ''} without anemometer data` });
@@ -232,6 +227,16 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     ];
   });
 
+  // Calculate column widths to avoid breaking headings
+  const baseColStyles: Record<number, { cellWidth?: number; minCellWidth?: number }> = {
+    0: { cellWidth: 22 },   // Date
+    1: { cellWidth: 14 },   // Time
+    2: { cellWidth: 14 },   // Speed
+    3: { cellWidth: 12 },   // Unit
+    4: { minCellWidth: 22 },// Location
+    5: { minCellWidth: 22 },// Recorded By
+  };
+
   autoTable(doc, {
     startY: y,
     head,
@@ -240,18 +245,10 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     styles: { ...PDF_TABLE_BODY_STYLES },
     headStyles: { ...PDF_TABLE_HEAD_STYLES },
     alternateRowStyles: { ...PDF_TABLE_ALT_ROW },
-    columnStyles: {
-      0: { cellWidth: 20 },
-      1: { cellWidth: 13 },
-      2: { cellWidth: 13 },
-      3: { cellWidth: 11 },
-    },
+    columnStyles: baseColStyles,
     margin: { left: mL, right: mL },
+    tableWidth: 'auto',
   });
-
-  // ─── Compliance statement ───
-  const finalY = (doc as any).lastAutoTable?.finalY || y + 40;
-  drawComplianceStatement(doc, finalY + 6, mL);
 
   // ─── Footers ───
   drawAllPageFooters(doc, docId);
