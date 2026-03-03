@@ -512,26 +512,25 @@ const WindLog = () => {
 
   const isEntryHighWind = (entry: WindLogEntry) => toMph(entry.wind_speed, entry.wind_unit) >= HIGH_WIND_MPH;
 
-  // ─── Desktop row ───
+  // ─── Desktop row — slim 6-column main + expandable details ───
   const renderDesktopRow = (entry: WindLogEntry) => {
     const isExpanded = expandedId === entry.id;
     const anemStr = formatAnemometer(entry);
     const missingAnem = hasMissingAnemometer(entry);
     const highWind = isEntryHighWind(entry);
-    const hasExtra = entry.notes || (entry.linked_rides && entry.linked_rides.length > 3);
 
     return (
       <div key={entry.id} className="group">
         <div
           className={cn(
-            "grid grid-cols-[82px_52px_78px_1fr_1fr_1.4fr_1fr_1.4fr] items-start px-4 py-2.5 text-[13px] border-b border-border hover:bg-muted/30 transition-colors cursor-pointer gap-x-3",
+            "grid grid-cols-[80px_50px_76px_1fr_1.3fr_1.2fr] items-center px-4 py-2 text-[13px] border-b border-border hover:bg-muted/30 transition-colors cursor-pointer gap-x-3",
             isExpanded && "bg-muted/20"
           )}
           onClick={() => setExpandedId(isExpanded ? null : entry.id)}
         >
-          <span className="font-medium text-foreground tabular-nums pt-0.5">{formatDate(entry.log_date)}</span>
-          <span className="text-muted-foreground tabular-nums pt-0.5">{entry.log_time.slice(0, 5)}</span>
-          <div className="pt-0.5">
+          <span className="font-medium text-foreground tabular-nums">{formatDate(entry.log_date)}</span>
+          <span className="text-muted-foreground tabular-nums">{entry.log_time.slice(0, 5)}</span>
+          <div>
             {highWind ? (
               <Badge variant="destructive" className="text-[11px] px-1.5 py-0 font-bold tabular-nums">
                 {entry.wind_speed} {entry.wind_unit}
@@ -542,8 +541,7 @@ const WindLog = () => {
               </span>
             )}
           </div>
-          <span className="text-muted-foreground break-words leading-snug pt-0.5">{entry.location || '—'}</span>
-          <span className="text-muted-foreground break-words leading-snug pt-0.5">{entry.recorded_by}</span>
+          <span className="text-muted-foreground truncate" title={entry.location || undefined}>{entry.location || '—'}</span>
           <div className="flex flex-wrap items-center gap-1 min-w-0">
             {entry.linked_rides && entry.linked_rides.length > 0 ? (
               <>
@@ -560,29 +558,37 @@ const WindLog = () => {
               <span className="text-xs text-muted-foreground">—</span>
             )}
           </div>
-          <span className="text-muted-foreground break-words leading-snug text-xs pt-0.5">{entry.action_taken || '—'}</span>
-          <div className="flex items-start justify-between gap-1 min-w-0">
-            {missingAnem ? (
-              <Badge variant="destructive" className="text-[10px] px-1.5 py-0 opacity-70 shrink-0">
-                No anemometer
-              </Badge>
-            ) : (
-              <span className="text-muted-foreground break-words text-[11px] leading-snug">{anemStr}</span>
+          <div className="flex items-center justify-between gap-1 min-w-0">
+            <span className="text-muted-foreground truncate text-xs" title={entry.action_taken || undefined}>
+              {entry.action_taken || '—'}
+            </span>
+            {missingAnem && (
+              <Badge variant="destructive" className="text-[9px] px-1 py-0 opacity-70 shrink-0">No anem.</Badge>
             )}
-            {hasExtra && (
-              <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/50 shrink-0 transition-transform mt-0.5", isExpanded && "rotate-180")} />
-            )}
+            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/40 shrink-0 transition-transform", isExpanded && "rotate-180")} />
           </div>
         </div>
         {isExpanded && (
-          <div className="px-4 py-2.5 bg-muted/10 border-b border-border text-xs space-y-1.5">
+          <div className="px-4 py-2.5 bg-muted/10 border-b border-border text-xs grid grid-cols-3 gap-x-6 gap-y-1.5">
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Recorded By</span>
+              <p className="text-foreground mt-0.5">{entry.recorded_by}</p>
+            </div>
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Anemometer</span>
+              <p className="text-foreground mt-0.5">{missingAnem ? <Badge variant="destructive" className="text-[9px] px-1 py-0 opacity-70">No anemometer</Badge> : anemStr}</p>
+            </div>
             {entry.notes && (
-              <p className="text-muted-foreground"><span className="font-medium text-foreground">Notes:</span> {entry.notes}</p>
+              <div>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Notes</span>
+                <p className="text-muted-foreground mt-0.5 break-words">{entry.notes}</p>
+              </div>
             )}
             {entry.linked_rides && entry.linked_rides.length > 3 && (
-              <p className="text-muted-foreground">
-                <span className="font-medium text-foreground">All linked:</span> {entry.linked_rides.join(', ')}
-              </p>
+              <div className="col-span-3">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">All Linked</span>
+                <p className="text-muted-foreground mt-0.5">{entry.linked_rides.join(', ')}</p>
+              </div>
             )}
           </div>
         )}
@@ -590,81 +596,81 @@ const WindLog = () => {
     );
   };
 
-  // ─── Mobile row — stacked register card ───
+  // ─── Mobile row — stacked register card with expandable details ───
   const renderMobileRow = (entry: WindLogEntry) => {
     const anemStr = formatAnemometer(entry);
     const missingAnem = hasMissingAnemometer(entry);
     const highWind = isEntryHighWind(entry);
+    const isExpanded = expandedId === entry.id;
 
     return (
-      <div key={entry.id} className="border-b border-border px-3 py-2.5 space-y-1.5">
+      <div
+        key={entry.id}
+        className="border-b border-border px-3 py-2.5 space-y-1.5 cursor-pointer"
+        onClick={() => setExpandedId(isExpanded ? null : entry.id)}
+      >
         {/* Row 1: Date + Time + Speed badge */}
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <span className="text-[13px] font-medium text-foreground tabular-nums">{formatDate(entry.log_date)}</span>
             <span className="text-[11px] text-muted-foreground tabular-nums">{entry.log_time.slice(0, 5)}</span>
           </div>
-          {highWind ? (
-            <Badge variant="destructive" className="text-[12px] px-2 py-0.5 font-bold tabular-nums shrink-0">
-              {entry.wind_speed} {entry.wind_unit}
-            </Badge>
-          ) : (
-            <div className="flex items-center gap-1 shrink-0 bg-primary/10 px-2 py-0.5 rounded">
-              <span className="text-sm font-bold text-primary tabular-nums">{entry.wind_speed}</span>
-              <span className="text-[10px] text-primary/60">{entry.wind_unit}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {missingAnem && <Badge variant="destructive" className="text-[8px] px-1 py-0 opacity-70">No anem.</Badge>}
+            {highWind ? (
+              <Badge variant="destructive" className="text-[12px] px-2 py-0.5 font-bold tabular-nums">
+                {entry.wind_speed} {entry.wind_unit}
+              </Badge>
+            ) : (
+              <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded">
+                <span className="text-sm font-bold text-primary tabular-nums">{entry.wind_speed}</span>
+                <span className="text-[10px] text-primary/60">{entry.wind_unit}</span>
+              </div>
+            )}
+            <ChevronDown className={cn("h-3 w-3 text-muted-foreground/40 transition-transform", isExpanded && "rotate-180")} />
+          </div>
         </div>
 
         {/* Row 2: Location */}
         {entry.location && (
-          <div className="flex items-start gap-1.5">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 shrink-0 pt-px">Location</span>
-            <span className="text-[12px] text-foreground break-words leading-snug">{entry.location}</span>
-          </div>
+          <p className="text-[12px] text-muted-foreground break-words leading-snug">{entry.location}</p>
         )}
 
-        {/* Row 3: Recorded by */}
-        <div className="flex items-start gap-1.5">
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 shrink-0 pt-px">Recorded by</span>
-          <span className="text-[12px] text-muted-foreground break-words">{entry.recorded_by}</span>
-        </div>
-
-        {/* Row 4: Applies to */}
+        {/* Row 3: Applies to */}
         {entry.linked_rides && entry.linked_rides.length > 0 && (
-          <div className="flex items-start gap-1.5">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 shrink-0 pt-0.5">Applies to</span>
-            <div className="flex flex-wrap gap-1">
-              {entry.linked_rides.map((name, i) => (
-                <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">{name}</Badge>
-              ))}
-            </div>
+          <div className="flex flex-wrap gap-1">
+            {entry.linked_rides.map((name, i) => (
+              <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">{name}</Badge>
+            ))}
           </div>
         )}
 
-        {/* Row 5: Action taken */}
+        {/* Row 4: Action taken */}
         {entry.action_taken && (
-          <div className="flex items-start gap-1.5">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 shrink-0 pt-px">Action</span>
-            <span className="text-[12px] text-muted-foreground break-words leading-snug">{entry.action_taken}</span>
-          </div>
+          <p className="text-[11px] text-muted-foreground break-words leading-snug">{entry.action_taken}</p>
         )}
 
-        {/* Row 6: Anemometer */}
-        <div className="flex items-start gap-1.5">
-          <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 shrink-0 pt-px">Anemometer</span>
-          {missingAnem ? (
-            <Badge variant="destructive" className="text-[9px] px-1 py-0 opacity-70">No anemometer</Badge>
-          ) : (
-            <span className="text-[11px] text-muted-foreground break-words leading-snug">{anemStr}</span>
-          )}
-        </div>
-
-        {/* Row 7: Notes (only if present) */}
-        {entry.notes && (
-          <div className="flex items-start gap-1.5">
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 shrink-0 pt-px">Notes</span>
-            <span className="text-[11px] text-muted-foreground break-words leading-snug">{entry.notes}</span>
+        {/* Expandable details */}
+        {isExpanded && (
+          <div className="pt-1 space-y-1.5 border-t border-border/50 mt-1.5">
+            <div className="flex items-start gap-1.5">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 shrink-0 pt-px">Recorded by</span>
+              <span className="text-[12px] text-foreground break-words">{entry.recorded_by}</span>
+            </div>
+            <div className="flex items-start gap-1.5">
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 shrink-0 pt-px">Anemometer</span>
+              {missingAnem ? (
+                <Badge variant="destructive" className="text-[9px] px-1 py-0 opacity-70">No anemometer</Badge>
+              ) : (
+                <span className="text-[11px] text-muted-foreground break-words leading-snug">{anemStr}</span>
+              )}
+            </div>
+            {entry.notes && (
+              <div className="flex items-start gap-1.5">
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-20 shrink-0 pt-px">Notes</span>
+                <span className="text-[11px] text-muted-foreground break-words leading-snug">{entry.notes}</span>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -795,8 +801,8 @@ const WindLog = () => {
           <div className="bg-card rounded-lg border border-border overflow-hidden">
             {/* Desktop column headers */}
             {!isMobile && (
-              <div className="grid grid-cols-[82px_52px_78px_1fr_1fr_1.4fr_1fr_1.4fr] items-center px-4 py-2 bg-muted/50 border-b border-border gap-x-3">
-                {['Date', 'Time', 'Speed', 'Location', 'Recorded By', 'Applies To', 'Action', 'Anemometer'].map(h => (
+              <div className="grid grid-cols-[80px_50px_76px_1fr_1.3fr_1.2fr] items-center px-4 py-2 bg-muted/50 border-b border-border gap-x-3">
+                {['Date', 'Time', 'Speed', 'Location', 'Applies To', 'Action / Status'].map(h => (
                   <span key={h} className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">{h}</span>
                 ))}
               </div>

@@ -1,8 +1,7 @@
 /**
  * Wind Log / Wind Speed Register PDF
  * ====================================
- * Uses the shared pdfTemplate system (drawTemplateHeader, drawSection,
- * drawMetadataRows, drawTemplateFooters) so the output is visually identical
+ * Uses the shared pdfTemplate system so the output is visually identical
  * to checks, maintenance, timeline, and risk assessment reports.
  */
 import jsPDF from 'jspdf';
@@ -13,7 +12,6 @@ import {
   drawSection,
   drawMetadataRows,
   drawTemplateFooters,
-  checkOverflow,
   type PdfTemplateOptions,
   type MetadataField,
 } from './pdfTemplate';
@@ -27,7 +25,6 @@ import {
   PDF_TABLE_ALT_ROW,
 } from './pdfUtils';
 import { fetchEquipmentPhoto, drawEquipmentPhotoInHeader } from './pdfEquipmentPhoto';
-import { fetchLogoDataUrl } from './pdfTemplate';
 
 // ─── High-wind threshold (matches UI) ─────────────────────────────────────────
 const HIGH_WIND_MPH = 24;
@@ -104,7 +101,7 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
   // Report title
   const headerTitle = isSingleAsset ? 'WIND LOG' : 'WIND SPEED REGISTER';
 
-  // ─── 1. Navy header bar (matches all other reports) ────────────────────────
+  // ─── 1. Header bar ────────────────────────────────────────────────────────
   const templateOpts: PdfTemplateOptions = {
     doc,
     title: headerTitle,
@@ -113,7 +110,12 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
   };
   let y = drawTemplateHeader(templateOpts);
 
-  // ─── 2. Report details section ────────────────────────────────────────────
+  // ─── 2. Equipment photo (single-asset, right-aligned beside metadata) ────
+  if (isSingleAsset && equipmentPhoto) {
+    drawEquipmentPhotoInHeader(doc, equipmentPhoto, pageWidth - mL - 30, y, 28, 20);
+  }
+
+  // ─── 3. Report details ────────────────────────────────────────────────────
   y = drawSection(doc, 'Report Details', y, mL);
 
   const detailFields: MetadataField[] = [];
@@ -135,39 +137,24 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
   if (location) detailFields.push({ label: 'Location / Site', value: location });
   if (period) detailFields.push({ label: 'Period', value: period });
 
-  // Recorded by
+  // Recorder / anemometer status lines (not detailed per-reading data)
   const recorders = [...new Set(entries.map(e => e.recorded_by))];
   detailFields.push({
-    label: 'Recorded By',
-    value: recorders.length <= 5 ? recorders.join(', ') : `${recorders.length} staff members`,
+    label: 'Recorders',
+    value: recorders.length === 1 ? recorders[0] : `${recorders.length} staff members`,
   });
 
-  // Anemometer used
   const anemEntries = entries.filter(e => e.anemometer_make || e.anemometer_model);
-  if (anemEntries.length > 0) {
-    const uniqueAnems = [...new Set(anemEntries.map(e => {
-      const parts = [e.anemometer_make, e.anemometer_model, e.anemometer_serial ? `S/N: ${e.anemometer_serial}` : null].filter(Boolean);
-      return parts.join(' · ');
-    }))];
-    detailFields.push({ label: 'Anemometer', value: uniqueAnems.slice(0, 3).join(' | ') });
-  }
   const missingAnem = entries.length - anemEntries.length;
-  if (missingAnem > 0) {
-    detailFields.push({ label: 'Incomplete Readings', value: `${missingAnem} without anemometer data` });
-  }
+  detailFields.push({
+    label: 'Anemometer Records',
+    value: missingAnem === 0 ? 'Complete' : `Incomplete — ${missingAnem} reading${missingAnem !== 1 ? 's' : ''} without data`,
+  });
 
   detailFields.push({ label: 'Generated', value: format(new Date(), 'd MMM yyyy HH:mm') });
   detailFields.push({ label: 'Document ID', value: docId });
-  detailFields.push({ label: 'Total Readings', value: String(entries.length) });
 
   y = drawMetadataRows(doc, detailFields, y, mL);
-
-  // ─── 3. Equipment photo (single-asset only) ───────────────────────────────
-  if (isSingleAsset && equipmentPhoto) {
-    const photoX = pageWidth - mL - 30;
-    // Draw above summary box, right-aligned alongside metadata
-    drawEquipmentPhotoInHeader(doc, equipmentPhoto, photoX, 32, 28, 20);
-  }
 
   // ─── 4. Summary box ───────────────────────────────────────────────────────
   const speeds = entries.map(e => e.wind_speed);
@@ -178,29 +165,28 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
   const unit = entries[0]?.wind_unit || 'mph';
 
   y = drawSummaryBox(doc, [
-    { label: 'Total Readings', value: String(entries.length), accent: true },
+    { label: 'Readings', value: String(entries.length), accent: true },
     { label: `Max (${unit})`, value: maxSpeed.toFixed(1) },
     { label: `Avg (${unit})`, value: avgSpeed.toFixed(1) },
     { label: 'Ceased Ops', value: String(ceasedCount) },
     ...(highWindCount > 0 ? [{ label: `≥${HIGH_WIND_MPH} mph`, value: String(highWindCount) }] : []),
   ], y, mL);
 
-  // ─── 5. Readings table ────────────────────────────────────────────────────
-  y = drawSection(doc, 'Wind Speed Readings', y, mL);
+  // ─── 5. Readings register ─────────────────────────────────────────────────
+  y = drawSection(doc, 'Readings Register', y, mL);
 
   const showAppliesTo = !isSingleAsset;
-  const showAnem = entries.some(e => e.anemometer_make || e.anemometer_model || e.anemometer_serial);
 
   const head = [[
     'Date',
     'Time',
-    `Speed`,
+    'Speed',
     'Location',
     'Recorded By',
     ...(showAppliesTo ? ['Applies To'] : []),
     'Action Taken',
+    'Anemometer',
     'Notes',
-    ...(showAnem ? ['Anemometer'] : []),
   ]];
 
   const body = entries.map(e => {
@@ -209,29 +195,27 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     if (e.anemometer_model) anemParts.push(e.anemometer_model);
     if (e.anemometer_serial) anemParts.push(`S/N: ${e.anemometer_serial}`);
 
-    const speedStr = `${e.wind_speed} ${e.wind_unit}`;
-
     return [
       e.log_date,
       e.log_time.slice(0, 5),
-      speedStr,
+      `${e.wind_speed} ${e.wind_unit}`,
       e.location || '—',
       e.recorded_by,
       ...(showAppliesTo ? [(e.linked_rides || []).join(', ') || '—'] : []),
       e.action_taken || '—',
+      anemParts.join(' / ') || '—',
       e.notes || '—',
-      ...(showAnem ? [anemParts.join(' / ') || '—'] : []),
     ];
   });
 
-  // Column widths — prevent heading breaks
+  // Fixed column widths for the first few to prevent drift
   const colStyles: Record<number, { cellWidth?: number; minCellWidth?: number }> = {
     0: { cellWidth: 22 },   // Date
     1: { cellWidth: 14 },   // Time
-    2: { cellWidth: 20 },   // Speed (merged with unit)
+    2: { cellWidth: 22 },   // Speed
   };
 
-  // High-wind row indices for highlighting
+  // High-wind row indices
   const highWindRows = new Set(
     entries.map((e, i) => toMph(e.wind_speed, e.wind_unit) >= HIGH_WIND_MPH ? i : -1).filter(i => i >= 0)
   );
@@ -243,24 +227,23 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     theme: 'grid',
     styles: {
       ...PDF_TABLE_BODY_STYLES,
-      fontSize: 7.5,
-      cellPadding: 2.5,
+      fontSize: 7,
+      cellPadding: 2,
       overflow: 'linebreak',
     },
     headStyles: {
       ...PDF_TABLE_HEAD_STYLES,
-      fontSize: 7.5,
-      cellPadding: 2.5,
+      fontSize: 7,
+      cellPadding: 2,
     },
     alternateRowStyles: { ...PDF_TABLE_ALT_ROW },
     columnStyles: colStyles,
     margin: { left: mL, right: mL },
     showHead: 'everyPage',
     didParseCell: (data) => {
-      // Highlight high-wind rows
       if (data.section === 'body' && highWindRows.has(data.row.index)) {
-        data.cell.styles.fillColor = [254, 226, 226]; // red-100
-        data.cell.styles.textColor = [153, 27, 27];   // red-800
+        data.cell.styles.fillColor = [254, 226, 226];
+        data.cell.styles.textColor = [153, 27, 27];
         data.cell.styles.fontStyle = 'bold';
       }
     },
