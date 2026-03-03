@@ -643,7 +643,7 @@ const DefectRegister = () => {
                   </div>
                 </div>
               </SheetHeader>
-              <div className="flex-1 px-4 py-5">
+              <div className="flex-1 px-5 py-6">
                 <DefectDetailSheet
                   defect={detailDefect}
                   onClose={closeDetail}
