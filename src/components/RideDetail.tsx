@@ -63,9 +63,21 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
   const [searchParams, setSearchParams] = useSearchParams();
   
   const activeTab = searchParams.get('tab') || initialTab;
+  const sectionParam = searchParams.get('section');
   const setActiveTab = (tab: string) => {
     setSearchParams({ tab }, { replace: true });
   };
+
+  // Auto-scroll to a specific section when deep-linked (e.g. ?tab=overview&section=defects)
+  useEffect(() => {
+    if (sectionParam && activeTab === 'overview') {
+      const timeout = setTimeout(() => {
+        const el = document.getElementById(`ride-${sectionParam}-section`);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 400); // allow tab content to render
+      return () => clearTimeout(timeout);
+    }
+  }, [sectionParam, activeTab]);
   
   const [isEditing, setIsEditing] = useState(false);
   const [showChecksGuide, setShowChecksGuide] = useState(false);
@@ -116,13 +128,14 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         .eq('ride_id', ride.id)
         .neq('status', 'resolved');
 
-      // Overdue compliance
+      // Overdue compliance (exclude routine checks — they are log-first, not date-enforced)
       const overdueQuery = supabase
         .from('compliance_events')
-        .select('id, event_name, due_date')
+        .select('id, event_name, due_date, event_type')
         .eq('user_id', effectiveUserId)
         .eq('status', 'scheduled')
         .lt('due_date', today)
+        .not('event_type', 'in', '("daily_check","pre_opening_check")')
         .or(`ride_id.eq.${ride.id},ride_id.is.null`)
         .order('due_date', { ascending: true })
         .limit(5);
@@ -211,7 +224,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         label: evt.event_name,
         detail: `Overdue since ${new Date(evt.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
         color: 'hsl(0 72% 50%)',
-        action: () => navigate(`/calendar`),
+        action: () => navigate(`/calendar?eventId=${evt.id}`),
       });
     }
     if (rideStats.openDefects > 0 && !hasCriticalDefects) {
