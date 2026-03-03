@@ -236,13 +236,13 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 <button
                   key={value}
                   onClick={() => { setActiveTab(value); setShowNextPrompt(null); }}
-                  className={`flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl border-2 transition-all min-w-[72px] font-medium text-xs ${
+                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all min-w-[64px] font-medium text-xs ${
                     isActive
-                      ? 'bg-primary border-primary text-primary-foreground shadow-md'
-                      : 'bg-card border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                      ? 'bg-primary border-primary text-primary-foreground shadow-sm'
+                      : 'bg-card/60 border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground'
                   }`}
                 >
-                  <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
+                  <Icon className="h-4 w-4" strokeWidth={isActive ? 2.5 : 1.8} />
                   <span>{label}</span>
                   {hasTemplate && !isActive && (
                     <span className="w-1.5 h-1.5 rounded-full bg-success" />
@@ -262,13 +262,13 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
                 <button
                   key={value}
                   onClick={() => { setActiveTab(value); setShowNextPrompt(null); }}
-                  className={`flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl border-2 transition-all min-w-[72px] font-medium text-xs ${
+                  className={`flex flex-col items-center gap-1 px-3 py-2 rounded-xl border transition-all min-w-[64px] font-medium text-xs ${
                     isActive
-                      ? 'bg-primary border-primary text-primary-foreground shadow-md'
-                      : 'bg-card border-border text-muted-foreground hover:border-primary/40 hover:text-foreground'
+                      ? 'bg-primary border-primary text-primary-foreground shadow-sm'
+                      : 'bg-card/60 border-border/60 text-muted-foreground hover:border-primary/40 hover:text-foreground'
                   }`}
                 >
-                  <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
+                  <Icon className="h-4 w-4" strokeWidth={isActive ? 2.5 : 1.8} />
                   <span>{label}</span>
                 </button>
               );
