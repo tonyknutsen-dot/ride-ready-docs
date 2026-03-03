@@ -13,10 +13,10 @@ import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday, startOfDay, parseISO } from 'date-fns';
 import {
   ChevronDown, CalendarIcon, Power, CheckSquare, AlertTriangle,
-  Wrench, FileText, Shield, Atom, Clock, Filter
+  Wrench, FileText, Shield, Atom, Clock, Filter, Wind
 } from 'lucide-react';
 
-type EventType = 'operating_status' | 'check' | 'defect' | 'maintenance' | 'document' | 'third_party' | 'ndt';
+type EventType = 'operating_status' | 'check' | 'defect' | 'maintenance' | 'document' | 'third_party' | 'ndt' | 'wind';
 
 interface ActivityEntry {
   id: string;
@@ -35,6 +35,7 @@ const EVENT_CONFIG: Record<EventType, { label: string; icon: React.ElementType; 
   document: { label: 'Document', icon: FileText, color: 'text-blue-600' },
   third_party: { label: 'Third Party', icon: Shield, color: 'text-purple-600' },
   ndt: { label: 'NDT', icon: Atom, color: 'text-teal-600' },
+  wind: { label: 'Wind', icon: Wind, color: 'text-sky-600' },
 };
 
 const EVENT_TYPE_OPTIONS = Object.entries(EVENT_CONFIG).map(([value, cfg]) => ({ value, label: cfg.label }));
@@ -205,6 +206,33 @@ export default function RideActivityTimeline({ rideId }: RideActivityTimelinePro
           user_role: '',
         });
       });
+
+      // 8. Wind readings linked to this ride
+      const { data: windJunctions } = await supabase
+        .from('wind_log_rides')
+        .select('wind_log_id')
+        .eq('ride_id', rideId);
+
+      if (windJunctions && windJunctions.length > 0) {
+        const windLogIds = windJunctions.map((j: any) => j.wind_log_id);
+        const { data: windLogs } = await supabase
+          .from('wind_speed_logs')
+          .select('id, created_at, log_date, log_time, wind_speed, wind_unit, recorded_by')
+          .in('id', windLogIds)
+          .order('created_at', { ascending: false })
+          .limit(200);
+
+        (windLogs || []).forEach((w: any) => {
+          results.push({
+            id: `wind-${w.id}`,
+            timestamp: w.created_at,
+            event_type: 'wind' as EventType,
+            description: `Wind reading logged: ${w.wind_speed} ${w.wind_unit} at ${w.log_time?.slice(0, 5) || ''}`,
+            user_name: w.recorded_by || '',
+            user_role: '',
+          });
+        });
+      }
 
       // Sort all entries chronologically descending
       results.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());

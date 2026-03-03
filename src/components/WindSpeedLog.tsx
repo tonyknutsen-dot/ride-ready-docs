@@ -3,10 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useDateTimeSettings } from '@/hooks/useDateTimeSettings';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { Wind, MapPin, Clock, ChevronDown, Gauge, User, Loader2 } from 'lucide-react';
+import { Wind, MapPin, Clock, ChevronDown, Gauge, User, Loader2, ExternalLink, Download } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { generateWindLogPdf } from '@/utils/windLogPdf';
+import { format } from 'date-fns';
 
 interface WindSpeedLogProps {
   rideId: string;
@@ -41,7 +44,6 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
     if (!effectiveUserId) return;
     const load = async () => {
       try {
-        // Get wind_log_ids linked to this ride via junction table
         const { data: junctions, error: jErr } = await supabase
           .from('wind_log_rides')
           .select('wind_log_id')
@@ -76,19 +78,42 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
     load();
   }, [rideId, effectiveUserId]);
 
+  const handleExport = () => {
+    if (logs.length === 0) return;
+    generateWindLogPdf({
+      entries: logs,
+      title: `Wind Log — ${rideName}`,
+      inflatableName: rideName,
+    });
+  };
+
   const hasAnemometerDetails = (entry: WindLogEntry) =>
     entry.anemometer_make || entry.anemometer_model || entry.anemometer_serial;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
           <Wind className="h-5 w-5 text-primary" />
           <h2 className="text-base font-semibold text-foreground">Wind Log</h2>
+          {!loading && logs.length > 0 && (
+            <Badge variant="secondary" className="text-[10px]">{logs.length}</Badge>
+          )}
         </div>
-        <Button asChild size="sm" className="gap-1.5">
-          <Link to="/wind-log">Go to Wind Log</Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          {logs.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
+              <Download className="h-3.5 w-3.5" />
+              Export
+            </Button>
+          )}
+          <Button asChild size="sm" className="gap-1.5">
+            <Link to="/wind-log">
+              <ExternalLink className="h-3.5 w-3.5" />
+              Wind Log
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {loading ? (
