@@ -1,6 +1,6 @@
 /**
- * Wind Log PDF — Professional Operational Record
- * Uses the shared pdfUtils template system for consistent branding.
+ * Wind Log / Wind Speed Register PDF
+ * Uses the shared pdfUtils template system for visual consistency with all other reports.
  */
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
@@ -40,7 +40,6 @@ interface WindLogPdfEntry {
 export interface WindLogPdfOptions {
   entries: WindLogPdfEntry[];
   title: string;
-  subtitle?: string;
   dateRange?: { from?: string; to?: string };
   location?: string;
   inflatableName?: string;
@@ -48,7 +47,6 @@ export interface WindLogPdfOptions {
   controllerName?: string;
   logoDataUrl?: string | null;
   userId?: string;
-  /** When filtering for a single ride, pass the ID to include equipment photo */
   singleRideId?: string;
 }
 
@@ -69,9 +67,10 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     logoDataUrl = await fetchLogoDataUrl(options.userId);
   }
 
-  // Fetch equipment photo for single-asset reports only
+  // Equipment photo — only for single-inflatable reports
   let equipmentPhotoDataUrl: string | null = null;
-  if (options.singleRideId) {
+  const isSingleAsset = !!inflatableName && !!options.singleRideId;
+  if (isSingleAsset && options.singleRideId) {
     const photo = await fetchEquipmentPhoto(options.singleRideId);
     if (photo) equipmentPhotoDataUrl = photo.dataUrl;
   }
@@ -91,49 +90,69 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     period = `To ${dateRange.to}`;
   }
 
-  const isSingleAsset = !!inflatableName;
+  // Report title: single inflatable = "Wind Log – [Name]", multi = "Wind Speed Register"
+  const reportTitle = isSingleAsset ? 'WIND LOG' : 'WIND SPEED REGISTER';
 
-  // ─── Header ───
+  // ─── Header (same shell as checks/maintenance/risk) ───
   let y = drawPDFHeader({
     doc,
     logoDataUrl,
-    companyName: companyName || 'Wind Speed Log',
+    companyName: companyName || 'Wind Speed Register',
     controllerName,
-    reportTitle: isSingleAsset ? 'EQUIPMENT WIND LOG' : 'SITE WIND LOG',
+    reportTitle,
     subTitle: title,
     docId,
     period: period || undefined,
     generatedDate: format(new Date(), "dd MMM yyyy 'at' HH:mm"),
   });
 
-  // ─── Report Details with optional equipment photo ───
+  // ─── Report Details ───
   y = drawSectionTitle(doc, 'Report Details', y);
 
   const detailFields: Array<{ label: string; value: string | null | undefined }> = [];
   if (companyName) detailFields.push({ label: 'Company', value: companyName });
-  if (controllerName) detailFields.push({ label: 'Controller', value: controllerName });
-  if (inflatableName) detailFields.push({ label: 'Equipment', value: inflatableName });
+  if (controllerName) detailFields.push({ label: 'Controller / Duty Holder', value: controllerName });
+
+  // Report scope
+  if (isSingleAsset && inflatableName) {
+    detailFields.push({ label: 'Report Scope', value: 'Single Inflatable' });
+    detailFields.push({ label: 'Inflatable', value: inflatableName });
+  } else {
+    detailFields.push({ label: 'Report Scope', value: 'Shared Register' });
+    // List all unique inflatables covered
+    const allRides = new Set<string>();
+    entries.forEach(e => (e.linked_rides || []).forEach(r => allRides.add(r)));
+    if (allRides.size > 0) {
+      detailFields.push({ label: 'Inflatables Covered', value: [...allRides].join(', ') });
+    }
+  }
+
   if (location) detailFields.push({ label: 'Location / Site', value: location });
   if (period) detailFields.push({ label: 'Period', value: period });
 
-  // Unique recorded-by names
+  // Recorded by
   const recorders = [...new Set(entries.map(e => e.recorded_by))];
   if (recorders.length <= 3) {
     detailFields.push({ label: 'Recorded By', value: recorders.join(', ') });
   }
 
-  // Anemometer info (if consistent across entries)
+  // Anemometer used (if consistent)
   const anemometers = entries.filter(e => e.anemometer_make || e.anemometer_model);
   if (anemometers.length > 0) {
-    const first = anemometers[0];
-    const parts = [first.anemometer_make, first.anemometer_model, first.anemometer_serial ? `S/N: ${first.anemometer_serial}` : null].filter(Boolean);
-    if (parts.length > 0) detailFields.push({ label: 'Anemometer', value: parts.join(' · ') });
+    const uniqueAnems = new Set(anemometers.map(e => {
+      const parts = [e.anemometer_make, e.anemometer_model, e.anemometer_serial ? `S/N: ${e.anemometer_serial}` : null].filter(Boolean);
+      return parts.join(' · ');
+    }));
+    if (uniqueAnems.size <= 2) {
+      detailFields.push({ label: 'Anemometer Used', value: [...uniqueAnems].join(' | ') });
+    }
   }
 
   detailFields.push({ label: 'Generated', value: format(new Date(), 'd MMM yyyy HH:mm') });
+  detailFields.push({ label: 'Document ID', value: docId });
   detailFields.push({ label: 'Total Readings', value: String(entries.length) });
 
-  // If single-asset with photo, use equipment details block
+  // Use equipment details block with photo for single-asset, plain list for multi
   if (isSingleAsset && equipmentPhotoDataUrl) {
     y = await drawEquipmentDetails({
       doc,
@@ -144,9 +163,8 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
       maxImageH: 25,
     });
   } else {
-    // Simple label/value list
     const labelX = mL + 3;
-    const valueX = mL + 40;
+    const valueX = mL + 48;
     doc.setFontSize(8.5);
     for (const field of detailFields) {
       if (!field.value) continue;
@@ -155,28 +173,11 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
       doc.text(`${field.label}:`, labelX, y);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(...PDF_COLORS.title);
-      doc.text(field.value, valueX, y);
-      y += 5;
+      const lines = doc.splitTextToSize(field.value, pageWidth - valueX - mL);
+      doc.text(lines, valueX, y);
+      y += lines.length * 4 + 2;
     }
     y += 3;
-  }
-
-  // Multi-asset: list all unique inflatables covered
-  if (!isSingleAsset) {
-    const allRides = new Set<string>();
-    entries.forEach(e => (e.linked_rides || []).forEach(r => allRides.add(r)));
-    if (allRides.size > 0) {
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
-      doc.setTextColor(...PDF_COLORS.muted);
-      doc.text('Inflatables Covered:', mL + 3, y);
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(...PDF_COLORS.title);
-      const rideList = [...allRides].join(', ');
-      const lines = doc.splitTextToSize(rideList, pageWidth - mL * 2 - 45);
-      doc.text(lines, mL + 43, y);
-      y += lines.length * 4 + 3;
-    }
   }
 
   // ─── Summary metrics ───
@@ -253,7 +254,7 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
   // ─── Save ───
   const filename = inflatableName
     ? buildFileName(['wind-log', inflatableName, format(new Date(), 'yyyy-MM-dd')])
-    : buildFileName(['wind-log-report', format(new Date(), 'yyyy-MM-dd')]);
+    : buildFileName(['wind-speed-register', format(new Date(), 'yyyy-MM-dd')]);
 
   doc.save(filename);
 }

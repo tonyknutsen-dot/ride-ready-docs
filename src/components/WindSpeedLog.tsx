@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useDateTimeSettings } from '@/hooks/useDateTimeSettings';
 import { Badge } from '@/components/ui/badge';
-import { Wind, MapPin, Clock, User, Loader2, ExternalLink, Download, ChevronRight } from 'lucide-react';
+import { Wind, MapPin, Loader2, ExternalLink, Download, ChevronRight, Gauge } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { generateWindLogPdf } from '@/utils/windLogPdf';
@@ -90,14 +90,16 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
     if (allLogs.length === 0) return;
     generateWindLogPdf({
       entries: allLogs,
-      title: `Wind Log — ${rideName}`,
+      title: `Wind Log – ${rideName}`,
       inflatableName: rideName,
       singleRideId: rideId,
     });
   };
 
-  const hasExtra = (entry: WindLogEntry) =>
-    entry.anemometer_make || entry.anemometer_model || entry.anemometer_serial || entry.notes || entry.action_taken;
+  const formatAnemometer = (entry: WindLogEntry) => {
+    const parts = [entry.anemometer_make, entry.anemometer_model, entry.anemometer_serial ? `S/N ${entry.anemometer_serial}` : null].filter(Boolean);
+    return parts.length > 0 ? parts.join(' · ') : null;
+  };
 
   return (
     <div className="space-y-3">
@@ -118,7 +120,7 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
           )}
           <Button asChild variant="outline" size="sm" className="gap-1 h-7 text-[11px]">
             <Link to="/wind-log">
-              <ExternalLink className="h-3 w-3" />Full Log
+              <ExternalLink className="h-3 w-3" />Full Register
             </Link>
           </Button>
         </div>
@@ -133,21 +135,20 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
           <Wind className="h-6 w-6 text-muted-foreground/30 mx-auto mb-1.5" />
           <p className="text-xs text-muted-foreground">No wind readings linked to {rideName}.</p>
           <p className="text-[11px] text-muted-foreground mt-0.5">
-            Use the <Link to="/wind-log" className="text-primary underline">Wind Log</Link> to add readings.
+            Use the <Link to="/wind-log" className="text-primary underline">Wind Speed Register</Link> to add readings.
           </p>
         </div>
       ) : (
         <>
-          {/* Compact register */}
           <div className="bg-card rounded-lg border border-border overflow-hidden">
             {displayLogs.map((entry) => {
               const isExpanded = expandedId === entry.id;
-              const expandable = hasExtra(entry);
+              const anemStr = formatAnemometer(entry);
               return (
                 <div
                   key={entry.id}
                   className={cn("border-b border-border last:border-0", isExpanded && "bg-muted/10")}
-                  onClick={() => expandable && setExpandedId(isExpanded ? null : entry.id)}
+                  onClick={() => setExpandedId(isExpanded ? null : entry.id)}
                 >
                   <div className="flex items-center gap-2 px-3 py-2">
                     <div className="flex-1 min-w-0">
@@ -162,15 +163,18 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
                       </div>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <span className="text-[10px] text-muted-foreground">{entry.recorded_by}</span>
+                        {anemStr && (
+                          <span className="text-[10px] text-muted-foreground flex items-center gap-0.5">
+                            · <Gauge className="h-2.5 w-2.5" /> {anemStr}
+                          </span>
+                        )}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0 bg-primary/8 px-2 py-0.5 rounded">
                       <span className="text-[13px] font-bold text-primary tabular-nums">{entry.wind_speed}</span>
                       <span className="text-[10px] text-primary/60">{entry.wind_unit}</span>
                     </div>
-                    {expandable && (
-                      <ChevronRight className={cn("h-3 w-3 text-muted-foreground/40 shrink-0 transition-transform", isExpanded && "rotate-90")} />
-                    )}
+                    <ChevronRight className={cn("h-3 w-3 text-muted-foreground/40 shrink-0 transition-transform", isExpanded && "rotate-90")} />
                   </div>
                   {isExpanded && (
                     <div className="px-3 pb-2 space-y-1">
@@ -180,12 +184,6 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
                       {entry.notes && (
                         <p className="text-[11px] text-muted-foreground"><span className="font-medium text-foreground">Notes:</span> {entry.notes}</p>
                       )}
-                      {(entry.anemometer_make || entry.anemometer_model || entry.anemometer_serial) && (
-                        <p className="text-[11px] text-muted-foreground">
-                          <span className="font-medium text-foreground">Anemometer:</span>{' '}
-                          {[entry.anemometer_make, entry.anemometer_model, entry.anemometer_serial ? `S/N ${entry.anemometer_serial}` : null].filter(Boolean).join(' · ')}
-                        </p>
-                      )}
                     </div>
                   )}
                 </div>
@@ -193,7 +191,6 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
             })}
           </div>
 
-          {/* Show more / summary */}
           <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
             <span>Showing {displayLogs.length} of {totalCount} readings</span>
             {!showAll && allLogs.length > DEFAULT_LIMIT && (

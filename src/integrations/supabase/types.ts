@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      anemometer_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          is_default: boolean
+          label: string | null
+          make: string
+          model: string
+          serial_number: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string | null
+          make: string
+          model: string
+          serial_number?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_default?: boolean
+          label?: string | null
+          make?: string
+          model?: string
+          serial_number?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       annual_inspection_reports: {
         Row: {
           certificate_number: string | null
