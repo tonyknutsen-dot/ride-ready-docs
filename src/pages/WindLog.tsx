@@ -939,7 +939,7 @@ const WindLog = () => {
                 <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
                 <div className="text-xs space-y-0.5">
                   <p className="font-semibold text-destructive">High wind warning — {HIGH_WIND_MPH} mph / 38 km/h</p>
-                  <p className="text-muted-foreground">This reading is at or above the configured outdoor inflatable limit. Action Taken and Notes are strongly recommended.</p>
+                  <p className="text-muted-foreground">This reading is at or above the outdoor operating wind limit for inflatable play equipment under BS EN 14960-1. Operation should be reviewed immediately and the action taken must be recorded.</p>
                 </div>
               </div>
             )}
@@ -1059,14 +1059,11 @@ const WindLog = () => {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
               <AlertTriangle className="h-5 w-5" />
-              High Wind Alert
+              Wind reading at or above limit
             </DialogTitle>
             <DialogDescription className="text-left space-y-2 pt-2">
               <p>
-                This reading of <strong>{windSpeed} {windUnit}</strong> is at or above the configured outdoor inflatable safety limit of <strong>{HIGH_WIND_MPH} mph (38 km/h)</strong>.
-              </p>
-              <p>
-                At this wind speed, inflatables should not normally be operated. Please confirm you have selected the appropriate action and recorded any relevant notes before saving.
+                This reading is at or above the <strong>{HIGH_WIND_MPH} mph (38 km/h)</strong> outdoor operating wind limit referenced for inflatable play equipment under BS EN 14960-1. Please confirm the action taken before saving this record.
               </p>
             </DialogDescription>
           </DialogHeader>
