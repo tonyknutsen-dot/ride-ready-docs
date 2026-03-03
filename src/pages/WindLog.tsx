@@ -13,13 +13,12 @@ import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import {
   Wind, Plus, MapPin, Clock, ChevronDown, ChevronRight, Gauge, User, Loader2,
-  Download, Filter, CalendarIcon, X, ChevronsLeft, ChevronsRight, ChevronLeft
+  Download, Filter, CalendarIcon, X, ChevronsLeft, ChevronsRight, ChevronLeft, Save
 } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -29,6 +28,15 @@ import { generateWindLogPdf } from '@/utils/windLogPdf';
 interface InflatableRide {
   id: string;
   ride_name: string;
+}
+
+interface AnemometerProfile {
+  id: string;
+  make: string;
+  model: string;
+  serial_number: string | null;
+  label: string | null;
+  is_default: boolean;
 }
 
 interface WindLogEntry {
@@ -96,6 +104,11 @@ const WindLog = () => {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [page, setPage] = useState(0);
 
+  // Anemometer profiles
+  const [anemometerProfiles, setAnemometerProfiles] = useState<AnemometerProfile[]>([]);
+  const [selectedProfileId, setSelectedProfileId] = useState<string>('manual');
+  const [savingProfile, setSavingProfile] = useState(false);
+
   // Filters
   const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>(undefined);
   const [filterDateTo, setFilterDateTo] = useState<Date | undefined>(undefined);
@@ -143,6 +156,21 @@ const WindLog = () => {
     load();
   }, [effectiveUserId]);
 
+  // Load anemometer profiles
+  useEffect(() => {
+    if (!effectiveUserId) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from('anemometer_profiles')
+        .select('*')
+        .eq('user_id', effectiveUserId)
+        .order('is_default', { ascending: false })
+        .order('created_at', { ascending: false });
+      if (data) setAnemometerProfiles(data as AnemometerProfile[]);
+    };
+    load();
+  }, [effectiveUserId]);
+
   useEffect(() => {
     if (!effectiveUserId) return;
     const load = async () => {
@@ -173,7 +201,6 @@ const WindLog = () => {
 
       if (windLogs && windLogs.length > 0) {
         const logIds = windLogs.map((l: any) => l.id);
-        // Batch junction fetch in chunks of 200 to avoid URL limits
         const allJunctions: any[] = [];
         for (let i = 0; i < logIds.length; i += 200) {
           const chunk = logIds.slice(i, i + 200);
@@ -249,14 +276,12 @@ const WindLog = () => {
     });
   }, [logs, filterDateFrom, filterDateTo, filterLocation, filterInflatable, filterRecordedBy, filterAction]);
 
-  // Pagination
   const totalPages = Math.ceil(filteredLogs.length / PAGE_SIZE);
   const pagedLogs = useMemo(() => {
     const start = page * PAGE_SIZE;
     return filteredLogs.slice(start, start + PAGE_SIZE);
   }, [filteredLogs, page]);
 
-  // Reset page when filters change
   useEffect(() => { setPage(0); }, [filterDateFrom, filterDateTo, filterLocation, filterInflatable, filterRecordedBy, filterAction]);
 
   const hasFilters = filterDateFrom || filterDateTo || filterLocation || filterInflatable !== 'all' || filterRecordedBy !== 'all' || filterAction !== 'all';
@@ -270,6 +295,50 @@ const WindLog = () => {
     setFilterAction('all');
   };
 
+  const handleSelectProfile = (profileId: string) => {
+    setSelectedProfileId(profileId);
+    if (profileId === 'manual') {
+      setAnemometerMake('');
+      setAnemometerModel('');
+      setAnemometerSerial('');
+    } else {
+      const profile = anemometerProfiles.find(p => p.id === profileId);
+      if (profile) {
+        setAnemometerMake(profile.make);
+        setAnemometerModel(profile.model);
+        setAnemometerSerial(profile.serial_number || '');
+      }
+    }
+  };
+
+  const handleSaveAsProfile = async () => {
+    if (!effectiveUserId || !anemometerMake || !anemometerModel) return;
+    setSavingProfile(true);
+    try {
+      const label = `${anemometerMake} ${anemometerModel}${anemometerSerial ? ` (${anemometerSerial})` : ''}`;
+      const { data, error } = await supabase
+        .from('anemometer_profiles')
+        .insert({
+          user_id: effectiveUserId,
+          make: anemometerMake,
+          model: anemometerModel,
+          serial_number: anemometerSerial || null,
+          label,
+          is_default: anemometerProfiles.length === 0,
+        })
+        .select()
+        .single();
+      if (error) throw error;
+      setAnemometerProfiles(prev => [data as AnemometerProfile, ...prev]);
+      setSelectedProfileId(data.id);
+      toast({ title: 'Anemometer saved', description: 'You can select it for future readings.' });
+    } catch (err: any) {
+      toast({ title: 'Could not save profile', description: err?.message, variant: 'destructive' });
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
   const handleOpenSheet = () => {
     const n = new Date();
     setLogDate(format(n, 'yyyy-MM-dd'));
@@ -278,13 +347,23 @@ const WindLog = () => {
     setWindUnit('mph');
     setRecordedBy(defaultRecordedBy);
     setLocation(defaultLocation);
-    setAnemometerMake('');
-    setAnemometerModel('');
-    setAnemometerSerial('');
     setActionTaken('');
     setActionNotes('');
     setNotes('');
     setSelectedRideIds([]);
+    // Pre-fill anemometer from default profile
+    const defaultProfile = anemometerProfiles.find(p => p.is_default);
+    if (defaultProfile) {
+      setSelectedProfileId(defaultProfile.id);
+      setAnemometerMake(defaultProfile.make);
+      setAnemometerModel(defaultProfile.model);
+      setAnemometerSerial(defaultProfile.serial_number || '');
+    } else {
+      setSelectedProfileId('manual');
+      setAnemometerMake('');
+      setAnemometerModel('');
+      setAnemometerSerial('');
+    }
     setSheetOpen(true);
   };
 
@@ -297,6 +376,10 @@ const WindLog = () => {
   const handleSave = async () => {
     if (!effectiveUserId || !windSpeed || !recordedBy) {
       toast({ title: 'Missing fields', description: 'Wind speed and recorded by are required.', variant: 'destructive' });
+      return;
+    }
+    if (!anemometerMake || !anemometerModel) {
+      toast({ title: 'Anemometer required', description: 'Please enter the anemometer make and model used for this reading.', variant: 'destructive' });
       return;
     }
     if (selectedRideIds.length === 0) {
@@ -361,10 +444,14 @@ const WindLog = () => {
       ? inflatables.find(r => r.id === filterInflatable)?.ride_name
       : undefined;
 
+    // Title logic: single inflatable = "Wind Log – [Name]", multi = "Wind Speed Register"
+    const reportTitle = singleInflatable
+      ? `Wind Log – ${singleInflatable}`
+      : 'Wind Speed Register';
+
     generateWindLogPdf({
       entries: filteredLogs,
-      title: singleInflatable ? `Wind Log — ${singleInflatable}` : 'Wind Speed Log',
-      subtitle: 'Site Wind Reading Report',
+      title: reportTitle,
       inflatableName: singleInflatable,
       companyName: companyName || undefined,
       controllerName: controllerName || undefined,
@@ -378,21 +465,24 @@ const WindLog = () => {
     });
   };
 
-  const hasAnemometerDetails = (entry: WindLogEntry) =>
-    entry.anemometer_make || entry.anemometer_model || entry.anemometer_serial;
+  const formatAnemometer = (entry: WindLogEntry) => {
+    const parts = [entry.anemometer_make, entry.anemometer_model, entry.anemometer_serial ? `S/N ${entry.anemometer_serial}` : null].filter(Boolean);
+    return parts.length > 0 ? parts.join(' · ') : null;
+  };
 
-  // ─── Compact register row (desktop) ───
+  // ─── Desktop row ───
   const renderDesktopRow = (entry: WindLogEntry) => {
     const isExpanded = expandedId === entry.id;
-    const hasExtra = hasAnemometerDetails(entry) || entry.notes;
+    const anemStr = formatAnemometer(entry);
+    const hasExtra = entry.notes || (entry.linked_rides && entry.linked_rides.length > 2);
     return (
       <div key={entry.id} className="group">
         <div
           className={cn(
-            "grid grid-cols-[72px_48px_70px_1fr_120px_1fr_1fr] gap-x-3 items-center px-3 py-2 text-[13px] border-b border-border hover:bg-muted/30 transition-colors cursor-pointer",
+            "grid grid-cols-[72px_48px_70px_1fr_110px_1fr_100px_1fr] gap-x-3 items-center px-3 py-2 text-[13px] border-b border-border hover:bg-muted/30 transition-colors cursor-pointer",
             isExpanded && "bg-muted/20"
           )}
-          onClick={() => hasExtra && setExpandedId(isExpanded ? null : entry.id)}
+          onClick={() => setExpandedId(isExpanded ? null : entry.id)}
         >
           <span className="font-medium text-foreground tabular-nums">{formatDate(entry.log_date)}</span>
           <span className="text-muted-foreground tabular-nums">{entry.log_time.slice(0, 5)}</span>
@@ -417,8 +507,9 @@ const WindLog = () => {
               <span className="text-xs text-muted-foreground">—</span>
             )}
           </div>
+          <span className="text-muted-foreground truncate text-xs">{entry.action_taken || '—'}</span>
           <div className="flex items-center justify-between gap-1">
-            <span className="text-muted-foreground truncate text-xs">{entry.action_taken || '—'}</span>
+            <span className="text-muted-foreground truncate text-[11px]">{anemStr || '—'}</span>
             {hasExtra && (
               <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/50 shrink-0 transition-transform", isExpanded && "rotate-180")} />
             )}
@@ -428,12 +519,6 @@ const WindLog = () => {
           <div className="px-3 py-2 bg-muted/10 border-b border-border text-xs space-y-1.5">
             {entry.notes && (
               <p className="text-muted-foreground"><span className="font-medium text-foreground">Notes:</span> {entry.notes}</p>
-            )}
-            {hasAnemometerDetails(entry) && (
-              <p className="text-muted-foreground">
-                <span className="font-medium text-foreground">Anemometer:</span>{' '}
-                {[entry.anemometer_make, entry.anemometer_model, entry.anemometer_serial ? `S/N ${entry.anemometer_serial}` : null].filter(Boolean).join(' · ')}
-              </p>
             )}
             {entry.linked_rides && entry.linked_rides.length > 2 && (
               <p className="text-muted-foreground">
@@ -446,17 +531,16 @@ const WindLog = () => {
     );
   };
 
-  // ─── Compact mobile row ───
+  // ─── Mobile row ───
   const renderMobileRow = (entry: WindLogEntry) => {
     const isExpanded = expandedId === entry.id;
-    const hasExtra = hasAnemometerDetails(entry) || entry.notes || (entry.linked_rides && entry.linked_rides.length > 0);
+    const anemStr = formatAnemometer(entry);
     return (
       <div
         key={entry.id}
         className={cn("border-b border-border", isExpanded && "bg-muted/10")}
         onClick={() => setExpandedId(isExpanded ? null : entry.id)}
       >
-        {/* Main row */}
         <div className="flex items-center gap-2 px-3 py-2.5">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
@@ -470,8 +554,8 @@ const WindLog = () => {
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-[11px] text-muted-foreground">{entry.recorded_by}</span>
-              {entry.action_taken && (
-                <span className="text-[10px] text-muted-foreground truncate max-w-[120px]">· {entry.action_taken}</span>
+              {anemStr && (
+                <span className="text-[10px] text-muted-foreground truncate">· {anemStr}</span>
               )}
             </div>
           </div>
@@ -479,11 +563,8 @@ const WindLog = () => {
             <span className="text-sm font-bold text-primary tabular-nums">{entry.wind_speed}</span>
             <span className="text-[10px] text-primary/60">{entry.wind_unit}</span>
           </div>
-          {hasExtra && (
-            <ChevronRight className={cn("h-3.5 w-3.5 text-muted-foreground/40 shrink-0 transition-transform", isExpanded && "rotate-90")} />
-          )}
+          <ChevronRight className={cn("h-3.5 w-3.5 text-muted-foreground/40 shrink-0 transition-transform", isExpanded && "rotate-90")} />
         </div>
-        {/* Expanded detail */}
         {isExpanded && (
           <div className="px-3 pb-2.5 space-y-1.5">
             {entry.linked_rides && entry.linked_rides.length > 0 && (
@@ -500,12 +581,6 @@ const WindLog = () => {
             {entry.notes && (
               <p className="text-[11px] text-muted-foreground"><span className="font-medium text-foreground">Notes:</span> {entry.notes}</p>
             )}
-            {hasAnemometerDetails(entry) && (
-              <p className="text-[11px] text-muted-foreground">
-                <span className="font-medium text-foreground">Anemometer:</span>{' '}
-                {[entry.anemometer_make, entry.anemometer_model, entry.anemometer_serial ? `S/N ${entry.anemometer_serial}` : null].filter(Boolean).join(' · ')}
-              </p>
-            )}
           </div>
         )}
       </div>
@@ -514,7 +589,7 @@ const WindLog = () => {
 
   return (
     <div className="space-y-3 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-4">
-      <PageHeader title="Wind Log" />
+      <PageHeader title="Wind Speed Register" />
 
       {/* ─── Header bar ─── */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -523,7 +598,7 @@ const WindLog = () => {
           <div>
             <h2 className="text-[15px] font-semibold text-foreground leading-tight">Wind Speed Register</h2>
             <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
-              Site wind readings linked to inflatables · newest first
+              Shared wind readings linked to inflatables · newest first
             </p>
           </div>
         </div>
@@ -620,7 +695,7 @@ const WindLog = () => {
         </div>
       )}
 
-      {/* ─── Loading ─── */}
+      {/* ─── Loading / Content ─── */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
@@ -633,12 +708,11 @@ const WindLog = () => {
         </div>
       ) : (
         <>
-          {/* ─── Register ─── */}
           <div className="bg-card rounded-lg border border-border overflow-hidden">
             {/* Desktop column headers */}
             {!isMobile && (
-              <div className="grid grid-cols-[72px_48px_70px_1fr_120px_1fr_1fr] gap-x-3 items-center px-3 py-1.5 bg-muted/50 border-b border-border">
-                {['Date', 'Time', 'Speed', 'Location', 'Recorded By', 'Applies To', 'Action'].map(h => (
+              <div className="grid grid-cols-[72px_48px_70px_1fr_110px_1fr_100px_1fr] gap-x-3 items-center px-3 py-1.5 bg-muted/50 border-b border-border">
+                {['Date', 'Time', 'Speed', 'Location', 'Recorded By', 'Applies To', 'Action', 'Anemometer'].map(h => (
                   <span key={h} className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">{h}</span>
                 ))}
               </div>
@@ -727,6 +801,56 @@ const WindLog = () => {
               <Label className="text-xs">Location</Label>
               <Input placeholder="e.g. Main field, Site entrance" value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} />
             </div>
+
+            {/* Anemometer - Required */}
+            <div className="space-y-2 rounded-lg border border-border bg-card p-3">
+              <Label className="text-xs font-semibold flex items-center gap-1">
+                <Gauge className="h-3 w-3 text-muted-foreground" /> Anemometer Used *
+              </Label>
+              {anemometerProfiles.length > 0 && (
+                <Select value={selectedProfileId} onValueChange={handleSelectProfile}>
+                  <SelectTrigger className="h-9 text-xs">
+                    <SelectValue placeholder="Select anemometer..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {anemometerProfiles.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.label || `${p.make} ${p.model}`}
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="manual">Enter manually</SelectItem>
+                  </SelectContent>
+                </Select>
+              )}
+              <div className="grid grid-cols-3 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Make *</Label>
+                  <Input placeholder="e.g. Kestrel" value={anemometerMake} onChange={(e) => setAnemometerMake(e.target.value)} maxLength={100} className="h-9 text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Model *</Label>
+                  <Input placeholder="e.g. 3000" value={anemometerModel} onChange={(e) => setAnemometerModel(e.target.value)} maxLength={100} className="h-9 text-xs" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Serial</Label>
+                  <Input placeholder="Serial no." value={anemometerSerial} onChange={(e) => setAnemometerSerial(e.target.value)} maxLength={100} className="h-9 text-xs" />
+                </div>
+              </div>
+              {selectedProfileId === 'manual' && anemometerMake && anemometerModel && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleSaveAsProfile}
+                  disabled={savingProfile}
+                  className="text-[11px] h-7 gap-1 px-2"
+                >
+                  <Save className="h-3 w-3" />
+                  {savingProfile ? 'Saving...' : 'Save as profile for future use'}
+                </Button>
+              )}
+            </div>
+
             {/* Inflatable selector */}
             <div className="space-y-2 rounded-lg border border-border bg-card p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
@@ -747,17 +871,7 @@ const WindLog = () => {
               </div>
               <p className="text-[11px] text-muted-foreground">{selectedRideIds.length} of {inflatables.length} selected</p>
             </div>
-            {/* Anemometer */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-0.5">
-                <ChevronDown className="h-3 w-3" /> Anemometer Details
-              </CollapsibleTrigger>
-              <CollapsibleContent className="pt-2 space-y-2">
-                <div className="space-y-1"><Label className="text-xs">Make</Label><Input placeholder="e.g. Kestrel" value={anemometerMake} onChange={(e) => setAnemometerMake(e.target.value)} maxLength={100} /></div>
-                <div className="space-y-1"><Label className="text-xs">Model</Label><Input placeholder="e.g. 3000" value={anemometerModel} onChange={(e) => setAnemometerModel(e.target.value)} maxLength={100} /></div>
-                <div className="space-y-1"><Label className="text-xs">Serial</Label><Input placeholder="Serial number" value={anemometerSerial} onChange={(e) => setAnemometerSerial(e.target.value)} maxLength={100} /></div>
-              </CollapsibleContent>
-            </Collapsible>
+
             {/* Action */}
             <div className="space-y-1.5">
               <Label className="text-xs">Action Taken</Label>
