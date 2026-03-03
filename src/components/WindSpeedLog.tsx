@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useDateTimeSettings } from '@/hooks/useDateTimeSettings';
 import { Badge } from '@/components/ui/badge';
-import { Wind, MapPin, Loader2, ExternalLink, Download, ChevronDown, Gauge } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Wind, MapPin, Loader2, ExternalLink, Download, ChevronDown, Gauge, Plus } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { generateWindLogPdf } from '@/utils/windLogPdf';
 import { cn } from '@/lib/utils';
@@ -43,6 +43,7 @@ function toMph(speed: number, unit: string): number {
 const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
   const { effectiveUserId } = useEffectiveUserId();
   const { formatDate } = useDateTimeSettings();
+  const navigate = useNavigate();
 
   const [allLogs, setAllLogs] = useState<WindLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -124,6 +125,13 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
           )}
         </div>
         <div className="flex items-center gap-1.5">
+          <Button
+            size="sm"
+            onClick={() => navigate(`/wind-log?prelink=${rideId}`)}
+            className="gap-1 min-h-[36px] h-auto text-[11px] px-2"
+          >
+            <Plus className="h-3 w-3" />Add wind reading
+          </Button>
           {allLogs.length > 0 && (
             <Button variant="outline" size="sm" onClick={handleExport} className="gap-1 min-h-[36px] h-auto text-[11px] px-2">
               <Download className="h-3 w-3" />Export

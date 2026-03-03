@@ -699,25 +699,29 @@ const Rides = () => {
                 {/* Status badge — bottom left */}
                 {(() => {
                   const s = getComplianceStatus(ride.id);
+                  const badgeClick = (e: React.MouseEvent, tab: string) => {
+                    e.stopPropagation();
+                    navigate(`/rides/${ride.id}?tab=${tab}`);
+                  };
                   if (s === 'stop_use') return (
-                    <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow">
+                    <button onClick={(e) => badgeClick(e, 'overview')} className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
                       <AlertOctagon className="h-2.5 w-2.5" /> Do not operate
-                    </span>
+                    </button>
                   );
                   if (s === 'overdue') return (
-                    <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow">
+                    <button onClick={(e) => badgeClick(e, 'documents')} className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
                       <AlertTriangle className="h-2.5 w-2.5" /> Overdue
-                    </span>
+                    </button>
                   );
                   if (s === 'attention') return (
-                    <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow">
+                    <button onClick={(e) => badgeClick(e, 'overview')} className="absolute bottom-3 left-3 flex items-center gap-1 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
                       <AlertTriangle className="h-2.5 w-2.5" /> Attention needed
-                    </span>
+                    </button>
                   );
                   if (s === 'due_soon') return (
-                    <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-warning text-warning-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow">
+                    <button onClick={(e) => badgeClick(e, 'documents')} className="absolute bottom-3 left-3 flex items-center gap-1 bg-warning text-warning-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
                       <Clock className="h-2.5 w-2.5" /> Due Soon
-                    </span>
+                    </button>
                   );
                   if (s === 'compliant') return (
                     <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-success text-success-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow">

@@ -211,6 +211,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         label: evt.event_name,
         detail: `Overdue since ${new Date(evt.due_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}`,
         color: 'hsl(0 72% 50%)',
+        action: () => navigate(`/calendar`),
       });
     }
     if (rideStats.openDefects > 0 && !hasCriticalDefects) {
