@@ -75,6 +75,14 @@ interface InspectionChecklistProps {
   startImmediately?: boolean;
 }
 
+const FREQUENCY_LABELS: Record<string, string> = {
+  daily: 'Daily / Pre-Opening',
+  preopening: 'Pre-Opening',
+  weekly: 'Weekly',
+  monthly: 'Monthly',
+  yearly: 'Yearly',
+};
+
 const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediately = false }: InspectionChecklistProps) => {
   const navigate = useNavigate();
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
@@ -1053,7 +1061,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               <h2 className="text-[15px] font-semibold text-slate-900 leading-tight truncate" style={{ letterSpacing: '0.2px' }}>
                 {activeTemplate.template_name}
               </h2>
-              <p className="text-[11px] font-normal text-[#9CA3AF] mt-0.5">Due Today</p>
+              <p className="text-[11px] font-normal text-[#9CA3AF] mt-0.5">Routine: {FREQUENCY_LABELS[frequency] || frequency}</p>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -1080,11 +1088,11 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
             onClick={() => navigate(`/checks/${ride.id}/${frequency}/execute`)}
           >
             <PlayCircle className="h-4 w-4 shrink-0" />
-            Start Inspection
+            Start Check
           </button>
 
           <p className="text-[10px] text-center text-[#9CA3AF]">
-            {itemCount} items{lastDoneLabel ? ` • Last done ${lastDoneLabel}` : ''} • Due Today
+            {itemCount} items{lastDoneLabel ? ` • Last completed ${lastDoneLabel}` : ''}
           </p>
         </div>
 

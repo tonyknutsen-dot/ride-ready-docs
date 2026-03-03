@@ -137,7 +137,7 @@ const NeedsAttentionPanel = () => {
         const isOverdue = evt.due_date < todayStr;
         const daysUntil = Math.ceil((new Date(evt.due_date).getTime() - today.getTime()) / 86400000);
         const dateLabel = isOperationalCheck
-          ? 'Due today'
+          ? 'Ready to complete'
           : isOverdue
             ? `${Math.abs(daysUntil)}d overdue`
             : daysUntil === 0 ? 'Due today'
@@ -186,7 +186,7 @@ const NeedsAttentionPanel = () => {
       },
       {
         type: 'check_due',
-        title: 'Checks Due Today',
+        title: 'Routine Checks',
         icon: ClipboardCheck,
         defaultOpen: false,
         headerStyle: { bg: 'bg-amber-50 dark:bg-amber-950/20', border: 'border-amber-200 dark:border-amber-800', iconColor: 'text-amber-600', text: 'text-foreground' },
@@ -222,7 +222,7 @@ const NeedsAttentionPanel = () => {
       <div className="flex flex-col items-center gap-2 rounded-2xl border border-border bg-card px-4 py-6 text-center">
         <CheckCircle className="h-6 w-6 text-success" />
         <p className="text-sm font-semibold text-foreground">All clear — nothing needs attention</p>
-        <p className="text-xs text-muted-foreground">No overdue items, expiring documents, or open defects.</p>
+        <p className="text-xs text-muted-foreground">No outstanding items, expiring documents, or open defects.</p>
       </div>
     );
   }

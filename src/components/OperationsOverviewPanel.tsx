@@ -221,10 +221,10 @@ const OperationsOverviewPanel = () => {
             </TooltipTrigger>
             <TooltipContent side="bottom" className="max-w-[240px] text-xs font-normal">
               {data.preOpeningDueToday === 0 && data.preOpeningCompletedToday === 0
-                ? 'No checks are due today.'
+                ? 'No routine checks recorded today.'
                 : data.preOpeningDueToday === 0
-                  ? `${data.preOpeningCompletedToday} check(s) completed. No rides currently require checks.`
-                  : `${data.preOpeningCompletedToday} of ${data.preOpeningDueToday} required checks completed today.`}
+                  ? `${data.preOpeningCompletedToday} check(s) completed today.`
+                  : `${data.preOpeningCompletedToday} of ${data.preOpeningDueToday} routine checks completed today.`}
             </TooltipContent>
           </Tooltip>
         </div>
