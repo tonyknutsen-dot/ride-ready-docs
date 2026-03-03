@@ -66,7 +66,7 @@ export async function generateInspectionRecordPdf(
 
     const templateOpts = {
       doc,
-      title: `${frequencyLabel} SAFETY CHECK RECORD`,
+      title: `${frequencyLabel} CHECK RECORD`,
       documentId: docId,
       docType: 'IR' as const,
     };

@@ -168,7 +168,7 @@ const InspectionRecordPage = () => {
             </Button>
             <div className="min-w-0">
               <h1 className="text-sm font-bold text-foreground truncate">
-                {record.template_name || 'Safety Check Record'}
+                {record.template_name || 'Check Record'}
               </h1>
               <p className="text-[11px] text-muted-foreground truncate">
                 {ride?.ride_name || 'Loading...'} · v{record.version}

@@ -433,7 +433,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
 
       const docId = await generateDocumentId(ride.id, 'IC');
       const frequencyLabel = frequency === 'preopening' ? 'PRE-OPENING' : frequency.toUpperCase();
-      const templateOpts = { doc: pdf, title: `${frequencyLabel} SAFETY CHECK`, documentId: docId, docType: 'IC' as const };
+      const templateOpts = { doc: pdf, title: `${frequencyLabel} CHECKLIST`, documentId: docId, docType: 'IC' as const };
 
       currentY = drawTemplateHeader(templateOpts);
 
@@ -754,7 +754,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
         recentActivity: [
           {
             type: 'check',
-            title: `Safety check completed - ${ride.ride_name}`,
+            title: `Check completed - ${ride.ride_name}`,
             time: new Date().toLocaleDateString('en-GB'),
             _optimistic: true
           },
@@ -1037,7 +1037,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       <EmptyState
         icon={FileText}
         title="No Checklist Found"
-        description={`Build your ${frequency === 'preopening' ? 'pre-opening' : frequency} safety checklist to start recording checks.`}
+        description={`Build your ${frequency === 'preopening' ? 'pre-opening' : frequency} checklist to start recording checks.`}
         actionLabel="Build Checklist"
         onAction={() => setShowTemplateBuilder(true)}
       />
@@ -1286,7 +1286,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                    <h2 className="text-[14.5px] font-semibold text-slate-900 leading-tight truncate" style={{ letterSpacing: '0.3px' }}>
-                     {frequency === 'preopening' ? 'Pre-Opening Safety Check' : frequency === 'daily' ? 'Daily Safety Check' : frequency === 'weekly' ? 'Weekly Safety Check' : frequency === 'monthly' ? 'Monthly Safety Check' : frequency === 'yearly' ? 'Yearly Safety Check' : `${frequency} Safety Check`}
+                     {frequency === 'preopening' ? 'Pre-Opening Check' : frequency === 'daily' ? 'Daily Check' : frequency === 'weekly' ? 'Weekly Check' : frequency === 'monthly' ? 'Monthly Check' : frequency === 'yearly' ? 'Yearly Check' : `${frequency} Check`}
                    </h2>
                    <p className="text-[12px] font-normal text-slate-600 truncate mt-0.5">
                      {ride.ride_name}{ride.ride_code ? ` – ${ride.ride_code}` : ''}
@@ -1618,7 +1618,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
                    if (getProgress() === 100) setDeclarationChecked(prev => !prev);
                  }}
                >
-                I confirm this safety check is complete, accurate, and the results recorded truthfully.
+                I confirm this check is complete, accurate, and the results recorded truthfully.
               </span>
             </label>
           </div>
