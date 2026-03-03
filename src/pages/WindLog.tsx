@@ -1,21 +1,31 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useToast } from '@/hooks/use-toast';
 import { useDateTimeSettings } from '@/hooks/useDateTimeSettings';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Wind, Plus, MapPin, Clock, ChevronDown, Gauge, User, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import {
+  Wind, Plus, MapPin, Clock, ChevronDown, Gauge, User, Loader2,
+  Download, Filter, CalendarIcon, X
+} from 'lucide-react';
+import { format, startOfDay } from 'date-fns';
+import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
+import { generateWindLogPdf } from '@/utils/windLogPdf';
 
 interface InflatableRide {
   id: string;
@@ -37,6 +47,7 @@ interface WindLogEntry {
   notes: string | null;
   created_at: string;
   linked_rides?: string[];
+  linked_ride_ids?: string[];
 }
 
 const UNIT_OPTIONS = [
@@ -65,6 +76,7 @@ const WindLog = () => {
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const { formatDate } = useDateTimeSettings();
+  const isMobile = useIsMobile();
 
   const [logs, setLogs] = useState<WindLogEntry[]>([]);
   const [inflatables, setInflatables] = useState<InflatableRide[]>([]);
@@ -72,6 +84,14 @@ const WindLog = () => {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // Filters
+  const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>(undefined);
+  const [filterDateTo, setFilterDateTo] = useState<Date | undefined>(undefined);
+  const [filterLocation, setFilterLocation] = useState('');
+  const [filterInflatable, setFilterInflatable] = useState('all');
+  const [filterRecordedBy, setFilterRecordedBy] = useState('all');
+  const [showFilters, setShowFilters] = useState(false);
 
   // Defaults
   const [defaultRecordedBy, setDefaultRecordedBy] = useState('');
@@ -125,18 +145,16 @@ const WindLog = () => {
   const loadLogs = useCallback(async () => {
     if (!effectiveUserId) return;
     try {
-      // Get all wind logs for this user
       const { data: windLogs, error } = await supabase
         .from('wind_speed_logs')
         .select('*')
         .eq('user_id', effectiveUserId)
         .order('log_date', { ascending: false })
         .order('log_time', { ascending: false })
-        .limit(100);
+        .limit(500);
 
       if (error) throw error;
 
-      // Get junction rows for ride names
       if (windLogs && windLogs.length > 0) {
         const logIds = windLogs.map((l: any) => l.id);
         const { data: junctions } = await supabase
@@ -144,23 +162,25 @@ const WindLog = () => {
           .select('wind_log_id, ride_id')
           .in('wind_log_id', logIds);
 
-        // Build a map of log_id -> ride_names
         const rideIdToName = Object.fromEntries(inflatables.map(r => [r.id, r.ride_name]));
         const logRideMap: Record<string, string[]> = {};
+        const logRideIdMap: Record<string, string[]> = {};
         for (const j of (junctions || [])) {
           if (!logRideMap[j.wind_log_id]) logRideMap[j.wind_log_id] = [];
+          if (!logRideIdMap[j.wind_log_id]) logRideIdMap[j.wind_log_id] = [];
           logRideMap[j.wind_log_id].push(rideIdToName[j.ride_id] || 'Unknown');
+          logRideIdMap[j.wind_log_id].push(j.ride_id);
         }
 
         setLogs(windLogs.map((l: any) => ({
           ...l,
           linked_rides: logRideMap[l.id] || [],
+          linked_ride_ids: logRideIdMap[l.id] || [],
         })));
       } else {
         setLogs([]);
       }
 
-      // Prefill location from most recent
       if (windLogs && windLogs.length > 0 && windLogs[0].location) {
         setDefaultLocation(windLogs[0].location);
       }
@@ -174,6 +194,45 @@ const WindLog = () => {
   useEffect(() => {
     loadLogs();
   }, [loadLogs]);
+
+  // Unique values for filter dropdowns
+  const uniqueRecordedBy = useMemo(() => {
+    const set = new Set(logs.map(l => l.recorded_by));
+    return Array.from(set).sort();
+  }, [logs]);
+
+  const uniqueLocations = useMemo(() => {
+    const set = new Set(logs.map(l => l.location).filter(Boolean) as string[]);
+    return Array.from(set).sort();
+  }, [logs]);
+
+  // Filtered logs
+  const filteredLogs = useMemo(() => {
+    return logs.filter(entry => {
+      if (filterDateFrom) {
+        const entryDate = startOfDay(new Date(entry.log_date + 'T00:00:00'));
+        if (entryDate < startOfDay(filterDateFrom)) return false;
+      }
+      if (filterDateTo) {
+        const entryDate = startOfDay(new Date(entry.log_date + 'T00:00:00'));
+        if (entryDate > startOfDay(filterDateTo)) return false;
+      }
+      if (filterLocation && entry.location !== filterLocation) return false;
+      if (filterInflatable !== 'all' && !(entry.linked_ride_ids || []).includes(filterInflatable)) return false;
+      if (filterRecordedBy !== 'all' && entry.recorded_by !== filterRecordedBy) return false;
+      return true;
+    });
+  }, [logs, filterDateFrom, filterDateTo, filterLocation, filterInflatable, filterRecordedBy]);
+
+  const hasFilters = filterDateFrom || filterDateTo || filterLocation || filterInflatable !== 'all' || filterRecordedBy !== 'all';
+
+  const clearFilters = () => {
+    setFilterDateFrom(undefined);
+    setFilterDateTo(undefined);
+    setFilterLocation('');
+    setFilterInflatable('all');
+    setFilterRecordedBy('all');
+  };
 
   const handleOpenSheet = () => {
     const n = new Date();
@@ -189,7 +248,6 @@ const WindLog = () => {
     setActionTaken('');
     setActionNotes('');
     setNotes('');
-    // Default to none selected — user picks which inflatables apply
     setSelectedRideIds([]);
     setSheetOpen(true);
   };
@@ -221,8 +279,6 @@ const WindLog = () => {
     setSaving(true);
     try {
       const windLogId = crypto.randomUUID();
-
-      // Insert the shared wind log entry (ride linkage is in wind_log_rides)
       const { error } = await supabase.from('wind_speed_logs').insert({
         id: windLogId,
         user_id: effectiveUserId,
@@ -239,10 +295,8 @@ const WindLog = () => {
         action_taken: finalAction,
         notes: notes || null,
       });
-
       if (error) throw error;
 
-      // Insert junction rows linking this reading to selected inflatables
       const junctionRows = selectedRideIds.map(rideId => ({
         wind_log_id: windLogId,
         ride_id: rideId,
@@ -255,32 +309,276 @@ const WindLog = () => {
       loadLogs();
     } catch (err: any) {
       console.error('Error saving wind log:', err);
-      toast({ title: "Couldn't save wind reading", description: 'Please try again.', variant: 'destructive' });
+      toast({ title: "Couldn't save wind reading", description: err?.message || 'Please try again.', variant: 'destructive' });
     } finally {
       setSaving(false);
     }
   };
 
+  const handleExport = () => {
+    if (filteredLogs.length === 0) {
+      toast({ title: 'Nothing to export', description: 'No readings match your current filters.', variant: 'destructive' });
+      return;
+    }
+
+    const singleInflatable = filterInflatable !== 'all'
+      ? inflatables.find(r => r.id === filterInflatable)?.ride_name
+      : undefined;
+
+    generateWindLogPdf({
+      entries: filteredLogs,
+      title: singleInflatable ? `Wind Log — ${singleInflatable}` : 'Wind Speed Log',
+      subtitle: 'Site Wind Reading Report',
+      inflatableName: singleInflatable,
+      dateRange: {
+        from: filterDateFrom ? format(filterDateFrom, 'd MMM yyyy') : undefined,
+        to: filterDateTo ? format(filterDateTo, 'd MMM yyyy') : undefined,
+      },
+      location: filterLocation || undefined,
+    });
+  };
+
   const hasAnemometerDetails = (entry: WindLogEntry) =>
     entry.anemometer_make || entry.anemometer_model || entry.anemometer_serial;
+
+  // ─── Mobile card view ───
+  const renderMobileCard = (entry: WindLogEntry) => (
+    <Card key={entry.id} className="p-3.5 space-y-2">
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1 flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-semibold text-foreground">{formatDate(entry.log_date)}</span>
+            <span className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />{entry.log_time.slice(0, 5)}
+            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <User className="h-3 w-3 shrink-0" />
+            <span className="truncate">{entry.recorded_by}</span>
+          </div>
+          {entry.location && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">{entry.location}</span>
+            </div>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0 bg-primary/10 px-3 py-1.5 rounded-lg">
+          <Gauge className="h-4 w-4 text-primary" />
+          <span className="text-base font-bold text-primary">{entry.wind_speed}</span>
+          <span className="text-xs font-medium text-primary/70">{entry.wind_unit}</span>
+        </div>
+      </div>
+
+      {/* Applies to */}
+      {entry.linked_rides && entry.linked_rides.length > 0 && (
+        <div className="space-y-1">
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Applies to</span>
+          <div className="flex flex-wrap gap-1">
+            {entry.linked_rides.map((name, i) => (
+              <Badge key={i} variant="secondary" className="text-xs font-medium">
+                {name}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {entry.action_taken && (
+        <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-2.5 py-1.5">
+          <span className="font-medium text-foreground">Action: </span>{entry.action_taken}
+        </p>
+      )}
+      {entry.notes && <p className="text-xs text-muted-foreground italic">{entry.notes}</p>}
+
+      {hasAnemometerDetails(entry) && (
+        <Collapsible open={expandedId === entry.id} onOpenChange={(open) => setExpandedId(open ? entry.id : null)}>
+          <CollapsibleTrigger className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+            <ChevronDown className={`h-3 w-3 transition-transform ${expandedId === entry.id ? 'rotate-180' : ''}`} />
+            Anemometer details
+          </CollapsibleTrigger>
+          <CollapsibleContent className="pt-1.5">
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground bg-muted/30 rounded-lg px-2.5 py-2">
+              {entry.anemometer_make && <span><span className="font-medium">Make:</span> {entry.anemometer_make}</span>}
+              {entry.anemometer_model && <span><span className="font-medium">Model:</span> {entry.anemometer_model}</span>}
+              {entry.anemometer_serial && <span><span className="font-medium">Serial:</span> {entry.anemometer_serial}</span>}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
+      )}
+    </Card>
+  );
+
+  // ─── Desktop table row ───
+  const renderDesktopTable = () => (
+    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/50">
+            <TableHead className="text-xs font-semibold w-[90px]">Date</TableHead>
+            <TableHead className="text-xs font-semibold w-[60px]">Time</TableHead>
+            <TableHead className="text-xs font-semibold w-[80px]">Speed</TableHead>
+            <TableHead className="text-xs font-semibold">Location</TableHead>
+            <TableHead className="text-xs font-semibold">Recorded By</TableHead>
+            <TableHead className="text-xs font-semibold min-w-[180px]">Applies To</TableHead>
+            <TableHead className="text-xs font-semibold">Action Taken</TableHead>
+            <TableHead className="text-xs font-semibold">Notes</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {filteredLogs.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
+                <Wind className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                <p className="text-sm">No readings match your filters</p>
+              </TableCell>
+            </TableRow>
+          ) : (
+            filteredLogs.map(entry => (
+              <TableRow key={entry.id} className="group">
+                <TableCell className="text-sm font-medium">{formatDate(entry.log_date)}</TableCell>
+                <TableCell className="text-sm tabular-nums">{entry.log_time.slice(0, 5)}</TableCell>
+                <TableCell>
+                  <span className="inline-flex items-center gap-1 bg-primary/10 text-primary font-bold text-sm px-2 py-0.5 rounded-md">
+                    {entry.wind_speed} <span className="text-xs font-medium text-primary/70">{entry.wind_unit}</span>
+                  </span>
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground">{entry.location || '—'}</TableCell>
+                <TableCell className="text-sm text-muted-foreground">{entry.recorded_by}</TableCell>
+                <TableCell>
+                  {entry.linked_rides && entry.linked_rides.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {entry.linked_rides.map((name, i) => (
+                        <Badge key={i} variant="secondary" className="text-xs font-medium whitespace-nowrap">
+                          {name}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell className="text-sm text-muted-foreground max-w-[160px] truncate">{entry.action_taken || '—'}</TableCell>
+                <TableCell className="text-sm text-muted-foreground max-w-[140px] truncate">{entry.notes || '—'}</TableCell>
+              </TableRow>
+            ))
+          )}
+        </TableBody>
+      </Table>
+    </div>
+  );
 
   return (
     <div className="space-y-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-4">
       <PageHeader title="Wind Log" />
 
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex items-start gap-2">
-          <Wind className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-          <p className="text-sm text-muted-foreground">
-            Log one site/session reading, then link it to selected inflatables.
+      {/* ─── Header bar ─── */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <Wind className="h-5 w-5 text-primary shrink-0" />
+            <h2 className="text-base font-semibold text-foreground md:text-lg">Wind Speed Register</h2>
+          </div>
+          <p className="text-sm text-muted-foreground max-w-lg">
+            Record site wind readings and link them to your inflatables. Each reading can apply to multiple items at once.
           </p>
         </div>
-        <Button onClick={handleOpenSheet} size="sm" className="gap-1.5 w-full sm:w-auto" disabled={inflatables.length === 0}>
-          <Plus className="h-4 w-4" />
-          Add Reading
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="gap-1.5">
+            <Filter className="h-3.5 w-3.5" />
+            Filters
+            {hasFilters && <Badge variant="secondary" className="text-[10px] px-1.5 py-0 ml-1">{filteredLogs.length}</Badge>}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5" disabled={filteredLogs.length === 0}>
+            <Download className="h-3.5 w-3.5" />
+            Export PDF
+          </Button>
+          <Button onClick={handleOpenSheet} size="sm" className="gap-1.5" disabled={inflatables.length === 0}>
+            <Plus className="h-4 w-4" />
+            Add Reading
+          </Button>
+        </div>
       </div>
 
+      {/* ─── Filters ─── */}
+      {showFilters && (
+        <Card className="p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="text-sm font-semibold text-foreground flex items-center gap-1.5">
+              <Filter className="h-4 w-4 text-muted-foreground" /> Filters
+            </span>
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs h-7 gap-1">
+                <X className="h-3 w-3" /> Clear all
+              </Button>
+            )}
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            {/* Date from */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("justify-start text-xs h-9 w-full", filterDateFrom && "text-foreground")}>
+                  <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                  {filterDateFrom ? format(filterDateFrom, 'd MMM yyyy') : 'From date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={filterDateFrom} onSelect={setFilterDateFrom} className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+            {/* Date to */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("justify-start text-xs h-9 w-full", filterDateTo && "text-foreground")}>
+                  <CalendarIcon className="h-3.5 w-3.5 mr-1.5" />
+                  {filterDateTo ? format(filterDateTo, 'd MMM yyyy') : 'To date'}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={filterDateTo} onSelect={setFilterDateTo} className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+            {/* Location */}
+            <Select value={filterLocation || '__all__'} onValueChange={(v) => setFilterLocation(v === '__all__' ? '' : v)}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="All locations" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__all__">All locations</SelectItem>
+                {uniqueLocations.map(loc => (
+                  <SelectItem key={loc} value={loc}>{loc}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* Inflatable */}
+            <Select value={filterInflatable} onValueChange={setFilterInflatable}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="All inflatables" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All inflatables</SelectItem>
+                {inflatables.map(r => (
+                  <SelectItem key={r.id} value={r.id}>{r.ride_name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {/* Recorded by */}
+            <Select value={filterRecordedBy} onValueChange={setFilterRecordedBy}>
+              <SelectTrigger className="h-9 text-xs">
+                <SelectValue placeholder="All staff" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All staff</SelectItem>
+                {uniqueRecordedBy.map(name => (
+                  <SelectItem key={name} value={name}>{name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </Card>
+      )}
+
+      {/* ─── No inflatables ─── */}
       {inflatables.length === 0 && !loading && (
         <Card className="p-6 text-center">
           <Wind className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
@@ -289,6 +587,7 @@ const WindLog = () => {
         </Card>
       )}
 
+      {/* ─── Loading ─── */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
@@ -300,80 +599,27 @@ const WindLog = () => {
           <p className="text-xs text-muted-foreground mt-1">Tap "Add Reading" to log your first entry.</p>
         </Card>
       ) : (
-        <div className="space-y-2">
-          {logs.map((entry) => (
-            <Card key={entry.id} className="p-3.5 space-y-2">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1 flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-foreground">
-                      {formatDate(entry.log_date)}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      {entry.log_time.slice(0, 5)}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <User className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{entry.recorded_by}</span>
-                  </div>
-                  {entry.location && (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{entry.location}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5 shrink-0 bg-primary/10 px-3 py-1.5 rounded-lg">
-                  <Gauge className="h-4 w-4 text-primary" />
-                  <span className="text-base font-bold text-primary">{entry.wind_speed}</span>
-                  <span className="text-xs font-medium text-primary/70">{entry.wind_unit}</span>
-                </div>
-              </div>
+        <>
+          {/* Summary bar */}
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>
+              {filteredLogs.length} reading{filteredLogs.length !== 1 ? 's' : ''}
+              {hasFilters ? ' (filtered)' : ''}
+            </span>
+          </div>
 
-              {/* Linked inflatables */}
-              {entry.linked_rides && entry.linked_rides.length > 0 && (
-                <div className="flex flex-wrap gap-1">
-                  {entry.linked_rides.map((name, i) => (
-                    <span key={i} className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-muted text-muted-foreground border border-border">
-                      {name}
-                    </span>
-                  ))}
-                </div>
-              )}
-
-              {entry.action_taken && (
-                <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-2.5 py-1.5">
-                  <span className="font-medium text-foreground">Action: </span>{entry.action_taken}
-                </p>
-              )}
-
-              {entry.notes && (
-                <p className="text-xs text-muted-foreground italic">{entry.notes}</p>
-              )}
-
-              {hasAnemometerDetails(entry) && (
-                <Collapsible open={expandedId === entry.id} onOpenChange={(open) => setExpandedId(open ? entry.id : null)}>
-                  <CollapsibleTrigger className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-                    <ChevronDown className={`h-3 w-3 transition-transform ${expandedId === entry.id ? 'rotate-180' : ''}`} />
-                    Anemometer details
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-1.5">
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground bg-muted/30 rounded-lg px-2.5 py-2">
-                      {entry.anemometer_make && <span><span className="font-medium">Make:</span> {entry.anemometer_make}</span>}
-                      {entry.anemometer_model && <span><span className="font-medium">Model:</span> {entry.anemometer_model}</span>}
-                      {entry.anemometer_serial && <span><span className="font-medium">Serial:</span> {entry.anemometer_serial}</span>}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-            </Card>
-          ))}
-        </div>
+          {/* Desktop: table | Mobile: cards */}
+          {isMobile ? (
+            <div className="space-y-2">
+              {filteredLogs.map(entry => renderMobileCard(entry))}
+            </div>
+          ) : (
+            renderDesktopTable()
+          )}
+        </>
       )}
 
-      {/* Add Reading Sheet */}
+      {/* ─── Add Reading Sheet ─── */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto rounded-t-2xl">
           <SheetHeader className="mb-4">
@@ -382,7 +628,6 @@ const WindLog = () => {
           </SheetHeader>
 
           <div className="space-y-4 pb-6">
-            {/* Date & Time */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Date</Label>
@@ -394,7 +639,6 @@ const WindLog = () => {
               </div>
             </div>
 
-            {/* Speed & Unit */}
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Wind Speed *</Label>
@@ -413,13 +657,11 @@ const WindLog = () => {
               </div>
             </div>
 
-            {/* Recorded by */}
             <div className="space-y-1.5">
               <Label className="text-xs">Recorded By *</Label>
               <Input placeholder="Name of person" value={recordedBy} onChange={(e) => setRecordedBy(e.target.value)} maxLength={100} />
             </div>
 
-            {/* Location */}
             <div className="space-y-1.5">
               <Label className="text-xs">Location</Label>
               <Input placeholder="e.g. Main field, Site entrance" value={location} onChange={(e) => setLocation(e.target.value)} maxLength={200} />
@@ -428,33 +670,22 @@ const WindLog = () => {
             {/* Inflatable selector */}
             <div className="space-y-2 rounded-xl border border-border bg-card p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <Label className="text-xs">Applies to *</Label>
+                <Label className="text-xs font-semibold">Applies to *</Label>
                 <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    className="text-[11px] text-primary font-medium hover:underline"
-                    onClick={() => setSelectedRideIds(inflatables.map(r => r.id))}
-                  >
+                  <button type="button" className="text-[11px] text-primary font-medium hover:underline" onClick={() => setSelectedRideIds(inflatables.map(r => r.id))}>
                     Select all
                   </button>
                   <span className="text-[11px] text-muted-foreground">•</span>
-                  <button
-                    type="button"
-                    className="text-[11px] text-primary font-medium hover:underline"
-                    onClick={() => setSelectedRideIds([])}
-                  >
+                  <button type="button" className="text-[11px] text-primary font-medium hover:underline" onClick={() => setSelectedRideIds([])}>
                     Clear all
                   </button>
                 </div>
               </div>
-              <p className="text-[11px] text-muted-foreground">Starts with none selected. Choose the inflatables this reading applies to.</p>
+              <p className="text-[11px] text-muted-foreground">Choose which inflatables this reading applies to.</p>
               <div className="space-y-1.5 max-h-44 overflow-y-auto rounded-lg border border-border p-2">
                 {inflatables.map((ride) => (
                   <label key={ride.id} className="flex items-center gap-2.5 py-1 px-1 rounded hover:bg-muted/50 cursor-pointer">
-                    <Checkbox
-                      checked={selectedRideIds.includes(ride.id)}
-                      onCheckedChange={() => toggleRide(ride.id)}
-                    />
+                    <Checkbox checked={selectedRideIds.includes(ride.id)} onCheckedChange={() => toggleRide(ride.id)} />
                     <span className="text-sm truncate">{ride.ride_name}</span>
                   </label>
                 ))}
@@ -462,7 +693,7 @@ const WindLog = () => {
               <p className="text-[11px] text-muted-foreground">{selectedRideIds.length} of {inflatables.length} selected</p>
             </div>
 
-            {/* Anemometer Details — collapsible */}
+            {/* Anemometer Details */}
             <Collapsible>
               <CollapsibleTrigger className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors py-1">
                 <ChevronDown className="h-3.5 w-3.5" />
@@ -512,7 +743,7 @@ const WindLog = () => {
 
             <div className="sticky bottom-0 -mx-6 px-6 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-background border-t border-border">
               <Button onClick={handleSave} disabled={saving || selectedRideIds.length === 0} className="w-full h-12">
-                {saving ? 'Saving...' : selectedRideIds.length === 0 ? 'Select inflatables to save' : 'Save reading to selected inflatables'}
+                {saving ? 'Saving...' : selectedRideIds.length === 0 ? 'Select inflatables to save' : `Save to ${selectedRideIds.length} inflatable${selectedRideIds.length !== 1 ? 's' : ''}`}
               </Button>
             </div>
           </div>
