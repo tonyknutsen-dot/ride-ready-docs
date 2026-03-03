@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,9 +10,11 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Plus, Calendar as CalendarIcon, Edit, Trash2, AlertTriangle, Clock, Repeat, CheckCircle2 } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { Plus, Calendar as CalendarIcon, Edit, Trash2, AlertTriangle, Clock, Repeat, CheckCircle2, MoreVertical } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import MarkCompleteSheet from '@/components/MarkCompleteSheet';
-import { format, differenceInDays, isBefore, addDays } from 'date-fns';
+import { format, differenceInDays, isBefore } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -49,7 +49,7 @@ const INSPECTION_TYPES = [
 const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => {
   const [events, setEvents] = useState<ComplianceEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ComplianceEvent | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [markingComplete, setMarkingComplete] = useState<string | null>(null);
@@ -135,14 +135,14 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
       recurrence_unit: recurrenceUnit,
     });
     setEditingEvent(event);
-    setDialogOpen(true);
+    setSheetOpen(true);
   };
 
   const handleSave = async () => {
     if (!formData.inspection_type || !formData.inspection_name || !formData.due_date) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields",
+        title: "Missing fields",
+        description: "Please fill in the type, name, and due date.",
         variant: "destructive",
       });
       return;
@@ -184,17 +184,17 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
           .update(eventData)
           .eq('id', editingEvent.id);
         if (error) throw error;
-        toast({ title: "Success", description: "Inspection schedule updated" });
+        toast({ title: "Updated", description: "Inspection schedule updated." });
       } else {
         const seriesId = formData.is_recurring ? crypto.randomUUID() : null;
         const { error } = await supabase
           .from('compliance_events')
           .insert([{ ...eventData, series_id: seriesId, status: 'open' }]);
         if (error) throw error;
-        toast({ title: "Success", description: "Inspection schedule created" });
+        toast({ title: "Created", description: "Inspection schedule created." });
       }
 
-      setDialogOpen(false);
+      setSheetOpen(false);
       resetForm();
       loadEvents();
       queryClient.invalidateQueries({ queryKey: ['compliance'] });
@@ -211,7 +211,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
         .update({ status: 'cancelled' })
         .eq('id', eventId);
       if (error) throw error;
-      toast({ title: "Success", description: "Inspection schedule removed" });
+      toast({ title: "Removed", description: "Inspection schedule removed." });
       loadEvents();
       queryClient.invalidateQueries({ queryKey: ['compliance'] });
     } catch (error) {
@@ -232,27 +232,33 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
 
   const getStatusBadge = (event: ComplianceEvent) => {
     if (event.status === 'completed') {
-      return <Badge className="bg-green-100 text-green-800 border-green-200">Completed</Badge>;
+      return <Badge className="bg-green-100 text-green-800 border-green-200 text-[10px] px-1.5 py-0">Completed</Badge>;
     }
     const due = new Date(event.due_date);
     const today = new Date();
     const daysUntilDue = differenceInDays(due, today);
 
     if (isBefore(due, today)) {
-      return <Badge variant="destructive" className="flex items-center gap-1">
-        <AlertTriangle className="h-3 w-3" />
-        Overdue ({Math.abs(daysUntilDue)}d)
-      </Badge>;
+      return (
+        <Badge variant="destructive" className="flex items-center gap-1 text-[10px] px-1.5 py-0">
+          <AlertTriangle className="h-2.5 w-2.5" />
+          Overdue ({Math.abs(daysUntilDue)}d)
+        </Badge>
+      );
     } else if (daysUntilDue <= event.advance_notice_days) {
-      return <Badge variant="secondary" className="flex items-center gap-1 bg-warning/15 text-warning border-warning/30">
-        <Clock className="h-3 w-3" />
-        Due Soon ({daysUntilDue}d)
-      </Badge>;
+      return (
+        <Badge variant="secondary" className="flex items-center gap-1 bg-warning/15 text-warning border-warning/30 text-[10px] px-1.5 py-0">
+          <Clock className="h-2.5 w-2.5" />
+          Due in {daysUntilDue}d
+        </Badge>
+      );
     } else {
-      return <Badge variant="outline" className="flex items-center gap-1">
-        <CalendarIcon className="h-3 w-3" />
-        Scheduled
-      </Badge>;
+      return (
+        <Badge variant="outline" className="flex items-center gap-1 text-[10px] px-1.5 py-0">
+          <CalendarIcon className="h-2.5 w-2.5" />
+          Scheduled
+        </Badge>
+      );
     }
   };
 
@@ -260,7 +266,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        <span className="ml-2">Loading inspection schedules...</span>
+        <span className="ml-2 text-sm text-muted-foreground">Loading…</span>
       </div>
     );
   }
@@ -269,211 +275,232 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
   const completedEvents = events.filter(e => e.status === 'completed');
 
   return (
-    <div className="space-y-6">
-      <Alert>
-        <AlertDescription>
-          Schedule inspections with due dates and advance notifications. When completed, recurring inspections automatically create the next occurrence.
-        </AlertDescription>
-      </Alert>
-      <div className="flex justify-between items-center">
+    <div className="space-y-4">
+      {/* Section header */}
+      <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Inspection Schedules</h3>
-          <p className="text-sm text-muted-foreground">
-            {scheduledEvents.length} scheduled · {completedEvents.length} completed
+          <h3 className="text-base font-semibold">Scheduled Inspections</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            Track due dates and get advance reminders for inspections.
+            {scheduledEvents.length > 0 && ` ${scheduledEvents.length} scheduled`}
+            {completedEvents.length > 0 && ` · ${completedEvents.length} completed`}
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Schedule
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingEvent ? 'Edit Inspection Schedule' : 'Add Inspection Schedule'}
-              </DialogTitle>
-              <DialogDescription>
-                Set up inspection schedules with advance notice and recurrence
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Inspection Type *</Label>
-                <Select
-                  value={formData.inspection_type}
-                  onValueChange={(value) => setFormData({ ...formData, inspection_type: value })}
-                >
-                  <SelectTrigger><SelectValue placeholder="Select inspection type" /></SelectTrigger>
-                  <SelectContent>
-                    {INSPECTION_TYPES.map((type) => (
-                      <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Inspection Name *</Label>
-                <Input
-                  value={formData.inspection_name}
-                  onChange={(e) => setFormData({ ...formData, inspection_name: e.target.value })}
-                  placeholder="Enter inspection name"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Due Date *</Label>
-                <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.due_date && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.due_date ? format(formData.due_date, "d MMM yyyy") : "Select due date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={formData.due_date}
-                      onSelect={(date) => { setFormData({ ...formData, due_date: date }); setCalendarOpen(false); }}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Advance Notice (Days)</Label>
-                <Input
-                  type="number" min="1" max="365"
-                  value={formData.advance_notice_days}
-                  onChange={(e) => setFormData({ ...formData, advance_notice_days: parseInt(e.target.value) || 30 })}
-                />
-              </div>
-
-              {/* Recurrence */}
-              <div className="space-y-3 rounded-lg border p-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Repeat className="h-4 w-4 text-muted-foreground" />
-                    <Label className="font-medium">Recurring</Label>
-                  </div>
-                  <Switch
-                    checked={formData.is_recurring}
-                    onCheckedChange={(checked) => setFormData({ ...formData, is_recurring: checked })}
-                  />
-                </div>
-                {formData.is_recurring && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">Every</span>
-                    <Input
-                      type="number" min="1" max="99"
-                      value={formData.recurrence_value}
-                      onChange={(e) => setFormData({ ...formData, recurrence_value: parseInt(e.target.value) || 1 })}
-                      className="w-16 h-9"
-                    />
-                    <Select value={formData.recurrence_unit} onValueChange={(v) => setFormData({ ...formData, recurrence_unit: v as any })}>
-                      <SelectTrigger className="w-[110px] h-9"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="days">Days</SelectItem>
-                        <SelectItem value="weeks">Weeks</SelectItem>
-                        <SelectItem value="months">Months</SelectItem>
-                        <SelectItem value="years">Years</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-2">
-                <Label>Notes</Label>
-                <Textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                  placeholder="Additional notes or requirements"
-                  rows={3}
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-4">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleSave}>{editingEvent ? 'Update' : 'Create'} Schedule</Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <Button
+          size="sm"
+          onClick={() => { resetForm(); setSheetOpen(true); }}
+          className="gap-1.5 h-8"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Add
+        </Button>
       </div>
 
+      {/* Add/Edit Sheet — full-height on mobile, avoids scroll-inside-scroll */}
+      <Sheet open={sheetOpen} onOpenChange={(open) => { setSheetOpen(open); if (!open) resetForm(); }}>
+        <SheetContent side="right" className="w-full sm:max-w-md overflow-y-auto">
+          <SheetHeader className="mb-6">
+            <SheetTitle>
+              {editingEvent ? 'Edit Inspection' : 'New Scheduled Inspection'}
+            </SheetTitle>
+            <SheetDescription>
+              Set up an inspection with a due date and optional recurring schedule.
+            </SheetDescription>
+          </SheetHeader>
+
+          <div className="space-y-5">
+            {/* Type */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Inspection Type</Label>
+              <Select
+                value={formData.inspection_type}
+                onValueChange={(value) => setFormData({ ...formData, inspection_type: value })}
+              >
+                <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
+                <SelectContent>
+                  {INSPECTION_TYPES.map((type) => (
+                    <SelectItem key={type.value} value={type.value}>{type.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Name */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Name</Label>
+              <Input
+                value={formData.inspection_name}
+                onChange={(e) => setFormData({ ...formData, inspection_name: e.target.value })}
+                placeholder="e.g. Annual structural inspection"
+              />
+            </div>
+
+            {/* Due date */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Due Date</Label>
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !formData.due_date && "text-muted-foreground")}>
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.due_date ? format(formData.due_date, "d MMM yyyy") : "Select date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={formData.due_date}
+                    onSelect={(date) => { setFormData({ ...formData, due_date: date }); setCalendarOpen(false); }}
+                    initialFocus
+                    className="pointer-events-auto"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            {/* Reminder */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Reminder before due date (days)</Label>
+              <Input
+                type="number" min="1" max="365"
+                value={formData.advance_notice_days}
+                onChange={(e) => setFormData({ ...formData, advance_notice_days: parseInt(e.target.value) || 30 })}
+              />
+              <p className="text-[10px] text-muted-foreground">You'll be reminded this many days before the due date.</p>
+            </div>
+
+            {/* Recurrence */}
+            <div className="space-y-3 rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label className="text-xs font-medium">Repeat after completion</Label>
+                  <p className="text-[10px] text-muted-foreground mt-0.5">Automatically create the next schedule when completed.</p>
+                </div>
+                <Switch
+                  checked={formData.is_recurring}
+                  onCheckedChange={(checked) => setFormData({ ...formData, is_recurring: checked })}
+                />
+              </div>
+              {formData.is_recurring && (
+                <div className="flex items-center gap-2 pt-1">
+                  <span className="text-xs text-muted-foreground">Every</span>
+                  <Input
+                    type="number" min="1" max="99"
+                    value={formData.recurrence_value}
+                    onChange={(e) => setFormData({ ...formData, recurrence_value: parseInt(e.target.value) || 1 })}
+                    className="w-16 h-8 text-sm"
+                  />
+                  <Select value={formData.recurrence_unit} onValueChange={(v) => setFormData({ ...formData, recurrence_unit: v as any })}>
+                    <SelectTrigger className="w-[100px] h-8 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="days">Days</SelectItem>
+                      <SelectItem value="weeks">Weeks</SelectItem>
+                      <SelectItem value="months">Months</SelectItem>
+                      <SelectItem value="years">Years</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Notes (optional)</Label>
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Any additional details"
+                rows={2}
+              />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 pt-2">
+              <Button variant="outline" onClick={() => setSheetOpen(false)} className="flex-1">Cancel</Button>
+              <Button onClick={handleSave} className="flex-1">{editingEvent ? 'Update' : 'Create'}</Button>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Empty state */}
       {scheduledEvents.length === 0 && completedEvents.length === 0 ? (
         <EmptyState
           icon={CalendarIcon}
-          title="No inspection schedules found"
-          description="Add your first inspection schedule to start tracking due dates"
+          title="No scheduled inspections"
+          description="Add an inspection to start tracking due dates and reminders."
           variant="compact"
         />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
+          {/* Scheduled cards */}
           {scheduledEvents.map((event) => (
-            <Card key={event.id}>
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2 flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h4 className="font-semibold">{event.event_name}</h4>
+            <Card key={event.id} className="border-border">
+              <CardContent className="p-3">
+                <div className="flex items-start justify-between gap-2">
+                  {/* Left: info */}
+                  <div className="flex-1 min-w-0 space-y-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <h4 className="text-sm font-semibold truncate">{event.event_name}</h4>
                       {getStatusBadge(event)}
                       {event.is_recurring && (
-                        <Badge variant="outline" className="gap-1 text-xs">
-                          <Repeat className="h-3 w-3" /> Recurring
+                        <Badge variant="outline" className="gap-0.5 text-[10px] px-1.5 py-0">
+                          <Repeat className="h-2.5 w-2.5" /> Repeats
                         </Badge>
                       )}
                     </div>
-                    <div className="text-sm text-muted-foreground space-y-1">
-                      <p><span className="font-medium">Type:</span> {INSPECTION_TYPES.find(t => t.value === event.event_type)?.label || event.event_type}</p>
-                      <p><span className="font-medium">Due Date:</span> {format(new Date(event.due_date), 'd MMM yyyy')}</p>
-                      <p><span className="font-medium">Advance Notice:</span> {event.advance_notice_days} days</p>
-                      {event.notes && <p><span className="font-medium">Notes:</span> {event.notes}</p>}
+                    <div className="text-xs text-muted-foreground space-y-0.5">
+                      <p>{INSPECTION_TYPES.find(t => t.value === event.event_type)?.label || event.event_type} · Due {format(new Date(event.due_date), 'd MMM yyyy')}</p>
+                      {event.notes && <p className="truncate">{event.notes}</p>}
                     </div>
                   </div>
-                  <div className="flex space-x-2">
+
+                  {/* Right: actions */}
+                  <div className="flex items-center gap-1.5 shrink-0">
                     <Button
-                      variant="outline"
                       size="sm"
                       onClick={() => handleMarkComplete(event)}
                       disabled={markingComplete === event.id}
-                      className="gap-1"
+                      className="h-7 px-2.5 text-xs gap-1"
                     >
-                      <CheckCircle2 className="h-4 w-4" />
-                      <span className="hidden sm:inline">Complete</span>
+                      <CheckCircle2 className="h-3 w-3" />
+                      Complete
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => handleEdit(event)}>
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          <Trash2 className="h-4 w-4" />
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                          <MoreVertical className="h-3.5 w-3.5" />
                         </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Inspection Schedule</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{event.event_name}"? This action cannot be undone.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDelete(event.id)}>Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEdit(event)}>
+                          <Edit className="h-3.5 w-3.5 mr-2" /> Edit
+                        </DropdownMenuItem>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                              <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                            </DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete inspection schedule</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{event.event_name}"? This cannot be undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(event.id)}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </div>
                 {event.is_recurring && event.auto_create_next && (
-                  <p className="text-xs text-muted-foreground mt-2 italic">
-                    Completing this will automatically schedule the next occurrence.
+                  <p className="text-[10px] text-muted-foreground mt-1.5">
+                    Next occurrence will be created automatically on completion.
                   </p>
                 )}
               </CardContent>
@@ -482,22 +509,18 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
 
           {/* Completed section */}
           {completedEvents.length > 0 && (
-            <div className="space-y-2">
-              <h4 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Completed</h4>
+            <div className="space-y-1.5 pt-2">
+              <h4 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">Completed</h4>
               {completedEvents.slice(0, 5).map((event) => (
-                <Card key={event.id} className="opacity-70">
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-green-600" />
-                        <span className="text-sm font-medium">{event.event_name}</span>
-                      </div>
-                      <span className="text-xs text-muted-foreground">
-                        {event.completed_at ? format(new Date(event.completed_at), 'd MMM yyyy') : ''}
-                      </span>
-                    </div>
-                  </CardContent>
-                </Card>
+                <div key={event.id} className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-muted/30">
+                  <div className="flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                    <span className="text-xs font-medium text-muted-foreground">{event.event_name}</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground">
+                    {event.completed_at ? format(new Date(event.completed_at), 'd MMM yyyy') : ''}
+                  </span>
+                </div>
               ))}
             </div>
           )}
