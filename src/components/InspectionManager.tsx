@@ -207,32 +207,9 @@ const InspectionManager = ({ ride }: InspectionManagerProps) => {
       )}
 
 
-      {/* Check Count Summary Strip — muted, informational */}
+      {/* Frequency selector — check-type cards with strong active state */}
       <div className="flex items-center justify-between gap-2 px-1">
-        <div className="flex items-center gap-2 flex-wrap">
-          {FREQUENCY_ORDER.map(freq => {
-            const icons: Record<string, any> = {
-              preopening: PlayCircle, daily: Clock, weekly: CalendarRange, monthly: Calendar, yearly: CalendarDays,
-            };
-            const Icon = icons[freq];
-            const hasTemplate = templateStatus[freq];
-            return (
-              <button
-                key={freq}
-                onClick={() => { setActiveTab(freq); setShowNextPrompt(null); }}
-                className={`inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-medium border transition-colors ${
-                  hasTemplate
-                    ? 'border-border bg-card text-foreground hover:border-primary/40'
-                    : 'border-border/50 bg-muted/30 text-muted-foreground opacity-60'
-                }`}
-              >
-                <Icon className="h-3 w-3" />
-                <span>{checkCounts[freq]}</span>
-                <span className="hidden sm:inline">{FREQUENCY_LABELS[freq]}</span>
-              </button>
-            );
-          })}
-        </div>
+        <div /> {/* spacer */}
         <Button
           variant="ghost"
           size="sm"
