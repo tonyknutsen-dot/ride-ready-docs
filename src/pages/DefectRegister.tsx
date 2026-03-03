@@ -522,106 +522,104 @@ const DefectRegister = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-2.5">
+        <div className="space-y-3">
           {filtered.map((defect) => {
             const sev = SEVERITY_CONFIG[defect.severity];
             const SevIcon = sev.icon;
             const isOpen = defect.status !== 'resolved';
             const hasPhotos = (defect.photo_paths?.length || 0) > 0;
 
+            const stripColor = defect.severity === 'stop_operation'
+              ? 'bg-destructive'
+              : defect.severity === 'urgent' ? 'bg-orange-500' : 'bg-yellow-400';
+
             return (
-              <Card
+              <div
                 key={defect.id}
-                className={`cursor-pointer transition-all hover:shadow-md active:scale-[0.997] rounded-xl overflow-hidden ${
+                className={`group relative rounded-xl border bg-card shadow-sm cursor-pointer transition-all duration-200 hover:shadow-md active:scale-[0.998] overflow-hidden ${
                   defect.severity === 'stop_operation' && isOpen
-                    ? 'border-destructive/30 bg-destructive/[0.03] hover:border-destructive/50'
-                    : 'hover:border-primary/20'
+                    ? 'border-destructive/30 hover:border-destructive/50'
+                    : 'border-border hover:border-primary/20'
                 }`}
                 onClick={() => openDetail(defect)}
               >
-                <CardContent className="p-0">
-                  {/* Colored severity strip */}
-                  <div className="flex items-stretch">
-                    <div className={`w-1 shrink-0 ${
-                      defect.severity === 'stop_operation' ? 'bg-destructive' :
-                      defect.severity === 'urgent' ? 'bg-orange-500' : 'bg-yellow-500'
-                    }`} />
+                {/* Severity left strip */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1 ${stripColor} rounded-l-xl`} />
 
-                    <div className="flex-1 p-3.5">
-                      <div className="flex items-start gap-3">
-                        {/* Severity icon */}
-                        <div className={`mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${sev.operationalClass}`}>
-                          <SevIcon className="h-4 w-4" />
-                        </div>
+                <div className="pl-4 pr-3.5 py-4">
+                  <div className="flex items-start gap-3">
+                    {/* Severity icon */}
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${sev.operationalClass} border`}>
+                      <SevIcon className="h-4.5 w-4.5" />
+                    </div>
 
-                        <div className="flex-1 min-w-0 space-y-1.5">
-                          {/* Description */}
-                          <p className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">{defect.description}</p>
+                    {/* Content */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2">
+                        {defect.description}
+                      </p>
 
-                          {/* Equipment name */}
-                          <div className="flex items-center gap-1.5">
-                            <Wrench className="h-3 w-3 text-muted-foreground shrink-0" />
-                            <p className="text-xs font-medium text-primary truncate">
-                              {defect.ride_name}
-                              {defect.category_name && <span className="text-muted-foreground font-normal"> · {defect.category_name}</span>}
-                            </p>
-                          </div>
-
-                          {/* Location if present */}
-                          {defect.location_on_ride && (
-                            <div className="flex items-center gap-1.5">
-                              <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
-                              <p className="text-[11px] text-muted-foreground truncate">{defect.location_on_ride}</p>
-                            </div>
-                          )}
-
-                          {/* Meta row */}
-                          <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                            <Badge className={`text-[10px] px-1.5 py-0 font-semibold ${sev.badgeClass}`}>{sev.label}</Badge>
-                            {isOpen ? (
-                              <Badge variant="destructive" className="text-[10px] px-1.5 py-0 font-medium">Open</Badge>
-                            ) : (
-                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 font-medium">Closed</Badge>
-                            )}
-                            {hasPhotos && (
-                              <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                                <Camera className="h-3 w-3" />
-                                {defect.photo_paths?.length}
-                              </span>
-                            )}
-                            <span className="text-[11px] text-muted-foreground">
-                              {formatDistanceToNow(new Date(defect.reported_at), { addSuffix: true })}
-                            </span>
-                          </div>
-
-                          {/* Operational status for open stop-use */}
-                          {isOpen && defect.severity === 'stop_operation' && (
-                            <p className="text-[11px] font-semibold text-destructive mt-0.5">⛔ Do not operate</p>
-                          )}
-
-                          {/* Resolution preview for closed */}
-                          {!isOpen && defect.resolution_notes && (
-                            <p className="text-[11px] text-muted-foreground italic line-clamp-1 mt-0.5">✓ {defect.resolution_notes}</p>
-                          )}
-                        </div>
-
-                        <div className="flex flex-col items-end gap-2 shrink-0 ml-1">
-                          {isOpen && (
-                            <Button
-                              size="sm" variant="outline"
-                              className="text-xs gap-1 h-7 rounded-lg"
-                              onClick={(e) => { e.stopPropagation(); handleCloseDefect(defect); }}
-                            >
-                              <Check className="h-3 w-3" /> Close
-                            </Button>
-                          )}
-                          <ChevronRight className="h-4 w-4 text-muted-foreground/30" />
-                        </div>
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <Wrench className="h-3 w-3 text-muted-foreground shrink-0" />
+                        <p className="text-xs text-muted-foreground truncate">
+                          <span className="font-medium text-foreground/80">{defect.ride_name}</span>
+                          {defect.category_name && <span> · {defect.category_name}</span>}
+                        </p>
                       </div>
+
+                      {defect.location_on_ride && (
+                        <div className="flex items-center gap-1.5 mt-1">
+                          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                          <p className="text-[11px] text-muted-foreground truncate">{defect.location_on_ride}</p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center gap-1.5 flex-wrap mt-2.5">
+                        <Badge className={`text-[10px] px-2 py-0.5 font-semibold border-0 ${sev.badgeClass}`}>{sev.label}</Badge>
+                        {isOpen ? (
+                          <Badge variant="destructive" className="text-[10px] px-2 py-0.5 font-medium border-0">Open</Badge>
+                        ) : (
+                          <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 font-medium border-0">Closed</Badge>
+                        )}
+                        {hasPhotos && (
+                          <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+                            <Camera className="h-3 w-3" />
+                            {defect.photo_paths?.length}
+                          </span>
+                        )}
+                        <span className="text-[11px] text-muted-foreground ml-auto">
+                          {formatDistanceToNow(new Date(defect.reported_at), { addSuffix: true })}
+                        </span>
+                      </div>
+
+                      {isOpen && defect.severity === 'stop_operation' && (
+                        <div className="flex items-center gap-1.5 mt-2 px-2.5 py-1.5 rounded-lg bg-destructive/8 border border-destructive/15">
+                          <span className="text-xs">⛔</span>
+                          <p className="text-[11px] font-semibold text-destructive">Do not operate</p>
+                        </div>
+                      )}
+
+                      {!isOpen && defect.resolution_notes && (
+                        <p className="text-[11px] text-muted-foreground italic line-clamp-1 mt-2">✓ {defect.resolution_notes}</p>
+                      )}
+                    </div>
+
+                    {/* Right actions */}
+                    <div className="flex flex-col items-end gap-2.5 shrink-0 ml-1 pt-0.5">
+                      {isOpen && (
+                        <Button
+                          size="sm" variant="outline"
+                          className="text-xs gap-1.5 h-8 rounded-lg px-3 font-medium"
+                          onClick={(e) => { e.stopPropagation(); handleCloseDefect(defect); }}
+                        >
+                          <Check className="h-3 w-3" /> Close
+                        </Button>
+                      )}
+                      <ChevronRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-muted-foreground/60 transition-colors" />
                     </div>
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             );
           })}
         </div>
