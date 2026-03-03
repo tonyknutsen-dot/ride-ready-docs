@@ -18,11 +18,11 @@ type Ride = Tables<'rides'> & {
 };
 
 const FREQUENCY_LABELS: Record<string, string> = {
-  preopening: 'Pre-Opening Safety Check',
-  daily: 'Daily Safety Check',
-  weekly: 'Weekly Safety Check',
-  monthly: 'Monthly Safety Check',
-  yearly: 'Yearly Safety Check',
+  preopening: 'Pre-Opening Check',
+  daily: 'Daily Check',
+  weekly: 'Weekly Check',
+  monthly: 'Monthly Check',
+  yearly: 'Yearly Check',
 };
 
 const ChecklistExecutionPage = () => {

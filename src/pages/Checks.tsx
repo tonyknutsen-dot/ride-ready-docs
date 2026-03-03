@@ -38,7 +38,7 @@ const Checks = () => {
               <CheckSquare className="h-[18px] w-[18px] text-primary" strokeWidth={2} />
             </span>
             <div>
-              <h1 className="text-lg font-bold text-foreground leading-none">Safety Checks</h1>
+              <h1 className="text-lg font-bold text-foreground leading-none">Checks</h1>
               <p className="text-xs text-muted-foreground mt-0.5">Daily, pre-opening &amp; periodic checks</p>
             </div>
           </div>
@@ -119,7 +119,7 @@ const Checks = () => {
           </h2>
           <RideSelector
             title="Select Equipment"
-            description="Choose which ride, stall, or equipment you want to perform safety checks on."
+            description="Choose which ride, stall, or equipment you want to perform checks on."
             actionLabel="Open Checks"
             icon={({ className }) => <CheckSquare className={className} />}
             onRideSelect={handleRideSelect}
