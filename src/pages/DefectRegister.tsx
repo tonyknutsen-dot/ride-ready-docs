@@ -3,13 +3,18 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
-import { format } from 'date-fns';
-import { AlertOctagon, Clock, Wrench, Check, Search, ChevronRight, Camera, SlidersHorizontal, ExternalLink } from 'lucide-react';
+import { format, formatDistanceToNow } from 'date-fns';
+import {
+  AlertOctagon, Clock, Wrench, Check, Search, ChevronRight, Camera,
+  SlidersHorizontal, ExternalLink, MapPin, User, CalendarDays, ShieldAlert,
+  ArrowLeft, FileText, CheckCircle2, Circle, AlertTriangle,
+} from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Separator } from '@/components/ui/separator';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -33,16 +38,190 @@ interface DefectRow {
   resolution_notes: string | null;
   ride_id: string;
   check_id: string | null;
+  created_at: string;
+  updated_at: string;
   ride_name?: string;
+  category_name?: string;
   category_group?: string;
 }
 
-const SEVERITY_CONFIG: Record<DefectSeverity, { label: string; icon: typeof AlertOctagon; className: string; sort: number }> = {
-  stop_operation: { label: 'Stop Use', icon: AlertOctagon, className: 'bg-destructive/10 text-destructive border-destructive/30', sort: 0 },
-  urgent:        { label: 'Important', icon: Wrench,      className: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-300/30', sort: 1 },
-  non_urgent:    { label: 'Low',       icon: Clock,       className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-300/30', sort: 2 },
+const SEVERITY_CONFIG: Record<DefectSeverity, {
+  label: string;
+  icon: typeof AlertOctagon;
+  badgeClass: string;
+  sort: number;
+  operational: string;
+  operationalClass: string;
+}> = {
+  stop_operation: {
+    label: 'Stop Use', icon: AlertOctagon,
+    badgeClass: 'bg-destructive text-destructive-foreground',
+    sort: 0,
+    operational: 'Do not operate',
+    operationalClass: 'bg-destructive/10 text-destructive border-destructive/30',
+  },
+  urgent: {
+    label: 'Important', icon: Wrench,
+    badgeClass: 'bg-orange-500 text-white dark:bg-orange-600',
+    sort: 1,
+    operational: 'Repair required',
+    operationalClass: 'bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300 border-orange-300/40',
+  },
+  non_urgent: {
+    label: 'Low', icon: Clock,
+    badgeClass: 'bg-yellow-500 text-white dark:bg-yellow-600',
+    sort: 2,
+    operational: 'Monitor',
+    operationalClass: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300 border-yellow-300/40',
+  },
 };
 
+// ─── Defect Detail Sheet ─────────────────────────────────────
+const DefectDetailSheet = ({
+  defect, onClose, onCloseDefect, onNavigateToEquipment, photoUrls,
+}: {
+  defect: DefectRow;
+  onClose: () => void;
+  onCloseDefect: (d: DefectRow) => void;
+  onNavigateToEquipment: (rideId: string) => void;
+  photoUrls: string[];
+}) => {
+  const sev = SEVERITY_CONFIG[defect.severity];
+  const SevIcon = sev.icon;
+  const isOpen = defect.status !== 'resolved';
+
+  // Build timeline events
+  const timeline: { label: string; date: string; icon: typeof Circle; color: string }[] = [
+    { label: 'Raised', date: defect.reported_at, icon: AlertTriangle, color: 'text-orange-500' },
+  ];
+  if (defect.created_at !== defect.updated_at && defect.status !== 'resolved') {
+    timeline.push({ label: 'Updated', date: defect.updated_at, icon: FileText, color: 'text-primary' });
+  }
+  if (defect.resolved_at) {
+    timeline.push({ label: 'Closed', date: defect.resolved_at, icon: CheckCircle2, color: 'text-green-600 dark:text-green-400' });
+  }
+
+  return (
+    <div className="space-y-5">
+      {/* Operational status banner */}
+      <div className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg border ${sev.operationalClass}`}>
+        <ShieldAlert className="h-4 w-4 shrink-0" />
+        <div>
+          <p className="text-sm font-semibold">{sev.operational}</p>
+          <p className="text-[11px] opacity-80">{sev.label} severity</p>
+        </div>
+      </div>
+
+      {/* Core details */}
+      <div className="space-y-3">
+        <div>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Description</p>
+          <p className="text-sm text-foreground leading-relaxed">{defect.description}</p>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <DetailField icon={<Wrench className="h-3.5 w-3.5" />} label="Equipment" value={defect.ride_name || 'Unknown'} />
+          {defect.category_name && (
+            <DetailField icon={<FileText className="h-3.5 w-3.5" />} label="Type" value={defect.category_name} />
+          )}
+          <DetailField icon={<CalendarDays className="h-3.5 w-3.5" />} label="Raised" value={format(new Date(defect.reported_at), 'dd MMM yyyy HH:mm')} />
+          <DetailField
+            icon={isOpen ? <AlertOctagon className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+            label="Status"
+            value={isOpen ? 'Open' : 'Closed'}
+          />
+          {defect.location_on_ride && (
+            <DetailField icon={<MapPin className="h-3.5 w-3.5" />} label="Location" value={defect.location_on_ride} />
+          )}
+          {defect.resolved_by && (
+            <DetailField icon={<User className="h-3.5 w-3.5" />} label="Closed by" value={defect.resolved_by} />
+          )}
+          {defect.resolved_at && (
+            <DetailField icon={<CalendarDays className="h-3.5 w-3.5" />} label="Closed" value={format(new Date(defect.resolved_at), 'dd MMM yyyy HH:mm')} />
+          )}
+        </div>
+      </div>
+
+      {/* Resolution notes */}
+      {defect.resolution_notes && (
+        <div>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-1">Repair / closure notes</p>
+          <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/40">
+            <p className="text-sm text-foreground">{defect.resolution_notes}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Photos */}
+      {photoUrls.length > 0 && (
+        <div>
+          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2">Evidence photos</p>
+          <div className="grid grid-cols-3 gap-2">
+            {photoUrls.map((url, idx) => (
+              <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="aspect-square rounded-lg overflow-hidden border border-border hover:ring-2 hover:ring-primary/50 transition-all">
+                <img src={url} alt={`Evidence ${idx + 1}`} className="w-full h-full object-cover" />
+              </a>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Timeline */}
+      <div>
+        <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2">Lifecycle</p>
+        <div className="relative pl-5 space-y-3">
+          <div className="absolute left-[7px] top-1 bottom-1 w-px bg-border" />
+          {timeline.map((evt, i) => {
+            const TlIcon = evt.icon;
+            return (
+              <div key={i} className="relative flex items-start gap-2.5">
+                <div className={`absolute -left-5 top-0.5 w-3.5 h-3.5 rounded-full bg-background border-2 border-border flex items-center justify-center`}>
+                  <TlIcon className={`h-2 w-2 ${evt.color}`} />
+                </div>
+                <div>
+                  <p className="text-xs font-medium text-foreground">{evt.label}</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    {format(new Date(evt.date), 'dd MMM yyyy HH:mm')}
+                    {' · '}
+                    {formatDistanceToNow(new Date(evt.date), { addSuffix: true })}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Actions */}
+      <div className="flex flex-col gap-2">
+        {isOpen && (
+          <Button className="gap-1.5 w-full" onClick={() => onCloseDefect(defect)}>
+            <Check className="h-4 w-4" />
+            Close defect
+          </Button>
+        )}
+        <Button variant="outline" className="gap-1.5 w-full" onClick={() => onNavigateToEquipment(defect.ride_id)}>
+          <ExternalLink className="h-3.5 w-3.5" />
+          View on equipment page
+        </Button>
+      </div>
+    </div>
+  );
+};
+
+const DetailField = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
+  <div className="flex items-start gap-2">
+    <span className="text-muted-foreground mt-0.5 shrink-0">{icon}</span>
+    <div className="min-w-0">
+      <p className="text-[11px] text-muted-foreground">{label}</p>
+      <p className="text-sm font-medium text-foreground truncate">{value}</p>
+    </div>
+  </div>
+);
+
+// ─── Main Register ───────────────────────────────────────────
 const DefectRegister = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -57,6 +236,7 @@ const DefectRegister = () => {
   const [closureDialogOpen, setClosureDialogOpen] = useState(false);
   const [selectedDefect, setSelectedDefect] = useState<DefectRow | null>(null);
   const [detailDefect, setDetailDefect] = useState<DefectRow | null>(null);
+  const [detailPhotoUrls, setDetailPhotoUrls] = useState<string[]>([]);
 
   // Fetch all defects
   const { data: defects = [], isLoading } = useQuery({
@@ -65,7 +245,7 @@ const DefectRegister = () => {
       if (!effectiveUserId) return [];
       const { data, error } = await supabase
         .from('defects')
-        .select('id, description, severity, status, location_on_ride, photo_paths, reported_at, resolved_at, resolved_by, resolution_notes, ride_id, check_id')
+        .select('id, description, severity, status, location_on_ride, photo_paths, reported_at, resolved_at, resolved_by, resolution_notes, ride_id, check_id, created_at, updated_at')
         .order('reported_at', { ascending: false });
       if (error) throw error;
       return (data || []) as DefectRow[];
@@ -89,38 +269,39 @@ const DefectRegister = () => {
   });
 
   const rideMap = useMemo(() => {
-    const m = new Map<string, { name: string; group: string }>();
+    const m = new Map<string, { name: string; categoryName: string; group: string }>();
     for (const r of rides) {
       m.set(r.id, {
         name: r.ride_name,
+        categoryName: (r.ride_categories as any)?.name || '',
         group: (r.ride_categories as any)?.category_group || '',
       });
     }
     return m;
   }, [rides]);
 
-  // Enrich defects with ride names
   const enriched = useMemo(() => {
     return defects.map(d => ({
       ...d,
       ride_name: rideMap.get(d.ride_id)?.name || 'Unknown',
+      category_name: rideMap.get(d.ride_id)?.categoryName || '',
       category_group: rideMap.get(d.ride_id)?.group || '',
     }));
   }, [defects, rideMap]);
 
-  // Keep local filter state synced when deep-link params change
+  // Sync filters from URL
   useEffect(() => {
     setStatusFilter(searchParams.get('status') || 'open');
     setSeverityFilter(searchParams.get('severity') || 'all');
     setRideFilter(searchParams.get('rideId') || 'all');
   }, [searchParams]);
 
-  // Open exact defect detail when deep-linked with ?defectId=
+  // Auto-open detail from URL
   useEffect(() => {
     const defectId = searchParams.get('defectId');
     if (!defectId || enriched.length === 0) return;
     const found = enriched.find((d) => d.id === defectId);
-    if (found) setDetailDefect(found);
+    if (found) openDetail(found);
   }, [searchParams, enriched]);
 
   const updateFilterParams = (next: { status?: string; severity?: string; rideId?: string }) => {
@@ -132,19 +313,28 @@ const DefectRegister = () => {
     setSearchParams(params, { replace: true });
   };
 
-  const handleOpenDefectDetail = (defect: DefectRow) => {
+  const openDetail = async (defect: DefectRow) => {
     setDetailDefect(defect);
     const params = new URLSearchParams(searchParams);
     params.set('defectId', defect.id);
-    if (rideFilter !== 'all') params.set('rideId', rideFilter);
-    if (severityFilter !== 'all') params.set('severity', severityFilter);
-    params.set('status', statusFilter);
     setSearchParams(params, { replace: true });
+
+    // Load photos
+    if (defect.photo_paths && defect.photo_paths.length > 0) {
+      const urls: string[] = [];
+      for (const path of defect.photo_paths) {
+        const { data } = await supabase.storage.from('defect-photos').createSignedUrl(path, 3600);
+        if (data?.signedUrl) urls.push(data.signedUrl);
+      }
+      setDetailPhotoUrls(urls);
+    } else {
+      setDetailPhotoUrls([]);
+    }
   };
 
-  const handleCloseDefectDetail = (open: boolean) => {
-    if (open) return;
+  const closeDetail = () => {
     setDetailDefect(null);
+    setDetailPhotoUrls([]);
     const params = new URLSearchParams(searchParams);
     params.delete('defectId');
     setSearchParams(params, { replace: true });
@@ -161,25 +351,15 @@ const DefectRegister = () => {
     queryClient.invalidateQueries({ queryKey: ['all-rides-critical-defects'] });
     queryClient.invalidateQueries({ queryKey: ['all-rides-open-defects'] });
     queryClient.invalidateQueries({ queryKey: ['needs-attention'] });
+    closeDetail();
   };
 
   const filtered = useMemo(() => {
     let list = [...enriched];
-
-    if (statusFilter === 'open') {
-      list = list.filter((d) => d.status !== 'resolved');
-    } else if (statusFilter === 'closed') {
-      list = list.filter((d) => d.status === 'resolved');
-    }
-
-    if (severityFilter !== 'all') {
-      list = list.filter((d) => d.severity === severityFilter);
-    }
-
-    if (rideFilter !== 'all') {
-      list = list.filter((d) => d.ride_id === rideFilter);
-    }
-
+    if (statusFilter === 'open') list = list.filter((d) => d.status !== 'resolved');
+    else if (statusFilter === 'closed') list = list.filter((d) => d.status === 'resolved');
+    if (severityFilter !== 'all') list = list.filter((d) => d.severity === severityFilter);
+    if (rideFilter !== 'all') list = list.filter((d) => d.ride_id === rideFilter);
     if (searchTerm.trim()) {
       const q = searchTerm.toLowerCase();
       list = list.filter((d) =>
@@ -188,14 +368,12 @@ const DefectRegister = () => {
         (d.location_on_ride || '').toLowerCase().includes(q)
       );
     }
-
     list.sort((a, b) => {
       const sa = SEVERITY_CONFIG[a.severity]?.sort ?? 3;
       const sb = SEVERITY_CONFIG[b.severity]?.sort ?? 3;
       if (sa !== sb) return sa - sb;
       return new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime();
     });
-
     return list;
   }, [enriched, statusFilter, severityFilter, rideFilter, searchTerm]);
 
@@ -214,6 +392,8 @@ const DefectRegister = () => {
         iconBgClass="from-destructive/20 to-destructive/10"
         title="Defect Register"
         subtitle={`${openCount} open defect${openCount !== 1 ? 's' : ''}${stopUseCount > 0 ? ` · ${stopUseCount} stop-use` : ''}`}
+        showBackButton
+        backTo="/overview"
         actions={
           <DefectReportDialog
             onDefectReported={handleDefectUpdated}
@@ -229,12 +409,12 @@ const DefectRegister = () => {
         }
       />
 
-      {/* KPI strip */}
+      {/* Stop-use banner */}
       {stopUseCount > 0 && (
-        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-destructive/10 border border-destructive/20">
+        <div className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-lg bg-destructive/10 border border-destructive/20">
           <AlertOctagon className="h-4 w-4 text-destructive flex-shrink-0" />
-          <span className="text-sm font-medium text-destructive">
-            {stopUseCount} stop-use defect{stopUseCount !== 1 ? 's' : ''} require immediate attention
+          <span className="text-sm font-semibold text-destructive">
+            {stopUseCount} stop-use defect{stopUseCount !== 1 ? 's' : ''} — do not operate
           </span>
         </div>
       )}
@@ -243,40 +423,20 @@ const DefectRegister = () => {
       <div className="flex flex-col gap-2">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search defects..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 h-10"
-          />
+          <Input placeholder="Search defects..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-9 h-10" />
         </div>
         <div className="flex gap-2 overflow-x-auto">
-          <Select
-            value={statusFilter}
-            onValueChange={(value) => {
-              setStatusFilter(value);
-              updateFilterParams({ status: value });
-            }}
-          >
-            <SelectTrigger className="w-[120px] h-9 text-xs shrink-0">
-              <SelectValue />
-            </SelectTrigger>
+          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); updateFilterParams({ status: v }); }}>
+            <SelectTrigger className="w-[110px] h-9 text-xs shrink-0"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="open">Open</SelectItem>
               <SelectItem value="closed">Closed</SelectItem>
               <SelectItem value="all">All</SelectItem>
             </SelectContent>
           </Select>
-          <Select
-            value={severityFilter}
-            onValueChange={(value) => {
-              setSeverityFilter(value);
-              updateFilterParams({ severity: value });
-            }}
-          >
+          <Select value={severityFilter} onValueChange={(v) => { setSeverityFilter(v); updateFilterParams({ severity: v }); }}>
             <SelectTrigger className="w-[130px] h-9 text-xs shrink-0">
-              <SlidersHorizontal className="h-3 w-3 mr-1 text-muted-foreground" />
-              <SelectValue placeholder="Severity" />
+              <SlidersHorizontal className="h-3 w-3 mr-1 text-muted-foreground" /><SelectValue placeholder="Severity" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Severities</SelectItem>
@@ -285,16 +445,8 @@ const DefectRegister = () => {
               <SelectItem value="non_urgent">Low</SelectItem>
             </SelectContent>
           </Select>
-          <Select
-            value={rideFilter}
-            onValueChange={(value) => {
-              setRideFilter(value);
-              updateFilterParams({ rideId: value });
-            }}
-          >
-            <SelectTrigger className="w-[160px] h-9 text-xs shrink-0">
-              <SelectValue placeholder="Equipment" />
-            </SelectTrigger>
+          <Select value={rideFilter} onValueChange={(v) => { setRideFilter(v); updateFilterParams({ rideId: v }); }}>
+            <SelectTrigger className="w-[160px] h-9 text-xs shrink-0"><SelectValue placeholder="Equipment" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Equipment</SelectItem>
               {ridesWithDefects.map((r) => (
@@ -312,9 +464,9 @@ const DefectRegister = () => {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-12 space-y-2">
-          <AlertOctagon className="h-10 w-10 text-muted-foreground/30 mx-auto" />
+          <CheckCircle2 className="h-10 w-10 text-muted-foreground/30 mx-auto" />
           <p className="text-sm text-muted-foreground">
-            {statusFilter === 'open' ? 'No open defects' : 'No defects found'}
+            {statusFilter === 'open' ? 'No open defects — all clear' : 'No defects found'}
           </p>
         </div>
       ) : (
@@ -328,66 +480,53 @@ const DefectRegister = () => {
             return (
               <Card
                 key={defect.id}
-                className={`cursor-pointer transition-shadow hover:shadow-md active:scale-[0.995] ${
+                className={`cursor-pointer transition-all hover:shadow-md active:scale-[0.995] ${
                   defect.severity === 'stop_operation' && isOpen
-                    ? 'border-destructive/40 bg-destructive/5'
-                    : ''
+                    ? 'border-destructive/40 bg-destructive/5 hover:border-destructive/60'
+                    : 'hover:border-primary/30'
                 }`}
-                onClick={() => handleOpenDefectDetail(defect)}
+                onClick={() => openDetail(defect)}
               >
-                <CardContent className="p-3">
+                <CardContent className="p-3.5">
                   <div className="flex items-start gap-3">
-                    <div className="flex-1 min-w-0 space-y-1.5">
-                      {/* Status row */}
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${sev.className}`}>
-                          <SevIcon className="h-3 w-3" />
-                          {sev.label}
-                        </span>
+                    {/* Severity icon pill */}
+                    <div className={`mt-0.5 w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${sev.operationalClass}`}>
+                      <SevIcon className="h-4 w-4" />
+                    </div>
+
+                    <div className="flex-1 min-w-0 space-y-1">
+                      {/* Description */}
+                      <p className="text-sm font-medium text-foreground line-clamp-2 leading-snug">{defect.description}</p>
+
+                      {/* Equipment + category */}
+                      <p className="text-xs text-primary font-medium truncate">
+                        {defect.ride_name}
+                        {defect.category_name && <span className="text-muted-foreground font-normal"> · {defect.category_name}</span>}
+                      </p>
+
+                      {/* Meta row */}
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge className={`text-[10px] px-1.5 py-0 ${sev.badgeClass}`}>{sev.label}</Badge>
                         {isOpen ? (
                           <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Open</Badge>
                         ) : (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Closed</Badge>
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Closed</Badge>
                         )}
-                        {hasPhotos && (
-                          <Camera className="h-3 w-3 text-muted-foreground" />
-                        )}
+                        {hasPhotos && <Camera className="h-3 w-3 text-muted-foreground" />}
+                        <span className="text-[11px] text-muted-foreground">
+                          {formatDistanceToNow(new Date(defect.reported_at), { addSuffix: true })}
+                        </span>
                       </div>
-
-                      {/* Description */}
-                      <p className="text-sm font-medium text-foreground line-clamp-2">{defect.description}</p>
-
-                      {/* Equipment name */}
-                      <p className="text-xs text-primary font-medium">{defect.ride_name}</p>
-
-                      {/* Meta line */}
-                      <p className="text-[11px] text-muted-foreground">
-                        {format(new Date(defect.reported_at), 'dd MMM yyyy HH:mm')}
-                        {defect.location_on_ride && ` · ${defect.location_on_ride}`}
-                      </p>
-
-                      {/* Resolution preview */}
-                      {!isOpen && defect.resolution_notes && (
-                        <p className="text-[11px] text-muted-foreground italic line-clamp-1">
-                          ✓ {defect.resolution_notes}
-                        </p>
-                      )}
                     </div>
 
-                    {/* Actions */}
                     <div className="flex flex-col items-end gap-2 shrink-0">
                       {isOpen && (
                         <Button
-                          size="sm"
-                          variant="outline"
+                          size="sm" variant="outline"
                           className="text-xs gap-1 h-7"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleCloseDefect(defect);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); handleCloseDefect(defect); }}
                         >
-                          <Check className="h-3 w-3" />
-                          Close
+                          <Check className="h-3 w-3" /> Close
                         </Button>
                       )}
                       <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
@@ -400,66 +539,32 @@ const DefectRegister = () => {
         </div>
       )}
 
-      <Dialog open={!!detailDefect} onOpenChange={handleCloseDefectDetail}>
-        <DialogContent className="max-w-lg">
+      {/* Detail sheet */}
+      <Sheet open={!!detailDefect} onOpenChange={(open) => { if (!open) closeDetail(); }}>
+        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto p-0">
           {detailDefect && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  {(() => {
-                    const DefectIcon = SEVERITY_CONFIG[detailDefect.severity].icon;
-                    return <DefectIcon className="h-4 w-4 text-destructive" />;
-                  })()}
-                  Defect detail
-                </DialogTitle>
-                <DialogDescription>
-                  {detailDefect.ride_name} • {format(new Date(detailDefect.reported_at), 'dd MMM yyyy HH:mm')}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-3 text-sm">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant={detailDefect.status === 'resolved' ? 'secondary' : 'destructive'}>
-                    {detailDefect.status === 'resolved' ? 'Closed' : 'Open'}
-                  </Badge>
-                  <Badge variant="outline">{SEVERITY_CONFIG[detailDefect.severity].label}</Badge>
-                  {detailDefect.category_group && <Badge variant="outline">{detailDefect.category_group}</Badge>}
-                </div>
-                <p className="text-foreground">{detailDefect.description}</p>
-                {detailDefect.location_on_ride && (
-                  <p className="text-muted-foreground">Location: {detailDefect.location_on_ride}</p>
-                )}
-                {detailDefect.resolution_notes && (
-                  <p className="text-muted-foreground">Resolution: {detailDefect.resolution_notes}</p>
-                )}
-                <div className="flex items-center gap-2 pt-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="gap-1"
-                    onClick={() => navigate(`/rides/${detailDefect.ride_id}?tab=overview&section=defects`)}
-                  >
-                    <ExternalLink className="h-3.5 w-3.5" />
-                    Open on equipment page
+            <div className="flex flex-col h-full">
+              <SheetHeader className="px-4 pt-4 pb-3 border-b border-border sticky top-0 bg-background z-10">
+                <div className="flex items-center gap-2">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={closeDetail}>
+                    <ArrowLeft className="h-4 w-4" />
                   </Button>
-                  {detailDefect.status !== 'resolved' && (
-                    <Button
-                      size="sm"
-                      className="gap-1"
-                      onClick={() => {
-                        setSelectedDefect(detailDefect);
-                        setClosureDialogOpen(true);
-                      }}
-                    >
-                      <Check className="h-3.5 w-3.5" />
-                      Close defect
-                    </Button>
-                  )}
+                  <SheetTitle className="text-base">Defect Detail</SheetTitle>
                 </div>
+              </SheetHeader>
+              <div className="flex-1 px-4 py-4">
+                <DefectDetailSheet
+                  defect={detailDefect}
+                  onClose={closeDetail}
+                  onCloseDefect={handleCloseDefect}
+                  onNavigateToEquipment={(rideId) => navigate(`/rides/${rideId}?tab=overview&section=defects`)}
+                  photoUrls={detailPhotoUrls}
+                />
               </div>
-            </>
+            </div>
           )}
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
       {/* Closure dialog */}
       <DefectClosureDialog
