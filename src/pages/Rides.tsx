@@ -11,7 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store, Sparkles, ImageIcon, Camera, Loader2, Clock, AlertTriangle, CheckCircle, Share2 } from 'lucide-react';
+import { Plus, Settings, FileText, CheckSquare, Mail, Lock, Gamepad2, Utensils, Zap, FerrisWheel, Wind, Store, Sparkles, ImageIcon, Camera, Loader2, Clock, AlertTriangle, CheckCircle, Share2, AlertOctagon } from 'lucide-react';
 import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 import { setCache, getCache } from '@/lib/offlineCache';
@@ -27,7 +27,7 @@ import StaffAccountBanner from '@/components/StaffAccountBanner';
 import { OfflineStaleAlert } from '@/components/OfflineStaleAlert';
 import EquipmentViewToggle, { type ViewMode } from '@/components/equipment/EquipmentViewToggle';
 import EquipmentListView from '@/components/equipment/EquipmentListView';
-import { useAllRidesCriticalDefects } from '@/hooks/useOpenCriticalDefects';
+import { useAllRidesCriticalDefects, useAllRidesOpenDefects } from '@/hooks/useOpenCriticalDefects';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -62,6 +62,7 @@ const Rides = () => {
   const [activeGroup, setActiveGroup] = useState<string>('All');
   const [uploadingPhotoFor, setUploadingPhotoFor] = useState<string | null>(null);
   const { data: criticalDefectsMap } = useAllRidesCriticalDefects();
+  const { data: openDefectsMap } = useAllRidesOpenDefects();
 
   // View toggle with localStorage persistence
   const VIEW_PREF_KEY = 'rrd-equipment-view';
@@ -442,9 +443,15 @@ const Rides = () => {
   }
 
   const categoryGroups = ['All', 'Rides', 'Food Stalls', 'Stalls', 'Games', 'Inflatables', 'Attractions', 'Equipment'] as const;
-  const complianceGroups = ['Overdue', 'Due Soon', 'Compliant'] as const;
+  const complianceGroups = ['Overdue', 'Due Soon', 'Attention', 'Compliant'] as const;
 
-  const getComplianceStatus = (rideId: string): 'overdue' | 'due_soon' | 'compliant' | 'no_docs' => {
+  const getComplianceStatus = (rideId: string): 'stop_use' | 'attention' | 'overdue' | 'due_soon' | 'compliant' | 'no_docs' => {
+    // Stop-use defects take absolute priority
+    const defects = openDefectsMap?.get(rideId);
+    if (defects?.critical && defects.critical > 0) return 'stop_use';
+    // Any open defect means attention needed
+    if (defects?.nonCritical && defects.nonCritical > 0) return 'attention';
+    
     const s = rideStats[rideId];
     if (!s) return 'compliant';
     if (s.overdueCount > 0 || s.expiredDocCount > 0) return 'overdue';
@@ -471,8 +478,9 @@ const Rides = () => {
       complianceGroups.includes(activeGroup as any)
         ? rides.filter(r => {
             const s = getComplianceStatus(r.id);
-            if (activeGroup === 'Overdue') return s === 'overdue';
+            if (activeGroup === 'Overdue') return s === 'overdue' || s === 'stop_use';
             if (activeGroup === 'Due Soon') return s === 'due_soon';
+            if (activeGroup === 'Attention') return s === 'attention';
             if (activeGroup === 'Compliant') return s === 'compliant' || s === 'no_docs';
             return true;
           })
@@ -480,8 +488,9 @@ const Rides = () => {
     return base;
   })();
 
-  const overdueTotal = rides.filter(r => getComplianceStatus(r.id) === 'overdue').length;
+  const overdueTotal = rides.filter(r => ['overdue', 'stop_use'].includes(getComplianceStatus(r.id))).length;
   const dueSoonTotal = rides.filter(r => getComplianceStatus(r.id) === 'due_soon').length;
+  const attentionTotal = rides.filter(r => getComplianceStatus(r.id) === 'attention').length;
   const compliantTotal = rides.filter(r => ['compliant', 'no_docs'].includes(getComplianceStatus(r.id))).length;
 
   const groupCounts: Record<string, number> = {
@@ -495,6 +504,7 @@ const Rides = () => {
     Equipment: rides.filter(r => r.ride_categories.category_group === 'Equipment').length,
     Overdue: overdueTotal,
     'Due Soon': dueSoonTotal,
+    Attention: attentionTotal,
     Compliant: compliantTotal,
   };
 
@@ -534,7 +544,7 @@ const Rides = () => {
 
       {/* Compliance KPI Strip */}
       {rides.length > 0 && (
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-4 gap-2">
           <button
             onClick={() => setActiveGroup('Overdue')}
             className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'Overdue' ? 'border-destructive/50 bg-destructive/5' : 'border-border bg-card hover:border-destructive/30'}`}
@@ -548,6 +558,13 @@ const Rides = () => {
           >
             <span className="text-xl font-bold text-warning">{dueSoonTotal}</span>
             <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Due Soon</span>
+          </button>
+          <button
+            onClick={() => setActiveGroup('Attention')}
+            className={`flex flex-col items-center gap-0.5 p-3 rounded-xl border transition-all ${activeGroup === 'Attention' ? 'border-amber-500/50 bg-amber-50 dark:bg-amber-950/20' : 'border-border bg-card hover:border-amber-500/30'}`}
+          >
+            <span className="text-xl font-bold text-amber-600 dark:text-amber-400">{attentionTotal}</span>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wide">Attention</span>
           </button>
           <button
             onClick={() => setActiveGroup('Compliant')}
@@ -611,6 +628,7 @@ const Rides = () => {
           rides={filteredRides as any}
           rideStats={rideStats}
           criticalDefectsMap={criticalDefectsMap}
+          openDefectsMap={openDefectsMap}
           onSelectRide={(ride) => navigate(`/rides/${ride.id}`)}
         />
       ) : (
@@ -678,12 +696,22 @@ const Rides = () => {
                     {ride.ride_categories.name}
                   </Badge>
                 )}
-                {/* Compliance status badge — bottom left */}
+                {/* Status badge — bottom left */}
                 {(() => {
                   const s = getComplianceStatus(ride.id);
+                  if (s === 'stop_use') return (
+                    <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow">
+                      <AlertOctagon className="h-2.5 w-2.5" /> Do not operate
+                    </span>
+                  );
                   if (s === 'overdue') return (
                     <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow">
                       <AlertTriangle className="h-2.5 w-2.5" /> Overdue
+                    </span>
+                  );
+                  if (s === 'attention') return (
+                    <span className="absolute bottom-3 left-3 flex items-center gap-1 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow">
+                      <AlertTriangle className="h-2.5 w-2.5" /> Attention needed
                     </span>
                   );
                   if (s === 'due_soon') return (

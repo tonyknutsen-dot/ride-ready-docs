@@ -1,4 +1,4 @@
-import { AlertOctagon, ChevronRight, FileText } from 'lucide-react';
+import { AlertOctagon, AlertTriangle, ChevronRight, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import type { Ride } from '@/types/ride';
@@ -13,17 +13,19 @@ interface EquipmentListViewProps {
   rides: Ride[];
   rideStats: Record<string, RideStats>;
   criticalDefectsMap: Map<string, number> | undefined;
+  openDefectsMap?: Map<string, { critical: number; nonCritical: number }> | undefined;
   onSelectRide: (ride: Ride) => void;
 }
 
-const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, onSelectRide }: EquipmentListViewProps) => {
+const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMap, onSelectRide }: EquipmentListViewProps) => {
   return (
     <div className="border border-border rounded-lg overflow-hidden divide-y divide-border">
       {rides.map((ride) => {
-        const criticalCount = criticalDefectsMap?.get(ride.id) || 0;
+        const defects = openDefectsMap?.get(ride.id);
+        const hasCritical = (defects?.critical ?? 0) > 0;
+        const hasNonCritical = (defects?.nonCritical ?? 0) > 0;
         const stats = rideStats[ride.id];
         const hasDue = !!stats?.nextDue;
-        const isCritical = criticalCount > 0;
 
         return (
           <button
@@ -32,9 +34,10 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, onSelectRide 
             className={cn(
               'w-full flex items-center gap-3 px-3 py-3 sm:px-4 sm:py-3 text-left transition-colors hover:bg-muted/50',
               'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset',
-              isCritical && 'border-l-4 border-l-destructive bg-destructive/5',
-              !isCritical && hasDue && 'border-l-4 border-l-amber-500',
-              !isCritical && !hasDue && 'border-l-4 border-l-transparent'
+              hasCritical && 'border-l-4 border-l-destructive bg-destructive/5',
+              !hasCritical && hasNonCritical && 'border-l-4 border-l-amber-500',
+              !hasCritical && !hasNonCritical && hasDue && 'border-l-4 border-l-amber-500',
+              !hasCritical && !hasNonCritical && !hasDue && 'border-l-4 border-l-transparent'
             )}
           >
             {/* Thumbnail placeholder */}
@@ -75,18 +78,24 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, onSelectRide 
 
               {/* Status */}
               <div className="sm:w-[140px]">
-                {isCritical ? (
+                {hasCritical ? (
                   <span className="inline-flex items-center gap-1 text-xs font-bold text-destructive">
                     <AlertOctagon className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">Stop use</span>
-                    <span className="sm:hidden">Critical</span>
+                    <span className="hidden sm:inline">Do not operate</span>
+                    <span className="sm:hidden">Stop use</span>
+                  </span>
+                ) : hasNonCritical ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400">
+                    <AlertTriangle className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">Attention needed</span>
+                    <span className="sm:hidden">Attention</span>
                   </span>
                 ) : hasDue ? (
                   <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
                     Due {new Date(stats!.nextDue!).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
                   </span>
                 ) : (
-                  <span className="text-xs text-muted-foreground">OK</span>
+                  <span className="text-xs text-success font-medium">Compliant</span>
                 )}
               </div>
 
