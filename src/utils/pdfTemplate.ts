@@ -33,7 +33,7 @@ export const DOC_TYPE_DISCLAIMERS: Record<DocTypeCode, string> = {
   MR: 'System-generated maintenance record.',
   DR: 'Stored copy of uploaded document.',
   TL: 'System-generated equipment timeline report for audit and compliance purposes.',
-  CH: 'System-generated check records report for operational monitoring and compliance purposes.',
+  CH: 'System-generated check records report for operational and compliance review.',
   IC: 'System-generated inspection checklist record.',
   RA: 'System-generated risk assessment record. Professional judgement must always be applied.',
   WL: 'System-generated wind speed record for operational monitoring and compliance purposes.',
