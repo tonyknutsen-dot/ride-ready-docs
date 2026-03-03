@@ -1,12 +1,10 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Eye,
   Download,
@@ -27,6 +25,10 @@ import {
   ChevronUp,
   Calendar as CalendarIcon,
   X,
+  FileDown,
+  Table2,
+  Camera,
+  StickyNote,
 } from 'lucide-react';
 import { format, parseISO, subDays, startOfMonth, endOfMonth, startOfYear } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -58,6 +60,14 @@ interface InspectionRecordListProps {
   rideManufacturer?: string;
   rideSerialNumber?: string;
 }
+
+const DATE_PRESETS = [
+  { label: '7 days', value: '7' },
+  { label: '30 days', value: '30' },
+  { label: '90 days', value: '90' },
+  { label: 'This month', value: 'month' },
+  { label: 'This year', value: 'year' },
+] as const;
 
 const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCategory, rideManufacturer, rideSerialNumber }: InspectionRecordListProps) => {
   const { user } = useAuth();
@@ -136,7 +146,6 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
     if (!user?.id || !effectiveUserId || records.length === 0) return;
     setExporting('pdf');
     try {
-      // Fetch ALL filtered records (not just paginated page) for the report
       const { fetchInspectionRecords } = await import('@/utils/inspectionRecordService');
       const allRecords = await fetchInspectionRecords(rideId, {
         ...filters,
@@ -317,6 +326,14 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
 
   const isController = role === 'controller';
 
+  // Build scope description
+  const scopeLabel = useMemo(() => {
+    if (dateFrom && dateTo) return `${format(dateFrom, 'd MMM yyyy')} – ${format(dateTo, 'd MMM yyyy')}`;
+    if (dateFrom) return `from ${format(dateFrom, 'd MMM yyyy')}`;
+    if (dateTo) return `up to ${format(dateTo!, 'd MMM yyyy')}`;
+    return null;
+  }, [dateFrom, dateTo]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -326,177 +343,156 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
   }
 
   return (
-    <div className="space-y-2">
-      {/* Header with count + filter toggle */}
-      <div className="flex items-center justify-between px-1 mb-1">
+    <div className="space-y-1.5">
+      {/* ── Header row ── */}
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-1.5">
           <History className="h-3.5 w-3.5 text-muted-foreground" />
-          <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">
-            Check Records{totalCount > 0 ? ` (${totalCount})` : ''}
+          <span className="text-xs font-semibold text-foreground tracking-wide">
+            Check Records
           </span>
+          {totalCount > 0 && (
+            <span className="text-[10px] font-medium text-muted-foreground">({totalCount})</span>
+          )}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn("h-7 px-2 text-xs gap-1", hasActiveFilters && "text-primary font-semibold")}
-          onClick={() => setFiltersOpen(!filtersOpen)}
-        >
-          <Filter className="h-3 w-3" />
-          {hasActiveFilters ? 'Filters applied' : 'Filters'}
-          {filtersOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-        </Button>
+        <div className="flex items-center gap-1">
+          {hasActiveFilters && (
+            <button
+              onClick={clearFilters}
+              className="text-[10px] text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
+            >
+              Clear all
+            </button>
+          )}
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-7 px-2 text-[11px] gap-1",
+              hasActiveFilters && "text-primary font-semibold"
+            )}
+            onClick={() => setFiltersOpen(!filtersOpen)}
+          >
+            <Filter className="h-3 w-3" />
+            {hasActiveFilters ? 'Filtered' : 'Filter'}
+            {filtersOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+          </Button>
+        </div>
       </div>
 
-      {/* Collapsible filter panel */}
-      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <CollapsibleContent>
-          <div className="space-y-2.5 p-3 bg-muted/30 rounded-lg border border-border/60 mb-2">
-            {/* Date presets */}
-            <div className="flex flex-wrap gap-1">
-              {[
-                { label: '7 days', value: '7' },
-                { label: '30 days', value: '30' },
-                { label: '90 days', value: '90' },
-                { label: 'This month', value: 'month' },
-                { label: 'This year', value: 'year' },
-              ].map(p => (
-                <Button
-                  key={p.value}
-                  variant={activePreset === p.value ? 'default' : 'outline'}
-                  size="sm"
-                  className={cn(
-                    "h-6 text-[10px] px-2",
-                    activePreset === p.value && "font-bold"
-                  )}
-                  onClick={() => applyDatePreset(p.value)}
-                >
-                  {p.label}
-                </Button>
-              ))}
-            </div>
-
-            {/* Custom date range */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-0.5">
-                <span className="text-[10px] font-bold text-muted-foreground">From</span>
-                <Popover open={fromCalOpen} onOpenChange={setFromCalOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn("w-full justify-start text-left font-normal h-7 text-[11px]", !dateFrom && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-1 h-3 w-3" />
-                      {dateFrom ? format(dateFrom, "dd MMM yyyy") : "Start"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={dateFrom} onSelect={(d) => { setDateFrom(d); setFromCalOpen(false); setActivePreset(null); }} initialFocus className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-0.5">
-                <span className="text-[10px] font-bold text-muted-foreground">To</span>
-                <Popover open={toCalOpen} onOpenChange={setToCalOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn("w-full justify-start text-left font-normal h-7 text-[11px]", !dateTo && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-1 h-3 w-3" />
-                      {dateTo ? format(dateTo, "dd MMM yyyy") : "End"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={dateTo} onSelect={(d) => { setDateTo(d); setToCalOpen(false); setActivePreset(null); }} disabled={(d) => dateFrom ? d < dateFrom : false} initialFocus className="p-3 pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            {/* Result + Defects filters */}
-            <div className="grid grid-cols-2 gap-2">
-              <div className="space-y-0.5">
-                <span className="text-[10px] font-bold text-muted-foreground">Result</span>
-                <Select value={resultFilter} onValueChange={setResultFilter}>
-                  <SelectTrigger className="h-7 text-[11px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="text-xs">All results</SelectItem>
-                    <SelectItem value="passed" className="text-xs">Passed</SelectItem>
-                    <SelectItem value="failed" className="text-xs">Failed</SelectItem>
-                    <SelectItem value="partial" className="text-xs">Partial</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-0.5">
-                <span className="text-[10px] font-bold text-muted-foreground">Defects</span>
-                <Select value={defectsFilter} onValueChange={setDefectsFilter}>
-                  <SelectTrigger className="h-7 text-[11px]"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all" className="text-xs">Any</SelectItem>
-                    <SelectItem value="yes" className="text-xs">With defects</SelectItem>
-                    <SelectItem value="no" className="text-xs">No defects</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
-              <Input
-                placeholder="Search by name, notes…"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-7 text-[11px] pl-7"
-              />
-            </div>
-
-            {/* Scope summary + clear */}
-            <div className="rounded-md bg-muted/50 border border-border/50 px-2.5 py-2 space-y-1">
-              <p className="text-[11px] font-medium text-foreground">
-                Showing {totalCount} record{totalCount !== 1 ? 's' : ''}
-                {(dateFrom || dateTo) && (
-                  <span className="text-muted-foreground">
-                    {' '}for{' '}
-                    {dateFrom && dateTo
-                      ? `${format(dateFrom, 'd MMM yyyy')} – ${format(dateTo, 'd MMM yyyy')}`
-                      : dateFrom
-                        ? `from ${format(dateFrom, 'd MMM yyyy')}`
-                        : `up to ${format(dateTo!, 'd MMM yyyy')}`}
-                  </span>
+      {/* ── Filter panel ── */}
+      {filtersOpen && (
+        <div className="space-y-1.5 pb-1">
+          {/* Quick range pills */}
+          <div className="flex flex-wrap gap-1">
+            {DATE_PRESETS.map(p => (
+              <button
+                key={p.value}
+                onClick={() => applyDatePreset(p.value)}
+                className={cn(
+                  "h-6 px-2.5 rounded-md text-[10px] font-semibold border transition-all",
+                  activePreset === p.value
+                    ? "bg-primary text-primary-foreground border-primary shadow-sm"
+                    : "bg-background text-muted-foreground border-border hover:border-primary/40 hover:text-foreground"
                 )}
-              </p>
-              {hasActiveFilters && (
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground">Exports include the current filters and date range</span>
-                  <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5 text-muted-foreground hover:text-foreground" onClick={clearFilters}>
-                    <X className="h-2.5 w-2.5 mr-0.5" />
-                    Clear all
-                  </Button>
-                </div>
-              )}
-            </div>
+              >
+                {p.label}
+              </button>
+            ))}
           </div>
-        </CollapsibleContent>
-      </Collapsible>
 
-      {/* Export buttons — always visible when records exist, with count */}
+          {/* From / To + Result + Defects in a tight grid */}
+          <div className="grid grid-cols-2 gap-x-2 gap-y-1">
+            <Popover open={fromCalOpen} onOpenChange={setFromCalOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("w-full justify-start text-left font-normal h-7 text-[11px]", !dateFrom && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-1 h-3 w-3 shrink-0" />
+                  {dateFrom ? format(dateFrom, "dd MMM yy") : "From"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={dateFrom} onSelect={(d) => { setDateFrom(d); setFromCalOpen(false); setActivePreset(null); }} initialFocus className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+
+            <Popover open={toCalOpen} onOpenChange={setToCalOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className={cn("w-full justify-start text-left font-normal h-7 text-[11px]", !dateTo && "text-muted-foreground")}>
+                  <CalendarIcon className="mr-1 h-3 w-3 shrink-0" />
+                  {dateTo ? format(dateTo, "dd MMM yy") : "To"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar mode="single" selected={dateTo} onSelect={(d) => { setDateTo(d); setToCalOpen(false); setActivePreset(null); }} disabled={(d) => dateFrom ? d < dateFrom : false} initialFocus className="p-3 pointer-events-auto" />
+              </PopoverContent>
+            </Popover>
+
+            <Select value={resultFilter} onValueChange={setResultFilter}>
+              <SelectTrigger className="h-7 text-[11px]"><SelectValue placeholder="Result" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">All results</SelectItem>
+                <SelectItem value="passed" className="text-xs">Passed</SelectItem>
+                <SelectItem value="failed" className="text-xs">Failed</SelectItem>
+                <SelectItem value="partial" className="text-xs">Partial</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={defectsFilter} onValueChange={setDefectsFilter}>
+              <SelectTrigger className="h-7 text-[11px]"><SelectValue placeholder="Defects" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" className="text-xs">Any</SelectItem>
+                <SelectItem value="yes" className="text-xs">With defects</SelectItem>
+                <SelectItem value="no" className="text-xs">No defects</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-3 w-3 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, notes…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-7 text-[11px] pl-7"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* ── Slim summary strip + export ── */}
       {records.length > 0 && (
-        <div className="flex gap-2 px-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-[11px] gap-1.5 flex-1"
-            onClick={handleExportPdf}
-            disabled={!!exporting}
-          >
-            {exporting === 'pdf' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-            Export PDF ({totalCount})
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 text-[11px] gap-1.5 flex-1"
-            onClick={handleExportCsv}
-            disabled={!!exporting}
-          >
-            {exporting === 'csv' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-            Export CSV ({totalCount})
-          </Button>
+        <div className="flex items-center justify-between gap-2 py-1 border-t border-b border-border/50">
+          <p className="text-[10px] text-muted-foreground leading-tight">
+            <span className="font-semibold text-foreground">{totalCount}</span> record{totalCount !== 1 ? 's' : ''}
+            {scopeLabel && <span> · {scopeLabel}</span>}
+            {hasActiveFilters && <span> · filtered</span>}
+          </p>
+          <div className="flex items-center gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
+              onClick={handleExportPdf}
+              disabled={!!exporting}
+              title="Export filtered records as PDF"
+            >
+              {exporting === 'pdf' ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileDown className="h-3 w-3" />}
+              PDF ({totalCount})
+            </Button>
+            <span className="text-border">|</span>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
+              onClick={handleExportCsv}
+              disabled={!!exporting}
+              title="Export filtered records as CSV"
+            >
+              {exporting === 'csv' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Table2 className="h-3 w-3" />}
+              CSV ({totalCount})
+            </Button>
+          </div>
         </div>
       )}
 
@@ -510,17 +506,19 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         />
       )}
 
-      {/* Compact record rows */}
+      {/* ── Compact record rows ── */}
       {records.length > 0 && (
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           {records.map((record) => {
             const defectCount = record.defect_ids?.length || 0;
+            const hasNotes = !!record.notes;
+            const hasPhotos = (record.photo_paths?.length || 0) > 0;
             const canAmend = isController && isWithinAmendmentWindow(record) && !record.superseded_by_id;
 
             return (
               <div
                 key={record.id}
-                className="rounded-lg border border-border bg-card px-3 py-2 flex items-center justify-between gap-2 min-w-0 cursor-pointer hover:bg-muted/30 transition-colors"
+                className="rounded-lg border border-border/70 bg-card px-3 py-2 flex items-center justify-between gap-2 min-w-0 cursor-pointer hover:bg-muted/30 active:bg-muted/50 transition-colors"
                 onClick={() => handleViewRecord(record)}
               >
                 {/* Left: date + name + badges */}
@@ -529,10 +527,16 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                     <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums">
                       {format(parseISO(record.completed_at), 'd MMM yy')}
                     </span>
+                    <span className="text-[11px] text-muted-foreground shrink-0 tabular-nums">
+                      {format(parseISO(record.completed_at), 'HH:mm')}
+                    </span>
                     <span className="font-semibold text-xs text-foreground truncate">{record.inspector_name}</span>
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     {getResultBadge(record.overall_result, record)}
+                    {record.template_name && (
+                      <span className="text-[9px] text-muted-foreground truncate max-w-[120px]">{record.template_name}</span>
+                    )}
                     {record.version > 1 && (
                       <span className="text-[9px] font-semibold text-muted-foreground bg-muted px-1 py-0.5 rounded">v{record.version}</span>
                     )}
@@ -542,6 +546,8 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                         {defectCount}
                       </span>
                     )}
+                    {hasNotes && <StickyNote className="h-2.5 w-2.5 text-muted-foreground" />}
+                    {hasPhotos && <Camera className="h-2.5 w-2.5 text-muted-foreground" />}
                     {record.superseded_by_id && (
                       <span className="text-[9px] text-muted-foreground italic line-through">Superseded</span>
                     )}
@@ -570,11 +576,11 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
 
       {/* Load more */}
       {hasNextPage && (
-        <div className="flex justify-center pt-2">
+        <div className="flex justify-center pt-1.5">
           <Button
             variant="outline"
             size="sm"
-            className="h-8 text-xs gap-1.5"
+            className="h-7 text-[11px] gap-1.5"
             onClick={() => fetchNextPage()}
             disabled={isFetchingNextPage}
           >
@@ -589,7 +595,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
 
       {/* Record count footer */}
       {records.length > 0 && !hasNextPage && totalCount > PAGE_SIZE && (
-        <p className="text-center text-[10px] text-muted-foreground pt-1">
+        <p className="text-center text-[10px] text-muted-foreground pt-0.5">
           All {records.length} records loaded
         </p>
       )}
