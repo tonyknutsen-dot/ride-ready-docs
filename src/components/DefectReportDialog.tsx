@@ -212,21 +212,26 @@ const DefectReportDialog = ({
         {showRideSelector ? (
           <>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-orange-500" />
+              <DialogTitle className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                </div>
                 Report Defect
               </DialogTitle>
-              <DialogDescription>
-                Which piece of equipment has the defect?
+              <DialogDescription className="pt-1">
+                Select the piece of equipment with the defect.
               </DialogDescription>
             </DialogHeader>
-            <div className="py-4 space-y-2">
+            <div className="py-3 space-y-1.5">
               {loadingRides ? (
-                <div className="flex items-center justify-center py-8">
+                <div className="flex items-center justify-center py-10">
                   <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
                 </div>
               ) : rides.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6">No equipment found. Add equipment first.</p>
+                <div className="text-center py-10 space-y-2">
+                  <Wrench className="h-8 w-8 text-muted-foreground/30 mx-auto" />
+                  <p className="text-sm text-muted-foreground">No equipment found. Add equipment first.</p>
+                </div>
               ) : (
                 rides.map((ride) => (
                   <button
@@ -235,10 +240,15 @@ const DefectReportDialog = ({
                       setSelectedRideId(ride.id);
                       setSelectedRideName(ride.ride_name);
                     }}
-                    className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors text-left active:scale-[0.98]"
+                    className="w-full flex items-center justify-between gap-3 px-3.5 py-3 rounded-xl border border-border bg-card hover:bg-accent/50 hover:border-primary/20 transition-all text-left active:scale-[0.98] group"
                   >
-                    <span className="text-sm font-medium text-foreground truncate">{ride.ride_name}</span>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
+                        <Wrench className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+                      </div>
+                      <span className="text-sm font-medium text-foreground truncate">{ride.ride_name}</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-muted-foreground shrink-0 transition-colors" />
                   </button>
                 ))
               )}
@@ -250,21 +260,25 @@ const DefectReportDialog = ({
         ) : (
           <>
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-orange-500" />
+              <DialogTitle className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center shrink-0">
+                  <AlertTriangle className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                </div>
                 Report Defect
               </DialogTitle>
-              <DialogDescription>
-                Log a defect on <strong>{effectiveRideName}</strong>.
-                {needsRideSelection && (
-                  <button
-                    type="button"
-                    onClick={() => { setSelectedRideId(null); setSelectedRideName(null); }}
-                    className="ml-2 text-primary hover:underline text-xs"
-                  >
-                    Change
-                  </button>
-                )}
+              <DialogDescription className="pt-1">
+                <span className="flex items-center gap-1.5 flex-wrap">
+                  Logging on <strong className="text-foreground">{effectiveRideName}</strong>
+                  {needsRideSelection && (
+                    <button
+                      type="button"
+                      onClick={() => { setSelectedRideId(null); setSelectedRideName(null); }}
+                      className="text-primary hover:underline text-xs font-medium"
+                    >
+                      Change
+                    </button>
+                  )}
+                </span>
               </DialogDescription>
             </DialogHeader>
 
