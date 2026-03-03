@@ -718,8 +718,8 @@ const Rides = () => {
                     navigate(`/rides/${ride.id}?tab=${tab}`);
                   };
                   if (s === 'stop_use') return (
-                    <button onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview&section=defects`); }} className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
-                      <AlertOctagon className="h-2.5 w-2.5" /> Do not operate
+                     <button onClick={(e) => { e.stopPropagation(); navigate(`/defects?rideId=${ride.id}&severity=stop_operation`); }} className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
+                       <AlertOctagon className="h-2.5 w-2.5" /> Do not operate
                     </button>
                   );
                   if (s === 'documents_overdue') return (
@@ -733,8 +733,8 @@ const Rides = () => {
                     </button>
                   );
                   if (s === 'attention') return (
-                    <button onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview&section=defects`); }} className="absolute bottom-3 left-3 flex items-center gap-1 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
-                      <AlertTriangle className="h-2.5 w-2.5" /> Attention needed
+                     <button onClick={(e) => { e.stopPropagation(); navigate(`/defects?rideId=${ride.id}`); }} className="absolute bottom-3 left-3 flex items-center gap-1 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
+                       <AlertTriangle className="h-2.5 w-2.5" /> Attention needed
                     </button>
                   );
                   if (s === 'due_soon') return (

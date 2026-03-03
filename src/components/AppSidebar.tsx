@@ -21,6 +21,7 @@ import {
   Download,
   Bell,
   Wind,
+  AlertOctagon,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -66,6 +67,7 @@ const mainNavItems: NavItemDef[] = [
 
 const toolsNavItems: NavItemDef[] = [
   { title: 'Checks', url: '/checks', icon: CheckSquare, feature: 'checks' },
+  { title: 'Defect Register', url: '/defects', icon: AlertOctagon },
   { title: 'Maintenance', url: '/maintenance', icon: Wrench, feature: 'maintenance' },
   { title: 'Wind Log', url: '/wind-log', icon: Wind },
   { title: 'Risk Assessments', url: '/risk-assessments', icon: ShieldCheck, feature: 'risk_assessments' },

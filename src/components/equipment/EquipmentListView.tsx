@@ -97,8 +97,8 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
               <div className="sm:w-[180px]">
                 {status === 'stop_use' ? (
                   <button
-                    onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview&section=defects`); }}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-destructive hover:underline"
+                     onClick={(e) => { e.stopPropagation(); navigate(`/defects?rideId=${ride.id}&severity=stop_operation`); }}
+                     className="inline-flex items-center gap-1 text-xs font-bold text-destructive hover:underline"
                   >
                     <AlertOctagon className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Do not operate</span>
@@ -106,8 +106,8 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
                   </button>
                 ) : status === 'attention' ? (
                   <button
-                    onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview&section=defects`); }}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
+                     onClick={(e) => { e.stopPropagation(); navigate(`/defects?rideId=${ride.id}`); }}
+                     className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
                   >
                     <AlertTriangle className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Attention needed</span>
