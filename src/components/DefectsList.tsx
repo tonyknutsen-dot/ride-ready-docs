@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { AlertOctagon, Clock, Wrench, Check, WifiOff } from 'lucide-react';
+import { AlertOctagon, Clock, Wrench, Check, WifiOff, ChevronRight, Camera } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { setCache, getCache } from '@/lib/offlineCache';
 import DefectClosureDialog from '@/components/DefectClosureDialog';
 
@@ -35,23 +35,12 @@ interface DefectsListProps {
   onDefectUpdated?: () => void;
 }
 
-const getSeverityLabel = (severity: DefectSeverity) => {
-  switch (severity) {
-    case 'non_urgent': return 'Low';
-    case 'urgent': return 'Important';
-    case 'stop_operation': return 'Stop Use';
-  }
-};
-
-const getSeverityStyle = (severity: DefectSeverity) => {
-  switch (severity) {
-    case 'non_urgent':
-      return { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200', icon: Clock };
-    case 'urgent':
-      return { color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200', icon: Wrench };
-    case 'stop_operation':
-      return { color: 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200', icon: AlertOctagon };
-  }
+const SEVERITY_CONFIG: Record<DefectSeverity, {
+  label: string; icon: typeof AlertOctagon; badgeClass: string; ringClass: string;
+}> = {
+  stop_operation: { label: 'Stop Use', icon: AlertOctagon, badgeClass: 'bg-destructive text-destructive-foreground', ringClass: 'bg-destructive/10 text-destructive' },
+  urgent: { label: 'Important', icon: Wrench, badgeClass: 'bg-orange-500 text-white dark:bg-orange-600', ringClass: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300' },
+  non_urgent: { label: 'Low', icon: Clock, badgeClass: 'bg-yellow-500 text-white dark:bg-yellow-600', ringClass: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300' },
 };
 
 const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }: DefectsListProps) => {
@@ -64,56 +53,37 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
   const [photoUrls, setPhotoUrls] = useState<{ [defectId: string]: string[] }>({});
   const { toast } = useToast();
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const cacheKey = `defects:${rideId}:${showResolved ? 'all' : 'open'}`;
 
-  useEffect(() => {
-    loadDefects();
-  }, [rideId, showResolved]);
+  useEffect(() => { loadDefects(); }, [rideId, showResolved]);
 
   const loadDefects = async () => {
     if (!navigator.onLine) {
       try {
         const cached = await getCache<Defect[]>(cacheKey);
-        if (cached) {
-          setDefects(cached.data);
-          setIsOfflineData(true);
-        }
-      } catch (e) { /* ignore */ }
+        if (cached) { setDefects(cached.data); setIsOfflineData(true); }
+      } catch { /* ignore */ }
       setLoading(false);
       return;
     }
-
     try {
-      let query = supabase
-        .from('defects')
-        .select('*')
-        .eq('ride_id', rideId)
-        .eq('user_id', user?.id)
-        .order('reported_at', { ascending: false });
-
-      if (!showResolved) {
-        query = query.neq('status', 'resolved');
-      }
-
+      let query = supabase.from('defects').select('*').eq('ride_id', rideId).eq('user_id', user?.id).order('reported_at', { ascending: false });
+      if (!showResolved) query = query.neq('status', 'resolved');
       const { data, error } = await query;
       if (error) throw error;
-
       const defectsData = (data || []) as unknown as Defect[];
       setDefects(defectsData);
       setIsOfflineData(false);
       setCache(cacheKey, defectsData).catch(console.error);
-
-      // Load photo URLs
       if (data) {
         const photosToLoad: { [key: string]: string[] } = {};
         for (const defect of defectsData) {
           if (defect.photo_paths && defect.photo_paths.length > 0) {
             const urls: string[] = [];
             for (const path of defect.photo_paths) {
-              const { data: urlData } = await supabase.storage
-                .from('defect-photos')
-                .createSignedUrl(path, 3600);
+              const { data: urlData } = await supabase.storage.from('defect-photos').createSignedUrl(path, 3600);
               if (urlData?.signedUrl) urls.push(urlData.signedUrl);
             }
             if (urls.length > 0) photosToLoad[defect.id] = urls;
@@ -123,18 +93,18 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
       }
     } catch (error) {
       console.error('Error loading defects:', error);
-      if (navigator.onLine) {
-        toast({ title: "Error", description: "Failed to load defects", variant: "destructive" });
-      }
-    } finally {
-      setLoading(false);
-    }
+      if (navigator.onLine) toast({ title: "Error", description: "Failed to load defects", variant: "destructive" });
+    } finally { setLoading(false); }
+  };
+
+  const openInRegister = (defect: Defect) => {
+    navigate(`/defects?rideId=${rideId}&defectId=${defect.id}&status=${defect.status === 'resolved' ? 'closed' : 'open'}`);
   };
 
   if (loading) {
     return (
       <div className="flex justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
@@ -160,77 +130,64 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
       {offlineBanner}
       <div className="space-y-2">
         {defects.map((defect) => {
-          const style = getSeverityStyle(defect.severity);
-          const SeverityIcon = style.icon;
+          const sev = SEVERITY_CONFIG[defect.severity];
+          const SevIcon = sev.icon;
           const isResolved = defect.status === 'resolved';
           const hasPhotos = photoUrls[defect.id]?.length > 0;
 
           return (
             <Card
               key={defect.id}
-              className={defect.severity === 'stop_operation' && !isResolved
-                ? 'border-destructive/50 bg-destructive/5'
-                : ''
-              }
+              className={`cursor-pointer transition-all hover:shadow-md active:scale-[0.995] ${
+                defect.severity === 'stop_operation' && !isResolved
+                  ? 'border-destructive/40 bg-destructive/5 hover:border-destructive/60'
+                  : 'hover:border-primary/30'
+              }`}
+              onClick={() => openInRegister(defect)}
             >
               <CardContent className="p-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0 space-y-1.5">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${style.color}`}>
-                        <SeverityIcon className="h-3 w-3" />
-                        {getSeverityLabel(defect.severity)}
-                      </span>
+                <div className="flex items-start gap-2.5">
+                  {/* Severity icon */}
+                  <div className={`mt-0.5 w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${sev.ringClass}`}>
+                    <SevIcon className="h-3.5 w-3.5" />
+                  </div>
+
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <p className="text-sm font-medium text-foreground line-clamp-2 leading-snug">{defect.description}</p>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <Badge className={`text-[10px] px-1.5 py-0 ${sev.badgeClass}`}>{sev.label}</Badge>
                       {isResolved ? (
-                        <Badge className="bg-green-500 hover:bg-green-600 text-[10px]">Closed</Badge>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">Closed</Badge>
                       ) : (
-                        <Badge variant="destructive" className="text-[10px]">Open</Badge>
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Open</Badge>
                       )}
+                      {hasPhotos && <Camera className="h-3 w-3 text-muted-foreground" />}
+                      <span className="text-[11px] text-muted-foreground">
+                        {formatDistanceToNow(new Date(defect.reported_at), { addSuffix: true })}
+                      </span>
                     </div>
-                    <p className="text-sm text-foreground line-clamp-2">{defect.description}</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      {format(new Date(defect.reported_at), 'dd/MM/yyyy HH:mm')}
-                      {defect.location_on_ride && ` • ${defect.location_on_ride}`}
-                    </p>
 
-                    {/* Resolution info */}
+                    {/* Resolution preview */}
                     {isResolved && defect.resolution_notes && (
-                      <p className="text-xs text-muted-foreground italic mt-1">
-                        ✓ {defect.resolution_notes}
-                      </p>
-                    )}
-
-                    {/* Photos inline */}
-                    {hasPhotos && (
-                      <div className="flex gap-1.5 mt-1.5">
-                        {photoUrls[defect.id].slice(0, 3).map((url, idx) => (
-                          <div
-                            key={idx}
-                            className="w-12 h-12 cursor-pointer"
-                            onClick={() => setViewingPhoto(url)}
-                          >
-                            <img src={url} alt="" className="w-full h-full object-cover rounded border" />
-                          </div>
-                        ))}
-                      </div>
+                      <p className="text-[11px] text-muted-foreground italic line-clamp-1">✓ {defect.resolution_notes}</p>
                     )}
                   </div>
 
-                  {/* Close button for open defects */}
-                  {!isResolved && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="shrink-0 text-xs gap-1"
-                      onClick={() => {
-                        setSelectedDefect({ ...defect, ride_id: rideId } as any);
-                        setResolveDialogOpen(true);
-                      }}
-                    >
-                      <Check className="h-3 w-3" />
-                      Close
-                    </Button>
-                  )}
+                  <div className="flex flex-col items-end gap-2 shrink-0">
+                    {!isResolved && (
+                      <Button
+                        size="sm" variant="outline" className="text-xs gap-1 h-7"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedDefect({ ...defect, ride_id: rideId } as any);
+                          setResolveDialogOpen(true);
+                        }}
+                      >
+                        <Check className="h-3 w-3" /> Close
+                      </Button>
+                    )}
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -244,18 +201,13 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
         onOpenChange={setResolveDialogOpen}
         defect={selectedDefect as any}
         rideName={rideName}
-        onDefectUpdated={() => {
-          loadDefects();
-          onDefectUpdated?.();
-        }}
+        onDefectUpdated={() => { loadDefects(); onDefectUpdated?.(); }}
       />
 
       {/* Photo viewer */}
       <Dialog open={!!viewingPhoto} onOpenChange={() => setViewingPhoto(null)}>
         <DialogContent className="max-w-3xl p-0">
-          {viewingPhoto && (
-            <img src={viewingPhoto} alt="Defect photo" className="w-full h-auto max-h-[80vh] object-contain" />
-          )}
+          {viewingPhoto && <img src={viewingPhoto} alt="Defect photo" className="w-full h-auto max-h-[80vh] object-contain" />}
         </DialogContent>
       </Dialog>
     </>
