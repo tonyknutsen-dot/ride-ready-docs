@@ -1,14 +1,15 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { format } from 'date-fns';
-import { AlertOctagon, Clock, Wrench, Check, Search, Filter, ChevronRight, Camera, SlidersHorizontal } from 'lucide-react';
+import { AlertOctagon, Clock, Wrench, Check, Search, ChevronRight, Camera, SlidersHorizontal, ExternalLink } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
@@ -44,22 +45,18 @@ const SEVERITY_CONFIG: Record<DefectSeverity, { label: string; icon: typeof Aler
 
 const DefectRegister = () => {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { effectiveUserId } = useEffectiveUserId();
   const queryClient = useQueryClient();
 
-  // Filters from URL or defaults
-  const initialStatus = searchParams.get('status') || 'open';
-  const initialRideId = searchParams.get('rideId') || 'all';
-  const initialSeverity = searchParams.get('severity') || 'all';
-
-  const [statusFilter, setStatusFilter] = useState(initialStatus);
-  const [severityFilter, setSeverityFilter] = useState(initialSeverity);
-  const [rideFilter, setRideFilter] = useState(initialRideId);
+  const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'open');
+  const [severityFilter, setSeverityFilter] = useState(searchParams.get('severity') || 'all');
+  const [rideFilter, setRideFilter] = useState(searchParams.get('rideId') || 'all');
   const [searchTerm, setSearchTerm] = useState('');
 
   const [closureDialogOpen, setClosureDialogOpen] = useState(false);
   const [selectedDefect, setSelectedDefect] = useState<DefectRow | null>(null);
+  const [detailDefect, setDetailDefect] = useState<DefectRow | null>(null);
 
   // Fetch all defects
   const { data: defects = [], isLoading } = useQuery({
@@ -102,7 +99,7 @@ const DefectRegister = () => {
     return m;
   }, [rides]);
 
-  // Enrich and filter defects
+  // Enrich defects with ride names
   const enriched = useMemo(() => {
     return defects.map(d => ({
       ...d,
@@ -111,55 +108,47 @@ const DefectRegister = () => {
     }));
   }, [defects, rideMap]);
 
-  const filtered = useMemo(() => {
-    let list = enriched;
+  // Keep local filter state synced when deep-link params change
+  useEffect(() => {
+    setStatusFilter(searchParams.get('status') || 'open');
+    setSeverityFilter(searchParams.get('severity') || 'all');
+    setRideFilter(searchParams.get('rideId') || 'all');
+  }, [searchParams]);
 
-    // Status filter
-    if (statusFilter === 'open') {
-      list = list.filter(d => d.status !== 'resolved');
-    } else if (statusFilter === 'closed') {
-      list = list.filter(d => d.status === 'resolved');
-    }
+  // Open exact defect detail when deep-linked with ?defectId=
+  useEffect(() => {
+    const defectId = searchParams.get('defectId');
+    if (!defectId || enriched.length === 0) return;
+    const found = enriched.find((d) => d.id === defectId);
+    if (found) setDetailDefect(found);
+  }, [searchParams, enriched]);
 
-    // Severity
-    if (severityFilter !== 'all') {
-      list = list.filter(d => d.severity === severityFilter);
-    }
+  const updateFilterParams = (next: { status?: string; severity?: string; rideId?: string }) => {
+    const params = new URLSearchParams(searchParams);
+    if (next.status !== undefined) params.set('status', next.status);
+    if (next.severity !== undefined) params.set('severity', next.severity);
+    if (next.rideId !== undefined) params.set('rideId', next.rideId);
+    params.delete('defectId');
+    setSearchParams(params, { replace: true });
+  };
 
-    // Ride
-    if (rideFilter !== 'all') {
-      list = list.filter(d => d.ride_id === rideFilter);
-    }
+  const handleOpenDefectDetail = (defect: DefectRow) => {
+    setDetailDefect(defect);
+    const params = new URLSearchParams(searchParams);
+    params.set('defectId', defect.id);
+    if (rideFilter !== 'all') params.set('rideId', rideFilter);
+    if (severityFilter !== 'all') params.set('severity', severityFilter);
+    params.set('status', statusFilter);
+    setSearchParams(params, { replace: true });
+  };
 
-    // Search
-    if (searchTerm.trim()) {
-      const q = searchTerm.toLowerCase();
-      list = list.filter(d =>
-        d.description.toLowerCase().includes(q) ||
-        d.ride_name?.toLowerCase().includes(q) ||
-        d.location_on_ride?.toLowerCase().includes(q)
-      );
-    }
-
-    // Sort: stop_use first, then severity, then newest
-    list.sort((a, b) => {
-      const sa = SEVERITY_CONFIG[a.severity]?.sort ?? 3;
-      const sb = SEVERITY_CONFIG[b.severity]?.sort ?? 3;
-      if (sa !== sb) return sa - sb;
-      return new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime();
-    });
-
-    return list;
-  }, [enriched, statusFilter, severityFilter, rideFilter, searchTerm]);
-
-  // Unique rides that have defects for the filter
-  const ridesWithDefects = useMemo(() => {
-    const ids = new Set(defects.map(d => d.ride_id));
-    return rides.filter(r => ids.has(r.id));
-  }, [rides, defects]);
-
-  const openCount = enriched.filter(d => d.status !== 'resolved').length;
-  const stopUseCount = enriched.filter(d => d.severity === 'stop_operation' && d.status !== 'resolved').length;
+  const handleCloseDefectDetail = (open: boolean) => {
+    if (open) return;
+    setDetailDefect(null);
+    const params = new URLSearchParams(searchParams);
+    params.delete('defectId');
+    setSearchParams(params, { replace: true });
+  };
 
   const handleCloseDefect = (defect: DefectRow) => {
     setSelectedDefect(defect);
@@ -173,6 +162,50 @@ const DefectRegister = () => {
     queryClient.invalidateQueries({ queryKey: ['all-rides-open-defects'] });
     queryClient.invalidateQueries({ queryKey: ['needs-attention'] });
   };
+
+  const filtered = useMemo(() => {
+    let list = [...enriched];
+
+    if (statusFilter === 'open') {
+      list = list.filter((d) => d.status !== 'resolved');
+    } else if (statusFilter === 'closed') {
+      list = list.filter((d) => d.status === 'resolved');
+    }
+
+    if (severityFilter !== 'all') {
+      list = list.filter((d) => d.severity === severityFilter);
+    }
+
+    if (rideFilter !== 'all') {
+      list = list.filter((d) => d.ride_id === rideFilter);
+    }
+
+    if (searchTerm.trim()) {
+      const q = searchTerm.toLowerCase();
+      list = list.filter((d) =>
+        d.description.toLowerCase().includes(q) ||
+        (d.ride_name || '').toLowerCase().includes(q) ||
+        (d.location_on_ride || '').toLowerCase().includes(q)
+      );
+    }
+
+    list.sort((a, b) => {
+      const sa = SEVERITY_CONFIG[a.severity]?.sort ?? 3;
+      const sb = SEVERITY_CONFIG[b.severity]?.sort ?? 3;
+      if (sa !== sb) return sa - sb;
+      return new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime();
+    });
+
+    return list;
+  }, [enriched, statusFilter, severityFilter, rideFilter, searchTerm]);
+
+  const ridesWithDefects = useMemo(() => {
+    const ids = new Set(defects.map((d) => d.ride_id));
+    return rides.filter((r) => ids.has(r.id));
+  }, [rides, defects]);
+
+  const openCount = enriched.filter((d) => d.status !== 'resolved').length;
+  const stopUseCount = enriched.filter((d) => d.severity === 'stop_operation' && d.status !== 'resolved').length;
 
   return (
     <div className="space-y-4 pb-24 md:pb-8">
@@ -218,7 +251,13 @@ const DefectRegister = () => {
           />
         </div>
         <div className="flex gap-2 overflow-x-auto">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <Select
+            value={statusFilter}
+            onValueChange={(value) => {
+              setStatusFilter(value);
+              updateFilterParams({ status: value });
+            }}
+          >
             <SelectTrigger className="w-[120px] h-9 text-xs shrink-0">
               <SelectValue />
             </SelectTrigger>
@@ -228,7 +267,13 @@ const DefectRegister = () => {
               <SelectItem value="all">All</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={severityFilter} onValueChange={setSeverityFilter}>
+          <Select
+            value={severityFilter}
+            onValueChange={(value) => {
+              setSeverityFilter(value);
+              updateFilterParams({ severity: value });
+            }}
+          >
             <SelectTrigger className="w-[130px] h-9 text-xs shrink-0">
               <SlidersHorizontal className="h-3 w-3 mr-1 text-muted-foreground" />
               <SelectValue placeholder="Severity" />
@@ -240,13 +285,19 @@ const DefectRegister = () => {
               <SelectItem value="non_urgent">Low</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={rideFilter} onValueChange={setRideFilter}>
+          <Select
+            value={rideFilter}
+            onValueChange={(value) => {
+              setRideFilter(value);
+              updateFilterParams({ rideId: value });
+            }}
+          >
             <SelectTrigger className="w-[160px] h-9 text-xs shrink-0">
               <SelectValue placeholder="Equipment" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Equipment</SelectItem>
-              {ridesWithDefects.map(r => (
+              {ridesWithDefects.map((r) => (
                 <SelectItem key={r.id} value={r.id}>{r.ride_name}</SelectItem>
               ))}
             </SelectContent>
@@ -282,7 +333,7 @@ const DefectRegister = () => {
                     ? 'border-destructive/40 bg-destructive/5'
                     : ''
                 }`}
-                onClick={() => navigate(`/rides/${defect.ride_id}?tab=overview&section=defects`)}
+                onClick={() => handleOpenDefectDetail(defect)}
               >
                 <CardContent className="p-3">
                   <div className="flex items-start gap-3">
@@ -296,7 +347,7 @@ const DefectRegister = () => {
                         {isOpen ? (
                           <Badge variant="destructive" className="text-[10px] px-1.5 py-0">Open</Badge>
                         ) : (
-                          <Badge className="bg-green-600 hover:bg-green-700 text-[10px] px-1.5 py-0">Closed</Badge>
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Closed</Badge>
                         )}
                         {hasPhotos && (
                           <Camera className="h-3 w-3 text-muted-foreground" />
@@ -348,6 +399,67 @@ const DefectRegister = () => {
           })}
         </div>
       )}
+
+      <Dialog open={!!detailDefect} onOpenChange={handleCloseDefectDetail}>
+        <DialogContent className="max-w-lg">
+          {detailDefect && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  {(() => {
+                    const DefectIcon = SEVERITY_CONFIG[detailDefect.severity].icon;
+                    return <DefectIcon className="h-4 w-4 text-destructive" />;
+                  })()}
+                  Defect detail
+                </DialogTitle>
+                <DialogDescription>
+                  {detailDefect.ride_name} • {format(new Date(detailDefect.reported_at), 'dd MMM yyyy HH:mm')}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 text-sm">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant={detailDefect.status === 'resolved' ? 'secondary' : 'destructive'}>
+                    {detailDefect.status === 'resolved' ? 'Closed' : 'Open'}
+                  </Badge>
+                  <Badge variant="outline">{SEVERITY_CONFIG[detailDefect.severity].label}</Badge>
+                  {detailDefect.category_group && <Badge variant="outline">{detailDefect.category_group}</Badge>}
+                </div>
+                <p className="text-foreground">{detailDefect.description}</p>
+                {detailDefect.location_on_ride && (
+                  <p className="text-muted-foreground">Location: {detailDefect.location_on_ride}</p>
+                )}
+                {detailDefect.resolution_notes && (
+                  <p className="text-muted-foreground">Resolution: {detailDefect.resolution_notes}</p>
+                )}
+                <div className="flex items-center gap-2 pt-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1"
+                    onClick={() => navigate(`/rides/${detailDefect.ride_id}?tab=overview&section=defects`)}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Open on equipment page
+                  </Button>
+                  {detailDefect.status !== 'resolved' && (
+                    <Button
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => {
+                        setSelectedDefect(detailDefect);
+                        setClosureDialogOpen(true);
+                      }}
+                    >
+                      <Check className="h-3.5 w-3.5" />
+                      Close defect
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Closure dialog */}
       <DefectClosureDialog

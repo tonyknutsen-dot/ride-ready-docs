@@ -97,7 +97,7 @@ const NeedsAttentionPanel = () => {
           label: d.rides?.ride_name || 'Equipment',
           sublabel: d.description?.substring(0, 80),
           urgency: 'critical',
-          path: d.ride_id ? `/rides/${d.ride_id}?tab=overview` : '/rides',
+          path: d.ride_id ? `/defects?rideId=${d.ride_id}&severity=stop_operation&defectId=${d.id}` : '/defects?severity=stop_operation',
         });
       });
 
