@@ -80,6 +80,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
   const [dateTo, setDateTo] = useState<Date | undefined>();
   const [fromCalOpen, setFromCalOpen] = useState(false);
   const [toCalOpen, setToCalOpen] = useState(false);
+  const [activePreset, setActivePreset] = useState<string | null>(null);
 
   const filters: FetchRecordsFilters = useMemo(() => ({
     frequency,
@@ -127,6 +128,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
     setDefectsFilter('all');
     setDateFrom(undefined);
     setDateTo(undefined);
+    setActivePreset(null);
   }, []);
 
   // ── Export handlers ──
@@ -207,6 +209,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
 
   const applyDatePreset = useCallback((preset: string) => {
     const now = new Date();
+    setActivePreset(preset);
     switch (preset) {
       case '7': setDateFrom(subDays(now, 7)); setDateTo(now); break;
       case '30': setDateFrom(subDays(now, 30)); setDateTo(now); break;
@@ -335,11 +338,11 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         <Button
           variant="ghost"
           size="sm"
-          className={cn("h-7 px-2 text-xs gap-1", hasActiveFilters && "text-primary")}
+          className={cn("h-7 px-2 text-xs gap-1", hasActiveFilters && "text-primary font-semibold")}
           onClick={() => setFiltersOpen(!filtersOpen)}
         >
           <Filter className="h-3 w-3" />
-          {hasActiveFilters ? 'Filtered' : 'Filter'}
+          {hasActiveFilters ? 'Filters applied' : 'Filters'}
           {filtersOpen ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
         </Button>
       </div>
@@ -357,7 +360,16 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                 { label: 'This month', value: 'month' },
                 { label: 'This year', value: 'year' },
               ].map(p => (
-                <Button key={p.value} variant="outline" size="sm" className="h-6 text-[10px] px-2" onClick={() => applyDatePreset(p.value)}>
+                <Button
+                  key={p.value}
+                  variant={activePreset === p.value ? 'default' : 'outline'}
+                  size="sm"
+                  className={cn(
+                    "h-6 text-[10px] px-2",
+                    activePreset === p.value && "font-bold"
+                  )}
+                  onClick={() => applyDatePreset(p.value)}
+                >
                   {p.label}
                 </Button>
               ))}
@@ -375,7 +387,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={dateFrom} onSelect={(d) => { setDateFrom(d); setFromCalOpen(false); }} initialFocus className="p-3 pointer-events-auto" />
+                    <Calendar mode="single" selected={dateFrom} onSelect={(d) => { setDateFrom(d); setFromCalOpen(false); setActivePreset(null); }} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -389,7 +401,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={dateTo} onSelect={(d) => { setDateTo(d); setToCalOpen(false); }} disabled={(d) => dateFrom ? d < dateFrom : false} initialFocus className="p-3 pointer-events-auto" />
+                    <Calendar mode="single" selected={dateTo} onSelect={(d) => { setDateTo(d); setToCalOpen(false); setActivePreset(null); }} disabled={(d) => dateFrom ? d < dateFrom : false} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
               </div>
@@ -433,23 +445,36 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
               />
             </div>
 
-            {/* Active filters summary */}
-            {hasActiveFilters && (
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] text-muted-foreground">
-                  Showing {records.length}{totalCount > records.length ? ` of ${totalCount}` : ''} records
-                </span>
-                <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5 text-muted-foreground" onClick={clearFilters}>
-                  <X className="h-2.5 w-2.5 mr-0.5" />
-                  Clear
-                </Button>
-              </div>
-            )}
+            {/* Scope summary + clear */}
+            <div className="rounded-md bg-muted/50 border border-border/50 px-2.5 py-2 space-y-1">
+              <p className="text-[11px] font-medium text-foreground">
+                Showing {totalCount} record{totalCount !== 1 ? 's' : ''}
+                {(dateFrom || dateTo) && (
+                  <span className="text-muted-foreground">
+                    {' '}for{' '}
+                    {dateFrom && dateTo
+                      ? `${format(dateFrom, 'd MMM yyyy')} – ${format(dateTo, 'd MMM yyyy')}`
+                      : dateFrom
+                        ? `from ${format(dateFrom, 'd MMM yyyy')}`
+                        : `up to ${format(dateTo!, 'd MMM yyyy')}`}
+                  </span>
+                )}
+              </p>
+              {hasActiveFilters && (
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-muted-foreground">Exports include the current filters and date range</span>
+                  <Button variant="ghost" size="sm" className="h-5 text-[10px] px-1.5 text-muted-foreground hover:text-foreground" onClick={clearFilters}>
+                    <X className="h-2.5 w-2.5 mr-0.5" />
+                    Clear all
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Export buttons */}
+      {/* Export buttons — always visible when records exist, with count */}
       {records.length > 0 && (
         <div className="flex gap-2 px-1">
           <Button
@@ -460,7 +485,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
             disabled={!!exporting}
           >
             {exporting === 'pdf' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-            Export PDF
+            Export PDF ({totalCount})
           </Button>
           <Button
             variant="outline"
@@ -470,7 +495,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
             disabled={!!exporting}
           >
             {exporting === 'csv' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
-            Export CSV
+            Export CSV ({totalCount})
           </Button>
         </div>
       )}
