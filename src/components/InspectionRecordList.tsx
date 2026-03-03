@@ -460,36 +460,35 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         </div>
       )}
 
-      {/* ── Summary strip + export toolbar ── */}
+      {/* ── Summary + export toolbar ── */}
       {records.length > 0 && (
-        <div className="rounded-lg border border-border bg-card p-3 space-y-2.5">
-          <p className="text-xs text-muted-foreground leading-snug">
-            Showing <span className="font-bold text-foreground">{totalCount}</span> record{totalCount !== 1 ? 's' : ''}
-            {scopeLabel && <span className="text-foreground font-medium"> for {scopeLabel}</span>}
-            {hasActiveFilters && <span> · filters applied</span>}
-          </p>
-          <div className="flex items-center gap-2.5">
-            <Button
-              size="default"
-              className="h-10 px-5 text-sm gap-2 font-semibold shadow-sm"
-              onClick={handleExportPdf}
-              disabled={!!exporting}
-            >
-              {exporting === 'pdf' ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileDown className="h-4 w-4" />}
-              Export PDF ({totalCount})
-            </Button>
-            <Button
-              variant="outline"
-              size="default"
-              className="h-10 px-5 text-sm gap-2 font-semibold shadow-sm"
-              onClick={handleExportCsv}
-              disabled={!!exporting}
-            >
-              {exporting === 'csv' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Table2 className="h-4 w-4" />}
-              Export CSV ({totalCount})
-            </Button>
+        <div className="flex flex-col gap-1 py-1.5">
+          <div className="flex items-center justify-between flex-wrap gap-x-3 gap-y-1">
+            <p className="text-[11px] text-muted-foreground leading-snug">
+              Showing <span className="font-semibold text-foreground">{totalCount}</span> record{totalCount !== 1 ? 's' : ''}
+              {scopeLabel && <span className="font-medium text-foreground"> for {scopeLabel}</span>}
+              {hasActiveFilters && <span> · filters applied</span>}
+            </p>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleExportPdf}
+                disabled={!!exporting}
+                className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-border bg-background text-[11px] font-medium text-foreground hover:bg-muted/60 active:bg-muted transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {exporting === 'pdf' ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileDown className="h-3 w-3 text-muted-foreground" />}
+                Export PDF ({totalCount})
+              </button>
+              <button
+                onClick={handleExportCsv}
+                disabled={!!exporting}
+                className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-border bg-background text-[11px] font-medium text-foreground hover:bg-muted/60 active:bg-muted transition-colors disabled:opacity-50 disabled:pointer-events-none"
+              >
+                {exporting === 'csv' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Table2 className="h-3 w-3 text-muted-foreground" />}
+                Export CSV ({totalCount})
+              </button>
+            </div>
           </div>
-          <p className="text-[10px] text-muted-foreground">Exports include the current filters and date range</p>
+          <p className="text-[9px] text-muted-foreground">Exports include the current filters and date range</p>
         </div>
       )}
 

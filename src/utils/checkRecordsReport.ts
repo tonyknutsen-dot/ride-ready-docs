@@ -196,13 +196,11 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     { label: 'Pass Rate', value: `${stats.passRate}%`, accent: true },
   ], y, 15);
 
-  // Templates used
+  // Templates used — as metadata row
   if (stats.templateNames.length > 0) {
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(...PDF_COLORS.muted);
-    doc.text(`Templates: ${stats.templateNames.join(', ')}`, 17, y);
-    y += 5;
+    y = drawMetadataRows(doc, [
+      { label: 'Templates Used', value: stats.templateNames.join(', ') },
+    ], y);
   }
 
   // ── Filters applied (only if non-default filters) ──
@@ -239,21 +237,21 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
 
   autoTable(doc, {
     startY: y,
-    head: [['Date', 'Time', 'Type', 'Template', 'Result', 'Recorded By', 'Defects', 'Notes', 'Attach.']],
+    head: [['Date', 'Time', 'Type', 'Template', 'Result', 'Recorded By', 'Def.', 'Notes', 'Att.']],
     body: tableBody,
-    headStyles: PDF_TABLE_HEAD_STYLES,
-    styles: { ...PDF_TABLE_BODY_STYLES, fontSize: 7 },
+    headStyles: { ...PDF_TABLE_HEAD_STYLES, fontSize: 7 },
+    styles: { ...PDF_TABLE_BODY_STYLES, fontSize: 6.5 },
     alternateRowStyles: PDF_TABLE_ALT_ROW,
     columnStyles: {
-      0: { cellWidth: 18 },
-      1: { cellWidth: 13 },
-      2: { cellWidth: 20 },
-      3: { cellWidth: 34 },
-      4: { cellWidth: 16 },
-      5: { cellWidth: 30 },
-      6: { cellWidth: 14, halign: 'center' as const },
-      7: { cellWidth: 12, halign: 'center' as const },
-      8: { cellWidth: 13, halign: 'center' as const },
+      0: { cellWidth: 17 },
+      1: { cellWidth: 12 },
+      2: { cellWidth: 22 },
+      3: { cellWidth: 36 },
+      4: { cellWidth: 15 },
+      5: { cellWidth: 34 },
+      6: { cellWidth: 11, halign: 'center' as const },
+      7: { cellWidth: 11, halign: 'center' as const },
+      8: { cellWidth: 11, halign: 'center' as const },
     },
     margin: { left: 15, right: 15 },
     didParseCell: (data: any) => {
