@@ -112,9 +112,9 @@ const DefectDetailSheet = ({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-0">
       {/* ── Operational status banner ── */}
-      <div className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${sev.operationalClass}`}>
+      <div className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border ${sev.operationalClass}`}>
         <div className="text-lg leading-none">{sev.operationalIcon}</div>
         <div className="flex-1">
           <p className="text-sm font-bold tracking-tight">{sev.operational}</p>
@@ -128,17 +128,17 @@ const DefectDetailSheet = ({
       </div>
 
       {/* ── Description ── */}
-      <section>
+      <section className="pt-7">
         <SectionLabel>Description</SectionLabel>
-        <div className="p-3.5 rounded-xl bg-muted/40 border border-border">
+        <div className="p-4 rounded-xl bg-muted/40 border border-border mt-2">
           <p className="text-sm text-foreground leading-relaxed">{defect.description}</p>
         </div>
       </section>
 
       {/* ── Core details grid ── */}
-      <section>
+      <section className="pt-7">
         <SectionLabel>Details</SectionLabel>
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3 p-3.5 rounded-xl bg-card border border-border">
+        <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 rounded-xl bg-card border border-border mt-2">
           <DetailField icon={<Wrench className="h-3.5 w-3.5" />} label="Equipment" value={defect.ride_name || 'Unknown'} />
           {defect.category_name && (
             <DetailField icon={<FileText className="h-3.5 w-3.5" />} label="Type" value={defect.category_name} />
@@ -171,9 +171,9 @@ const DefectDetailSheet = ({
 
       {/* ── Resolution notes ── */}
       {defect.resolution_notes && (
-        <section>
+        <section className="pt-7">
           <SectionLabel>Repair / closure notes</SectionLabel>
-          <div className="p-3.5 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/40">
+          <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/40 mt-2">
             <p className="text-sm text-foreground leading-relaxed">{defect.resolution_notes}</p>
           </div>
         </section>
@@ -181,9 +181,9 @@ const DefectDetailSheet = ({
 
       {/* ── Evidence photos ── */}
       {photoUrls.length > 0 && (
-        <section>
+        <section className="pt-7">
           <SectionLabel>Evidence photos</SectionLabel>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-3 gap-2.5 mt-2">
             {photoUrls.map((url, idx) => (
               <a
                 key={idx}
@@ -200,10 +200,10 @@ const DefectDetailSheet = ({
       )}
 
       {/* ── Lifecycle timeline ── */}
-      <section>
+      <section className="pt-7">
         <SectionLabel>Lifecycle</SectionLabel>
-        <div className="relative pl-6 space-y-4 py-1">
-          <div className="absolute left-[9px] top-2 bottom-2 w-px bg-border" />
+        <div className="relative pl-6 space-y-5 py-2 mt-2">
+          <div className="absolute left-[9px] top-3 bottom-3 w-px bg-border" />
           {timeline.map((evt, i) => {
             const TlIcon = evt.icon;
             const isLast = i === timeline.length - 1;
@@ -214,7 +214,7 @@ const DefectDetailSheet = ({
                 </div>
                 <div className="pt-px">
                   <p className="text-xs font-semibold text-foreground">{evt.label}</p>
-                  <p className="text-[11px] text-muted-foreground leading-snug">
+                  <p className="text-[11px] text-muted-foreground leading-snug mt-0.5">
                     {format(new Date(evt.date), 'dd MMM yyyy · HH:mm')}
                     <span className="mx-1">·</span>
                     {formatDistanceToNow(new Date(evt.date), { addSuffix: true })}
@@ -229,21 +229,21 @@ const DefectDetailSheet = ({
         </div>
       </section>
 
-      <Separator />
-
       {/* ── Actions ── */}
-      <div className="flex flex-col gap-2.5 pb-4">
-        {isOpen && (
-          <Button className="gap-2 w-full h-11 text-sm font-semibold" onClick={() => onCloseDefect(defect)}>
-            <Check className="h-4 w-4" />
-            Close defect
+      <section className="pt-8 pb-6">
+        <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2.5">
+          {isOpen && (
+            <Button className="gap-2 w-full h-11 text-sm font-semibold" onClick={() => onCloseDefect(defect)}>
+              <Check className="h-4 w-4" />
+              Close defect
+            </Button>
+          )}
+          <Button variant="outline" className="gap-2 w-full h-10 text-sm" onClick={() => onNavigateToEquipment(defect.ride_id)}>
+            <ExternalLink className="h-3.5 w-3.5" />
+            View on equipment page
           </Button>
-        )}
-        <Button variant="outline" className="gap-2 w-full h-10 text-sm" onClick={() => onNavigateToEquipment(defect.ride_id)}>
-          <ExternalLink className="h-3.5 w-3.5" />
-          View on equipment page
-        </Button>
-      </div>
+        </div>
+      </section>
     </div>
   );
 };
