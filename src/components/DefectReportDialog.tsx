@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { AlertTriangle, Camera, X, Upload, Loader2, AlertOctagon, Clock, Wrench, ChevronRight } from 'lucide-react';
+import { AlertTriangle, Camera, X, Upload, Loader2, AlertOctagon, Clock, Wrench, ChevronRight, ShieldAlert } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,7 +49,6 @@ const DefectReportDialog = ({
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
   const { isStaff: isStaffContext } = useStaff();
 
-  // Ride selection state (used when no rideId provided)
   const needsRideSelection = !rideId;
   const [selectedRideId, setSelectedRideId] = useState<string | null>(null);
   const [selectedRideName, setSelectedRideName] = useState<string | null>(null);
@@ -59,7 +58,6 @@ const DefectReportDialog = ({
   const effectiveRideId = rideId || selectedRideId;
   const effectiveRideName = rideName || selectedRideName;
 
-  // Load rides when dialog opens and no rideId provided
   useEffect(() => {
     if (open && needsRideSelection && effectiveUserId) {
       loadRides();
@@ -69,23 +67,13 @@ const DefectReportDialog = ({
   const loadRides = async () => {
     setLoadingRides(true);
     try {
-      let query = supabase
-        .from('rides')
-        .select('id, ride_name')
-        .order('ride_name');
-
-      if (!isStaffContext) {
-        query = query.eq('user_id', effectiveUserId);
-      }
-
+      let query = supabase.from('rides').select('id, ride_name').order('ride_name');
+      if (!isStaffContext) query = query.eq('user_id', effectiveUserId);
       const { data, error } = await query;
       if (error) throw error;
       setRides(data || []);
-    } catch {
-      setRides([]);
-    } finally {
-      setLoadingRides(false);
-    }
+    } catch { setRides([]); }
+    finally { setLoadingRides(false); }
   };
 
   const handlePhotoSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -159,7 +147,6 @@ const DefectReportDialog = ({
       });
       if (error) throw error;
 
-      // Notify controller if staff
       if (isStaff && effectiveUserId && actualUserId !== effectiveUserId) {
         const severityLabel = severity === 'stop_operation' ? '🛑 STOP USE' : severity === 'urgent' ? '⚠️ Important' : 'Low';
         await supabase.from('notifications').insert({
@@ -179,7 +166,6 @@ const DefectReportDialog = ({
         variant: severity === 'stop_operation' ? 'destructive' : 'default'
       });
 
-      // Reset
       setDescription('');
       setSeverity('non_urgent');
       setLocationOnRide('');
@@ -204,13 +190,12 @@ const DefectReportDialog = ({
     setSelectedRideName(null);
   };
 
-  const severities: { value: DefectSeverity; label: string; description: string; icon: typeof Clock; color: string }[] = [
-    { value: 'non_urgent', label: 'Low', description: 'Minor issue — fix at next maintenance', icon: Clock, color: 'text-yellow-600 dark:text-yellow-400' },
-    { value: 'urgent', label: 'Important', description: 'Needs attention soon — use with caution', icon: Wrench, color: 'text-orange-600 dark:text-orange-400' },
-    { value: 'stop_operation', label: 'Stop Use', description: 'CRITICAL — equipment must NOT be used', icon: AlertOctagon, color: 'text-destructive' },
+  const severities: { value: DefectSeverity; label: string; description: string; operational: string; icon: typeof Clock; color: string; activeBorder: string }[] = [
+    { value: 'non_urgent', label: 'Low', description: 'Minor issue — fix at next maintenance', operational: 'Monitor', icon: Clock, color: 'text-yellow-600 dark:text-yellow-400', activeBorder: 'border-yellow-500 bg-yellow-50 dark:bg-yellow-950/20' },
+    { value: 'urgent', label: 'Important', description: 'Needs attention soon — use with caution', operational: 'Repair required', icon: Wrench, color: 'text-orange-600 dark:text-orange-400', activeBorder: 'border-orange-500 bg-orange-50 dark:bg-orange-950/20' },
+    { value: 'stop_operation', label: 'Stop Use', description: 'CRITICAL — equipment must NOT be used', operational: 'Do not operate', icon: AlertOctagon, color: 'text-destructive', activeBorder: 'border-destructive bg-destructive/5' },
   ];
 
-  // Step 1: Ride selector (only when no rideId provided)
   const showRideSelector = needsRideSelection && !selectedRideId;
 
   return (
@@ -250,7 +235,7 @@ const DefectReportDialog = ({
                       setSelectedRideId(ride.id);
                       setSelectedRideName(ride.ride_name);
                     }}
-                    className="w-full flex items-center justify-between gap-3 p-3 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors text-left active:scale-[0.98]"
+                    className="w-full flex items-center justify-between gap-3 p-3.5 rounded-xl border border-border bg-card hover:bg-muted/50 transition-colors text-left active:scale-[0.98]"
                   >
                     <span className="text-sm font-medium text-foreground truncate">{ride.ride_name}</span>
                     <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
@@ -259,7 +244,7 @@ const DefectReportDialog = ({
               )}
             </div>
             <DialogFooter>
-              <Button variant="outline" onClick={handleClose}>Cancel</Button>
+              <Button variant="outline" onClick={handleClose} className="rounded-lg">Cancel</Button>
             </DialogFooter>
           </>
         ) : (
@@ -285,27 +270,27 @@ const DefectReportDialog = ({
 
             <div className="space-y-5 py-4">
               {/* Severity */}
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Severity *</Label>
+              <div className="space-y-2.5">
+                <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Severity *</Label>
                 <RadioGroup value={severity} onValueChange={(v) => setSeverity(v as DefectSeverity)} className="space-y-2">
                   {severities.map((sev) => {
                     const Icon = sev.icon;
+                    const isActive = severity === sev.value;
                     return (
                       <label
                         key={sev.value}
-                        className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                          severity === sev.value
-                            ? sev.value === 'stop_operation' ? 'border-destructive bg-destructive/5' : 'border-primary bg-primary/5'
-                            : 'border-border hover:border-muted-foreground/50'
+                        className={`flex items-start gap-3 p-3.5 border rounded-xl cursor-pointer transition-all ${
+                          isActive ? sev.activeBorder : 'border-border hover:border-muted-foreground/30'
                         }`}
                       >
                         <RadioGroupItem value={sev.value} className="mt-0.5" />
                         <div className="flex-1">
-                          <div className={`flex items-center gap-2 font-medium ${sev.color}`}>
+                          <div className={`flex items-center gap-2 font-semibold text-sm ${sev.color}`}>
                             <Icon className="h-4 w-4" />
                             {sev.label}
                           </div>
-                          <p className="text-xs text-muted-foreground mt-1">{sev.description}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{sev.description}</p>
+                          <p className="text-[10px] text-muted-foreground/75 mt-0.5">Operational: {sev.operational}</p>
                         </div>
                       </label>
                     );
@@ -314,28 +299,28 @@ const DefectReportDialog = ({
               </div>
 
               {/* Description */}
-              <div className="space-y-2">
-                <Label htmlFor="defect-description">Description *</Label>
-                <Textarea id="defect-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe the defect..." rows={3} />
+              <div className="space-y-1.5">
+                <Label htmlFor="defect-description" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Description *</Label>
+                <Textarea id="defect-description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe the defect..." rows={3} className="rounded-xl" />
               </div>
 
               {/* Location */}
-              <div className="space-y-2">
-                <Label htmlFor="location-on-ride">Location on equipment</Label>
-                <Input id="location-on-ride" value={locationOnRide} onChange={(e) => setLocationOnRide(e.target.value)} placeholder="e.g. Front car, left side" />
+              <div className="space-y-1.5">
+                <Label htmlFor="location-on-ride" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Location on equipment</Label>
+                <Input id="location-on-ride" value={locationOnRide} onChange={(e) => setLocationOnRide(e.target.value)} placeholder="e.g. Front car, left side" className="rounded-xl h-10" />
               </div>
 
               {/* Photos */}
-              <div className="space-y-3">
+              <div className="space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <Label>Photos</Label>
-                  <span className="text-xs text-muted-foreground">{photos.length}/{MAX_PHOTOS_PER_DEFECT}</span>
+                  <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Evidence photos</Label>
+                  <span className="text-[10px] text-muted-foreground">{photos.length}/{MAX_PHOTOS_PER_DEFECT}</span>
                 </div>
                 {photoPreviewUrls.length > 0 && (
                   <div className="grid grid-cols-3 gap-2">
                     {photoPreviewUrls.map((url, index) => (
                       <div key={index} className="relative aspect-square">
-                        <img src={url} alt="" className="w-full h-full object-cover rounded-lg border" />
+                        <img src={url} alt="" className="w-full h-full object-cover rounded-xl border border-border" />
                         <button type="button" onClick={() => removePhoto(index)} className="absolute -top-2 -right-2 p-1 bg-destructive text-destructive-foreground rounded-full shadow-md">
                           <X className="h-3 w-3" />
                         </button>
@@ -346,7 +331,7 @@ const DefectReportDialog = ({
                 {photos.length < MAX_PHOTOS_PER_DEFECT && (
                   <div className="flex gap-2">
                     <input ref={fileInputRef} type="file" accept="image/*" capture="environment" multiple onChange={handlePhotoSelect} className="hidden" />
-                    <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 gap-2">
+                    <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} className="flex-1 gap-2 h-10 rounded-xl">
                       <Camera className="h-4 w-4" /> Take Photo
                     </Button>
                     <Button type="button" variant="outline" onClick={() => {
@@ -355,18 +340,33 @@ const DefectReportDialog = ({
                         fileInputRef.current.click();
                         setTimeout(() => fileInputRef.current?.setAttribute('capture', 'environment'), 100);
                       }
-                    }} className="flex-1 gap-2">
+                    }} className="flex-1 gap-2 h-10 rounded-xl">
                       <Upload className="h-4 w-4" /> Upload
                     </Button>
                   </div>
                 )}
               </div>
+
+              {/* Stop-use warning */}
+              {severity === 'stop_operation' && (
+                <div className="flex items-center gap-2.5 px-3.5 py-3 rounded-xl bg-destructive/10 border border-destructive/25">
+                  <ShieldAlert className="h-4 w-4 text-destructive shrink-0" />
+                  <p className="text-xs font-semibold text-destructive">
+                    This will flag the equipment as "Do not operate" until the defect is closed.
+                  </p>
+                </div>
+              )}
             </div>
 
             <DialogFooter className="gap-2 sm:gap-0">
-              <Button variant="outline" onClick={handleClose} disabled={submitting}>Cancel</Button>
-              <Button onClick={handleSubmit} disabled={submitting || !description.trim()} variant={severity === 'stop_operation' ? 'destructive' : 'default'}>
-                {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Reporting...</> : 'Report Defect'}
+              <Button variant="outline" onClick={handleClose} disabled={submitting} className="rounded-lg">Cancel</Button>
+              <Button
+                onClick={handleSubmit}
+                disabled={submitting || !description.trim()}
+                variant={severity === 'stop_operation' ? 'destructive' : 'default'}
+                className="rounded-lg gap-1.5"
+              >
+                {submitting ? <><Loader2 className="h-4 w-4 animate-spin" />Reporting...</> : 'Report Defect'}
               </Button>
             </DialogFooter>
           </>
