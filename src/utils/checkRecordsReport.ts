@@ -12,7 +12,6 @@ import autoTable from 'jspdf-autotable';
 import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import type { InspectionRecord, FetchRecordsFilters } from './inspectionRecordService';
-import { fetchInspectionRecords } from './inspectionRecordService';
 import {
   PDF_COLORS,
   buildFileName,
@@ -26,17 +25,10 @@ import {
   PDF_TABLE_HEAD_STYLES,
   PDF_TABLE_BODY_STYLES,
   PDF_TABLE_ALT_ROW,
-  getImageDimensions,
-  fitImage,
 } from './pdfUtils';
 import {
-  drawTemplateHeader,
-  drawTemplateFooters,
-  drawSection,
-  drawMetadataRows,
   generateDocumentId,
   checkOverflow,
-  type DocTypeCode,
 } from './pdfTemplate';
 import { storeRideDocument, getRideCode } from './rideDocumentService';
 
@@ -61,7 +53,10 @@ interface ReportStats {
   failed: number;
   partial: number;
   withDefects: number;
+  withNotes: number;
+  withPhotos: number;
   passRate: number;
+  templateNames: string[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -72,8 +67,16 @@ function computeStats(records: InspectionRecord[]): ReportStats {
   const failed = records.filter(r => r.overall_result === 'failed').length;
   const partial = total - passed - failed;
   const withDefects = records.filter(r => (r.defect_ids?.length || 0) > 0).length;
+  const withNotes = records.filter(r => !!r.notes).length;
+  const withPhotos = records.filter(r => (r.photo_paths?.length || 0) > 0).length;
   const passRate = total > 0 ? Math.round((passed / total) * 100) : 0;
-  return { total, passed, failed, partial, withDefects, passRate };
+
+  const templateSet = new Set<string>();
+  records.forEach(r => {
+    if (r.template_name) templateSet.add(r.template_name);
+  });
+
+  return { total, passed, failed, partial, withDefects, withNotes, withPhotos, passRate, templateNames: Array.from(templateSet) };
 }
 
 function formatFrequency(freq: string): string {
@@ -89,17 +92,12 @@ function formatFrequency(freq: string): string {
 
 function buildFiltersSummary(filters: FetchRecordsFilters): string[] {
   const parts: string[] = [];
-  if (filters.dateFrom || filters.dateTo) {
-    const from = filters.dateFrom || '—';
-    const to = filters.dateTo || '—';
-    parts.push(`Date range: ${from} to ${to}`);
-  }
   if (filters.result && filters.result !== 'all') {
-    parts.push(`Result: ${filters.result}`);
+    parts.push(`Result: ${filters.result.charAt(0).toUpperCase() + filters.result.slice(1)}`);
   }
   if (filters.hasDefects === true) parts.push('Defects: With defects only');
   if (filters.hasDefects === false) parts.push('Defects: No defects only');
-  if (filters.inspectorName) parts.push(`Checked by: ${filters.inspectorName}`);
+  if (filters.inspectorName) parts.push(`Recorded by: ${filters.inspectorName}`);
   if (filters.searchQuery) parts.push(`Search: "${filters.searchQuery}"`);
   return parts;
 }
@@ -179,7 +177,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     fields: [
       { label: 'Equipment', value: rideName },
       { label: 'Report Period', value: periodLabel },
-      { label: 'Total Records', value: String(stats.total) },
+      { label: 'Document ID', value: docId },
       { label: 'Generated', value: generatedAt },
     ],
     imageDataUrl: rideImageDataUrl,
@@ -187,20 +185,30 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
 
   // ── Summary metrics ──
   y = drawSummaryBox(doc, [
-    { label: 'Total Checks', value: String(stats.total) },
+    { label: 'Total Records', value: String(stats.total) },
     { label: 'Passed', value: String(stats.passed), accent: true },
     { label: 'Failed', value: String(stats.failed) },
+    { label: 'Partial', value: String(stats.partial) },
+  ], y);
+
+  y = drawSummaryBox(doc, [
+    { label: 'With Defects', value: String(stats.withDefects) },
+    { label: 'With Notes', value: String(stats.withNotes) },
+    { label: 'With Attachments', value: String(stats.withPhotos) },
     { label: 'Pass Rate', value: `${stats.passRate}%`, accent: true },
   ], y);
 
-  // Extended summary row
-  y = drawSummaryBox(doc, [
-    { label: 'Partial', value: String(stats.partial) },
-    { label: 'With Defects', value: String(stats.withDefects) },
-    { label: 'No Defects', value: String(stats.total - stats.withDefects), accent: true },
-  ], y);
+  // Templates used
+  if (stats.templateNames.length > 0) {
+    y += 1;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...PDF_COLORS.muted);
+    doc.text(`Templates used: ${stats.templateNames.join(', ')}`, 14, y);
+    y += 5;
+  }
 
-  // ── Filters applied ──
+  // ── Filters applied (only if non-default filters in use) ──
   const filterLines = buildFiltersSummary(filters);
   if (filterLines.length > 0) {
     y = drawSectionTitle(doc, 'Filters Applied', y);
@@ -212,7 +220,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
       doc.text(`• ${line}`, 16, y);
       y += 4.5;
     }
-    y += 3;
+    y += 2;
   }
 
   // ── Records table ──
@@ -221,43 +229,48 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
 
   const tableBody = records.map(record => {
     const defectCount = record.defect_ids?.length || 0;
-    const dateStr = format(parseISO(record.check_date), 'dd MMM yyyy');
+    const dateStr = format(parseISO(record.check_date), 'dd/MM/yy');
     const timeStr = format(parseISO(record.completed_at), 'HH:mm');
     const freq = formatFrequency(record.check_frequency);
     const result = record.overall_result === 'completed' ? 'Passed' : record.overall_result.charAt(0).toUpperCase() + record.overall_result.slice(1);
-    const hasNotes = record.notes ? '✓' : '';
-    const hasPhotos = (record.photo_paths?.length || 0) > 0 ? '✓' : '';
+    const template = record.template_name || '—';
+    const hasNotes = record.notes ? '✓' : '—';
+    const hasPhotos = (record.photo_paths?.length || 0) > 0 ? '✓' : '—';
 
     return [
       dateStr,
       timeStr,
-      `${freq}${record.template_name ? `\n${record.template_name}` : ''}`,
+      freq,
+      template,
       result,
       record.inspector_name,
       defectCount > 0 ? String(defectCount) : '—',
-      [hasNotes && 'Notes', hasPhotos && 'Photos'].filter(Boolean).join(', ') || '—',
+      hasNotes,
+      hasPhotos,
     ];
   });
 
   autoTable(doc, {
     startY: y,
-    head: [['Date', 'Time', 'Check / Template', 'Result', 'Checked By', 'Defects', 'Attachments']],
+    head: [['Date', 'Time', 'Check Type', 'Template', 'Result', 'Recorded By', 'Defects', 'Notes', 'Attach.']],
     body: tableBody,
     headStyles: PDF_TABLE_HEAD_STYLES,
-    styles: { ...PDF_TABLE_BODY_STYLES, fontSize: 7.5 },
+    styles: { ...PDF_TABLE_BODY_STYLES, fontSize: 7 },
     alternateRowStyles: PDF_TABLE_ALT_ROW,
     columnStyles: {
-      0: { cellWidth: 22 },
-      1: { cellWidth: 14 },
-      2: { cellWidth: 38 },
-      3: { cellWidth: 18 },
-      4: { cellWidth: 30 },
-      5: { cellWidth: 16, halign: 'center' },
-      6: { cellWidth: 26 },
+      0: { cellWidth: 18 },   // Date
+      1: { cellWidth: 13 },   // Time
+      2: { cellWidth: 20 },   // Check Type
+      3: { cellWidth: 34 },   // Template
+      4: { cellWidth: 16 },   // Result
+      5: { cellWidth: 30 },   // Recorded By
+      6: { cellWidth: 14, halign: 'center' }, // Defects
+      7: { cellWidth: 12, halign: 'center' }, // Notes
+      8: { cellWidth: 13, halign: 'center' }, // Attach
     },
     margin: { left: 13, right: 13 },
     didParseCell: (data: any) => {
-      if (data.section === 'body' && data.column.index === 3) {
+      if (data.section === 'body' && data.column.index === 4) {
         const val = data.cell.text?.[0]?.toLowerCase();
         if (val === 'passed') {
           data.cell.styles.textColor = PDF_COLORS.green;
@@ -317,10 +330,10 @@ export function generateCheckRecordsCsv(records: InspectionRecord[], rideName: s
   const headers = [
     'Date',
     'Time',
-    'Frequency',
+    'Check Type',
     'Template',
     'Result',
-    'Checked By',
+    'Recorded By',
     'Defects',
     'Notes',
     'Weather',
@@ -330,7 +343,7 @@ export function generateCheckRecordsCsv(records: InspectionRecord[], rideName: s
   ];
 
   const rows = records.map(record => [
-    format(parseISO(record.check_date), 'yyyy-MM-dd'),
+    format(parseISO(record.check_date), 'dd/MM/yyyy'),
     format(parseISO(record.completed_at), 'HH:mm'),
     formatFrequency(record.check_frequency),
     record.template_name || '',
