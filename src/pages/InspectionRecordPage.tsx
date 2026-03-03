@@ -83,7 +83,7 @@ const InspectionRecordPage = () => {
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Inspection-Record-v${record.version}-${record.check_date}.pdf`;
+      a.download = `Check-Record-v${record.version}-${record.check_date}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch {

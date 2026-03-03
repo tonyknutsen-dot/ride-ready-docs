@@ -75,7 +75,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Inspection-Record-v${record.version}-${format(parseISO(record.check_date), 'yyyy-MM-dd')}.pdf`;
+      a.download = `Check-Record-v${record.version}-${format(parseISO(record.check_date), 'yyyy-MM-dd')}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (error) {
@@ -127,7 +127,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
       await supabase.from('documents').insert({
         user_id: effectiveUserId,
         ride_id: rideId,
-        document_name: `${freqLabel} Inspection Record – ${rideName} – ${dateStr}`,
+        document_name: `${freqLabel} Check Record – ${rideName} – ${dateStr}`,
         document_type: 'inspection_record',
         file_path: filePath,
         mime_type: 'application/pdf',
@@ -135,7 +135,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
       });
 
       queryClient.invalidateQueries({ queryKey: ['documents'] });
-      toast({ title: 'Saved to documents', description: 'Inspection record saved to this ride\'s document area.' });
+      toast({ title: 'Saved to documents', description: 'Check record saved to this ride\'s document area.' });
     } catch (err: any) {
       console.error('Save to documents failed:', err);
       toast({ title: 'Save failed', description: err.message, variant: 'destructive' });
