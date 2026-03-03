@@ -470,16 +470,23 @@ const WindLog = () => {
     return parts.length > 0 ? parts.join(' · ') : null;
   };
 
+  const hasMissingAnemometer = (entry: WindLogEntry) => !entry.anemometer_make && !entry.anemometer_model;
+
   // ─── Desktop row ───
+  // Column order: Date | Time | Speed | Location | Recorded By | Applies To | Action | Anemometer
+  const DESKTOP_GRID = "grid grid-cols-[80px_50px_72px_minmax(80px,1.2fr)_minmax(80px,1fr)_minmax(100px,1.5fr)_minmax(80px,1fr)_minmax(100px,1.5fr)] gap-x-4";
+
   const renderDesktopRow = (entry: WindLogEntry) => {
     const isExpanded = expandedId === entry.id;
     const anemStr = formatAnemometer(entry);
+    const missingAnem = hasMissingAnemometer(entry);
     const hasExtra = entry.notes || (entry.linked_rides && entry.linked_rides.length > 2);
     return (
       <div key={entry.id} className="group">
         <div
           className={cn(
-            "grid grid-cols-[72px_48px_70px_1fr_110px_1fr_100px_1fr] gap-x-3 items-center px-3 py-2 text-[13px] border-b border-border hover:bg-muted/30 transition-colors cursor-pointer",
+            DESKTOP_GRID,
+            "items-center px-4 py-2.5 text-[13px] border-b border-border hover:bg-muted/30 transition-colors cursor-pointer",
             isExpanded && "bg-muted/20"
           )}
           onClick={() => setExpandedId(isExpanded ? null : entry.id)}
@@ -487,7 +494,7 @@ const WindLog = () => {
           <span className="font-medium text-foreground tabular-nums">{formatDate(entry.log_date)}</span>
           <span className="text-muted-foreground tabular-nums">{entry.log_time.slice(0, 5)}</span>
           <span className="font-semibold text-primary tabular-nums">
-            {entry.wind_speed} <span className="font-normal text-xs text-muted-foreground">{entry.wind_unit}</span>
+            {entry.wind_speed} <span className="font-normal text-[11px] text-muted-foreground">{entry.wind_unit}</span>
           </span>
           <span className="text-muted-foreground truncate">{entry.location || '—'}</span>
           <span className="text-muted-foreground truncate">{entry.recorded_by}</span>
@@ -508,15 +515,21 @@ const WindLog = () => {
             )}
           </div>
           <span className="text-muted-foreground truncate text-xs">{entry.action_taken || '—'}</span>
-          <div className="flex items-center justify-between gap-1">
-            <span className="text-muted-foreground truncate text-[11px]">{anemStr || '—'}</span>
+          <div className="flex items-center justify-between gap-1 min-w-0">
+            {missingAnem ? (
+              <Badge variant="destructive" className="text-[10px] px-1.5 py-0 opacity-70 shrink-0">
+                No anemometer
+              </Badge>
+            ) : (
+              <span className="text-muted-foreground truncate text-[11px]">{anemStr}</span>
+            )}
             {hasExtra && (
               <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/50 shrink-0 transition-transform", isExpanded && "rotate-180")} />
             )}
           </div>
         </div>
         {isExpanded && (
-          <div className="px-3 py-2 bg-muted/10 border-b border-border text-xs space-y-1.5">
+          <div className="px-4 py-2.5 bg-muted/10 border-b border-border text-xs space-y-1.5">
             {entry.notes && (
               <p className="text-muted-foreground"><span className="font-medium text-foreground">Notes:</span> {entry.notes}</p>
             )}
@@ -535,6 +548,7 @@ const WindLog = () => {
   const renderMobileRow = (entry: WindLogEntry) => {
     const isExpanded = expandedId === entry.id;
     const anemStr = formatAnemometer(entry);
+    const missingAnem = hasMissingAnemometer(entry);
     return (
       <div
         key={entry.id}
@@ -554,9 +568,13 @@ const WindLog = () => {
             </div>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-[11px] text-muted-foreground">{entry.recorded_by}</span>
-              {anemStr && (
+              {missingAnem ? (
+                <Badge variant="destructive" className="text-[9px] px-1 py-0 opacity-70">
+                  No anemometer
+                </Badge>
+              ) : anemStr ? (
                 <span className="text-[10px] text-muted-foreground truncate">· {anemStr}</span>
-              )}
+              ) : null}
             </div>
           </div>
           <div className="flex items-center gap-1 shrink-0 bg-primary/8 px-2 py-1 rounded">
@@ -588,31 +606,31 @@ const WindLog = () => {
   };
 
   return (
-    <div className="space-y-3 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-4">
+    <div className="space-y-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-6">
       <PageHeader title="Wind Speed Register" />
 
       {/* ─── Header bar ─── */}
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Wind className="h-5 w-5 text-primary shrink-0" />
           <div>
-            <h2 className="text-[15px] font-semibold text-foreground leading-tight">Wind Speed Register</h2>
-            <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">
+            <h2 className="text-base font-semibold text-foreground leading-tight">Wind Speed Register</h2>
+            <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
               Shared wind readings linked to inflatables · newest first
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className={cn("gap-1 h-8 text-xs", hasFilters && "border-primary/50")}>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className={cn("gap-1.5 h-8 text-xs", hasFilters && "border-primary/50")}>
             <Filter className="h-3 w-3" />
             {hasFilters ? `Filtered (${filteredLogs.length})` : 'Filter'}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExport} className="gap-1 h-8 text-xs" disabled={filteredLogs.length === 0}>
+          <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5 h-8 text-xs" disabled={filteredLogs.length === 0}>
             <Download className="h-3 w-3" />
             <span className="hidden sm:inline">Export PDF</span>
             <span className="sm:hidden">PDF</span>
           </Button>
-          <Button onClick={handleOpenSheet} size="sm" className="gap-1 h-8 text-xs" disabled={inflatables.length === 0}>
+          <Button onClick={handleOpenSheet} size="sm" className="gap-1.5 h-8 text-xs" disabled={inflatables.length === 0}>
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Add Reading</span>
             <span className="sm:hidden">Add</span>
@@ -711,7 +729,7 @@ const WindLog = () => {
           <div className="bg-card rounded-lg border border-border overflow-hidden">
             {/* Desktop column headers */}
             {!isMobile && (
-              <div className="grid grid-cols-[72px_48px_70px_1fr_110px_1fr_100px_1fr] gap-x-3 items-center px-3 py-1.5 bg-muted/50 border-b border-border">
+              <div className={cn(DESKTOP_GRID, "items-center px-4 py-2 bg-muted/50 border-b border-border")}>
                 {['Date', 'Time', 'Speed', 'Location', 'Recorded By', 'Applies To', 'Action', 'Anemometer'].map(h => (
                   <span key={h} className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.08em]">{h}</span>
                 ))}
