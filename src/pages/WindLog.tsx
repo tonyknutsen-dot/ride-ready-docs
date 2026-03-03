@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -108,6 +109,7 @@ const WindLog = () => {
   const { toast } = useToast();
   const { formatDate } = useDateTimeSettings();
   const isMobile = useIsMobile();
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [logs, setLogs] = useState<WindLogEntry[]>([]);
   const [inflatables, setInflatables] = useState<InflatableRide[]>([]);
@@ -355,7 +357,7 @@ const WindLog = () => {
     }
   };
 
-  const handleOpenSheet = () => {
+  const handleOpenSheet = (prelinkRideId?: string) => {
     const n = new Date();
     setLogDate(format(n, 'yyyy-MM-dd'));
     setLogTime(format(n, 'HH:mm'));
@@ -366,7 +368,8 @@ const WindLog = () => {
     setActionTaken('');
     setActionNotes('');
     setNotes('');
-    setSelectedRideIds([]);
+    // Pre-link if a ride ID was passed
+    setSelectedRideIds(prelinkRideId ? [prelinkRideId] : []);
     setHighWindAcknowledged(false);
     const defaultProfile = anemometerProfiles.find(p => p.is_default);
     if (defaultProfile) {
@@ -382,6 +385,20 @@ const WindLog = () => {
     }
     setSheetOpen(true);
   };
+
+  // Auto-open sheet if ?prelink=rideId is present
+  const [prelinkHandled, setPrelinkHandled] = useState(false);
+  useEffect(() => {
+    if (prelinkHandled) return;
+    const prelinkId = searchParams.get('prelink');
+    if (prelinkId && inflatables.length > 0 && !loading) {
+      setPrelinkHandled(true);
+      // Clear the param
+      searchParams.delete('prelink');
+      setSearchParams(searchParams, { replace: true });
+      handleOpenSheet(prelinkId);
+    }
+  }, [searchParams, inflatables, loading, prelinkHandled]);
 
   const toggleRide = (rideId: string) => {
     setSelectedRideIds(prev =>

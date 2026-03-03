@@ -95,8 +95,25 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
   // Check if adding a billable ride would exceed the current tier
   const selectedCategory = categories.find(c => c.id === formData.category_id);
-  const isSelectedCategoryBillable = selectedCategory?.is_billable !== false;
+  const selectedGroupCategories = categories.filter(c => c.category_group === formData.category_group);
+  const isSelectedCategoryBillable = formData.category_id
+    ? selectedCategory?.is_billable !== false
+    : selectedGroupCategories.length > 0 ? selectedGroupCategories[0]?.is_billable !== false : false;
   const wouldExceedTier = !isEditMode && subscription && isSelectedCategoryBillable && !subscription.canAddRide && subscription.subscriptionStatus === 'active';
+
+  // Soft mismatch warning: if name suggests a billable item but category is non-billable
+  const BILLABLE_KEYWORDS = [
+    'ride', 'waltzer', 'dodgem', 'carousel', 'coaster', 'wheel', 'swinger', 'chair-o-plane',
+    'inflatable', 'bouncy', 'castle', 'slide', 'bungee', 'obstacle',
+    'funhouse', 'dark ride', 'dark show', 'mirror maze', 'walkthrough', 'ghost train',
+    'helter', 'skelter', 'sizzler', 'twister', 'orbiter', 'tagada', 'enterprise',
+  ];
+  const showMismatchWarning = (() => {
+    if (!formData.ride_name || !formData.category_group) return false;
+    if (isSelectedCategoryBillable) return false; // already counted, no issue
+    const nameLower = formData.ride_name.toLowerCase();
+    return BILLABLE_KEYWORDS.some(kw => nameLower.includes(kw));
+  })();
 
   useEffect(() => {
     loadCategories();
@@ -574,6 +591,16 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               <p className="text-xs text-foreground/55">
                 The broad category of your equipment
               </p>
+              {formData.category_group && isSelectedCategoryBillable && !isEditMode && (
+                <p className="text-xs text-primary mt-1">
+                  This item counts toward your plan allowance
+                </p>
+              )}
+              {formData.category_group && !isSelectedCategoryBillable && !isEditMode && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  This item does not count toward your plan allowance
+                </p>
+              )}
             </div>
 
             {formData.category_group && filteredTypes.length > 1 && (
@@ -608,6 +635,17 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
             {errors.category_group && (
               <p className="text-sm text-destructive">{errors.category_group}</p>
+            )}
+
+            {showMismatchWarning && (
+              <Alert className="border-warning/30 bg-warning/10">
+                <AlertTriangle className="h-4 w-4 text-warning" />
+                <AlertTitle className="text-warning text-sm">Check classification</AlertTitle>
+                <AlertDescription className="text-xs">
+                  The name "{formData.ride_name}" looks like it could be a ride, inflatable, or attraction. 
+                  Items in {formData.category_group} are not counted toward your plan. Please check this is the right category.
+                </AlertDescription>
+              </Alert>
             )}
 
             <Button 

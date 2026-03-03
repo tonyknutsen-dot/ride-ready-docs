@@ -1,6 +1,7 @@
 import { AlertOctagon, AlertTriangle, ChevronRight, FileText } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 import type { Ride } from '@/types/ride';
 
 interface RideStats {
@@ -18,6 +19,7 @@ interface EquipmentListViewProps {
 }
 
 const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMap, onSelectRide }: EquipmentListViewProps) => {
+  const navigate = useNavigate();
   return (
     <div className="border border-border rounded-lg overflow-hidden divide-y divide-border">
       {rides.map((ride) => {
@@ -79,21 +81,30 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
               {/* Status */}
               <div className="sm:w-[140px]">
                 {hasCritical ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-destructive">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview`); }}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-destructive hover:underline"
+                  >
                     <AlertOctagon className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Do not operate</span>
                     <span className="sm:hidden">Stop use</span>
-                  </span>
+                  </button>
                 ) : hasNonCritical ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview`); }}
+                    className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
+                  >
                     <AlertTriangle className="h-3.5 w-3.5" />
                     <span className="hidden sm:inline">Attention needed</span>
                     <span className="sm:hidden">Attention</span>
-                  </span>
+                  </button>
                 ) : hasDue ? (
-                  <span className="text-xs font-medium text-amber-600 dark:text-amber-400">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=documents`); }}
+                    className="text-xs font-medium text-amber-600 dark:text-amber-400 hover:underline"
+                  >
                     Due {new Date(stats!.nextDue!).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })}
-                  </span>
+                  </button>
                 ) : (
                   <span className="text-xs text-success font-medium">Compliant</span>
                 )}
