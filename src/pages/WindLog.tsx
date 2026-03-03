@@ -558,9 +558,6 @@ const WindLog = () => {
             )}
           </div>
           <div className="flex items-center gap-1.5 min-w-0">
-            {missingAnem && (
-              <Badge variant="destructive" className="text-[9px] px-1 py-0 opacity-70 shrink-0">No anem.</Badge>
-            )}
             <span className="text-muted-foreground break-words text-xs leading-snug" title={entry.action_taken || undefined}>
               {entry.action_taken || '—'}
             </span>
