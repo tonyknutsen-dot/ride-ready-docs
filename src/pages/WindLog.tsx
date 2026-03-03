@@ -725,35 +725,31 @@ const WindLog = () => {
 
   return (
     <div className="space-y-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-6">
-      <PageHeader title="Wind Speed Register" />
-
-      {/* ─── Header bar ─── */}
-      <div className="space-y-2">
-        <div className="flex items-start gap-3">
-          <Wind className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-          <div className="min-w-0">
-            <h2 className="text-base font-semibold text-foreground leading-tight">Wind Speed Register</h2>
-            <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
-              Shared wind readings linked to inflatables · newest first
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className={cn("gap-1.5 min-h-[44px] h-auto px-3 text-xs", hasFilters && "border-primary/50")}>
-            <Filter className="h-3.5 w-3.5" />
-            {hasFilters ? `Filtered (${filteredLogs.length})` : 'Filter'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5 min-h-[44px] h-auto px-3 text-xs" disabled={filteredLogs.length === 0}>
-            <Download className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Export PDF</span>
-            <span className="sm:hidden">PDF</span>
-          </Button>
-          <Button onClick={handleOpenSheet} size="sm" className="gap-1.5 min-h-[44px] h-auto px-3 text-xs ml-auto" disabled={inflatables.length === 0}>
+      <PageHeader
+        title="Wind Speed Register"
+        icon={<Wind className="h-5 w-5 text-primary" />}
+        subtitle="Record one reading and link it to one or more inflatables."
+        showBackButton
+        backTo="/overview"
+        actions={
+          <Button onClick={handleOpenSheet} size="sm" className="gap-1.5" disabled={inflatables.length === 0}>
             <Plus className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Add Reading</span>
-            <span className="sm:hidden">Add</span>
+            Add wind reading
           </Button>
-        </div>
+        }
+      />
+
+      {/* ─── Action bar ─── */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className={cn("gap-1.5 min-h-[44px] h-auto px-3 text-xs", hasFilters && "border-primary/50")}>
+          <Filter className="h-3.5 w-3.5" />
+          {hasFilters ? `Filtered (${filteredLogs.length})` : 'Filter'}
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5 min-h-[44px] h-auto px-3 text-xs" disabled={filteredLogs.length === 0}>
+          <Download className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">Export PDF</span>
+          <span className="sm:hidden">PDF</span>
+        </Button>
       </div>
 
       {/* ─── Filters ─── */}
