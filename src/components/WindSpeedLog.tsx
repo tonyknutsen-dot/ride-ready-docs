@@ -1,15 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useDateTimeSettings } from '@/hooks/useDateTimeSettings';
-import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
-import { Wind, MapPin, Clock, ChevronDown, Gauge, User, Loader2, ExternalLink, Download } from 'lucide-react';
+import { Wind, MapPin, Clock, User, Loader2, ExternalLink, Download, ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { generateWindLogPdf } from '@/utils/windLogPdf';
-import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface WindSpeedLogProps {
   rideId: string;
@@ -32,12 +30,16 @@ interface WindLogEntry {
   created_at: string;
 }
 
+const DEFAULT_LIMIT = 20;
+
 const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
   const { effectiveUserId } = useEffectiveUserId();
   const { formatDate } = useDateTimeSettings();
 
-  const [logs, setLogs] = useState<WindLogEntry[]>([]);
+  const [allLogs, setAllLogs] = useState<WindLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [totalCount, setTotalCount] = useState(0);
+  const [showAll, setShowAll] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -52,12 +54,14 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
         if (jErr) throw jErr;
 
         if (!junctions || junctions.length === 0) {
-          setLogs([]);
+          setAllLogs([]);
+          setTotalCount(0);
           setLoading(false);
           return;
         }
 
         const logIds = junctions.map(j => j.wind_log_id);
+        setTotalCount(logIds.length);
 
         const { data, error } = await supabase
           .from('wind_speed_logs')
@@ -65,10 +69,10 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
           .in('id', logIds)
           .order('log_date', { ascending: false })
           .order('log_time', { ascending: false })
-          .limit(100);
+          .limit(200);
 
         if (error) throw error;
-        setLogs((data as WindLogEntry[]) || []);
+        setAllLogs((data as WindLogEntry[]) || []);
       } catch (err) {
         console.error('Error loading wind logs:', err);
       } finally {
@@ -78,117 +82,132 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
     load();
   }, [rideId, effectiveUserId]);
 
+  const displayLogs = useMemo(() => {
+    return showAll ? allLogs : allLogs.slice(0, DEFAULT_LIMIT);
+  }, [allLogs, showAll]);
+
   const handleExport = () => {
-    if (logs.length === 0) return;
+    if (allLogs.length === 0) return;
     generateWindLogPdf({
-      entries: logs,
+      entries: allLogs,
       title: `Wind Log — ${rideName}`,
       inflatableName: rideName,
+      singleRideId: rideId,
     });
   };
 
-  const hasAnemometerDetails = (entry: WindLogEntry) =>
-    entry.anemometer_make || entry.anemometer_model || entry.anemometer_serial;
+  const hasExtra = (entry: WindLogEntry) =>
+    entry.anemometer_make || entry.anemometer_model || entry.anemometer_serial || entry.notes || entry.action_taken;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
+      {/* Header */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2">
-          <Wind className="h-5 w-5 text-primary" />
-          <h2 className="text-base font-semibold text-foreground">Wind Log</h2>
-          {!loading && logs.length > 0 && (
-            <Badge variant="secondary" className="text-[10px]">{logs.length}</Badge>
+          <Wind className="h-4 w-4 text-primary" />
+          <h2 className="text-[13px] font-semibold text-foreground">Wind Log</h2>
+          {!loading && totalCount > 0 && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">{totalCount}</Badge>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          {logs.length > 0 && (
-            <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5">
-              <Download className="h-3.5 w-3.5" />
-              Export
+        <div className="flex items-center gap-1.5">
+          {allLogs.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handleExport} className="gap-1 h-7 text-[11px]">
+              <Download className="h-3 w-3" />Export
             </Button>
           )}
-          <Button asChild size="sm" className="gap-1.5">
+          <Button asChild variant="outline" size="sm" className="gap-1 h-7 text-[11px]">
             <Link to="/wind-log">
-              <ExternalLink className="h-3.5 w-3.5" />
-              Wind Log
+              <ExternalLink className="h-3 w-3" />Full Log
             </Link>
           </Button>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        <div className="flex items-center justify-center py-8">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
         </div>
-      ) : logs.length === 0 ? (
-        <Card className="p-6 text-center">
-          <Wind className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">No wind readings linked to {rideName} yet.</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Use the <Link to="/wind-log" className="text-primary underline">Wind Log</Link> page to record readings for multiple inflatables at once.
+      ) : allLogs.length === 0 ? (
+        <div className="text-center py-6 border border-border rounded-lg">
+          <Wind className="h-6 w-6 text-muted-foreground/30 mx-auto mb-1.5" />
+          <p className="text-xs text-muted-foreground">No wind readings linked to {rideName}.</p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Use the <Link to="/wind-log" className="text-primary underline">Wind Log</Link> to add readings.
           </p>
-        </Card>
+        </div>
       ) : (
-        <div className="space-y-2">
-          {logs.map((entry) => (
-            <Card key={entry.id} className="p-3.5 space-y-2">
-              <div className="flex items-start justify-between gap-3">
-                <div className="space-y-1 flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="text-sm font-semibold text-foreground">
-                      {formatDate(entry.log_date)}
-                    </span>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      {entry.log_time.slice(0, 5)}
-                    </span>
+        <>
+          {/* Compact register */}
+          <div className="bg-card rounded-lg border border-border overflow-hidden">
+            {displayLogs.map((entry) => {
+              const isExpanded = expandedId === entry.id;
+              const expandable = hasExtra(entry);
+              return (
+                <div
+                  key={entry.id}
+                  className={cn("border-b border-border last:border-0", isExpanded && "bg-muted/10")}
+                  onClick={() => expandable && setExpandedId(isExpanded ? null : entry.id)}
+                >
+                  <div className="flex items-center gap-2 px-3 py-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[12px] font-medium text-foreground tabular-nums">{formatDate(entry.log_date)}</span>
+                        <span className="text-[11px] text-muted-foreground tabular-nums">{entry.log_time.slice(0, 5)}</span>
+                        {entry.location && (
+                          <span className="text-[10px] text-muted-foreground truncate flex items-center gap-0.5">
+                            <MapPin className="h-2.5 w-2.5" />{entry.location}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-[10px] text-muted-foreground">{entry.recorded_by}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0 bg-primary/8 px-2 py-0.5 rounded">
+                      <span className="text-[13px] font-bold text-primary tabular-nums">{entry.wind_speed}</span>
+                      <span className="text-[10px] text-primary/60">{entry.wind_unit}</span>
+                    </div>
+                    {expandable && (
+                      <ChevronRight className={cn("h-3 w-3 text-muted-foreground/40 shrink-0 transition-transform", isExpanded && "rotate-90")} />
+                    )}
                   </div>
-                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <User className="h-3 w-3 shrink-0" />
-                    <span className="truncate">{entry.recorded_by}</span>
-                  </div>
-                  {entry.location && (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <MapPin className="h-3 w-3 shrink-0" />
-                      <span className="truncate">{entry.location}</span>
+                  {isExpanded && (
+                    <div className="px-3 pb-2 space-y-1">
+                      {entry.action_taken && (
+                        <p className="text-[11px] text-muted-foreground"><span className="font-medium text-foreground">Action:</span> {entry.action_taken}</p>
+                      )}
+                      {entry.notes && (
+                        <p className="text-[11px] text-muted-foreground"><span className="font-medium text-foreground">Notes:</span> {entry.notes}</p>
+                      )}
+                      {(entry.anemometer_make || entry.anemometer_model || entry.anemometer_serial) && (
+                        <p className="text-[11px] text-muted-foreground">
+                          <span className="font-medium text-foreground">Anemometer:</span>{' '}
+                          {[entry.anemometer_make, entry.anemometer_model, entry.anemometer_serial ? `S/N ${entry.anemometer_serial}` : null].filter(Boolean).join(' · ')}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
-                <div className="flex items-center gap-1.5 shrink-0 bg-primary/10 px-3 py-1.5 rounded-lg">
-                  <Gauge className="h-4 w-4 text-primary" />
-                  <span className="text-base font-bold text-primary">{entry.wind_speed}</span>
-                  <span className="text-xs font-medium text-primary/70">{entry.wind_unit}</span>
-                </div>
-              </div>
+              );
+            })}
+          </div>
 
-              {entry.action_taken && (
-                <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-2.5 py-1.5">
-                  <span className="font-medium text-foreground">Action: </span>{entry.action_taken}
-                </p>
-              )}
-
-              {entry.notes && (
-                <p className="text-xs text-muted-foreground italic">{entry.notes}</p>
-              )}
-
-              {hasAnemometerDetails(entry) && (
-                <Collapsible open={expandedId === entry.id} onOpenChange={(open) => setExpandedId(open ? entry.id : null)}>
-                  <CollapsibleTrigger className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-                    <ChevronDown className={`h-3 w-3 transition-transform ${expandedId === entry.id ? 'rotate-180' : ''}`} />
-                    Anemometer details
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-1.5">
-                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground bg-muted/30 rounded-lg px-2.5 py-2">
-                      {entry.anemometer_make && <span><span className="font-medium">Make:</span> {entry.anemometer_make}</span>}
-                      {entry.anemometer_model && <span><span className="font-medium">Model:</span> {entry.anemometer_model}</span>}
-                      {entry.anemometer_serial && <span><span className="font-medium">Serial:</span> {entry.anemometer_serial}</span>}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
-            </Card>
-          ))}
-        </div>
+          {/* Show more / summary */}
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
+            <span>Showing {displayLogs.length} of {totalCount} readings</span>
+            {!showAll && allLogs.length > DEFAULT_LIMIT && (
+              <Button variant="ghost" size="sm" onClick={() => setShowAll(true)} className="text-[11px] h-6 gap-1 px-2">
+                View all {totalCount} readings
+              </Button>
+            )}
+            {showAll && allLogs.length > DEFAULT_LIMIT && (
+              <Button variant="ghost" size="sm" onClick={() => setShowAll(false)} className="text-[11px] h-6 gap-1 px-2">
+                Show latest {DEFAULT_LIMIT}
+              </Button>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

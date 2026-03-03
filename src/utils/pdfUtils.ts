@@ -24,7 +24,7 @@ export const PDF_COLORS = {
 };
 
 // ─── Document-ID prefix map ───────────────────────────────────────────────────
-export type DocIdPrefix = 'MAINT' | 'RISK' | 'CHECK' | 'DEFECT' | 'INSPECT' | 'TIMELINE';
+export type DocIdPrefix = 'MAINT' | 'RISK' | 'CHECK' | 'DEFECT' | 'INSPECT' | 'TIMELINE' | 'WIND';
 
 let _docIdCounter = 0;
 export function generateDocId(prefix: DocIdPrefix): string {
