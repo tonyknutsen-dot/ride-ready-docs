@@ -52,7 +52,7 @@ export function useOpenCriticalDefects(rideId: string) {
 }
 
 /**
- * Returns a map of ride IDs → count of open critical defects.
+ * Returns a map of ride IDs → count of open critical (stop_operation) defects.
  * Used for the ride list view indicators.
  */
 export function useAllRidesCriticalDefects() {
@@ -77,6 +77,45 @@ export function useAllRidesCriticalDefects() {
       const map = new Map<string, number>();
       for (const d of data || []) {
         map.set(d.ride_id, (map.get(d.ride_id) || 0) + 1);
+      }
+      return map;
+    },
+    enabled: !!effectiveUserId,
+    staleTime: 1000 * 60 * 2,
+  });
+}
+
+/**
+ * Returns a map of ride IDs → { critical: number, nonCritical: number }
+ * for ALL open (non-resolved) defects, partitioned by severity.
+ */
+export function useAllRidesOpenDefects() {
+  const { effectiveUserId } = useEffectiveUserId();
+
+  return useQuery({
+    queryKey: ['all-rides-open-defects', effectiveUserId],
+    queryFn: async () => {
+      if (!effectiveUserId) return new Map<string, { critical: number; nonCritical: number }>();
+
+      const { data, error } = await supabase
+        .from('defects')
+        .select('ride_id, severity')
+        .neq('status', 'resolved');
+
+      if (error) {
+        console.error('Error fetching all open defects:', error);
+        return new Map<string, { critical: number; nonCritical: number }>();
+      }
+
+      const map = new Map<string, { critical: number; nonCritical: number }>();
+      for (const d of data || []) {
+        const current = map.get(d.ride_id) || { critical: 0, nonCritical: 0 };
+        if (d.severity === 'stop_operation') {
+          current.critical += 1;
+        } else {
+          current.nonCritical += 1;
+        }
+        map.set(d.ride_id, current);
       }
       return map;
     },
