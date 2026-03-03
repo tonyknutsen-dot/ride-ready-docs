@@ -63,8 +63,8 @@ interface ReportStats {
 
 function computeStats(records: InspectionRecord[]): ReportStats {
   const total = records.length;
-  const passed = records.filter(r => r.overall_result === 'passed' || r.overall_result === 'completed').length;
-  const failed = records.filter(r => r.overall_result === 'failed').length;
+  const passed = records.filter(r => deriveOverallResult(r) === 'passed').length;
+  const failed = records.filter(r => deriveOverallResult(r) === 'failed').length;
   const partial = total - passed - failed;
   const withDefects = records.filter(r => (r.defect_ids?.length || 0) > 0).length;
   const withNotes = records.filter(r => !!r.notes).length;
@@ -104,6 +104,25 @@ function formatFrequency(freq: string): string {
 function formatResult(result: string): string {
   if (result === 'completed') return 'Passed';
   return result.charAt(0).toUpperCase() + result.slice(1);
+}
+
+/**
+ * Derive the true overall result from item-level results.
+ * If item_results exist, recalculate; otherwise fall back to stored result.
+ */
+function deriveOverallResult(record: InspectionRecord): string {
+  const items = (record.item_results || []) as ItemResultSnapshot[];
+  if (items.length === 0) return record.overall_result;
+
+  const applicable = items.filter(i => i.result !== 'na');
+  if (applicable.length === 0) return record.overall_result; // all N/A — use stored
+
+  const hasFail = applicable.some(i => i.result === 'fail');
+  const allPass = applicable.every(i => i.result === 'pass');
+
+  if (hasFail) return 'failed';
+  if (allPass) return 'passed';
+  return 'partial';
 }
 
 function buildFiltersSummary(filters: FetchRecordsFilters): string[] {
@@ -227,17 +246,16 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     const dateStr = format(parseISO(record.check_date), 'dd/MM/yy');
     const timeStr = format(parseISO(record.completed_at), 'HH:mm');
     const freq = formatFrequency(record.check_frequency);
-    const result = formatResult(record.overall_result);
+    const result = formatResult(deriveOverallResult(record));
     const template = record.template_name ? neutraliseTemplateName(record.template_name) : '—';
-    const hasNotes = record.notes ? '✓' : '—';
-    const hasPhotos = (record.photo_paths?.length || 0) > 0 ? '✓' : '—';
+    const location = record.location || '—';
 
-    return [dateStr, timeStr, freq, template, result, record.inspector_name, defectCount > 0 ? String(defectCount) : '—', hasNotes, hasPhotos];
+    return [dateStr, timeStr, freq, result, record.inspector_name, location, defectCount > 0 ? String(defectCount) : '—'];
   });
 
   autoTable(doc, {
     startY: y,
-    head: [['Date', 'Time', 'Type', 'Template', 'Result', 'Recorded By', 'Def.', 'Notes', 'Att.']],
+    head: [['Date', 'Time', 'Type', 'Result', 'Recorded By', 'Location', 'Def.']],
     body: tableBody,
     headStyles: { ...PDF_TABLE_HEAD_STYLES, fontSize: 7 },
     styles: { ...PDF_TABLE_BODY_STYLES, fontSize: 6.5 },
@@ -246,16 +264,14 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
       0: { cellWidth: 17 },
       1: { cellWidth: 12 },
       2: { cellWidth: 22 },
-      3: { cellWidth: 36 },
-      4: { cellWidth: 15 },
-      5: { cellWidth: 34 },
-      6: { cellWidth: 11, halign: 'center' as const },
-      7: { cellWidth: 11, halign: 'center' as const },
-      8: { cellWidth: 11, halign: 'center' as const },
+      3: { cellWidth: 15 },
+      4: { cellWidth: 34 },
+      5: { cellWidth: 50 },
+      6: { cellWidth: 14, halign: 'center' as const },
     },
     margin: { left: 15, right: 15 },
     didParseCell: (data: any) => {
-      if (data.section === 'body' && data.column.index === 4) {
+      if (data.section === 'body' && data.column.index === 3) {
         const val = data.cell.text?.[0]?.toLowerCase();
         if (val === 'passed') {
           data.cell.styles.textColor = PDF_COLORS.green;
@@ -283,12 +299,13 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     const defectCount = record.defect_ids?.length || 0;
     const dateStr = format(parseISO(record.check_date), 'dd/MM/yyyy');
     const timeStr = format(parseISO(record.completed_at), 'HH:mm');
-    const result = formatResult(record.overall_result);
+    const result = formatResult(deriveOverallResult(record));
     const template = record.template_name ? neutraliseTemplateName(record.template_name) : '—';
     const freq = formatFrequency(record.check_frequency);
+    const location = record.location || '';
 
-    // Need at least ~45pt for the record header + a few item rows
-    y = checkOverflow(doc, y, 45);
+    // Need at least ~50pt for the record header + a few item rows
+    y = checkOverflow(doc, y, 50);
 
     // Record header bar — styled panel
     const pageW = doc.internal.pageSize.getWidth();
@@ -297,10 +314,10 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     const barW = pageW - mL - mR;
 
     doc.setFillColor(240, 242, 245);
-    doc.rect(mL, y - 1, barW, 14, 'F');
+    doc.rect(mL, y - 1, barW, 18, 'F');
     doc.setDrawColor(...PDF_COLORS.border);
     doc.setLineWidth(0.3);
-    doc.rect(mL, y - 1, barW, 14, 'S');
+    doc.rect(mL, y - 1, barW, 18, 'S');
 
     // Record number
     doc.setFont('helvetica', 'bold');
@@ -322,7 +339,12 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     doc.setTextColor(...PDF_COLORS.body);
     doc.text(`${dateStr}  ${timeStr}  ·  ${freq}  ·  ${template}  ·  Recorded by: ${record.inspector_name}`, mL + 3, y + 10);
 
-    y += 17;
+    // Location row
+    if (location) {
+      doc.text(`Location: ${location}`, mL + 3, y + 14.5);
+    }
+
+    y += 21;
 
     // Defects indicator
     if (defectCount > 0) {
@@ -468,7 +490,7 @@ export function generateCheckRecordsCsv(records: InspectionRecord[], rideName: s
     format(parseISO(record.completed_at), 'HH:mm'),
     formatFrequency(record.check_frequency),
     record.template_name ? neutraliseTemplateName(record.template_name) : '',
-    record.overall_result === 'completed' ? 'Passed' : record.overall_result,
+    formatResult(deriveOverallResult(record)),
     record.inspector_name,
     String(record.defect_ids?.length || 0),
     record.notes || '',

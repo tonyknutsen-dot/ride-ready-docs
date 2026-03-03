@@ -527,6 +527,9 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
                       {format(parseISO(record.completed_at), 'HH:mm')}
                     </span>
                     <span className="font-semibold text-xs text-foreground truncate">{record.inspector_name}</span>
+                    {record.location && (
+                      <span className="text-[10px] text-muted-foreground truncate max-w-[140px]">· {record.location}</span>
+                    )}
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                     {getResultBadge(record.overall_result, record)}
