@@ -17,10 +17,9 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Wind, Plus, MapPin, Clock, ChevronDown, Gauge, User, Loader2,
-  Download, Filter, CalendarIcon, X
+  Download, Filter, CalendarIcon, X, FileText
 } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -96,6 +95,8 @@ const WindLog = () => {
   // Defaults
   const [defaultRecordedBy, setDefaultRecordedBy] = useState('');
   const [defaultLocation, setDefaultLocation] = useState('');
+  const [companyName, setCompanyName] = useState('');
+  const [controllerName, setControllerName] = useState('');
 
   // Form state
   const [logDate, setLogDate] = useState(format(new Date(), 'yyyy-MM-dd'));
@@ -118,10 +119,14 @@ const WindLog = () => {
     const load = async () => {
       const { data } = await supabase
         .from('profiles')
-        .select('controller_name')
+        .select('controller_name, company_name')
         .eq('user_id', effectiveUserId)
         .maybeSingle();
-      if (data?.controller_name) setDefaultRecordedBy(data.controller_name);
+      if (data?.controller_name) {
+        setDefaultRecordedBy(data.controller_name);
+        setControllerName(data.controller_name);
+      }
+      if (data?.company_name) setCompanyName(data.company_name);
     };
     load();
   }, [effectiveUserId]);
@@ -330,6 +335,9 @@ const WindLog = () => {
       title: singleInflatable ? `Wind Log — ${singleInflatable}` : 'Wind Speed Log',
       subtitle: 'Site Wind Reading Report',
       inflatableName: singleInflatable,
+      companyName: companyName || undefined,
+      controllerName: controllerName || undefined,
+      userId: effectiveUserId || undefined,
       dateRange: {
         from: filterDateFrom ? format(filterDateFrom, 'd MMM yyyy') : undefined,
         to: filterDateTo ? format(filterDateTo, 'd MMM yyyy') : undefined,
@@ -341,130 +349,102 @@ const WindLog = () => {
   const hasAnemometerDetails = (entry: WindLogEntry) =>
     entry.anemometer_make || entry.anemometer_model || entry.anemometer_serial;
 
-  // ─── Mobile card view ───
-  const renderMobileCard = (entry: WindLogEntry) => (
-    <Card key={entry.id} className="p-3.5 space-y-2">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1 flex-1 min-w-0">
+  // ─── Reading Card (used for both mobile and desktop) ───
+  const renderReadingCard = (entry: WindLogEntry) => (
+    <div key={entry.id} className="bg-card rounded-xl border border-border p-4 hover:border-primary/20 transition-colors">
+      {/* Top row: date/time + speed badge */}
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="space-y-1.5 flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-sm font-semibold text-foreground">{formatDate(entry.log_date)}</span>
             <span className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />{entry.log_time.slice(0, 5)}
             </span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-            <User className="h-3 w-3 shrink-0" />
-            <span className="truncate">{entry.recorded_by}</span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <User className="h-3 w-3 shrink-0" />
+              <span className="truncate">{entry.recorded_by}</span>
+            </span>
+            {entry.location && (
+              <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3 shrink-0" />
+                <span className="truncate">{entry.location}</span>
+              </span>
+            )}
           </div>
-          {entry.location && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-              <MapPin className="h-3 w-3 shrink-0" />
-              <span className="truncate">{entry.location}</span>
-            </div>
-          )}
         </div>
-        <div className="flex items-center gap-1.5 shrink-0 bg-primary/10 px-3 py-1.5 rounded-lg">
+        <div className="flex items-center gap-1.5 shrink-0 bg-primary/10 px-3 py-2 rounded-lg">
           <Gauge className="h-4 w-4 text-primary" />
-          <span className="text-base font-bold text-primary">{entry.wind_speed}</span>
+          <span className="text-lg font-bold text-primary tabular-nums">{entry.wind_speed}</span>
           <span className="text-xs font-medium text-primary/70">{entry.wind_unit}</span>
         </div>
       </div>
 
-      {/* Applies to */}
+      {/* Applies to — prominent display */}
       {entry.linked_rides && entry.linked_rides.length > 0 && (
-        <div className="space-y-1">
-          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Applies to</span>
-          <div className="flex flex-wrap gap-1">
+        <div className="mb-3">
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1.5">
+            Applies to
+          </span>
+          <div className="flex flex-wrap gap-1.5">
             {entry.linked_rides.map((name, i) => (
-              <Badge key={i} variant="secondary" className="text-xs font-medium">
+              <span
+                key={i}
+                className="inline-flex items-center gap-1 text-xs font-medium bg-secondary text-secondary-foreground px-2.5 py-1 rounded-md border border-border"
+              >
+                <Wind className="h-3 w-3 text-muted-foreground" />
                 {name}
-              </Badge>
+              </span>
             ))}
           </div>
         </div>
       )}
 
+      {/* Action taken */}
       {entry.action_taken && (
-        <p className="text-xs text-muted-foreground bg-muted/50 rounded-lg px-2.5 py-1.5">
-          <span className="font-medium text-foreground">Action: </span>{entry.action_taken}
-        </p>
+        <div className="mb-2 bg-muted/50 rounded-lg px-3 py-2">
+          <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Action</span>
+          <p className="text-xs text-foreground">{entry.action_taken}</p>
+        </div>
       )}
-      {entry.notes && <p className="text-xs text-muted-foreground italic">{entry.notes}</p>}
 
+      {/* Notes */}
+      {entry.notes && (
+        <p className="text-xs text-muted-foreground italic mb-2">{entry.notes}</p>
+      )}
+
+      {/* Anemometer details (expandable) */}
       {hasAnemometerDetails(entry) && (
         <Collapsible open={expandedId === entry.id} onOpenChange={(open) => setExpandedId(open ? entry.id : null)}>
           <CollapsibleTrigger className="flex items-center gap-1.5 text-[11px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-            <ChevronDown className={`h-3 w-3 transition-transform ${expandedId === entry.id ? 'rotate-180' : ''}`} />
+            <ChevronDown className={cn("h-3 w-3 transition-transform", expandedId === entry.id && "rotate-180")} />
             Anemometer details
           </CollapsibleTrigger>
-          <CollapsibleContent className="pt-1.5">
-            <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-muted-foreground bg-muted/30 rounded-lg px-2.5 py-2">
-              {entry.anemometer_make && <span><span className="font-medium">Make:</span> {entry.anemometer_make}</span>}
-              {entry.anemometer_model && <span><span className="font-medium">Model:</span> {entry.anemometer_model}</span>}
-              {entry.anemometer_serial && <span><span className="font-medium">Serial:</span> {entry.anemometer_serial}</span>}
+          <CollapsibleContent className="pt-2">
+            <div className="grid grid-cols-3 gap-2 text-[11px] bg-muted/30 rounded-lg px-3 py-2">
+              {entry.anemometer_make && (
+                <div>
+                  <span className="font-semibold text-muted-foreground block">Make</span>
+                  <span className="text-foreground">{entry.anemometer_make}</span>
+                </div>
+              )}
+              {entry.anemometer_model && (
+                <div>
+                  <span className="font-semibold text-muted-foreground block">Model</span>
+                  <span className="text-foreground">{entry.anemometer_model}</span>
+                </div>
+              )}
+              {entry.anemometer_serial && (
+                <div>
+                  <span className="font-semibold text-muted-foreground block">Serial</span>
+                  <span className="text-foreground">{entry.anemometer_serial}</span>
+                </div>
+              )}
             </div>
           </CollapsibleContent>
         </Collapsible>
       )}
-    </Card>
-  );
-
-  // ─── Desktop table row ───
-  const renderDesktopTable = () => (
-    <div className="bg-card rounded-2xl border border-border shadow-sm overflow-hidden">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/50">
-            <TableHead className="text-xs font-semibold w-[90px]">Date</TableHead>
-            <TableHead className="text-xs font-semibold w-[60px]">Time</TableHead>
-            <TableHead className="text-xs font-semibold w-[80px]">Speed</TableHead>
-            <TableHead className="text-xs font-semibold">Location</TableHead>
-            <TableHead className="text-xs font-semibold">Recorded By</TableHead>
-            <TableHead className="text-xs font-semibold min-w-[180px]">Applies To</TableHead>
-            <TableHead className="text-xs font-semibold">Action Taken</TableHead>
-            <TableHead className="text-xs font-semibold">Notes</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {filteredLogs.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={8} className="text-center py-12 text-muted-foreground">
-                <Wind className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-                <p className="text-sm">No readings match your filters</p>
-              </TableCell>
-            </TableRow>
-          ) : (
-            filteredLogs.map(entry => (
-              <TableRow key={entry.id} className="group">
-                <TableCell className="text-sm font-medium">{formatDate(entry.log_date)}</TableCell>
-                <TableCell className="text-sm tabular-nums">{entry.log_time.slice(0, 5)}</TableCell>
-                <TableCell>
-                  <span className="inline-flex items-center gap-1 bg-primary/10 text-primary font-bold text-sm px-2 py-0.5 rounded-md">
-                    {entry.wind_speed} <span className="text-xs font-medium text-primary/70">{entry.wind_unit}</span>
-                  </span>
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground">{entry.location || '—'}</TableCell>
-                <TableCell className="text-sm text-muted-foreground">{entry.recorded_by}</TableCell>
-                <TableCell>
-                  {entry.linked_rides && entry.linked_rides.length > 0 ? (
-                    <div className="flex flex-wrap gap-1">
-                      {entry.linked_rides.map((name, i) => (
-                        <Badge key={i} variant="secondary" className="text-xs font-medium whitespace-nowrap">
-                          {name}
-                        </Badge>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell className="text-sm text-muted-foreground max-w-[160px] truncate">{entry.action_taken || '—'}</TableCell>
-                <TableCell className="text-sm text-muted-foreground max-w-[140px] truncate">{entry.notes || '—'}</TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
     </div>
   );
 
@@ -483,7 +463,7 @@ const WindLog = () => {
             Record site wind readings and link them to your inflatables. Each reading can apply to multiple items at once.
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className="gap-1.5">
             <Filter className="h-3.5 w-3.5" />
             Filters
@@ -491,11 +471,13 @@ const WindLog = () => {
           </Button>
           <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5" disabled={filteredLogs.length === 0}>
             <Download className="h-3.5 w-3.5" />
-            Export PDF
+            <span className="hidden sm:inline">Export PDF</span>
+            <span className="sm:hidden">PDF</span>
           </Button>
           <Button onClick={handleOpenSheet} size="sm" className="gap-1.5" disabled={inflatables.length === 0}>
             <Plus className="h-4 w-4" />
-            Add Reading
+            <span className="hidden sm:inline">Add Reading</span>
+            <span className="sm:hidden">Add</span>
           </Button>
         </div>
       </div>
@@ -514,7 +496,6 @@ const WindLog = () => {
             )}
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            {/* Date from */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("justify-start text-xs h-9 w-full", filterDateFrom && "text-foreground")}>
@@ -526,7 +507,6 @@ const WindLog = () => {
                 <Calendar mode="single" selected={filterDateFrom} onSelect={setFilterDateFrom} className="p-3 pointer-events-auto" />
               </PopoverContent>
             </Popover>
-            {/* Date to */}
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("justify-start text-xs h-9 w-full", filterDateTo && "text-foreground")}>
@@ -538,7 +518,6 @@ const WindLog = () => {
                 <Calendar mode="single" selected={filterDateTo} onSelect={setFilterDateTo} className="p-3 pointer-events-auto" />
               </PopoverContent>
             </Popover>
-            {/* Location */}
             <Select value={filterLocation || '__all__'} onValueChange={(v) => setFilterLocation(v === '__all__' ? '' : v)}>
               <SelectTrigger className="h-9 text-xs">
                 <SelectValue placeholder="All locations" />
@@ -550,7 +529,6 @@ const WindLog = () => {
                 ))}
               </SelectContent>
             </Select>
-            {/* Inflatable */}
             <Select value={filterInflatable} onValueChange={setFilterInflatable}>
               <SelectTrigger className="h-9 text-xs">
                 <SelectValue placeholder="All inflatables" />
@@ -562,7 +540,6 @@ const WindLog = () => {
                 ))}
               </SelectContent>
             </Select>
-            {/* Recorded by */}
             <Select value={filterRecordedBy} onValueChange={setFilterRecordedBy}>
               <SelectTrigger className="h-9 text-xs">
                 <SelectValue placeholder="All staff" />
@@ -593,28 +570,37 @@ const WindLog = () => {
           <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
         </div>
       ) : logs.length === 0 && inflatables.length > 0 ? (
-        <Card className="p-6 text-center">
-          <Wind className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-          <p className="text-sm text-muted-foreground">No wind speed readings recorded yet.</p>
-          <p className="text-xs text-muted-foreground mt-1">Tap "Add Reading" to log your first entry.</p>
+        <Card className="p-8 text-center">
+          <Wind className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+          <p className="text-sm font-medium text-foreground mb-1">No wind readings yet</p>
+          <p className="text-xs text-muted-foreground">Tap "Add Reading" to log your first wind speed entry.</p>
         </Card>
       ) : (
         <>
           {/* Summary bar */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>
+          <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
+            <span className="flex items-center gap-1.5">
+              <FileText className="h-3.5 w-3.5" />
               {filteredLogs.length} reading{filteredLogs.length !== 1 ? 's' : ''}
               {hasFilters ? ' (filtered)' : ''}
             </span>
+            {hasFilters && (
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-xs h-6 gap-1 px-2">
+                <X className="h-3 w-3" /> Clear filters
+              </Button>
+            )}
           </div>
 
-          {/* Desktop: table | Mobile: cards */}
-          {isMobile ? (
-            <div className="space-y-2">
-              {filteredLogs.map(entry => renderMobileCard(entry))}
-            </div>
+          {/* Card grid */}
+          {filteredLogs.length === 0 ? (
+            <Card className="p-8 text-center">
+              <Wind className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No readings match your filters</p>
+            </Card>
           ) : (
-            renderDesktopTable()
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+              {filteredLogs.map(entry => renderReadingCard(entry))}
+            </div>
           )}
         </>
       )}
