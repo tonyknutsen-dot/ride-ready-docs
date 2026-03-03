@@ -623,76 +623,97 @@ const WindLog = () => {
     return (
       <div
         key={entry.id}
-        className={cn("border-b border-border px-3 py-2.5 cursor-pointer active:bg-muted/20 transition-colors", isExpanded && "bg-muted/5")}
-        onClick={() => setExpandedId(isExpanded ? null : entry.id)}
-      >
-        {/* Row 1: Date + Time + Speed + expand chevron */}
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-[13px] font-medium text-foreground tabular-nums">{formatDate(entry.log_date)}</span>
-            <span className="text-[11px] text-muted-foreground tabular-nums">{entry.log_time.slice(0, 5)}</span>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            {highWind ? (
-              <Badge variant="destructive" className="text-[12px] px-2 py-0.5 font-bold tabular-nums">
-                {entry.wind_speed} {entry.wind_unit}
-              </Badge>
-            ) : (
-              <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded">
-                <span className="text-sm font-bold text-primary tabular-nums">{entry.wind_speed}</span>
-                <span className="text-[10px] text-primary/60">{entry.wind_unit}</span>
-              </div>
-            )}
-            <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/50 transition-transform", isExpanded && "rotate-180")} />
-          </div>
-        </div>
-
-        {/* Row 2: Location + action (compact) */}
-        <div className="flex items-center justify-between gap-2 mt-1">
-          <span className="text-[11px] text-muted-foreground truncate">{entry.location || '—'}</span>
-          {entry.action_taken && (
-            <span className="text-[10px] text-muted-foreground truncate shrink-0 max-w-[45%]">{entry.action_taken}</span>
-          )}
-        </div>
-
-        {/* Row 3: 1–2 inflatable badges + warnings */}
-        {(rides.length > 0 || missingAnem) && (
-          <div className="flex flex-wrap items-center gap-1 mt-1">
-            {rides.slice(0, 2).map((name, i) => (
-              <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">{name}</Badge>
-            ))}
-            {rides.length > 2 && (
-              <Badge variant="outline" className="text-[10px] px-1 py-0 text-muted-foreground">+{rides.length - 2}</Badge>
-            )}
-            {missingAnem && <Badge variant="destructive" className="text-[8px] px-1 py-0 opacity-70">No anem.</Badge>}
-          </div>
+        className={cn(
+          "border-b border-border last:border-b-0 active:bg-muted/20 transition-colors",
+          isExpanded && "bg-muted/5",
+          highWind && "border-l-2 border-l-destructive"
         )}
+      >
+        {/* Tap target — entire summary area */}
+        <button
+          type="button"
+          className="w-full text-left px-3 py-3 min-h-[56px]"
+          onClick={() => setExpandedId(isExpanded ? null : entry.id)}
+        >
+          {/* Row 1: Date + Time + Speed + chevron */}
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="text-[13px] font-medium text-foreground tabular-nums whitespace-nowrap">{formatDate(entry.log_date)}</span>
+              <span className="text-[11px] text-muted-foreground tabular-nums whitespace-nowrap">{entry.log_time.slice(0, 5)}</span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              {highWind ? (
+                <Badge variant="destructive" className="text-[12px] px-2 py-0.5 font-bold tabular-nums whitespace-nowrap">
+                  {entry.wind_speed} {entry.wind_unit}
+                </Badge>
+              ) : (
+                <div className="flex items-center gap-1 bg-primary/10 px-2 py-0.5 rounded whitespace-nowrap">
+                  <span className="text-sm font-bold text-primary tabular-nums">{entry.wind_speed}</span>
+                  <span className="text-[10px] text-primary/60">{entry.wind_unit}</span>
+                </div>
+              )}
+              <ChevronDown className={cn("h-4 w-4 text-muted-foreground/40 transition-transform shrink-0", isExpanded && "rotate-180")} />
+            </div>
+          </div>
+
+          {/* Row 2: Location */}
+          {entry.location && (
+            <p className="text-[11px] text-muted-foreground mt-1 break-words leading-snug">
+              <MapPin className="h-2.5 w-2.5 inline-block mr-0.5 -mt-px" />
+              {entry.location}
+            </p>
+          )}
+
+          {/* Row 3: Applies-to badges (max 2) + warnings */}
+          {(rides.length > 0 || missingAnem) && (
+            <div className="flex flex-wrap items-center gap-1 mt-1.5">
+              {rides.slice(0, 2).map((name, i) => (
+                <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 font-medium max-w-[140px] truncate">{name}</Badge>
+              ))}
+              {rides.length > 2 && (
+                <Badge variant="outline" className="text-[10px] px-1 py-0 text-muted-foreground whitespace-nowrap">+{rides.length - 2}</Badge>
+              )}
+              {missingAnem && <Badge variant="destructive" className="text-[9px] px-1.5 py-0 opacity-80 whitespace-nowrap">No anem.</Badge>}
+            </div>
+          )}
+
+          {/* Row 4: Action */}
+          {entry.action_taken && (
+            <p className="text-[11px] text-muted-foreground mt-1 break-words leading-snug">{entry.action_taken}</p>
+          )}
+        </button>
 
         {/* Expanded detail panel */}
         {isExpanded && (
-          <div className="pt-2 mt-2 space-y-2 border-t border-border/50">
-            <div className="flex items-start gap-1.5">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-[72px] shrink-0 pt-px">Recorded by</span>
-              <span className="text-[12px] text-foreground break-words">{entry.recorded_by}</span>
+          <div className="px-3 pb-3 space-y-2.5 border-t border-border/50 pt-2.5 mx-3">
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Recorded by</span>
+              <p className="text-[12px] text-foreground">{entry.recorded_by}</p>
             </div>
-            <div className="flex items-start gap-1.5">
-              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-[72px] shrink-0 pt-px">Anemometer</span>
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Anemometer</span>
               {missingAnem ? (
                 <Badge variant="destructive" className="text-[9px] px-1.5 py-0 opacity-80">No anemometer recorded</Badge>
               ) : (
-                <span className="text-[11px] text-muted-foreground break-words leading-snug">{anemStr}</span>
+                <p className="text-[11px] text-muted-foreground break-words leading-snug">{anemStr}</p>
               )}
             </div>
+            {entry.action_taken && (
+              <div>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Action</span>
+                <p className="text-[11px] text-muted-foreground break-words leading-snug">{entry.action_taken}</p>
+              </div>
+            )}
             {entry.notes && (
-              <div className="flex items-start gap-1.5">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-[72px] shrink-0 pt-px">Notes</span>
-                <span className="text-[11px] text-muted-foreground break-words leading-snug">{entry.notes}</span>
+              <div>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Notes</span>
+                <p className="text-[11px] text-muted-foreground break-words leading-snug">{entry.notes}</p>
               </div>
             )}
             {rides.length > 2 && (
-              <div className="flex items-start gap-1.5">
-                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-[72px] shrink-0 pt-px">Applies to</span>
-                <div className="flex flex-wrap gap-1">
+              <div>
+                <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">All linked inflatables</span>
+                <div className="flex flex-wrap gap-1 mt-0.5">
                   {rides.map((name, i) => (
                     <Badge key={i} variant="secondary" className="text-[10px] px-1.5 py-0 font-medium">{name}</Badge>
                   ))}
@@ -710,27 +731,27 @@ const WindLog = () => {
       <PageHeader title="Wind Speed Register" />
 
       {/* ─── Header bar ─── */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <div className="flex items-center gap-3">
-          <Wind className="h-5 w-5 text-primary shrink-0" />
-          <div>
+      <div className="space-y-2">
+        <div className="flex items-start gap-3">
+          <Wind className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+          <div className="min-w-0">
             <h2 className="text-base font-semibold text-foreground leading-tight">Wind Speed Register</h2>
             <p className="text-xs text-muted-foreground leading-relaxed mt-0.5">
               Shared wind readings linked to inflatables · newest first
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className={cn("gap-1.5 h-8 text-xs", hasFilters && "border-primary/50")}>
-            <Filter className="h-3 w-3" />
+        <div className="flex items-center gap-2 flex-wrap">
+          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className={cn("gap-1.5 min-h-[44px] h-auto px-3 text-xs", hasFilters && "border-primary/50")}>
+            <Filter className="h-3.5 w-3.5" />
             {hasFilters ? `Filtered (${filteredLogs.length})` : 'Filter'}
           </Button>
-          <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5 h-8 text-xs" disabled={filteredLogs.length === 0}>
-            <Download className="h-3 w-3" />
+          <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5 min-h-[44px] h-auto px-3 text-xs" disabled={filteredLogs.length === 0}>
+            <Download className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Export PDF</span>
             <span className="sm:hidden">PDF</span>
           </Button>
-          <Button onClick={handleOpenSheet} size="sm" className="gap-1.5 h-8 text-xs" disabled={inflatables.length === 0}>
+          <Button onClick={handleOpenSheet} size="sm" className="gap-1.5 min-h-[44px] h-auto px-3 text-xs ml-auto" disabled={inflatables.length === 0}>
             <Plus className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Add Reading</span>
             <span className="sm:hidden">Add</span>
@@ -751,7 +772,7 @@ const WindLog = () => {
               </Button>
             )}
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className={cn("justify-start text-[11px] h-8 w-full", filterDateFrom && "text-foreground border-primary/30")}>
@@ -852,25 +873,25 @@ const WindLog = () => {
           </div>
 
           {/* ─── Pagination ─── */}
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1">
-            <span>
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground px-1 gap-2 flex-wrap">
+            <span className="whitespace-nowrap">
               {filteredLogs.length} reading{filteredLogs.length !== 1 ? 's' : ''}
               {hasFilters ? ' (filtered)' : ''}
-              {totalPages > 1 && ` · Page ${page + 1} of ${totalPages}`}
+              {totalPages > 1 && ` · Page ${page + 1}/${totalPages}`}
             </span>
             {totalPages > 1 && (
-              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={page === 0} onClick={() => setPage(0)}>
-                  <ChevronsLeft className="h-3.5 w-3.5" />
+              <div className="flex items-center gap-0.5">
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 min-h-[36px]" disabled={page === 0} onClick={() => setPage(0)}>
+                  <ChevronsLeft className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
-                  <ChevronLeft className="h-3.5 w-3.5" />
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 min-h-[36px]" disabled={page === 0} onClick={() => setPage(p => p - 1)}>
+                  <ChevronLeft className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
-                  <ChevronRight className="h-3.5 w-3.5" />
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 min-h-[36px]" disabled={page >= totalPages - 1} onClick={() => setPage(p => p + 1)}>
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0" disabled={page >= totalPages - 1} onClick={() => setPage(totalPages - 1)}>
-                  <ChevronsRight className="h-3.5 w-3.5" />
+                <Button variant="ghost" size="sm" className="h-9 w-9 p-0 min-h-[36px]" disabled={page >= totalPages - 1} onClick={() => setPage(totalPages - 1)}>
+                  <ChevronsRight className="h-4 w-4" />
                 </Button>
               </div>
             )}
