@@ -460,39 +460,37 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         </div>
       )}
 
-      {/* ── Slim summary strip + export ── */}
+      {/* ── Summary strip + export buttons ── */}
       {records.length > 0 && (
-        <div className="flex items-center justify-between gap-2 py-1 border-t border-b border-border/50">
+        <div className="space-y-1.5 py-1.5 border-t border-b border-border/50">
           <p className="text-[10px] text-muted-foreground leading-tight">
-            <span className="font-semibold text-foreground">{totalCount}</span> record{totalCount !== 1 ? 's' : ''}
-            {scopeLabel && <span> · {scopeLabel}</span>}
-            {hasActiveFilters && <span> · filtered</span>}
+            Showing <span className="font-semibold text-foreground">{totalCount}</span> record{totalCount !== 1 ? 's' : ''}
+            {scopeLabel && <span> for {scopeLabel}</span>}
+            {hasActiveFilters && <span> · filters applied</span>}
           </p>
-          <div className="flex items-center gap-1 shrink-0">
+          <div className="flex items-center gap-2">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="h-6 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
+              className="h-8 px-3 text-xs gap-1.5 font-semibold"
               onClick={handleExportPdf}
               disabled={!!exporting}
-              title="Export filtered records as PDF"
             >
-              {exporting === 'pdf' ? <Loader2 className="h-3 w-3 animate-spin" /> : <FileDown className="h-3 w-3" />}
-              PDF ({totalCount})
+              {exporting === 'pdf' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
+              Export PDF ({totalCount})
             </Button>
-            <span className="text-border">|</span>
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="h-6 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
+              className="h-8 px-3 text-xs gap-1.5 font-semibold"
               onClick={handleExportCsv}
               disabled={!!exporting}
-              title="Export filtered records as CSV"
             >
-              {exporting === 'csv' ? <Loader2 className="h-3 w-3 animate-spin" /> : <Table2 className="h-3 w-3" />}
-              CSV ({totalCount})
+              {exporting === 'csv' ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Table2 className="h-3.5 w-3.5" />}
+              Export CSV ({totalCount})
             </Button>
           </div>
+          <p className="text-[9px] text-muted-foreground">Exports include the current filters and date range</p>
         </div>
       )}
 
