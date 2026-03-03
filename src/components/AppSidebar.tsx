@@ -59,7 +59,7 @@ interface NavItemDef {
 
 const mainNavItems: NavItemDef[] = [
   { title: 'Overview', url: '/overview', icon: Home },
-  { title: 'Rides', url: '/rides', icon: FolderOpen },
+  { title: 'Equipment', url: '/rides', icon: FolderOpen },
   { title: 'Calendar', url: '/calendar', icon: CalendarIcon, feature: 'calendar' },
   { title: 'Documents', url: '/documents', icon: FileText, feature: 'documents' },
 ];

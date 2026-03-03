@@ -143,12 +143,12 @@ export default function MobileBottomNav() {
           <span className="mt-0.5">Dashboard</span>
         </button>
 
-        {/* Rides/Equipment */}
+        {/* Equipment */}
         <NavButton 
           onClick={() => go("/rides")}
           active={isActive(["/rides"])}
           icon={FolderOpen}
-          label="Rides"
+          label="Equipment"
         />
 
         {/* CHECKS - Central prominent button (only if has permission) */}
