@@ -704,17 +704,17 @@ const Rides = () => {
                     navigate(`/rides/${ride.id}?tab=${tab}`);
                   };
                   if (s === 'stop_use') return (
-                    <button onClick={(e) => badgeClick(e, 'overview')} className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
+                    <button onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview&section=defects`); }} className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
                       <AlertOctagon className="h-2.5 w-2.5" /> Do not operate
                     </button>
                   );
                   if (s === 'overdue') return (
-                    <button onClick={(e) => badgeClick(e, 'documents')} className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
+                    <button onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=documents&filter=expired`); }} className="absolute bottom-3 left-3 flex items-center gap-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
                       <AlertTriangle className="h-2.5 w-2.5" /> Overdue
                     </button>
                   );
                   if (s === 'attention') return (
-                    <button onClick={(e) => badgeClick(e, 'overview')} className="absolute bottom-3 left-3 flex items-center gap-1 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
+                    <button onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview&section=defects`); }} className="absolute bottom-3 left-3 flex items-center gap-1 bg-amber-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow hover:opacity-90 transition-opacity">
                       <AlertTriangle className="h-2.5 w-2.5" /> Attention needed
                     </button>
                   );

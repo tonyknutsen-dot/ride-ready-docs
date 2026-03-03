@@ -313,7 +313,7 @@ const OperationsOverviewPanel = () => {
                         )}
                       </div>
                       <div className="flex flex-col gap-1 shrink-0">
-                        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-destructive hover:text-destructive" onClick={() => navigate(`/rides?rideId=${d.ride_id}`)}>
+                        <Button variant="ghost" size="sm" className="h-7 text-xs gap-1 text-destructive hover:text-destructive" onClick={() => navigate(`/rides/${d.ride_id}?tab=overview&section=defects`)}>
                           <Eye className="h-3 w-3" /> Ride
                         </Button>
                         <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => navigate(`/maintenance`)}>

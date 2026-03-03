@@ -80,9 +80,9 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
 
               {/* Status */}
               <div className="sm:w-[140px]">
-                {hasCritical ? (
+              {hasCritical ? (
                   <button
-                    onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview`); }}
+                    onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview&section=defects`); }}
                     className="inline-flex items-center gap-1 text-xs font-bold text-destructive hover:underline"
                   >
                     <AlertOctagon className="h-3.5 w-3.5" />
@@ -91,7 +91,7 @@ const EquipmentListView = ({ rides, rideStats, criticalDefectsMap, openDefectsMa
                   </button>
                 ) : hasNonCritical ? (
                   <button
-                    onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview`); }}
+                    onClick={(e) => { e.stopPropagation(); navigate(`/rides/${ride.id}?tab=overview&section=defects`); }}
                     className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline"
                   >
                     <AlertTriangle className="h-3.5 w-3.5" />
