@@ -11,7 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PDF_COLORS, blobToDataUrl } from './pdfUtils';
 
 // ─── Doc type codes ──────────────────────────────────────────────────────────
-export type DocTypeCode = 'CR' | 'IR' | 'NDT' | 'MR' | 'DR' | 'TL' | 'CH' | 'IC' | 'RA';
+export type DocTypeCode = 'CR' | 'IR' | 'NDT' | 'MR' | 'DR' | 'TL' | 'CH' | 'IC' | 'RA' | 'WL';
 
 export const DOC_TYPE_LABELS: Record<DocTypeCode, string> = {
   CR: 'COMPLIANCE COMPLETION RECORD',
@@ -23,6 +23,7 @@ export const DOC_TYPE_LABELS: Record<DocTypeCode, string> = {
   CH: 'CHECKS HISTORY REPORT',
   IC: 'INSPECTION CHECKLIST',
   RA: 'RISK ASSESSMENT',
+  WL: 'WIND SPEED REGISTER',
 };
 
 export const DOC_TYPE_DISCLAIMERS: Record<DocTypeCode, string> = {
@@ -35,6 +36,7 @@ export const DOC_TYPE_DISCLAIMERS: Record<DocTypeCode, string> = {
   CH: 'System-generated checks history report.',
   IC: 'System-generated inspection checklist record.',
   RA: 'System-generated risk assessment record. Professional judgement must always be applied.',
+  WL: 'System-generated wind speed record for operational monitoring and compliance purposes.',
 };
 
 // ─── Generate document ID via Supabase RPC ───────────────────────────────────
