@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Edit, Trash2, FileText, Camera, Download, Eye, Filter, Save, Clock, X, FolderOpen } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Calendar, Edit, Trash2, FileText, Camera, Download, Filter, Save, Clock, X, FolderOpen, MoreVertical, Paperclip } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -64,6 +65,8 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   const [saving, setSaving] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [newFiles, setNewFiles] = useState<File[]>([]);
+  const [deleteRecordId, setDeleteRecordId] = useState<string | null>(null);
+  const [attachmentViewOpen, setAttachmentViewOpen] = useState(false);
   const { toast } = useToast();
 
   const ALLOWED_TYPES = [
@@ -329,145 +332,78 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         <EmptyState icon={Calendar} title="No maintenance records found"
           description="Start logging maintenance activities to build your record history" variant="compact" />
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3">
           {filteredRecords.map((record) => {
             const recordDocs = documents[record.id] || [];
             return (
-              <div key={record.id} className="bg-white border rounded-2xl shadow-sm overflow-hidden" style={{ borderColor: '#E2E8F0' }}>
-                <div className="p-4 space-y-3">
+              <div key={record.id} className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+                <div className="p-3.5 space-y-2">
 
-                  {/* Badge + Actions */}
-                  <div className="flex items-start justify-between gap-3">
-                    {getMaintenanceTypeBadge(record.maintenance_type)}
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <Button variant="ghost" size="sm"
-                        className="h-9 w-9 p-0 rounded-xl border hover:bg-slate-50"
-                        style={{ borderColor: '#E2E8F0', color: '#475569' }}
-                        onClick={() => openEditDialog(record)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Dialog>
-                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="sm"
-                            className="h-9 w-9 p-0 rounded-xl border hidden sm:flex hover:bg-slate-50"
-                            style={{ borderColor: '#E2E8F0', color: '#475569' }}
-                            onClick={() => setSelectedRecord(record)}>
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                          <DialogHeader>
-                            <DialogTitle>Maintenance Record Details</DialogTitle>
-                            <DialogDescription>{format(parseISO(record.maintenance_date), 'PPP')}</DialogDescription>
-                          </DialogHeader>
-                          {selectedRecord && (
-                            <div className="space-y-4">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div><strong>Type:</strong> {getMaintenanceTypeLabel(selectedRecord.maintenance_type)}</div>
-                                <div><strong>Date:</strong> {format(parseISO(selectedRecord.maintenance_date), 'd MMM yyyy')}</div>
-                                <div><strong>Performed by:</strong> {selectedRecord.performed_by}</div>
-                                {selectedRecord.cost && <div><strong>Cost:</strong> £{selectedRecord.cost}</div>}
-                              </div>
-                              <div><strong>Description:</strong><p className="mt-1">{selectedRecord.description}</p></div>
-                              {selectedRecord.parts_replaced && <div><strong>Parts Replaced:</strong><p className="mt-1">{selectedRecord.parts_replaced}</p></div>}
-                              {selectedRecord.notes && <div><strong>Notes:</strong><p className="mt-1">{selectedRecord.notes}</p></div>}
-                            </div>
-                          )}
-                        </DialogContent>
-                      </Dialog>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="sm"
-                            className="h-9 w-9 p-0 rounded-xl border"
-                            style={{ borderColor: '#FCA5A5', background: '#FEF2F2', color: '#DC2626' }}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Record?</AlertDialogTitle>
-                            <AlertDialogDescription>This will permanently delete this maintenance record and all attached files.</AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => handleDelete(record.id)}>Delete</AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </div>
-
-                  {/* Work title */}
-                  <h4 className="text-[15px] font-semibold leading-snug" style={{ color: '#0F172A' }}>
-                    {record.description}
-                  </h4>
-
-                  {/* 2×2 Meta Grid */}
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <Calendar className="h-3.5 w-3.5 shrink-0" style={{ color: '#94A3B8' }} />
-                      <span className="truncate font-medium" style={{ color: '#334155' }}>
+                  {/* Top row: type pill · date · overflow */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      {getMaintenanceTypeBadge(record.maintenance_type)}
+                      <span className="text-[12px] text-muted-foreground shrink-0">
                         {format(parseISO(record.maintenance_date), 'd MMM yyyy')}
                       </span>
                     </div>
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <span className="shrink-0 text-[12px]" style={{ color: '#94A3B8' }}>By</span>
-                      <span className="truncate font-medium" style={{ color: '#334155' }}>{record.performed_by}</span>
-                    </div>
-                    {record.cost && (
-                      <div className="flex items-center gap-1.5">
-                        <span className="shrink-0 text-[12px]" style={{ color: '#94A3B8' }}>Cost</span>
-                        <span className="font-semibold" style={{ color: '#0F172A' }}>£{record.cost}</span>
-                      </div>
-                    )}
-                    {record.parts_replaced && (
-                      <div className="flex items-center gap-1.5 min-w-0 col-span-2">
-                        <span className="shrink-0 text-[12px]" style={{ color: '#94A3B8' }}>Parts</span>
-                        <span className="truncate" style={{ color: '#334155' }}>{record.parts_replaced}</span>
-                      </div>
-                    )}
+
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-40">
+                        <DropdownMenuItem onClick={() => openEditDialog(record)}>
+                          <Edit className="h-3.5 w-3.5 mr-2" /> Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => setDeleteRecordId(record.id)}>
+                          <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
 
-                  {/* Notes */}
-                  {record.notes && (
-                    <p className="text-[12px] italic line-clamp-2" style={{ color: '#64748B' }}>{record.notes}</p>
+                  {/* Work title */}
+                  <h4 className="text-[14px] font-semibold leading-snug text-foreground line-clamp-2">
+                    {record.description}
+                  </h4>
+
+                  {/* Metadata lines */}
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
+                    {record.performed_by && (
+                      <span>By <span className="font-medium text-foreground">{record.performed_by}</span></span>
+                    )}
+                    {record.cost != null && (
+                      <span>£<span className="font-semibold text-foreground">{record.cost}</span></span>
+                    )}
+                  </div>
+                  {record.parts_replaced && (
+                    <p className="text-[12px] text-muted-foreground">
+                      <span className="font-medium text-foreground/70">Parts:</span> {record.parts_replaced}
+                    </p>
                   )}
 
-                  {/* Divider */}
-                  <div className="h-px" style={{ background: '#F1F5F9' }} />
-
-                  {/* Attachments Row */}
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-1.5 text-[12px]" style={{ color: '#64748B' }}>
-                      <FileText className="h-3.5 w-3.5 shrink-0" style={{ color: '#94A3B8' }} />
-                      <span>{recordDocs.length} attachment{recordDocs.length !== 1 ? 's' : ''}</span>
-                    </div>
-                    {recordDocs.length > 0 && (
-                      <div className="flex gap-1.5 overflow-x-auto">
-                        {recordDocs.slice(0, 4).map((doc) => (
-                          <button key={doc.id}
-                            className="h-10 w-12 rounded-xl border flex items-center justify-center shrink-0 overflow-hidden hover:ring-2 hover:ring-blue-200 transition-all"
-                            style={{ background: '#F8FAFC', borderColor: '#E2E8F0' }}
-                            onClick={() => downloadFile(doc)} title={doc.document_name}>
-                            {doc.mime_type?.startsWith('image/') && documentUrls[doc.id] ? (
-                              <img src={documentUrls[doc.id]} alt={doc.document_name} className="w-full h-full object-cover" />
-                            ) : (
-                              <FileText className="h-4 w-4" style={{ color: '#64748B' }} />
-                            )}
-                          </button>
-                        ))}
-                        {recordDocs.length > 4 && (
-                          <div className="h-10 w-12 rounded-xl border flex items-center justify-center text-[11px] font-semibold shrink-0"
-                            style={{ background: '#F1F5F9', borderColor: '#E2E8F0', color: '#475569' }}>
-                            +{recordDocs.length - 4}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
+                  {/* Attachments row */}
+                  {recordDocs.length > 0 && (
+                    <button
+                      className="flex items-center gap-1.5 text-[12px] font-medium text-primary hover:underline"
+                      onClick={() => {
+                        setSelectedRecord(record);
+                        setAttachmentViewOpen(true);
+                      }}
+                    >
+                      <Paperclip className="h-3 w-3" />
+                      {recordDocs.length} attachment{recordDocs.length !== 1 ? 's' : ''}
+                    </button>
+                  )}
 
                   {/* Footer timestamps */}
-                  <div className="flex flex-wrap gap-x-2 text-[10px]" style={{ color: '#CBD5E1' }}>
+                  <div className="flex flex-wrap gap-x-2 text-[11px] text-muted-foreground/70">
                     <span>Created {format(parseISO(record.created_at), 'dd/MM/yy')}</span>
                     {record.updated_at !== record.created_at && (
                       <><span>·</span><span>Edited {format(parseISO(record.updated_at), 'dd/MM/yy')}</span></>
@@ -479,6 +415,57 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
           })}
         </div>
       )}
+
+      {/* ── Edit Dialog ── */}
+      {/* ── Delete Confirmation ── */}
+      <AlertDialog open={!!deleteRecordId} onOpenChange={(open) => { if (!open) setDeleteRecordId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Record?</AlertDialogTitle>
+            <AlertDialogDescription>This will permanently delete this maintenance record and all attached files.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (deleteRecordId) { handleDelete(deleteRecordId); setDeleteRecordId(null); } }}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Attachment Viewer ── */}
+      <Dialog open={attachmentViewOpen} onOpenChange={setAttachmentViewOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Attachments</DialogTitle>
+            <DialogDescription>
+              {selectedRecord ? format(parseISO(selectedRecord.maintenance_date), 'd MMM yyyy') : ''}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRecord && (documents[selectedRecord.id] || []).length > 0 ? (
+            <div className="space-y-2">
+              {(documents[selectedRecord.id] || []).map((doc) => (
+                <button key={doc.id}
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-accent/50 transition-colors text-left"
+                  onClick={() => downloadFile(doc)}>
+                  {doc.mime_type?.startsWith('image/') && documentUrls[doc.id] ? (
+                    <img src={documentUrls[doc.id]} alt={doc.document_name} className="h-10 w-10 rounded-lg object-cover shrink-0" />
+                  ) : (
+                    <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                      <FileText className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{doc.document_name}</p>
+                    <p className="text-[11px] text-muted-foreground">{doc.file_size ? `${(doc.file_size / 1024).toFixed(0)} KB` : 'Download'}</p>
+                  </div>
+                  <Download className="h-4 w-4 text-muted-foreground shrink-0" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <p className="text-sm text-muted-foreground">No attachments</p>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* ── Edit Dialog ── */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
