@@ -7,12 +7,17 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Loader2, CheckCircle, ShieldAlert, Camera, X } from 'lucide-react';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
+import { Loader2, CheckCircle, Camera, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { compressImage } from '@/utils/imageCompression';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 interface Defect {
   id: string;
@@ -31,15 +36,33 @@ interface DefectClosureDialogProps {
   onDefectUpdated: () => void;
 }
 
-const SEVERITY_LABELS: Record<string, { operational: string; class: string }> = {
-  stop_operation: { operational: 'Do not operate', class: 'bg-destructive/10 text-destructive border-destructive/30' },
-  urgent: { operational: 'Repair required', class: 'bg-orange-50 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 border-orange-200 dark:border-orange-800/40' },
-  non_urgent: { operational: 'Monitor', class: 'bg-yellow-50 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300 border-yellow-200 dark:border-yellow-800/40' },
+const SEVERITY_DISPLAY: Record<string, { label: string; variant: 'destructive' | 'default' | 'secondary' | 'outline' }> = {
+  stop_operation: { label: 'Stop Use', variant: 'destructive' },
+  urgent: { label: 'Important', variant: 'default' },
+  non_urgent: { label: 'Low', variant: 'secondary' },
 };
 
+const STATUS_DISPLAY: Record<string, string> = {
+  open: 'Open',
+  in_progress: 'In Progress',
+  resolved: 'Resolved',
+  monitoring: 'Monitoring',
+};
+
+const CLOSURE_REASONS = [
+  { value: 'repaired', label: 'Repaired' },
+  { value: 'adjusted', label: 'Adjusted / tightened' },
+  { value: 'replaced_part', label: 'Replaced part' },
+  { value: 'no_fault_found', label: 'Checked and no fault found' },
+  { value: 'cleaned_reset', label: 'Cleaned / reset' },
+  { value: 'temporary_action', label: 'Temporary action taken' },
+  { value: 'duplicate', label: 'Duplicate / entered in error' },
+  { value: 'other', label: 'Other' },
+] as const;
+
 /**
- * Defect closure dialog — captures resolution details.
- * Closure reason/action is required for ALL severities.
+ * Defect closure dialog — captures structured resolution details.
+ * Requires both a closure reason (dropdown) and action taken (free text).
  */
 const DefectClosureDialog = ({
   open, onOpenChange, defect, rideName, onDefectUpdated,
@@ -49,6 +72,7 @@ const DefectClosureDialog = ({
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [closureReason, setClosureReason] = useState('');
   const [actionTaken, setActionTaken] = useState('');
   const [closedByName, setClosedByName] = useState('');
   const [additionalNotes, setAdditionalNotes] = useState('');
@@ -73,10 +97,8 @@ const DefectClosureDialog = ({
     fetchName();
   }, [open, user?.id]);
 
-  const isStopUse = defect?.severity === 'stop_operation';
-  const sevInfo = SEVERITY_LABELS[defect?.severity || 'non_urgent'] || SEVERITY_LABELS.non_urgent;
-
   const handleClose = () => {
+    setClosureReason('');
     setActionTaken('');
     setClosedByName('');
     setAdditionalNotes('');
@@ -107,18 +129,17 @@ const DefectClosureDialog = ({
   const handleCloseDefect = async () => {
     if (!defect) return;
 
+    if (!closureReason) {
+      toast({ title: 'Closure reason is required', description: 'Please select why this defect is being closed.', variant: 'destructive' });
+      return;
+    }
     if (!actionTaken.trim()) {
-      toast({
-        title: 'Action taken is required',
-        description: 'Please describe what action was taken to close this defect.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Action taken is required', description: 'Please describe what action was taken.', variant: 'destructive' });
       return;
     }
 
     setUpdating(true);
     try {
-      // Upload closure evidence photos if any
       const uploadedPaths: string[] = [];
       for (const file of evidenceFiles) {
         const compressed = await compressImage(file);
@@ -130,14 +151,13 @@ const DefectClosureDialog = ({
         if (!uploadError) uploadedPaths.push(filePath);
       }
 
-      // Combine existing photo_paths with closure evidence
       const existingPaths = defect.photo_paths || [];
       const allPaths = [...existingPaths, ...uploadedPaths];
-
       const resolvedByValue = closedByName.trim() || user?.email || null;
 
-      // Combine action taken + additional notes into resolution_notes
-      let fullNotes = actionTaken.trim();
+      // Build structured resolution_notes
+      const reasonLabel = CLOSURE_REASONS.find(r => r.value === closureReason)?.label || closureReason;
+      let fullNotes = `Closure reason: ${reasonLabel}\n\nAction taken: ${actionTaken.trim()}`;
       if (additionalNotes.trim()) {
         fullNotes += `\n\nAdditional notes: ${additionalNotes.trim()}`;
       }
@@ -155,10 +175,7 @@ const DefectClosureDialog = ({
 
       if (error) throw error;
 
-      toast({
-        title: 'Defect closed',
-        description: `Defect on ${rideName} has been closed.`,
-      });
+      toast({ title: 'Defect closed', description: `Defect on ${rideName} has been closed.` });
 
       queryClient.invalidateQueries({ queryKey: ['open-critical-defects'] });
       queryClient.invalidateQueries({ queryKey: ['all-rides-critical-defects'] });
@@ -170,17 +187,17 @@ const DefectClosureDialog = ({
       handleClose();
     } catch (error: any) {
       console.error('Error closing defect:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to close defect',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: 'Failed to close defect', variant: 'destructive' });
     } finally {
       setUpdating(false);
     }
   };
 
   if (!defect) return null;
+
+  const sevDisplay = SEVERITY_DISPLAY[defect.severity] || SEVERITY_DISPLAY.non_urgent;
+  const statusDisplay = STATUS_DISPLAY[defect.status] || defect.status;
+  const canSubmit = !!closureReason && !!actionTaken.trim();
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -191,44 +208,64 @@ const DefectClosureDialog = ({
             Close Defect
           </DialogTitle>
           <DialogDescription>
-            Record what action was taken before closing this defect.
+            Record the closure reason and action taken before closing this defect.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
-          {/* Operational status reminder */}
-          <div className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border ${sevInfo.class}`}>
-            <ShieldAlert className="h-4 w-4 shrink-0" />
-            <div>
-              <p className="text-xs font-bold">{sevInfo.operational}</p>
-              <p className="text-[11px] opacity-75">Closing this defect on {rideName}</p>
+          {/* ── Context ── */}
+          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">Equipment</span>
+              <span className="text-xs font-semibold text-foreground truncate max-w-[60%] text-right">{rideName}</span>
             </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">Severity</span>
+              <Badge variant={sevDisplay.variant} className="text-[10px] h-5">
+                {sevDisplay.label}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-xs text-muted-foreground">Status</span>
+              <span className="text-xs font-medium text-foreground">{statusDisplay}</span>
+            </div>
+            <Separator className="my-1" />
+            <p className="text-xs text-foreground leading-relaxed line-clamp-3">{defect.description}</p>
           </div>
 
-          {/* Defect summary */}
-          <div className="p-3 rounded-xl bg-muted/40 border border-border">
-            <p className="text-sm text-foreground leading-relaxed line-clamp-3">{defect.description}</p>
+          {/* ── Closure reason (required dropdown) ── */}
+          <div className="space-y-1.5">
+            <Label htmlFor="closure-reason" className="text-xs font-semibold">
+              Closure reason <span className="text-destructive">*</span>
+            </Label>
+            <Select value={closureReason} onValueChange={setClosureReason}>
+              <SelectTrigger id="closure-reason" className="h-11 rounded-xl">
+                <SelectValue placeholder="Select a reason…" />
+              </SelectTrigger>
+              <SelectContent>
+                {CLOSURE_REASONS.map(r => (
+                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
-          {/* Action taken — required for ALL severities */}
+          {/* ── Action taken / details (required free text) ── */}
           <div className="space-y-1.5">
             <Label htmlFor="action-taken" className="text-xs font-semibold">
-              Action taken / reason for closure <span className="text-destructive">*</span>
+              Action taken / details <span className="text-destructive">*</span>
             </Label>
             <Textarea
               id="action-taken"
               value={actionTaken}
               onChange={(e) => setActionTaken(e.target.value)}
-              placeholder="Describe the repair, corrective action, or reason for closure..."
+              placeholder="Describe what was done — e.g. replaced bolt, retightened bearing housing…"
               rows={3}
               className="rounded-xl"
             />
-            <p className="text-[10px] text-muted-foreground">
-              Required for all defects — this will appear on the defect record
-            </p>
           </div>
 
-          {/* Closed by */}
+          {/* ── Closed by ── */}
           <div className="space-y-1.5">
             <Label htmlFor="closed-by-name" className="text-xs font-semibold">
               Closed by
@@ -243,7 +280,7 @@ const DefectClosureDialog = ({
             <p className="text-[10px] text-muted-foreground">Leave blank to use your account email</p>
           </div>
 
-          {/* Additional notes — optional */}
+          {/* ── Additional notes (optional) ── */}
           <div className="space-y-1.5">
             <Label htmlFor="additional-notes" className="text-xs font-semibold">
               Additional notes <span className="text-muted-foreground font-normal">(optional)</span>
@@ -252,13 +289,13 @@ const DefectClosureDialog = ({
               id="additional-notes"
               value={additionalNotes}
               onChange={(e) => setAdditionalNotes(e.target.value)}
-              placeholder="Any further details, part numbers, follow-up actions..."
+              placeholder="Part numbers, follow-up actions, warranty info…"
               rows={2}
               className="rounded-xl"
             />
           </div>
 
-          {/* Evidence photos — optional */}
+          {/* ── Evidence photos (optional) ── */}
           <div className="space-y-1.5">
             <Label className="text-xs font-semibold">
               Evidence photos <span className="text-muted-foreground font-normal">(optional)</span>
@@ -309,7 +346,7 @@ const DefectClosureDialog = ({
           </Button>
           <Button
             onClick={handleCloseDefect}
-            disabled={updating || !actionTaken.trim()}
+            disabled={updating || !canSubmit}
             className="rounded-lg gap-1.5"
           >
             {updating && <Loader2 className="h-4 w-4 animate-spin" />}
