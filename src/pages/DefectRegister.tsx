@@ -426,7 +426,7 @@ const DefectRegister = () => {
   const stopUseCount = enriched.filter((d) => d.severity === 'stop_operation' && d.status !== 'resolved').length;
 
   return (
-    <div className="space-y-4 pb-24 md:pb-8">
+    <div className="space-y-5 px-4 md:px-0 pb-24 md:pb-8">
       <PageHeader
         icon={<AlertOctagon className="h-5 w-5 text-destructive" />}
         iconBgClass="from-destructive/20 to-destructive/10"
@@ -465,19 +465,19 @@ const DefectRegister = () => {
       )}
 
       {/* Filters */}
-      <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search defects..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 h-10 rounded-xl"
+            className="pl-9 h-11 rounded-xl"
           />
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-0.5">
+        <div className="flex flex-wrap gap-2">
           <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); updateFilterParams({ status: v }); }}>
-            <SelectTrigger className="w-[110px] h-9 text-xs shrink-0 rounded-lg"><SelectValue /></SelectTrigger>
+            <SelectTrigger className="w-[110px] h-11 text-xs shrink-0 rounded-lg"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value="open">Open</SelectItem>
               <SelectItem value="closed">Closed</SelectItem>
@@ -485,7 +485,7 @@ const DefectRegister = () => {
             </SelectContent>
           </Select>
           <Select value={severityFilter} onValueChange={(v) => { setSeverityFilter(v); updateFilterParams({ severity: v }); }}>
-            <SelectTrigger className="w-[130px] h-9 text-xs shrink-0 rounded-lg">
+            <SelectTrigger className="w-[130px] h-11 text-xs shrink-0 rounded-lg">
               <SlidersHorizontal className="h-3 w-3 mr-1 text-muted-foreground" /><SelectValue placeholder="Severity" />
             </SelectTrigger>
             <SelectContent>
@@ -496,7 +496,7 @@ const DefectRegister = () => {
             </SelectContent>
           </Select>
           <Select value={rideFilter} onValueChange={(v) => { setRideFilter(v); updateFilterParams({ rideId: v }); }}>
-            <SelectTrigger className="w-[160px] h-9 text-xs shrink-0 rounded-lg"><SelectValue placeholder="Equipment" /></SelectTrigger>
+            <SelectTrigger className="w-[160px] h-11 text-xs shrink-0 rounded-lg"><SelectValue placeholder="Equipment" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Equipment</SelectItem>
               {ridesWithDefects.map((r) => (
