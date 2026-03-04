@@ -296,14 +296,14 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           ];
           return (
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-              <TabsList className={`w-full h-auto p-1 bg-transparent rounded-none ${isInflatable ? 'flex overflow-x-auto' : 'grid grid-cols-4'}`}>
+              <TabsList className={`w-full h-auto p-0.5 bg-transparent rounded-none ${isInflatable ? 'flex overflow-x-auto' : 'grid grid-cols-4'}`}>
                 {tabs.map(({ value, label, Icon }) => (
                   <TabsTrigger
                     key={value}
                     value={value}
-                    className={`flex flex-col items-center gap-1.5 py-3 text-xs font-semibold rounded-xl border-b-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground data-[state=active]:shadow-none data-[state=inactive]:bg-transparent transition-all min-h-[52px] ${isInflatable ? 'flex-1 min-w-[72px]' : ''}`}
+                    className={`flex flex-col items-center gap-1 py-2 text-[11px] font-semibold rounded-lg border-b-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground data-[state=active]:shadow-none data-[state=inactive]:bg-transparent transition-all min-h-[44px] ${isInflatable ? 'flex-1 min-w-[64px]' : ''}`}
                   >
-                    <Icon className="h-4 w-4" strokeWidth={2} />
+                    <Icon className="h-3.5 w-3.5" strokeWidth={2} />
                     {label}
                   </TabsTrigger>
                 ))}
@@ -313,7 +313,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         })()}
 
         {/* ─── HOME TAB ─── */}
-        <TabsContent value="overview" className="space-y-4 animate-fade-in">
+        <TabsContent value="overview" className="space-y-5 animate-fade-in">
 
            {/* Critical Defect Banner — top priority */}
           <CriticalDefectBanner
@@ -433,8 +433,8 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
               <p className="text-[11px] text-muted-foreground leading-tight">Checks today</p>
             </button>
             <button onClick={() => setActiveTab('documents')} className={`bg-card rounded-xl border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all ${rideStats.hasExpiredDocs ? 'border-destructive/30' : rideStats.hasExpiringSoonDocs ? 'border-orange-300 dark:border-orange-800/40' : 'border-border'}`}>
-              <p className={`text-lg font-bold ${rideStats.hasExpiredDocs ? 'text-destructive' : 'text-foreground'}`}>{rideStats.loading ? '—' : rideStats.docCount}</p>
-              <p className="text-[11px] text-muted-foreground leading-tight">{rideStats.hasExpiredDocs ? 'Docs · expired' : rideStats.hasExpiringSoonDocs ? 'Docs · expiring' : 'Documents'}</p>
+              <p className={`text-lg font-bold ${rideStats.hasExpiredDocs ? 'text-destructive' : rideStats.hasExpiringSoonDocs ? 'text-orange-600 dark:text-orange-400' : 'text-foreground'}`}>{rideStats.loading ? '—' : rideStats.docCount}</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">{rideStats.hasExpiredDocs ? 'Docs expired' : rideStats.hasExpiringSoonDocs ? 'Docs expiring' : 'Total docs'}</p>
             </button>
             <button onClick={() => document.getElementById('ride-defects-section')?.scrollIntoView({ behavior: 'smooth' })} className={`bg-card rounded-xl border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all ${rideStats.openDefects > 0 ? 'border-destructive/30' : 'border-border'}`}>
               <p className={`text-lg font-bold ${rideStats.openDefects > 0 ? 'text-destructive' : 'text-foreground'}`}>{rideStats.loading ? '—' : rideStats.openDefects}</p>
