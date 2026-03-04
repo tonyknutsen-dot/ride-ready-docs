@@ -631,17 +631,17 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
       </LogSectionCard>
 
       {/* ── STICKY BOTTOM ACTION BAR ── */}
-      <div className="sticky bottom-0 z-50 border-t px-4 py-3 flex gap-3"
+      <div className="sticky bottom-0 z-50 border-t px-4 py-3 flex flex-col gap-2 sm:flex-row sm:gap-3"
         style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderColor: '#E2E8F0', boxShadow: '0 -4px 16px rgba(15,23,42,0.08)' }}>
         <Button onClick={handleSubmit} disabled={loading}
-          className="flex-1 h-12 text-[14px] font-semibold rounded-xl text-white"
+          className="w-full sm:flex-1 h-12 text-[14px] font-semibold rounded-xl text-white"
           style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)', boxShadow: '0 4px 12px rgba(30,58,95,0.3)' }}>
           {loading
             ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />Saving…</>
             : <><Save className="h-4 w-4 mr-2" />Log Maintenance Record</>}
         </Button>
         <Button type="button" variant="outline" onClick={resetForm}
-          className="h-12 px-4 rounded-xl font-medium text-[13px]"
+          className="w-full sm:w-auto h-12 px-4 rounded-xl font-medium text-[13px]"
           style={{ borderColor: '#CBD5E1', color: '#64748B' }}>
           <RotateCcw className="h-4 w-4 mr-1.5" />
           Reset
