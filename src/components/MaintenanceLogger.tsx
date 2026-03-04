@@ -737,37 +737,39 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         </CollapsibleSection>
       )}
 
-      {/* ── STICKY BOTTOM ACTION BAR ── */}
-      <div className="sticky bottom-0 z-50 border-t px-4 py-3 flex items-center gap-3"
-        style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderColor: '#E2E8F0', boxShadow: '0 -4px 16px rgba(15,23,42,0.08)' }}>
+      {/* ── ACTION BAR ── */}
+      <div className="rounded-2xl border p-4 space-y-3"
+        style={{ background: '#FFFFFF', borderColor: '#E2E8F0', boxShadow: '0 2px 8px rgba(15,23,42,0.05)' }}>
         <Button onClick={handleSubmit} disabled={loading}
-          className="flex-1 h-12 text-[14px] font-semibold rounded-xl text-white"
+          className="w-full h-12 text-[14px] font-semibold rounded-xl text-white"
           style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)', boxShadow: '0 4px 12px rgba(30,58,95,0.3)' }}>
           {loading
             ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />Saving…</>
             : <><Save className="h-4 w-4 mr-2" />Log Maintenance Record</>}
         </Button>
 
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <button type="button" className="shrink-0 flex items-center gap-1.5 px-3 h-12 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors">
-              <RotateCcw className="h-3.5 w-3.5" />
-              Clear form
-            </button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Clear form?</AlertDialogTitle>
-              <AlertDialogDescription>
-                Clear all entered maintenance details? This cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={resetForm}>Clear form</AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <div className="flex justify-center">
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button type="button" className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                <RotateCcw className="h-3 w-3" />
+                Clear form
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Clear form?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Clear all entered maintenance details? This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={resetForm}>Clear form</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
       </div>
 
     </div>
