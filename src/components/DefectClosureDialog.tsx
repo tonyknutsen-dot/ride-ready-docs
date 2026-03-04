@@ -73,6 +73,7 @@ const DefectClosureDialog = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [closureReason, setClosureReason] = useState('');
+  const [otherReason, setOtherReason] = useState('');
   const [actionTaken, setActionTaken] = useState('');
   const [closedByName, setClosedByName] = useState('');
   const [additionalNotes, setAdditionalNotes] = useState('');
@@ -99,6 +100,7 @@ const DefectClosureDialog = ({
 
   const handleClose = () => {
     setClosureReason('');
+    setOtherReason('');
     setActionTaken('');
     setClosedByName('');
     setAdditionalNotes('');
@@ -133,6 +135,10 @@ const DefectClosureDialog = ({
       toast({ title: 'Closure reason is required', description: 'Please select why this defect is being closed.', variant: 'destructive' });
       return;
     }
+    if (closureReason === 'other' && !otherReason.trim()) {
+      toast({ title: 'Please specify the reason', description: 'An explanation is required when selecting "Other".', variant: 'destructive' });
+      return;
+    }
     if (!actionTaken.trim()) {
       toast({ title: 'Action taken is required', description: 'Please describe what action was taken.', variant: 'destructive' });
       return;
@@ -156,7 +162,9 @@ const DefectClosureDialog = ({
       const resolvedByValue = closedByName.trim() || user?.email || null;
 
       // Build structured resolution_notes
-      const reasonLabel = CLOSURE_REASONS.find(r => r.value === closureReason)?.label || closureReason;
+      const reasonLabel = closureReason === 'other'
+        ? `Other: ${otherReason.trim()}`
+        : (CLOSURE_REASONS.find(r => r.value === closureReason)?.label || closureReason);
       let fullNotes = `Closure reason: ${reasonLabel}\n\nAction taken: ${actionTaken.trim()}`;
       if (additionalNotes.trim()) {
         fullNotes += `\n\nAdditional notes: ${additionalNotes.trim()}`;
@@ -197,7 +205,7 @@ const DefectClosureDialog = ({
 
   const sevDisplay = SEVERITY_DISPLAY[defect.severity] || SEVERITY_DISPLAY.non_urgent;
   const statusDisplay = STATUS_DISPLAY[defect.status] || defect.status;
-  const canSubmit = !!closureReason && !!actionTaken.trim();
+  const canSubmit = !!closureReason && !!actionTaken.trim() && (closureReason !== 'other' || !!otherReason.trim());
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -212,34 +220,34 @@ const DefectClosureDialog = ({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
+        <div className="space-y-3 py-1">
           {/* ── Context ── */}
-          <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2">
+          <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 space-y-1">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground">Equipment</span>
-              <span className="text-xs font-semibold text-foreground truncate max-w-[60%] text-right">{rideName}</span>
+              <span className="text-[11px] text-muted-foreground">Equipment</span>
+              <span className="text-[11px] font-semibold text-foreground truncate max-w-[60%] text-right">{rideName}</span>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground">Severity</span>
-              <Badge variant={sevDisplay.variant} className="text-[10px] h-5">
+              <span className="text-[11px] text-muted-foreground">Severity</span>
+              <Badge variant={sevDisplay.variant} className="text-[10px] h-[18px] px-1.5">
                 {sevDisplay.label}
               </Badge>
             </div>
             <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-muted-foreground">Status</span>
-              <span className="text-xs font-medium text-foreground">{statusDisplay}</span>
+              <span className="text-[11px] text-muted-foreground">Status</span>
+              <span className="text-[11px] font-medium text-foreground">{statusDisplay}</span>
             </div>
-            <Separator className="my-1" />
-            <p className="text-xs text-foreground leading-relaxed line-clamp-3">{defect.description}</p>
+            <Separator className="!my-1.5" />
+            <p className="text-[11px] text-foreground leading-relaxed line-clamp-2">{defect.description}</p>
           </div>
 
           {/* ── Closure reason (required dropdown) ── */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="closure-reason" className="text-xs font-semibold">
               Closure reason <span className="text-destructive">*</span>
             </Label>
             <Select value={closureReason} onValueChange={setClosureReason}>
-              <SelectTrigger id="closure-reason" className="h-11 rounded-xl">
+              <SelectTrigger id="closure-reason" className="h-10 rounded-lg">
                 <SelectValue placeholder="Select a reason…" />
               </SelectTrigger>
               <SelectContent>
@@ -250,8 +258,24 @@ const DefectClosureDialog = ({
             </Select>
           </div>
 
+          {/* ── Other reason explanation (conditionally required) ── */}
+          {closureReason === 'other' && (
+            <div className="space-y-1">
+              <Label htmlFor="other-reason" className="text-xs font-semibold">
+                Specify closure reason <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="other-reason"
+                value={otherReason}
+                onChange={(e) => setOtherReason(e.target.value)}
+                placeholder="Explain the reason for closure…"
+                className="h-10 rounded-lg"
+              />
+            </div>
+          )}
+
           {/* ── Action taken / details (required free text) ── */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="action-taken" className="text-xs font-semibold">
               Action taken / details <span className="text-destructive">*</span>
             </Label>
@@ -260,13 +284,13 @@ const DefectClosureDialog = ({
               value={actionTaken}
               onChange={(e) => setActionTaken(e.target.value)}
               placeholder="Describe what was done — e.g. replaced bolt, retightened bearing housing…"
-              rows={3}
-              className="rounded-xl"
+              rows={2}
+              className="rounded-lg"
             />
           </div>
 
           {/* ── Closed by ── */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="closed-by-name" className="text-xs font-semibold">
               Closed by
             </Label>
@@ -275,13 +299,15 @@ const DefectClosureDialog = ({
               value={closedByName}
               onChange={(e) => setClosedByName(e.target.value)}
               placeholder={user?.email || 'Your name'}
-              className="h-11 rounded-xl"
+              className="h-10 rounded-lg"
             />
-            <p className="text-[10px] text-muted-foreground">Leave blank to use your account email</p>
+            <p className="text-[10px] text-muted-foreground">
+              {closedByName ? 'Defaults to your account name' : 'Will use your account email if left blank'}
+            </p>
           </div>
 
           {/* ── Additional notes (optional) ── */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label htmlFor="additional-notes" className="text-xs font-semibold">
               Additional notes <span className="text-muted-foreground font-normal">(optional)</span>
             </Label>
@@ -291,12 +317,12 @@ const DefectClosureDialog = ({
               onChange={(e) => setAdditionalNotes(e.target.value)}
               placeholder="Part numbers, follow-up actions, warranty info…"
               rows={2}
-              className="rounded-xl"
+              className="rounded-lg"
             />
           </div>
 
           {/* ── Evidence photos (optional) ── */}
-          <div className="space-y-1.5">
+          <div className="space-y-1">
             <Label className="text-xs font-semibold">
               Evidence photos <span className="text-muted-foreground font-normal">(optional)</span>
             </Label>
