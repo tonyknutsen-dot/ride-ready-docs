@@ -144,7 +144,7 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
   return (
     <>
       {offlineBanner}
-      <div className="space-y-2">
+      <div className="space-y-2.5">
         {defects.map((defect) => {
           const sev = SEVERITY_CONFIG[defect.severity];
           const SevIcon = sev.icon;
@@ -169,24 +169,24 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
                     defect.severity === 'urgent' ? 'bg-orange-500' : 'bg-yellow-500'
                   }`} />
 
-                  <div className="flex-1 p-3">
-                    <div className="flex items-start gap-2.5">
+                  <div className="flex-1 p-3.5">
+                    <div className="flex items-start gap-3">
                       {/* Severity icon */}
-                      <div className={`mt-0.5 w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${sev.operationalClass}`}>
+                      <div className={`mt-0.5 w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${sev.operationalClass}`}>
                         <SevIcon className="h-3.5 w-3.5" />
                       </div>
 
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <p className="text-sm font-semibold text-foreground line-clamp-2 leading-snug">{defect.description}</p>
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <p className="text-[13px] font-semibold text-foreground line-clamp-2 leading-snug">{defect.description}</p>
 
                         {defect.location_on_ride && (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5">
                             <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
                             <p className="text-[11px] text-muted-foreground truncate">{defect.location_on_ride}</p>
                           </div>
                         )}
 
-                        <div className="flex items-center gap-1.5 flex-wrap">
+                        <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                           <Badge className={`text-[10px] px-1.5 py-0 font-semibold ${sev.badgeClass}`}>{sev.label}</Badge>
                           {isResolved ? (
                             <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 font-medium">Closed</Badge>
@@ -199,14 +199,14 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
                               {photoUrls[defect.id]?.length}
                             </span>
                           )}
-                          <span className="text-[11px] text-muted-foreground">
+                          <span className="text-[11px] text-muted-foreground ml-auto">
                             {formatDistanceToNow(new Date(defect.reported_at), { addSuffix: true })}
                           </span>
                         </div>
 
                         {/* Operational status for stop-use */}
                         {!isResolved && defect.severity === 'stop_operation' && (
-                          <p className="text-[11px] font-semibold text-destructive">⛔ Do not operate</p>
+                          <p className="text-[11px] font-semibold text-destructive pt-0.5">⛔ Do not operate</p>
                         )}
 
                         {/* Resolution preview */}
@@ -215,10 +215,10 @@ const DefectsList = ({ rideId, rideName, showResolved = false, onDefectUpdated }
                         )}
                       </div>
 
-                      <div className="flex flex-col items-end gap-2 shrink-0">
+                      <div className="flex flex-col items-end gap-2.5 shrink-0 pt-0.5">
                         {!isResolved && (
                           <Button
-                            size="sm" variant="outline" className="text-xs gap-1 h-7 rounded-lg"
+                            size="sm" variant="outline" className="text-xs gap-1.5 h-8 rounded-lg px-2.5"
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedDefect({ ...defect, ride_id: rideId } as any);
