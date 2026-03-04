@@ -284,10 +284,10 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
   // ─── 6. Footer on all pages ───────────────────────────────────────────────
   drawTemplateFooters(templateOpts);
 
-  // ─── Save ─────────────────────────────────────────────────────────────────
+  // ─── Return blob + filename (callers handle View/Download/Save) ────────────
   const filename = inflatableName
     ? buildFileName(['wind-log', inflatableName, format(new Date(), 'yyyy-MM-dd')])
     : buildFileName(['wind-speed-register', format(new Date(), 'yyyy-MM-dd')]);
 
-  doc.save(filename);
+  return { blob: doc.output('blob') as Blob, fileName: filename };
 }

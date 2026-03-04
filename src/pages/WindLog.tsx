@@ -29,6 +29,7 @@ import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { generateWindLogPdf } from '@/utils/windLogPdf';
+import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 
 interface InflatableRide {
   id: string;
@@ -136,6 +137,8 @@ const WindLog = () => {
   const [filterRecordedBy, setFilterRecordedBy] = useState('all');
   const [filterAction, setFilterAction] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportResult, setExportResult] = useState<ExportResult | null>(null);
 
   // Defaults
   const [defaultRecordedBy, setDefaultRecordedBy] = useState('');
@@ -490,7 +493,7 @@ const WindLog = () => {
     executeSave();
   };
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (filteredLogs.length === 0) {
       toast({ title: 'Nothing to export', description: 'No readings match your current filters.', variant: 'destructive' });
       return;
@@ -504,7 +507,7 @@ const WindLog = () => {
       ? `Wind Log – ${singleInflatable}`
       : 'Wind Speed Register';
 
-    generateWindLogPdf({
+    const result = await generateWindLogPdf({
       entries: filteredLogs,
       title: reportTitle,
       inflatableName: singleInflatable,
@@ -518,6 +521,9 @@ const WindLog = () => {
       },
       location: filterLocation || undefined,
     });
+
+    setExportResult({ blob: result.blob, fileName: result.fileName });
+    setExportDialogOpen(true);
   };
 
   const formatAnemometer = (entry: WindLogEntry) => {
@@ -1087,6 +1093,8 @@ const WindLog = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ExportActionsDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} result={exportResult} />
     </div>
   );
 };

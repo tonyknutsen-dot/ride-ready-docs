@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -27,6 +27,7 @@ import {
 } from '@/utils/pdfUtils';
 import { drawTemplateHeader, drawTemplateFooters, generateDocumentId } from '@/utils/pdfTemplate';
 import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
+import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 
 // Types
 type Ride = Tables<'rides'> & {
@@ -93,6 +94,8 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   // Export
   const [generatingPdf, setGeneratingPdf] = useState(false);
   const [generatingCsv, setGeneratingCsv] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportResult, setExportResult] = useState<ExportResult | null>(null);
 
   // Previous reports
   const [previousReports, setPreviousReports] = useState<Document[]>([]);
@@ -412,12 +415,9 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       ]);
       const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Maintenance - ${ride.ride_name} - ${format(new Date(), 'ddMMMyyyy')}.csv`;
-      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-      toast({ title: 'CSV exported', description: `${filteredRecords.length} records exported` });
+      const fileName = `Maintenance - ${ride.ride_name} - ${format(new Date(), 'ddMMMyyyy')}.csv`;
+      setExportResult({ blob, fileName });
+      setExportDialogOpen(true);
     } catch (error) {
       console.error('CSV export error:', error);
       toast({ title: 'Error', description: 'Failed to export CSV', variant: 'destructive' });
@@ -654,13 +654,12 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       const fileName = `${documentName.replace(/[^a-zA-Z0-9\s-]/g, '')}.pdf`;
       const pdfBlob = doc.output('blob');
 
-      const storagePath = `${user.id}/maintenance-reports/${ride.id}/${Date.now()}-${fileName}`;
-      const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
+      // Show export actions dialog (no auto-save)
+      const saveToDocuments = async () => {
+        const storagePath = `${user.id}/maintenance-reports/${ride.id}/${Date.now()}-${fileName}`;
+        const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
+        if (uploadError) throw uploadError;
 
-      if (uploadError) {
-        doc.save(fileName);
-        toast({ title: 'Report Downloaded', description: 'Saved locally (could not upload)' });
-      } else {
         await supabase.from('documents').insert({
           user_id: user.id, ride_id: ride.id, document_name: documentName,
           document_type: 'maintenance_report', file_path: storagePath,
@@ -673,10 +672,11 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
           fileUrl: storagePath, title: documentName,
           metadata: { recordCount: filteredRecords.length, totalCost },
         });
-        doc.save(fileName);
-        toast({ title: 'Report Generated', description: 'Saved to Documents and downloaded' });
         loadPreviousReports();
-      }
+      };
+
+      setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments });
+      setExportDialogOpen(true);
     } catch (error) {
       console.error('PDF error:', error);
       toast({ title: 'Error', description: 'Failed to generate report', variant: 'destructive' });
@@ -1054,6 +1054,8 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ExportActionsDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} result={exportResult} />
 
     </div>
   );
