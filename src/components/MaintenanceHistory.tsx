@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Calendar, Edit, Trash2, FileText, Camera, Download, Filter, Save, Clock, X, FolderOpen, MoreVertical, Paperclip, Image, FileSpreadsheet, File } from 'lucide-react';
+import { Calendar, Edit, Trash2, FileText, Camera, Download, Filter, Save, Clock, X, FolderOpen, MoreVertical, Paperclip, Image, FileSpreadsheet, File, Search, FileDown, Eye, ChevronDown } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { format, parseISO } from 'date-fns';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { format, parseISO, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
@@ -17,6 +18,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { compressImage } from '@/utils/imageCompression';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import {
+  PDF_COLORS, blobToDataUrl, drawSectionTitle, drawEquipmentDetails,
+  drawSummaryBox, PDF_TABLE_HEAD_STYLES, PDF_TABLE_BODY_STYLES, PDF_TABLE_ALT_ROW,
+  drawComplianceStatement,
+} from '@/utils/pdfUtils';
+import { drawTemplateHeader, drawTemplateFooters, generateDocumentId } from '@/utils/pdfTemplate';
+import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 
 // Types
 type Ride = Tables<'rides'> & {
@@ -34,7 +44,10 @@ interface MaintenanceHistoryProps {
 const MAINTENANCE_TYPES = [
   { value: 'preventive', label: 'Preventive Maintenance' },
   { value: 'corrective', label: 'Corrective Maintenance' },
+  { value: 'reactive', label: 'Reactive Repair' },
   { value: 'emergency', label: 'Emergency Repair' },
+  { value: 'modification', label: 'Modification / Upgrade' },
+  { value: 'inspection_linked', label: 'Inspection-Linked Repair' },
   { value: 'inspection', label: 'Inspection & Testing' },
   { value: 'lubrication', label: 'Lubrication' },
   { value: 'electrical', label: 'Electrical Work' },
@@ -51,17 +64,23 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   const [documentUrls, setDocumentUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState<MaintenanceRecord | null>(null);
+
+  // Filters
+  const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState<string>('all');
+  const [filterPerformedBy, setFilterPerformedBy] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [dateFromOpen, setDateFromOpen] = useState(false);
+  const [dateToOpen, setDateToOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Dialogs
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingRecord, setEditingRecord] = useState<MaintenanceRecord | null>(null);
   const [editFormData, setEditFormData] = useState({
-    maintenance_date: new Date(),
-    maintenance_type: '',
-    description: '',
-    performed_by: '',
-    parts_replaced: '',
-    cost: '',
-    notes: '',
+    maintenance_date: new Date(), maintenance_type: '', description: '',
+    performed_by: '', parts_replaced: '', cost: '', notes: '',
   });
   const [saving, setSaving] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
@@ -70,6 +89,14 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   const [attachmentViewOpen, setAttachmentViewOpen] = useState(false);
   const [detailViewOpen, setDetailViewOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+
+  // Export
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [generatingCsv, setGeneratingCsv] = useState(false);
+
+  // Previous reports
+  const [previousReports, setPreviousReports] = useState<Document[]>([]);
+
   const { toast } = useToast();
 
   const ALLOWED_TYPES = [
@@ -81,7 +108,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
     'text/plain','text/csv',
   ];
 
-  useEffect(() => { loadMaintenanceRecords(); }, [ride.id, refreshTrigger]);
+  useEffect(() => { loadMaintenanceRecords(); loadPreviousReports(); }, [ride.id, refreshTrigger]);
 
   const loadMaintenanceRecords = async () => {
     try {
@@ -106,10 +133,10 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
 
         const imageDocuments = (documentsData || []).filter(doc => doc.mime_type?.startsWith('image/'));
         const urls: Record<string, string> = {};
-        for (const doc of imageDocuments) {
+        for (const imgDoc of imageDocuments) {
           try {
-            const { data } = await supabase.storage.from('ride-documents').createSignedUrl(doc.file_path, 3600);
-            if (data?.signedUrl) urls[doc.id] = data.signedUrl;
+            const { data } = await supabase.storage.from('ride-documents').createSignedUrl(imgDoc.file_path, 3600);
+            if (data?.signedUrl) urls[imgDoc.id] = data.signedUrl;
           } catch { /* skip */ }
         }
         setDocumentUrls(urls);
@@ -124,6 +151,54 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
     }
   };
 
+  const loadPreviousReports = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data } = await supabase
+      .from('documents').select('*')
+      .eq('ride_id', ride.id).eq('user_id', user.id)
+      .eq('document_type', 'maintenance_report')
+      .order('uploaded_at', { ascending: false });
+    setPreviousReports(data || []);
+  };
+
+  // ── Unique performers for filter ──
+  const uniquePerformers = useMemo(() => {
+    const performers = new Set<string>();
+    records.forEach(r => { if (r.performed_by) performers.add(r.performed_by); });
+    return Array.from(performers).sort();
+  }, [records]);
+
+  // ── Filtered records ──
+  const filteredRecords = useMemo(() => {
+    return records.filter(r => {
+      if (filterType !== 'all' && r.maintenance_type !== filterType) return false;
+      if (filterPerformedBy !== 'all' && r.performed_by !== filterPerformedBy) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matches = r.description.toLowerCase().includes(q)
+          || r.performed_by?.toLowerCase().includes(q)
+          || r.parts_replaced?.toLowerCase().includes(q)
+          || r.notes?.toLowerCase().includes(q);
+        if (!matches) return false;
+      }
+      if (dateFrom || dateTo) {
+        const recordDate = parseISO(r.maintenance_date);
+        if (dateFrom && dateTo) {
+          if (!isWithinInterval(recordDate, { start: startOfDay(dateFrom), end: endOfDay(dateTo) })) return false;
+        } else if (dateFrom) {
+          if (recordDate < startOfDay(dateFrom)) return false;
+        } else if (dateTo) {
+          if (recordDate > endOfDay(dateTo)) return false;
+        }
+      }
+      return true;
+    });
+  }, [records, filterType, filterPerformedBy, searchQuery, dateFrom, dateTo]);
+
+  const hasActiveFilters = filterType !== 'all' || filterPerformedBy !== 'all' || !!searchQuery || !!dateFrom || !!dateTo;
+
+  // ── CRUD operations ──
   const handleDelete = async (recordId: string) => {
     try {
       const { data: record, error: fetchError } = await supabase
@@ -138,23 +213,20 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       }
       const { error } = await supabase.from('maintenance_records').delete().eq('id', recordId);
       if (error) throw error;
-      toast({ title: 'Success', description: 'Maintenance record and attachments deleted successfully' });
+      toast({ title: 'Success', description: 'Maintenance record deleted' });
       loadMaintenanceRecords();
     } catch (error) {
-      console.error('Error deleting maintenance record:', error);
-      toast({ title: 'Error', description: 'Failed to delete maintenance record', variant: 'destructive' });
+      console.error('Error deleting:', error);
+      toast({ title: 'Error', description: 'Failed to delete record', variant: 'destructive' });
     }
   };
 
   const openEditDialog = (record: MaintenanceRecord) => {
     setEditingRecord(record);
     setEditFormData({
-      maintenance_date: parseISO(record.maintenance_date),
-      maintenance_type: record.maintenance_type,
-      description: record.description,
-      performed_by: record.performed_by || '',
-      parts_replaced: record.parts_replaced || '',
-      cost: record.cost?.toString() || '',
+      maintenance_date: parseISO(record.maintenance_date), maintenance_type: record.maintenance_type,
+      description: record.description, performed_by: record.performed_by || '',
+      parts_replaced: record.parts_replaced || '', cost: record.cost?.toString() || '',
       notes: record.notes || '',
     });
     setNewFiles([]);
@@ -224,27 +296,21 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       const allDocumentIds = [...(editingRecord.document_ids || []), ...newDocumentIds];
       const { error } = await supabase.from('maintenance_records').update({
         maintenance_date: editFormData.maintenance_date.toISOString().split('T')[0],
-        maintenance_type: editFormData.maintenance_type,
-        description: editFormData.description,
-        performed_by: editFormData.performed_by,
-        parts_replaced: editFormData.parts_replaced || null,
+        maintenance_type: editFormData.maintenance_type, description: editFormData.description,
+        performed_by: editFormData.performed_by, parts_replaced: editFormData.parts_replaced || null,
         cost: editFormData.cost ? parseFloat(editFormData.cost) : null,
         notes: editFormData.notes || null,
         document_ids: allDocumentIds.length > 0 ? allDocumentIds : null,
         updated_at: new Date().toISOString(),
       }).eq('id', editingRecord.id);
       if (error) throw error;
-      toast({ title: 'Success', description: 'Maintenance record updated successfully' });
-      setEditDialogOpen(false);
-      setEditingRecord(null);
-      setNewFiles([]);
+      toast({ title: 'Success', description: 'Record updated' });
+      setEditDialogOpen(false); setEditingRecord(null); setNewFiles([]);
       loadMaintenanceRecords();
     } catch (error) {
-      console.error('Error updating maintenance record:', error);
-      toast({ title: 'Error', description: 'Failed to update maintenance record', variant: 'destructive' });
-    } finally {
-      setSaving(false);
-    }
+      console.error('Error updating:', error);
+      toast({ title: 'Error', description: 'Failed to update record', variant: 'destructive' });
+    } finally { setSaving(false); }
   };
 
   const downloadFile = async (doc: Document) => {
@@ -252,13 +318,10 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       const { data, error } = await supabase.storage.from('ride-documents').download(doc.file_path);
       if (error) throw error;
       const url = URL.createObjectURL(data);
-      const a = document.createElement('a');
-      a.href = url; a.download = doc.document_name;
-      document.body.appendChild(a); a.click();
-      document.body.removeChild(a); URL.revokeObjectURL(url);
-      toast({ title: 'Success', description: 'File downloaded successfully' });
+      const a = document.createElement('a'); a.href = url; a.download = doc.document_name;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading file:', error);
+      console.error('Error downloading:', error);
       toast({ title: 'Error', description: 'Failed to download file', variant: 'destructive' });
     }
   };
@@ -274,7 +337,6 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       return <FileSpreadsheet className="h-4 w-4 text-green-600" />;
     if (mimeType.includes('word') || mimeType.includes('document'))
       return <FileText className="h-4 w-4 text-blue-600" />;
-    if (mimeType.startsWith('text/')) return <FileText className="h-4 w-4 text-muted-foreground" />;
     return <File className="h-4 w-4 text-muted-foreground" />;
   };
 
@@ -297,23 +359,17 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
     );
   };
 
-  const filteredRecords = records.filter(r => filterType === 'all' || r.maintenance_type === filterType);
-
   const renderAttachmentRow = (doc: Document, compact = false) => {
     const thumbSize = compact ? 'h-8 w-8' : 'h-9 w-9';
     const textSize = compact ? 'text-[12px]' : 'text-[13px]';
-    const subSize = compact ? 'text-[10px]' : 'text-[10px]';
+    const subSize = 'text-[10px]';
     const padding = compact ? 'p-2' : 'p-2.5';
-
     return (
       <button key={doc.id}
         className={`w-full flex items-center gap-2.5 ${padding} rounded-lg border border-border hover:bg-accent/50 transition-colors text-left`}
         onClick={() => {
-          if (doc.mime_type?.startsWith('image/') && documentUrls[doc.id]) {
-            setPreviewImage(documentUrls[doc.id]);
-          } else {
-            downloadFile(doc);
-          }
+          if (doc.mime_type?.startsWith('image/') && documentUrls[doc.id]) { setPreviewImage(documentUrls[doc.id]); }
+          else { downloadFile(doc); }
         }}>
         {doc.mime_type?.startsWith('image/') && documentUrls[doc.id] ? (
           <img src={documentUrls[doc.id]} alt={doc.document_name} className={`${thumbSize} rounded-lg object-cover shrink-0`} />
@@ -338,6 +394,300 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
     );
   };
 
+  // ── Export CSV ──
+  const handleExportCsv = () => {
+    setGeneratingCsv(true);
+    try {
+      const headers = ['Date', 'Type', 'Description', 'Performed By', 'Cost', 'Parts Replaced', 'Notes', 'Created', 'Updated'];
+      const rows = filteredRecords.map(r => [
+        r.maintenance_date,
+        getMaintenanceTypeLabel(r.maintenance_type),
+        `"${r.description.replace(/"/g, '""')}"`,
+        r.performed_by || '',
+        r.cost != null ? r.cost.toString() : '',
+        `"${(r.parts_replaced || '').replace(/"/g, '""')}"`,
+        `"${(r.notes || '').replace(/"/g, '""')}"`,
+        format(parseISO(r.created_at), 'dd/MM/yyyy HH:mm'),
+        format(parseISO(r.updated_at), 'dd/MM/yyyy HH:mm'),
+      ]);
+      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Maintenance - ${ride.ride_name} - ${format(new Date(), 'ddMMMyyyy')}.csv`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+      toast({ title: 'CSV exported', description: `${filteredRecords.length} records exported` });
+    } catch (error) {
+      console.error('CSV export error:', error);
+      toast({ title: 'Error', description: 'Failed to export CSV', variant: 'destructive' });
+    } finally { setGeneratingCsv(false); }
+  };
+
+  // ── Export PDF (moved from MaintenanceReports) ──
+  const handleExportPdf = async () => {
+    setGeneratingPdf(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      if (filteredRecords.length === 0) {
+        toast({ title: 'No Records', description: 'No records match current filters', variant: 'destructive' });
+        setGeneratingPdf(false);
+        return;
+      }
+
+      const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
+
+      let logoDataUrl: string | null = null;
+      if (profile?.company_logo_path) {
+        try {
+          const { data: logoBlob } = await supabase.storage.from('ride-documents').download(profile.company_logo_path);
+          if (logoBlob) { logoDataUrl = await blobToDataUrl(logoBlob); }
+        } catch { /* skip */ }
+      }
+
+      const { data: rideImage } = await supabase.from('documents').select('file_path')
+        .eq('ride_id', ride.id).like('mime_type', 'image/%').limit(1).maybeSingle();
+      let imageDataUrl: string | null = null;
+      if (rideImage) {
+        try {
+          const { data: imageBlob } = await supabase.storage.from('ride-documents').download(rideImage.file_path);
+          if (imageBlob) { imageDataUrl = await blobToDataUrl(imageBlob); }
+        } catch { /* skip */ }
+      }
+
+      const docId = await generateDocumentId(ride.id, 'MR');
+      const doc = new jsPDF();
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 13;
+
+      let yPos = drawTemplateHeader({ doc, title: 'MAINTENANCE REPORT', documentId: docId, docType: 'MR' as const });
+
+      yPos = drawSectionTitle(doc, 'Equipment Details', yPos, margin);
+      yPos = await drawEquipmentDetails({
+        doc, y: yPos, margin,
+        fields: [
+          { label: 'Name', value: ride.ride_name },
+          { label: 'Category', value: ride.ride_categories?.name },
+          { label: 'Manufacturer', value: ride.manufacturer },
+          { label: 'Serial No', value: ride.serial_number },
+          { label: 'Year', value: ride.year_manufactured?.toString() },
+          { label: 'Controller', value: ride.owner_name },
+        ],
+        imageDataUrl, maxImageW: 40, maxImageH: 30,
+      });
+
+      const totalCost = filteredRecords.reduce((sum, r) => sum + (Number(r.cost) || 0), 0);
+      const periodLabel = dateFrom && dateTo
+        ? `${format(dateFrom, 'dd/MM/yyyy')} – ${format(dateTo, 'dd/MM/yyyy')}`
+        : dateFrom ? `From ${format(dateFrom, 'dd/MM/yyyy')}`
+        : dateTo ? `Up to ${format(dateTo, 'dd/MM/yyyy')}`
+        : 'All time';
+
+      yPos = drawSectionTitle(doc, 'Report Summary', yPos, margin);
+      yPos = drawSummaryBox(doc, [
+        { label: 'Total Records', value: String(filteredRecords.length) },
+        { label: 'Total Cost', value: `£${totalCost.toFixed(2)}`, accent: true },
+        { label: 'Period', value: periodLabel },
+        ...(filterType !== 'all' ? [{ label: 'Type Filter', value: getMaintenanceTypeLabel(filterType) }] : []),
+      ], yPos, margin);
+
+      yPos = drawSectionTitle(doc, 'Maintenance Records', yPos, margin);
+      const truncate = (t: string, max: number) => t.length <= max ? t : t.substring(0, max - 3) + '...';
+      const tableData = filteredRecords.map((r, i) => [
+        (i + 1).toString(),
+        format(parseISO(r.maintenance_date), 'dd/MM/yyyy'),
+        getMaintenanceTypeLabel(r.maintenance_type),
+        truncate(r.description, 50),
+        r.performed_by || '-',
+        r.cost ? `£${Number(r.cost).toFixed(2)}` : '-',
+      ]);
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [['#', 'Date', 'Type', 'Work Done', 'By', 'Cost']],
+        body: tableData,
+        headStyles: PDF_TABLE_HEAD_STYLES,
+        styles: PDF_TABLE_BODY_STYLES,
+        columnStyles: {
+          0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 24, halign: 'center' },
+          2: { cellWidth: 32 }, 3: { cellWidth: 52 }, 4: { cellWidth: 28 }, 5: { cellWidth: 22, halign: 'right' },
+        },
+        alternateRowStyles: PDF_TABLE_ALT_ROW,
+        margin: { bottom: 28 },
+      });
+      yPos = (doc as any).lastAutoTable.finalY + 15;
+
+      // Detailed records
+      doc.addPage();
+      yPos = 20;
+      const attachmentsForAppendix: Array<{
+        recordIndex: number; recordDate: string; recordType: string;
+        docs: Array<{ id: string; document_name: string; mime_type: string | null; file_path: string }>;
+      }> = [];
+
+      yPos = drawSectionTitle(doc, 'Detailed Maintenance Records', yPos, margin);
+      yPos = drawComplianceStatement(doc, yPos, margin);
+
+      for (let i = 0; i < filteredRecords.length; i++) {
+        const record = filteredRecords[i];
+        if (yPos > 240) { doc.addPage(); yPos = 20; }
+
+        doc.setFillColor(...PDF_COLORS.navy);
+        doc.rect(margin, yPos - 5, pageWidth - margin * 2, 9, 'F');
+        doc.setFontSize(10); doc.setFont('helvetica', 'bold'); doc.setTextColor(...PDF_COLORS.white);
+        doc.text(`${i + 1}.  ${format(parseISO(record.maintenance_date), 'dd MMMM yyyy')}  —  ${getMaintenanceTypeLabel(record.maintenance_type)}`, margin + 4, yPos);
+        doc.setTextColor(0); yPos += 11;
+
+        doc.setFontSize(9); doc.setFont('helvetica', 'normal'); doc.setTextColor(...PDF_COLORS.body);
+        const detailFields: Array<[string, string | null | undefined, boolean?]> = [
+          ['Description', record.description, true],
+          ['Performed by', record.performed_by],
+          ['Cost', record.cost ? `£${Number(record.cost).toFixed(2)}` : null],
+          ['Parts replaced', record.parts_replaced],
+          ['Notes', record.notes],
+        ];
+        for (const [label, value, isLong] of detailFields) {
+          if (!value) continue;
+          doc.setFont('helvetica', 'bold'); doc.setTextColor(...PDF_COLORS.muted);
+          doc.text(`${label}:`, margin + 5, yPos);
+          doc.setFont('helvetica', 'normal'); doc.setTextColor(...PDF_COLORS.body);
+          if (isLong) {
+            const lines = doc.splitTextToSize(value, pageWidth - margin - 50);
+            doc.text(lines, margin + 38, yPos);
+            yPos += Math.max(lines.length * 4, 5) + 2;
+          } else { doc.text(String(value), margin + 38, yPos); yPos += 5; }
+        }
+
+        if (record.document_ids && record.document_ids.length > 0) {
+          const { data: attachedDocs } = await supabase.from('documents')
+            .select('id, document_name, mime_type, file_path').in('id', record.document_ids);
+          if (attachedDocs && attachedDocs.length > 0) {
+            doc.setFont('helvetica', 'bold'); doc.setTextColor(...PDF_COLORS.muted);
+            doc.text('Attachments:', margin + 5, yPos); yPos += 5;
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(...PDF_COLORS.body);
+            for (const att of attachedDocs) {
+              doc.text(`• ${att.document_name}`, margin + 10, yPos); yPos += 4;
+              if (yPos > 270) { doc.addPage(); yPos = 20; }
+            }
+            doc.setFontSize(9); yPos += 2;
+            attachmentsForAppendix.push({
+              recordIndex: i + 1, recordDate: format(parseISO(record.maintenance_date), 'dd MMM yyyy'),
+              recordType: getMaintenanceTypeLabel(record.maintenance_type), docs: attachedDocs,
+            });
+          }
+        }
+
+        doc.setFontSize(7); doc.setTextColor(160);
+        doc.text(`Record created: ${format(parseISO(record.created_at), 'dd/MM/yyyy HH:mm')}${record.updated_at !== record.created_at ? ` | Last edited: ${format(parseISO(record.updated_at), 'dd/MM/yyyy HH:mm')}` : ''}`, margin + 5, yPos);
+        doc.setTextColor(0); yPos += 12;
+      }
+
+      // Defect history
+      const { data: defectsData } = await supabase.from('defects').select('*')
+        .eq('ride_id', ride.id).eq('user_id', user.id).order('reported_at', { ascending: false });
+      const allDefects = defectsData || [];
+      if (allDefects.length > 0) {
+        doc.addPage(); yPos = 20;
+        yPos = drawSectionTitle(doc, 'Defect History', yPos, margin);
+        doc.setFontSize(8.5); doc.setFont('helvetica', 'normal'); doc.setTextColor(...PDF_COLORS.muted);
+        doc.text('Resolved defects represent completed repairs. Open defects require attention.', margin, yPos);
+        yPos += 10;
+
+        const defectTableData = allDefects.map((d, idx) => [
+          (idx + 1).toString(),
+          format(parseISO(d.reported_at), 'dd/MM/yyyy'),
+          d.severity === 'stop_operation' ? 'Stop Use' : d.severity === 'urgent' ? 'Important' : 'Low',
+          truncate(d.description, 45),
+          d.status === 'resolved' ? 'Closed' : 'Open',
+          d.resolved_at ? format(parseISO(d.resolved_at), 'dd/MM/yyyy') : '-',
+        ]);
+        autoTable(doc, {
+          startY: yPos, head: [['#', 'Reported', 'Severity', 'Description', 'Status', 'Resolved']],
+          body: defectTableData, headStyles: PDF_TABLE_HEAD_STYLES, styles: PDF_TABLE_BODY_STYLES,
+          columnStyles: { 0: { cellWidth: 10, halign: 'center' }, 1: { cellWidth: 24, halign: 'center' }, 2: { cellWidth: 22 }, 3: { cellWidth: 55 }, 4: { cellWidth: 18, halign: 'center' }, 5: { cellWidth: 24, halign: 'center' } },
+          alternateRowStyles: PDF_TABLE_ALT_ROW, margin: { bottom: 28 },
+        });
+      }
+
+      // Attachments appendix
+      if (attachmentsForAppendix.length > 0) {
+        doc.addPage(); yPos = 20;
+        yPos = drawSectionTitle(doc, 'Appendix: Maintenance Attachments', yPos, margin);
+        for (const att of attachmentsForAppendix) {
+          if (yPos > 250) { doc.addPage(); yPos = 20; }
+          doc.setFillColor(...PDF_COLORS.navy);
+          doc.rect(margin, yPos - 4, pageWidth - margin * 2, 8, 'F');
+          doc.setFontSize(9.5); doc.setFont('helvetica', 'bold'); doc.setTextColor(...PDF_COLORS.white);
+          doc.text(`Record ${att.recordIndex}: ${att.recordDate}  —  ${att.recordType}`, margin + 4, yPos);
+          doc.setTextColor(0); yPos += 10;
+          let photoCounter = 0;
+          for (const docItem of att.docs) {
+            if (docItem.mime_type?.startsWith('image/')) {
+              photoCounter++;
+              try {
+                const { data: imgBlob } = await supabase.storage.from('ride-documents').download(docItem.file_path);
+                if (imgBlob) {
+                  const imgUrl = await blobToDataUrl(imgBlob);
+                  if (yPos > 200) { doc.addPage(); yPos = 20; }
+                  doc.setFontSize(9); doc.setFont('helvetica', 'bold'); doc.setTextColor(...PDF_COLORS.body);
+                  doc.text(`Photo ${photoCounter} — ${att.recordType} — ${att.recordDate}`, margin + 5, yPos); yPos += 5;
+                  try { doc.addImage(imgUrl, 'AUTO', margin + 5, yPos, 60, 45); yPos += 52; }
+                  catch { doc.setFontSize(8); doc.setTextColor(...PDF_COLORS.muted); doc.text('[Image could not be embedded]', margin + 5, yPos); yPos += 6; }
+                }
+              } catch { doc.setFontSize(8); doc.text(`• Photo ${photoCounter} (file not available)`, margin + 5, yPos); yPos += 5; }
+            } else {
+              doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.setTextColor(...PDF_COLORS.body);
+              doc.text(`📎 ${docItem.document_name}`, margin + 5, yPos); yPos += 5;
+            }
+          }
+          yPos += 5;
+        }
+      }
+
+      drawTemplateFooters({ doc, title: 'MAINTENANCE REPORT', documentId: docId, docType: 'MR' as const });
+
+      const fromStr = dateFrom ? format(dateFrom, 'ddMMMyyyy') : 'all';
+      const toStr = dateTo ? format(dateTo, 'ddMMMyyyy') : 'present';
+      const documentName = `Maintenance Report - ${ride.ride_name} - ${fromStr} to ${toStr}`;
+      const fileName = `${documentName.replace(/[^a-zA-Z0-9\s-]/g, '')}.pdf`;
+      const pdfBlob = doc.output('blob');
+
+      const storagePath = `${user.id}/maintenance-reports/${ride.id}/${Date.now()}-${fileName}`;
+      const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
+
+      if (uploadError) {
+        doc.save(fileName);
+        toast({ title: 'Report Downloaded', description: 'Saved locally (could not upload)' });
+      } else {
+        await supabase.from('documents').insert({
+          user_id: user.id, ride_id: ride.id, document_name: documentName,
+          document_type: 'maintenance_report', file_path: storagePath,
+          mime_type: 'application/pdf', file_size: pdfBlob.size,
+          notes: `Maintenance report: ${filteredRecords.length} records, ${periodLabel}`, is_global: false,
+        });
+        const rideCode = await getRideCode(ride.id);
+        await storeRideDocument({
+          rideId: ride.id, rideCode, documentType: 'MR', documentId: docId,
+          fileUrl: storagePath, title: documentName,
+          metadata: { recordCount: filteredRecords.length, totalCost },
+        });
+        doc.save(fileName);
+        toast({ title: 'Report Generated', description: 'Saved to Documents and downloaded' });
+        loadPreviousReports();
+      }
+    } catch (error) {
+      console.error('PDF error:', error);
+      toast({ title: 'Error', description: 'Failed to generate report', variant: 'destructive' });
+    } finally { setGeneratingPdf(false); }
+  };
+
+  const handleViewReport = async (filePath: string) => {
+    const { data } = await supabase.storage.from('ride-documents').createSignedUrl(filePath, 300);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -350,39 +700,152 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   return (
     <div className="space-y-4 pb-6">
 
-      {/* ── Title + Count ── */}
-      <div>
-        <h3 className="text-xl font-bold" style={{ color: '#0F172A' }}>Maintenance History</h3>
-        <p className="text-[13px]" style={{ color: '#64748B' }}>
-          {filteredRecords.length} record{filteredRecords.length !== 1 ? 's' : ''}
+      {/* ── Header: title + count + export ── */}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-bold text-foreground">Maintenance Register</h3>
+          <p className="text-[13px] text-muted-foreground">
+            {filteredRecords.length} record{filteredRecords.length !== 1 ? 's' : ''}
+            {hasActiveFilters && ` (filtered from ${records.length})`}
+          </p>
+        </div>
+        <div className="flex items-center gap-1.5 shrink-0">
+          <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={generatingCsv || filteredRecords.length === 0}
+            className="h-8 text-[12px] gap-1.5">
+            <FileDown className="h-3.5 w-3.5" /> CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={generatingPdf || filteredRecords.length === 0}
+            className="h-8 text-[12px] gap-1.5">
+            {generatingPdf ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" /> : <FileDown className="h-3.5 w-3.5" />}
+            PDF
+          </Button>
+        </div>
+      </div>
+
+      {/* ── Search bar ── */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search records…"
+          className="pl-9 h-10 rounded-xl"
+        />
+        {searchQuery && (
+          <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+            <X className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+        )}
+      </div>
+
+      {/* ── Filters ── */}
+      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+            style={{ borderColor: hasActiveFilters ? '#3B82F6' : '#E2E8F0', background: hasActiveFilters ? '#EFF6FF' : '#FFFFFF' }}>
+            <div className="flex items-center gap-2">
+              <Filter className="h-3.5 w-3.5" />
+              <span>{hasActiveFilters ? 'Filters active' : 'Filters & date range'}</span>
+            </div>
+            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')} />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="mt-2 rounded-xl border bg-card p-3 space-y-3" style={{ borderColor: '#E2E8F0' }}>
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* Date from */}
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">From</Label>
+                <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left h-9 text-[12px]', !dateFrom && 'text-muted-foreground')}>
+                      <Calendar className="mr-1.5 h-3.5 w-3.5" />
+                      {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : 'Start date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent mode="single" selected={dateFrom} onSelect={(d) => { setDateFrom(d || undefined); setDateFromOpen(false); }} initialFocus className="pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              {/* Date to */}
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">To</Label>
+                <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left h-9 text-[12px]', !dateTo && 'text-muted-foreground')}>
+                      <Calendar className="mr-1.5 h-3.5 w-3.5" />
+                      {dateTo ? format(dateTo, 'dd/MM/yyyy') : 'End date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent mode="single" selected={dateTo} onSelect={(d) => { setDateTo(d || undefined); setDateToOpen(false); }} initialFocus className="pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Quick date presets */}
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: 'Last 3 months', from: subMonths(new Date(), 3), to: new Date() },
+                { label: 'Last 6 months', from: subMonths(new Date(), 6), to: new Date() },
+                { label: 'Last 12 months', from: subMonths(new Date(), 12), to: new Date() },
+              ].map(p => (
+                <button key={p.label} onClick={() => { setDateFrom(p.from); setDateTo(p.to); }}
+                  className="text-[11px] px-2.5 py-1 rounded-full border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2.5">
+              {/* Type filter */}
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Type</Label>
+                <Select value={filterType} onValueChange={setFilterType}>
+                  <SelectTrigger className="h-9 text-[12px]"><SelectValue placeholder="All types" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All types</SelectItem>
+                    {MAINTENANCE_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              {/* Performed by filter */}
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Performed by</Label>
+                <Select value={filterPerformedBy} onValueChange={setFilterPerformedBy}>
+                  <SelectTrigger className="h-9 text-[12px]"><SelectValue placeholder="Anyone" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Anyone</SelectItem>
+                    {uniquePerformers.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {hasActiveFilters && (
+              <button onClick={() => { setFilterType('all'); setFilterPerformedBy('all'); setDateFrom(undefined); setDateTo(undefined); setSearchQuery(''); }}
+                className="text-[12px] font-medium text-primary hover:underline">
+                Clear all filters
+              </button>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* ── Export hint ── */}
+      {hasActiveFilters && (
+        <p className="text-[11px] text-muted-foreground text-center">
+          Exports include the current filters and date range.
         </p>
-      </div>
+      )}
 
-      {/* ── Filter Bar ── */}
-      <div className="bg-white border rounded-2xl px-3 py-2.5 shadow-sm flex items-center gap-3"
-        style={{ borderColor: '#E2E8F0' }}>
-        <div className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#F1F5F9' }}>
-          <Filter className="h-4 w-4" style={{ color: '#475569' }} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="text-[10px] uppercase tracking-wide font-semibold" style={{ color: '#94A3B8' }}>Filter by type</div>
-          <Select value={filterType} onValueChange={setFilterType}>
-            <SelectTrigger className="border-0 p-0 h-auto text-[14px] font-semibold shadow-none focus:ring-0 bg-transparent"
-              style={{ color: '#0F172A' }}>
-              <SelectValue placeholder="All Types" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Types</SelectItem>
-              {MAINTENANCE_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      {/* ── Records ── */}
+      {/* ── Records list ── */}
       {filteredRecords.length === 0 ? (
         <EmptyState icon={Calendar} title="No maintenance records found"
-          description="Start logging maintenance activities to build your record history" variant="compact" />
+          description={hasActiveFilters ? 'Try adjusting your filters or date range' : 'Start logging maintenance activities to build your record history'}
+          variant="compact" />
       ) : (
         <div className="space-y-3">
           {filteredRecords.map((record) => {
@@ -390,8 +853,6 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
             return (
               <div key={record.id} className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
                 <div className="p-3.5 space-y-2">
-
-                  {/* Top row: type pill · date · overflow */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       {getMaintenanceTypeBadge(record.maintenance_type)}
@@ -399,7 +860,6 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                         {format(parseISO(record.maintenance_date), 'd MMM yyyy')}
                       </span>
                     </div>
-
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground">
@@ -407,68 +867,65 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem onClick={() => openEditDialog(record)}>
-                          <Edit className="h-3.5 w-3.5 mr-2" /> Edit
-                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => openEditDialog(record)}><Edit className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => setDeleteRecordId(record.id)}>
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteRecordId(record.id)}>
                           <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
 
-                  {/* Tappable card body → opens detail */}
-                  <button
-                    className="w-full text-left space-y-2 active:opacity-80 transition-opacity"
-                    onClick={() => { setSelectedRecord(record); setDetailViewOpen(true); }}
-                  >
-                    <h4 className="text-[14px] font-semibold leading-snug text-foreground line-clamp-2">
-                      {record.description}
-                    </h4>
-
+                  <button className="w-full text-left space-y-2 active:opacity-80 transition-opacity"
+                    onClick={() => { setSelectedRecord(record); setDetailViewOpen(true); }}>
+                    <h4 className="text-[14px] font-semibold leading-snug text-foreground line-clamp-2">{record.description}</h4>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
-                      {record.performed_by && (
-                        <span>By <span className="font-medium text-foreground">{record.performed_by}</span></span>
-                      )}
-                      {record.cost != null && (
-                        <span>£<span className="font-semibold text-foreground">{record.cost}</span></span>
-                      )}
+                      {record.performed_by && <span>By <span className="font-medium text-foreground">{record.performed_by}</span></span>}
+                      {record.cost != null && <span>£<span className="font-semibold text-foreground">{record.cost}</span></span>}
                     </div>
                     {record.parts_replaced && (
-                      <p className="text-[12px] text-muted-foreground">
-                        <span className="font-medium text-foreground/70">Parts:</span> {record.parts_replaced}
-                      </p>
+                      <p className="text-[12px] text-muted-foreground"><span className="font-medium text-foreground/70">Parts:</span> {record.parts_replaced}</p>
                     )}
                   </button>
 
-                  {/* Attachments row — separate tap target */}
                   {recordDocs.length > 0 && (
-                    <button
-                      className="flex items-center gap-1.5 text-[12px] font-medium text-primary hover:underline"
-                      onClick={() => {
-                        setSelectedRecord(record);
-                        setAttachmentViewOpen(true);
-                      }}
-                    >
-                      <Paperclip className="h-3 w-3" />
-                      {recordDocs.length} attachment{recordDocs.length !== 1 ? 's' : ''}
+                    <button className="flex items-center gap-1.5 text-[12px] font-medium text-primary hover:underline"
+                      onClick={() => { setSelectedRecord(record); setAttachmentViewOpen(true); }}>
+                      <Paperclip className="h-3 w-3" /> {recordDocs.length} attachment{recordDocs.length !== 1 ? 's' : ''}
                     </button>
                   )}
 
-                  {/* Footer timestamps */}
                   <div className="flex flex-wrap gap-x-2 text-[11px] text-muted-foreground/70">
                     <span>Created {format(parseISO(record.created_at), 'dd/MM/yy')}</span>
-                    {record.updated_at !== record.created_at && (
-                      <><span>·</span><span>Edited {format(parseISO(record.updated_at), 'dd/MM/yy')}</span></>
-                    )}
+                    {record.updated_at !== record.created_at && <><span>·</span><span>Edited {format(parseISO(record.updated_at), 'dd/MM/yy')}</span></>}
                   </div>
                 </div>
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ── Previously generated reports ── */}
+      {previousReports.length > 0 && (
+        <div className="space-y-2 pt-4 border-t">
+          <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
+          {previousReports.map((report) => (
+            <div key={report.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                  <FileText className="h-4 w-4 text-destructive" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
+                  <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => handleViewReport(report.file_path)} className="h-7 text-[11px] gap-1">
+                <Eye className="h-3 w-3" /> View
+              </Button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -485,84 +942,24 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
             const detailDocs = documents[selectedRecord.id] || [];
             return (
               <div className="space-y-3 pt-1">
-                {/* Core details card */}
                 <div className="rounded-xl border border-border bg-muted/30 p-3 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    {getMaintenanceTypeBadge(selectedRecord.maintenance_type)}
-                  </div>
+                  <div className="flex items-center justify-between">{getMaintenanceTypeBadge(selectedRecord.maintenance_type)}</div>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[13px]">
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Equipment</p>
-                      <p className="font-medium text-foreground truncate">{ride.ride_name}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Date</p>
-                      <p className="font-medium text-foreground">{format(parseISO(selectedRecord.maintenance_date), 'd MMM yyyy')}</p>
-                    </div>
-                    {selectedRecord.performed_by && (
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Performed By</p>
-                        <p className="font-medium text-foreground">{selectedRecord.performed_by}</p>
-                      </div>
-                    )}
-                    {selectedRecord.cost != null && (
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Cost</p>
-                        <p className="font-semibold text-foreground">£{selectedRecord.cost}</p>
-                      </div>
-                    )}
-                    {selectedRecord.next_maintenance_due && (
-                      <div>
-                        <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Next Due</p>
-                        <p className="font-medium text-foreground">{format(parseISO(selectedRecord.next_maintenance_due), 'd MMM yyyy')}</p>
-                      </div>
-                    )}
+                    <div><p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Equipment</p><p className="font-medium text-foreground truncate">{ride.ride_name}</p></div>
+                    <div><p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Date</p><p className="font-medium text-foreground">{format(parseISO(selectedRecord.maintenance_date), 'd MMM yyyy')}</p></div>
+                    {selectedRecord.performed_by && <div><p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Performed By</p><p className="font-medium text-foreground">{selectedRecord.performed_by}</p></div>}
+                    {selectedRecord.cost != null && <div><p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Cost</p><p className="font-semibold text-foreground">£{selectedRecord.cost}</p></div>}
+                    {selectedRecord.next_maintenance_due && <div><p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Next Due</p><p className="font-medium text-foreground">{format(parseISO(selectedRecord.next_maintenance_due), 'd MMM yyyy')}</p></div>}
                   </div>
                 </div>
-
-                {/* Work summary */}
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Work Summary</p>
-                  <p className="text-[13px] text-foreground leading-relaxed">{selectedRecord.description}</p>
-                </div>
-
-                {selectedRecord.parts_replaced && (
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Parts Replaced</p>
-                    <p className="text-[13px] text-foreground">{selectedRecord.parts_replaced}</p>
-                  </div>
-                )}
-
-                {selectedRecord.notes && (
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Notes</p>
-                    <p className="text-[13px] text-foreground">{selectedRecord.notes}</p>
-                  </div>
-                )}
-
-                {detailDocs.length > 0 && (
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5">
-                      Attachments ({detailDocs.length})
-                    </p>
-                    <div className="space-y-1">
-                      {detailDocs.map((doc) => renderAttachmentRow(doc, true))}
-                    </div>
-                  </div>
-                )}
-
+                <div><p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Work Summary</p><p className="text-[13px] text-foreground leading-relaxed">{selectedRecord.description}</p></div>
+                {selectedRecord.parts_replaced && <div><p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Parts Replaced</p><p className="text-[13px] text-foreground">{selectedRecord.parts_replaced}</p></div>}
+                {selectedRecord.notes && <div><p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Notes</p><p className="text-[13px] text-foreground">{selectedRecord.notes}</p></div>}
+                {detailDocs.length > 0 && <div><p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground mb-1.5">Attachments ({detailDocs.length})</p><div className="space-y-1">{detailDocs.map((d) => renderAttachmentRow(d, true))}</div></div>}
                 <div className="h-px bg-border" />
                 <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-muted-foreground">
-                  <span className="flex items-center gap-1">
-                    <Clock className="h-2.5 w-2.5" />
-                    Created {format(parseISO(selectedRecord.created_at), 'dd/MM/yyyy HH:mm')}
-                  </span>
-                  {selectedRecord.updated_at !== selectedRecord.created_at && (
-                    <span className="flex items-center gap-1">
-                      <Edit className="h-2.5 w-2.5" />
-                      Edited {format(parseISO(selectedRecord.updated_at), 'dd/MM/yyyy HH:mm')}
-                    </span>
-                  )}
+                  <span className="flex items-center gap-1"><Clock className="h-2.5 w-2.5" />Created {format(parseISO(selectedRecord.created_at), 'dd/MM/yyyy HH:mm')}</span>
+                  {selectedRecord.updated_at !== selectedRecord.created_at && <span className="flex items-center gap-1"><Edit className="h-2.5 w-2.5" />Edited {format(parseISO(selectedRecord.updated_at), 'dd/MM/yyyy HH:mm')}</span>}
                 </div>
               </div>
             );
@@ -572,200 +969,87 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
 
       {/* ── Image Preview ── */}
       <Dialog open={!!previewImage} onOpenChange={(open) => { if (!open) setPreviewImage(null); }}>
-        <DialogContent className="max-w-2xl p-2">
-          {previewImage && (
-            <img src={previewImage} alt="Preview" className="w-full h-auto rounded-lg" />
-          )}
-        </DialogContent>
+        <DialogContent className="max-w-2xl p-2">{previewImage && <img src={previewImage} alt="Preview" className="w-full h-auto rounded-lg" />}</DialogContent>
       </Dialog>
 
       {/* ── Delete Confirmation ── */}
       <AlertDialog open={!!deleteRecordId} onOpenChange={(open) => { if (!open) setDeleteRecordId(null); }}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Record?</AlertDialogTitle>
-            <AlertDialogDescription>This will permanently delete this maintenance record and all attached files.</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { if (deleteRecordId) { handleDelete(deleteRecordId); setDeleteRecordId(null); } }}>Delete</AlertDialogAction>
-          </AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Delete Record?</AlertDialogTitle><AlertDialogDescription>This will permanently delete this maintenance record and all attached files.</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => { if (deleteRecordId) { handleDelete(deleteRecordId); setDeleteRecordId(null); } }}>Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* ── Attachment Viewer ── */}
       <Dialog open={attachmentViewOpen} onOpenChange={setAttachmentViewOpen}>
         <DialogContent className="max-w-md">
-          <DialogHeader className="pb-0">
-            <DialogTitle className="text-base">Attachments</DialogTitle>
-            <DialogDescription className="text-[13px]">
-              {selectedRecord ? `${ride.ride_name} · ${format(parseISO(selectedRecord.maintenance_date), 'd MMM yyyy')}` : ''}
-            </DialogDescription>
-          </DialogHeader>
+          <DialogHeader className="pb-0"><DialogTitle className="text-base">Attachments</DialogTitle><DialogDescription className="text-[13px]">{selectedRecord ? `${ride.ride_name} · ${format(parseISO(selectedRecord.maintenance_date), 'd MMM yyyy')}` : ''}</DialogDescription></DialogHeader>
           {selectedRecord && (documents[selectedRecord.id] || []).length > 0 ? (
-            <div className="space-y-1 pt-1">
-              {(documents[selectedRecord.id] || []).map((doc) => renderAttachmentRow(doc))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">No attachments</p>
-          )}
+            <div className="space-y-1 pt-1">{(documents[selectedRecord.id] || []).map((d) => renderAttachmentRow(d))}</div>
+          ) : <p className="text-sm text-muted-foreground">No attachments</p>}
         </DialogContent>
       </Dialog>
 
       {/* ── Edit Dialog ── */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Maintenance Record</DialogTitle>
-            <DialogDescription>Update the maintenance record details. Changes will be timestamped.</DialogDescription>
-          </DialogHeader>
-
+          <DialogHeader><DialogTitle>Edit Maintenance Record</DialogTitle><DialogDescription>Update the maintenance record details. Changes will be timestamped.</DialogDescription></DialogHeader>
           {editingRecord && (
             <div className="space-y-4">
               <div className="flex flex-wrap gap-4 text-xs text-muted-foreground p-3 bg-muted rounded-xl">
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  <span>Originally created: {format(parseISO(editingRecord.created_at), 'dd/MM/yyyy HH:mm')}</span>
-                </div>
-                {editingRecord.updated_at !== editingRecord.created_at && (
-                  <div className="flex items-center gap-1">
-                    <Edit className="h-3 w-3" />
-                    <span>Last edited: {format(parseISO(editingRecord.updated_at), 'dd/MM/yyyy HH:mm')}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-1"><Clock className="h-3 w-3" /><span>Created: {format(parseISO(editingRecord.created_at), 'dd/MM/yyyy HH:mm')}</span></div>
+                {editingRecord.updated_at !== editingRecord.created_at && <div className="flex items-center gap-1"><Edit className="h-3 w-3" /><span>Edited: {format(parseISO(editingRecord.updated_at), 'dd/MM/yyyy HH:mm')}</span></div>}
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Maintenance Date *</Label>
                   <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn('w-full justify-start text-left font-normal', !editFormData.maintenance_date && 'text-muted-foreground')}>
-                        <Calendar className="mr-2 h-4 w-4" />
-                        {editFormData.maintenance_date ? format(editFormData.maintenance_date, 'PPP') : 'Select date'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <CalendarComponent mode="single" selected={editFormData.maintenance_date}
-                        onSelect={(date) => { setEditFormData({ ...editFormData, maintenance_date: date || new Date() }); setCalendarOpen(false); }}
-                        initialFocus className="pointer-events-auto" />
-                    </PopoverContent>
+                    <PopoverTrigger asChild><Button variant="outline" className={cn('w-full justify-start text-left font-normal', !editFormData.maintenance_date && 'text-muted-foreground')}><Calendar className="mr-2 h-4 w-4" />{editFormData.maintenance_date ? format(editFormData.maintenance_date, 'PPP') : 'Select date'}</Button></PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start"><CalendarComponent mode="single" selected={editFormData.maintenance_date} onSelect={(date) => { setEditFormData({ ...editFormData, maintenance_date: date || new Date() }); setCalendarOpen(false); }} initialFocus className="pointer-events-auto" /></PopoverContent>
                   </Popover>
                 </div>
-
                 <div className="space-y-2">
                   <Label>Maintenance Type *</Label>
                   <Select value={editFormData.maintenance_type} onValueChange={(v) => setEditFormData({ ...editFormData, maintenance_type: v })}>
-                    <SelectTrigger><SelectValue placeholder="Select maintenance type" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                     <SelectContent>{MAINTENANCE_TYPES.map(t => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit_performed_by">Performed By *</Label>
-                  <Input id="edit_performed_by" value={editFormData.performed_by}
-                    onChange={(e) => setEditFormData({ ...editFormData, performed_by: e.target.value })}
-                    placeholder="Name of person who performed maintenance" />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="edit_cost">Cost (£)</Label>
-                  <Input id="edit_cost" type="number" step="0.01" min="0" value={editFormData.cost}
-                    onChange={(e) => setEditFormData({ ...editFormData, cost: e.target.value })} placeholder="0.00" />
-                </div>
+                <div className="space-y-2"><Label htmlFor="edit_performed_by">Performed By *</Label><Input id="edit_performed_by" value={editFormData.performed_by} onChange={(e) => setEditFormData({ ...editFormData, performed_by: e.target.value })} placeholder="Name" /></div>
+                <div className="space-y-2"><Label htmlFor="edit_cost">Cost (£)</Label><Input id="edit_cost" type="number" step="0.01" min="0" value={editFormData.cost} onChange={(e) => setEditFormData({ ...editFormData, cost: e.target.value })} placeholder="0.00" /></div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit_description">Work Description *</Label>
-                <Textarea id="edit_description" value={editFormData.description}
-                  onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                  placeholder="Describe the maintenance work performed..." rows={3} />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit_parts_replaced">Parts Replaced</Label>
-                <Textarea id="edit_parts_replaced" value={editFormData.parts_replaced}
-                  onChange={(e) => setEditFormData({ ...editFormData, parts_replaced: e.target.value })}
-                  placeholder="List any parts that were replaced..." rows={2} />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="edit_notes">Additional Notes</Label>
-                <Textarea id="edit_notes" value={editFormData.notes}
-                  onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })}
-                  placeholder="Any additional notes or observations..." rows={2} />
-              </div>
-
+              <div className="space-y-2"><Label htmlFor="edit_description">Work Description *</Label><Textarea id="edit_description" value={editFormData.description} onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })} placeholder="Describe the work…" rows={3} /></div>
+              <div className="space-y-2"><Label htmlFor="edit_parts_replaced">Parts Replaced</Label><Textarea id="edit_parts_replaced" value={editFormData.parts_replaced} onChange={(e) => setEditFormData({ ...editFormData, parts_replaced: e.target.value })} placeholder="List any parts replaced…" rows={2} /></div>
+              <div className="space-y-2"><Label htmlFor="edit_notes">Additional Notes</Label><Textarea id="edit_notes" value={editFormData.notes} onChange={(e) => setEditFormData({ ...editFormData, notes: e.target.value })} placeholder="Additional notes…" rows={2} /></div>
               {editingRecord && documents[editingRecord.id] && documents[editingRecord.id].length > 0 && (
-                <div className="space-y-2">
-                  <Label>Existing Attachments ({documents[editingRecord.id].length})</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {documents[editingRecord.id].map((doc) => (
-                      <div key={doc.id} className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30">
-                        {doc.mime_type?.startsWith('image/') ? <Camera className="h-4 w-4 text-primary" /> : <FileText className="h-4 w-4 text-muted-foreground" />}
-                        <span className="text-xs truncate max-w-32">{doc.document_name}</span>
-                        <Button variant="ghost" size="sm" onClick={() => downloadFile(doc)} className="h-6 w-6 p-0">
-                          <Download className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <div className="space-y-2"><Label>Existing Attachments ({documents[editingRecord.id].length})</Label><div className="flex flex-wrap gap-2">{documents[editingRecord.id].map((d) => (
+                  <div key={d.id} className="flex items-center gap-2 p-2 border rounded-lg bg-muted/30">{d.mime_type?.startsWith('image/') ? <Camera className="h-4 w-4 text-primary" /> : <FileText className="h-4 w-4 text-muted-foreground" />}<span className="text-xs truncate max-w-32">{d.document_name}</span><Button variant="ghost" size="sm" onClick={() => downloadFile(d)} className="h-6 w-6 p-0"><Download className="h-3 w-3" /></Button></div>
+                ))}</div></div>
               )}
-
               <div className="space-y-2">
                 <Label>Add New Files</Label>
                 <input type="file" multiple accept="image/*,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx" onChange={handleEditFileUpload} className="hidden" id="edit-file-upload" />
                 <input type="file" multiple accept="image/*" capture="environment" onChange={handleEditFileUpload} className="hidden" id="edit-camera-upload" />
                 <div className="grid grid-cols-2 gap-3">
-                  <Button type="button" variant="outline"
-                    className="h-16 flex flex-col items-center justify-center gap-1 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#1E3A5F] rounded-2xl"
-                    onClick={() => document.getElementById('edit-camera-upload')?.click()}>
-                    <Camera className="h-5 w-5 text-[#475569]" strokeWidth={2} />
-                    <span className="text-xs font-medium">Take Photo</span>
-                  </Button>
-                  <Button type="button" variant="outline"
-                    className="h-16 flex flex-col items-center justify-center gap-1 border-2 border-dashed border-[#CBD5E1] bg-[#F8FAFC] hover:border-[#1E3A5F] rounded-2xl"
-                    onClick={() => document.getElementById('edit-file-upload')?.click()}>
-                    <FolderOpen className="h-5 w-5 text-[#475569]" strokeWidth={2} />
-                    <span className="text-xs font-medium">Choose File</span>
-                  </Button>
+                  <Button type="button" variant="outline" className="h-16 flex flex-col items-center justify-center gap-1 border-2 border-dashed rounded-2xl" onClick={() => document.getElementById('edit-camera-upload')?.click()}><Camera className="h-5 w-5 text-muted-foreground" /><span className="text-xs font-medium">Take Photo</span></Button>
+                  <Button type="button" variant="outline" className="h-16 flex flex-col items-center justify-center gap-1 border-2 border-dashed rounded-2xl" onClick={() => document.getElementById('edit-file-upload')?.click()}><FolderOpen className="h-5 w-5 text-muted-foreground" /><span className="text-xs font-medium">Choose File</span></Button>
                 </div>
-                <p className="text-xs text-muted-foreground">Max 10MB per file. Supports: Images, PDF, Word, Excel, Text files</p>
               </div>
-
               {newFiles.length > 0 && (
-                <div className="space-y-2">
-                  <Label>New Files to Upload ({newFiles.length})</Label>
-                  <div className="flex flex-wrap gap-2">
-                    {newFiles.map((file, index) => (
-                      <div key={index} className="relative group border rounded-md overflow-hidden bg-muted/30 w-16 h-16">
-                        {file.type.startsWith('image/') ? (
-                          <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex flex-col items-center justify-center p-1">
-                            <FileText className="h-5 w-5 text-muted-foreground" />
-                            <span className="text-[8px] text-center text-muted-foreground line-clamp-1 mt-0.5">{file.name.split('.').pop()}</span>
-                          </div>
-                        )}
-                        <Button type="button" variant="destructive" size="icon"
-                          className="absolute top-0.5 right-0.5 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={() => removeNewFile(index)}>
-                          <X className="h-2.5 w-2.5" />
-                        </Button>
-                      </div>
-                    ))}
+                <div className="space-y-2"><Label>New Files ({newFiles.length})</Label><div className="flex flex-wrap gap-2">{newFiles.map((file, index) => (
+                  <div key={index} className="relative group border rounded-md overflow-hidden bg-muted/30 w-16 h-16">
+                    {file.type.startsWith('image/') ? <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-full object-cover" /> : <div className="w-full h-full flex flex-col items-center justify-center p-1"><FileText className="h-5 w-5 text-muted-foreground" /><span className="text-[8px] text-center text-muted-foreground line-clamp-1 mt-0.5">{file.name.split('.').pop()}</span></div>}
+                    <Button type="button" variant="destructive" size="icon" className="absolute top-0.5 right-0.5 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeNewFile(index)}><X className="h-2.5 w-2.5" /></Button>
                   </div>
-                </div>
+                ))}</div></div>
               )}
             </div>
           )}
-
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleSaveEdit} disabled={saving}>
               {saving ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-              {saving ? 'Saving...' : 'Save Changes'}
+              {saving ? 'Saving…' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>
