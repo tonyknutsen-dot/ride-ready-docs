@@ -7,6 +7,7 @@ import { Wind, MapPin, Loader2, ExternalLink, Download, ChevronDown, Gauge, Plus
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { generateWindLogPdf } from '@/utils/windLogPdf';
+import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 import { cn } from '@/lib/utils';
 
 interface WindSpeedLogProps {
@@ -50,6 +51,8 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
   const [totalCount, setTotalCount] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportResult, setExportResult] = useState<ExportResult | null>(null);
 
   useEffect(() => {
     if (!effectiveUserId) return;
@@ -95,14 +98,16 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
     return showAll ? allLogs : allLogs.slice(0, DEFAULT_LIMIT);
   }, [allLogs, showAll]);
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (allLogs.length === 0) return;
-    generateWindLogPdf({
+    const result = await generateWindLogPdf({
       entries: allLogs,
       title: `Wind Log – ${rideName}`,
       inflatableName: rideName,
       singleRideId: rideId,
     });
+    setExportResult({ blob: result.blob, fileName: result.fileName });
+    setExportDialogOpen(true);
   };
 
   const formatAnemometer = (entry: WindLogEntry) => {
@@ -114,6 +119,7 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
   const isHighWind = (entry: WindLogEntry) => toMph(entry.wind_speed, entry.wind_unit) >= HIGH_WIND_MPH;
 
   return (
+    <>
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between gap-2 flex-wrap">
@@ -264,6 +270,9 @@ const WindSpeedLog = ({ rideId, rideName }: WindSpeedLogProps) => {
         </>
       )}
     </div>
+
+    <ExportActionsDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} result={exportResult} />
+    </>
   );
 };
 

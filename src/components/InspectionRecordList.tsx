@@ -49,6 +49,7 @@ import { generateInspectionRecordPdf } from '@/utils/inspectionRecordPdf';
 import { generateCheckRecordsPdf, generateCheckRecordsCsv } from '@/utils/checkRecordsReport';
 import { useAuth } from '@/contexts/AuthContext';
 import { format as formatDateFns } from 'date-fns';
+import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 
 /** Normalise template/check names for consistent display */
 function normaliseCheckName(name: string): string {
@@ -92,6 +93,8 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
   const [savingDocId, setSavingDocId] = useState<string | null>(null);
   const [exporting, setExporting] = useState<'pdf' | 'csv' | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportResult, setExportResult] = useState<ExportResult | null>(null);
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');
@@ -172,7 +175,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
             ? `To ${format(dateTo, 'dd MMM yyyy')}`
             : 'All records';
 
-      const { blob, fileName } = await generateCheckRecordsPdf({
+      const { blob, fileName, saveToDocuments } = await generateCheckRecordsPdf({
         rideId,
         rideName,
         userId: user.id,
@@ -182,14 +185,8 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         periodLabel,
       });
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.click();
-      URL.revokeObjectURL(url);
-
-      toast({ title: 'Report exported', description: `Check Records report with ${allRecords.length} records exported as PDF.` });
+      setExportResult({ blob, fileName, onSaveToDocuments: saveToDocuments });
+      setExportDialogOpen(true);
     } catch (err: any) {
       console.error('PDF export failed:', err);
       toast({ title: 'Export failed', description: err.message, variant: 'destructive' });
@@ -211,14 +208,8 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
 
       const { blob, fileName } = generateCheckRecordsCsv(allRecords, rideName);
 
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.click();
-      URL.revokeObjectURL(url);
-
-      toast({ title: 'Export complete', description: `${allRecords.length} check records exported as CSV.` });
+      setExportResult({ blob, fileName });
+      setExportDialogOpen(true);
     } catch (err: any) {
       console.error('CSV export failed:', err);
       toast({ title: 'Export failed', description: err.message, variant: 'destructive' });
@@ -621,6 +612,8 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
           }}
         />
       )}
+
+      <ExportActionsDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} result={exportResult} />
     </div>
   );
 };

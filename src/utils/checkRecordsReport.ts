@@ -450,33 +450,30 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
   // ── Unified footer on all pages (same as all other reports) ──
   drawTemplateFooters(templateOpts);
 
-  // ── Save to storage ──
+  // ── Return blob + filename (callers handle save-to-documents) ──
   const pdfBlob = doc.output('blob');
   const fileName = buildFileName([rideName, 'Check_Records', format(new Date(), 'yyyyMMdd')]);
-  const storagePath = `${effectiveUserId}/check-records-reports/${rideId}/${Date.now()}-${fileName}`;
 
-  let savedPath: string | null = null;
-  try {
+  const saveToDocuments = async () => {
+    const storagePath = `${effectiveUserId}/check-records-reports/${rideId}/${Date.now()}-${fileName}`;
     const { error: uploadError } = await supabase.storage
       .from('ride-documents')
       .upload(storagePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
+    if (uploadError) throw uploadError;
 
-    if (!uploadError) {
-      savedPath = storagePath;
-      const rideCode = await getRideCode(rideId);
-      await storeRideDocument({
-        rideId,
-        rideCode,
-        documentType: 'CH',
-        documentId: docId,
-        fileUrl: storagePath,
-        title: `Check Records – ${rideName} – ${format(new Date(), 'dd MMM yyyy')}`,
-        metadata: { checkCount: stats.total, passRate: stats.passRate, period: periodLabel },
-      });
-    }
-  } catch (_) { /* non-fatal */ }
+    const rideCode = await getRideCode(rideId);
+    await storeRideDocument({
+      rideId,
+      rideCode,
+      documentType: 'CH',
+      documentId: docId,
+      fileUrl: storagePath,
+      title: `Check Records – ${rideName} – ${format(new Date(), 'dd MMM yyyy')}`,
+      metadata: { checkCount: stats.total, passRate: stats.passRate, period: periodLabel },
+    });
+  };
 
-  return { blob: pdfBlob, fileName, storagePath: savedPath };
+  return { blob: pdfBlob, fileName, saveToDocuments };
 }
 
 // ─── CSV Generator ───────────────────────────────────────────────────────────

@@ -16,6 +16,7 @@ import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useToast } from '@/hooks/use-toast';
 import PageHeader from '@/components/PageHeader';
 import { generateTimelineReportPdf, storeTimelineReportPdf, type TimelineEvent } from '@/utils/timelineReportPdf';
+import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 
 const EVENT_TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; borderColor: string; label: string }> = {
   CHECK: { icon: CheckSquare, color: 'text-green-700', bgColor: 'bg-green-50', borderColor: 'border-green-200', label: 'Check' },
@@ -42,6 +43,8 @@ export default function Reports({ preFilterRideId, preFilterRideName }: ReportsP
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportResult, setExportResult] = useState<ExportResult | null>(null);
   const [filters, setFilters] = useState({
     checks: true,
     defects: true,
@@ -130,25 +133,20 @@ export default function Reports({ preFilterRideId, preFilterRideName }: ReportsP
         userId: effectiveUserId,
       });
 
-      // Store in Supabase
-      await storeTimelineReportPdf(blob, fileName, documentId, {
-        rideId: selectedRide?.id,
-        rideName: selectedRide?.ride_name,
-        userId: effectiveUserId,
-        startDate,
-        endDate,
-        scope,
-      });
+      // Save to Documents callback (not auto)
+      const saveToDocuments = async () => {
+        await storeTimelineReportPdf(blob, fileName, documentId, {
+          rideId: selectedRide?.id,
+          rideName: selectedRide?.ride_name,
+          userId: effectiveUserId,
+          startDate,
+          endDate,
+          scope,
+        });
+      };
 
-      // Download
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      a.click();
-      URL.revokeObjectURL(url);
-
-      toast({ title: 'Report generated', description: `${documentId} — saved to Documents` });
+      setExportResult({ blob, fileName, onSaveToDocuments: saveToDocuments });
+      setExportDialogOpen(true);
     } catch (err) {
       console.error('PDF generation failed:', err);
       toast({ title: 'Failed to generate report', variant: 'destructive' });
@@ -355,6 +353,8 @@ export default function Reports({ preFilterRideId, preFilterRideName }: ReportsP
           })
         )}
       </div>
+
+      <ExportActionsDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} result={exportResult} />
     </div>
   );
 }

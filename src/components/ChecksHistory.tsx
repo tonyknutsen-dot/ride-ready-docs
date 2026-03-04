@@ -62,6 +62,7 @@ import {
   generateDocumentId,
 } from '@/utils/pdfTemplate';
 import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
+import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 
 type Check = Tables<'checks'>;
 
@@ -108,6 +109,8 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const [endCalendarOpen, setEndCalendarOpen] = useState(false);
   const [selectedCheck, setSelectedCheck] = useState<CheckWithResults | null>(null);
   const [showCheckDetail, setShowCheckDetail] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportResult, setExportResult] = useState<ExportResult | null>(null);
   const itemsPerPage = 20;
 
   const hasFailedItems = offlineChecks.some(c => c.syncStatus === 'failed');
@@ -392,16 +395,17 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
 
     drawTemplateFooters(templateOpts);
 
-    // Save to storage and register
+    // Show export actions dialog (no auto-save)
     const pdfBlob = doc.output('blob');
     const fileName = buildFileName([rideName, frequency, 'SafetyChecks', format(new Date(), 'yyyyMMdd')]);
-    const storagePath = `${effectiveUserId}/checks-history/${rideId}/${Date.now()}-${fileName}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('ride-documents')
-      .upload(storagePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
+    const saveToDocuments = async () => {
+      const storagePath = `${effectiveUserId}/checks-history/${rideId}/${Date.now()}-${fileName}`;
+      const { error: uploadError } = await supabase.storage
+        .from('ride-documents')
+        .upload(storagePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
+      if (uploadError) throw uploadError;
 
-    if (!uploadError) {
       const rideCode = await getRideCode(rideId);
       await storeRideDocument({
         rideId,
@@ -412,14 +416,10 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         title: `${frequencyLabel} Safety Checks – ${rideName} – ${format(new Date(), 'dd MMM yyyy')}`,
         metadata: { checkCount: filteredChecks.length, passRate: overallStats.passRate },
       });
-    }
+    };
 
-    doc.save(fileName);
-
-    toast({
-      title: "Export Complete",
-      description: `Professional report with ${filteredChecks.length} checks exported`,
-    });
+    setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments });
+    setExportDialogOpen(true);
   };
 
   const exportToCSV = () => {
@@ -440,17 +440,9 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
     ].join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `checks-history-${rideName}-${format(new Date(), 'yyyy-MM-dd')}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-
-    toast({
-      title: "Export Complete",
-      description: "Checks history exported to CSV",
-    });
+    const fileName = `checks-history-${rideName}-${format(new Date(), 'yyyy-MM-dd')}.csv`;
+    setExportResult({ blob, fileName });
+    setExportDialogOpen(true);
   };
 
   const monthGroups = groupByMonth();
@@ -483,6 +475,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   }
 
   return (
+    <>
     <div className="checksWrap -mx-4 px-4 pt-4 pb-32 space-y-4">
 
       {/* ── KPI cards ── */}
@@ -785,6 +778,9 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
 
       <CheckDetailDialog check={selectedCheck} open={showCheckDetail} onOpenChange={setShowCheckDetail} />
     </div>
+
+    <ExportActionsDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} result={exportResult} />
+    </>
   );
 };
 
