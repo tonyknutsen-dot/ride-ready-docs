@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Calendar, Edit, Trash2, FileText, Camera, Download, Filter, Save, Clock, X, FolderOpen, MoreVertical, Paperclip } from 'lucide-react';
+import { Calendar, Edit, Trash2, FileText, Camera, Download, Filter, Save, Clock, X, FolderOpen, MoreVertical, Paperclip, Image, FileSpreadsheet, File } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,6 +67,8 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   const [newFiles, setNewFiles] = useState<File[]>([]);
   const [deleteRecordId, setDeleteRecordId] = useState<string | null>(null);
   const [attachmentViewOpen, setAttachmentViewOpen] = useState(false);
+  const [detailViewOpen, setDetailViewOpen] = useState(false);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const { toast } = useToast();
 
   const ALLOWED_TYPES = [
@@ -263,6 +265,18 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   const getMaintenanceTypeLabel = (type: string) =>
     MAINTENANCE_TYPES.find(t => t.value === type)?.label || type;
 
+  const getFileIcon = (mimeType: string | null) => {
+    if (!mimeType) return <File className="h-4 w-4 text-muted-foreground" />;
+    if (mimeType.startsWith('image/')) return <Image className="h-4 w-4 text-blue-500" />;
+    if (mimeType === 'application/pdf') return <FileText className="h-4 w-4 text-red-500" />;
+    if (mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType === 'text/csv')
+      return <FileSpreadsheet className="h-4 w-4 text-green-600" />;
+    if (mimeType.includes('word') || mimeType.includes('document'))
+      return <FileText className="h-4 w-4 text-blue-600" />;
+    if (mimeType.startsWith('text/')) return <FileText className="h-4 w-4 text-muted-foreground" />;
+    return <File className="h-4 w-4 text-muted-foreground" />;
+  };
+
   const getMaintenanceTypeBadge = (type: string) => {
     const configs: Record<string, { bg: string; border: string; dot: string; text: string }> = {
       emergency:   { bg: '#FEF2F2', border: '#FCA5A5', dot: '#EF4444', text: '#B91C1C' },
@@ -368,27 +382,31 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                     </DropdownMenu>
                   </div>
 
-                  {/* Work title */}
-                  <h4 className="text-[14px] font-semibold leading-snug text-foreground line-clamp-2">
-                    {record.description}
-                  </h4>
+                  {/* Tappable card body → opens detail */}
+                  <button
+                    className="w-full text-left space-y-2 active:opacity-80 transition-opacity"
+                    onClick={() => { setSelectedRecord(record); setDetailViewOpen(true); }}
+                  >
+                    <h4 className="text-[14px] font-semibold leading-snug text-foreground line-clamp-2">
+                      {record.description}
+                    </h4>
 
-                  {/* Metadata lines */}
-                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
-                    {record.performed_by && (
-                      <span>By <span className="font-medium text-foreground">{record.performed_by}</span></span>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
+                      {record.performed_by && (
+                        <span>By <span className="font-medium text-foreground">{record.performed_by}</span></span>
+                      )}
+                      {record.cost != null && (
+                        <span>£<span className="font-semibold text-foreground">{record.cost}</span></span>
+                      )}
+                    </div>
+                    {record.parts_replaced && (
+                      <p className="text-[12px] text-muted-foreground">
+                        <span className="font-medium text-foreground/70">Parts:</span> {record.parts_replaced}
+                      </p>
                     )}
-                    {record.cost != null && (
-                      <span>£<span className="font-semibold text-foreground">{record.cost}</span></span>
-                    )}
-                  </div>
-                  {record.parts_replaced && (
-                    <p className="text-[12px] text-muted-foreground">
-                      <span className="font-medium text-foreground/70">Parts:</span> {record.parts_replaced}
-                    </p>
-                  )}
+                  </button>
 
-                  {/* Attachments row */}
+                  {/* Attachments row — separate tap target */}
                   {recordDocs.length > 0 && (
                     <button
                       className="flex items-center gap-1.5 text-[12px] font-medium text-primary hover:underline"
@@ -416,7 +434,131 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         </div>
       )}
 
-      {/* ── Edit Dialog ── */}
+      {/* ── Record Detail View ── */}
+      <Dialog open={detailViewOpen} onOpenChange={setDetailViewOpen}>
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Maintenance Record</DialogTitle>
+            <DialogDescription>
+              {selectedRecord ? format(parseISO(selectedRecord.maintenance_date), 'd MMMM yyyy') : ''}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedRecord && (() => {
+            const detailDocs = documents[selectedRecord.id] || [];
+            return (
+              <div className="space-y-4">
+                <div>{getMaintenanceTypeBadge(selectedRecord.maintenance_type)}</div>
+
+                <div>
+                  <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Work Summary</p>
+                  <p className="text-sm text-foreground">{selectedRecord.description}</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Date</p>
+                    <p className="text-sm font-medium text-foreground">{format(parseISO(selectedRecord.maintenance_date), 'd MMM yyyy')}</p>
+                  </div>
+                  {selectedRecord.performed_by && (
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Performed By</p>
+                      <p className="text-sm font-medium text-foreground">{selectedRecord.performed_by}</p>
+                    </div>
+                  )}
+                  {selectedRecord.cost != null && (
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Cost</p>
+                      <p className="text-sm font-semibold text-foreground">£{selectedRecord.cost}</p>
+                    </div>
+                  )}
+                  {selectedRecord.next_maintenance_due && (
+                    <div>
+                      <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-0.5">Next Due</p>
+                      <p className="text-sm font-medium text-foreground">{format(parseISO(selectedRecord.next_maintenance_due), 'd MMM yyyy')}</p>
+                    </div>
+                  )}
+                </div>
+
+                {selectedRecord.parts_replaced && (
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Parts Replaced</p>
+                    <p className="text-sm text-foreground">{selectedRecord.parts_replaced}</p>
+                  </div>
+                )}
+
+                {selectedRecord.notes && (
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-1">Notes</p>
+                    <p className="text-sm text-foreground">{selectedRecord.notes}</p>
+                  </div>
+                )}
+
+                {detailDocs.length > 0 && (
+                  <div>
+                    <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground mb-2">
+                      Attachments ({detailDocs.length})
+                    </p>
+                    <div className="space-y-1.5">
+                      {detailDocs.map((doc) => (
+                        <button key={doc.id}
+                          className="w-full flex items-center gap-3 p-2.5 rounded-xl border border-border hover:bg-accent/50 transition-colors text-left"
+                          onClick={() => {
+                            if (doc.mime_type?.startsWith('image/') && documentUrls[doc.id]) {
+                              setPreviewImage(documentUrls[doc.id]);
+                            } else {
+                              downloadFile(doc);
+                            }
+                          }}>
+                          {doc.mime_type?.startsWith('image/') && documentUrls[doc.id] ? (
+                            <img src={documentUrls[doc.id]} alt={doc.document_name} className="h-9 w-9 rounded-lg object-cover shrink-0" />
+                          ) : (
+                            <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                              {getFileIcon(doc.mime_type)}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-[13px] font-medium text-foreground truncate">{doc.document_name}</p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {doc.mime_type?.startsWith('image/') ? 'Tap to preview' : doc.file_size ? `${(doc.file_size / 1024).toFixed(0)} KB` : 'Tap to download'}
+                            </p>
+                          </div>
+                          <button className="shrink-0 p-1 rounded hover:bg-muted" onClick={(e) => { e.stopPropagation(); downloadFile(doc); }}>
+                            <Download className="h-3.5 w-3.5 text-muted-foreground/50" />
+                          </button>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="h-px bg-border" />
+                <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <Clock className="h-3 w-3" />
+                    Created {format(parseISO(selectedRecord.created_at), 'dd/MM/yyyy HH:mm')}
+                  </span>
+                  {selectedRecord.updated_at !== selectedRecord.created_at && (
+                    <span className="flex items-center gap-1">
+                      <Edit className="h-3 w-3" />
+                      Edited {format(parseISO(selectedRecord.updated_at), 'dd/MM/yyyy HH:mm')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Image Preview ── */}
+      <Dialog open={!!previewImage} onOpenChange={(open) => { if (!open) setPreviewImage(null); }}>
+        <DialogContent className="max-w-2xl p-2">
+          {previewImage && (
+            <img src={previewImage} alt="Preview" className="w-full h-auto rounded-lg" />
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* ── Delete Confirmation ── */}
       <AlertDialog open={!!deleteRecordId} onOpenChange={(open) => { if (!open) setDeleteRecordId(null); }}>
         <AlertDialogContent>
@@ -445,19 +587,29 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
               {(documents[selectedRecord.id] || []).map((doc) => (
                 <button key={doc.id}
                   className="w-full flex items-center gap-3 p-3 rounded-xl border border-border hover:bg-accent/50 transition-colors text-left"
-                  onClick={() => downloadFile(doc)}>
+                  onClick={() => {
+                    if (doc.mime_type?.startsWith('image/') && documentUrls[doc.id]) {
+                      setPreviewImage(documentUrls[doc.id]);
+                    } else {
+                      downloadFile(doc);
+                    }
+                  }}>
                   {doc.mime_type?.startsWith('image/') && documentUrls[doc.id] ? (
                     <img src={documentUrls[doc.id]} alt={doc.document_name} className="h-10 w-10 rounded-lg object-cover shrink-0" />
                   ) : (
                     <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
+                      {getFileIcon(doc.mime_type)}
                     </div>
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{doc.document_name}</p>
-                    <p className="text-[11px] text-muted-foreground">{doc.file_size ? `${(doc.file_size / 1024).toFixed(0)} KB` : 'Download'}</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {doc.mime_type?.startsWith('image/') ? 'Tap to preview' : doc.file_size ? `${(doc.file_size / 1024).toFixed(0)} KB` : 'Tap to download'}
+                    </p>
                   </div>
-                  <Download className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <button className="shrink-0 p-1 rounded hover:bg-muted" onClick={(e) => { e.stopPropagation(); downloadFile(doc); }}>
+                    <Download className="h-4 w-4 text-muted-foreground/50" />
+                  </button>
                 </button>
               ))}
             </div>
