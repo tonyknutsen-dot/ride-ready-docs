@@ -268,10 +268,10 @@ const DefectClosureDialog = ({
                 id="other-reason"
                 value={otherReason}
                 onChange={(e) => setOtherReason(e.target.value)}
-                placeholder="e.g. Logged in error, issue reassessed and no longer applies…"
+                placeholder="Enter your reason…"
                 className="h-10 rounded-lg"
               />
-              <p className="text-[10px] text-muted-foreground">Why none of the standard reasons apply</p>
+              <p className="text-[10px] text-muted-foreground">Describe what "Other" means</p>
             </div>
           )}
 
