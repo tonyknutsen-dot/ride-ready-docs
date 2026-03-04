@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
-import { Loader2, CheckCircle, Camera, X } from 'lucide-react';
+import { Loader2, CheckCircle, Camera, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -71,6 +71,7 @@ const DefectClosureDialog = ({
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
 
   const [closureReason, setClosureReason] = useState('');
   const [otherReason, setOtherReason] = useState('');
@@ -324,34 +325,58 @@ const DefectClosureDialog = ({
           </div>
 
           {/* ── Evidence photos (optional) ── */}
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <Label className="text-xs font-semibold">
               Evidence photos <span className="text-muted-foreground font-normal">(optional)</span>
             </Label>
-            <div className="flex flex-wrap gap-2">
-              {evidencePreviews.map((url, idx) => (
-                <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
-                  <img src={url} alt={`Evidence ${idx + 1}`} className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(idx)}
-                    className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-background/80 flex items-center justify-center"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
-              {evidenceFiles.length < 4 && (
-                <button
+            {evidencePreviews.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {evidencePreviews.map((url, idx) => (
+                  <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
+                    <img src={url} alt={`Evidence ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => removePhoto(idx)}
+                      className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-background/80 flex items-center justify-center"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+            {evidenceFiles.length < 4 && (
+              <div className="flex gap-2">
+                <Button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-16 h-16 rounded-lg border-2 border-dashed border-border flex flex-col items-center justify-center gap-0.5 text-muted-foreground hover:border-primary/40 hover:text-primary transition-colors"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 rounded-lg text-xs h-9"
+                  onClick={() => cameraInputRef.current?.click()}
                 >
-                  <Camera className="h-4 w-4" />
-                  <span className="text-[9px]">Add</span>
-                </button>
-              )}
-            </div>
+                  <Camera className="h-3.5 w-3.5" />
+                  Take photo
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 rounded-lg text-xs h-9"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  Upload
+                </Button>
+              </div>
+            )}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleAddPhotos}
+            />
             <input
               ref={fileInputRef}
               type="file"
