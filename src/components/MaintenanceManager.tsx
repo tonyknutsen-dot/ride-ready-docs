@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { History, FileText, Plus } from 'lucide-react';
+import { History, Plus } from 'lucide-react';
 import { Ride } from '@/types/ride';
 import MaintenanceLogger from './MaintenanceLogger';
 import MaintenanceHistory from './MaintenanceHistory';
-import MaintenanceReports from './MaintenanceReports';
 
 interface MaintenanceManagerProps {
   ride: Ride;
@@ -22,7 +21,7 @@ const MaintenanceManager = ({ ride }: MaintenanceManagerProps) => {
   return (
     <div className="space-y-6">
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="log" className="flex items-center space-x-2">
             <Plus className="h-4 w-4" />
             <span>Log Activity</span>
@@ -30,10 +29,6 @@ const MaintenanceManager = ({ ride }: MaintenanceManagerProps) => {
           <TabsTrigger value="history" className="flex items-center space-x-2">
             <History className="h-4 w-4" />
             <span>History</span>
-          </TabsTrigger>
-          <TabsTrigger value="reports" className="flex items-center space-x-2">
-            <FileText className="h-4 w-4" />
-            <span>Reports</span>
           </TabsTrigger>
         </TabsList>
 
@@ -43,10 +38,6 @@ const MaintenanceManager = ({ ride }: MaintenanceManagerProps) => {
 
         <TabsContent value="history">
           <MaintenanceHistory ride={ride} refreshTrigger={refreshTrigger} />
-        </TabsContent>
-
-        <TabsContent value="reports">
-          <MaintenanceReports ride={ride} />
         </TabsContent>
       </Tabs>
     </div>
