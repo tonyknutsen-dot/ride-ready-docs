@@ -3,24 +3,39 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, parseISO, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
 import {
   AlertOctagon, Clock, Wrench, Check, Search, ChevronRight, Camera,
   SlidersHorizontal, ExternalLink, MapPin, User, CalendarDays, ShieldAlert,
   ArrowLeft, FileText, CheckCircle2, Circle, AlertTriangle, Eye,
+  FileDown, Filter, ChevronDown, X, Calendar,
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import DefectClosureDialog from '@/components/DefectClosureDialog';
 import DefectReportDialog from '@/components/DefectReportDialog';
+import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
+import { useToast } from '@/hooks/use-toast';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import {
+  PDF_COLORS, blobToDataUrl, drawSectionTitle, drawSummaryBox,
+  PDF_TABLE_HEAD_STYLES, PDF_TABLE_BODY_STYLES, PDF_TABLE_ALT_ROW,
+} from '@/utils/pdfUtils';
+import { drawTemplateHeader, drawTemplateFooters, generateDocumentId } from '@/utils/pdfTemplate';
 
 type DefectSeverity = 'non_urgent' | 'urgent' | 'stop_operation';
 type DefectStatus = 'open' | 'acknowledged' | 'in_progress' | 'awaiting_review' | 'resolved';
@@ -94,7 +109,6 @@ const DefectDetailSheet = ({
   const SevIcon = sev.icon;
   const isOpen = defect.status !== 'resolved';
 
-  // Build timeline events
   const timeline: { label: string; date: string; icon: typeof Circle; color: string; description?: string }[] = [
     { label: 'Reported', date: defect.reported_at, icon: AlertTriangle, color: 'text-orange-500', description: 'Defect raised and logged' },
   ];
@@ -102,44 +116,27 @@ const DefectDetailSheet = ({
     timeline.push({ label: 'Updated', date: defect.updated_at, icon: FileText, color: 'text-primary', description: 'Record modified' });
   }
   if (defect.resolved_at) {
-    const closureDescription = [
-      defect.resolved_by ? `By ${defect.resolved_by}` : 'Defect resolved',
-    ];
-    // Extract the primary action from resolution_notes (first line before any "Additional notes:")
+    const closureDescription = [defect.resolved_by ? `By ${defect.resolved_by}` : 'Defect resolved'];
     if (defect.resolution_notes) {
       const actionLine = defect.resolution_notes.split('\n\nAdditional notes:')[0].trim();
-      if (actionLine.length <= 80) {
-        closureDescription.push(actionLine);
-      } else {
-        closureDescription.push(actionLine.slice(0, 77) + '…');
-      }
+      closureDescription.push(actionLine.length <= 80 ? actionLine : actionLine.slice(0, 77) + '…');
     }
-    timeline.push({
-      label: 'Closed',
-      date: defect.resolved_at,
-      icon: CheckCircle2,
-      color: 'text-green-600 dark:text-green-400',
-      description: closureDescription.join(' · '),
-    });
+    timeline.push({ label: 'Closed', date: defect.resolved_at, icon: CheckCircle2, color: 'text-green-600 dark:text-green-400', description: closureDescription.join(' · ') });
   }
 
   return (
     <div className="space-y-0">
-      {/* ── Operational status banner ── */}
       <div className={`flex items-center gap-3 px-4 py-3.5 rounded-xl border ${sev.operationalClass}`}>
         <div className="text-lg leading-none">{sev.operationalIcon}</div>
         <div className="flex-1">
           <p className="text-sm font-bold tracking-tight">{sev.operational}</p>
           <p className="text-[11px] opacity-75 mt-0.5">
-            {isOpen ? 'This defect is open' : 'This defect has been closed'}
-            {' · '}
-            {sev.label} severity
+            {isOpen ? 'This defect is open' : 'This defect has been closed'} · {sev.label} severity
           </p>
         </div>
         <Badge className={`text-[10px] px-2 py-0.5 ${sev.badgeClass}`}>{sev.label}</Badge>
       </div>
 
-      {/* ── Description ── */}
       <section className="pt-7">
         <SectionLabel>Description</SectionLabel>
         <div className="p-4 rounded-xl bg-muted/40 border border-border mt-2">
@@ -147,38 +144,18 @@ const DefectDetailSheet = ({
         </div>
       </section>
 
-      {/* ── Core details grid ── */}
       <section className="pt-7">
         <SectionLabel>Details</SectionLabel>
         <div className="grid grid-cols-2 gap-x-5 gap-y-5 p-4 rounded-xl bg-card border border-border mt-2">
           <DetailField icon={<Wrench className="h-3.5 w-3.5" />} label="Equipment" value={defect.ride_name || 'Unknown'} />
-          {defect.category_name && (
-            <DetailField icon={<FileText className="h-3.5 w-3.5" />} label="Type" value={defect.category_name} />
-          )}
-          <DetailField
-            icon={<CalendarDays className="h-3.5 w-3.5" />}
-            label="Raised"
-            value={format(new Date(defect.reported_at), 'dd MMM yyyy')}
-            secondaryValue={format(new Date(defect.reported_at), 'HH:mm')}
-          />
-          {defect.location_on_ride && (
-            <DetailField icon={<MapPin className="h-3.5 w-3.5" />} label="Location" value={defect.location_on_ride} />
-          )}
-          {defect.resolved_by && (
-            <DetailField icon={<User className="h-3.5 w-3.5" />} label="Closed by" value={defect.resolved_by} />
-          )}
-          {defect.resolved_at && (
-            <DetailField
-              icon={<CalendarDays className="h-3.5 w-3.5" />}
-              label="Closed"
-              value={format(new Date(defect.resolved_at), 'dd MMM yyyy')}
-              secondaryValue={format(new Date(defect.resolved_at), 'HH:mm')}
-            />
-          )}
+          {defect.category_name && <DetailField icon={<FileText className="h-3.5 w-3.5" />} label="Type" value={defect.category_name} />}
+          <DetailField icon={<CalendarDays className="h-3.5 w-3.5" />} label="Raised" value={format(new Date(defect.reported_at), 'dd MMM yyyy')} secondaryValue={format(new Date(defect.reported_at), 'HH:mm')} />
+          {defect.location_on_ride && <DetailField icon={<MapPin className="h-3.5 w-3.5" />} label="Location" value={defect.location_on_ride} />}
+          {defect.resolved_by && <DetailField icon={<User className="h-3.5 w-3.5" />} label="Closed by" value={defect.resolved_by} />}
+          {defect.resolved_at && <DetailField icon={<CalendarDays className="h-3.5 w-3.5" />} label="Closed" value={format(new Date(defect.resolved_at), 'dd MMM yyyy')} secondaryValue={format(new Date(defect.resolved_at), 'HH:mm')} />}
         </div>
       </section>
 
-      {/* ── Resolution notes ── */}
       {defect.resolution_notes && (
         <section className="pt-7">
           <SectionLabel>Action taken</SectionLabel>
@@ -188,19 +165,12 @@ const DefectDetailSheet = ({
         </section>
       )}
 
-      {/* ── Evidence photos ── */}
       {photoUrls.length > 0 && (
         <section className="pt-7">
           <SectionLabel>Evidence photos</SectionLabel>
           <div className="grid grid-cols-3 gap-2.5 mt-2">
             {photoUrls.map((url, idx) => (
-              <a
-                key={idx}
-                href={url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="aspect-square rounded-xl overflow-hidden border border-border hover:ring-2 hover:ring-primary/40 transition-all shadow-sm"
-              >
+              <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="aspect-square rounded-xl overflow-hidden border border-border hover:ring-2 hover:ring-primary/40 transition-all shadow-sm">
                 <img src={url} alt={`Evidence ${idx + 1}`} className="w-full h-full object-cover" />
               </a>
             ))}
@@ -208,7 +178,6 @@ const DefectDetailSheet = ({
         </section>
       )}
 
-      {/* ── Lifecycle timeline ── */}
       <section className="pt-7">
         <SectionLabel>Lifecycle</SectionLabel>
         <div className="relative pl-6 space-y-5 py-2 mt-2">
@@ -228,9 +197,7 @@ const DefectDetailSheet = ({
                     <span className="mx-1">·</span>
                     {formatDistanceToNow(new Date(evt.date), { addSuffix: true })}
                   </p>
-                  {evt.description && (
-                    <p className="text-[11px] text-muted-foreground/80 mt-0.5">{evt.description}</p>
-                  )}
+                  {evt.description && <p className="text-[11px] text-muted-foreground/80 mt-0.5">{evt.description}</p>}
                 </div>
               </div>
             );
@@ -238,18 +205,15 @@ const DefectDetailSheet = ({
         </div>
       </section>
 
-      {/* ── Actions ── */}
       <section className="pt-8 pb-6">
         <div className="rounded-xl border border-border bg-muted/30 p-4 space-y-2.5">
           {isOpen && (
             <Button className="gap-2 w-full h-11 text-sm font-semibold" onClick={() => onCloseDefect(defect)}>
-              <Check className="h-4 w-4" />
-              Close defect
+              <Check className="h-4 w-4" /> Close defect
             </Button>
           )}
           <Button variant="outline" className="gap-2 w-full h-10 text-sm" onClick={() => onNavigateToEquipment(defect.ride_id)}>
-            <ExternalLink className="h-3.5 w-3.5" />
-            View on equipment page
+            <ExternalLink className="h-3.5 w-3.5" /> View on equipment page
           </Button>
         </div>
       </section>
@@ -278,16 +242,33 @@ const DefectRegister = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { effectiveUserId } = useEffectiveUserId();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const [statusFilter, setStatusFilter] = useState(searchParams.get('status') || 'open');
   const [severityFilter, setSeverityFilter] = useState(searchParams.get('severity') || 'all');
   const [rideFilter, setRideFilter] = useState(searchParams.get('rideId') || 'all');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Date range
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [dateFromOpen, setDateFromOpen] = useState(false);
+  const [dateToOpen, setDateToOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   const [closureDialogOpen, setClosureDialogOpen] = useState(false);
   const [selectedDefect, setSelectedDefect] = useState<DefectRow | null>(null);
   const [detailDefect, setDetailDefect] = useState<DefectRow | null>(null);
   const [detailPhotoUrls, setDetailPhotoUrls] = useState<string[]>([]);
+
+  // Export
+  const [generatingPdf, setGeneratingPdf] = useState(false);
+  const [generatingCsv, setGeneratingCsv] = useState(false);
+  const [exportDialogOpen, setExportDialogOpen] = useState(false);
+  const [exportResult, setExportResult] = useState<ExportResult | null>(null);
+
+  // Saved reports
+  const [savedReports, setSavedReports] = useState<any[]>([]);
 
   // Fetch all defects
   const { data: defects = [], isLoading } = useQuery({
@@ -318,6 +299,20 @@ const DefectRegister = () => {
     },
     enabled: !!effectiveUserId,
   });
+
+  // Load saved defect reports
+  useEffect(() => { loadSavedReports(); }, [effectiveUserId]);
+
+  const loadSavedReports = async () => {
+    if (!effectiveUserId) return;
+    const { data } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('user_id', effectiveUserId)
+      .eq('document_type', 'defect_report')
+      .order('uploaded_at', { ascending: false });
+    setSavedReports(data || []);
+  };
 
   const rideMap = useMemo(() => {
     const m = new Map<string, { name: string; categoryName: string; group: string }>();
@@ -404,6 +399,8 @@ const DefectRegister = () => {
     closeDetail();
   };
 
+  const hasActiveFilters = statusFilter !== 'open' || severityFilter !== 'all' || rideFilter !== 'all' || !!searchTerm || !!dateFrom || !!dateTo;
+
   const filtered = useMemo(() => {
     let list = [...enriched];
     if (statusFilter === 'open') list = list.filter((d) => d.status !== 'resolved');
@@ -415,8 +412,19 @@ const DefectRegister = () => {
       list = list.filter((d) =>
         d.description.toLowerCase().includes(q) ||
         (d.ride_name || '').toLowerCase().includes(q) ||
-        (d.location_on_ride || '').toLowerCase().includes(q)
+        (d.location_on_ride || '').toLowerCase().includes(q) ||
+        (d.resolved_by || '').toLowerCase().includes(q)
       );
+    }
+    // Date range filter
+    if (dateFrom || dateTo) {
+      list = list.filter(d => {
+        const reportedDate = new Date(d.reported_at);
+        if (dateFrom && dateTo) return isWithinInterval(reportedDate, { start: startOfDay(dateFrom), end: endOfDay(dateTo) });
+        if (dateFrom) return reportedDate >= startOfDay(dateFrom);
+        if (dateTo) return reportedDate <= endOfDay(dateTo);
+        return true;
+      });
     }
     list.sort((a, b) => {
       const sa = SEVERITY_CONFIG[a.severity]?.sort ?? 3;
@@ -425,7 +433,7 @@ const DefectRegister = () => {
       return new Date(b.reported_at).getTime() - new Date(a.reported_at).getTime();
     });
     return list;
-  }, [enriched, statusFilter, severityFilter, rideFilter, searchTerm]);
+  }, [enriched, statusFilter, severityFilter, rideFilter, searchTerm, dateFrom, dateTo]);
 
   const ridesWithDefects = useMemo(() => {
     const ids = new Set(defects.map((d) => d.ride_id));
@@ -434,6 +442,154 @@ const DefectRegister = () => {
 
   const openCount = enriched.filter((d) => d.status !== 'resolved').length;
   const stopUseCount = enriched.filter((d) => d.severity === 'stop_operation' && d.status !== 'resolved').length;
+
+  const getSeverityLabel = (s: DefectSeverity) => SEVERITY_CONFIG[s]?.label || s;
+  const getStatusLabel = (s: DefectStatus) => s === 'resolved' ? 'Closed' : 'Open';
+
+  // ── Export CSV ──
+  const handleExportCsv = () => {
+    setGeneratingCsv(true);
+    try {
+      const headers = ['Reported', 'Equipment', 'Severity', 'Status', 'Description', 'Location', 'Resolved', 'Resolved By', 'Resolution Notes'];
+      const rows = filtered.map(d => [
+        format(new Date(d.reported_at), 'dd/MM/yyyy HH:mm'),
+        d.ride_name || '',
+        getSeverityLabel(d.severity),
+        getStatusLabel(d.status),
+        `"${d.description.replace(/"/g, '""')}"`,
+        d.location_on_ride || '',
+        d.resolved_at ? format(new Date(d.resolved_at), 'dd/MM/yyyy HH:mm') : '',
+        d.resolved_by || '',
+        `"${(d.resolution_notes || '').replace(/"/g, '""')}"`,
+      ]);
+      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const fileName = `Defect Register - ${format(new Date(), 'ddMMMyyyy')}.csv`;
+      setExportResult({ blob, fileName });
+      setExportDialogOpen(true);
+    } catch (error) {
+      console.error('CSV export error:', error);
+      toast({ title: 'Error', description: 'Failed to export CSV', variant: 'destructive' });
+    } finally { setGeneratingCsv(false); }
+  };
+
+  // ── Export PDF ──
+  const handleExportPdf = async () => {
+    setGeneratingPdf(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      if (filtered.length === 0) {
+        toast({ title: 'No Records', description: 'No defects match current filters', variant: 'destructive' });
+        setGeneratingPdf(false);
+        return;
+      }
+
+      const { data: profile } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
+
+      let logoDataUrl: string | null = null;
+      if (profile?.company_logo_path) {
+        try {
+          const { data: logoBlob } = await supabase.storage.from('ride-documents').download(profile.company_logo_path);
+          if (logoBlob) logoDataUrl = await blobToDataUrl(logoBlob);
+        } catch { /* skip */ }
+      }
+
+      const docId = await generateDocumentId('global', 'DR');
+      const doc = new jsPDF();
+      const margin = 13;
+
+      let yPos = drawTemplateHeader({ doc, title: 'DEFECT REGISTER', documentId: docId, docType: 'DR' as any });
+
+      const periodLabel = dateFrom && dateTo
+        ? `${format(dateFrom, 'dd/MM/yyyy')} – ${format(dateTo, 'dd/MM/yyyy')}`
+        : dateFrom ? `From ${format(dateFrom, 'dd/MM/yyyy')}`
+        : dateTo ? `Up to ${format(dateTo, 'dd/MM/yyyy')}`
+        : 'All time';
+
+      const openFiltered = filtered.filter(d => d.status !== 'resolved').length;
+      const closedFiltered = filtered.filter(d => d.status === 'resolved').length;
+      const stopUseFiltered = filtered.filter(d => d.severity === 'stop_operation' && d.status !== 'resolved').length;
+
+      yPos = drawSectionTitle(doc, 'Report Summary', yPos, margin);
+      yPos = drawSummaryBox(doc, [
+        { label: 'Total Defects', value: String(filtered.length) },
+        { label: 'Open', value: String(openFiltered), accent: openFiltered > 0 },
+        { label: 'Closed', value: String(closedFiltered) },
+        ...(stopUseFiltered > 0 ? [{ label: 'Stop Use', value: String(stopUseFiltered), accent: true }] : []),
+        { label: 'Period', value: periodLabel },
+        ...(statusFilter !== 'open' ? [{ label: 'Status Filter', value: statusFilter === 'closed' ? 'Closed' : 'All' }] : []),
+        ...(severityFilter !== 'all' ? [{ label: 'Severity Filter', value: getSeverityLabel(severityFilter as DefectSeverity) }] : []),
+        ...(rideFilter !== 'all' ? [{ label: 'Equipment Filter', value: rideMap.get(rideFilter)?.name || rideFilter }] : []),
+      ], yPos, margin);
+
+      yPos = drawSectionTitle(doc, 'Defect Records', yPos, margin);
+      const truncate = (t: string, max: number) => t.length <= max ? t : t.substring(0, max - 3) + '...';
+      const tableData = filtered.map((d, i) => [
+        (i + 1).toString(),
+        format(new Date(d.reported_at), 'dd/MM/yyyy'),
+        d.ride_name || '-',
+        getSeverityLabel(d.severity),
+        truncate(d.description, 45),
+        getStatusLabel(d.status),
+        d.resolved_at ? format(new Date(d.resolved_at), 'dd/MM/yyyy') : '-',
+      ]);
+
+      autoTable(doc, {
+        startY: yPos,
+        head: [['#', 'Reported', 'Equipment', 'Severity', 'Description', 'Status', 'Resolved']],
+        body: tableData,
+        headStyles: PDF_TABLE_HEAD_STYLES,
+        styles: PDF_TABLE_BODY_STYLES,
+        columnStyles: {
+          0: { cellWidth: 8, halign: 'center' },
+          1: { cellWidth: 22, halign: 'center' },
+          2: { cellWidth: 30 },
+          3: { cellWidth: 18 },
+          4: { cellWidth: 55 },
+          5: { cellWidth: 16, halign: 'center' },
+          6: { cellWidth: 22, halign: 'center' },
+        },
+        alternateRowStyles: PDF_TABLE_ALT_ROW,
+        margin: { bottom: 28 },
+      });
+
+      drawTemplateFooters({ doc, title: 'DEFECT REGISTER', documentId: docId, docType: 'DR' as any });
+
+      const fromStr = dateFrom ? format(dateFrom, 'ddMMMyyyy') : 'all';
+      const toStr = dateTo ? format(dateTo, 'ddMMMyyyy') : 'present';
+      const documentName = `Defect Register - ${fromStr} to ${toStr}`;
+      const fileName = `${documentName.replace(/[^a-zA-Z0-9\s-]/g, '')}.pdf`;
+      const pdfBlob = doc.output('blob');
+
+      const saveToDocuments = async () => {
+        const storagePath = `${user.id}/defect-reports/${Date.now()}-${fileName}`;
+        const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
+        if (uploadError) throw uploadError;
+
+        await supabase.from('documents').insert({
+          user_id: user.id, document_name: documentName,
+          document_type: 'defect_report', file_path: storagePath,
+          mime_type: 'application/pdf', file_size: pdfBlob.size,
+          notes: `Defect register: ${filtered.length} records, ${periodLabel}`,
+          is_global: true,
+        });
+        loadSavedReports();
+      };
+
+      setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments });
+      setExportDialogOpen(true);
+    } catch (error) {
+      console.error('PDF error:', error);
+      toast({ title: 'Error', description: 'Failed to generate report', variant: 'destructive' });
+    } finally { setGeneratingPdf(false); }
+  };
+
+  const handleViewReport = async (filePath: string) => {
+    const { data } = await supabase.storage.from('ride-documents').createSignedUrl(filePath, 300);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+  };
 
   return (
     <div className="space-y-5 px-4 md:px-0 pb-24 md:pb-8">
@@ -445,17 +601,26 @@ const DefectRegister = () => {
         showBackButton
         backTo="/overview"
         actions={
-          <DefectReportDialog
-            onDefectReported={handleDefectUpdated}
-            onCriticalDefectReported={handleDefectUpdated}
-            trigger={
-              <Button size="sm" className="gap-1.5 h-9">
-                <AlertOctagon className="h-4 w-4" />
-                <span className="hidden sm:inline">Report Defect</span>
-                <span className="sm:hidden">Report</span>
-              </Button>
-            }
-          />
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={generatingCsv || filtered.length === 0} className="h-8 text-[12px] gap-1.5">
+              <FileDown className="h-3.5 w-3.5" /> CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={generatingPdf || filtered.length === 0} className="h-8 text-[12px] gap-1.5">
+              {generatingPdf ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" /> : <FileDown className="h-3.5 w-3.5" />}
+              PDF
+            </Button>
+            <DefectReportDialog
+              onDefectReported={handleDefectUpdated}
+              onCriticalDefectReported={handleDefectUpdated}
+              trigger={
+                <Button size="sm" className="gap-1.5 h-8">
+                  <AlertOctagon className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Report Defect</span>
+                  <span className="sm:hidden">Report</span>
+                </Button>
+              }
+            />
+          </div>
         }
       />
 
@@ -466,55 +631,152 @@ const DefectRegister = () => {
             <AlertOctagon className="h-4 w-4 text-destructive" />
           </div>
           <div>
-            <p className="text-sm font-bold text-destructive">
-              {stopUseCount} stop-use defect{stopUseCount !== 1 ? 's' : ''}
-            </p>
+            <p className="text-sm font-bold text-destructive">{stopUseCount} stop-use defect{stopUseCount !== 1 ? 's' : ''}</p>
             <p className="text-[11px] text-destructive/80">Equipment must not be operated until resolved</p>
           </div>
         </div>
       )}
 
-      {/* Filters */}
-      <div className="flex flex-col gap-3">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search defects..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-9 h-11 rounded-xl"
-          />
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); updateFilterParams({ status: v }); }}>
-            <SelectTrigger className="w-[110px] h-11 text-xs shrink-0 rounded-lg"><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="open">Open</SelectItem>
-              <SelectItem value="closed">Closed</SelectItem>
-              <SelectItem value="all">All</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={severityFilter} onValueChange={(v) => { setSeverityFilter(v); updateFilterParams({ severity: v }); }}>
-            <SelectTrigger className="w-[130px] h-11 text-xs shrink-0 rounded-lg">
-              <SlidersHorizontal className="h-3 w-3 mr-1 text-muted-foreground" /><SelectValue placeholder="Severity" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Severities</SelectItem>
-              <SelectItem value="stop_operation">Stop Use</SelectItem>
-              <SelectItem value="urgent">Important</SelectItem>
-              <SelectItem value="non_urgent">Low</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={rideFilter} onValueChange={(v) => { setRideFilter(v); updateFilterParams({ rideId: v }); }}>
-            <SelectTrigger className="w-[160px] h-11 text-xs shrink-0 rounded-lg"><SelectValue placeholder="Equipment" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Equipment</SelectItem>
-              {ridesWithDefects.map((r) => (
-                <SelectItem key={r.id} value={r.id}>{r.ride_name}</SelectItem>
+      {/* ── Search bar ── */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          placeholder="Search defects..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="pl-9 h-10 rounded-xl"
+        />
+        {searchTerm && (
+          <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+            <X className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+        )}
+      </div>
+
+      {/* ── Collapsible Filters & date range ── */}
+      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+            style={{ borderColor: hasActiveFilters ? 'hsl(var(--primary))' : 'hsl(var(--border))', background: hasActiveFilters ? 'hsl(var(--primary) / 0.05)' : 'hsl(var(--background))' }}>
+            <div className="flex items-center gap-2">
+              <Filter className="h-3.5 w-3.5" />
+              <span>{hasActiveFilters ? 'Filters active' : 'Filters & date range'}</span>
+            </div>
+            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')} />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="mt-2 rounded-xl border bg-card p-3 space-y-3">
+            {/* Date range */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">From</Label>
+                <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left h-9 text-[12px]', !dateFrom && 'text-muted-foreground')}>
+                      <Calendar className="mr-1.5 h-3.5 w-3.5" />
+                      {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : 'Start date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent mode="single" selected={dateFrom} onSelect={(d) => { setDateFrom(d || undefined); setDateFromOpen(false); }} initialFocus className="pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">To</Label>
+                <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left h-9 text-[12px]', !dateTo && 'text-muted-foreground')}>
+                      <Calendar className="mr-1.5 h-3.5 w-3.5" />
+                      {dateTo ? format(dateTo, 'dd/MM/yyyy') : 'End date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent mode="single" selected={dateTo} onSelect={(d) => { setDateTo(d || undefined); setDateToOpen(false); }} initialFocus className="pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Quick date presets */}
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: 'Last 3 months', from: subMonths(new Date(), 3), to: new Date() },
+                { label: 'Last 6 months', from: subMonths(new Date(), 6), to: new Date() },
+                { label: 'Last 12 months', from: subMonths(new Date(), 12), to: new Date() },
+              ].map(p => (
+                <button key={p.label} onClick={() => { setDateFrom(p.from); setDateTo(p.to); }}
+                  className="text-[11px] px-2.5 py-1 rounded-full border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  {p.label}
+                </button>
               ))}
-            </SelectContent>
-          </Select>
-        </div>
+            </div>
+
+            {/* Filter dropdowns */}
+            <div className="grid grid-cols-3 gap-2.5">
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Status</Label>
+                <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); updateFilterParams({ status: v }); }}>
+                  <SelectTrigger className="h-9 text-[12px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="closed">Closed</SelectItem>
+                    <SelectItem value="all">All</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Severity</Label>
+                <Select value={severityFilter} onValueChange={(v) => { setSeverityFilter(v); updateFilterParams({ severity: v }); }}>
+                  <SelectTrigger className="h-9 text-[12px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="stop_operation">Stop Use</SelectItem>
+                    <SelectItem value="urgent">Important</SelectItem>
+                    <SelectItem value="non_urgent">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Equipment</Label>
+                <Select value={rideFilter} onValueChange={(v) => { setRideFilter(v); updateFilterParams({ rideId: v }); }}>
+                  <SelectTrigger className="h-9 text-[12px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    {ridesWithDefects.map((r) => (
+                      <SelectItem key={r.id} value={r.id}>{r.ride_name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {hasActiveFilters && (
+              <button onClick={() => {
+                setStatusFilter('open'); setSeverityFilter('all'); setRideFilter('all');
+                setDateFrom(undefined); setDateTo(undefined); setSearchTerm('');
+                updateFilterParams({ status: 'open', severity: 'all', rideId: 'all' });
+              }}
+                className="text-[12px] font-medium text-primary hover:underline">
+                Clear all filters
+              </button>
+            )}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* ── Filter hint + result count ── */}
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] text-muted-foreground">
+          {filtered.length} defect{filtered.length !== 1 ? 's' : ''}
+          {hasActiveFilters && ` (filtered from ${enriched.length})`}
+        </p>
+        {hasActiveFilters && (
+          <p className="text-[11px] text-muted-foreground">
+            Exports include the current filters and date range
+          </p>
+        )}
       </div>
 
       {/* Defect list */}
@@ -530,6 +792,9 @@ const DefectRegister = () => {
           <p className="text-sm font-medium text-muted-foreground">
             {statusFilter === 'open' ? 'No open defects — all clear' : 'No defects found'}
           </p>
+          {hasActiveFilters && (
+            <p className="text-xs text-muted-foreground">Try adjusting your filters or date range</p>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -553,21 +818,16 @@ const DefectRegister = () => {
                 }`}
                 onClick={() => openDetail(defect)}
               >
-                {/* Severity left strip */}
                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${stripColor} rounded-l-xl`} />
 
                 <div className="pl-4 pr-3.5 py-4">
                   <div className="flex items-start gap-3">
-                    {/* Severity icon */}
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${sev.operationalClass} border`}>
                       <SevIcon className="h-4.5 w-4.5" />
                     </div>
 
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2">
-                        {defect.description}
-                      </p>
+                      <p className="text-[13px] font-semibold text-foreground leading-snug line-clamp-2">{defect.description}</p>
 
                       <div className="flex items-center gap-1.5 mt-1.5">
                         <Wrench className="h-3 w-3 text-muted-foreground shrink-0" />
@@ -614,7 +874,6 @@ const DefectRegister = () => {
                       )}
                     </div>
 
-                    {/* Right actions */}
                     <div className="flex flex-col items-end gap-2.5 shrink-0 ml-1 pt-0.5">
                       {isOpen && (
                         <Button
@@ -632,6 +891,29 @@ const DefectRegister = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* ── Previously generated reports ── */}
+      {savedReports.length > 0 && (
+        <div className="space-y-2 pt-4 border-t">
+          <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
+          {savedReports.map((report: any) => (
+            <div key={report.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                  <FileText className="h-4 w-4 text-destructive" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
+                  <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => handleViewReport(report.file_path)} className="h-7 text-[11px] gap-1">
+                <Eye className="h-3 w-3" /> View
+              </Button>
+            </div>
+          ))}
         </div>
       )}
 
@@ -672,6 +954,13 @@ const DefectRegister = () => {
         defect={selectedDefect}
         rideName={selectedDefect?.ride_name || ''}
         onDefectUpdated={handleDefectUpdated}
+      />
+
+      {/* Export actions dialog */}
+      <ExportActionsDialog
+        open={exportDialogOpen}
+        onOpenChange={setExportDialogOpen}
+        result={exportResult}
       />
     </div>
   );
