@@ -5,7 +5,7 @@ import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Wrench, AlertTriangle, Clock, CheckCircle2, Search, Filter, CalendarDays, Sparkles } from 'lucide-react';
+import { Wrench, AlertTriangle, Clock, CheckCircle2, Search, Filter, CalendarDays, Sparkles, ChevronRight } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { EmptyState } from '@/components/EmptyState';
@@ -31,12 +31,21 @@ interface MaintenanceRideSelectorProps {
   onRideSelect: (ride: Ride) => void;
 }
 
+// Normalize legacy status values to current keys
+const normalizeStatus = (status: string): keyof typeof STATUS_CONFIG => {
+  const LEGACY_MAP: Record<string, keyof typeof STATUS_CONFIG> = {
+    compliant: 'up-to-date',
+  };
+  const mapped = LEGACY_MAP[status] ?? status;
+  return (mapped in STATUS_CONFIG) ? mapped as keyof typeof STATUS_CONFIG : 'no-data';
+};
+
 const STATUS_CONFIG = {
   overdue:      { label: 'Overdue',      chipClass: 'bg-destructive/10 text-destructive border-destructive/30',              accent: 'border-l-destructive' },
   'due-soon':   { label: 'Due soon',     chipClass: 'bg-warning/10 text-warning border-warning/30',                          accent: 'border-l-warning' },
   'up-to-date': { label: 'Up to date',   chipClass: 'bg-primary/10 text-primary border-primary/30',                          accent: 'border-l-primary' },
   'no-data':    { label: 'No schedule',   chipClass: 'bg-muted/60 text-muted-foreground border-border',                      accent: 'border-l-muted-foreground/30' },
-};
+} as const;
 
 const MaintenanceRideSelector = ({ onRideSelect }: MaintenanceRideSelectorProps) => {
   const { user } = useAuth();
@@ -127,7 +136,8 @@ const MaintenanceRideSelector = ({ onRideSelect }: MaintenanceRideSelectorProps)
           else if (isBefore(due, soon)) status = 'due-soon';
           else status = 'up-to-date';
         } else if (lastServiceDate) {
-          status = 'up-to-date';
+          // Has records but no future due date → show "No schedule" not "Up to date"
+          status = 'no-data';
         }
 
         newSummaries[ride.id] = { rideId: ride.id, lastServiceDate, nextDueDate, openDefects, status };
@@ -267,18 +277,19 @@ const MaintenanceRideSelector = ({ onRideSelect }: MaintenanceRideSelectorProps)
         <div className="space-y-2">
           {filteredRides.map((ride) => {
             const summary = summaries[ride.id];
-            const statusKey = summary?.status ?? 'no-data';
-            const statusCfg = STATUS_CONFIG[statusKey as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG['no-data'];
+            const statusKey = normalizeStatus(summary?.status ?? 'no-data');
+            const statusCfg = STATUS_CONFIG[statusKey];
             const hasThumb = !!thumbs[ride.id];
+            const defectCount = summary?.openDefects ?? 0;
 
             return (
               <button
                 key={ride.id}
                 type="button"
                 onClick={() => onRideSelect(ride)}
-                className={`w-full text-left rounded-lg border border-border border-l-4 ${statusCfg.accent} bg-card hover:bg-accent/30 active:scale-[0.99] transition-all`}
+                className={`w-full text-left rounded-lg border border-border border-l-4 ${statusCfg.accent} bg-card hover:bg-accent/30 active:bg-accent/50 active:scale-[0.99] transition-all`}
               >
-                <div className="flex gap-3 p-3">
+                <div className="flex items-center gap-3 p-3">
                   {/* Thumbnail or compact icon */}
                   {hasThumb ? (
                     <img
@@ -299,9 +310,16 @@ const MaintenanceRideSelector = ({ onRideSelect }: MaintenanceRideSelectorProps)
                         <p className="text-sm font-semibold text-foreground truncate">{ride.ride_name}</p>
                         <p className="text-[10px] text-muted-foreground">{ride.ride_categories.name}</p>
                       </div>
-                      <span className={`shrink-0 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border ${statusCfg.chipClass}`}>
-                        {statusCfg.label}
-                      </span>
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {defectCount > 0 && (
+                          <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border bg-destructive/10 text-destructive border-destructive/30">
+                            {defectCount} defect{defectCount > 1 ? 's' : ''}
+                          </span>
+                        )}
+                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border ${statusCfg.chipClass}`}>
+                          {statusCfg.label}
+                        </span>
+                      </div>
                     </div>
 
                     {/* Compact summary row */}
@@ -313,22 +331,17 @@ const MaintenanceRideSelector = ({ onRideSelect }: MaintenanceRideSelectorProps)
                           : <span className="italic">No maintenance logged</span>}
                       </span>
                       <span className="text-muted-foreground">·</span>
-                      <span className={`flex items-center gap-1 ${summary?.status === 'overdue' ? 'text-destructive font-medium' : summary?.status === 'due-soon' ? 'text-warning font-medium' : 'text-muted-foreground'}`}>
+                      <span className={`flex items-center gap-1 ${statusKey === 'overdue' ? 'text-destructive font-medium' : statusKey === 'due-soon' ? 'text-warning font-medium' : 'text-muted-foreground'}`}>
                         <Clock className="h-3 w-3" />
                         {summary?.nextDueDate
                           ? format(new Date(summary.nextDueDate), 'd MMM yyyy')
                           : <span className="italic">No due date set</span>}
                       </span>
                     </div>
-
-                    {/* Open defects inline */}
-                    {(summary?.openDefects ?? 0) > 0 && (
-                      <div className="flex items-center gap-1 mt-1 text-[11px] text-destructive font-medium">
-                        <AlertTriangle className="h-3 w-3" />
-                        {summary!.openDefects} open defect{summary!.openDefects > 1 ? 's' : ''}
-                      </div>
-                    )}
                   </div>
+
+                  {/* Chevron */}
+                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
                 </div>
               </button>
             );
