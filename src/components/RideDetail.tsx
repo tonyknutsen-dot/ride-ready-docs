@@ -296,12 +296,12 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           ];
           return (
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-              <TabsList className={`w-full h-auto p-0 bg-transparent rounded-none ${isInflatable ? 'flex overflow-x-auto' : 'grid grid-cols-4'}`}>
+              <TabsList className={`w-full h-auto p-1 bg-transparent rounded-none ${isInflatable ? 'flex overflow-x-auto' : 'grid grid-cols-4'}`}>
                 {tabs.map(({ value, label, Icon }) => (
                   <TabsTrigger
                     key={value}
                     value={value}
-                    className={`flex flex-col items-center gap-1 py-3.5 text-xs font-semibold rounded-none border-b-2 data-[state=active]:border-b-primary data-[state=inactive]:border-b-transparent data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground data-[state=active]:bg-transparent data-[state=inactive]:bg-transparent transition-all ${isInflatable ? 'flex-1 min-w-[72px]' : ''}`}
+                    className={`flex flex-col items-center gap-1.5 py-3 text-xs font-semibold rounded-xl border-b-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground data-[state=active]:shadow-none data-[state=inactive]:bg-transparent transition-all min-h-[52px] ${isInflatable ? 'flex-1 min-w-[72px]' : ''}`}
                   >
                     <Icon className="h-4 w-4" strokeWidth={2} />
                     {label}
@@ -360,29 +360,33 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
           {/* Needs Attention */}
           {needsAttention.length > 0 && (
-            <div className="bg-card rounded-2xl border border-border shadow-sm p-4 space-y-2">
-              <h2 className="text-sm font-semibold text-foreground">Needs Attention</h2>
+            <button
+              className="w-full bg-card rounded-2xl border border-orange-200 dark:border-orange-800/40 shadow-sm p-4 space-y-2 text-left hover:bg-muted/30 active:scale-[0.99] transition-all"
+              onClick={() => document.getElementById('ride-defects-section')?.scrollIntoView({ behavior: 'smooth' })}
+            >
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-foreground">Needs Attention</h2>
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">View ↓</span>
+              </div>
               <div className="space-y-1.5">
                 {needsAttention.map(item => (
-                  <button
+                  <div
                     key={item.key}
-                    className="w-full flex items-center gap-3 p-2.5 rounded-xl hover:bg-muted/50 transition-colors text-left"
-                    onClick={item.action}
-                    disabled={!item.action}
+                    className="flex items-center gap-3 p-2 rounded-lg"
                   >
                     <item.icon className="h-4 w-4 shrink-0" style={{ color: item.color }} />
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground truncate">{item.label}</p>
                       <p className="text-xs text-muted-foreground">{item.detail}</p>
                     </div>
-                  </button>
+                  </div>
                 ))}
               </div>
-            </div>
+            </button>
           )}
 
           {/* Quick Actions */}
-          <div className="bg-card rounded-2xl border border-border shadow-sm p-4 space-y-3">
+          <div className="rounded-2xl p-4 space-y-3">
             <h2 className="text-sm font-semibold text-foreground">Quick Actions</h2>
             <div className="grid grid-cols-2 gap-2.5">
               <button
@@ -423,18 +427,18 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           </div>
 
           {/* Summary Stats — compact row */}
-          <div className="grid grid-cols-3 gap-2">
-            <button onClick={() => setActiveTab('checks')} className="bg-card rounded-xl border border-border p-3 text-center hover:bg-muted/30 transition-colors">
+          <div className="grid grid-cols-3 gap-2.5">
+            <button onClick={() => setActiveTab('checks')} className="bg-card rounded-xl border border-border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all">
               <p className="text-lg font-bold text-foreground">{rideStats.loading ? '—' : rideStats.todayChecks}</p>
-              <p className="text-[11px] text-muted-foreground">Checks today</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">Checks today</p>
             </button>
-            <button onClick={() => setActiveTab('documents')} className="bg-card rounded-xl border border-border p-3 text-center hover:bg-muted/30 transition-colors">
-              <p className="text-lg font-bold text-foreground">{rideStats.loading ? '—' : rideStats.docCount}</p>
-              <p className="text-[11px] text-muted-foreground">Documents</p>
+            <button onClick={() => setActiveTab('documents')} className={`bg-card rounded-xl border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all ${rideStats.hasExpiredDocs ? 'border-destructive/30' : rideStats.hasExpiringSoonDocs ? 'border-orange-300 dark:border-orange-800/40' : 'border-border'}`}>
+              <p className={`text-lg font-bold ${rideStats.hasExpiredDocs ? 'text-destructive' : 'text-foreground'}`}>{rideStats.loading ? '—' : rideStats.docCount}</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">{rideStats.hasExpiredDocs ? 'Docs · expired' : rideStats.hasExpiringSoonDocs ? 'Docs · expiring' : 'Documents'}</p>
             </button>
-            <button onClick={() => document.getElementById('ride-defects-section')?.scrollIntoView({ behavior: 'smooth' })} className="bg-card rounded-xl border border-border p-3 text-center hover:bg-muted/30 transition-colors">
+            <button onClick={() => document.getElementById('ride-defects-section')?.scrollIntoView({ behavior: 'smooth' })} className={`bg-card rounded-xl border p-3.5 text-center hover:bg-muted/30 active:scale-[0.98] transition-all ${rideStats.openDefects > 0 ? 'border-destructive/30' : 'border-border'}`}>
               <p className={`text-lg font-bold ${rideStats.openDefects > 0 ? 'text-destructive' : 'text-foreground'}`}>{rideStats.loading ? '—' : rideStats.openDefects}</p>
-              <p className="text-[11px] text-muted-foreground">Open defects</p>
+              <p className="text-[11px] text-muted-foreground leading-tight">Open defects</p>
             </button>
           </div>
 
