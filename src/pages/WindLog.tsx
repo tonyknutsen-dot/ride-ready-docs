@@ -23,11 +23,13 @@ import {
 import {
   Wind, Plus, MapPin, Clock, ChevronDown, ChevronRight, Gauge, User, Loader2,
   Download, Filter, CalendarIcon, X, ChevronsLeft, ChevronsRight, ChevronLeft, Save,
-  AlertTriangle,
+  AlertTriangle, FileDown, Search, Eye, FileText,
 } from 'lucide-react';
-import { format, startOfDay } from 'date-fns';
+import { format, startOfDay, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+
 import { generateWindLogPdf } from '@/utils/windLogPdf';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 
@@ -136,9 +138,12 @@ const WindLog = () => {
   const [filterInflatable, setFilterInflatable] = useState('all');
   const [filterRecordedBy, setFilterRecordedBy] = useState('all');
   const [filterAction, setFilterAction] = useState('all');
-  const [showFilters, setShowFilters] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
+  const [generatingCsv, setGeneratingCsv] = useState(false);
+  const [savedReports, setSavedReports] = useState<any[]>([]);
 
   // Defaults
   const [defaultRecordedBy, setDefaultRecordedBy] = useState('');
@@ -263,6 +268,20 @@ const WindLog = () => {
 
   useEffect(() => { loadLogs(); }, [loadLogs]);
 
+  // Load saved wind reports
+  useEffect(() => { loadSavedReports(); }, [effectiveUserId]);
+
+  const loadSavedReports = async () => {
+    if (!effectiveUserId) return;
+    const { data } = await supabase
+      .from('documents')
+      .select('*')
+      .eq('user_id', effectiveUserId)
+      .eq('document_type', 'wind_report')
+      .order('uploaded_at', { ascending: false });
+    setSavedReports(data || []);
+  };
+
   const uniqueRecordedBy = useMemo(() => {
     const set = new Set(logs.map(l => l.recorded_by));
     return Array.from(set).sort();
@@ -293,9 +312,18 @@ const WindLog = () => {
           if (!entry.action_taken?.toLowerCase().includes(ACTION_LABEL_MAP[filterAction]?.toLowerCase() || filterAction)) return false;
         }
       }
+      if (searchTerm.trim()) {
+        const q = searchTerm.toLowerCase();
+        const matches = entry.recorded_by.toLowerCase().includes(q)
+          || (entry.location || '').toLowerCase().includes(q)
+          || (entry.action_taken || '').toLowerCase().includes(q)
+          || (entry.notes || '').toLowerCase().includes(q)
+          || (entry.linked_rides || []).some(r => r.toLowerCase().includes(q));
+        if (!matches) return false;
+      }
       return true;
     });
-  }, [logs, filterDateFrom, filterDateTo, filterLocation, filterInflatable, filterRecordedBy, filterAction]);
+  }, [logs, filterDateFrom, filterDateTo, filterLocation, filterInflatable, filterRecordedBy, filterAction, searchTerm]);
 
   const totalPages = Math.ceil(filteredLogs.length / PAGE_SIZE);
   const pagedLogs = useMemo(() => {
@@ -303,9 +331,9 @@ const WindLog = () => {
     return filteredLogs.slice(start, start + PAGE_SIZE);
   }, [filteredLogs, page]);
 
-  useEffect(() => { setPage(0); }, [filterDateFrom, filterDateTo, filterLocation, filterInflatable, filterRecordedBy, filterAction]);
+  useEffect(() => { setPage(0); }, [filterDateFrom, filterDateTo, filterLocation, filterInflatable, filterRecordedBy, filterAction, searchTerm]);
 
-  const hasFilters = filterDateFrom || filterDateTo || filterLocation || filterInflatable !== 'all' || filterRecordedBy !== 'all' || filterAction !== 'all';
+  const hasFilters = filterDateFrom || filterDateTo || filterLocation || filterInflatable !== 'all' || filterRecordedBy !== 'all' || filterAction !== 'all' || !!searchTerm;
 
   const clearFilters = () => {
     setFilterDateFrom(undefined);
@@ -314,6 +342,7 @@ const WindLog = () => {
     setFilterInflatable('all');
     setFilterRecordedBy('all');
     setFilterAction('all');
+    setSearchTerm('');
   };
 
   const handleSelectProfile = (profileId: string) => {
@@ -493,7 +522,7 @@ const WindLog = () => {
     executeSave();
   };
 
-  const handleExport = async () => {
+  const handleExportPdf = async () => {
     if (filteredLogs.length === 0) {
       toast({ title: 'Nothing to export', description: 'No readings match your current filters.', variant: 'destructive' });
       return;
@@ -522,8 +551,61 @@ const WindLog = () => {
       location: filterLocation || undefined,
     });
 
-    setExportResult({ blob: result.blob, fileName: result.fileName });
+    const saveToDocuments = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+      const storagePath = `${user.id}/wind-reports/${Date.now()}-${result.fileName}`;
+      const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, result.blob, { contentType: 'application/pdf' });
+      if (uploadError) throw uploadError;
+      await supabase.from('documents').insert({
+        user_id: user.id, document_name: reportTitle,
+        document_type: 'wind_report', file_path: storagePath,
+        mime_type: 'application/pdf', file_size: result.blob.size,
+        notes: `Wind register: ${filteredLogs.length} readings`,
+        is_global: true,
+        ride_id: filterInflatable !== 'all' ? filterInflatable : null,
+      });
+      loadSavedReports();
+    };
+
+    setExportResult({ blob: result.blob, fileName: result.fileName, onSaveToDocuments: saveToDocuments });
     setExportDialogOpen(true);
+  };
+
+  const handleExportCsv = () => {
+    if (filteredLogs.length === 0) {
+      toast({ title: 'Nothing to export', description: 'No readings match your current filters.', variant: 'destructive' });
+      return;
+    }
+    setGeneratingCsv(true);
+    try {
+      const headers = ['Date', 'Time', 'Speed', 'Unit', 'Location', 'Recorded By', 'Anemometer', 'Inflatables', 'Action', 'Notes'];
+      const rows = filteredLogs.map(e => [
+        e.log_date,
+        e.log_time.slice(0, 5),
+        e.wind_speed.toString(),
+        e.wind_unit,
+        e.location || '',
+        e.recorded_by,
+        [e.anemometer_make, e.anemometer_model, e.anemometer_serial].filter(Boolean).join(' '),
+        (e.linked_rides || []).join('; '),
+        e.action_taken || '',
+        `"${(e.notes || '').replace(/"/g, '""')}"`,
+      ]);
+      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const fileName = `Wind Speed Register - ${format(new Date(), 'ddMMMyyyy')}.csv`;
+      setExportResult({ blob, fileName });
+      setExportDialogOpen(true);
+    } catch (error) {
+      console.error('CSV export error:', error);
+      toast({ title: 'Error', description: 'Failed to export CSV', variant: 'destructive' });
+    } finally { setGeneratingCsv(false); }
+  };
+
+  const handleViewReport = async (filePath: string) => {
+    const { data } = await supabase.storage.from('ride-documents').createSignedUrl(filePath, 300);
+    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
   };
 
   const formatAnemometer = (entry: WindLogEntry) => {
@@ -751,95 +833,160 @@ const WindLog = () => {
       <PageHeader
         title="Wind Speed Register"
         icon={<Wind className="h-5 w-5 text-primary" />}
-        subtitle="Record one reading and link it to one or more inflatables."
+        subtitle={`${filteredLogs.length} reading${filteredLogs.length !== 1 ? 's' : ''}${hasFilters ? ` (filtered from ${logs.length})` : ''}`}
         showBackButton
         backTo="/overview"
         actions={
-          <Button onClick={handleOpenSheet} size="sm" className="gap-1.5" disabled={inflatables.length === 0}>
-            <Plus className="h-3.5 w-3.5" />
-            Add wind reading
-          </Button>
+          <div className="flex items-center gap-1.5">
+            <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={generatingCsv || filteredLogs.length === 0} className="h-8 text-[12px] gap-1.5">
+              <FileDown className="h-3.5 w-3.5" /> CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={filteredLogs.length === 0} className="h-8 text-[12px] gap-1.5">
+              <FileDown className="h-3.5 w-3.5" /> PDF
+            </Button>
+            <Button onClick={handleOpenSheet} size="sm" className="gap-1.5 h-8" disabled={inflatables.length === 0}>
+              <Plus className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Add wind reading</span>
+              <span className="sm:hidden">Add</span>
+            </Button>
+          </div>
         }
       />
 
-      {/* ─── Action bar ─── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)} className={cn("gap-1.5 min-h-[44px] h-auto px-3 text-xs", hasFilters && "border-primary/50")}>
-          <Filter className="h-3.5 w-3.5" />
-          {hasFilters ? `Filtered (${filteredLogs.length})` : 'Filter'}
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleExport} className="gap-1.5 min-h-[44px] h-auto px-3 text-xs" disabled={filteredLogs.length === 0}>
-          <Download className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Export PDF</span>
-          <span className="sm:hidden">PDF</span>
-        </Button>
+      {/* ── Search bar ── */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Input
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Search readings…"
+          className="pl-9 h-10 rounded-xl"
+        />
+        {searchTerm && (
+          <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2">
+            <X className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+        )}
       </div>
 
-      {/* ─── Filters ─── */}
-      {showFilters && (
-        <div className="bg-card rounded-lg border border-border p-3 space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-foreground flex items-center gap-1">
-              <Filter className="h-3 w-3 text-muted-foreground" /> Filters
-            </span>
+      {/* ── Collapsible Filters & date range ── */}
+      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <CollapsibleTrigger asChild>
+          <button className="w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+            style={{ borderColor: hasFilters ? 'hsl(var(--primary))' : 'hsl(var(--border))', background: hasFilters ? 'hsl(var(--primary) / 0.05)' : 'hsl(var(--background))' }}>
+            <div className="flex items-center gap-2">
+              <Filter className="h-3.5 w-3.5" />
+              <span>{hasFilters ? 'Filters active' : 'Filters & date range'}</span>
+            </div>
+            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')} />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="mt-2 rounded-xl border bg-card p-3 space-y-3">
+            {/* Date range */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">From</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left h-9 text-[12px]', !filterDateFrom && 'text-muted-foreground')}>
+                      <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                      {filterDateFrom ? format(filterDateFrom, 'dd/MM/yyyy') : 'Start date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={filterDateFrom} onSelect={(d) => setFilterDateFrom(d || undefined)} initialFocus className="pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">To</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left h-9 text-[12px]', !filterDateTo && 'text-muted-foreground')}>
+                      <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
+                      {filterDateTo ? format(filterDateTo, 'dd/MM/yyyy') : 'End date'}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar mode="single" selected={filterDateTo} onSelect={(d) => setFilterDateTo(d || undefined)} initialFocus className="pointer-events-auto" />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            </div>
+
+            {/* Quick date presets */}
+            <div className="flex flex-wrap gap-1.5">
+              {[
+                { label: 'Last 3 months', from: subMonths(new Date(), 3), to: new Date() },
+                { label: 'Last 6 months', from: subMonths(new Date(), 6), to: new Date() },
+                { label: 'Last 12 months', from: subMonths(new Date(), 12), to: new Date() },
+              ].map(p => (
+                <button key={p.label} onClick={() => { setFilterDateFrom(p.from); setFilterDateTo(p.to); }}
+                  className="text-[11px] px-2.5 py-1 rounded-full border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Module-specific filters */}
+            <div className="grid grid-cols-2 gap-2.5">
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Location</Label>
+                <Select value={filterLocation || '__all__'} onValueChange={(v) => setFilterLocation(v === '__all__' ? '' : v)}>
+                  <SelectTrigger className="h-9 text-[12px]"><SelectValue placeholder="All locations" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__all__">All locations</SelectItem>
+                    {uniqueLocations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Inflatable</Label>
+                <Select value={filterInflatable} onValueChange={setFilterInflatable}>
+                  <SelectTrigger className="h-9 text-[12px]"><SelectValue placeholder="All inflatables" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All inflatables</SelectItem>
+                    {inflatables.map(r => <SelectItem key={r.id} value={r.id}>{r.ride_name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Recorded by</Label>
+                <Select value={filterRecordedBy} onValueChange={setFilterRecordedBy}>
+                  <SelectTrigger className="h-9 text-[12px]"><SelectValue placeholder="All staff" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All staff</SelectItem>
+                    {uniqueRecordedBy.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Action</Label>
+                <Select value={filterAction} onValueChange={setFilterAction}>
+                  <SelectTrigger className="h-9 text-[12px]"><SelectValue placeholder="All actions" /></SelectTrigger>
+                  <SelectContent>
+                    {ACTION_FILTER_OPTIONS.map(a => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             {hasFilters && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="text-[11px] h-6 gap-1 px-2">
-                <X className="h-2.5 w-2.5" /> Clear
-              </Button>
+              <button onClick={clearFilters}
+                className="text-[12px] font-medium text-primary hover:underline">
+                Clear all filters
+              </button>
             )}
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn("justify-start text-[11px] h-8 w-full", filterDateFrom && "text-foreground border-primary/30")}>
-                  <CalendarIcon className="h-3 w-3 mr-1" />
-                  {filterDateFrom ? format(filterDateFrom, 'd MMM yy') : 'From'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={filterDateFrom} onSelect={setFilterDateFrom} className="p-3 pointer-events-auto" />
-              </PopoverContent>
-            </Popover>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm" className={cn("justify-start text-[11px] h-8 w-full", filterDateTo && "text-foreground border-primary/30")}>
-                  <CalendarIcon className="h-3 w-3 mr-1" />
-                  {filterDateTo ? format(filterDateTo, 'd MMM yy') : 'To'}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar mode="single" selected={filterDateTo} onSelect={setFilterDateTo} className="p-3 pointer-events-auto" />
-              </PopoverContent>
-            </Popover>
-            <Select value={filterLocation || '__all__'} onValueChange={(v) => setFilterLocation(v === '__all__' ? '' : v)}>
-              <SelectTrigger className="h-8 text-[11px]"><SelectValue placeholder="Location" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="__all__">All locations</SelectItem>
-                {uniqueLocations.map(loc => <SelectItem key={loc} value={loc}>{loc}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={filterInflatable} onValueChange={setFilterInflatable}>
-              <SelectTrigger className="h-8 text-[11px]"><SelectValue placeholder="Inflatable" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All inflatables</SelectItem>
-                {inflatables.map(r => <SelectItem key={r.id} value={r.id}>{r.ride_name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={filterRecordedBy} onValueChange={setFilterRecordedBy}>
-              <SelectTrigger className="h-8 text-[11px]"><SelectValue placeholder="Recorded by" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All staff</SelectItem>
-                {uniqueRecordedBy.map(name => <SelectItem key={name} value={name}>{name}</SelectItem>)}
-              </SelectContent>
-            </Select>
-            <Select value={filterAction} onValueChange={setFilterAction}>
-              <SelectTrigger className="h-8 text-[11px]"><SelectValue placeholder="Action" /></SelectTrigger>
-              <SelectContent>
-                {ACTION_FILTER_OPTIONS.map(a => <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* ── Export hint ── */}
+      {hasFilters && (
+        <p className="text-[11px] text-muted-foreground text-center">
+          Exports include the current filters and date range
+        </p>
       )}
 
       {/* ─── No inflatables ─── */}
@@ -913,6 +1060,29 @@ const WindLog = () => {
             )}
           </div>
         </>
+      )}
+
+      {/* ── Previously generated reports ── */}
+      {savedReports.length > 0 && (
+        <div className="space-y-2 pt-4 border-t">
+          <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
+          {savedReports.map((report: any) => (
+            <div key={report.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <FileText className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
+                  <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
+                </div>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => handleViewReport(report.file_path)} className="h-7 text-[11px] gap-1">
+                <Eye className="h-3 w-3" /> View
+              </Button>
+            </div>
+          ))}
+        </div>
       )}
 
       {/* ─── Add Reading Sheet ─── */}
