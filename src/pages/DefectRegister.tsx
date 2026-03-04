@@ -600,29 +600,40 @@ const DefectRegister = () => {
         subtitle={`${openCount} open defect${openCount !== 1 ? 's' : ''}${stopUseCount > 0 ? ` · ${stopUseCount} stop-use` : ''}`}
         showBackButton
         backTo="/overview"
-        actions={
-          <div className="flex items-center gap-1.5">
-            <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={generatingCsv || filtered.length === 0} className="h-8 text-[12px] gap-1.5">
-              <FileDown className="h-3.5 w-3.5" /> CSV
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={generatingPdf || filtered.length === 0} className="h-8 text-[12px] gap-1.5">
-              {generatingPdf ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" /> : <FileDown className="h-3.5 w-3.5" />}
-              PDF
-            </Button>
-            <DefectReportDialog
-              onDefectReported={handleDefectUpdated}
-              onCriticalDefectReported={handleDefectUpdated}
-              trigger={
-                <Button size="sm" className="gap-1.5 h-8">
-                  <AlertOctagon className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">Report Defect</span>
-                  <span className="sm:hidden">Report</span>
-                </Button>
-              }
-            />
-          </div>
-        }
       />
+
+      {/* Top actions */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <DefectReportDialog
+          onDefectReported={handleDefectUpdated}
+          onCriticalDefectReported={handleDefectUpdated}
+          trigger={
+            <Button size="sm" className="gap-1.5 h-9 w-full justify-center">
+              <AlertOctagon className="h-3.5 w-3.5" />
+              Report defect
+            </Button>
+          }
+        />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleExportCsv}
+          disabled={generatingCsv || filtered.length === 0}
+          className="h-9 text-[12px] gap-1.5 w-full"
+        >
+          <FileDown className="h-3.5 w-3.5" /> Export CSV
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleExportPdf}
+          disabled={generatingPdf || filtered.length === 0}
+          className="h-9 text-[12px] gap-1.5 w-full"
+        >
+          {generatingPdf ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" /> : <FileDown className="h-3.5 w-3.5" />}
+          Export PDF
+        </Button>
+      </div>
 
       {/* Stop-use banner */}
       {stopUseCount > 0 && (
@@ -772,12 +783,10 @@ const DefectRegister = () => {
           {filtered.length} defect{filtered.length !== 1 ? 's' : ''}
           {hasActiveFilters && ` (filtered from ${enriched.length})`}
         </p>
-        {hasActiveFilters && (
-          <p className="text-[11px] text-muted-foreground">
-            Exports include the current filters and date range
-          </p>
-        )}
       </div>
+      <p className="text-[11px] text-muted-foreground text-center">
+        Exports include the current filters and date range
+      </p>
 
       {/* Defect list */}
       {isLoading ? (
@@ -895,10 +904,12 @@ const DefectRegister = () => {
       )}
 
       {/* ── Previously generated reports ── */}
-      {savedReports.length > 0 && (
-        <div className="space-y-2 pt-4 border-t">
-          <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
-          {savedReports.map((report: any) => (
+      <div className="space-y-2 pt-4 border-t">
+        <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
+        {savedReports.length === 0 ? (
+          <p className="text-[12px] text-muted-foreground">No saved reports yet.</p>
+        ) : (
+          savedReports.map((report: any) => (
             <div key={report.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
@@ -913,9 +924,9 @@ const DefectRegister = () => {
                 <Eye className="h-3 w-3" /> View
               </Button>
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
 
       {/* Detail sheet */}
       <Sheet open={!!detailDefect} onOpenChange={(open) => { if (!open) closeDetail(); }}>
