@@ -2,8 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Calendar, Edit, Trash2, FileText, Camera, Download, Eye, Filter, Save, Clock, X, FolderOpen, AlertTriangle } from 'lucide-react';
-import DefectsList from './DefectsList';
+import { Calendar, Edit, Trash2, FileText, Camera, Download, Eye, Filter, Save, Clock, X, FolderOpen } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -323,15 +322,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         </div>
       </div>
 
-      {/* ── Defects ── */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-          <h4 className="text-[13px] font-bold text-foreground tracking-[1px] uppercase">Defects</h4>
-        </div>
-        <div className="h-px bg-border" />
-        <DefectsList rideId={ride.id} rideName={ride.ride_name} showResolved={true} />
-      </div>
+      {/* Defects removed — they belong in the Defect Register, not maintenance history */}
 
       {/* ── Records ── */}
       {filteredRecords.length === 0 ? (

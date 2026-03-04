@@ -61,7 +61,8 @@ const MaintenanceRideSelector = ({ onRideSelect }: MaintenanceRideSelectorProps)
 
   useEffect(() => {
     if (user && effectiveUserId) loadAll();
-  }, [user, effectiveUserId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, effectiveUserId]);
 
   const loadAll = async () => {
     try {

@@ -67,7 +67,8 @@ const Maintenance = () => {
     };
 
     loadRide();
-  }, [rideIdFromUrl, user, isStaff, effectiveUserId, setSearchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rideIdFromUrl, user?.id, isStaff, effectiveUserId]);
 
   const handleRideSelect = (ride: Ride) => {
     setSelectedRide(ride);
