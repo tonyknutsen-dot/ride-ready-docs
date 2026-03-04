@@ -102,12 +102,24 @@ const DefectDetailSheet = ({
     timeline.push({ label: 'Updated', date: defect.updated_at, icon: FileText, color: 'text-primary', description: 'Record modified' });
   }
   if (defect.resolved_at) {
+    const closureDescription = [
+      defect.resolved_by ? `By ${defect.resolved_by}` : 'Defect resolved',
+    ];
+    // Extract the primary action from resolution_notes (first line before any "Additional notes:")
+    if (defect.resolution_notes) {
+      const actionLine = defect.resolution_notes.split('\n\nAdditional notes:')[0].trim();
+      if (actionLine.length <= 80) {
+        closureDescription.push(actionLine);
+      } else {
+        closureDescription.push(actionLine.slice(0, 77) + '…');
+      }
+    }
     timeline.push({
       label: 'Closed',
       date: defect.resolved_at,
       icon: CheckCircle2,
       color: 'text-green-600 dark:text-green-400',
-      description: defect.resolved_by ? `By ${defect.resolved_by}` : 'Defect resolved',
+      description: closureDescription.join(' · '),
     });
   }
 
@@ -169,9 +181,9 @@ const DefectDetailSheet = ({
       {/* ── Resolution notes ── */}
       {defect.resolution_notes && (
         <section className="pt-7">
-          <SectionLabel>Repair / closure notes</SectionLabel>
+          <SectionLabel>Action taken</SectionLabel>
           <div className="p-4 rounded-xl bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/40 mt-2">
-            <p className="text-sm text-foreground leading-relaxed">{defect.resolution_notes}</p>
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">{defect.resolution_notes}</p>
           </div>
         </section>
       )}
