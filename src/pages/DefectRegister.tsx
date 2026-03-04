@@ -138,7 +138,7 @@ const DefectDetailSheet = ({
       {/* ── Core details grid ── */}
       <section className="pt-7">
         <SectionLabel>Details</SectionLabel>
-        <div className="grid grid-cols-2 gap-x-5 gap-y-4 p-4 rounded-xl bg-card border border-border mt-2">
+        <div className="grid grid-cols-2 gap-x-5 gap-y-5 p-4 rounded-xl bg-card border border-border mt-2">
           <DetailField icon={<Wrench className="h-3.5 w-3.5" />} label="Equipment" value={defect.ride_name || 'Unknown'} />
           {defect.category_name && (
             <DetailField icon={<FileText className="h-3.5 w-3.5" />} label="Type" value={defect.category_name} />
@@ -146,12 +146,8 @@ const DefectDetailSheet = ({
           <DetailField
             icon={<CalendarDays className="h-3.5 w-3.5" />}
             label="Raised"
-            value={format(new Date(defect.reported_at), 'dd MMM yyyy HH:mm')}
-          />
-          <DetailField
-            icon={isOpen ? <AlertOctagon className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-            label="Status"
-            value={isOpen ? 'Open' : 'Closed'}
+            value={format(new Date(defect.reported_at), 'dd MMM yyyy')}
+            secondaryValue={format(new Date(defect.reported_at), 'HH:mm')}
           />
           {defect.location_on_ride && (
             <DetailField icon={<MapPin className="h-3.5 w-3.5" />} label="Location" value={defect.location_on_ride} />
@@ -163,7 +159,8 @@ const DefectDetailSheet = ({
             <DetailField
               icon={<CalendarDays className="h-3.5 w-3.5" />}
               label="Closed"
-              value={format(new Date(defect.resolved_at), 'dd MMM yyyy HH:mm')}
+              value={format(new Date(defect.resolved_at), 'dd MMM yyyy')}
+              secondaryValue={format(new Date(defect.resolved_at), 'HH:mm')}
             />
           )}
         </div>
@@ -252,12 +249,13 @@ const SectionLabel = ({ children }: { children: React.ReactNode }) => (
   <p className="text-[11px] text-muted-foreground font-semibold uppercase tracking-wider mb-2">{children}</p>
 );
 
-const DetailField = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) => (
+const DetailField = ({ icon, label, value, secondaryValue }: { icon: React.ReactNode; label: string; value: string; secondaryValue?: string }) => (
   <div className="flex items-start gap-2.5">
     <span className="text-muted-foreground mt-0.5 shrink-0">{icon}</span>
     <div className="min-w-0">
       <p className="text-[10px] text-muted-foreground uppercase tracking-wide">{label}</p>
-      <p className="text-sm font-medium text-foreground truncate leading-snug">{value}</p>
+      <p className="text-[13px] font-medium text-foreground leading-snug">{value}</p>
+      {secondaryValue && <p className="text-xs text-muted-foreground leading-snug">{secondaryValue}</p>}
     </div>
   </div>
 );
@@ -632,7 +630,7 @@ const DefectRegister = () => {
             <div className="flex flex-col h-full">
               <SheetHeader className="px-4 pt-4 pb-3 border-b border-border sticky top-0 bg-background z-10">
                 <div className="flex items-center gap-3">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 rounded-lg" onClick={closeDetail}>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 rounded-full text-muted-foreground hover:text-foreground" onClick={closeDetail}>
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
                   <div className="min-w-0">
