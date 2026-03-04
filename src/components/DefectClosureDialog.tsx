@@ -268,9 +268,10 @@ const DefectClosureDialog = ({
                 id="other-reason"
                 value={otherReason}
                 onChange={(e) => setOtherReason(e.target.value)}
-                placeholder="Explain the reason for closure…"
+                placeholder="e.g. Superseded by new assessment, owner decision…"
                 className="h-10 rounded-lg"
               />
+              <p className="text-[10px] text-muted-foreground">Why none of the standard reasons apply</p>
             </div>
           )}
 
@@ -283,10 +284,11 @@ const DefectClosureDialog = ({
               id="action-taken"
               value={actionTaken}
               onChange={(e) => setActionTaken(e.target.value)}
-              placeholder="Describe what was done — e.g. replaced bolt, retightened bearing housing…"
+              placeholder="Describe what was physically done — e.g. replaced bolt, retightened bearing housing…"
               rows={2}
               className="rounded-lg"
             />
+            <p className="text-[10px] text-muted-foreground">What was done before closing this defect</p>
           </div>
 
           {/* ── Closed by ── */}
