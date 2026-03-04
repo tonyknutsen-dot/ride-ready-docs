@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter,
   DialogHeader, DialogTitle,
@@ -55,6 +55,23 @@ const DefectClosureDialog = ({
   const [evidenceFiles, setEvidenceFiles] = useState<File[]>([]);
   const [evidencePreviews, setEvidencePreviews] = useState<string[]>([]);
   const [updating, setUpdating] = useState(false);
+
+  // Auto-fill closed-by with profile display name
+  useEffect(() => {
+    if (!open || !user?.id) return;
+    const fetchName = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('controller_name, showmen_name, company_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      const displayName = data?.controller_name || data?.showmen_name || '';
+      if (displayName && !closedByName) {
+        setClosedByName(displayName);
+      }
+    };
+    fetchName();
+  }, [open, user?.id]);
 
   const isStopUse = defect?.severity === 'stop_operation';
   const sevInfo = SEVERITY_LABELS[defect?.severity || 'non_urgent'] || SEVERITY_LABELS.non_urgent;
