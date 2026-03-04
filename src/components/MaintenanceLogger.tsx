@@ -8,6 +8,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { CalendarIcon, X, Camera, FileText, Save, FolderOpen, Info, Link, Clock, Wrench, UserCog, Paperclip, RotateCcw, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -205,7 +206,6 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
       if (data) {
         const name = data.controller_name || data.showmen_name || data.company_name || user.email || '';
         setLoggedInUserName(name);
-        // Only set default if performed_by is still empty
         setFormData(prev => prev.performed_by ? prev : { ...prev, performed_by: name });
       }
     };
@@ -225,7 +225,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
     fetchDefects();
   }, [ride.id]);
 
-  // When "someone else" is toggled off, revert to logged-in user
+  // When performer toggle changes
   useEffect(() => {
     if (!someoneElse && loggedInUserName) {
       setFormData(prev => ({ ...prev, performed_by: loggedInUserName }));
@@ -421,19 +421,22 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
     setUploadedFiles([]);
   };
 
+  // Whether contractor section should be visible
+  const showContractorSection = someoneElse || formData.service_provider_type === 'external';
+
   return (
     <div className="pb-6 space-y-3" style={{ background: '#F1F5F9', minHeight: '100%' }}>
 
-      {/* ── Info banner ── */}
-      <div className="flex items-start gap-3 rounded-xl border px-3.5 py-3"
-        style={{ background: '#EFF6FF', borderColor: '#BFDBFE' }}>
-        <Info className="shrink-0 mt-0.5 h-4 w-4" style={{ color: '#2563EB' }} />
-        <p style={{ color: '#1D4ED8', fontSize: 12, lineHeight: '1.5' }}>
-          Attachments are stored in the equipment document register under <strong>"Maintenance"</strong>.
+      {/* ── Lightweight info hint ── */}
+      <div className="flex items-center gap-2 rounded-lg border px-3 py-2"
+        style={{ background: '#F0F7FF', borderColor: '#DBEAFE' }}>
+        <Info className="shrink-0 h-3.5 w-3.5" style={{ color: '#60A5FA' }} />
+        <p className="text-[11px] text-muted-foreground" style={{ lineHeight: '1.4' }}>
+          Attachments are stored in the document register under <strong className="text-foreground font-medium">"Maintenance"</strong>.
         </p>
       </div>
 
-      {/* ── CORE FIELDS: Date, Type, Description ── */}
+      {/* ── CORE FIELDS: Date, Type, Description, Performed By ── */}
       <LogSectionCard>
         <LogSectionHeader icon={Wrench} title="Maintenance Details" iconColor="#1E3A5F" iconBg="#DBEAFE" />
 
@@ -480,47 +483,68 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             placeholder="Describe the maintenance work performed…" rows={3} className={textareaClass} />
         </div>
 
-        {/* Who did the work */}
+        {/* ── Performed By — segmented toggle ── */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
-              Performed By <span className="text-destructive">*</span>
-            </Label>
-            {!someoneElse && loggedInUserName && (
-              <span className="text-[12px] text-muted-foreground">You</span>
-            )}
+          <Label className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
+            Who performed the work? <span className="text-destructive">*</span>
+          </Label>
+
+          {/* Pill toggle */}
+          <div className="flex rounded-lg border p-0.5" style={{ background: '#F1F5F9', borderColor: '#E2E8F0' }}>
+            <button
+              type="button"
+              onClick={() => setSomeoneElse(false)}
+              className={cn(
+                'flex-1 h-9 rounded-md text-[13px] font-medium transition-all',
+                !someoneElse
+                  ? 'bg-white text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Me
+            </button>
+            <button
+              type="button"
+              onClick={() => setSomeoneElse(true)}
+              className={cn(
+                'flex-1 h-9 rounded-md text-[13px] font-medium transition-all',
+                someoneElse
+                  ? 'bg-white text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              )}
+            >
+              Someone else
+            </button>
           </div>
 
+          {/* Me — show name as read-only */}
           {!someoneElse && (
-            <div className="flex items-center justify-between rounded-lg p-2.5 border" style={{ background: '#F8FAFC', borderColor: '#E2E8F0' }}>
-              <span className="text-[13px] font-medium" style={{ color: '#0F172A' }}>
-                {loggedInUserName || 'Loading…'}
-              </span>
-              <button
-                type="button"
-                onClick={() => setSomeoneElse(true)}
-                className="text-[12px] font-medium text-primary hover:underline"
-              >
-                Someone else?
-              </button>
-            </div>
+            <p className="text-[12px] text-muted-foreground pl-0.5">
+              Recording as <span className="font-medium text-foreground">{loggedInUserName || '…'}</span>
+            </p>
           )}
 
+          {/* Someone else — show input fields */}
           {someoneElse && (
-            <div className="space-y-2">
-              <Input
-                value={formData.performed_by}
-                onChange={(e) => setFormData({ ...formData, performed_by: e.target.value })}
-                placeholder="Name of person who performed the work"
-                className={fieldClass}
-              />
-              <button
-                type="button"
-                onClick={() => setSomeoneElse(false)}
-                className="text-[12px] font-medium text-muted-foreground hover:text-foreground"
-              >
-                ← I did this work
-              </button>
+            <div className="space-y-2.5">
+              <div className="space-y-1">
+                <Label className="text-[12px] font-medium text-muted-foreground">Performed by name <span className="text-destructive">*</span></Label>
+                <Input
+                  value={formData.performed_by}
+                  onChange={(e) => setFormData({ ...formData, performed_by: e.target.value })}
+                  placeholder="Name of person who did the work"
+                  className={fieldClass}
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[12px] font-medium text-muted-foreground">Company / contractor <span className="text-[11px] font-normal">(optional)</span></Label>
+                <Input
+                  value={formData.service_company}
+                  onChange={(e) => setFormData({ ...formData, service_company: e.target.value })}
+                  placeholder="Company or contractor name"
+                  className={fieldClass}
+                />
+              </div>
             </div>
           )}
         </div>
@@ -578,37 +602,34 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           </button>
         </div>
 
-        {imageCount > 0 && (
-          <p className="text-[12px] font-semibold text-center" style={{ color: '#1E3A5F' }}>
-            📷 {imageCount}/{MAX_PHOTOS} photos added
-          </p>
-        )}
+        <p className="text-[11px] text-muted-foreground text-center">
+          Photos and files will be attached to this maintenance record.
+        </p>
 
-        {/* Attached file thumbnails */}
+        {/* Attached files list */}
         {uploadedFiles.length > 0 && (
           <div className="space-y-1.5">
-            <Label className="text-[12px] font-semibold" style={{ color: '#0F172A' }}>
-              Attached ({uploadedFiles.length})
-            </Label>
-            <div className="flex flex-wrap gap-2">
+            {imageCount > 0 && (
+              <p className="text-[11px] font-medium text-center" style={{ color: '#1E3A5F' }}>
+                📷 {imageCount}/{MAX_PHOTOS} photos
+              </p>
+            )}
+            <div className="space-y-1">
               {uploadedFiles.map((file, index) => (
-                <div key={index} className="relative group rounded-lg overflow-hidden w-14 h-14"
-                  style={{ border: '1px solid #E2E8F0', background: '#F8FAFC' }}>
-                  {file.type.startsWith('image/') ? (
-                    <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center p-1">
-                      <FileText className="h-4 w-4" style={{ color: '#64748B' }} />
-                      <span className="text-[7px] text-center line-clamp-1 mt-0.5" style={{ color: '#64748B' }}>
-                        {file.name.split('.').pop()}
-                      </span>
-                    </div>
-                  )}
-                  <Button type="button" variant="destructive" size="icon"
-                    className="absolute top-0.5 right-0.5 h-4 w-4 opacity-0 group-hover:opacity-100 transition-opacity"
-                    onClick={() => removeFile(index)}>
-                    <X className="h-2.5 w-2.5" />
-                  </Button>
+                <div key={index} className="flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 border"
+                  style={{ background: '#F8FAFC', borderColor: '#E2E8F0' }}>
+                  <div className="flex items-center gap-2 min-w-0">
+                    {file.type.startsWith('image/') ? (
+                      <img src={URL.createObjectURL(file)} alt={file.name} className="w-8 h-8 rounded object-cover shrink-0" />
+                    ) : (
+                      <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                    )}
+                    <span className="text-[12px] text-foreground truncate">{file.name}</span>
+                  </div>
+                  <button type="button" onClick={() => removeFile(index)}
+                    className="shrink-0 p-1 rounded hover:bg-destructive/10 transition-colors">
+                    <X className="h-3.5 w-3.5 text-muted-foreground hover:text-destructive" />
+                  </button>
                 </div>
               ))}
             </div>
@@ -616,10 +637,10 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         )}
       </LogSectionCard>
 
-      {/* ── COLLAPSIBLE: More Details ── */}
+      {/* ── COLLAPSIBLE: More details (cost, parts, notes) ── */}
       <CollapsibleSection
         icon={Clock}
-        title="More Details"
+        title="More details (cost, parts, notes)"
         iconColor="#B45309"
         iconBg="#FEF3C7"
       >
@@ -674,61 +695,79 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         </div>
       </CollapsibleSection>
 
-      {/* ── COLLAPSIBLE: Contractor / Provider ── */}
-      <CollapsibleSection
-        icon={UserCog}
-        title="Contractor / Provider"
-        iconColor="#0F766E"
-        iconBg="#CCFBF1"
-      >
-        <div className="space-y-1.5">
-          <Label className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
-            Provider Type
-          </Label>
-          <Select value={formData.service_provider_type} onValueChange={(v) => setFormData({ ...formData, service_provider_type: v })}>
-            <SelectTrigger className={fieldClass}><SelectValue placeholder="Internal or external?" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="internal">Internal — Own team</SelectItem>
-              <SelectItem value="external">External — Contractor</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {formData.service_provider_type === 'external' && (
+      {/* ── COLLAPSIBLE: Contractor / provider — shown contextually ── */}
+      {showContractorSection && (
+        <CollapsibleSection
+          icon={UserCog}
+          title="Contractor / provider"
+          iconColor="#0F766E"
+          iconBg="#CCFBF1"
+          defaultOpen={someoneElse}
+        >
           <div className="space-y-1.5">
-            <Label htmlFor="service_company" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>Company Name</Label>
-            <Input id="service_company" value={formData.service_company}
-              onChange={(e) => setFormData({ ...formData, service_company: e.target.value })}
-              placeholder="Contractor / service company name" className={fieldClass} />
+            <Label className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
+              Provider Type
+            </Label>
+            <Select value={formData.service_provider_type} onValueChange={(v) => setFormData({ ...formData, service_provider_type: v })}>
+              <SelectTrigger className={fieldClass}><SelectValue placeholder="Internal or external?" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="internal">Internal — Own team</SelectItem>
+                <SelectItem value="external">External — Contractor</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        )}
 
-        <div className="space-y-1.5">
-          <Label htmlFor="engineer_name" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
-            Engineer / Technician Name
-          </Label>
-          <Input id="engineer_name" value={formData.engineer_name}
-            onChange={(e) => setFormData({ ...formData, engineer_name: e.target.value })}
-            placeholder="Name of engineer or technician" className={fieldClass} />
-        </div>
-      </CollapsibleSection>
+          {formData.service_provider_type === 'external' && (
+            <div className="space-y-1.5">
+              <Label htmlFor="service_company" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>Company Name</Label>
+              <Input id="service_company" value={formData.service_company}
+                onChange={(e) => setFormData({ ...formData, service_company: e.target.value })}
+                placeholder="Contractor / service company name" className={fieldClass} />
+            </div>
+          )}
+
+          <div className="space-y-1.5">
+            <Label htmlFor="engineer_name" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
+              Engineer / Technician Name
+            </Label>
+            <Input id="engineer_name" value={formData.engineer_name}
+              onChange={(e) => setFormData({ ...formData, engineer_name: e.target.value })}
+              placeholder="Name of engineer or technician" className={fieldClass} />
+          </div>
+        </CollapsibleSection>
+      )}
 
       {/* ── STICKY BOTTOM ACTION BAR ── */}
-      <div className="sticky bottom-0 z-50 border-t px-4 py-3 flex flex-col gap-2 sm:flex-row sm:gap-3"
+      <div className="sticky bottom-0 z-50 border-t px-4 py-3 flex items-center gap-3"
         style={{ background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(8px)', borderColor: '#E2E8F0', boxShadow: '0 -4px 16px rgba(15,23,42,0.08)' }}>
         <Button onClick={handleSubmit} disabled={loading}
-          className="w-full sm:flex-1 h-12 text-[14px] font-semibold rounded-xl text-white"
+          className="flex-1 h-12 text-[14px] font-semibold rounded-xl text-white"
           style={{ background: 'linear-gradient(135deg, #1E3A5F 0%, #2563EB 100%)', boxShadow: '0 4px 12px rgba(30,58,95,0.3)' }}>
           {loading
             ? <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />Saving…</>
             : <><Save className="h-4 w-4 mr-2" />Log Maintenance Record</>}
         </Button>
-        <Button type="button" variant="outline" onClick={resetForm}
-          className="w-full sm:w-auto h-12 px-4 rounded-xl font-medium text-[13px]"
-          style={{ borderColor: '#CBD5E1', color: '#64748B' }}>
-          <RotateCcw className="h-4 w-4 mr-1.5" />
-          Reset
-        </Button>
+
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button type="button" className="shrink-0 flex items-center gap-1.5 px-3 h-12 rounded-xl text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors">
+              <RotateCcw className="h-3.5 w-3.5" />
+              Clear form
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Clear form?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Clear all entered maintenance details? This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={resetForm}>Clear form</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
 
     </div>
