@@ -267,7 +267,8 @@ const MaintenanceRideSelector = ({ onRideSelect }: MaintenanceRideSelectorProps)
         <div className="space-y-2">
           {filteredRides.map((ride) => {
             const summary = summaries[ride.id];
-            const statusCfg = STATUS_CONFIG[summary?.status ?? 'no-data'];
+            const statusKey = summary?.status ?? 'no-data';
+            const statusCfg = STATUS_CONFIG[statusKey as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG['no-data'];
             const hasThumb = !!thumbs[ride.id];
 
             return (
