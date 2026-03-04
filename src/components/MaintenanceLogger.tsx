@@ -7,11 +7,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Switch } from '@/components/ui/switch';
-import { CalendarIcon, X, Camera, FileText, Save, FolderOpen, Info, Link, ShieldCheck, Clock, Wrench, UserCog, ClipboardList, Paperclip, RotateCcw } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { CalendarIcon, X, Camera, FileText, Save, FolderOpen, Info, Link, Clock, Wrench, UserCog, Paperclip, RotateCcw, ChevronDown } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Tables } from '@/integrations/supabase/types';
 import { compressImage } from '@/utils/imageCompression';
@@ -81,7 +83,7 @@ const LogSectionCard = ({
   style?: React.CSSProperties;
 }) => (
   <div
-    className={`rounded-2xl border p-5 space-y-4 ${className}`}
+    className={`rounded-2xl border p-4 space-y-3 ${className}`}
     style={{
       background: '#FFFFFF',
       borderColor: '#E2E8F0',
@@ -93,9 +95,61 @@ const LogSectionCard = ({
   </div>
 );
 
+// ── Collapsible section ─────────────────────────────────────────────────────
+const CollapsibleSection = ({
+  icon: Icon,
+  title,
+  iconColor,
+  iconBg,
+  children,
+  defaultOpen = false,
+}: {
+  icon: React.ElementType;
+  title: string;
+  iconColor: string;
+  iconBg: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) => {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <div
+        className="rounded-2xl border overflow-hidden"
+        style={{ background: '#FFFFFF', borderColor: '#E2E8F0', boxShadow: '0 2px 8px rgba(15,23,42,0.05)' }}
+      >
+        <CollapsibleTrigger asChild>
+          <button
+            type="button"
+            className="w-full flex items-center justify-between gap-2.5 p-4 hover:bg-muted/30 transition-colors"
+          >
+            <div className="flex items-center gap-2.5">
+              <div
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg"
+                style={{ backgroundColor: iconBg }}
+              >
+                <Icon className="h-3.5 w-3.5" style={{ color: iconColor }} strokeWidth={2.2} />
+              </div>
+              <span className="text-[14px] font-semibold" style={{ color: '#1E293B' }}>{title}</span>
+            </div>
+            <ChevronDown
+              className={cn('h-4 w-4 text-muted-foreground transition-transform duration-200', open && 'rotate-180')}
+            />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="px-4 pb-4 pt-1 space-y-3 border-t" style={{ borderColor: '#F1F5F9' }}>
+            {children}
+          </div>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  );
+};
+
 // ── Field styles ─────────────────────────────────────────────────────────────
 const fieldClass = 'h-11 rounded-[10px] border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] placeholder:text-[#94A3B8] focus-visible:outline-none focus-visible:border-[#1E3A5F] focus-visible:shadow-[0_0_0_3px_rgba(30,58,95,0.15)]';
-const textareaClass = 'rounded-[10px] border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] placeholder:text-[#94A3B8] focus-visible:outline-none focus-visible:border-[#1E3A5F] focus-visible:shadow-[0_0_0_3px_rgba(30,58,95,0.15)] min-h-[100px]';
+const textareaClass = 'rounded-[10px] border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A] placeholder:text-[#94A3B8] focus-visible:outline-none focus-visible:border-[#1E3A5F] focus-visible:shadow-[0_0_0_3px_rgba(30,58,95,0.15)] min-h-[80px]';
 
 const ALLOWED_TYPES = [
   'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/heic', 'image/tiff', 'image/bmp',
@@ -115,11 +169,13 @@ const MAX_PHOTOS = 5;
 const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps) => {
   const [loading, setLoading] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [verificationCalendarOpen, setVerificationCalendarOpen] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [openDefects, setOpenDefects] = useState<Defect[]>([]);
+  const [someoneElse, setSomeoneElse] = useState(false);
+  const [loggedInUserName, setLoggedInUserName] = useState('');
   const { toast } = useToast();
-  const { effectiveUserId } = useEffectiveUserId();
+  const { user } = useAuth();
+  const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
 
   const [formData, setFormData] = useState({
     maintenance_date: new Date(),
@@ -135,10 +191,26 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
     engineer_name: '',
     equipment_out_of_service: false,
     downtime_duration: '',
-    requires_verification: false,
-    verified_by: '',
-    verification_date: null as Date | null,
   });
+
+  // Fetch logged-in user's name for default "performed by"
+  useEffect(() => {
+    const fetchUserName = async () => {
+      if (!user?.id) return;
+      const { data } = await supabase
+        .from('profiles')
+        .select('controller_name, showmen_name, company_name')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      if (data) {
+        const name = data.controller_name || data.showmen_name || data.company_name || user.email || '';
+        setLoggedInUserName(name);
+        // Only set default if performed_by is still empty
+        setFormData(prev => prev.performed_by ? prev : { ...prev, performed_by: name });
+      }
+    };
+    fetchUserName();
+  }, [user?.id]);
 
   useEffect(() => {
     const fetchDefects = async () => {
@@ -152,6 +224,15 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
     };
     fetchDefects();
   }, [ride.id]);
+
+  // When "someone else" is toggled off, revert to logged-in user
+  useEffect(() => {
+    if (!someoneElse && loggedInUserName) {
+      setFormData(prev => ({ ...prev, performed_by: loggedInUserName }));
+    } else if (someoneElse) {
+      setFormData(prev => ({ ...prev, performed_by: '' }));
+    }
+  }, [someoneElse, loggedInUserName]);
 
   const imageCount = uploadedFiles.filter(f => f.type.startsWith('image/')).length;
 
@@ -266,12 +347,6 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
       if (formData.equipment_out_of_service) {
         noteParts.push(`Equipment out of service. Downtime: ${formData.downtime_duration || 'Not recorded'}`);
       }
-      if (formData.requires_verification) {
-        const verif = formData.verified_by
-          ? `Verified by: ${formData.verified_by}${formData.verification_date ? ` on ${format(formData.verification_date, 'd MMM yyyy')}` : ''}`
-          : 'Verification required — pending';
-        noteParts.push(verif);
-      }
       if (formData.linked_defect_id) {
         const defect = openDefects.find(d => d.id === formData.linked_defect_id);
         if (defect) noteParts.push(`Linked defect: ${defect.description.substring(0, 60)}...`);
@@ -296,14 +371,34 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         await supabase.from('defects').update({ status: 'in_progress' }).eq('id', formData.linked_defect_id);
       }
 
+      // Notify if work was performed by someone else, or if staff logs for controller
+      const performedBySomeoneElse = someoneElse && formData.performed_by !== loggedInUserName;
+      const staffLoggingForController = isStaff && effectiveUserId && actualUserId !== effectiveUserId;
+
+      if (performedBySomeoneElse || staffLoggingForController) {
+        const notifUserId = effectiveUserId;
+        if (notifUserId) {
+          await supabase.from('notifications').insert({
+            user_id: notifUserId,
+            title: `Maintenance logged: ${ride.ride_name}`,
+            message: `Work on ${ride.ride_name} performed by ${formData.performed_by}. Logged by ${loggedInUserName || 'a team member'}.`,
+            type: 'info',
+            related_table: 'maintenance_records',
+          }).then(({ error: notifError }) => {
+            if (notifError) console.error('Failed to send notification:', notifError);
+          });
+        }
+      }
+
       toast({ title: "Maintenance Record Logged", description: "Record saved successfully." });
 
       setFormData({
-        maintenance_date: new Date(), maintenance_type: '', description: '', performed_by: '',
+        maintenance_date: new Date(), maintenance_type: '', description: '',
+        performed_by: loggedInUserName,
         parts_replaced: '', cost: '', notes: '', linked_defect_id: '', service_provider_type: '',
         service_company: '', engineer_name: '', equipment_out_of_service: false, downtime_duration: '',
-        requires_verification: false, verified_by: '', verification_date: null,
       });
+      setSomeoneElse(false);
       setUploadedFiles([]);
       onMaintenanceLogged?.();
 
@@ -317,35 +412,36 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
 
   const resetForm = () => {
     setFormData({
-      maintenance_date: new Date(), maintenance_type: '', description: '', performed_by: '',
+      maintenance_date: new Date(), maintenance_type: '', description: '',
+      performed_by: loggedInUserName,
       parts_replaced: '', cost: '', notes: '', linked_defect_id: '', service_provider_type: '',
       service_company: '', engineer_name: '', equipment_out_of_service: false, downtime_duration: '',
-      requires_verification: false, verified_by: '', verification_date: null,
     });
+    setSomeoneElse(false);
     setUploadedFiles([]);
   };
 
   return (
-    <div className="pb-6 space-y-4" style={{ background: '#F1F5F9', minHeight: '100%' }}>
+    <div className="pb-6 space-y-3" style={{ background: '#F1F5F9', minHeight: '100%' }}>
 
       {/* ── Info banner ── */}
-      <div className="flex items-start gap-3 rounded-xl border p-4"
+      <div className="flex items-start gap-3 rounded-xl border px-3.5 py-3"
         style={{ background: '#EFF6FF', borderColor: '#BFDBFE' }}>
         <Info className="shrink-0 mt-0.5 h-4 w-4" style={{ color: '#2563EB' }} />
-        <p style={{ color: '#1D4ED8', fontSize: 13, lineHeight: '1.5' }}>
-          All attachments are stored in the equipment document register under <strong>"Maintenance"</strong>. Generated reports will also appear there.
+        <p style={{ color: '#1D4ED8', fontSize: 12, lineHeight: '1.5' }}>
+          Attachments are stored in the equipment document register under <strong>"Maintenance"</strong>.
         </p>
       </div>
 
-      {/* ── SECTION 1: Maintenance Details ── */}
+      {/* ── CORE FIELDS: Date, Type, Description ── */}
       <LogSectionCard>
-        <LogSectionHeader icon={CalendarIcon} title="Maintenance Details" iconColor="#1E3A5F" iconBg="#DBEAFE" />
+        <LogSectionHeader icon={Wrench} title="Maintenance Details" iconColor="#1E3A5F" iconBg="#DBEAFE" />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-3">
           {/* Date */}
           <div className="space-y-1.5">
             <Label className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
-              Maintenance Date <span className="text-destructive">*</span>
+              Date <span className="text-destructive">*</span>
             </Label>
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
@@ -365,33 +461,68 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           {/* Type */}
           <div className="space-y-1.5">
             <Label className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
-              Maintenance Type <span className="text-destructive">*</span>
+              Type <span className="text-destructive">*</span>
             </Label>
             <Select value={formData.maintenance_type} onValueChange={(v) => setFormData({ ...formData, maintenance_type: v })}>
-              <SelectTrigger className={fieldClass}><SelectValue placeholder="Select maintenance type" /></SelectTrigger>
+              <SelectTrigger className={fieldClass}><SelectValue placeholder="Select type" /></SelectTrigger>
               <SelectContent>{MAINTENANCE_TYPES.map((t) => <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>)}</SelectContent>
             </Select>
           </div>
+        </div>
 
-          {/* Performed By */}
-          <div className="space-y-1.5">
-            <Label htmlFor="performed_by" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
+        {/* Work Description */}
+        <div className="space-y-1.5">
+          <Label htmlFor="description" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
+            Work Summary <span className="text-destructive">*</span>
+          </Label>
+          <Textarea id="description" value={formData.description}
+            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+            placeholder="Describe the maintenance work performed…" rows={3} className={textareaClass} />
+        </div>
+
+        {/* Who did the work */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
               Performed By <span className="text-destructive">*</span>
             </Label>
-            <Input id="performed_by" value={formData.performed_by}
-              onChange={(e) => setFormData({ ...formData, performed_by: e.target.value })}
-              placeholder="Name of person who performed maintenance" className={fieldClass} />
+            {!someoneElse && loggedInUserName && (
+              <span className="text-[12px] text-muted-foreground">You</span>
+            )}
           </div>
 
-          {/* Cost */}
-          <div className="space-y-1.5">
-            <Label htmlFor="cost" className="text-[13px] font-semibold flex items-center gap-1.5" style={{ color: '#0F172A' }}>
-              Cost (£) <span className="text-[11px] font-normal text-slate-400">(optional)</span>
-            </Label>
-            <Input id="cost" type="number" step="0.01" min="0" value={formData.cost}
-              onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
-              placeholder="0.00" className={fieldClass} />
-          </div>
+          {!someoneElse && (
+            <div className="flex items-center justify-between rounded-lg p-2.5 border" style={{ background: '#F8FAFC', borderColor: '#E2E8F0' }}>
+              <span className="text-[13px] font-medium" style={{ color: '#0F172A' }}>
+                {loggedInUserName || 'Loading…'}
+              </span>
+              <button
+                type="button"
+                onClick={() => setSomeoneElse(true)}
+                className="text-[12px] font-medium text-primary hover:underline"
+              >
+                Someone else?
+              </button>
+            </div>
+          )}
+
+          {someoneElse && (
+            <div className="space-y-2">
+              <Input
+                value={formData.performed_by}
+                onChange={(e) => setFormData({ ...formData, performed_by: e.target.value })}
+                placeholder="Name of person who performed the work"
+                className={fieldClass}
+              />
+              <button
+                type="button"
+                onClick={() => setSomeoneElse(false)}
+                className="text-[12px] font-medium text-muted-foreground hover:text-foreground"
+              >
+                ← I did this work
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Linked Defect */}
@@ -418,147 +549,9 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
             )}
           </div>
         )}
-
-        {/* Out of Service toggle */}
-        <div className="flex items-center justify-between rounded-xl p-3 border" style={{ background: '#F8FAFC', borderColor: '#E2E8F0' }}>
-          <div>
-            <p className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>Equipment Out of Service</p>
-            <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>Was equipment taken offline for this work?</p>
-          </div>
-          <Switch checked={formData.equipment_out_of_service}
-            onCheckedChange={(v) => setFormData({ ...formData, equipment_out_of_service: v })} />
-        </div>
-
-        {formData.equipment_out_of_service && (
-          <div className="space-y-1.5">
-            <Label htmlFor="downtime" className="text-[13px] font-semibold flex items-center gap-1.5" style={{ color: '#0F172A' }}>
-              <Clock className="h-3.5 w-3.5" style={{ color: '#1E3A5F' }} /> Downtime Duration
-            </Label>
-            <Input id="downtime" value={formData.downtime_duration}
-              onChange={(e) => setFormData({ ...formData, downtime_duration: e.target.value })}
-              placeholder="e.g. 2 hours, half day, 3 days" className={fieldClass} />
-          </div>
-        )}
       </LogSectionCard>
 
-      {/* ── SECTION 2: Work Performed ── */}
-      <LogSectionCard>
-        <LogSectionHeader icon={ClipboardList} title="Work Performed" iconColor="#B45309" iconBg="#FEF3C7" />
-
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="description" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
-              Work Description <span className="text-destructive">*</span>
-            </Label>
-            <Textarea id="description" value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Describe the maintenance work performed…" rows={4} className={textareaClass} />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="parts_replaced" className="text-[13px] font-semibold flex items-center gap-1.5" style={{ color: '#0F172A' }}>
-              Parts Replaced <span className="text-[11px] font-normal text-slate-400">(optional)</span>
-            </Label>
-            <Textarea id="parts_replaced" value={formData.parts_replaced}
-              onChange={(e) => setFormData({ ...formData, parts_replaced: e.target.value })}
-              placeholder="List any parts replaced, e.g. bearings, bolts, seals…"
-              rows={2} className={textareaClass} style={{ minHeight: 72 }} />
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="notes" className="text-[13px] font-semibold flex items-center gap-1.5" style={{ color: '#0F172A' }}>
-              Additional Notes <span className="text-[11px] font-normal text-slate-400">(optional)</span>
-            </Label>
-            <Textarea id="notes" value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Any additional observations, recommendations or follow-up actions…"
-              rows={2} className={textareaClass} style={{ minHeight: 72 }} />
-          </div>
-        </div>
-      </LogSectionCard>
-
-      {/* ── SECTION 3: Service Provider ── */}
-      <LogSectionCard>
-        <LogSectionHeader icon={UserCog} title="Service Provider" iconColor="#0F766E" iconBg="#CCFBF1" />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-1.5">
-            <Label className="text-[13px] font-semibold flex items-center gap-1.5" style={{ color: '#0F172A' }}>
-              Provider Type <span className="text-[11px] font-normal text-slate-400">(optional)</span>
-            </Label>
-            <Select value={formData.service_provider_type} onValueChange={(v) => setFormData({ ...formData, service_provider_type: v })}>
-              <SelectTrigger className={fieldClass}><SelectValue placeholder="Internal or external?" /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="internal">Internal — Own team</SelectItem>
-                <SelectItem value="external">External — Contractor</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {formData.service_provider_type === 'external' && (
-            <div className="space-y-1.5">
-              <Label htmlFor="service_company" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>Company Name</Label>
-              <Input id="service_company" value={formData.service_company}
-                onChange={(e) => setFormData({ ...formData, service_company: e.target.value })}
-                placeholder="Contractor / service company name" className={fieldClass} />
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <Label htmlFor="engineer_name" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
-              Engineer / Technician Name
-            </Label>
-            <Input id="engineer_name" value={formData.engineer_name}
-              onChange={(e) => setFormData({ ...formData, engineer_name: e.target.value })}
-              placeholder="Name of engineer or technician" className={fieldClass} />
-          </div>
-        </div>
-      </LogSectionCard>
-
-      {/* ── SECTION 4: Verification ── */}
-      <LogSectionCard style={formData.requires_verification ? { background: '#ECFDF5', borderColor: '#34D399' } : {}}>
-        <LogSectionHeader icon={ShieldCheck} title="Verification"
-          iconColor="#16A34A" iconBg={formData.requires_verification ? '#D1FAE5' : '#F0FDF4'} />
-
-        <div className="flex items-center justify-between rounded-xl p-3 border"
-          style={{ background: formData.requires_verification ? 'rgba(255,255,255,0.6)' : '#F8FAFC', borderColor: formData.requires_verification ? '#6EE7B7' : '#E2E8F0' }}>
-          <div>
-            <p className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>Supervisor Sign-off Required</p>
-            <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>Record verification of this work by a competent person</p>
-          </div>
-          <Switch checked={formData.requires_verification}
-            onCheckedChange={(v) => setFormData({ ...formData, requires_verification: v })} />
-        </div>
-
-        {formData.requires_verification && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="verified_by" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>Verified By</Label>
-              <Input id="verified_by" value={formData.verified_by}
-                onChange={(e) => setFormData({ ...formData, verified_by: e.target.value })}
-                placeholder="Name of verifying person" className={fieldClass} />
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>Verification Date</Label>
-              <Popover open={verificationCalendarOpen} onOpenChange={setVerificationCalendarOpen}>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className={cn('w-full justify-start text-left font-normal h-11 rounded-[10px] border-[#CBD5E1] bg-[#F8FAFC] text-[#0F172A]', !formData.verification_date && 'text-[#94A3B8]')}>
-                    <CalendarIcon className="mr-2 h-4 w-4 opacity-60" />
-                    {formData.verification_date ? format(formData.verification_date, 'd MMM yyyy') : 'Select date'}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={formData.verification_date || undefined}
-                    onSelect={(date) => { setFormData({ ...formData, verification_date: date || null }); setVerificationCalendarOpen(false); }}
-                    initialFocus className="pointer-events-auto" />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-        )}
-      </LogSectionCard>
-
-      {/* ── SECTION 5: Evidence & Attachments ── */}
+      {/* ── EVIDENCE & ATTACHMENTS ── */}
       <LogSectionCard>
         <LogSectionHeader icon={Paperclip} title="Evidence & Attachments" iconColor="#7C3AED" iconBg="#EDE9FE" />
 
@@ -568,52 +561,45 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
         <input type="file" multiple accept="image/*" capture="environment"
           onChange={handleFileUpload} className="hidden" id="camera-upload" />
 
-        {/* Upload area */}
-        <div className="rounded-xl border-2 border-dashed p-5 space-y-4" style={{ borderColor: '#CBD5E1', background: '#F8FAFC' }}>
-          <div className="grid grid-cols-2 gap-3">
-            <button type="button"
-              className="h-20 flex flex-col items-center justify-center gap-2 rounded-xl border transition-colors cursor-pointer hover:border-[#1E3A5F] hover:bg-white"
-              style={{ background: '#FFFFFF', borderColor: '#E2E8F0' }}
-              onClick={() => document.getElementById('camera-upload')?.click()}>
-              <Camera className="h-5 w-5" style={{ color: '#1E3A5F' }} strokeWidth={2} />
-              <span className="text-[13px] font-semibold" style={{ color: '#1E293B' }}>Take Photo</span>
-            </button>
-            <button type="button"
-              className="h-20 flex flex-col items-center justify-center gap-2 rounded-xl border transition-colors cursor-pointer hover:border-[#1E3A5F] hover:bg-white"
-              style={{ background: '#FFFFFF', borderColor: '#E2E8F0' }}
-              onClick={() => document.getElementById('file-upload')?.click()}>
-              <FolderOpen className="h-5 w-5" style={{ color: '#1E3A5F' }} strokeWidth={2} />
-              <span className="text-[13px] font-semibold" style={{ color: '#1E293B' }}>Choose File</span>
-            </button>
-          </div>
-
-          <p className="text-[11px] text-center" style={{ color: '#94A3B8' }}>
-            Max 10MB per file · Images (max {MAX_PHOTOS}), PDF, Word, Excel, PowerPoint, Video, ZIP
-          </p>
-
-          {imageCount > 0 && (
-            <p className="text-[12px] font-semibold text-center" style={{ color: '#1E3A5F' }}>
-              📷 {imageCount}/{MAX_PHOTOS} photos added
-            </p>
-          )}
+        <div className="grid grid-cols-2 gap-2.5">
+          <button type="button"
+            className="h-16 flex flex-col items-center justify-center gap-1.5 rounded-xl border transition-colors cursor-pointer hover:border-[#1E3A5F] hover:bg-white"
+            style={{ background: '#FFFFFF', borderColor: '#E2E8F0' }}
+            onClick={() => document.getElementById('camera-upload')?.click()}>
+            <Camera className="h-5 w-5" style={{ color: '#1E3A5F' }} strokeWidth={2} />
+            <span className="text-[12px] font-semibold" style={{ color: '#1E293B' }}>Take Photo</span>
+          </button>
+          <button type="button"
+            className="h-16 flex flex-col items-center justify-center gap-1.5 rounded-xl border transition-colors cursor-pointer hover:border-[#1E3A5F] hover:bg-white"
+            style={{ background: '#FFFFFF', borderColor: '#E2E8F0' }}
+            onClick={() => document.getElementById('file-upload')?.click()}>
+            <FolderOpen className="h-5 w-5" style={{ color: '#1E3A5F' }} strokeWidth={2} />
+            <span className="text-[12px] font-semibold" style={{ color: '#1E293B' }}>Choose File</span>
+          </button>
         </div>
+
+        {imageCount > 0 && (
+          <p className="text-[12px] font-semibold text-center" style={{ color: '#1E3A5F' }}>
+            📷 {imageCount}/{MAX_PHOTOS} photos added
+          </p>
+        )}
 
         {/* Attached file thumbnails */}
         {uploadedFiles.length > 0 && (
-          <div className="space-y-2">
-            <Label className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
-              Attached Files ({uploadedFiles.length})
+          <div className="space-y-1.5">
+            <Label className="text-[12px] font-semibold" style={{ color: '#0F172A' }}>
+              Attached ({uploadedFiles.length})
             </Label>
             <div className="flex flex-wrap gap-2">
               {uploadedFiles.map((file, index) => (
-                <div key={index} className="relative group rounded-lg overflow-hidden w-16 h-16"
+                <div key={index} className="relative group rounded-lg overflow-hidden w-14 h-14"
                   style={{ border: '1px solid #E2E8F0', background: '#F8FAFC' }}>
                   {file.type.startsWith('image/') ? (
                     <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center p-1">
-                      <FileText className="h-5 w-5" style={{ color: '#64748B' }} />
-                      <span className="text-[8px] text-center line-clamp-1 mt-0.5" style={{ color: '#64748B' }}>
+                      <FileText className="h-4 w-4" style={{ color: '#64748B' }} />
+                      <span className="text-[7px] text-center line-clamp-1 mt-0.5" style={{ color: '#64748B' }}>
                         {file.name.split('.').pop()}
                       </span>
                     </div>
@@ -629,6 +615,103 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
           </div>
         )}
       </LogSectionCard>
+
+      {/* ── COLLAPSIBLE: More Details ── */}
+      <CollapsibleSection
+        icon={Clock}
+        title="More Details"
+        iconColor="#B45309"
+        iconBg="#FEF3C7"
+      >
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label htmlFor="cost" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
+              Cost (£)
+            </Label>
+            <Input id="cost" type="number" step="0.01" min="0" value={formData.cost}
+              onChange={(e) => setFormData({ ...formData, cost: e.target.value })}
+              placeholder="0.00" className={fieldClass} />
+          </div>
+          <div className="space-y-1.5 flex flex-col">
+            <Label className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>Out of Service?</Label>
+            <div className="flex items-center gap-2 mt-auto h-11">
+              <Switch checked={formData.equipment_out_of_service}
+                onCheckedChange={(v) => setFormData({ ...formData, equipment_out_of_service: v })} />
+              <span className="text-[12px] text-muted-foreground">{formData.equipment_out_of_service ? 'Yes' : 'No'}</span>
+            </div>
+          </div>
+        </div>
+
+        {formData.equipment_out_of_service && (
+          <div className="space-y-1.5">
+            <Label htmlFor="downtime" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
+              Downtime Duration
+            </Label>
+            <Input id="downtime" value={formData.downtime_duration}
+              onChange={(e) => setFormData({ ...formData, downtime_duration: e.target.value })}
+              placeholder="e.g. 2 hours, half day" className={fieldClass} />
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          <Label htmlFor="parts_replaced" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
+            Parts Replaced
+          </Label>
+          <Textarea id="parts_replaced" value={formData.parts_replaced}
+            onChange={(e) => setFormData({ ...formData, parts_replaced: e.target.value })}
+            placeholder="List any parts replaced…"
+            rows={2} className={textareaClass} style={{ minHeight: 60 }} />
+        </div>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="notes" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
+            Additional Notes
+          </Label>
+          <Textarea id="notes" value={formData.notes}
+            onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+            placeholder="Any additional observations or follow-up actions…"
+            rows={2} className={textareaClass} style={{ minHeight: 60 }} />
+        </div>
+      </CollapsibleSection>
+
+      {/* ── COLLAPSIBLE: Contractor / Provider ── */}
+      <CollapsibleSection
+        icon={UserCog}
+        title="Contractor / Provider"
+        iconColor="#0F766E"
+        iconBg="#CCFBF1"
+      >
+        <div className="space-y-1.5">
+          <Label className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
+            Provider Type
+          </Label>
+          <Select value={formData.service_provider_type} onValueChange={(v) => setFormData({ ...formData, service_provider_type: v })}>
+            <SelectTrigger className={fieldClass}><SelectValue placeholder="Internal or external?" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="internal">Internal — Own team</SelectItem>
+              <SelectItem value="external">External — Contractor</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {formData.service_provider_type === 'external' && (
+          <div className="space-y-1.5">
+            <Label htmlFor="service_company" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>Company Name</Label>
+            <Input id="service_company" value={formData.service_company}
+              onChange={(e) => setFormData({ ...formData, service_company: e.target.value })}
+              placeholder="Contractor / service company name" className={fieldClass} />
+          </div>
+        )}
+
+        <div className="space-y-1.5">
+          <Label htmlFor="engineer_name" className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>
+            Engineer / Technician Name
+          </Label>
+          <Input id="engineer_name" value={formData.engineer_name}
+            onChange={(e) => setFormData({ ...formData, engineer_name: e.target.value })}
+            placeholder="Name of engineer or technician" className={fieldClass} />
+        </div>
+      </CollapsibleSection>
 
       {/* ── STICKY BOTTOM ACTION BAR ── */}
       <div className="sticky bottom-0 z-50 border-t px-4 py-3 flex flex-col gap-2 sm:flex-row sm:gap-3"
