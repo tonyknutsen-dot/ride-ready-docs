@@ -58,6 +58,7 @@ import { format, startOfMonth, endOfMonth, subDays, startOfYear, endOfYear } fro
 import { cn } from '@/lib/utils';
 import { isCheckRecord, filterCheckRecords, CheckRecordFiltersState, defaultCheckRecordFilters } from '@/components/CheckRecordFilters';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
+import PageHeader from '@/components/PageHeader';
 
 interface Document {
   id: string;
@@ -582,17 +583,13 @@ const BatchSendDocuments = () => {
 
   return (
     <div className="container mx-auto py-8 px-4 pb-24 md:pb-8" style={{ backgroundColor: 'hsl(210 40% 95%)' }}>
-      <div className="mb-6">
-        <h1 className="text-[20px] font-semibold mb-1 flex items-center gap-2.5" style={{ color: 'hsl(222 84% 5%)' }}>
-          <span className="flex items-center justify-center w-9 h-9 rounded-xl" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
-            <Send className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-          </span>
-          Send Compliance Documents
-        </h1>
-        <p className="text-sm ml-11" style={{ color: 'hsl(215 19% 40%)' }}>
-          Submit compliance documents to councils, insurers, and auditors.
-        </p>
-      </div>
+      <PageHeader
+        title="Send Compliance Documents"
+        subtitle="Submit compliance documents to councils, insurers, and auditors."
+        icon={<Send className="h-5 w-5 text-primary" />}
+        showBackButton
+        backTo="/documents"
+      />
 
       {/* Step 1: Ride Selection (if no ride selected) */}
       {!selectedRide ? (
