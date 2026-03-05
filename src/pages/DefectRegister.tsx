@@ -564,6 +564,7 @@ const DefectRegister = () => {
       const pdfBlob = doc.output('blob');
 
       const saveToDocuments = async () => {
+        const isSingleRide = rideFilter !== 'all';
         const storagePath = `${user.id}/defect-reports/${Date.now()}-${fileName}`;
         const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
         if (uploadError) throw uploadError;
@@ -573,7 +574,8 @@ const DefectRegister = () => {
           document_type: 'defect_report', file_path: storagePath,
           mime_type: 'application/pdf', file_size: pdfBlob.size,
           notes: `Defect register: ${filtered.length} records, ${periodLabel}`,
-          is_global: true,
+          is_global: !isSingleRide,
+          ride_id: isSingleRide ? rideFilter : null,
         });
         loadSavedReports();
       };
