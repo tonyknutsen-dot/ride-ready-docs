@@ -833,25 +833,24 @@ const WindLog = () => {
       <PageHeader
         title="Wind Speed Register"
         icon={<Wind className="h-5 w-5 text-primary" />}
-        subtitle={`${filteredLogs.length} reading${filteredLogs.length !== 1 ? 's' : ''}${hasFilters ? ` (filtered from ${logs.length})` : ''}`}
+        subtitle="Record one reading and link it to one or more inflatables."
         showBackButton
         backTo="/overview"
-        actions={
-          <div className="flex items-center gap-1.5">
-            <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={generatingCsv || filteredLogs.length === 0} className="h-8 text-[12px] gap-1.5">
-              <FileDown className="h-3.5 w-3.5" /> CSV
-            </Button>
-            <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={filteredLogs.length === 0} className="h-8 text-[12px] gap-1.5">
-              <FileDown className="h-3.5 w-3.5" /> PDF
-            </Button>
-            <Button onClick={handleOpenSheet} size="sm" className="gap-1.5 h-8" disabled={inflatables.length === 0}>
-              <Plus className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Add wind reading</span>
-              <span className="sm:hidden">Add</span>
-            </Button>
-          </div>
-        }
       />
+
+      {/* ── Export actions ── */}
+      <div className="flex items-center gap-1.5 flex-wrap">
+        <Button onClick={handleOpenSheet} size="sm" className="gap-1.5 h-9" disabled={inflatables.length === 0}>
+          <Plus className="h-3.5 w-3.5" />
+          Add wind reading
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={generatingCsv || filteredLogs.length === 0} className="h-9 text-[12px] gap-1.5">
+          <FileDown className="h-3.5 w-3.5" /> Export CSV
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={filteredLogs.length === 0} className="h-9 text-[12px] gap-1.5">
+          <FileDown className="h-3.5 w-3.5" /> Export PDF
+        </Button>
+      </div>
 
       {/* ── Search bar ── */}
       <div className="relative">
@@ -923,7 +922,7 @@ const WindLog = () => {
                 { label: 'Last 12 months', from: subMonths(new Date(), 12), to: new Date() },
               ].map(p => (
                 <button key={p.label} onClick={() => { setFilterDateFrom(p.from); setFilterDateTo(p.to); }}
-                  className="text-[11px] px-2.5 py-1 rounded-full border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  className="text-[11px] px-2.5 py-1 rounded-full border border-border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                   {p.label}
                 </button>
               ))}
@@ -982,12 +981,16 @@ const WindLog = () => {
         </CollapsibleContent>
       </Collapsible>
 
-      {/* ── Export hint ── */}
-      {hasFilters && (
-        <p className="text-[11px] text-muted-foreground text-center">
-          Exports include the current filters and date range
+      {/* ── Result count + export hint ── */}
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] text-muted-foreground">
+          {filteredLogs.length} reading{filteredLogs.length !== 1 ? 's' : ''}
+          {hasFilters && ` (filtered from ${logs.length})`}
         </p>
-      )}
+      </div>
+      <p className="text-[11px] text-muted-foreground text-center">
+        Exports include the current filters and date range
+      </p>
 
       {/* ─── No inflatables ─── */}
       {inflatables.length === 0 && !loading && (
@@ -1063,10 +1066,12 @@ const WindLog = () => {
       )}
 
       {/* ── Previously generated reports ── */}
-      {savedReports.length > 0 && (
-        <div className="space-y-2 pt-4 border-t">
-          <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
-          {savedReports.map((report: any) => (
+      <div className="space-y-2 pt-4 border-t">
+        <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
+        {savedReports.length === 0 ? (
+          <p className="text-[12px] text-muted-foreground">No saved reports yet.</p>
+        ) : (
+          savedReports.map((report: any) => (
             <div key={report.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -1081,9 +1086,9 @@ const WindLog = () => {
                 <Eye className="h-3 w-3" /> View
               </Button>
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
 
       {/* ─── Add Reading Sheet ─── */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>

@@ -700,26 +700,22 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   return (
     <div className="space-y-4 pb-6">
 
-      {/* ── Header: title + count + export ── */}
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-lg font-bold text-foreground">Maintenance Register</h3>
-          <p className="text-[13px] text-muted-foreground">
-            {filteredRecords.length} record{filteredRecords.length !== 1 ? 's' : ''}
-            {hasActiveFilters && ` (filtered from ${records.length})`}
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={generatingCsv || filteredRecords.length === 0}
-            className="h-8 text-[12px] gap-1.5">
-            <FileDown className="h-3.5 w-3.5" /> CSV
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={generatingPdf || filteredRecords.length === 0}
-            className="h-8 text-[12px] gap-1.5">
-            {generatingPdf ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" /> : <FileDown className="h-3.5 w-3.5" />}
-            PDF
-          </Button>
-        </div>
+      {/* ── Header ── */}
+      <div>
+        <h3 className="text-lg font-bold text-foreground">Maintenance Register</h3>
+      </div>
+
+      {/* ── Export actions ── */}
+      <div className="flex items-center gap-1.5">
+        <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={generatingCsv || filteredRecords.length === 0}
+          className="h-9 text-[12px] gap-1.5">
+          <FileDown className="h-3.5 w-3.5" /> Export CSV
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={generatingPdf || filteredRecords.length === 0}
+          className="h-9 text-[12px] gap-1.5">
+          {generatingPdf ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" /> : <FileDown className="h-3.5 w-3.5" />}
+          Export PDF
+        </Button>
       </div>
 
       {/* ── Search bar ── */}
@@ -742,7 +738,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
         <CollapsibleTrigger asChild>
           <button className="w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-            style={{ borderColor: hasActiveFilters ? '#3B82F6' : '#E2E8F0', background: hasActiveFilters ? '#EFF6FF' : '#FFFFFF' }}>
+            style={{ borderColor: hasActiveFilters ? 'hsl(var(--primary))' : 'hsl(var(--border))', background: hasActiveFilters ? 'hsl(var(--primary) / 0.05)' : 'hsl(var(--background))' }}>
             <div className="flex items-center gap-2">
               <Filter className="h-3.5 w-3.5" />
               <span>{hasActiveFilters ? 'Filters active' : 'Filters & date range'}</span>
@@ -751,7 +747,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
-          <div className="mt-2 rounded-xl border bg-card p-3 space-y-3" style={{ borderColor: '#E2E8F0' }}>
+          <div className="mt-2 rounded-xl border border-border bg-card p-3 space-y-3">
             <div className="grid grid-cols-2 gap-2.5">
               {/* Date from */}
               <div className="space-y-1">
@@ -793,7 +789,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                 { label: 'Last 12 months', from: subMonths(new Date(), 12), to: new Date() },
               ].map(p => (
                 <button key={p.label} onClick={() => { setDateFrom(p.from); setDateTo(p.to); }}
-                  className="text-[11px] px-2.5 py-1 rounded-full border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  className="text-[11px] px-2.5 py-1 rounded-full border border-border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                   {p.label}
                 </button>
               ))}
@@ -834,12 +830,16 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         </CollapsibleContent>
       </Collapsible>
 
-      {/* ── Export hint ── */}
-      {hasActiveFilters && (
-        <p className="text-[11px] text-muted-foreground text-center">
-          Exports include the current filters and date range.
+      {/* ── Result count + export hint ── */}
+      <div className="flex items-center justify-between">
+        <p className="text-[13px] text-muted-foreground">
+          {filteredRecords.length} record{filteredRecords.length !== 1 ? 's' : ''}
+          {hasActiveFilters && ` (filtered from ${records.length})`}
         </p>
-      )}
+      </div>
+      <p className="text-[11px] text-muted-foreground text-center">
+        Exports include the current filters and date range
+      </p>
 
       {/* ── Records list ── */}
       {filteredRecords.length === 0 ? (
@@ -907,14 +907,16 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       )}
 
       {/* ── Previously generated reports ── */}
-      {previousReports.length > 0 && (
-        <div className="space-y-2 pt-4 border-t">
-          <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
-          {previousReports.map((report) => (
+      <div className="space-y-2 pt-4 border-t">
+        <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
+        {previousReports.length === 0 ? (
+          <p className="text-[12px] text-muted-foreground">No saved reports yet.</p>
+        ) : (
+          previousReports.map((report) => (
             <div key={report.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
-                  <FileText className="h-4 w-4 text-destructive" />
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <FileText className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
@@ -925,9 +927,9 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                 <Eye className="h-3 w-3" /> View
               </Button>
             </div>
-          ))}
-        </div>
-      )}
+          ))
+        )}
+      </div>
 
       {/* ── Record Detail View ── */}
       <Dialog open={detailViewOpen} onOpenChange={setDetailViewOpen}>
