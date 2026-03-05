@@ -829,7 +829,7 @@ const WindLog = () => {
   };
 
   return (
-    <div className="space-y-4 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-6">
+    <div className="space-y-5 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-6">
       <PageHeader
         title="Wind Speed Register"
         icon={<Wind className="h-5 w-5 text-primary" />}
@@ -838,8 +838,8 @@ const WindLog = () => {
         backTo="/overview"
       />
 
-      {/* ── Export actions ── */}
-      <div className="flex items-center gap-1.5 flex-wrap">
+      {/* ── Action buttons ── */}
+      <div className="flex items-center gap-2 flex-wrap">
         <Button onClick={handleOpenSheet} size="sm" className="gap-1.5 h-9" disabled={inflatables.length === 0}>
           <Plus className="h-3.5 w-3.5" />
           Add wind reading
@@ -871,7 +871,7 @@ const WindLog = () => {
       {/* ── Collapsible Filters & date range ── */}
       <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
         <CollapsibleTrigger asChild>
-          <button className="w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
+          <button className="w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
             style={{ borderColor: hasFilters ? 'hsl(var(--primary))' : 'hsl(var(--border))', background: hasFilters ? 'hsl(var(--primary) / 0.05)' : 'hsl(var(--background))' }}>
             <div className="flex items-center gap-2">
               <Filter className="h-3.5 w-3.5" />
@@ -982,15 +982,15 @@ const WindLog = () => {
       </Collapsible>
 
       {/* ── Result count + export hint ── */}
-      <div className="flex items-center justify-between">
+      <div className="space-y-1">
         <p className="text-[13px] text-muted-foreground">
           {filteredLogs.length} reading{filteredLogs.length !== 1 ? 's' : ''}
           {hasFilters && ` (filtered from ${logs.length})`}
         </p>
+        <p className="text-[11px] text-muted-foreground">
+          Exports include the current filters and date range
+        </p>
       </div>
-      <p className="text-[11px] text-muted-foreground text-center">
-        Exports include the current filters and date range
-      </p>
 
       {/* ─── No inflatables ─── */}
       {inflatables.length === 0 && !loading && (
