@@ -32,6 +32,8 @@ interface EquipmentSelectorProps {
   placeholderIcon?: React.ComponentType<{ className?: string }>;
   /** Empty state description */
   emptyDescription?: string;
+  /** Whether to show the KPI strip and status filters (default: true) */
+  showKpis?: boolean;
 }
 
 const normalizeStatus = (status: string): keyof typeof STATUS_CONFIG => {
@@ -53,6 +55,7 @@ const EquipmentSelector = ({
   onRideSelect,
   placeholderIcon: PlaceholderIcon = Wrench,
   emptyDescription = 'Add rides or equipment in the Rides section to get started.',
+  showKpis = true,
 }: EquipmentSelectorProps) => {
   const { user } = useAuth();
   const { isStaff } = useStaff();
@@ -213,9 +216,11 @@ const EquipmentSelector = ({
   if (loading) {
     return (
       <div className="space-y-4">
-        <div className="grid grid-cols-4 gap-2">
-          {[1,2,3,4].map(i => <div key={i} className="h-14 bg-muted rounded-lg animate-pulse" />)}
-        </div>
+        {showKpis && (
+          <div className="grid grid-cols-4 gap-2">
+            {[1,2,3,4].map(i => <div key={i} className="h-14 bg-muted rounded-lg animate-pulse" />)}
+          </div>
+        )}
         <div className="h-10 bg-muted rounded-lg animate-pulse" />
         <div className="space-y-2">
           {[1,2,3].map(i => <div key={i} className="h-20 bg-muted rounded-lg animate-pulse" />)}
@@ -227,7 +232,7 @@ const EquipmentSelector = ({
   return (
     <div className="space-y-4">
       {/* ── KPI Strip ── */}
-      {rides.length > 0 && (
+      {showKpis && rides.length > 0 && (
         <div className="grid grid-cols-4 gap-2">
           {[
             { count: kpis.overdue,     label: 'Overdue',      icon: AlertTriangle, active: kpis.overdue > 0,     activeColor: 'text-destructive' },
@@ -255,19 +260,21 @@ const EquipmentSelector = ({
               className="pl-9 h-10"
             />
           </div>
-          <div className="flex gap-1.5 overflow-x-auto pb-0.5">
-            {(['all', 'overdue', 'due-soon', 'up-to-date'] as const).map(f => (
-              <Button
-                key={f}
-                variant={filterStatus === f ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFilterStatus(f)}
-                className="text-[11px] h-8 px-3 rounded-full whitespace-nowrap shrink-0"
-              >
-                {f === 'all' ? 'All' : f === 'due-soon' ? 'Due soon' : f === 'up-to-date' ? 'Up to date' : 'Overdue'}
-              </Button>
-            ))}
-          </div>
+          {showKpis && (
+            <div className="flex gap-1.5 overflow-x-auto pb-0.5">
+              {(['all', 'overdue', 'due-soon', 'up-to-date'] as const).map(f => (
+                <Button
+                  key={f}
+                  variant={filterStatus === f ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setFilterStatus(f)}
+                  className="text-[11px] h-8 px-3 rounded-full whitespace-nowrap shrink-0"
+                >
+                  {f === 'all' ? 'All' : f === 'due-soon' ? 'Due soon' : f === 'up-to-date' ? 'Up to date' : 'Overdue'}
+                </Button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
