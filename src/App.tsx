@@ -80,6 +80,7 @@ const DataIndependence = lazy(() => import("./pages/DataIndependence"));
 const SharedDocuments = lazy(() => import("./pages/SharedDocuments"));
 const WindLog = lazy(() => import("./pages/WindLog"));
 const DefectRegister = lazy(() => import("./pages/DefectRegister"));
+const DefectReport = lazy(() => import("./pages/DefectReport"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const Compliance = lazy(() => import("./pages/Compliance"));
 const DocumentViewerPage = lazy(() => import("./pages/DocumentViewerPage"));
@@ -318,6 +319,19 @@ const App = () => (
                     <ProfileGuard>
                       <AppLayout>
                         <DefectRegister />
+                      </AppLayout>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              {/* Defect Report route */}
+              <Route 
+                path="/defect-report"
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <AppLayout>
+                        <DefectReport />
                       </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>

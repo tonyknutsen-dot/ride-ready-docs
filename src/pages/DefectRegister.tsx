@@ -26,7 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import DefectClosureDialog from '@/components/DefectClosureDialog';
-import DefectReportDialog from '@/components/DefectReportDialog';
+
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 import { useToast } from '@/hooks/use-toast';
 import jsPDF from 'jspdf';
@@ -606,16 +606,10 @@ const DefectRegister = () => {
 
       {/* Top actions */}
       <div className="flex items-center gap-1.5 flex-wrap">
-        <DefectReportDialog
-          onDefectReported={handleDefectUpdated}
-          onCriticalDefectReported={handleDefectUpdated}
-          trigger={
-            <Button size="sm" className="gap-1.5 h-9">
-              <AlertOctagon className="h-3.5 w-3.5" />
-              Report defect
-            </Button>
-          }
-        />
+        <Button size="sm" className="gap-1.5 h-9" onClick={() => navigate('/defect-report')}>
+          <AlertOctagon className="h-3.5 w-3.5" />
+          Report defect
+        </Button>
         <Button
           variant="outline"
           size="sm"
