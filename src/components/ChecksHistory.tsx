@@ -764,6 +764,10 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         </div>
       )}
 
+      <p className="text-[11px] text-muted-foreground text-center">
+        Exports include the current filters and date range
+      </p>
+
       {/* ── Sticky export bar ── */}
       <div className="fixed left-0 right-0 bottom-0 z-30 border-t border-border bg-card/95 backdrop-blur-sm">
         <div className="max-w-xl mx-auto px-4 py-3 grid grid-cols-2 gap-2">
