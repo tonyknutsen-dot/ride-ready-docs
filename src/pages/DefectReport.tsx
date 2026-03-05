@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { AlertTriangle, HelpCircle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import PageHeader from '@/components/PageHeader';
-import RideSelector from '@/components/RideSelector';
+import EquipmentSelector from '@/components/EquipmentSelector';
 import DefectReportForm from '@/components/DefectReportForm';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
 
@@ -123,7 +122,7 @@ const DefectReport = () => {
     );
   }
 
-  // Show ride selector when no ride is selected
+  // Show ride selector when no ride is selected — identical layout to Maintenance
   return (
     <div className="min-h-screen bg-background pb-28 md:pb-8">
       <StaffAccountBanner />
@@ -141,12 +140,10 @@ const DefectReport = () => {
       </header>
 
       <main className="container mx-auto px-4 py-5">
-        <RideSelector
-          title="Report Defect"
-          description="Select the piece of equipment with the defect to log an issue."
-          actionLabel="Report Defect"
-          icon={AlertTriangle}
+        <EquipmentSelector
           onRideSelect={handleRideSelect}
+          placeholderIcon={AlertTriangle}
+          emptyDescription="Add rides or equipment in the Rides section to report defects."
         />
       </main>
     </div>
