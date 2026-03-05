@@ -603,12 +603,12 @@ const DefectRegister = () => {
       />
 
       {/* Top actions */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <div className="flex items-center gap-1.5 flex-wrap">
         <DefectReportDialog
           onDefectReported={handleDefectUpdated}
           onCriticalDefectReported={handleDefectUpdated}
           trigger={
-            <Button size="sm" className="gap-1.5 h-9 w-full justify-center">
+            <Button size="sm" className="gap-1.5 h-9">
               <AlertOctagon className="h-3.5 w-3.5" />
               Report defect
             </Button>
@@ -619,7 +619,7 @@ const DefectRegister = () => {
           size="sm"
           onClick={handleExportCsv}
           disabled={generatingCsv || filtered.length === 0}
-          className="h-9 text-[12px] gap-1.5 w-full"
+          className="h-9 text-[12px] gap-1.5"
         >
           <FileDown className="h-3.5 w-3.5" /> Export CSV
         </Button>
@@ -628,7 +628,7 @@ const DefectRegister = () => {
           size="sm"
           onClick={handleExportPdf}
           disabled={generatingPdf || filtered.length === 0}
-          className="h-9 text-[12px] gap-1.5 w-full"
+          className="h-9 text-[12px] gap-1.5"
         >
           {generatingPdf ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" /> : <FileDown className="h-3.5 w-3.5" />}
           Export PDF
@@ -718,7 +718,7 @@ const DefectRegister = () => {
                 { label: 'Last 12 months', from: subMonths(new Date(), 12), to: new Date() },
               ].map(p => (
                 <button key={p.label} onClick={() => { setDateFrom(p.from); setDateTo(p.to); }}
-                  className="text-[11px] px-2.5 py-1 rounded-full border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                  className="text-[11px] px-2.5 py-1 rounded-full border border-border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
                   {p.label}
                 </button>
               ))}
@@ -912,8 +912,8 @@ const DefectRegister = () => {
           savedReports.map((report: any) => (
             <div key={report.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5 min-w-0">
-                <div className="h-8 w-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
-                  <FileText className="h-4 w-4 text-destructive" />
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <FileText className="h-4 w-4 text-primary" />
                 </div>
                 <div className="min-w-0">
                   <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
