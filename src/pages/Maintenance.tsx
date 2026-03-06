@@ -9,6 +9,7 @@ import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import PageHeader from '@/components/PageHeader';
 import MaintenanceManager from '@/components/MaintenanceManager';
 import MaintenanceRideSelector from '@/components/MaintenanceRideSelector';
+import EquipmentPickerDialog from '@/components/EquipmentPickerDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MaintenanceOnboardingModal } from '@/components/MaintenanceOnboardingModal';
@@ -33,6 +34,7 @@ const Maintenance = () => {
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(!!rideIdFromUrl);
   const [showGuide, setShowGuide] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   // Load ride from URL param if present
   useEffect(() => {
@@ -48,7 +50,6 @@ const Maintenance = () => {
           .select('*, ride_categories(name, description, category_group)')
           .eq('id', rideIdFromUrl);
 
-        // For owners, scope to their rides. For staff, RLS handles access.
         if (!isStaff) {
           query = query.eq('user_id', effectiveUserId);
         }
@@ -59,7 +60,6 @@ const Maintenance = () => {
         setSelectedRide(data as Ride);
       } catch (error) {
         console.error('Error loading ride:', error);
-        // Clear invalid rideId from URL
         setSearchParams({});
       } finally {
         setLoading(false);
@@ -73,6 +73,12 @@ const Maintenance = () => {
   const handleRideSelect = (ride: Ride) => {
     setSelectedRide(ride);
     setSearchParams({ rideId: ride.id });
+  };
+
+  const handleLogMaintenancePick = (ride: any) => {
+    setPickerOpen(false);
+    setSelectedRide(ride as Ride);
+    setSearchParams({ rideId: ride.id, tab: 'log' });
   };
 
   const handleBack = () => {
@@ -164,20 +170,24 @@ const Maintenance = () => {
       <main className="container mx-auto px-4 py-5">
         <div className="space-y-4">
           <Button
-            onClick={() => {
-              const el = document.getElementById('maintenance-equipment-section');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }}
-            className="gap-1.5 h-10 min-h-[44px] w-full sm:w-auto"
+            onClick={() => setPickerOpen(true)}
+            className="gap-1.5 h-12 min-h-[52px] w-full sm:w-auto text-sm"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus className="h-4 w-4" />
             Log maintenance
           </Button>
-          <div id="maintenance-equipment-section">
-            <MaintenanceRideSelector onRideSelect={handleRideSelect} />
-          </div>
+          <MaintenanceRideSelector onRideSelect={handleRideSelect} />
         </div>
       </main>
+
+      {/* ── EQUIPMENT PICKER ── */}
+      <EquipmentPickerDialog
+        open={pickerOpen}
+        onOpenChange={setPickerOpen}
+        title="Select equipment"
+        subtitle="Choose equipment to log maintenance for"
+        onSelect={handleLogMaintenancePick}
+      />
     </div>
   );
 };
