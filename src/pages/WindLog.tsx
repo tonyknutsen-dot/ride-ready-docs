@@ -29,6 +29,7 @@ import { format, startOfDay, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import RegisterHeader, { PreviousReportsSection } from '@/components/RegisterHeader';
 
 import { generateWindLogPdf } from '@/utils/windLogPdf';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
