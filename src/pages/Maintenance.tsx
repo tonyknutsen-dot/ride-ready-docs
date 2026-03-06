@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Wrench, HelpCircle } from 'lucide-react';
+import { Wrench, HelpCircle, Plus } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -162,7 +162,16 @@ const Maintenance = () => {
       </header>
       
       <main className="container mx-auto px-4 py-5">
-        <MaintenanceRideSelector onRideSelect={handleRideSelect} />
+        <div className="space-y-4">
+          <Button
+            onClick={() => {/* Will use the ride selector below, then navigate */}}
+            className="gap-1.5 h-10 min-h-[44px] w-full sm:w-auto"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Log maintenance
+          </Button>
+          <MaintenanceRideSelector onRideSelect={handleRideSelect} />
+        </div>
       </main>
     </div>
   );

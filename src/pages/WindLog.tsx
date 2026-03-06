@@ -29,6 +29,7 @@ import { format, startOfDay, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import RegisterHeader, { PreviousReportsSection } from '@/components/RegisterHeader';
 
 import { generateWindLogPdf } from '@/utils/windLogPdf';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
@@ -829,7 +830,7 @@ const WindLog = () => {
   };
 
   return (
-    <div className="space-y-5 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-6">
+    <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-6">
       <PageHeader
         title="Wind Speed Register"
         icon={<Wind className="h-5 w-5 text-primary" />}
@@ -838,97 +839,28 @@ const WindLog = () => {
         backTo="/overview"
       />
 
-      {/* ── Action buttons ── */}
-      <div className="flex items-center gap-2 flex-wrap">
-        <Button onClick={handleOpenSheet} size="sm" className="gap-1.5 h-9" disabled={inflatables.length === 0}>
-          <Plus className="h-3.5 w-3.5" />
-          Add wind reading
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={generatingCsv || filteredLogs.length === 0} className="h-9 text-[12px] gap-1.5">
-          <FileDown className="h-3.5 w-3.5" /> Export CSV
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={filteredLogs.length === 0} className="h-9 text-[12px] gap-1.5">
-          <FileDown className="h-3.5 w-3.5" /> Export PDF
-        </Button>
-      </div>
-
-      {/* ── Search bar ── */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          placeholder="Search readings…"
-          className="pl-9 h-10 rounded-xl"
-        />
-        {searchTerm && (
-          <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-            <X className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-        )}
-      </div>
-
-      {/* ── Collapsible Filters & date range ── */}
-      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <CollapsibleTrigger asChild>
-          <button className="w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-            style={{ borderColor: hasFilters ? 'hsl(var(--primary))' : 'hsl(var(--border))', background: hasFilters ? 'hsl(var(--primary) / 0.05)' : 'hsl(var(--background))' }}>
-            <div className="flex items-center gap-2">
-              <Filter className="h-3.5 w-3.5" />
-              <span>{hasFilters ? 'Filters active' : 'Filters & date range'}</span>
-            </div>
-            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')} />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="mt-2 rounded-xl border bg-card p-3 space-y-3">
-            {/* Date range */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="space-y-1">
-                <Label className="text-[11px] font-medium text-muted-foreground">From</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left h-9 text-[12px]', !filterDateFrom && 'text-muted-foreground')}>
-                      <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
-                      {filterDateFrom ? format(filterDateFrom, 'dd/MM/yyyy') : 'Start date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={filterDateFrom} onSelect={(d) => setFilterDateFrom(d || undefined)} initialFocus className="pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-[11px] font-medium text-muted-foreground">To</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left h-9 text-[12px]', !filterDateTo && 'text-muted-foreground')}>
-                      <CalendarIcon className="mr-1.5 h-3.5 w-3.5" />
-                      {filterDateTo ? format(filterDateTo, 'dd/MM/yyyy') : 'End date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar mode="single" selected={filterDateTo} onSelect={(d) => setFilterDateTo(d || undefined)} initialFocus className="pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            {/* Quick date presets */}
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { label: 'Last 3 months', from: subMonths(new Date(), 3), to: new Date() },
-                { label: 'Last 6 months', from: subMonths(new Date(), 6), to: new Date() },
-                { label: 'Last 12 months', from: subMonths(new Date(), 12), to: new Date() },
-              ].map(p => (
-                <button key={p.label} onClick={() => { setFilterDateFrom(p.from); setFilterDateTo(p.to); }}
-                  className="text-[11px] px-2.5 py-1 rounded-full border border-border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Module-specific filters */}
+      <RegisterHeader
+        resultCount={`${filteredLogs.length} reading${filteredLogs.length !== 1 ? 's' : ''}`}
+        totalCount={logs.length}
+        hasActiveFilters={!!hasFilters}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search readings…"
+        actions={[
+          { label: 'Add wind reading', icon: <Plus className="h-3.5 w-3.5" />, onClick: () => handleOpenSheet(), disabled: inflatables.length === 0 },
+          { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filteredLogs.length === 0 },
+          { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline', disabled: filteredLogs.length === 0 },
+        ]}
+        filtersOpen={filtersOpen}
+        onFiltersOpenChange={setFiltersOpen}
+        dateFrom={filterDateFrom}
+        dateTo={filterDateTo}
+        onDateFromChange={setFilterDateFrom}
+        onDateToChange={setFilterDateTo}
+        savedReports={savedReports}
+        onViewReport={handleViewReport}
+        filterContent={
+          <>
             <div className="grid grid-cols-2 gap-2.5">
               <div className="space-y-1">
                 <Label className="text-[11px] font-medium text-muted-foreground">Location</Label>
@@ -970,27 +902,15 @@ const WindLog = () => {
                 </Select>
               </div>
             </div>
-
             {hasFilters && (
               <button onClick={clearFilters}
                 className="text-[12px] font-medium text-primary hover:underline">
                 Clear all filters
               </button>
             )}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-
-      {/* ── Result count + export hint ── */}
-      <div className="space-y-1">
-        <p className="text-[13px] text-muted-foreground">
-          {filteredLogs.length} reading{filteredLogs.length !== 1 ? 's' : ''}
-          {hasFilters && ` (filtered from ${logs.length})`}
-        </p>
-        <p className="text-[11px] text-muted-foreground">
-          Exports include the current filters and date range
-        </p>
-      </div>
+          </>
+        }
+      />
 
       {/* ─── No inflatables ─── */}
       {inflatables.length === 0 && !loading && (
@@ -1065,30 +985,7 @@ const WindLog = () => {
         </>
       )}
 
-      {/* ── Previously generated reports ── */}
-      <div className="space-y-2 pt-4 border-t">
-        <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
-        {savedReports.length === 0 ? (
-          <p className="text-[12px] text-muted-foreground">No saved reports yet.</p>
-        ) : (
-          savedReports.map((report: any) => (
-            <div key={report.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <FileText className="h-4 w-4 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
-                  <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => handleViewReport(report.file_path)} className="h-7 text-[11px] gap-1">
-                <Eye className="h-3 w-3" /> View
-              </Button>
-            </div>
-          ))
-        )}
-      </div>
+      <PreviousReportsSection reports={savedReports} onViewReport={handleViewReport} />
 
       {/* ─── Add Reading Sheet ─── */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>

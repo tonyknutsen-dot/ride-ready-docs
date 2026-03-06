@@ -26,6 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import DefectClosureDialog from '@/components/DefectClosureDialog';
+import RegisterHeader, { PreviousReportsSection } from '@/components/RegisterHeader';
 
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -594,7 +595,7 @@ const DefectRegister = () => {
   };
 
   return (
-    <div className="space-y-5 px-4 md:px-0 pb-24 md:pb-8">
+    <div className="space-y-3 px-4 md:px-0 pb-24 md:pb-8">
       <PageHeader
         icon={<AlertOctagon className="h-5 w-5 text-destructive" />}
         iconBgClass="from-destructive/20 to-destructive/10"
@@ -604,124 +605,42 @@ const DefectRegister = () => {
         backTo="/overview"
       />
 
-      {/* Top actions */}
-      <div className="flex items-center gap-1.5 flex-wrap">
-        <Button size="sm" className="gap-1.5 h-9" onClick={() => navigate('/defect-report')}>
-          <AlertOctagon className="h-3.5 w-3.5" />
-          Report defect
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExportCsv}
-          disabled={generatingCsv || filtered.length === 0}
-          className="h-9 text-[12px] gap-1.5"
-        >
-          <FileDown className="h-3.5 w-3.5" /> Export CSV
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleExportPdf}
-          disabled={generatingPdf || filtered.length === 0}
-          className="h-9 text-[12px] gap-1.5"
-        >
-          {generatingPdf ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" /> : <FileDown className="h-3.5 w-3.5" />}
-          Export PDF
-        </Button>
-      </div>
-
-      {/* Stop-use banner */}
-      {stopUseCount > 0 && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/25 shadow-sm">
-          <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
-            <AlertOctagon className="h-4 w-4 text-destructive" />
-          </div>
-          <div>
-            <p className="text-sm font-bold text-destructive">{stopUseCount} stop-use defect{stopUseCount !== 1 ? 's' : ''}</p>
-            <p className="text-[11px] text-destructive/80">Equipment must not be operated until resolved</p>
-          </div>
-        </div>
-      )}
-
-      {/* ── Search bar ── */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search defects..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="pl-9 h-10 rounded-xl"
-        />
-        {searchTerm && (
-          <button onClick={() => setSearchTerm('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-            <X className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-        )}
-      </div>
-
-      {/* ── Collapsible Filters & date range ── */}
-      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <CollapsibleTrigger asChild>
-          <button className="w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-            style={{ borderColor: hasActiveFilters ? 'hsl(var(--primary))' : 'hsl(var(--border))', background: hasActiveFilters ? 'hsl(var(--primary) / 0.05)' : 'hsl(var(--background))' }}>
-            <div className="flex items-center gap-2">
-              <Filter className="h-3.5 w-3.5" />
-              <span>{hasActiveFilters ? 'Filters active' : 'Filters & date range'}</span>
-            </div>
-            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')} />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="mt-2 rounded-xl border bg-card p-3 space-y-3">
-            {/* Date range */}
-            <div className="grid grid-cols-2 gap-2.5">
-              <div className="space-y-1">
-                <Label className="text-[11px] font-medium text-muted-foreground">From</Label>
-                <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left h-9 text-[12px]', !dateFrom && 'text-muted-foreground')}>
-                      <Calendar className="mr-1.5 h-3.5 w-3.5" />
-                      {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : 'Start date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent mode="single" selected={dateFrom} onSelect={(d) => { setDateFrom(d || undefined); setDateFromOpen(false); }} initialFocus className="pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
+      <RegisterHeader
+        resultCount={`${filtered.length} defect${filtered.length !== 1 ? 's' : ''}`}
+        totalCount={enriched.length}
+        hasActiveFilters={hasActiveFilters}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Search defects…"
+        actions={[
+          { label: 'Report defect', icon: <AlertOctagon className="h-3.5 w-3.5" />, onClick: () => navigate('/defect-report') },
+          { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filtered.length === 0 },
+          { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline', disabled: generatingPdf || filtered.length === 0, loading: generatingPdf },
+        ]}
+        filtersOpen={filtersOpen}
+        onFiltersOpenChange={setFiltersOpen}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        savedReports={savedReports}
+        onViewReport={handleViewReport}
+        extraContent={
+          stopUseCount > 0 ? (
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-destructive/10 border border-destructive/25 shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center shrink-0">
+                <AlertOctagon className="h-4 w-4 text-destructive" />
               </div>
-              <div className="space-y-1">
-                <Label className="text-[11px] font-medium text-muted-foreground">To</Label>
-                <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left h-9 text-[12px]', !dateTo && 'text-muted-foreground')}>
-                      <Calendar className="mr-1.5 h-3.5 w-3.5" />
-                      {dateTo ? format(dateTo, 'dd/MM/yyyy') : 'End date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent mode="single" selected={dateTo} onSelect={(d) => { setDateTo(d || undefined); setDateToOpen(false); }} initialFocus className="pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
+              <div>
+                <p className="text-sm font-bold text-destructive">{stopUseCount} stop-use defect{stopUseCount !== 1 ? 's' : ''}</p>
+                <p className="text-[11px] text-destructive/80">Equipment must not be operated until resolved</p>
               </div>
             </div>
-
-            {/* Quick date presets */}
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { label: 'Last 3 months', from: subMonths(new Date(), 3), to: new Date() },
-                { label: 'Last 6 months', from: subMonths(new Date(), 6), to: new Date() },
-                { label: 'Last 12 months', from: subMonths(new Date(), 12), to: new Date() },
-              ].map(p => (
-                <button key={p.label} onClick={() => { setDateFrom(p.from); setDateTo(p.to); }}
-                  className="text-[11px] px-2.5 py-1 rounded-full border border-border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Filter dropdowns */}
-            <div className="grid grid-cols-3 gap-2.5">
+          ) : undefined
+        }
+        filterContent={
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
               <div className="space-y-1">
                 <Label className="text-[11px] font-medium text-muted-foreground">Status</Label>
                 <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); updateFilterParams({ status: v }); }}>
@@ -758,7 +677,6 @@ const DefectRegister = () => {
                 </Select>
               </div>
             </div>
-
             {hasActiveFilters && (
               <button onClick={() => {
                 setStatusFilter('open'); setSeverityFilter('all'); setRideFilter('all');
@@ -769,20 +687,9 @@ const DefectRegister = () => {
                 Clear all filters
               </button>
             )}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
-
-      {/* ── Filter hint + result count ── */}
-      <div className="flex items-center justify-between">
-        <p className="text-[13px] text-muted-foreground">
-          {filtered.length} defect{filtered.length !== 1 ? 's' : ''}
-          {hasActiveFilters && ` (filtered from ${enriched.length})`}
-        </p>
-      </div>
-      <p className="text-[11px] text-muted-foreground text-center">
-        Exports include the current filters and date range
-      </p>
+          </>
+        }
+      />
 
       {/* Defect list */}
       {isLoading ? (
@@ -899,30 +806,7 @@ const DefectRegister = () => {
         </div>
       )}
 
-      {/* ── Previously generated reports ── */}
-      <div className="space-y-2 pt-4 border-t">
-        <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
-        {savedReports.length === 0 ? (
-          <p className="text-[12px] text-muted-foreground">No saved reports yet.</p>
-        ) : (
-          savedReports.map((report: any) => (
-            <div key={report.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <FileText className="h-4 w-4 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
-                  <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => handleViewReport(report.file_path)} className="h-7 text-[11px] gap-1">
-                <Eye className="h-3 w-3" /> View
-              </Button>
-            </div>
-          ))
-        )}
-      </div>
+      <PreviousReportsSection reports={savedReports} onViewReport={handleViewReport} />
 
       {/* Detail sheet */}
       <Sheet open={!!detailDefect} onOpenChange={(open) => { if (!open) closeDetail(); }}>
