@@ -700,105 +700,30 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
   }
 
   return (
-    <div className="space-y-4 pb-6">
+    <div className="space-y-3 pb-6">
 
-      {/* ── Header ── */}
-      <div>
-        <h3 className="text-lg font-bold text-foreground">Maintenance Register</h3>
-      </div>
-
-      {/* ── Export actions ── */}
-      <div className="flex items-center gap-1.5">
-        <Button variant="outline" size="sm" onClick={handleExportCsv} disabled={generatingCsv || filteredRecords.length === 0}
-          className="h-9 text-[12px] gap-1.5">
-          <FileDown className="h-3.5 w-3.5" /> Export CSV
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleExportPdf} disabled={generatingPdf || filteredRecords.length === 0}
-          className="h-9 text-[12px] gap-1.5">
-          {generatingPdf ? <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" /> : <FileDown className="h-3.5 w-3.5" />}
-          Export PDF
-        </Button>
-      </div>
-
-      {/* ── Search bar ── */}
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search records…"
-          className="pl-9 h-10 rounded-xl"
-        />
-        {searchQuery && (
-          <button onClick={() => setSearchQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2">
-            <X className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-        )}
-      </div>
-
-      {/* ── Filters ── */}
-      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
-        <CollapsibleTrigger asChild>
-          <button className="w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors"
-            style={{ borderColor: hasActiveFilters ? 'hsl(var(--primary))' : 'hsl(var(--border))', background: hasActiveFilters ? 'hsl(var(--primary) / 0.05)' : 'hsl(var(--background))' }}>
-            <div className="flex items-center gap-2">
-              <Filter className="h-3.5 w-3.5" />
-              <span>{hasActiveFilters ? 'Filters active' : 'Filters & date range'}</span>
-            </div>
-            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')} />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="mt-2 rounded-xl border border-border bg-card p-3 space-y-3">
+      <RegisterHeader
+        resultCount={`${filteredRecords.length} record${filteredRecords.length !== 1 ? 's' : ''}`}
+        totalCount={records.length}
+        hasActiveFilters={hasActiveFilters}
+        searchTerm={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search records…"
+        actions={[
+          { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filteredRecords.length === 0 },
+          { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline', disabled: generatingPdf || filteredRecords.length === 0, loading: generatingPdf },
+        ]}
+        filtersOpen={filtersOpen}
+        onFiltersOpenChange={setFiltersOpen}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        onDateFromChange={setDateFrom}
+        onDateToChange={setDateTo}
+        savedReports={previousReports}
+        onViewReport={handleViewReport}
+        filterContent={
+          <>
             <div className="grid grid-cols-2 gap-2.5">
-              {/* Date from */}
-              <div className="space-y-1">
-                <Label className="text-[11px] font-medium text-muted-foreground">From</Label>
-                <Popover open={dateFromOpen} onOpenChange={setDateFromOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left h-9 text-[12px]', !dateFrom && 'text-muted-foreground')}>
-                      <Calendar className="mr-1.5 h-3.5 w-3.5" />
-                      {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : 'Start date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent mode="single" selected={dateFrom} onSelect={(d) => { setDateFrom(d || undefined); setDateFromOpen(false); }} initialFocus className="pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-              {/* Date to */}
-              <div className="space-y-1">
-                <Label className="text-[11px] font-medium text-muted-foreground">To</Label>
-                <Popover open={dateToOpen} onOpenChange={setDateToOpen}>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" size="sm" className={cn('w-full justify-start text-left h-9 text-[12px]', !dateTo && 'text-muted-foreground')}>
-                      <Calendar className="mr-1.5 h-3.5 w-3.5" />
-                      {dateTo ? format(dateTo, 'dd/MM/yyyy') : 'End date'}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarComponent mode="single" selected={dateTo} onSelect={(d) => { setDateTo(d || undefined); setDateToOpen(false); }} initialFocus className="pointer-events-auto" />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            </div>
-
-            {/* Quick date presets */}
-            <div className="flex flex-wrap gap-1.5">
-              {[
-                { label: 'Last 3 months', from: subMonths(new Date(), 3), to: new Date() },
-                { label: 'Last 6 months', from: subMonths(new Date(), 6), to: new Date() },
-                { label: 'Last 12 months', from: subMonths(new Date(), 12), to: new Date() },
-              ].map(p => (
-                <button key={p.label} onClick={() => { setDateFrom(p.from); setDateTo(p.to); }}
-                  className="text-[11px] px-2.5 py-1 rounded-full border border-border bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
-                  {p.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-2 gap-2.5">
-              {/* Type filter */}
               <div className="space-y-1">
                 <Label className="text-[11px] font-medium text-muted-foreground">Type</Label>
                 <Select value={filterType} onValueChange={setFilterType}>
@@ -809,7 +734,6 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                   </SelectContent>
                 </Select>
               </div>
-              {/* Performed by filter */}
               <div className="space-y-1">
                 <Label className="text-[11px] font-medium text-muted-foreground">Performed by</Label>
                 <Select value={filterPerformedBy} onValueChange={setFilterPerformedBy}>
@@ -821,27 +745,18 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                 </Select>
               </div>
             </div>
-
             {hasActiveFilters && (
               <button onClick={() => { setFilterType('all'); setFilterPerformedBy('all'); setDateFrom(undefined); setDateTo(undefined); setSearchQuery(''); }}
                 className="text-[12px] font-medium text-primary hover:underline">
                 Clear all filters
               </button>
             )}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+          </>
+        }
+      />
 
-      {/* ── Result count + export hint ── */}
-      <div className="flex items-center justify-between">
-        <p className="text-[13px] text-muted-foreground">
-          {filteredRecords.length} record{filteredRecords.length !== 1 ? 's' : ''}
-          {hasActiveFilters && ` (filtered from ${records.length})`}
-        </p>
-      </div>
-      <p className="text-[11px] text-muted-foreground text-center">
-        Exports include the current filters and date range
-      </p>
+      {/* ── Related Defects (collapsed) ── */}
+      <RelatedDefectsSection rideId={ride.id} rideName={ride.ride_name} />
 
       {/* ── Records list ── */}
       {filteredRecords.length === 0 ? (
@@ -853,7 +768,8 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
           {filteredRecords.map((record) => {
             const recordDocs = documents[record.id] || [];
             return (
-              <div key={record.id} className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden">
+              <div key={record.id} className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.998] transition-all"
+                onClick={() => { setSelectedRecord(record); setDetailViewOpen(true); }}>
                 <div className="p-3.5 space-y-2">
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
@@ -864,22 +780,22 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                     </div>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg text-muted-foreground hover:text-foreground"
+                          onClick={(e) => e.stopPropagation()}>
                           <MoreVertical className="h-4 w-4" />
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem onClick={() => openEditDialog(record)}><Edit className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); openEditDialog(record); }}><Edit className="h-3.5 w-3.5 mr-2" /> Edit</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setDeleteRecordId(record.id)}>
+                        <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteRecordId(record.id); }}>
                           <Trash2 className="h-3.5 w-3.5 mr-2" /> Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </div>
 
-                  <button className="w-full text-left space-y-2 active:opacity-80 transition-opacity"
-                    onClick={() => { setSelectedRecord(record); setDetailViewOpen(true); }}>
+                  <div className="space-y-2">
                     <h4 className="text-[14px] font-semibold leading-snug text-foreground line-clamp-2">{record.description}</h4>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
                       {record.performed_by && <span>By <span className="font-medium text-foreground">{record.performed_by}</span></span>}
@@ -888,11 +804,11 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
                     {record.parts_replaced && (
                       <p className="text-[12px] text-muted-foreground"><span className="font-medium text-foreground/70">Parts:</span> {record.parts_replaced}</p>
                     )}
-                  </button>
+                  </div>
 
                   {recordDocs.length > 0 && (
                     <button className="flex items-center gap-1.5 text-[12px] font-medium text-primary hover:underline"
-                      onClick={() => { setSelectedRecord(record); setAttachmentViewOpen(true); }}>
+                      onClick={(e) => { e.stopPropagation(); setSelectedRecord(record); setAttachmentViewOpen(true); }}>
                       <Paperclip className="h-3 w-3" /> {recordDocs.length} attachment{recordDocs.length !== 1 ? 's' : ''}
                     </button>
                   )}
@@ -908,30 +824,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         </div>
       )}
 
-      {/* ── Previously generated reports ── */}
-      <div className="space-y-2 pt-4 border-t">
-        <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
-        {previousReports.length === 0 ? (
-          <p className="text-[12px] text-muted-foreground">No saved reports yet.</p>
-        ) : (
-          previousReports.map((report) => (
-            <div key={report.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <FileText className="h-4 w-4 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
-                  <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => handleViewReport(report.file_path)} className="h-7 text-[11px] gap-1">
-                <Eye className="h-3 w-3" /> View
-              </Button>
-            </div>
-          ))
-        )}
-      </div>
+      <PreviousReportsSection reports={previousReports} onViewReport={handleViewReport} />
 
       {/* ── Record Detail View ── */}
       <Dialog open={detailViewOpen} onOpenChange={setDetailViewOpen}>
