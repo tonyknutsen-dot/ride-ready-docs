@@ -408,7 +408,7 @@ const MarkCompleteSheet = ({
   // ─── Form state ───
   return (
     <Sheet open={open} onOpenChange={(v) => { if (!v) handleClose(); else onOpenChange(v); }}>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] flex flex-col p-0">
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[85dvh] flex flex-col p-0">
         {/* Header */}
         <div className="px-5 pt-5 pb-4 border-b border-border shrink-0">
           <div className="flex items-center gap-2">
@@ -552,7 +552,7 @@ const MarkCompleteSheet = ({
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex gap-3">
+        <div className="shrink-0 border-t border-border bg-background/95 backdrop-blur px-5 py-4 pb-[max(16px,env(safe-area-inset-bottom))] flex gap-3">
           <Button variant="outline" className="flex-1" onClick={handleClose} disabled={submitting}>
             Cancel
           </Button>
