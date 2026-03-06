@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { formatPlanWithDescription } from "@/utils/planFormatter";
 import { ItemLimitWarning } from "@/components/ItemLimitWarning";
-import DeviceHintBanner from "@/components/DeviceHintBanner";
+
 import { StatSkeleton, GridSkeleton } from "@/components/Skeletons";
 import { useOverviewData } from "@/hooks/useOverviewData";
 import { useCallback } from "react";
