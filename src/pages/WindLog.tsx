@@ -984,30 +984,7 @@ const WindLog = () => {
         </>
       )}
 
-      {/* ── Previously generated reports ── */}
-      <div className="space-y-2 pt-4 border-t">
-        <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
-        {savedReports.length === 0 ? (
-          <p className="text-[12px] text-muted-foreground">No saved reports yet.</p>
-        ) : (
-          savedReports.map((report: any) => (
-            <div key={report.id} className="bg-card border border-border rounded-xl p-3 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <FileText className="h-4 w-4 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
-                  <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={() => handleViewReport(report.file_path)} className="h-7 text-[11px] gap-1">
-                <Eye className="h-3 w-3" /> View
-              </Button>
-            </div>
-          ))
-        )}
-      </div>
+      <PreviousReportsSection reports={savedReports} onViewReport={handleViewReport} />
 
       {/* ─── Add Reading Sheet ─── */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
