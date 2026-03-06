@@ -351,6 +351,19 @@ const App = () => (
                   </ProtectedRoute>
                 } 
               />
+              {/* Per-equipment Checks Register */}
+              <Route 
+                path="/checks/register" 
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <AppLayout>
+                        <ChecksRegister />
+                      </AppLayout>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
               {/* Checklist Execution route */}
               <Route 
                 path="/checks/:rideId/:frequency/execute" 
