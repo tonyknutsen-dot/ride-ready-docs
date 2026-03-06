@@ -1135,11 +1135,12 @@ const WindLog = () => {
               </Label>
               <Textarea placeholder="Any additional notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="min-h-[56px]" maxLength={500} />
             </div>
-            <div className="sticky bottom-0 -mx-6 px-6 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-background border-t border-border">
-              <Button onClick={validateAndSave} disabled={saving || selectedRideIds.length === 0} className="w-full h-11">
-                {saving ? 'Saving...' : selectedRideIds.length === 0 ? 'Select inflatables to save' : `Save to ${selectedRideIds.length} inflatable${selectedRideIds.length !== 1 ? 's' : ''}`}
-              </Button>
             </div>
+          </div>
+          <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t px-5 py-3 pb-[max(12px,env(safe-area-inset-bottom))] shrink-0">
+            <Button type="button" onClick={validateAndSave} disabled={saving || selectedRideIds.length === 0} className="w-full h-11">
+              {saving ? 'Saving...' : selectedRideIds.length === 0 ? 'Select inflatables to save' : `Save to ${selectedRideIds.length} inflatable${selectedRideIds.length !== 1 ? 's' : ''}`}
+            </Button>
           </div>
         </SheetContent>
       </Sheet>
