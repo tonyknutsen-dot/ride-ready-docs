@@ -173,7 +173,9 @@ const Maintenance = () => {
             <Plus className="h-3.5 w-3.5" />
             Log maintenance
           </Button>
-          <MaintenanceRideSelector onRideSelect={handleRideSelect} />
+          <div id="maintenance-equipment-section">
+            <MaintenanceRideSelector onRideSelect={handleRideSelect} />
+          </div>
         </div>
       </main>
     </div>
