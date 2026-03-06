@@ -221,6 +221,7 @@ const DefectClosureDialog = ({
           </DialogDescription>
         </DialogHeader>
 
+        <div className="flex-1 overflow-y-auto px-6">
         <div className="space-y-3 py-1">
           {/* ── Context ── */}
           <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 space-y-1">
