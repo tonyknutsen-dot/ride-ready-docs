@@ -82,54 +82,60 @@ const EquipmentPickerDialog = ({
 
   return (
     <Sheet open={open} onOpenChange={handleClose}>
-      <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
-        <SheetHeader>
-          <SheetTitle className="text-base">{title}</SheetTitle>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground -mt-1">{subtitle}</p>
-          )}
-        </SheetHeader>
-
-        <div className="mt-3 space-y-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search equipment…"
-              className="pl-9 h-10 rounded-xl"
-              autoFocus
-            />
-          </div>
-
-          <div className="space-y-2 overflow-auto pb-2" style={{ maxHeight: '55vh' }}>
-            {isLoading ? (
-              <div className="text-sm text-muted-foreground text-center py-8">Loading equipment…</div>
-            ) : filtered.length === 0 ? (
-              <div className="text-sm text-muted-foreground text-center py-8">
-                {search ? 'No matching equipment.' : 'No equipment found.'}
-              </div>
-            ) : (
-              filtered.map((ride) => (
-                <button
-                  key={ride.id}
-                  type="button"
-                  className={cn(
-                    'w-full text-left rounded-xl border border-border p-3.5 flex items-center justify-between gap-3',
-                    'hover:bg-muted/30 active:bg-muted/50 active:scale-[0.99] transition-all min-h-[52px]'
-                  )}
-                  onClick={() => handleSelect(ride)}
-                >
-                  <div className="min-w-0">
-                    <div className="text-sm font-semibold text-foreground truncate">{ride.ride_name}</div>
-                    <div className="text-xs text-muted-foreground">{ride.ride_categories?.name || 'Equipment'}</div>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-                </button>
-              ))
+      <SheetContent side="bottom" className="max-h-[85dvh] rounded-t-2xl flex flex-col p-0 gap-0">
+        <div className="px-5 pt-5 pb-3 shrink-0">
+          <SheetHeader>
+            <SheetTitle className="text-base">{title}</SheetTitle>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground -mt-1">{subtitle}</p>
             )}
-          </div>
+          </SheetHeader>
+        </div>
 
+        <div className="flex-1 overflow-y-auto px-5 pb-[max(16px,env(safe-area-inset-bottom))]">
+          <div className="space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search equipment…"
+                className="pl-9 h-10 rounded-xl"
+                onFocus={(e) => requestAnimationFrame(() => setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120))}
+              />
+            </div>
+
+            <div className="space-y-2 pb-2">
+              {isLoading ? (
+                <div className="text-sm text-muted-foreground text-center py-8">Loading equipment…</div>
+              ) : filtered.length === 0 ? (
+                <div className="text-sm text-muted-foreground text-center py-8">
+                  {search ? 'No matching equipment.' : 'No equipment found.'}
+                </div>
+              ) : (
+                filtered.map((ride) => (
+                  <button
+                    key={ride.id}
+                    type="button"
+                    className={cn(
+                      'w-full text-left rounded-xl border border-border p-3.5 flex items-center justify-between gap-3',
+                      'hover:bg-muted/30 active:bg-muted/50 active:scale-[0.99] transition-all min-h-[52px]'
+                    )}
+                    onClick={() => handleSelect(ride)}
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-foreground truncate">{ride.ride_name}</div>
+                      <div className="text-xs text-muted-foreground">{ride.ride_categories?.name || 'Equipment'}</div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t px-5 py-3 pb-[max(12px,env(safe-area-inset-bottom))] shrink-0">
           <Button variant="outline" className="w-full min-h-[44px]" onClick={() => handleClose(false)} type="button">
             Cancel
           </Button>

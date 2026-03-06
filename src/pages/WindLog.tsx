@@ -989,12 +989,15 @@ const WindLog = () => {
 
       {/* ─── Add Reading Sheet ─── */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto rounded-t-2xl">
-          <SheetHeader className="mb-4">
-            <SheetTitle>Add Wind Reading</SheetTitle>
-            <SheetDescription>Record a wind speed measurement and link it to your inflatables.</SheetDescription>
-          </SheetHeader>
-          <div className="space-y-4 pb-6">
+        <SheetContent side="bottom" className="max-h-[85dvh] rounded-t-2xl flex flex-col p-0 gap-0">
+          <div className="px-5 pt-5 pb-3 shrink-0">
+            <SheetHeader className="mb-0">
+              <SheetTitle>Add Wind Reading</SheetTitle>
+              <SheetDescription>Record a wind speed measurement and link it to your inflatables.</SheetDescription>
+            </SheetHeader>
+          </div>
+          <div className="flex-1 overflow-y-auto px-5 pb-2">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Date</Label>
@@ -1132,11 +1135,12 @@ const WindLog = () => {
               </Label>
               <Textarea placeholder="Any additional notes" value={notes} onChange={(e) => setNotes(e.target.value)} className="min-h-[56px]" maxLength={500} />
             </div>
-            <div className="sticky bottom-0 -mx-6 px-6 pt-3 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] bg-background border-t border-border">
-              <Button onClick={validateAndSave} disabled={saving || selectedRideIds.length === 0} className="w-full h-11">
-                {saving ? 'Saving...' : selectedRideIds.length === 0 ? 'Select inflatables to save' : `Save to ${selectedRideIds.length} inflatable${selectedRideIds.length !== 1 ? 's' : ''}`}
-              </Button>
             </div>
+          </div>
+          <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t px-5 py-3 pb-[max(12px,env(safe-area-inset-bottom))] shrink-0">
+            <Button type="button" onClick={validateAndSave} disabled={saving || selectedRideIds.length === 0} className="w-full h-11">
+              {saving ? 'Saving...' : selectedRideIds.length === 0 ? 'Select inflatables to save' : `Save to ${selectedRideIds.length} inflatable${selectedRideIds.length !== 1 ? 's' : ''}`}
+            </Button>
           </div>
         </SheetContent>
       </Sheet>
