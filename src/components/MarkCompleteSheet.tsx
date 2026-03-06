@@ -408,7 +408,7 @@ const MarkCompleteSheet = ({
   // ─── Form state ───
   return (
     <Sheet open={open} onOpenChange={(v) => { if (!v) handleClose(); else onOpenChange(v); }}>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[80vh] flex flex-col p-0">
+      <SheetContent side="bottom" className="rounded-t-2xl max-h-[85dvh] flex flex-col p-0">
         {/* Header */}
         <div className="px-5 pt-5 pb-4 border-b border-border shrink-0">
           <div className="flex items-center gap-2">
