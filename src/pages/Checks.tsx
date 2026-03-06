@@ -1,14 +1,21 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckSquare, HelpCircle, ClipboardList, Clock, ChevronRight, Plus } from 'lucide-react';
+import { CheckSquare, HelpCircle, ClipboardList, Clock, ChevronRight, Plus, Search } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import RideSelector from '@/components/RideSelector';
 import { ChecksOnboardingModal } from '@/components/ChecksOnboardingModal';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import PageHeader from '@/components/PageHeader';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
 import { OfflineStaleAlert } from '@/components/OfflineStaleAlert';
 import { useRecentChecksSummary } from '@/hooks/useRecentChecksSummary';
+import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
+import { useStaff } from '@/contexts/StaffContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { useOfflineQuery } from '@/hooks/useOfflineQuery';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 type Ride = Tables<'rides'> & {
@@ -20,11 +27,50 @@ type Ride = Tables<'rides'> & {
 
 const Checks = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { isStaff } = useStaff();
+  const { effectiveUserId } = useEffectiveUserId();
   const [showGuide, setShowGuide] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerSearch, setPickerSearch] = useState('');
   const { data: summary, isLoading } = useRecentChecksSummary();
+
+  // Equipment list for the picker sheet
+  const { data: equipment = [], isLoading: equipLoading } = useOfflineQuery<Ride[]>({
+    queryKey: ['rides-selector', effectiveUserId, isStaff],
+    queryFn: async () => {
+      let query = supabase
+        .from('rides')
+        .select('*, ride_categories(name, description)')
+        .order('ride_name');
+      if (!isStaff) {
+        query = query.eq('user_id', effectiveUserId);
+      }
+      const { data, error } = await query;
+      if (error) throw error;
+      return (data || []) as Ride[];
+    },
+    enabled: !!user && !!effectiveUserId,
+    staleTime: 1000 * 60 * 2,
+    offlineCacheKey: `rides-selector:${effectiveUserId}`,
+  });
+
+  const filteredPicker = useMemo(() => {
+    const t = pickerSearch.trim().toLowerCase();
+    if (!t) return equipment;
+    return equipment.filter(e =>
+      `${e.ride_name} ${e.ride_categories?.name || ''}`.toLowerCase().includes(t)
+    );
+  }, [equipment, pickerSearch]);
 
   const handleRideSelect = (ride: Ride) => {
     navigate(`/checks/register?rideId=${ride.id}`);
+  };
+
+  const handleStartCheck = (rideId: string) => {
+    setPickerOpen(false);
+    setPickerSearch('');
+    navigate(`/rides/${rideId}?tab=checks`);
   };
 
   return (
@@ -64,11 +110,7 @@ const Checks = () => {
 
         {/* ── PRIMARY CTA ────────────────────────── */}
         <Button
-          onClick={() => {
-            // Opens equipment picker below — same pattern as Maintenance "Log maintenance"
-            const el = document.getElementById('checks-equipment-section');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }}
+          onClick={() => setPickerOpen(true)}
           className="gap-1.5 h-10 min-h-[44px] w-full sm:w-auto"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -136,7 +178,7 @@ const Checks = () => {
         )}
 
         {/* ── SELECT EQUIPMENT SECTION ─────────── */}
-        <div id="checks-equipment-section">
+        <div>
           <h2 className="text-xs font-semibold text-muted-foreground mb-3 tracking-widest uppercase flex items-center gap-1.5">
             <ClipboardList className="h-3 w-3" strokeWidth={2} />
             All Equipment
@@ -152,6 +194,57 @@ const Checks = () => {
         </div>
 
       </main>
+
+      {/* ── EQUIPMENT PICKER SHEET ────────────── */}
+      <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
+        <SheetContent side="bottom" className="max-h-[85vh] rounded-t-2xl">
+          <SheetHeader>
+            <SheetTitle className="text-base">Select equipment to check</SheetTitle>
+          </SheetHeader>
+
+          <div className="mt-3 space-y-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                value={pickerSearch}
+                onChange={(e) => setPickerSearch(e.target.value)}
+                placeholder="Search equipment…"
+                className="pl-9 h-10 rounded-xl"
+              />
+            </div>
+
+            <div className="space-y-2 overflow-auto pb-2" style={{ maxHeight: '55vh' }}>
+              {equipLoading ? (
+                <div className="text-sm text-muted-foreground text-center py-6">Loading…</div>
+              ) : filteredPicker.length === 0 ? (
+                <div className="text-sm text-muted-foreground text-center py-6">No matching equipment.</div>
+              ) : (
+                filteredPicker.map((ride) => (
+                  <button
+                    key={ride.id}
+                    type="button"
+                    className={cn(
+                      'w-full text-left rounded-xl border border-border p-3 flex items-center justify-between gap-3',
+                      'hover:bg-muted/30 active:bg-muted/50 active:scale-[0.99] transition-all min-h-[52px]'
+                    )}
+                    onClick={() => handleStartCheck(ride.id)}
+                  >
+                    <div className="min-w-0">
+                      <div className="text-sm font-semibold text-foreground truncate">{ride.ride_name}</div>
+                      <div className="text-xs text-muted-foreground">{ride.ride_categories?.name || 'Equipment'}</div>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                  </button>
+                ))
+              )}
+            </div>
+
+            <Button variant="outline" className="w-full" onClick={() => setPickerOpen(false)} type="button">
+              Cancel
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
