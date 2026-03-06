@@ -28,6 +28,8 @@ import {
 import { drawTemplateHeader, drawTemplateFooters, generateDocumentId } from '@/utils/pdfTemplate';
 import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
+import RegisterHeader, { PreviousReportsSection } from '@/components/RegisterHeader';
+import RelatedDefectsSection from '@/components/RelatedDefectsSection';
 
 // Types
 type Ride = Tables<'rides'> & {
