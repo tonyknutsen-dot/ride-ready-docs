@@ -164,7 +164,10 @@ const Maintenance = () => {
       <main className="container mx-auto px-4 py-5">
         <div className="space-y-4">
           <Button
-            onClick={() => {/* Will use the ride selector below, then navigate */}}
+            onClick={() => {
+              const el = document.getElementById('maintenance-equipment-section');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }}
             className="gap-1.5 h-10 min-h-[44px] w-full sm:w-auto"
           >
             <Plus className="h-3.5 w-3.5" />
