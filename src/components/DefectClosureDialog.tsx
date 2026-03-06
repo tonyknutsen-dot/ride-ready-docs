@@ -211,194 +211,202 @@ const DefectClosureDialog = ({
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-md max-h-[85dvh] flex flex-col p-0 gap-0">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-            Close Defect
-          </DialogTitle>
-          <DialogDescription>
-            Record the closure reason and action taken before closing this defect.
-          </DialogDescription>
-        </DialogHeader>
-
-        <div className="flex-1 overflow-y-auto px-6">
-        <div className="space-y-3 py-1">
-          {/* ── Context ── */}
-          <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 space-y-1">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] text-muted-foreground">Equipment</span>
-              <span className="text-[11px] font-semibold text-foreground truncate max-w-[60%] text-right">{rideName}</span>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] text-muted-foreground">Severity</span>
-              <Badge variant={sevDisplay.variant} className="text-[10px] h-[18px] px-1.5">
-                {sevDisplay.label}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-[11px] text-muted-foreground">Status</span>
-              <span className="text-[11px] font-medium text-foreground">{statusDisplay}</span>
-            </div>
-            <Separator className="!my-1.5" />
-            <p className="text-[11px] text-foreground leading-relaxed line-clamp-2">{defect.description}</p>
-          </div>
-
-          {/* ── Closure reason (required dropdown) ── */}
-          <div className="space-y-1">
-            <Label htmlFor="closure-reason" className="text-xs font-semibold">
-              Closure reason <span className="text-destructive">*</span>
-            </Label>
-            <Select value={closureReason} onValueChange={setClosureReason}>
-              <SelectTrigger id="closure-reason" className="h-10 rounded-lg">
-                <SelectValue placeholder="Select a reason…" />
-              </SelectTrigger>
-              <SelectContent>
-                {CLOSURE_REASONS.map(r => (
-                  <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* ── Other reason explanation (conditionally required) ── */}
-          {closureReason === 'other' && (
-            <div className="space-y-1">
-              <Label htmlFor="other-reason" className="text-xs font-semibold">
-                Specify closure reason <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="other-reason"
-                value={otherReason}
-                onChange={(e) => setOtherReason(e.target.value)}
-                placeholder="Enter your reason…"
-                className="h-10 rounded-lg"
-              />
-              <p className="text-[10px] text-muted-foreground">Describe what "Other" means</p>
-            </div>
-          )}
-
-          {/* ── Action taken / details (required free text) ── */}
-          <div className="space-y-1">
-            <Label htmlFor="action-taken" className="text-xs font-semibold">
-              Action taken / details <span className="text-destructive">*</span>
-            </Label>
-            <Textarea
-              id="action-taken"
-              value={actionTaken}
-              onChange={(e) => setActionTaken(e.target.value)}
-              placeholder="Describe what was physically done — e.g. replaced bolt, retightened bearing housing…"
-              rows={2}
-              className="rounded-lg"
-            />
-            <p className="text-[10px] text-muted-foreground">What was done before closing this defect</p>
-          </div>
-
-          {/* ── Closed by ── */}
-          <div className="space-y-1">
-            <Label htmlFor="closed-by-name" className="text-xs font-semibold">
-              Closed by
-            </Label>
-            <Input
-              id="closed-by-name"
-              value={closedByName}
-              onChange={(e) => setClosedByName(e.target.value)}
-              placeholder={user?.email || 'Your name'}
-              className="h-10 rounded-lg"
-            />
-            <p className="text-[10px] text-muted-foreground">
-              {closedByName ? 'Defaults to your account name' : 'Will use your account email if left blank'}
-            </p>
-          </div>
-
-          {/* ── Additional notes (optional) ── */}
-          <div className="space-y-1">
-            <Label htmlFor="additional-notes" className="text-xs font-semibold">
-              Additional notes <span className="text-muted-foreground font-normal">(optional)</span>
-            </Label>
-            <Textarea
-              id="additional-notes"
-              value={additionalNotes}
-              onChange={(e) => setAdditionalNotes(e.target.value)}
-              placeholder="Part numbers, follow-up actions, warranty info…"
-              rows={2}
-              className="rounded-lg"
-            />
-          </div>
-
-          {/* ── Evidence photos (optional) ── */}
-          <div className="space-y-1.5">
-            <Label className="text-xs font-semibold">
-              Evidence photos <span className="text-muted-foreground font-normal">(optional)</span>
-            </Label>
-            {evidencePreviews.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {evidencePreviews.map((url, idx) => (
-                  <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
-                    <img src={url} alt={`Evidence ${idx + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => removePhoto(idx)}
-                      className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-background/80 flex items-center justify-center"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-            {evidenceFiles.length < 4 && (
-              <div className="flex gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 rounded-lg text-xs h-9"
-                  onClick={() => cameraInputRef.current?.click()}
-                >
-                  <Camera className="h-3.5 w-3.5" />
-                  Take photo
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="gap-1.5 rounded-lg text-xs h-9"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="h-3.5 w-3.5" />
-                  Upload
-                </Button>
-              </div>
-            )}
-            <input
-              ref={cameraInputRef}
-              type="file"
-              accept="image/*"
-              capture="environment"
-              className="hidden"
-              onChange={handleAddPhotos}
-            />
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              className="hidden"
-              onChange={handleAddPhotos}
-            />
-          </div>
-
-          {/* Auto-timestamp note */}
-          <p className="text-[10px] text-muted-foreground italic">
-            Closure date and time will be recorded automatically.
-          </p>
+        <div className="px-6 pt-6 pb-3 shrink-0">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+              Close Defect
+            </DialogTitle>
+            <DialogDescription>
+              Record the closure reason and action taken before closing this defect.
+            </DialogDescription>
+          </DialogHeader>
         </div>
 
-        <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={handleClose} disabled={updating} className="rounded-lg">
+        <div className="flex-1 overflow-y-auto px-6 pb-[max(16px,env(safe-area-inset-bottom))]">
+          <div className="space-y-3 py-1">
+            {/* ── Context ── */}
+            <div className="rounded-lg border border-border bg-muted/30 px-3 py-2 space-y-1">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] text-muted-foreground">Equipment</span>
+                <span className="text-[11px] font-semibold text-foreground truncate max-w-[60%] text-right">{rideName}</span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] text-muted-foreground">Severity</span>
+                <Badge variant={sevDisplay.variant} className="text-[10px] h-[18px] px-1.5">
+                  {sevDisplay.label}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] text-muted-foreground">Status</span>
+                <span className="text-[11px] font-medium text-foreground">{statusDisplay}</span>
+              </div>
+              <Separator className="!my-1.5" />
+              <p className="text-[11px] text-foreground leading-relaxed line-clamp-2">{defect.description}</p>
+            </div>
+
+            {/* ── Closure reason (required dropdown) ── */}
+            <div className="space-y-1">
+              <Label htmlFor="closure-reason" className="text-xs font-semibold">
+                Closure reason <span className="text-destructive">*</span>
+              </Label>
+              <Select value={closureReason} onValueChange={setClosureReason}>
+                <SelectTrigger id="closure-reason" className="h-10 rounded-lg">
+                  <SelectValue placeholder="Select a reason…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CLOSURE_REASONS.map(r => (
+                    <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* ── Other reason explanation (conditionally required) ── */}
+            {closureReason === 'other' && (
+              <div className="space-y-1">
+                <Label htmlFor="other-reason" className="text-xs font-semibold">
+                  Specify closure reason <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="other-reason"
+                  value={otherReason}
+                  onChange={(e) => setOtherReason(e.target.value)}
+                  placeholder="Enter your reason…"
+                  className="h-10 rounded-lg"
+                  onFocus={(e) => requestAnimationFrame(() => setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120))}
+                />
+                <p className="text-[10px] text-muted-foreground">Describe what "Other" means</p>
+              </div>
+            )}
+
+            {/* ── Action taken / details (required free text) ── */}
+            <div className="space-y-1">
+              <Label htmlFor="action-taken" className="text-xs font-semibold">
+                Action taken / details <span className="text-destructive">*</span>
+              </Label>
+              <Textarea
+                id="action-taken"
+                value={actionTaken}
+                onChange={(e) => setActionTaken(e.target.value)}
+                placeholder="Describe what was physically done — e.g. replaced bolt, retightened bearing housing…"
+                rows={2}
+                className="rounded-lg"
+                onFocus={(e) => requestAnimationFrame(() => setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120))}
+              />
+              <p className="text-[10px] text-muted-foreground">What was done before closing this defect</p>
+            </div>
+
+            {/* ── Closed by ── */}
+            <div className="space-y-1">
+              <Label htmlFor="closed-by-name" className="text-xs font-semibold">
+                Closed by
+              </Label>
+              <Input
+                id="closed-by-name"
+                value={closedByName}
+                onChange={(e) => setClosedByName(e.target.value)}
+                placeholder={user?.email || 'Your name'}
+                className="h-10 rounded-lg"
+                onFocus={(e) => requestAnimationFrame(() => setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120))}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                {closedByName ? 'Defaults to your account name' : 'Will use your account email if left blank'}
+              </p>
+            </div>
+
+            {/* ── Additional notes (optional) ── */}
+            <div className="space-y-1">
+              <Label htmlFor="additional-notes" className="text-xs font-semibold">
+                Additional notes <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              <Textarea
+                id="additional-notes"
+                value={additionalNotes}
+                onChange={(e) => setAdditionalNotes(e.target.value)}
+                placeholder="Part numbers, follow-up actions, warranty info…"
+                rows={2}
+                className="rounded-lg"
+                onFocus={(e) => requestAnimationFrame(() => setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120))}
+              />
+            </div>
+
+            {/* ── Evidence photos (optional) ── */}
+            <div className="space-y-1.5">
+              <Label className="text-xs font-semibold">
+                Evidence photos <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              {evidencePreviews.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {evidencePreviews.map((url, idx) => (
+                    <div key={idx} className="relative w-16 h-16 rounded-lg overflow-hidden border border-border">
+                      <img src={url} alt={`Evidence ${idx + 1}`} className="w-full h-full object-cover" />
+                      <button
+                        type="button"
+                        onClick={() => removePhoto(idx)}
+                        className="absolute top-0.5 right-0.5 w-5 h-5 rounded-full bg-background/80 flex items-center justify-center"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {evidenceFiles.length < 4 && (
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 rounded-lg text-xs h-9"
+                    onClick={() => cameraInputRef.current?.click()}
+                  >
+                    <Camera className="h-3.5 w-3.5" />
+                    Take photo
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 rounded-lg text-xs h-9"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="h-3.5 w-3.5" />
+                    Upload
+                  </Button>
+                </div>
+              )}
+              <input
+                ref={cameraInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={handleAddPhotos}
+              />
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                className="hidden"
+                onChange={handleAddPhotos}
+              />
+            </div>
+
+            {/* Auto-timestamp note */}
+            <p className="text-[10px] text-muted-foreground italic">
+              Closure date and time will be recorded automatically.
+            </p>
+          </div>
+        </div>
+
+        <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t px-6 py-3 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:gap-2 shrink-0">
+          <Button type="button" variant="outline" onClick={handleClose} disabled={updating} className="rounded-lg">
             Cancel
           </Button>
           <Button
+            type="button"
             onClick={handleCloseDefect}
             disabled={updating || !canSubmit}
             className="rounded-lg gap-1.5"
@@ -406,7 +414,7 @@ const DefectClosureDialog = ({
             {updating && <Loader2 className="h-4 w-4 animate-spin" />}
             Close Defect
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -552,7 +552,7 @@ const MarkCompleteSheet = ({
         </div>
 
         {/* Footer */}
-        <div className="shrink-0 border-t border-border bg-background px-5 py-4 flex gap-3">
+        <div className="shrink-0 border-t border-border bg-background/95 backdrop-blur px-5 py-4 pb-[max(16px,env(safe-area-inset-bottom))] flex gap-3">
           <Button variant="outline" className="flex-1" onClick={handleClose} disabled={submitting}>
             Cancel
           </Button>

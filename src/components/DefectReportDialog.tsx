@@ -208,7 +208,7 @@ const DefectReportDialog = ({
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg max-h-[85dvh] flex flex-col p-0 gap-0">
         {showRideSelector ? (
           <>
             <DialogHeader>
