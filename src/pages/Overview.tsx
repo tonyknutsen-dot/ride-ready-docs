@@ -54,8 +54,6 @@ const Overview = () => {
       <StaffAccountBanner />
       <PullToRefresh onRefresh={handleRefresh} disabled={isLoading}>
         <div className="container mx-auto py-6 pb-24 md:pb-8 space-y-5" style={{ backgroundColor: 'hsl(210 40% 95%)' }}>
-          <DeviceHintBanner />
-
           {/* ── HEADER ─────────────────────────────── */}
           <div className="flex items-center justify-between py-1">
             <div className="flex items-center gap-3">
