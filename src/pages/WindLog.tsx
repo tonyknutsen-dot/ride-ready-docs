@@ -989,12 +989,15 @@ const WindLog = () => {
 
       {/* ─── Add Reading Sheet ─── */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto rounded-t-2xl">
-          <SheetHeader className="mb-4">
-            <SheetTitle>Add Wind Reading</SheetTitle>
-            <SheetDescription>Record a wind speed measurement and link it to your inflatables.</SheetDescription>
-          </SheetHeader>
-          <div className="space-y-4 pb-6">
+        <SheetContent side="bottom" className="max-h-[85dvh] rounded-t-2xl flex flex-col p-0 gap-0">
+          <div className="px-5 pt-5 pb-3 shrink-0">
+            <SheetHeader className="mb-0">
+              <SheetTitle>Add Wind Reading</SheetTitle>
+              <SheetDescription>Record a wind speed measurement and link it to your inflatables.</SheetDescription>
+            </SheetHeader>
+          </div>
+          <div className="flex-1 overflow-y-auto px-5 pb-2">
+          <div className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs">Date</Label>
