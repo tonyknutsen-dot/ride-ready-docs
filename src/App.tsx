@@ -48,6 +48,7 @@ const Security = lazy(() => import("./pages/Security"));
 const CookiePolicy = lazy(() => import("./pages/CookiePolicy"));
 const DataProcessingAgreement = lazy(() => import("./pages/DataProcessingAgreement"));
 const Checks = lazy(() => import("./pages/Checks"));
+const ChecksRegister = lazy(() => import("./pages/ChecksRegister"));
 const ChecklistExecutionPage = lazy(() => import("./pages/ChecklistExecutionPage"));
 const Maintenance = lazy(() => import("./pages/Maintenance"));
 const SetupAdmin = lazy(() => import("./pages/SetupAdmin"));
@@ -345,6 +346,19 @@ const App = () => (
                     <ProfileGuard>
                       <AppLayout>
                         <Checks />
+                      </AppLayout>
+                    </ProfileGuard>
+                  </ProtectedRoute>
+                } 
+              />
+              {/* Per-equipment Checks Register */}
+              <Route 
+                path="/checks/register" 
+                element={
+                  <ProtectedRoute>
+                    <ProfileGuard>
+                      <AppLayout>
+                        <ChecksRegister />
                       </AppLayout>
                     </ProfileGuard>
                   </ProtectedRoute>
