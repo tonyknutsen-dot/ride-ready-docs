@@ -114,7 +114,7 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
               <div className="border-t border-border my-1" />
               <ActionButton
                 icon={saved ? CheckCircle2 : FolderPlus}
-                label={saved ? 'Saved to Documents' : 'Save to Documents'}
+                label={saved ? 'Saved to Documents' : (result.saveLabel || 'Save to Documents')}
                 description={saved ? 'Added to your document register' : 'Archive in your equipment documents'}
                 onClick={handleSaveToDocuments}
                 loading={saving}
