@@ -677,7 +677,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         loadPreviousReports();
       };
 
-      setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments });
+      setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel: 'Save to Asset Documents' });
       setExportDialogOpen(true);
     } catch (error) {
       console.error('PDF error:', error);
