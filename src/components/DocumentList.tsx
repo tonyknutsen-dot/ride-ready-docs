@@ -46,12 +46,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const [assignmentDialogDoc, setAssignmentDialogDoc] = useState<Document | null>(null);
   const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
   const [cleaningUp, setCleaningUp] = useState(false);
-  const [viewerState, setViewerState] = useState<{
-    type: 'image' | 'pdf' | null;
-    url: string;
-    name: string;
-    document: Document | null;
-  }>({ type: null, url: '', name: '', document: null });
   
   // Check record filters and send dialog
   const [checkRecordFilters, setCheckRecordFilters] = useState<CheckRecordFiltersState>(defaultCheckRecordFilters);
