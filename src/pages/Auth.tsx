@@ -387,6 +387,29 @@ const Auth = () => {
     );
   }
 
+  // Show MFA verification screen
+  if (showMFA) {
+    return (
+      <Suspense fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      }>
+        <MFAVerifyScreen
+          onVerified={() => {
+            setShowMFA(false);
+            const from = (location.state as any)?.from?.pathname || '/overview';
+            navigate(from, { replace: true });
+          }}
+          onCancel={async () => {
+            setShowMFA(false);
+            await supabase.auth.signOut();
+          }}
+        />
+      </Suspense>
+    );
+  }
+
   if (showResetForm) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex items-center justify-center p-4">
