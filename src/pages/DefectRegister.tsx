@@ -613,13 +613,16 @@ const DefectRegister = () => {
       const pdfBlob = doc.output('blob');
 
       const isSingleRide = rideFilter !== 'all';
-      const saveLabel = isSingleRide ? 'Save to Asset Documents' : 'Save as Global Document';
+      const filteredRideNames = isSingleRide
+        ? rides.find(r => r.id === rideFilter)?.ride_name
+        : undefined;
 
       const saveToDocuments = async () => {
         const storagePath = `${user.id}/defect-reports/${Date.now()}-${fileName}`;
         const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
         if (uploadError) throw uploadError;
 
+        // Operational records belong to the ride, not global
         const { data: insertedDoc, error: insertError } = await supabase
           .from('documents')
           .insert({
@@ -630,36 +633,31 @@ const DefectRegister = () => {
             mime_type: 'application/pdf',
             file_size: pdfBlob.size,
             notes: `Defect register: ${filtered.length} records, ${periodLabel}`,
-            is_global: !isSingleRide,
+            is_global: false,
             ride_id: isSingleRide ? rideFilter : null,
           })
           .select('id, file_path, mime_type, file_size, document_type')
           .single();
 
         if (insertError || !insertedDoc) {
-          console.error('[PDF DEBUG][Defects] saveToDocuments insert failed', {
-            storagePath,
-            insertError,
-            rideFilter,
-            isSingleRide,
-          });
+          console.error('[PDF DEBUG][Defects] saveToDocuments insert failed', { storagePath, insertError });
           throw insertError || new Error('Failed to create documents row for defect report');
         }
 
         console.info('[PDF DEBUG][Defects] saveToDocuments success', {
           documentId: insertedDoc.id,
           storagePath: insertedDoc.file_path,
-          mimeType: insertedDoc.mime_type,
-          fileSize: insertedDoc.file_size,
-          documentType: insertedDoc.document_type,
         });
 
         await loadSavedReports();
       };
 
+      const saveLabel = isSingleRide
+        ? `Save to ${filteredRideNames || 'Asset'} Documents`
+        : 'Save to Documents';
       const saveHint = isSingleRide
-        ? 'This report will be saved to the selected asset\'s Documents.'
-        : 'This report will be saved as a Global Document.';
+        ? `Saves this report inside ${filteredRideNames || 'this asset'}'s document register.`
+        : 'Saves this report to your document register for later access.';
       setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel, saveHint });
       setExportDialogOpen(true);
     } catch (error) {
