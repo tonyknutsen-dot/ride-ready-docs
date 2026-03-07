@@ -124,7 +124,7 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
               {savedDocId && (
                 <ActionButton
                   icon={Eye}
-                  label="View Document"
+                  label="View Saved Document"
                   description="Open in the document viewer"
                   onClick={handleViewDocument}
                   accent
