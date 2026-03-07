@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { VisuallyHidden } from '@radix-ui/react-visually-hidden';
 import { X, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import PdfCanvasViewer from '@/components/PdfCanvasViewer';
 
 interface PDFViewerProps {
   isOpen: boolean;
@@ -51,23 +52,12 @@ const PDFViewer = ({ isOpen, onClose, pdfUrl, pdfName, onDownload }: PDFViewerPr
             </div>
           </div>
 
-          {/* PDF Container */}
-          <div className="w-full h-full pt-16 bg-muted/10">
-            <object
-              key={pdfUrl}
-              data={pdfUrl}
-              type="application/pdf"
-              className="w-full h-full"
-              aria-label={pdfName}
-            >
-              <iframe src={pdfUrl} className="w-full h-full border-0" title={pdfName} />
-              <div className="h-full w-full flex flex-col items-center justify-center gap-2 p-6 text-center">
-                <p className="text-sm text-muted-foreground">Unable to render this PDF in-app.</p>
-                <Button variant="outline" onClick={onDownload} className="gap-2">
-                  <Download className="h-4 w-4" /> Save to Device
-                </Button>
-              </div>
-            </object>
+          {/* PDF Canvas Viewer */}
+          <div className="w-full h-full pt-16">
+            <PdfCanvasViewer
+              src={pdfUrl}
+              onDownload={onDownload}
+            />
           </div>
         </div>
       </DialogContent>
