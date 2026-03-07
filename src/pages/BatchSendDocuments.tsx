@@ -851,7 +851,7 @@ const BatchSendDocuments = () => {
 
                       {/* Ride Documents */}
                       {currentRideDocuments.length > 0 && (
-                        <Collapsible defaultOpen>
+                        <Collapsible defaultOpen={!isMobile}>
                           <div className="border border-border rounded-lg overflow-hidden">
                             <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
                               <div className="flex items-center gap-1.5 min-w-0">
