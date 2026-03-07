@@ -479,9 +479,18 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
       )}
       {viewerState.type === 'pdf' && (
         <PDFViewer
-          url={viewerState.url}
-          title={viewerState.name}
+          isOpen={true}
+          pdfUrl={viewerState.url}
+          pdfName={viewerState.name}
           onClose={() => setViewerState({ type: null, url: '', name: '' })}
+          onDownload={() => {
+            const a = document.createElement('a');
+            a.href = viewerState.url;
+            a.download = viewerState.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
         />
       )}
     </div>
