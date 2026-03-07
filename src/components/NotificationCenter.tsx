@@ -172,12 +172,21 @@ const getActionRoute = (n: Notification): string | null => {
 const getActionLabel = (n: Notification): string => {
   const title = n.title?.toLowerCase() ?? '';
   if (isSentDocument(n)) return 'View record';
-  if (isDefectRelatedNotification(n)) return 'View defect';
+  // Defect notifications — always say "defect"
+  if (isDefectRelatedNotification(n)) {
+    if (title.includes('linked defect')) return 'Open linked defect';
+    if (title.includes('stop use')) return 'Review defect';
+    if (title.includes('unresolved')) return 'Review defect';
+    return 'View defect';
+  }
+  // Checks — always say "check", never ambiguous "Review"
   if (title.includes('check') && title.includes('missed')) return 'Start check';
-  if (title.includes('check') && title.includes('failed')) return 'Review';
-  if (title.includes('check') && title.includes('completed')) return 'View';
+  if (title.includes('check') && title.includes('failed')) return 'Review check';
+  if (title.includes('check') && title.includes('completed')) return 'View check';
+  if (n.related_table === 'checks') return 'View check';
+  // Other categories
   if (title.includes('inspection') || title.includes('ndt')) return 'View';
-  if (title.includes('expir') || title.includes('document') || title.includes('certificate')) return 'Review';
+  if (title.includes('expir') || title.includes('document') || title.includes('certificate')) return 'Review certificate';
   if (title.includes('maintenance') && (title.includes('overdue') || title.includes('due'))) return 'View';
   if (title.includes('maintenance') && title.includes('logged')) return 'View';
   if (title.includes('wind') || title.includes('threshold')) return 'View log';
