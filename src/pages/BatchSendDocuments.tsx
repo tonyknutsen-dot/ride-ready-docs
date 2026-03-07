@@ -660,15 +660,14 @@ const BatchSendDocuments = () => {
                     const rideCheckRecords = checkRecords.filter(doc => doc.ride_id === ride.id);
                     const totalDocs = docCount + rideCheckRecords.length;
                     
-                    // Compliance status based on expiring docs
                     const hasExpired = ride.documents.some(d => d.expires_at && new Date(d.expires_at) < new Date());
                     const hasExpiringSoon = ride.documents.some(d => d.expires_at && isExpiringSoon(d.expires_at));
                     const complianceStatus = hasExpired ? 'overdue' : hasExpiringSoon ? 'expiring' : 'compliant';
                     
                     const statusConfig = {
-                      overdue: { label: 'Doc Expiring', color: '#DC2626', bg: '#FEF2F2', icon: AlertTriangle },
-                      expiring: { label: 'Expiring Soon', color: '#F59E0B', bg: '#FFFBEB', icon: Clock },
-                      compliant: { label: 'All Current', color: '#16A34A', bg: '#F0FDF4', icon: CheckCircle2 },
+                      overdue: { label: 'Doc Expiring', color: 'hsl(var(--destructive))', bg: 'hsl(var(--destructive) / 0.1)', icon: AlertTriangle },
+                      expiring: { label: 'Expiring Soon', color: 'hsl(var(--warning))', bg: 'hsl(var(--warning) / 0.1)', icon: Clock },
+                      compliant: { label: 'All Current', color: 'hsl(var(--success))', bg: 'hsl(var(--success) / 0.1)', icon: CheckCircle2 },
                     }[complianceStatus];
                     
                     const StatusIcon = statusConfig.icon;
@@ -679,21 +678,18 @@ const BatchSendDocuments = () => {
                         onClick={() => setSelectedRide(ride)}
                         className="w-full text-left group active:scale-[0.99] transition-all"
                       >
-                        <div 
-                          className="p-4 rounded-2xl border-2 transition-all group-hover:border-primary/40"
-                          style={{ backgroundColor: 'hsl(210 40% 98%)', borderColor: 'hsl(215 19% 90%)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
-                        >
+                        <div className="p-4 rounded-2xl border-2 border-border bg-card transition-all group-hover:border-primary/40 shadow-sm">
                           <div className="flex items-start gap-3">
-                            <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
-                              <ClipboardCheck className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                            <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-primary/10">
+                              <ClipboardCheck className="h-5 w-5 text-primary" strokeWidth={2} />
                             </span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2">
-                                <p className="font-bold text-sm group-hover:text-primary transition-colors truncate" style={{ color: 'hsl(222 84% 5%)' }}>
+                                <p className="font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
                                   {ride.ride_name}
                                 </p>
                                 <span 
-                                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full shrink-0"
                                   style={{ backgroundColor: statusConfig.bg, color: statusConfig.color }}
                                 >
                                   <StatusIcon className="h-3 w-3" strokeWidth={2} />
@@ -701,22 +697,23 @@ const BatchSendDocuments = () => {
                                 </span>
                               </div>
                               {ride.manufacturer && (
-                                <p className="text-xs mt-0.5 truncate" style={{ color: 'hsl(215 19% 50%)' }}>{ride.manufacturer}</p>
+                                <p className="text-xs mt-0.5 text-muted-foreground truncate">{ride.manufacturer}</p>
                               )}
-                              <div className="flex items-center gap-3 mt-2.5">
-                                <span className="inline-flex items-center gap-1 text-xs font-medium" style={{ color: 'hsl(215 19% 40%)' }}>
+                              <div className="flex items-center gap-3 mt-2">
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
                                   <FileText className="h-3.5 w-3.5" strokeWidth={2} />
                                   {totalDocs} {totalDocs === 1 ? 'document' : 'documents'}
                                 </span>
                               </div>
                             </div>
                           </div>
-                          <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: 'hsl(215 19% 92%)' }}>
-                            <span className="text-xs font-semibold flex items-center gap-1.5 group-hover:text-primary transition-colors" style={{ color: 'hsl(213 52% 24%)' }}>
+                          {/* Full-width primary CTA */}
+                          <div className="mt-3 pt-3 border-t border-border">
+                            <span className="w-full inline-flex items-center justify-center gap-2 text-xs font-semibold text-primary bg-primary/8 hover:bg-primary/15 rounded-lg py-2.5 min-h-[40px] transition-colors">
                               <Shield className="h-3.5 w-3.5" strokeWidth={2} />
                               Build Compliance Pack
+                              <ChevronRight className="h-3.5 w-3.5" />
                             </span>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                           </div>
                         </div>
                       </button>
