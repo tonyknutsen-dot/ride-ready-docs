@@ -707,8 +707,8 @@ const DefectRegister = () => {
         filterSummary={filterSummary}
         primaryAction={{ label: 'Report defect', icon: <AlertOctagon className="h-4 w-4" />, onClick: () => { (document.activeElement as HTMLElement)?.blur(); setDefectPickerOpen(true); } }}
         actions={[
-          { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filtered.length === 0 },
-          { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline', disabled: generatingPdf || filtered.length === 0, loading: generatingPdf },
+          { label: 'Export CSV', icon: <FileDown className="h-4 w-4" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filtered.length === 0 },
+          { label: 'Export PDF', icon: <FileDown className="h-4 w-4" />, onClick: handleExportPdf, variant: 'outline', disabled: generatingPdf || filtered.length === 0, loading: generatingPdf },
         ]}
         filtersOpen={filtersOpen}
         onFiltersOpenChange={setFiltersOpen}
