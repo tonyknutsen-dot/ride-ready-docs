@@ -1,4 +1,5 @@
 import { ReactNode, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -6,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Download, Link2 } from 'lucide-react';
+import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Download, Link2, Eye, Share2 } from 'lucide-react';
 import { format, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +15,7 @@ import {
   downloadBlob,
   getSignedStorageUrl,
   getStorageFileBlob,
+  shareStoredFileOrFallback,
 } from '@/utils/exportFileActions';
 
 interface ActionButton {
@@ -268,6 +270,11 @@ export const PreviousReportsSection = ({
   onViewReport?: (filePath: string) => void;
 }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleView = (reportId: string) => {
+    navigate(`/documents/${reportId}`);
+  };
 
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
@@ -279,15 +286,28 @@ export const PreviousReportsSection = ({
     }
   };
 
-
-  const handleCopyLink = async (report: { file_path: string }) => {
+  const handleShare = async (filePath: string, fileName: string) => {
     try {
-      const signedUrl = await getSignedStorageUrl(report.file_path);
-      if (!signedUrl) throw new Error('No signed URL');
-      await navigator.clipboard.writeText(signedUrl);
-      toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+      const outcome = await shareStoredFileOrFallback(filePath, fileName);
+      if (outcome === 'shared') {
+        toast({ title: 'Shared', description: 'Report sent via share sheet' });
+      } else if (outcome === 'copied') {
+        toast({ title: 'Link copied', description: 'Signed link copied to clipboard' });
+      } else if (outcome === 'downloaded') {
+        toast({ title: 'Downloaded', description: 'Share not available — file downloaded instead' });
+      }
     } catch {
-      toast({ title: 'Copy link failed', description: 'Could not copy link.', variant: 'destructive' });
+      toast({ title: 'Share failed', variant: 'destructive' });
+    }
+  };
+
+  const handleCopyLink = async (reportId: string) => {
+    try {
+      const link = `${window.location.origin}/documents/${reportId}`;
+      await navigator.clipboard.writeText(link);
+      toast({ title: 'Link copied', description: 'Document link copied to clipboard' });
+    } catch {
+      toast({ title: 'Copy link failed', variant: 'destructive' });
     }
   };
 
@@ -304,34 +324,37 @@ export const PreviousReportsSection = ({
             <p className="text-[11px] text-muted-foreground mt-0.5">Export a PDF and save it to Documents to see it here.</p>
           </div>
         ) : (
-          reports.map((report) => {
-            return (
-              <div key={report.id} className="bg-card border border-border rounded-xl p-3 space-y-2">
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                      <FileText className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
-                      <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
-                    </div>
+          reports.map((report) => (
+            <div key={report.id} className="bg-card border border-border rounded-xl p-3 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <FileText className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
+                    <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
-                    <Download className="h-3 w-3" /> Save to Device
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report)} className="h-8 text-[11px] gap-1 min-h-[36px]">
-                    <Link2 className="h-3 w-3" /> Copy Link
-                  </Button>
-                </div>
               </div>
-            );
-          })
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <Button variant="ghost" size="sm" onClick={() => handleView(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                  <Eye className="h-3 w-3" /> View
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                  <Download className="h-3 w-3" /> Save to Device
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleShare(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                  <Share2 className="h-3 w-3" /> Share
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                  <Link2 className="h-3 w-3" /> Copy Link
+                </Button>
+              </div>
+            </div>
+          ))
         )}
       </div>
-
     </>
   );
 };
