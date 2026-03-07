@@ -278,25 +278,56 @@ export const PreviousReportsSection = ({
   const handleView = async (report: { id: string; file_path: string; document_name: string; mime_type?: string | null }) => {
     setLoadingId(report.id);
     try {
+      console.info('[PDF DEBUG][History] view-start', {
+        reportId: report.id,
+        storagePath: report.file_path,
+        documentName: report.document_name,
+        mimeTypeFromDb: report.mime_type || '(null)',
+      });
+
       if (!isPdfByMeta(report.document_name, report.mime_type)) {
         await handleDownload(report.file_path, report.document_name);
         return;
       }
 
       const blob = await getStorageFileBlob(report.file_path);
+      const signature = await blob.slice(0, 8).text();
       const validPdf = await isValidPdfBlob(blob);
+
+      console.info('[PDF DEBUG][History] blob-loaded', {
+        reportId: report.id,
+        downloadSucceeded: true,
+        blobSize: blob.size,
+        blobType: blob.type || '(empty)',
+        signature,
+        validPdfSignature: validPdf,
+      });
+
       if (!validPdf) {
         toast({ title: 'Invalid PDF', description: 'This file is not a valid PDF and cannot be previewed.', variant: 'destructive' });
         return;
       }
 
-      const url = URL.createObjectURL(blob);
+      const pdfBlob = blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' });
+      const url = URL.createObjectURL(pdfBlob);
+
+      console.info('[PDF DEBUG][History] viewer-source', {
+        reportId: report.id,
+        viewerSourceType: 'blob-url',
+        normalizedBlobType: pdfBlob.type,
+        viewerUrlPreview: url.slice(0, 32),
+      });
+
       setViewerState((prev) => {
         if (prev.url) URL.revokeObjectURL(prev.url);
         return { open: true, url, name: report.document_name };
       });
     } catch (error) {
-      console.error('Failed to view report:', error);
+      console.error('[PDF DEBUG][History] view-failed', {
+        reportId: report.id,
+        storagePath: report.file_path,
+        error,
+      });
       toast({ title: 'Failed to open', description: 'Could not load the report file.', variant: 'destructive' });
     } finally {
       setLoadingId(null);
