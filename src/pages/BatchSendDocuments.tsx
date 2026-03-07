@@ -582,7 +582,7 @@ const BatchSendDocuments = () => {
     : [];
 
   return (
-    <div className="container mx-auto py-8 px-4 pb-24 md:pb-8" style={{ backgroundColor: 'hsl(210 40% 95%)' }}>
+    <div className="container mx-auto py-8 px-4 pb-24 md:pb-8">
       <PageHeader
         title="Send Compliance Documents"
         subtitle="Submit compliance documents to councils, insurers, and auditors."
@@ -593,40 +593,57 @@ const BatchSendDocuments = () => {
 
       {/* Step 1: Ride Selection (if no ride selected) */}
       {!selectedRide ? (
-        <div className="space-y-4">
-          {/* Submission Summary Strip */}
-          <div className="rounded-2xl px-4 py-3.5 flex items-center gap-4 flex-wrap" style={{ backgroundColor: 'hsl(217 91% 97%)', border: '1px solid hsl(213 52% 24% / 0.15)' }}>
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-              <span className="text-sm font-semibold" style={{ color: 'hsl(213 52% 24%)' }}>{rides.length} {rides.length === 1 ? 'Asset' : 'Assets'}</span>
-            </div>
-            <div className="h-4 w-px" style={{ backgroundColor: 'hsl(213 52% 24% / 0.2)' }} />
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-              <span className="text-sm font-semibold" style={{ color: 'hsl(213 52% 24%)' }}>
+        <div className="space-y-5">
+          {/* Submission Summary Pills */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => {
+                const el = document.getElementById('asset-pack-section');
+                el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 min-h-[44px] hover:bg-accent/60 active:bg-accent transition-colors group"
+            >
+              <Package className="h-4 w-4 text-primary" strokeWidth={2} />
+              <span className="text-sm font-semibold text-foreground">{rides.length} {rides.length === 1 ? 'Asset' : 'Assets'}</span>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
+            <button
+              onClick={() => {
+                const el = document.getElementById('asset-pack-section');
+                el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 min-h-[44px] hover:bg-accent/60 active:bg-accent transition-colors group"
+            >
+              <FileText className="h-4 w-4 text-primary" strokeWidth={2} />
+              <span className="text-sm font-semibold text-foreground">
                 {rides.reduce((sum, r) => sum + r.documents.length, 0) + checkRecords.length} Documents
               </span>
-            </div>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
             {globalDocuments.length > 0 && (
-              <>
-                <div className="h-4 w-px" style={{ backgroundColor: 'hsl(213 52% 24% / 0.2)' }} />
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                  <span className="text-sm font-semibold" style={{ color: 'hsl(213 52% 24%)' }}>{globalDocuments.length} Global</span>
-                </div>
-              </>
+              <button
+                onClick={() => {
+                  const el = document.getElementById('global-docs-section');
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 min-h-[44px] hover:bg-accent/60 active:bg-accent transition-colors group"
+              >
+                <Building2 className="h-4 w-4 text-primary" strokeWidth={2} />
+                <span className="text-sm font-semibold text-foreground">{globalDocuments.length} Global docs</span>
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </button>
             )}
           </div>
 
           {/* Asset Compliance Pack Selection */}
-          <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 6px 14px rgba(0,0,0,0.06)' }}>
+          <div id="asset-pack-section" className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
             <div className="px-5 py-4 border-b border-border flex items-center gap-3">
-              <span className="flex items-center justify-center w-9 h-9 rounded-xl" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
-                <ClipboardCheck className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+              <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
+                <ClipboardCheck className="h-5 w-5 text-primary" strokeWidth={2} />
               </span>
               <div>
-                <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Select Asset Compliance Pack</p>
-                <p className="text-xs mt-0.5" style={{ color: 'hsl(215 19% 45%)' }}>Choose the asset to build a documentation submission for</p>
+                <p className="text-sm font-bold text-foreground">Select Asset Compliance Pack</p>
+                <p className="text-xs mt-0.5 text-muted-foreground">Choose the asset to build a documentation submission for</p>
               </div>
             </div>
             <div className="p-4">
@@ -643,15 +660,14 @@ const BatchSendDocuments = () => {
                     const rideCheckRecords = checkRecords.filter(doc => doc.ride_id === ride.id);
                     const totalDocs = docCount + rideCheckRecords.length;
                     
-                    // Compliance status based on expiring docs
                     const hasExpired = ride.documents.some(d => d.expires_at && new Date(d.expires_at) < new Date());
                     const hasExpiringSoon = ride.documents.some(d => d.expires_at && isExpiringSoon(d.expires_at));
                     const complianceStatus = hasExpired ? 'overdue' : hasExpiringSoon ? 'expiring' : 'compliant';
                     
                     const statusConfig = {
-                      overdue: { label: 'Doc Expiring', color: '#DC2626', bg: '#FEF2F2', icon: AlertTriangle },
-                      expiring: { label: 'Expiring Soon', color: '#F59E0B', bg: '#FFFBEB', icon: Clock },
-                      compliant: { label: 'All Current', color: '#16A34A', bg: '#F0FDF4', icon: CheckCircle2 },
+                      overdue: { label: 'Doc Expiring', color: 'hsl(var(--destructive))', bg: 'hsl(var(--destructive) / 0.1)', icon: AlertTriangle },
+                      expiring: { label: 'Expiring Soon', color: 'hsl(var(--warning))', bg: 'hsl(var(--warning) / 0.1)', icon: Clock },
+                      compliant: { label: 'All Current', color: 'hsl(var(--success))', bg: 'hsl(var(--success) / 0.1)', icon: CheckCircle2 },
                     }[complianceStatus];
                     
                     const StatusIcon = statusConfig.icon;
@@ -662,21 +678,18 @@ const BatchSendDocuments = () => {
                         onClick={() => setSelectedRide(ride)}
                         className="w-full text-left group active:scale-[0.99] transition-all"
                       >
-                        <div 
-                          className="p-4 rounded-2xl border-2 transition-all group-hover:border-primary/40"
-                          style={{ backgroundColor: 'hsl(210 40% 98%)', borderColor: 'hsl(215 19% 90%)', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}
-                        >
+                        <div className="p-4 rounded-2xl border-2 border-border bg-card transition-all group-hover:border-primary/40 shadow-sm">
                           <div className="flex items-start gap-3">
-                            <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
-                              <ClipboardCheck className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                            <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-primary/10">
+                              <ClipboardCheck className="h-5 w-5 text-primary" strokeWidth={2} />
                             </span>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between gap-2">
-                                <p className="font-bold text-sm group-hover:text-primary transition-colors truncate" style={{ color: 'hsl(222 84% 5%)' }}>
+                                <p className="font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
                                   {ride.ride_name}
                                 </p>
                                 <span 
-                                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0"
+                                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full shrink-0"
                                   style={{ backgroundColor: statusConfig.bg, color: statusConfig.color }}
                                 >
                                   <StatusIcon className="h-3 w-3" strokeWidth={2} />
@@ -684,22 +697,23 @@ const BatchSendDocuments = () => {
                                 </span>
                               </div>
                               {ride.manufacturer && (
-                                <p className="text-xs mt-0.5 truncate" style={{ color: 'hsl(215 19% 50%)' }}>{ride.manufacturer}</p>
+                                <p className="text-xs mt-0.5 text-muted-foreground truncate">{ride.manufacturer}</p>
                               )}
-                              <div className="flex items-center gap-3 mt-2.5">
-                                <span className="inline-flex items-center gap-1 text-xs font-medium" style={{ color: 'hsl(215 19% 40%)' }}>
+                              <div className="flex items-center gap-3 mt-2">
+                                <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
                                   <FileText className="h-3.5 w-3.5" strokeWidth={2} />
                                   {totalDocs} {totalDocs === 1 ? 'document' : 'documents'}
                                 </span>
                               </div>
                             </div>
                           </div>
-                          <div className="mt-3 pt-3 border-t flex items-center justify-between" style={{ borderColor: 'hsl(215 19% 92%)' }}>
-                            <span className="text-xs font-semibold flex items-center gap-1.5 group-hover:text-primary transition-colors" style={{ color: 'hsl(213 52% 24%)' }}>
+                          {/* Full-width primary CTA */}
+                          <div className="mt-3 pt-3 border-t border-border">
+                            <span className="w-full inline-flex items-center justify-center gap-2 text-xs font-semibold text-primary bg-primary/8 hover:bg-primary/15 rounded-lg py-2.5 min-h-[40px] transition-colors">
                               <Shield className="h-3.5 w-3.5" strokeWidth={2} />
                               Build Compliance Pack
+                              <ChevronRight className="h-3.5 w-3.5" />
                             </span>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                           </div>
                         </div>
                       </button>
@@ -712,44 +726,50 @@ const BatchSendDocuments = () => {
 
           {/* Global Documents Panel */}
           {globalDocuments.length > 0 && (
-            <div 
-              className="bg-white border border-border rounded-2xl p-4 flex items-center justify-between gap-3 cursor-pointer group hover:border-primary/40 transition-all"
-              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
-              onClick={() => {
-                // Select all global docs and open send panel without a specific ride
-                setSelectedRide({ id: '__global__', ride_name: 'Global Documents' });
-              }}
+            <button
+              id="global-docs-section"
+              className="w-full text-left group active:scale-[0.99] transition-all"
+              onClick={() => setSelectedRide({ id: '__global__', ride_name: 'Global Documents' })}
             >
-              <div className="flex items-center gap-3">
-                <span className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.08)' }}>
-                  <Building2 className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                </span>
-                <div>
-                  <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Global Compliance Documents</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'hsl(215 19% 50%)' }}>Insurance, policies &amp; company-wide documents · {globalDocuments.length} files</p>
+              <div className="p-4 rounded-2xl border-2 border-border bg-card shadow-sm transition-all group-hover:border-primary/40">
+                <div className="flex items-start gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-primary/10">
+                    <Building2 className="h-5 w-5 text-primary" strokeWidth={2} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">Global Compliance Documents</p>
+                    <p className="text-xs mt-0.5 text-muted-foreground">Insurance, policies &amp; company-wide documents · {globalDocuments.length} files</p>
+                    <p className="text-[11px] mt-1.5 text-muted-foreground/80 italic">These can be included in any submission pack</p>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-border">
+                  <span className="w-full inline-flex items-center justify-center gap-2 text-xs font-semibold text-primary bg-primary/8 hover:bg-primary/15 rounded-lg py-2.5 min-h-[40px] transition-colors">
+                    <Shield className="h-3.5 w-3.5" strokeWidth={2} />
+                    Build Compliance Pack
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </span>
                 </div>
               </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
-            </div>
+            </button>
           )}
         </div>
       ) : (
         <>
           {/* Asset context strip */}
-          <div className="mb-4 bg-white border border-border rounded-2xl p-4" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+          <div className="mb-4 bg-card border border-border rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
-                  <ClipboardCheck className="h-4.5 w-4.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                <span className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0 bg-primary/10">
+                  <ClipboardCheck className="h-4 w-4 text-primary" strokeWidth={2} />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium" style={{ color: 'hsl(215 19% 40%)' }}>Asset</p>
-                  <p className="text-sm font-semibold truncate" style={{ color: 'hsl(222 84% 5%)' }}>{selectedRide.ride_name}</p>
+                  <p className="text-xs font-medium text-muted-foreground">Asset</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{selectedRide.ride_name}</p>
                 </div>
                 <div className="hidden sm:block h-8 w-px bg-border mx-1" />
                 <div className="hidden sm:block">
-                  <p className="text-xs font-medium" style={{ color: 'hsl(215 19% 40%)' }}>Available</p>
-                  <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>
+                  <p className="text-xs font-medium text-muted-foreground">Available</p>
+                  <p className="text-sm font-semibold text-foreground">
                     {currentRideDocuments.length + currentRideCheckRecords.length} documents
                   </p>
                 </div>
@@ -770,7 +790,7 @@ const BatchSendDocuments = () => {
 
             {/* Selection summary bar */}
             {selectedDocuments.length > 0 && (
-              <div className="mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium" style={{ backgroundColor: 'hsl(217 91% 97%)', color: 'hsl(213 52% 24%)' }}>
+              <div className="mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium bg-primary/10 text-primary">
                 <FileText className="h-4 w-4 shrink-0" strokeWidth={2} />
                 <span>{selectedDocuments.length} document{selectedDocuments.length !== 1 ? 's' : ''} selected</span>
                 <span className="text-xs opacity-70">·</span>
