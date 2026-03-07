@@ -159,7 +159,7 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
           onClose={() => {
             setPreviewOpen(false);
             setPreviewUrl((prev) => {
-              if (prev) URL.revokeObjectURL(prev);
+              if (prev) revokeObjectUrl(prev);
               return '';
             });
           }}
