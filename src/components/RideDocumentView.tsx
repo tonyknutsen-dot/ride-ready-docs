@@ -478,19 +478,6 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
         </CollapsibleContent>
       </Collapsible>
 
-      {/* Viewers */}
-      {viewerState.type === 'image' && (
-        <ImageViewer
-          url={viewerState.url}
-          alt={viewerState.name}
-          onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '' }; })}
-        />
-      )}
-      <DocumentPreviewSheet
-        open={viewerState.type === 'pdf'}
-        onOpenChange={(o) => { if (!o) setViewerState({ type: null, url: '', name: '' }); }}
-        source={viewerState.type === 'pdf' ? { name: viewerState.name, storagePath: viewerState.url } : null}
-      />
     </div>
   );
 };
