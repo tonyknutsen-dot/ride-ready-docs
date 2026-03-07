@@ -76,10 +76,6 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
       setSaved(false);
       setSaving(false);
       setPreviewOpen(false);
-      setPreviewUrl((prev) => {
-        if (prev) revokeObjectUrl(prev);
-        return '';
-      });
     }
     onOpenChange(nextOpen);
   };
