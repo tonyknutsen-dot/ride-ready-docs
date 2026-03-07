@@ -103,10 +103,9 @@ export function isLikelyMobileOrTablet(): boolean {
 
 export async function shareBlobOrFallback(blob: Blob, fileName: string): Promise<'shared' | 'downloaded' | 'copied' | 'cancelled'> {
   const canUseNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
-  const isMobile = isLikelyMobileOrTablet();
 
-  // Mobile/tablet: use native share sheet
-  if (canUseNativeShare && isMobile) {
+  // Try native Web Share API on any platform (mobile gets share sheet, desktop gets share dialog)
+  if (canUseNativeShare) {
     try {
       const file = new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
       const canShareFiles = typeof navigator.canShare !== 'function' || navigator.canShare({ files: [file] });
@@ -116,38 +115,11 @@ export async function shareBlobOrFallback(blob: Blob, fileName: string): Promise
       }
     } catch (error: any) {
       if (error?.name === 'AbortError') return 'cancelled';
+      // Share failed — fall through to download
     }
   }
 
-  // Desktop: try native share (some browsers support it), then copy blob as download link
-  if (canUseNativeShare && !isMobile) {
-    try {
-      const file = new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
-      const canShareFiles = typeof navigator.canShare !== 'function' || navigator.canShare({ files: [file] });
-      if (canShareFiles) {
-        await navigator.share({ files: [file], title: fileName });
-        return 'shared';
-      }
-    } catch (error: any) {
-      if (error?.name === 'AbortError') return 'cancelled';
-      // Fall through to clipboard copy
-    }
-  }
-
-  // Desktop fallback: create a temporary blob URL and copy to clipboard
-  if (navigator.clipboard?.writeText) {
-    try {
-      const blobUrl = URL.createObjectURL(blob);
-      // We can't copy blob URLs meaningfully, so download and signal as such
-      // Instead, try to copy the file name as a reference
-      await navigator.clipboard.writeText(`${fileName} (use Save to Device to download)`);
-      URL.revokeObjectURL(blobUrl);
-      // Actually: better to just trigger download on desktop as final fallback
-    } catch {
-      // fall through
-    }
-  }
-
+  // Fallback: download the file
   downloadBlob(blob, fileName);
   return 'downloaded';
 }
