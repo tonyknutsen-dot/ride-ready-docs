@@ -75,14 +75,14 @@ const getBarColor = (n: Notification): string => {
   if (isActionable(n)) {
     const title = n.title?.toLowerCase() ?? '';
     if (title.includes('stop use') || title.includes('critical') || title.includes('overdue') || title.includes('expired')) return 'bg-destructive';
-    if (title.includes('expiring') || title.includes('missed') || title.includes('warning')) return 'bg-amber-500';
+    if (title.includes('expiring') || title.includes('missed') || title.includes('warning')) return 'bg-accent-foreground/60';
     return 'bg-destructive';
   }
   const cat = getCategory(n);
   switch (cat) {
     case 'compliance': return 'bg-destructive/60';
     case 'documents':  return 'bg-primary/60';
-    case 'maintenance': return 'bg-amber-500/60';
+    case 'maintenance': return 'bg-accent-foreground/60';
     default: return 'bg-muted-foreground/30';
   }
 };
