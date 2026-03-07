@@ -568,8 +568,10 @@ const DefectRegister = () => {
       const fileName = `${documentName.replace(/[^a-zA-Z0-9\s-]/g, '')}.pdf`;
       const pdfBlob = doc.output('blob');
 
+      const isSingleRide = rideFilter !== 'all';
+      const saveLabel = isSingleRide ? 'Save to Asset Documents' : 'Save as Global Document';
+
       const saveToDocuments = async () => {
-        const isSingleRide = rideFilter !== 'all';
         const storagePath = `${user.id}/defect-reports/${Date.now()}-${fileName}`;
         const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
         if (uploadError) throw uploadError;
@@ -585,7 +587,7 @@ const DefectRegister = () => {
         loadSavedReports();
       };
 
-      setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments });
+      setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel });
       setExportDialogOpen(true);
     } catch (error) {
       console.error('PDF error:', error);
