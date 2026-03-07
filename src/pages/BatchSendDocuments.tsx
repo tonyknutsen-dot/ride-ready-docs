@@ -582,8 +582,8 @@ const BatchSendDocuments = () => {
     : [];
 
   return (
-    <div className="t-page min-h-screen">
-      <div className="container mx-auto py-4 px-4 pb-24 md:pb-8 space-y-3">
+    <div className="t-page min-h-screen overflow-x-hidden">
+      <div className="container mx-auto py-4 px-4 pb-24 md:pb-8 space-y-3 overflow-x-hidden">
         <PageHeader
           title="Send Compliance Documents"
           subtitle="Submit compliance documents to councils, insurers, and auditors."
