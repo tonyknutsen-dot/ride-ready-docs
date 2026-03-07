@@ -37,11 +37,15 @@ const getCategory = (n: Notification): Category => {
   const t = n.type?.toLowerCase() ?? '';
   const title = n.title?.toLowerCase() ?? '';
 
-  // Defects
-  if (title.includes('defect') || title.includes('stop use') || title.includes('stop_operation') || n.related_table === 'defects') return 'defects';
+  // Defects — only if genuinely about a defect record
+  if (n.related_table === 'defects') return 'defects';
+  if (title.includes('defect') || title.includes('stop use defect') || title.includes('unresolved defect')) return 'defects';
+  // "linked defect" from a check still classifies as defect
+  if (title.includes('linked defect')) return 'defects';
 
-  // Checks
-  if (title.includes('check') && (title.includes('completed') || title.includes('failed') || title.includes('missed') || title.includes('overdue'))) return 'checks';
+  // Checks — anything about check execution
+  if (title.includes('check') && !title.includes('defect')) return 'checks';
+  if (title.includes('missed check') || title.includes('failed check')) return 'checks';
   if (n.related_table === 'checks') return 'checks';
 
   // Documents
@@ -168,12 +172,21 @@ const getActionRoute = (n: Notification): string | null => {
 const getActionLabel = (n: Notification): string => {
   const title = n.title?.toLowerCase() ?? '';
   if (isSentDocument(n)) return 'View record';
-  if (isDefectRelatedNotification(n)) return 'View defect';
+  // Defect notifications — always say "defect"
+  if (isDefectRelatedNotification(n)) {
+    if (title.includes('linked defect')) return 'Open linked defect';
+    if (title.includes('stop use')) return 'Review defect';
+    if (title.includes('unresolved')) return 'Review defect';
+    return 'View defect';
+  }
+  // Checks — always say "check", never ambiguous "Review"
   if (title.includes('check') && title.includes('missed')) return 'Start check';
-  if (title.includes('check') && title.includes('failed')) return 'Review';
-  if (title.includes('check') && title.includes('completed')) return 'View';
+  if (title.includes('check') && title.includes('failed')) return 'Review check';
+  if (title.includes('check') && title.includes('completed')) return 'View check';
+  if (n.related_table === 'checks') return 'View check';
+  // Other categories
   if (title.includes('inspection') || title.includes('ndt')) return 'View';
-  if (title.includes('expir') || title.includes('document') || title.includes('certificate')) return 'Review';
+  if (title.includes('expir') || title.includes('document') || title.includes('certificate')) return 'Review certificate';
   if (title.includes('maintenance') && (title.includes('overdue') || title.includes('due'))) return 'View';
   if (title.includes('maintenance') && title.includes('logged')) return 'View';
   if (title.includes('wind') || title.includes('threshold')) return 'View log';
@@ -461,7 +474,7 @@ const NotificationCenter = () => {
         }
       }
 
-      // ─── 6. Failed checks (today) ───
+      // ─── 6. Failed checks (today) — check for linked defects ───
       const { data: failedChecks } = await supabase
         .from('checks')
         .select('id, ride_id')
@@ -471,11 +484,31 @@ const NotificationCenter = () => {
 
       for (const fc of failedChecks || []) {
         const rideName = fc.ride_id ? rideMap.get(fc.ride_id) || '' : '';
-        await ensureNotification(
-          `Failed check requires action`,
-          `A check for ${rideName || 'an asset'} failed today. Review and take corrective action.`,
-          'warning', 'checks', fc.id
-        );
+
+        // Check if this failed check has a linked open defect
+        const { data: linkedDefect } = await supabase
+          .from('defects')
+          .select('id, severity')
+          .eq('check_id', fc.id)
+          .neq('status', 'resolved')
+          .limit(1)
+          .maybeSingle();
+
+        if (linkedDefect?.id) {
+          // Show as a linked-defect notification routed to defect register
+          await ensureNotification(
+            `Check failure linked defect: ${rideName || 'asset'}`,
+            `A failed check for ${rideName || 'an asset'} has created an open defect. Review and close the defect.`,
+            'warning', 'defects', linkedDefect.id
+          );
+        } else {
+          // Pure checks notification — no defect link
+          await ensureNotification(
+            `Failed check: ${rideName || 'asset'}`,
+            `A check for ${rideName || 'an asset'} failed today. Review the check result and take corrective action.`,
+            'warning', 'checks', fc.id
+          );
+        }
       }
 
       // Done — reload notifications
