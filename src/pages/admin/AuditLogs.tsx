@@ -35,6 +35,9 @@ interface AuditStats {
 const ACTION_ICONS: Record<string, React.ReactNode> = {
   login: <LogIn className="h-4 w-4" />,
   logout: <LogIn className="h-4 w-4 rotate-180" />,
+  lock: <Key className="h-4 w-4" />,
+  unlock: <Key className="h-4 w-4" />,
+  failed_unlock: <Key className="h-4 w-4" />,
   view: <Eye className="h-4 w-4" />,
   download: <Download className="h-4 w-4" />,
   share: <Share2 className="h-4 w-4" />,
