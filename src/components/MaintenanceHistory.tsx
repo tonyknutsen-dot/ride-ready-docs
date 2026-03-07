@@ -203,6 +203,26 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
 
   const hasActiveFilters = filterType !== 'all' || filterPerformedBy !== 'all' || !!searchQuery || !!dateFrom || !!dateTo;
 
+  const activeFilterCount = [
+    filterType !== 'all',
+    filterPerformedBy !== 'all',
+    !!dateFrom || !!dateTo,
+    !!searchQuery,
+  ].filter(Boolean).length;
+
+  const filterSummary = [
+    filterType !== 'all' ? `Type: ${getMaintenanceTypeLabel(filterType)}` : null,
+    filterPerformedBy !== 'all' ? `Performed by: ${filterPerformedBy}` : null,
+    dateFrom && dateTo
+      ? `${format(dateFrom, 'd MMM yyyy')} – ${format(dateTo, 'd MMM yyyy')}`
+      : dateFrom
+        ? `From ${format(dateFrom, 'd MMM yyyy')}`
+        : dateTo
+          ? `To ${format(dateTo, 'd MMM yyyy')}`
+          : null,
+    searchQuery ? `Search: “${searchQuery.trim()}”` : null,
+  ].filter(Boolean).join(' • ');
+
   // ── CRUD operations ──
   const handleDelete = async (recordId: string) => {
     try {
@@ -707,6 +727,8 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         searchTerm={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Search records…"
+        activeFilterCount={activeFilterCount}
+        filterSummary={filterSummary}
         actions={[
           { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline' as const, disabled: generatingCsv || filteredRecords.length === 0 },
           { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline' as const, disabled: generatingPdf || filteredRecords.length === 0, loading: generatingPdf },

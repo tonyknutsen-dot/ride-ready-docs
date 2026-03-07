@@ -407,6 +407,28 @@ const DefectRegister = () => {
 
   const hasActiveFilters = statusFilter !== 'open' || severityFilter !== 'all' || rideFilter !== 'all' || !!searchTerm || !!dateFrom || !!dateTo;
 
+  const activeFilterCount = [
+    statusFilter !== 'open',
+    severityFilter !== 'all',
+    rideFilter !== 'all',
+    !!dateFrom || !!dateTo,
+    !!searchTerm,
+  ].filter(Boolean).length;
+
+  const filterSummary = [
+    statusFilter !== 'open' ? `Status: ${statusFilter === 'closed' ? 'Closed' : 'All'}` : null,
+    severityFilter !== 'all' ? `Severity: ${getSeverityLabel(severityFilter as DefectSeverity)}` : null,
+    rideFilter !== 'all' ? `Equipment: ${rideMap.get(rideFilter)?.name || 'Selected'}` : null,
+    dateFrom && dateTo
+      ? `${format(dateFrom, 'd MMM yyyy')} – ${format(dateTo, 'd MMM yyyy')}`
+      : dateFrom
+        ? `From ${format(dateFrom, 'd MMM yyyy')}`
+        : dateTo
+          ? `To ${format(dateTo, 'd MMM yyyy')}`
+          : null,
+    searchTerm ? `Search: “${searchTerm.trim()}”` : null,
+  ].filter(Boolean).join(' • ');
+
   const filtered = useMemo(() => {
     let list = [...enriched];
     if (statusFilter === 'open') list = list.filter((d) => d.status !== 'resolved');
@@ -620,6 +642,8 @@ const DefectRegister = () => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search defects…"
+        activeFilterCount={activeFilterCount}
+        filterSummary={filterSummary}
         primaryAction={{ label: 'Report defect', icon: <AlertOctagon className="h-3.5 w-3.5" />, onClick: () => { (document.activeElement as HTMLElement)?.blur(); setDefectPickerOpen(true); } }}
         actions={[
           { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filtered.length === 0 },

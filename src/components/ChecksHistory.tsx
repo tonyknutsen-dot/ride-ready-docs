@@ -100,7 +100,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const [showCheckDetail, setShowCheckDetail] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
-  const [savedReports, setSavedReports] = useState<Array<{ id: string; document_name: string; uploaded_at: string; file_path: string }>>([]);
+  const [savedReports, setSavedReports] = useState<Array<{ id: string; document_name: string; uploaded_at: string; file_path: string; mime_type?: string | null }>>([]);
   const itemsPerPage = 20;
 
   const hasFailedItems = offlineChecks.some(c => c.syncStatus === 'failed');
@@ -123,7 +123,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
     if (!effectiveUserId || !rideId) return;
     supabase
       .from('documents')
-      .select('id, document_name, uploaded_at, file_path')
+      .select('id, document_name, uploaded_at, file_path, mime_type')
       .eq('user_id', effectiveUserId)
       .eq('ride_id', rideId)
       .eq('document_type', 'CH')
@@ -374,6 +374,22 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         .upload(storagePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
       if (uploadError) throw uploadError;
 
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) throw new Error('User not authenticated');
+
+      const { error: documentError } = await supabase.from('documents').insert({
+        user_id: authUser.id,
+        ride_id: rideId,
+        document_name: fileName,
+        document_type: 'CH',
+        file_path: storagePath,
+        mime_type: 'application/pdf',
+        file_size: pdfBlob.size,
+        notes: `Check records report: ${filteredChecks.length} checks`,
+        is_global: false,
+      });
+      if (documentError) throw documentError;
+
       const rideCode = await getRideCode(rideId);
       await storeRideDocument({
         rideId,
@@ -384,6 +400,16 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         title: `${frequencyLabel} Safety Checks – ${rideName} – ${format(new Date(), 'dd MMM yyyy')}`,
         metadata: { checkCount: filteredChecks.length, passRate: overallStats.passRate },
       });
+
+      const { data: refreshed } = await supabase
+        .from('documents')
+        .select('id, document_name, uploaded_at, file_path, mime_type')
+        .eq('user_id', authUser.id)
+        .eq('ride_id', rideId)
+        .eq('document_type', 'CH')
+        .order('uploaded_at', { ascending: false })
+        .limit(10);
+      setSavedReports(refreshed || []);
     };
 
     setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel: 'Save to Asset Documents', saveHint: 'This report will be saved to the selected asset\'s Documents.' });
@@ -419,6 +445,25 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const monthGroups = groupByMonth();
   const totalPages = Math.ceil(filteredChecks.length / itemsPerPage);
   const hasActiveFilters = searchTerm !== '' || frequencyFilter !== 'all' || statusFilter !== 'all' || !!dateFrom || !!dateTo;
+  const activeFilterCount = [
+    frequencyFilter !== 'all',
+    statusFilter !== 'all',
+    !!dateFrom || !!dateTo,
+    !!searchTerm,
+  ].filter(Boolean).length;
+
+  const filterSummary = [
+    frequencyFilter !== 'all' ? `Frequency: ${frequencyFilter}` : null,
+    statusFilter !== 'all' ? `Status: ${statusFilter}` : null,
+    dateFrom && dateTo
+      ? `${format(dateFrom, 'd MMM yyyy')} – ${format(dateTo, 'd MMM yyyy')}`
+      : dateFrom
+        ? `From ${format(dateFrom, 'd MMM yyyy')}`
+        : dateTo
+          ? `To ${format(dateTo, 'd MMM yyyy')}`
+          : null,
+    searchTerm ? `Search: “${searchTerm.trim()}”` : null,
+  ].filter(Boolean).join(' • ');
 
   if (loading) {
     return (
@@ -452,6 +497,8 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search by name or notes…"
+        activeFilterCount={activeFilterCount}
+        filterSummary={filterSummary}
         actions={[
           { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: exportToPDF, variant: 'outline' as const },
           { label: 'Export CSV', icon: <Download className="h-3.5 w-3.5" />, onClick: exportToCSV, variant: 'outline' as const },
