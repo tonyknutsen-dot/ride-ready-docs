@@ -518,7 +518,7 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
           isOpen={true}
           pdfUrl={viewerState.url}
           pdfName={viewerState.name}
-          onClose={() => setViewerState({ type: null, url: '', name: '' })}
+          onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '' }; })}
           onDownload={() => {
             const a = document.createElement('a');
             a.href = viewerState.url;
