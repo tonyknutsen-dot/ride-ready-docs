@@ -1,14 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Download, Share2, ExternalLink, X, FileText, AlertCircle, Link2 } from 'lucide-react';
+import { Download, ExternalLink, X, FileText, AlertCircle, Link2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   downloadBlob,
   getSignedStorageUrl,
   getStorageFileBlob,
-  shareBlobOrFallback,
-  shareStoredFileOrFallback,
 } from '@/utils/exportFileActions';
 import { useToast } from '@/hooks/use-toast';
 
@@ -151,23 +149,6 @@ const DocumentPreviewSheet = ({ open, onOpenChange, source }: DocumentPreviewShe
     }
   };
 
-  const handleShare = async () => {
-    if (!source) return;
-    try {
-      if (source.storagePath) {
-        const result = await shareStoredFileOrFallback(source.storagePath, source.name);
-        if (result === 'copied') toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
-        else if (result === 'downloaded') toast({ title: 'Downloaded', description: 'File downloaded as share fallback.' });
-      } else if (source.blob) {
-        const result = await shareBlobOrFallback(source.blob, source.name);
-        if (result === 'downloaded') toast({ title: 'Downloaded', description: 'File downloaded as share fallback.' });
-      }
-    } catch (err: any) {
-      if (err?.name !== 'AbortError') {
-        toast({ title: 'Share failed', variant: 'destructive' });
-      }
-    }
-  };
 
   const handleOpenExternal = async () => {
     if (!source) return;
@@ -259,9 +240,6 @@ const DocumentPreviewSheet = ({ open, onOpenChange, source }: DocumentPreviewShe
                 <Button onClick={handleDownload} disabled={downloading} className="gap-2 h-11">
                   <Download className="h-4 w-4" /> Save to device
                 </Button>
-                <Button variant="outline" onClick={handleShare} className="gap-2 h-11">
-                  <Share2 className="h-4 w-4" /> Share
-                </Button>
                 {source.storagePath && (
                   <Button variant="outline" onClick={handleCopyLink} className="gap-2 h-11">
                     <Link2 className="h-4 w-4" /> Copy link
@@ -275,15 +253,14 @@ const DocumentPreviewSheet = ({ open, onOpenChange, source }: DocumentPreviewShe
         {/* ─── Bottom action bar (visible when preview IS working) ─── */}
         {previewStatus === 'ready' && (
           <div className="shrink-0 border-t border-border px-4 py-3 flex items-center gap-2 bg-background">
-            <Button variant="outline" size="sm" onClick={handleOpenExternal} className="gap-1.5 flex-1 h-10 text-[12px]">
-              <ExternalLink className="h-3.5 w-3.5" /> Open
-            </Button>
             <Button variant="outline" size="sm" onClick={handleDownload} disabled={downloading} className="gap-1.5 flex-1 h-10 text-[12px]">
               <Download className="h-3.5 w-3.5" /> Save
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare} className="gap-1.5 flex-1 h-10 text-[12px]">
-              <Share2 className="h-3.5 w-3.5" /> Share
-            </Button>
+            {source?.storagePath && (
+              <Button variant="outline" size="sm" onClick={handleCopyLink} className="gap-1.5 flex-1 h-10 text-[12px]">
+                <Link2 className="h-3.5 w-3.5" /> Copy link
+              </Button>
+            )}
           </div>
         )}
       </SheetContent>

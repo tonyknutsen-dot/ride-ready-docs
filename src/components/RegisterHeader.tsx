@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Download, Share2, Link2 } from 'lucide-react';
+import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Download, Link2 } from 'lucide-react';
 import { format, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -14,7 +14,6 @@ import {
   downloadBlob,
   getSignedStorageUrl,
   getStorageFileBlob,
-  shareStoredFileOrFallback,
 } from '@/utils/exportFileActions';
 
 interface ActionButton {
@@ -280,18 +279,6 @@ export const PreviousReportsSection = ({
     }
   };
 
-  const handleShare = async (report: { file_path: string; document_name: string }) => {
-    try {
-      const outcome = await shareStoredFileOrFallback(report.file_path, report.document_name);
-      if (outcome === 'copied') {
-        toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
-      } else if (outcome === 'downloaded') {
-        toast({ title: 'Downloaded', description: 'Native sharing unavailable, file downloaded instead.' });
-      }
-    } catch {
-      toast({ title: 'Share failed', description: 'Could not share this report.', variant: 'destructive' });
-    }
-  };
 
   const handleCopyLink = async (report: { file_path: string }) => {
     try {
@@ -334,9 +321,6 @@ export const PreviousReportsSection = ({
                 <div className="flex items-center gap-1.5 flex-wrap">
                   <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
                     <Download className="h-3 w-3" /> Save to Device
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleShare(report)} className="h-8 text-[11px] gap-1 min-h-[36px]">
-                    <Share2 className="h-3 w-3" /> Share
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report)} className="h-8 text-[11px] gap-1 min-h-[36px]">
                     <Link2 className="h-3 w-3" /> Copy Link

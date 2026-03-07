@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Download, Share2, FolderPlus, Loader2, CheckCircle2 } from 'lucide-react';
+import { Download, FolderPlus, Loader2, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { isLikelyMobileOrTablet, shareBlobOrFallback, downloadBlob } from '@/utils/exportFileActions';
+import { downloadBlob } from '@/utils/exportFileActions';
 
 export interface ExportResult {
   blob: Blob;
@@ -30,22 +30,6 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const handleDownload = () => {
     downloadBlob(result.blob, result.fileName);
     toast({ title: 'Downloaded', description: result.fileName });
-  };
-
-  const handleShare = async () => {
-    try {
-      const outcome = await shareBlobOrFallback(result.blob, result.fileName);
-      if (outcome === 'downloaded') {
-        const mobileHint = isLikelyMobileOrTablet()
-          ? 'Native share is unavailable on this device, so the file was downloaded instead.'
-          : 'Desktop sharing uses download fallback for unsaved exports.';
-        toast({ title: 'Download fallback used', description: mobileHint });
-      }
-    } catch (err: any) {
-      if (err?.name !== 'AbortError') {
-        handleDownload();
-      }
-    }
   };
 
   const handleSaveToDocuments = async () => {
@@ -83,7 +67,6 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
 
         <div className="grid gap-2 pt-2">
           <ActionButton icon={Download} label="Save to Device" description="Download file to your phone or laptop" onClick={handleDownload} />
-          <ActionButton icon={Share2} label="Share" description="Send via native share or copy link" onClick={handleShare} />
 
           {result.onSaveToDocuments && (
             <>

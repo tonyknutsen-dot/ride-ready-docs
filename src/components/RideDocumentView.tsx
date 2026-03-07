@@ -25,7 +25,7 @@ import {
   AlertTriangle,
   File,
   RefreshCw,
-  Share2,
+  Link2,
   Link2,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,7 +34,7 @@ import { useStaff } from '@/contexts/StaffContext';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
-import { getSignedStorageUrl, shareStoredFileOrFallback } from '@/utils/exportFileActions';
+import { getSignedStorageUrl } from '@/utils/exportFileActions';
 
 type Document = Tables<'documents'>;
 
@@ -214,18 +214,6 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     }
   };
 
-  const handleShare = async (doc: Document) => {
-    try {
-      const outcome = await shareStoredFileOrFallback(doc.file_path, doc.document_name);
-      if (outcome === 'copied') {
-        toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
-      } else if (outcome === 'downloaded') {
-        toast({ title: 'Downloaded', description: 'Native share unavailable, file downloaded instead.' });
-      }
-    } catch {
-      toast({ title: 'Share failed', description: 'Could not share this document.', variant: 'destructive' });
-    }
-  };
 
   const handleCopyLink = async (doc: Document) => {
     try {
@@ -343,9 +331,6 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(doc); }}>
               <Download className="h-4 w-4 mr-2" /> Save to Device
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleShare(doc); }}>
-              <Share2 className="h-4 w-4 mr-2" /> Share
             </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleCopyLink(doc); }}>
               <Link2 className="h-4 w-4 mr-2" /> Copy Link
