@@ -154,8 +154,14 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
       {isPdf && (
         <PDFViewer
           isOpen={previewOpen}
-          onClose={() => setPreviewOpen(false)}
-          pdfUrl={objectUrl}
+          onClose={() => {
+            setPreviewOpen(false);
+            setPreviewUrl((prev) => {
+              if (prev) URL.revokeObjectURL(prev);
+              return '';
+            });
+          }}
+          pdfUrl={previewUrl}
           pdfName={result.fileName}
           onDownload={handleDownload}
         />
