@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { CheckSquare, HelpCircle, Wrench } from 'lucide-react';
+import { CheckSquare, HelpCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStaff } from '@/contexts/StaffContext';
@@ -64,15 +64,9 @@ const ChecksRegister = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pb-28 md:pb-8">
-        <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border">
-          <div className="container mx-auto px-4 py-3 sm:py-4">
-            <Skeleton className="h-12 w-64" />
-          </div>
-        </header>
-        <main className="container mx-auto px-4 py-5">
-          <Skeleton className="h-64 w-full" />
-        </main>
+      <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
+        <Skeleton className="h-12 w-64" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
@@ -83,26 +77,19 @@ const ChecksRegister = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-28 md:pb-8">
+    <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
       <StaffAccountBanner />
 
-      {/* ── PAGE HEADER ──────────────────────────── */}
-      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border">
-        <div className="container mx-auto px-4 py-3 sm:py-4">
-          <PageHeader
-            icon={<CheckSquare className="h-5 w-5 text-primary" />}
-            iconBgClass="from-primary/20 to-primary/10"
-            title={ride.ride_name}
-            subtitle="Check Records"
-            showBackButton
-            backTo="/checks"
-          />
-        </div>
-      </header>
+      <PageHeader
+        icon={<CheckSquare className="h-5 w-5 text-primary" />}
+        iconBgClass="from-primary/20 to-primary/10"
+        title={ride.ride_name}
+        subtitle="Check Records"
+        showBackButton
+        backTo="/checks"
+      />
 
-      <main className="container mx-auto px-4 py-5">
-        <ChecksHistory rideId={rideId} rideName={ride.ride_name} />
-      </main>
+      <ChecksHistory rideId={rideId} rideName={ride.ride_name} />
     </div>
   );
 };
