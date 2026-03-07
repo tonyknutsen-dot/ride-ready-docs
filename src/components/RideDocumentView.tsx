@@ -219,39 +219,8 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
         return;
       }
 
-      if (isPDFFile(fp)) {
-        const prepared = await createPdfViewerUrlFromStorage(doc.file_path);
-
-        console.info('[PDF DEBUG][RideDocumentView] view-pdf', {
-          documentId: doc.id,
-          storagePath: doc.file_path,
-          fileName: doc.document_name,
-          blobSize: prepared.blobSize,
-          blobType: prepared.blobType,
-          signature: prepared.signature,
-          validPdfSignature: prepared.validPdf,
-          viewerSourceType: 'blob-url',
-          normalizedBlobType: prepared.normalizedBlobType,
-        });
-
-        if (!prepared.validPdf) {
-          revokeObjectUrl(prepared.url);
-          toast({ title: 'Invalid PDF', description: 'This file is not a valid PDF.', variant: 'destructive' });
-          return;
-        }
-
-        setViewerState((prev) => {
-          if (prev.url) revokeObjectUrl(prev.url);
-          return { type: 'pdf', url: prepared.url, name: doc.document_name };
-        });
-        return;
-      }
-
-      const { data, error } = await supabase.storage
-        .from('ride-documents')
-        .createSignedUrl(doc.file_path, 3600);
-      if (error) throw error;
-      if (data?.signedUrl) window.open(data.signedUrl, '_blank');
+      // For PDFs and other files, use the shared DocumentPreviewSheet
+      setViewerState({ type: 'pdf', url: doc.file_path, name: doc.document_name });
     } catch (err: any) {
       if (!navigator.onLine) {
         showRequiresConnectionToast();
