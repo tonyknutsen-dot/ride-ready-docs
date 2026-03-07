@@ -69,6 +69,8 @@ interface ChecksHistoryProps {
   rideId: string;
   rideName: string;
   frequency?: string;
+  /** Callback to start a new check — wired as the primary CTA */
+  onStartCheck?: () => void;
 }
 
 interface MonthGroup {
