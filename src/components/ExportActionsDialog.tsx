@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Eye, Download, Share2, FolderPlus, Loader2, CheckCircle2 } from 'lucide-react';
+import { Download, Share2, FolderPlus, Loader2, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import DocumentPreviewSheet, { type DocumentPreviewSource } from '@/components/DocumentPreviewSheet';
-import { isLikelyMobileOrTablet, shareBlobOrFallback, downloadBlob, revokeObjectUrl } from '@/utils/exportFileActions';
+import { isLikelyMobileOrTablet, shareBlobOrFallback, downloadBlob } from '@/utils/exportFileActions';
 
 export interface ExportResult {
   blob: Blob;
