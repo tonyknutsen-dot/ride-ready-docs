@@ -100,7 +100,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const [showCheckDetail, setShowCheckDetail] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
-  const [savedReports, setSavedReports] = useState<Array<{ id: string; document_name: string; uploaded_at: string; file_path: string }>>([]);
+  const [savedReports, setSavedReports] = useState<Array<{ id: string; document_name: string; uploaded_at: string; file_path: string; mime_type?: string | null }>>([]);
   const itemsPerPage = 20;
 
   const hasFailedItems = offlineChecks.some(c => c.syncStatus === 'failed');
