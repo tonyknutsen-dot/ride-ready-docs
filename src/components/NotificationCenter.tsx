@@ -541,6 +541,21 @@ const NotificationCenter = () => {
       if (matchedDefect?.id) {
         return { route: buildDefectRoute(matchedDefect.id), reason: 'related_id_maps_to_defect' };
       }
+
+      if (n.related_table === 'checks') {
+        const { data: linkedDefect } = await supabase
+          .from('defects')
+          .select('id, severity, reported_at')
+          .eq('check_id', n.related_id)
+          .neq('status', 'resolved')
+          .order('reported_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (linkedDefect?.id) {
+          return { route: buildDefectRoute(linkedDefect.id), reason: 'check_maps_to_open_defect' };
+        }
+      }
     }
 
     return { route: getActionRoute(n), reason: 'default_mapping' };
