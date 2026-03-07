@@ -18,6 +18,8 @@ import {
   Globe,
   Search,
   Upload,
+  Share2,
+  Link2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,11 +27,8 @@ import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
-import ImageViewer from './ImageViewer';
-import DocumentPreviewSheet, { type DocumentPreviewSource } from './DocumentPreviewSheet';
-import { showRequiresConnectionToast } from '@/hooks/useOfflineGuard';
 import { cn } from '@/lib/utils';
-import { revokeObjectUrl } from '@/utils/exportFileActions';
+import { getSignedStorageUrl, shareStoredFileOrFallback } from '@/utils/exportFileActions';
 
 type Document = Tables<'documents'>;
 

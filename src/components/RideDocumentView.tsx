@@ -25,6 +25,8 @@ import {
   AlertTriangle,
   File,
   RefreshCw,
+  Share2,
+  Link2,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -32,10 +34,7 @@ import { useStaff } from '@/contexts/StaffContext';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
-import ImageViewer from './ImageViewer';
-import DocumentPreviewSheet, { type DocumentPreviewSource } from './DocumentPreviewSheet';
-import { showRequiresConnectionToast } from '@/hooks/useOfflineGuard';
-import { revokeObjectUrl } from '@/utils/exportFileActions';
+import { getSignedStorageUrl, shareStoredFileOrFallback } from '@/utils/exportFileActions';
 
 type Document = Tables<'documents'>;
 
