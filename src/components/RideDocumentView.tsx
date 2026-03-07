@@ -344,9 +344,6 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(doc); }}>
               <Download className="h-4 w-4 mr-2" /> Save to Device
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleShare(doc); }}>
-              <Share2 className="h-4 w-4 mr-2" /> Share
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleCopyLink(doc); }}>
               <Link2 className="h-4 w-4 mr-2" /> Copy Link
             </DropdownMenuItem>

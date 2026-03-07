@@ -227,19 +227,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     }
   };
 
-  const handleShare = async (document: Document) => {
-    try {
-      const displayName = getDocumentDisplayName(document);
-      const outcome = await shareStoredFileOrFallback(document.file_path, displayName);
-      if (outcome === 'copied') {
-        toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
-      } else if (outcome === 'downloaded') {
-        toast({ title: 'Downloaded', description: 'Native share unavailable, file downloaded instead.' });
-      }
-    } catch {
-      toast({ title: 'Share failed', description: 'Could not share this document.', variant: 'destructive' });
-    }
-  };
 
   const handleCopyLink = async (document: Document) => {
     try {

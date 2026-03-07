@@ -335,9 +335,6 @@ export const PreviousReportsSection = ({
                   <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
                     <Download className="h-3 w-3" /> Save to Device
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleShare(report)} className="h-8 text-[11px] gap-1 min-h-[36px]">
-                    <Share2 className="h-3 w-3" /> Share
-                  </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report)} className="h-8 text-[11px] gap-1 min-h-[36px]">
                     <Link2 className="h-3 w-3" /> Copy Link
                   </Button>

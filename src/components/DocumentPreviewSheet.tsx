@@ -253,15 +253,14 @@ const DocumentPreviewSheet = ({ open, onOpenChange, source }: DocumentPreviewShe
         {/* ─── Bottom action bar (visible when preview IS working) ─── */}
         {previewStatus === 'ready' && (
           <div className="shrink-0 border-t border-border px-4 py-3 flex items-center gap-2 bg-background">
-            <Button variant="outline" size="sm" onClick={handleOpenExternal} className="gap-1.5 flex-1 h-10 text-[12px]">
-              <ExternalLink className="h-3.5 w-3.5" /> Open
-            </Button>
             <Button variant="outline" size="sm" onClick={handleDownload} disabled={downloading} className="gap-1.5 flex-1 h-10 text-[12px]">
               <Download className="h-3.5 w-3.5" /> Save
             </Button>
-            <Button variant="outline" size="sm" onClick={handleShare} className="gap-1.5 flex-1 h-10 text-[12px]">
-              <Share2 className="h-3.5 w-3.5" /> Share
-            </Button>
+            {source?.storagePath && (
+              <Button variant="outline" size="sm" onClick={handleCopyLink} className="gap-1.5 flex-1 h-10 text-[12px]">
+                <Link2 className="h-3.5 w-3.5" /> Copy link
+              </Button>
+            )}
           </div>
         )}
       </SheetContent>
