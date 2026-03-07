@@ -300,7 +300,14 @@ const NotificationCenter = () => {
       checkNotifications.forEach((n) => {
         if (!n.related_id) return;
         const defectId = latestDefectByCheck.get(n.related_id);
-        if (defectId) mapping[n.id] = defectId;
+        if (defectId) {
+          mapping[n.id] = defectId;
+          console.info('[Notifications] Linked defect resolved for check notification', {
+            notification_id: n.id,
+            check_id: n.related_id,
+            linked_defect_id: defectId,
+          });
+        }
       });
 
       setLinkedDefectByNotification(mapping);
