@@ -792,7 +792,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
           {filteredRecords.map((record) => {
             const recordDocs = documents[record.id] || [];
             return (
-              <div key={record.id} className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.998] transition-all"
+              <div key={record.id} className="bg-card border border-border rounded-xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.998] transition-all"
                 onClick={() => { setSelectedRecord(record); setDetailViewOpen(true); }}>
                 <div className="p-3.5 space-y-2">
                   <div className="flex items-center justify-between gap-2">
