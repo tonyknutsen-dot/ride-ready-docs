@@ -729,11 +729,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
               <Globe className="w-4 h-4" />
             </button>
           )}
-          {isViewable(doc) && (
-            <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600" onClick={() => handleView(doc)}>
-              <Eye className="w-4 h-4" />
-            </button>
-          )}
           <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600" onClick={() => handleDownload(doc)}>
             <Download className="w-4 h-4" />
           </button>
