@@ -15,7 +15,7 @@ import { formatDateUK } from '@/utils/dateFormat';
 import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
 import { SendCheckRecordsDialog } from './SendCheckRecordsDialog';
 import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters, isCheckRecord, filterCheckRecords } from './CheckRecordFilters';
-import { getSignedStorageUrl, shareStoredFileOrFallback } from '@/utils/exportFileActions';
+import { getSignedStorageUrl } from '@/utils/exportFileActions';
 
 type Document = Tables<'documents'>;
 
