@@ -64,10 +64,9 @@ const LockScreen = ({ pinHash, onUnlock, onSignOut }: LockScreenProps) => {
       await logUnlockAttempt(false);
 
       if (newAttempts >= 5) {
-        const lockDuration = 60 * 1000; // 1 minute lockout
-        setLockedOut(true);
-        setLockoutEnd(Date.now() + lockDuration);
-        setError('Too many failed attempts. Locked for 60 seconds.');
+        // Force full re-auth after 5 failed PIN attempts
+        setError('Too many failed attempts. You must sign in again.');
+        setTimeout(() => onSignOut(), 2000);
       } else {
         setError(`Incorrect PIN. ${5 - newAttempts} attempts remaining.`);
       }

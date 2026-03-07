@@ -18,7 +18,7 @@ interface UseAuthRateLimitReturn {
 const STORAGE_KEY = 'auth-rate-limit';
 const MAX_ATTEMPTS = 5;
 const ATTEMPT_WINDOW_MS = 5 * 60 * 1000; // 5 minutes
-const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes lockout after max attempts
+const LOCKOUT_DURATION_MS = 10 * 60 * 1000; // 10 minutes lockout after max attempts
 
 function getStoredState(): RateLimitState {
   try {
