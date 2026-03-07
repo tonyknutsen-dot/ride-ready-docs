@@ -15,6 +15,7 @@ import {
   downloadBlob,
   getStorageFileBlob,
 } from '@/utils/exportFileActions';
+import QuickSendDialog from '@/components/QuickSendDialog';
 
 interface ActionButton {
   label: string;
