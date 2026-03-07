@@ -474,7 +474,7 @@ const NotificationCenter = () => {
         }
       }
 
-      // ─── 6. Failed checks (today) ───
+      // ─── 6. Failed checks (today) — check for linked defects ───
       const { data: failedChecks } = await supabase
         .from('checks')
         .select('id, ride_id')
@@ -484,11 +484,31 @@ const NotificationCenter = () => {
 
       for (const fc of failedChecks || []) {
         const rideName = fc.ride_id ? rideMap.get(fc.ride_id) || '' : '';
-        await ensureNotification(
-          `Failed check requires action`,
-          `A check for ${rideName || 'an asset'} failed today. Review and take corrective action.`,
-          'warning', 'checks', fc.id
-        );
+
+        // Check if this failed check has a linked open defect
+        const { data: linkedDefect } = await supabase
+          .from('defects')
+          .select('id, severity')
+          .eq('check_id', fc.id)
+          .neq('status', 'resolved')
+          .limit(1)
+          .maybeSingle();
+
+        if (linkedDefect?.id) {
+          // Show as a linked-defect notification routed to defect register
+          await ensureNotification(
+            `Check failure linked defect: ${rideName || 'asset'}`,
+            `A failed check for ${rideName || 'an asset'} has created an open defect. Review and close the defect.`,
+            'warning', 'defects', linkedDefect.id
+          );
+        } else {
+          // Pure checks notification — no defect link
+          await ensureNotification(
+            `Failed check: ${rideName || 'asset'}`,
+            `A check for ${rideName || 'an asset'} failed today. Review the check result and take corrective action.`,
+            'warning', 'checks', fc.id
+          );
+        }
       }
 
       // Done — reload notifications
