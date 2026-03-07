@@ -756,20 +756,20 @@ const BatchSendDocuments = () => {
       ) : (
         <>
           {/* Asset context strip */}
-          <div className="mb-4 bg-white border border-border rounded-2xl p-4" style={{ boxShadow: '0 2px 6px rgba(0,0,0,0.04)' }}>
+          <div className="mb-4 bg-card border border-border rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div className="flex items-center gap-3 min-w-0">
-                <span className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
-                  <ClipboardCheck className="h-4.5 w-4.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+                <span className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0 bg-primary/10">
+                  <ClipboardCheck className="h-4 w-4 text-primary" strokeWidth={2} />
                 </span>
                 <div className="min-w-0">
-                  <p className="text-xs font-medium" style={{ color: 'hsl(215 19% 40%)' }}>Asset</p>
-                  <p className="text-sm font-semibold truncate" style={{ color: 'hsl(222 84% 5%)' }}>{selectedRide.ride_name}</p>
+                  <p className="text-xs font-medium text-muted-foreground">Asset</p>
+                  <p className="text-sm font-semibold text-foreground truncate">{selectedRide.ride_name}</p>
                 </div>
                 <div className="hidden sm:block h-8 w-px bg-border mx-1" />
                 <div className="hidden sm:block">
-                  <p className="text-xs font-medium" style={{ color: 'hsl(215 19% 40%)' }}>Available</p>
-                  <p className="text-sm font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>
+                  <p className="text-xs font-medium text-muted-foreground">Available</p>
+                  <p className="text-sm font-semibold text-foreground">
                     {currentRideDocuments.length + currentRideCheckRecords.length} documents
                   </p>
                 </div>
@@ -790,7 +790,7 @@ const BatchSendDocuments = () => {
 
             {/* Selection summary bar */}
             {selectedDocuments.length > 0 && (
-              <div className="mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium" style={{ backgroundColor: 'hsl(217 91% 97%)', color: 'hsl(213 52% 24%)' }}>
+              <div className="mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium bg-primary/10 text-primary">
                 <FileText className="h-4 w-4 shrink-0" strokeWidth={2} />
                 <span>{selectedDocuments.length} document{selectedDocuments.length !== 1 ? 's' : ''} selected</span>
                 <span className="text-xs opacity-70">·</span>
