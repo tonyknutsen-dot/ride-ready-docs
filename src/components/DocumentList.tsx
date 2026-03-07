@@ -849,7 +849,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         />
         <PDFViewer
           isOpen={viewerState.type === 'pdf'}
-          onClose={() => setViewerState({ type: null, url: '', name: '', document: null })}
+          onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '', document: null }; })}
           pdfUrl={viewerState.url}
           pdfName={viewerState.name}
           onDownload={() => viewerState.document && handleDownload(viewerState.document)}
