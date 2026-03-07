@@ -284,7 +284,8 @@ export function useOverviewData() {
     queryKey: ['overview', effectiveUserId],
     queryFn: () => fetchOverviewData(effectiveUserId!),
     enabled: !!effectiveUserId && !staffLoading,
-    staleTime: 1000 * 60 * 2,
+    staleTime: 1000 * 30,
+    refetchOnMount: 'always',
     offlineCacheKey: `overview:${effectiveUserId}`,
   });
 }
