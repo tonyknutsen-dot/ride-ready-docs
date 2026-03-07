@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Download, FolderPlus, Loader2, CheckCircle2, Eye } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Download, FolderPlus, Loader2, CheckCircle2, Eye, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { downloadBlob } from '@/utils/exportFileActions';
@@ -74,33 +75,53 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-base">Export ready</DialogTitle>
+          <DialogTitle className="text-base">{saved ? 'Saved to Documents' : 'Export ready'}</DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground truncate">
             {result.fileName}
           </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-2 pt-2">
-          <ActionButton icon={Download} label="Save to Device" description="Download file to your phone or laptop" onClick={handleDownload} />
-
-          {result.onSaveToDocuments && (
+          {/* ── Pre-save actions ── */}
+          {!saved && (
             <>
-              <div className="border-t border-border my-1" />
-              {result.saveHint && !saved && (
-                <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
-                  {result.saveHint}
-                </p>
+              <ActionButton icon={Download} label="Save to Device" description="Download file to your phone or laptop" onClick={handleDownload} />
+
+              {result.onSaveToDocuments && (
+                <>
+                  <div className="border-t border-border my-1" />
+                  {result.saveHint && (
+                    <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
+                      {result.saveHint}
+                    </p>
+                  )}
+                  <ActionButton
+                    icon={FolderPlus}
+                    label={result.saveLabel || 'Save to Documents'}
+                    description="Saves this report inside RideReadyDocs for later access"
+                    onClick={handleSaveToDocuments}
+                    loading={saving}
+                    accent
+                  />
+                </>
               )}
-              <ActionButton
-                icon={saved ? CheckCircle2 : FolderPlus}
-                label={saved ? 'Saved ✓' : (result.saveLabel || 'Save to Documents')}
-                description={saved ? 'Report saved to your document register' : 'Saves this report inside RideReadyDocs for later access'}
-                onClick={handleSaveToDocuments}
-                loading={saving}
-                disabled={saved}
-                accent={!saved}
-              />
-              {saved && savedDocId && (
+            </>
+          )}
+
+          {/* ── Post-save success state ── */}
+          {saved && (
+            <>
+              <div className="flex flex-col items-center py-3 gap-2">
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <CheckCircle2 className="h-6 w-6 text-primary" />
+                </div>
+                <p className="text-sm font-medium text-foreground">Report saved successfully</p>
+                <p className="text-xs text-muted-foreground text-center">
+                  This report is now in your document register and can be viewed anytime.
+                </p>
+              </div>
+
+              {savedDocId && (
                 <ActionButton
                   icon={Eye}
                   label="View Document"
@@ -109,6 +130,23 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
                   accent
                 />
               )}
+
+              <ActionButton
+                icon={Download}
+                label="Save to Device"
+                description="Also download a copy to your phone or laptop"
+                onClick={handleDownload}
+              />
+
+              <div className="pt-1">
+                <Button
+                  variant="outline"
+                  className="w-full h-10 text-sm"
+                  onClick={() => handleClose(false)}
+                >
+                  Done
+                </Button>
+              </div>
             </>
           )}
         </div>
