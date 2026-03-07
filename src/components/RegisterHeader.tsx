@@ -1,4 +1,4 @@
-import { ReactNode } from 'react';
+import { ReactNode, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,6 +8,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Eye, Download, Share2 } from 'lucide-react';
 import { format, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import PDFViewer from '@/components/PDFViewer';
+import { useToast } from '@/hooks/use-toast';
 
 interface ActionButton {
   label: string;
@@ -51,7 +54,8 @@ interface RegisterHeaderProps {
   onDateToChange: (date: Date | undefined) => void;
   /** Previously generated reports */
   savedReports: SavedReport[];
-  onViewReport: (filePath: string) => void;
+  /** @deprecated No longer needed — PreviousReportsSection handles viewing internally */
+  onViewReport?: (filePath: string) => void;
   /** Extra content between CTA and search */
   extraContent?: ReactNode;
 }
@@ -227,24 +231,49 @@ const RegisterHeader = ({
   );
 };
 
-/** Shared "Previously Generated Reports" section */
+/** Shared "Previously Generated Reports" section — self-contained with in-app PDF viewer */
 export const PreviousReportsSection = ({
   reports,
-  onViewReport,
 }: {
   reports: Array<{ id: string; document_name: string; uploaded_at: string; file_path: string }>;
-  onViewReport: (filePath: string) => void;
+  /** @deprecated kept for backwards compat but ignored */
+  onViewReport?: (filePath: string) => void;
 }) => {
+  const { toast } = useToast();
+  const [viewerState, setViewerState] = useState<{ open: boolean; url: string; name: string }>({ open: false, url: '', name: '' });
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  const getSignedUrl = async (filePath: string): Promise<string | null> => {
+    const { data, error } = await supabase.storage
+      .from('ride-documents')
+      .createSignedUrl(filePath, 3600);
+    if (error || !data?.signedUrl) {
+      console.error('Failed to get signed URL:', error);
+      toast({ title: 'Failed to load', description: 'Could not access the report file.', variant: 'destructive' });
+      return null;
+    }
+    return data.signedUrl;
+  };
+
+  const handleView = async (report: { id: string; file_path: string; document_name: string }) => {
+    setLoadingId(report.id);
+    try {
+      const url = await getSignedUrl(report.file_path);
+      if (url) {
+        setViewerState({ open: true, url, name: report.document_name });
+      }
+    } finally {
+      setLoadingId(null);
+    }
+  };
+
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
-      const { data } = await (await import('@/integrations/supabase/client')).supabase.storage
-        .from('ride-documents')
-        .createSignedUrl(filePath, 300);
-      if (data?.signedUrl) {
+      const url = await getSignedUrl(filePath);
+      if (url) {
         const a = document.createElement('a');
-        a.href = data.signedUrl;
+        a.href = url;
         a.download = fileName;
-        a.target = '_blank';
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -256,15 +285,14 @@ export const PreviousReportsSection = ({
 
   const handleShare = async (filePath: string, fileName: string) => {
     try {
-      const { data } = await (await import('@/integrations/supabase/client')).supabase.storage
-        .from('ride-documents')
-        .createSignedUrl(filePath, 300);
-      if (data?.signedUrl && navigator.share) {
-        const response = await fetch(data.signedUrl);
+      const url = await getSignedUrl(filePath);
+      if (!url) return;
+      if (navigator.share) {
+        const response = await fetch(url);
         const blob = await response.blob();
         const file = new File([blob], fileName, { type: blob.type });
         await navigator.share({ files: [file], title: fileName });
-      } else if (data?.signedUrl) {
+      } else {
         handleDownload(filePath, fileName);
       }
     } catch (err: any) {
@@ -275,45 +303,72 @@ export const PreviousReportsSection = ({
   };
 
   return (
-    <div className="space-y-2 pt-4 border-t">
-      <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
-      {reports.length === 0 ? (
-        <div className="flex flex-col items-center py-6 text-center">
-          <div className="h-10 w-10 rounded-full bg-muted/60 flex items-center justify-center mb-2">
-            <FileText className="h-4 w-4 text-muted-foreground/40" />
+    <>
+      <div className="space-y-2 pt-4 border-t">
+        <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
+        {reports.length === 0 ? (
+          <div className="flex flex-col items-center py-6 text-center">
+            <div className="h-10 w-10 rounded-full bg-muted/60 flex items-center justify-center mb-2">
+              <FileText className="h-4 w-4 text-muted-foreground/40" />
+            </div>
+            <p className="text-[12px] text-muted-foreground">No saved reports yet.</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Export a PDF and save it to Documents to see it here.</p>
           </div>
-          <p className="text-[12px] text-muted-foreground">No saved reports yet.</p>
-          <p className="text-[11px] text-muted-foreground mt-0.5">Export a PDF and save it to Documents to see it here.</p>
-        </div>
-      ) : (
-        reports.map((report) => (
-          <div key={report.id} className="bg-card border border-border rounded-xl p-3 space-y-2">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2.5 min-w-0">
-                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                  <FileText className="h-4 w-4 text-primary" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
-                  <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
+        ) : (
+          reports.map((report) => (
+            <div key={report.id} className="bg-card border border-border rounded-xl p-3 space-y-2">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                    <FileText className="h-4 w-4 text-primary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
+                    <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
+                  </div>
                 </div>
               </div>
+              <div className="flex items-center gap-1.5">
+                <Button
+                  variant="ghost" size="sm"
+                  onClick={() => handleView(report)}
+                  disabled={loadingId === report.id}
+                  className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]"
+                >
+                  {loadingId === report.id ? (
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
+                  ) : (
+                    <Eye className="h-3 w-3" />
+                  )}
+                  View
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
+                  <Download className="h-3 w-3" /> Download
+                </Button>
+                <Button variant="ghost" size="sm" onClick={() => handleShare(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
+                  <Share2 className="h-3 w-3" /> Share
+                </Button>
+              </div>
             </div>
-            <div className="flex items-center gap-1.5">
-              <Button variant="ghost" size="sm" onClick={() => onViewReport(report.file_path)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
-                <Eye className="h-3 w-3" /> View
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
-                <Download className="h-3 w-3" /> Download
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => handleShare(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
-                <Share2 className="h-3 w-3" /> Share
-              </Button>
-            </div>
-          </div>
-        ))
-      )}
-    </div>
+          ))
+        )}
+      </div>
+
+      <PDFViewer
+        isOpen={viewerState.open}
+        onClose={() => setViewerState({ open: false, url: '', name: '' })}
+        pdfUrl={viewerState.url}
+        pdfName={viewerState.name}
+        onDownload={() => {
+          const a = document.createElement('a');
+          a.href = viewerState.url;
+          a.download = viewerState.name;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }}
+      />
+    </>
   );
 };
 
