@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Eye, Download, Share2, FolderPlus, Loader2, CheckCircle2 } from 'lucide-react';
@@ -10,6 +10,8 @@ export interface ExportResult {
   fileName: string;
   /** If provided, enables "Save to Documents" */
   onSaveToDocuments?: () => Promise<void>;
+  /** Label override for save button (e.g. "Save to Asset Documents" vs "Save as Global Document") */
+  saveLabel?: string;
 }
 
 interface ExportActionsDialogProps {
@@ -23,9 +25,20 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  if (!result) return null;
+  // Stable blob URL that only changes when the blob changes
+  const objectUrl = useMemo(() => {
+    if (!result) return '';
+    return URL.createObjectURL(result.blob);
+  }, [result?.blob]);
 
-  const objectUrl = URL.createObjectURL(result.blob);
+  // Clean up blob URL when it changes or unmounts
+  useEffect(() => {
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [objectUrl]);
+
+  if (!result) return null;
 
   const handleView = () => {
     window.open(objectUrl, '_blank');
