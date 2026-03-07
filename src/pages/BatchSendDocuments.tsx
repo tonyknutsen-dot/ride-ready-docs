@@ -593,40 +593,57 @@ const BatchSendDocuments = () => {
 
       {/* Step 1: Ride Selection (if no ride selected) */}
       {!selectedRide ? (
-        <div className="space-y-4">
-          {/* Submission Summary Strip */}
-          <div className="rounded-2xl px-4 py-3.5 flex items-center gap-4 flex-wrap" style={{ backgroundColor: 'hsl(217 91% 97%)', border: '1px solid hsl(213 52% 24% / 0.15)' }}>
-            <div className="flex items-center gap-2">
-              <Package className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-              <span className="text-sm font-semibold" style={{ color: 'hsl(213 52% 24%)' }}>{rides.length} {rides.length === 1 ? 'Asset' : 'Assets'}</span>
-            </div>
-            <div className="h-4 w-px" style={{ backgroundColor: 'hsl(213 52% 24% / 0.2)' }} />
-            <div className="flex items-center gap-2">
-              <FileText className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-              <span className="text-sm font-semibold" style={{ color: 'hsl(213 52% 24%)' }}>
+        <div className="space-y-5">
+          {/* Submission Summary Pills */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              onClick={() => {
+                const el = document.getElementById('asset-pack-section');
+                el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 min-h-[44px] hover:bg-accent/60 active:bg-accent transition-colors group"
+            >
+              <Package className="h-4 w-4 text-primary" strokeWidth={2} />
+              <span className="text-sm font-semibold text-foreground">{rides.length} {rides.length === 1 ? 'Asset' : 'Assets'}</span>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
+            <button
+              onClick={() => {
+                const el = document.getElementById('asset-pack-section');
+                el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 min-h-[44px] hover:bg-accent/60 active:bg-accent transition-colors group"
+            >
+              <FileText className="h-4 w-4 text-primary" strokeWidth={2} />
+              <span className="text-sm font-semibold text-foreground">
                 {rides.reduce((sum, r) => sum + r.documents.length, 0) + checkRecords.length} Documents
               </span>
-            </div>
+              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+            </button>
             {globalDocuments.length > 0 && (
-              <>
-                <div className="h-4 w-px" style={{ backgroundColor: 'hsl(213 52% 24% / 0.2)' }} />
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                  <span className="text-sm font-semibold" style={{ color: 'hsl(213 52% 24%)' }}>{globalDocuments.length} Global</span>
-                </div>
-              </>
+              <button
+                onClick={() => {
+                  const el = document.getElementById('global-docs-section');
+                  el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+                className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 min-h-[44px] hover:bg-accent/60 active:bg-accent transition-colors group"
+              >
+                <Building2 className="h-4 w-4 text-primary" strokeWidth={2} />
+                <span className="text-sm font-semibold text-foreground">{globalDocuments.length} Global docs</span>
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+              </button>
             )}
           </div>
 
           {/* Asset Compliance Pack Selection */}
-          <div className="bg-white border border-border rounded-2xl overflow-hidden" style={{ boxShadow: '0 6px 14px rgba(0,0,0,0.06)' }}>
+          <div id="asset-pack-section" className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
             <div className="px-5 py-4 border-b border-border flex items-center gap-3">
-              <span className="flex items-center justify-center w-9 h-9 rounded-xl" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
-                <ClipboardCheck className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
+              <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
+                <ClipboardCheck className="h-5 w-5 text-primary" strokeWidth={2} />
               </span>
               <div>
-                <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Select Asset Compliance Pack</p>
-                <p className="text-xs mt-0.5" style={{ color: 'hsl(215 19% 45%)' }}>Choose the asset to build a documentation submission for</p>
+                <p className="text-sm font-bold text-foreground">Select Asset Compliance Pack</p>
+                <p className="text-xs mt-0.5 text-muted-foreground">Choose the asset to build a documentation submission for</p>
               </div>
             </div>
             <div className="p-4">
