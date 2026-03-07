@@ -234,7 +234,7 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* Hidden file inputs */}
       <Input
         ref={fileInputRef}
@@ -258,18 +258,21 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
 
       {/* Asset Context Strip */}
       {rideName && (
-        <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-primary/5 border border-primary/20">
+        <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-primary/6 border border-primary/15 shadow-sm">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <FileText className="h-4 w-4 text-primary" />
+          </div>
           <div className="min-w-0">
-            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Uploading for</p>
-            <p className="text-xs font-semibold truncate text-foreground">{rideName}</p>
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-primary/60">Uploading for</p>
+            <p className="text-sm font-bold truncate text-foreground">{rideName}</p>
           </div>
         </div>
       )}
 
       {/* Replacing banner */}
       {replacingDocumentId && prefillDocName && (
-        <div className="flex items-center gap-2 px-3 py-2.5 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
-          <p className="text-xs text-amber-800 dark:text-amber-200">
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-300/60 dark:border-amber-700 shadow-sm">
+          <p className="text-xs font-medium text-amber-800 dark:text-amber-200">
             Replacing <strong>{prefillDocName}</strong> — the old version will be archived.
           </p>
         </div>
@@ -280,71 +283,81 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
-            className="h-28 flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card transition-all hover:border-primary/40 hover:shadow-sm disabled:opacity-50"
+            className="h-[120px] flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-foreground/8 bg-card shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-all active:scale-[0.97] hover:border-primary/30 hover:shadow-md disabled:opacity-50"
             onClick={() => cameraInputRef.current?.click()}
             disabled={uploading}
           >
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-primary/10">
-              <Camera className="h-5 w-5 text-primary" strokeWidth={2} />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary/8 border border-primary/15">
+              <Camera className="h-5.5 w-5.5 text-primary" strokeWidth={2} />
             </div>
-            <span className="text-sm font-semibold text-foreground">Take Photo</span>
+            <span className="text-sm font-bold tracking-tight text-foreground">Take Photo</span>
           </button>
           <button
             type="button"
-            className="h-28 flex flex-col items-center justify-center gap-3 rounded-2xl border border-border bg-card transition-all hover:border-primary/40 hover:shadow-sm disabled:opacity-50"
+            className="h-[120px] flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-foreground/8 bg-card shadow-[0_2px_8px_rgba(15,23,42,0.04)] transition-all active:scale-[0.97] hover:border-primary/30 hover:shadow-md disabled:opacity-50"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
           >
-            <div className="w-11 h-11 rounded-xl flex items-center justify-center bg-primary/10">
-              <FolderOpen className="h-5 w-5 text-primary" strokeWidth={2} />
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-primary/8 border border-primary/15">
+              <FolderOpen className="h-5.5 w-5.5 text-primary" strokeWidth={2} />
             </div>
-            <span className="text-sm font-semibold text-foreground">Choose File</span>
+            <span className="text-sm font-bold tracking-tight text-foreground">Choose File</span>
           </button>
         </div>
       ) : (
         <div 
-          className="relative rounded-xl p-4 cursor-pointer transition-all border-2 border-green-500/50 bg-green-50/50 dark:bg-green-950/20"
+          className="relative rounded-xl p-4 cursor-pointer transition-all border-2 border-success/40 bg-success/5 shadow-sm active:scale-[0.98]"
           onClick={() => {
             setSelectedFile(null);
             if (fileInputRef.current) fileInputRef.current.value = '';
             if (cameraInputRef.current) cameraInputRef.current.value = '';
           }}
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3.5">
             {selectedFile.type.startsWith('image/') ? (
               <img
                 src={URL.createObjectURL(selectedFile)}
                 alt="Preview"
-                className="h-14 w-14 rounded-xl object-cover border"
+                className="h-14 w-14 rounded-xl object-cover border-2 border-success/30 shadow-sm"
                 onLoad={(e) => URL.revokeObjectURL((e.target as HTMLImageElement).src)}
               />
             ) : (
-              <div className="h-14 w-14 rounded-xl flex items-center justify-center bg-muted">
-                <FileText className="h-7 w-7 text-muted-foreground" />
+              <div className="h-14 w-14 rounded-xl flex items-center justify-center bg-success/10 border border-success/20">
+                <FileText className="h-7 w-7 text-success" />
               </div>
             )}
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold truncate">{selectedFile.name}</p>
-              <p className="text-xs text-muted-foreground">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
-              <p className="text-xs font-medium mt-1 text-green-700 dark:text-green-400">✓ Ready · Tap to change</p>
+              <p className="text-sm font-bold truncate text-foreground">{selectedFile.name}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{(selectedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+              <p className="text-xs font-semibold mt-1 text-success">✓ Ready · Tap to change</p>
             </div>
           </div>
         </div>
       )}
 
+      {/* Divider */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-foreground/8" />
+        </div>
+        <div className="relative flex justify-center">
+          <span className="bg-background px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Details</span>
+        </div>
+      </div>
+
       {/* Form Fields */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         {/* Document Type */}
         <div className="space-y-1.5">
-          <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Document Type</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-foreground/70">Document Type</Label>
           <Select value={documentType} onValueChange={setDocumentType} disabled={uploading}>
-            <SelectTrigger className="h-11">
+            <SelectTrigger className="h-12 border-foreground/15 shadow-[inset_0_1px_3px_rgba(0,0,0,0.04)] font-medium">
               <SelectValue placeholder="What type of document?" />
             </SelectTrigger>
             <SelectContent className="max-h-80">
               {Object.entries(DOCUMENT_CATEGORIES).map(([category, items]) => (
                 <div key={category}>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 sticky top-0">
+                  <div className="px-2 py-1.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground bg-muted/60 sticky top-0 border-b border-border/50">
                     {category}
                   </div>
                   {items.map((item) => (
@@ -360,47 +373,49 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
 
         {/* Document Name */}
         <div className="space-y-1.5">
-          <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Document Name</Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-foreground/70">Document Name</Label>
           <Input
             value={documentName}
             onChange={(e) => setDocumentName(e.target.value)}
             placeholder="e.g., Annual Inspection 2026"
             disabled={uploading}
-            className="h-11"
+            className="h-12 border-foreground/15 shadow-[inset_0_1px_3px_rgba(0,0,0,0.04)] font-medium"
           />
         </div>
 
         {/* Expiry Date */}
-        <div className="space-y-1.5 rounded-xl p-3 bg-muted/40 border border-border">
-          <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Expiry Date <span className="normal-case font-normal">(if applicable)</span></Label>
+        <div className="space-y-2 rounded-xl p-3.5 bg-muted/30 border border-foreground/8">
+          <Label className="text-xs font-bold uppercase tracking-wider text-foreground/70">Expiry Date <span className="normal-case font-normal text-muted-foreground">(if applicable)</span></Label>
           <Input
             type="date"
             value={expiryDate}
             onChange={(e) => setExpiryDate(e.target.value)}
             disabled={uploading}
-            className={`h-11 ${!expiryDate ? 'text-muted-foreground' : ''}`}
+            className={`h-12 border-foreground/15 shadow-[inset_0_1px_3px_rgba(0,0,0,0.04)] font-medium ${!expiryDate ? 'text-muted-foreground' : ''}`}
           />
-          <p className="text-[11px] text-muted-foreground">You'll get a reminder before it expires.</p>
+          <p className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <span className="text-primary">●</span> You'll get a reminder before it expires.
+          </p>
         </div>
 
         {/* Notes */}
         <div className="space-y-1.5">
-          <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Notes <span className="normal-case font-normal">(optional)</span></Label>
+          <Label className="text-xs font-bold uppercase tracking-wider text-foreground/70">Notes <span className="normal-case font-normal text-muted-foreground">(optional)</span></Label>
           <Input
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
             placeholder="e.g., Inspector name, reference number"
             disabled={uploading}
-            className="h-11"
+            className="h-12 border-foreground/15 shadow-[inset_0_1px_3px_rgba(0,0,0,0.04)] font-medium"
           />
         </div>
 
         {/* Global Document Toggle */}
         <div 
-          className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer ${
+          className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer shadow-sm ${
             isGlobal 
-              ? 'border-primary/40 bg-primary/5' 
-              : 'border-border hover:border-primary/20'
+              ? 'border-primary/40 bg-primary/5 shadow-primary/5' 
+              : 'border-foreground/8 hover:border-primary/20 bg-card'
           }`}
           onClick={() => setIsGlobal(!isGlobal)}
         >
@@ -410,17 +425,19 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
             onCheckedChange={(checked) => setIsGlobal(checked as boolean)}
             disabled={uploading}
           />
-          <Globe2 className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          <div className="w-8 h-8 rounded-lg bg-muted/60 flex items-center justify-center flex-shrink-0">
+            <Globe2 className="h-4 w-4 text-muted-foreground" />
+          </div>
           <div className="flex-1 min-w-0">
-            <Label htmlFor="is-global" className="text-sm font-medium cursor-pointer">Applies to all equipment</Label>
+            <Label htmlFor="is-global" className="text-sm font-bold cursor-pointer text-foreground">Applies to all equipment</Label>
             <p className="text-[11px] text-muted-foreground">e.g., company insurance</p>
           </div>
         </div>
 
         {/* Existing versions info */}
         {existingDocuments.length > 0 && (
-          <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-            <p className="text-sm font-medium text-primary">
+          <div className="rounded-xl border border-primary/20 bg-primary/5 p-3.5 shadow-sm">
+            <p className="text-sm font-bold text-primary">
               {existingDocuments.length} previous version{existingDocuments.length !== 1 ? 's' : ''} found
             </p>
             <p className="text-xs text-muted-foreground mt-1">
@@ -434,8 +451,9 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
       <Button 
         onClick={handleUpload} 
         disabled={uploading || !selectedFile || !documentName || !documentType} 
-        className="w-full h-12 text-sm font-semibold rounded-xl gap-2"
+        className="t-btn-primary w-full min-h-[48px] rounded-xl text-sm font-bold gap-2 tracking-tight shadow-lg"
       >
+        <FileText className="h-4 w-4" />
         {uploading ? 'Uploading...' : replacingDocumentId ? 'Upload Replacement' : 'Upload Document'}
       </Button>
     </div>
