@@ -613,9 +613,17 @@ const DefectRegister = () => {
       const fileName = `${documentName.replace(/[^a-zA-Z0-9\s-]/g, '')}.pdf`;
       const pdfBlob = doc.output('blob');
 
-      const isSingleRide = rideFilter !== 'all';
-      const filteredRideNames = isSingleRide
-        ? rides.find(r => r.id === rideFilter)?.ride_name
+      // Determine the target ride for saving — even if filter is 'all',
+      // check if all filtered defects belong to a single ride
+      const isSingleRideFilter = rideFilter !== 'all';
+      const uniqueRideIds = [...new Set(filtered.map(d => d.ride_id))];
+      const effectiveSingleRide = isSingleRideFilter
+        ? rideFilter
+        : uniqueRideIds.length === 1
+          ? uniqueRideIds[0]
+          : null;
+      const targetRideName = effectiveSingleRide
+        ? rides.find(r => r.id === effectiveSingleRide)?.ride_name
         : undefined;
 
       const saveToDocuments = async (): Promise<string | void> => {
@@ -623,7 +631,7 @@ const DefectRegister = () => {
         const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
         if (uploadError) throw uploadError;
 
-        // Save to documents table for legacy views
+        // Save to documents table — always link to ride when possible
         const { data: legacyDoc } = await supabase
           .from('documents')
           .insert({
@@ -634,17 +642,17 @@ const DefectRegister = () => {
             mime_type: 'application/pdf',
             file_size: pdfBlob.size,
             notes: `Defect register: ${filtered.length} records, ${periodLabel}`,
-            is_global: !isSingleRide,
-            ride_id: isSingleRide ? rideFilter : null,
+            is_global: !effectiveSingleRide,
+            ride_id: effectiveSingleRide || null,
           })
           .select('id')
           .single();
 
-        // Also store in ride_documents for the proven DocumentViewerPage
-        if (isSingleRide) {
-          const rideCode = await getRideCode(rideFilter);
+        // Also store in ride_documents register when we have a target ride
+        if (effectiveSingleRide) {
+          const rideCode = await getRideCode(effectiveSingleRide);
           const rideDocId = await storeRideDocument({
-            rideId: rideFilter,
+            rideId: effectiveSingleRide,
             rideCode,
             documentType: 'CR' as any,
             documentId: docId,
@@ -660,12 +668,12 @@ const DefectRegister = () => {
         return legacyDoc?.id || undefined;
       };
 
-      const saveLabel = isSingleRide
-        ? `Save to ${filteredRideNames || 'Asset'} Documents`
-        : 'Save to Documents';
-      const saveHint = isSingleRide
-        ? `Saves this report inside ${filteredRideNames || 'this asset'}'s document register.`
-        : 'Saves this report to your document register for later access.';
+      const saveLabel = effectiveSingleRide
+        ? `Save to ${targetRideName || 'Asset'} Documents`
+        : 'Save as Global Document';
+      const saveHint = effectiveSingleRide
+        ? `Saves to ${targetRideName || 'this asset'}'s document register.`
+        : 'This report covers multiple assets and will save to Global Documents.';
       setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel, saveHint });
       setExportDialogOpen(true);
     } catch (error) {
