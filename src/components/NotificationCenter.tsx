@@ -1,17 +1,20 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Bell, BellRing, Check, X,
-  AlertTriangle, Info, CheckCircle,
-  FileText, Wrench, ClipboardCheck, Send, Bug
+import {
+  Bell, Check, X, AlertTriangle, Info, CheckCircle,
+  FileText, Wrench, ClipboardCheck, Shield, Wind,
+  CreditCard, ChevronRight, Clock, AlertOctagon,
+  CircleDot, Send
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAppRole } from '@/hooks/useAppRole';
-import { formatDistanceToNow, isToday, isThisWeek } from 'date-fns';
+import { formatDistanceToNow, isToday, isThisWeek, parseISO } from 'date-fns';
+
+/* ── Types ─────────────────────────────────────── */
 
 interface Notification {
   id: string;
@@ -24,87 +27,154 @@ interface Notification {
   created_at: string;
 }
 
-type FilterTab = 'all' | 'compliance' | 'documents' | 'maintenance' | 'system';
+type FilterTab = 'all' | 'action' | 'compliance' | 'documents' | 'maintenance' | 'system';
 
-const FILTER_TABS: { id: FilterTab; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'compliance', label: 'Compliance' },
-  { id: 'documents', label: 'Documents' },
-  { id: 'maintenance', label: 'Maintenance' },
-  { id: 'system', label: 'System' },
-];
+/* ── Classification helpers ────────────────────── */
 
-// Map notification to a category for filtering
-const getCategory = (n: Notification): FilterTab => {
+type Category = 'compliance' | 'documents' | 'maintenance' | 'system';
+
+const getCategory = (n: Notification): Category => {
   const t = n.type?.toLowerCase() ?? '';
   const title = n.title?.toLowerCase() ?? '';
-  if (t === 'warning' && (title.includes('overdue') || title.includes('inspection') || title.includes('check') || title.includes('ndt'))) return 'compliance';
-  if (title.includes('document') || title.includes('expir') || n.related_table === 'documents') return 'documents';
+  if (t === 'warning' && (title.includes('overdue') || title.includes('inspection') || title.includes('check') || title.includes('ndt') || title.includes('missed'))) return 'compliance';
+  if (title.includes('document') || title.includes('expir') || title.includes('certificate') || n.related_table === 'documents') return 'documents';
   if (title.includes('maintenance') || title.includes('repair') || n.related_table === 'maintenance_records') return 'maintenance';
-  if (t === 'bug_status' || title.includes('system') || title.includes('update')) return 'system';
+  if (title.includes('defect') || title.includes('stop use') || title.includes('stop_operation')) return 'compliance';
+  if (title.includes('wind') || title.includes('anemometer')) return 'compliance';
   if (t === 'warning' || t === 'error') return 'compliance';
   return 'system';
 };
 
-// Priority sort: overdue > expired doc > upcoming expiry > maintenance > rest
-const getPriority = (n: Notification): number => {
+const isActionable = (n: Notification): boolean => {
   const title = n.title?.toLowerCase() ?? '';
-  if (title.includes('overdue')) return 0;
-  if (title.includes('expir')) return 1;
-  if (title.includes('upcoming') || title.includes('due')) return 2;
-  if (title.includes('maintenance')) return 3;
-  return 4;
+  const t = n.type?.toLowerCase() ?? '';
+  // Actionable: overdue, expired, missing, unresolved, missed, high-wind, stop-use, billing
+  if (title.includes('overdue') || title.includes('expired') || title.includes('expiring')) return true;
+  if (title.includes('missing') || title.includes('missed') || title.includes('stop use')) return true;
+  if (title.includes('unresolved') || title.includes('high priority') || title.includes('critical')) return true;
+  if (title.includes('wind') && title.includes('warning')) return true;
+  if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return true;
+  if (title.includes('failed')) return true;
+  if (t === 'warning' || t === 'error') return true;
+  return false;
 };
 
-// Left bar colour by type
+const getPriority = (n: Notification): number => {
+  const title = n.title?.toLowerCase() ?? '';
+  if (title.includes('stop use') || title.includes('critical')) return 0;
+  if (title.includes('overdue')) return 1;
+  if (title.includes('expired')) return 2;
+  if (title.includes('missing') || title.includes('missed')) return 3;
+  if (title.includes('expiring') || title.includes('due')) return 4;
+  if (title.includes('maintenance')) return 5;
+  if (title.includes('wind')) return 6;
+  return 7;
+};
+
 const getBarColor = (n: Notification): string => {
+  if (isActionable(n)) {
+    const title = n.title?.toLowerCase() ?? '';
+    if (title.includes('stop use') || title.includes('critical') || title.includes('overdue') || title.includes('expired')) return 'bg-destructive';
+    if (title.includes('expiring') || title.includes('missed') || title.includes('warning')) return 'bg-accent-foreground/60';
+    return 'bg-destructive';
+  }
   const cat = getCategory(n);
   switch (cat) {
-    case 'compliance': return 'bg-[#DC2626]';
-    case 'documents':  return 'bg-[#2563EB]';
-    case 'maintenance':return 'bg-[#F59E0B]';
-    default: {
-      if (n.type === 'success') return 'bg-[#16A34A]';
-      return 'bg-[#64748B]';
-    }
+    case 'compliance': return 'bg-destructive/60';
+    case 'documents':  return 'bg-primary/60';
+    case 'maintenance': return 'bg-accent-foreground/60';
+    default: return 'bg-muted-foreground/30';
   }
 };
 
 const getIcon = (n: Notification) => {
-  const cat = getCategory(n);
-  const cls = 'h-4 w-4';
-  switch (cat) {
-    case 'compliance':  return <AlertTriangle className={cn(cls, 'text-[#DC2626]')} />;
-    case 'documents':   return <FileText className={cn(cls, 'text-[#2563EB]')} />;
-    case 'maintenance': return <Wrench className={cn(cls, 'text-[#F59E0B]')} />;
-    default: {
-      if (n.type === 'success') return <CheckCircle className={cn(cls, 'text-[#16A34A]')} />;
-      if (n.type === 'bug_status') return <Bug className={cn(cls, 'text-purple-500')} />;
-      return <Info className={cn(cls, 'text-[#64748B]')} />;
-    }
-  }
+  const title = n.title?.toLowerCase() ?? '';
+  const cls = 'h-[18px] w-[18px]';
+  if (title.includes('stop use') || title.includes('critical')) return <AlertOctagon className={cn(cls, 'text-destructive')} />;
+  if (title.includes('defect')) return <AlertTriangle className={cn(cls, 'text-destructive')} />;
+  if (title.includes('inspection') || title.includes('check') || title.includes('missed')) return <ClipboardCheck className={cn(cls, 'text-accent-foreground')} />;
+  if (title.includes('document') || title.includes('expir') || title.includes('certificate')) return <FileText className={cn(cls, 'text-primary')} />;
+  if (title.includes('maintenance') || title.includes('repair')) return <Wrench className={cn(cls, 'text-accent-foreground')} />;
+  if (title.includes('wind')) return <Wind className={cn(cls, 'text-primary')} />;
+  if (title.includes('sent') || title.includes('share')) return <Send className={cn(cls, 'text-primary')} />;
+  if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return <CreditCard className={cn(cls, 'text-accent-foreground')} />;
+  if (title.includes('security') || title.includes('role')) return <Shield className={cn(cls, 'text-primary')} />;
+  if (n.type === 'success') return <CheckCircle className={cn(cls, 'text-primary')} />;
+  return <Info className={cn(cls, 'text-muted-foreground')} />;
 };
 
-const groupByDate = (items: Notification[]): { label: string; items: Notification[] }[] => {
-  const today: Notification[] = [];
-  const week: Notification[] = [];
+/** Route to navigate to for an actionable notification */
+const getActionRoute = (n: Notification): string | null => {
+  const title = n.title?.toLowerCase() ?? '';
+  if (title.includes('check') || title.includes('missed')) return '/checks';
+  if (title.includes('inspection')) return '/compliance';
+  if (title.includes('document') || title.includes('expir') || title.includes('certificate')) return '/documents';
+  if (title.includes('defect')) return '/defects';
+  if (title.includes('maintenance')) return '/maintenance';
+  if (title.includes('wind')) return '/wind-log';
+  if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return '/plan-billing';
+  if (title.includes('security') || title.includes('role')) return '/security';
+  if (n.related_table === 'documents') return '/documents';
+  if (n.related_table === 'maintenance_records') return '/maintenance';
+  if (n.related_table === 'defects') return '/defects';
+  return null;
+};
+
+const getActionLabel = (n: Notification): string => {
+  const title = n.title?.toLowerCase() ?? '';
+  if (title.includes('check') || title.includes('missed')) return 'Start check';
+  if (title.includes('inspection')) return 'View';
+  if (title.includes('expir') || title.includes('document') || title.includes('certificate')) return 'Review';
+  if (title.includes('defect')) return 'View defect';
+  if (title.includes('maintenance')) return 'View';
+  if (title.includes('billing') || title.includes('plan')) return 'Manage';
+  return 'View';
+};
+
+/* ── Grouping ──────────────────────────────────── */
+
+interface NotificationGroup {
+  label: string;
+  items: Notification[];
+}
+
+const groupNotifications = (items: Notification[]): NotificationGroup[] => {
+  const actionNeeded: Notification[] = [];
+  const recent: Notification[] = [];
   const older: Notification[] = [];
 
   items.forEach(n => {
-    const d = new Date(n.created_at);
-    if (isToday(d)) today.push(n);
-    else if (isThisWeek(d)) week.push(n);
-    else older.push(n);
+    if (isActionable(n) && !n.is_read) {
+      actionNeeded.push(n);
+    } else {
+      const d = new Date(n.created_at);
+      if (isToday(d) || isThisWeek(d)) recent.push(n);
+      else older.push(n);
+    }
   });
 
   return [
-    { label: 'Today', items: today },
-    { label: 'This Week', items: week },
+    { label: 'Action needed', items: actionNeeded },
+    { label: 'Recent updates', items: recent },
     { label: 'Older', items: older },
   ].filter(g => g.items.length > 0);
 };
 
+/* ── Filter tabs ───────────────────────────────── */
+
+const FILTER_TABS: { id: FilterTab; label: string }[] = [
+  { id: 'all',         label: 'All' },
+  { id: 'action',      label: 'Action needed' },
+  { id: 'compliance',  label: 'Compliance' },
+  { id: 'documents',   label: 'Documents' },
+  { id: 'maintenance', label: 'Maintenance' },
+  { id: 'system',      label: 'System' },
+];
+
+/* ── Component ─────────────────────────────────── */
+
 const NotificationCenter = () => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -112,6 +182,7 @@ const NotificationCenter = () => {
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
   const role = useAppRole();
   const isController = role === 'controller';
+
   useEffect(() => {
     if (user) {
       loadNotifications();
@@ -126,7 +197,6 @@ const NotificationCenter = () => {
         .select('*')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
-
       if (error) throw error;
       setNotifications((data as Notification[]) || []);
     } catch (error) {
@@ -154,7 +224,6 @@ const NotificationCenter = () => {
 
       const thirtyDaysFromNow = new Date();
       thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-
       const { data: expiringDocs } = await supabase
         .from('documents')
         .select('id')
@@ -163,7 +232,7 @@ const NotificationCenter = () => {
         .lte('expires_at', thirtyDaysFromNow.toISOString().split('T')[0]);
 
       if (expiringDocs && expiringDocs.length > 0) {
-        await createNotification('Documents Expiring Soon', `${expiringDocs.length} document(s) will expire within 30 days. Please review and renew as needed.`, 'warning');
+        await createNotification('Documents Expiring Soon', `${expiringDocs.length} document(s) will expire within 30 days. Please review and renew.`, 'warning');
       }
     } catch (error) {
       console.error('Error generating system notifications:', error);
@@ -174,17 +243,15 @@ const NotificationCenter = () => {
     try {
       const yesterday = new Date();
       yesterday.setDate(yesterday.getDate() - 1);
-
       const { data: existing } = await supabase
         .from('notifications')
         .select('id')
         .eq('user_id', user?.id)
         .eq('title', title)
         .gte('created_at', yesterday.toISOString());
-
       if (existing && existing.length > 0) return;
-
       await supabase.from('notifications').insert({ user_id: user?.id, title, message, type });
+      await loadNotifications();
     } catch (error) {
       console.error('Error creating notification:', error);
     }
@@ -206,22 +273,47 @@ const NotificationCenter = () => {
     setNotifications(prev => prev.filter(n => n.id !== id));
   };
 
-  // Filtered + priority-sorted list
+  /* ── Derived data ─────────────────────── */
+
+  const unreadCount = useMemo(() => notifications.filter(n => !n.is_read).length, [notifications]);
+  const actionCount = useMemo(() => notifications.filter(n => isActionable(n) && !n.is_read).length, [notifications]);
+
   const filtered = useMemo(() => {
-    const list = activeTab === 'all'
-      ? notifications
-      : notifications.filter(n => getCategory(n) === activeTab);
+    let list: Notification[];
+    if (activeTab === 'all') list = notifications;
+    else if (activeTab === 'action') list = notifications.filter(n => isActionable(n));
+    else list = notifications.filter(n => getCategory(n) === activeTab);
     return [...list].sort((a, b) => getPriority(a) - getPriority(b));
   }, [notifications, activeTab]);
 
-  const grouped = useMemo(() => groupByDate(filtered), [filtered]);
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const grouped = useMemo(() => groupNotifications(filtered), [filtered]);
+
+  const tabCounts = useMemo(() => {
+    const counts: Record<FilterTab, number> = { all: notifications.length, action: 0, compliance: 0, documents: 0, maintenance: 0, system: 0 };
+    notifications.forEach(n => {
+      const cat = getCategory(n);
+      counts[cat] = (counts[cat] || 0) + 1;
+      if (isActionable(n) && !n.is_read) counts.action++;
+    });
+    return counts;
+  }, [notifications]);
+
+  const handleCardAction = useCallback((n: Notification, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const route = getActionRoute(n);
+    if (route) {
+      if (!n.is_read) markAsRead(n.id);
+      navigate(route);
+    }
+  }, [navigate]);
+
+  /* ── Render ───────────────────────────── */
 
   if (loading) {
     return (
       <div className="space-y-3">
-        {[1, 2, 3].map(i => (
-          <div key={i} className="h-20 rounded-[14px] bg-[#F1F5F9] animate-pulse" />
+        {[1, 2, 3, 4].map(i => (
+          <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
         ))}
       </div>
     );
@@ -229,118 +321,200 @@ const NotificationCenter = () => {
 
   return (
     <div className="space-y-5">
-      {/* Filter Tabs */}
-      <div className="flex items-center gap-2 flex-wrap">
-        {FILTER_TABS.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              'px-3.5 py-1.5 rounded-full text-sm font-medium transition-all',
-              activeTab === tab.id
-                ? 'bg-[#1E3A5F] text-white'
-                : 'bg-[#F1F5F9] text-[#475569] hover:bg-[#E2E8F0]'
-            )}
-          >
-            {tab.label}
-            {tab.id === 'all' && unreadCount > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#DC2626] text-white text-[10px] font-bold">
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </button>
-        ))}
+      {/* ── Summary strip ────────────────── */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-border bg-card">
+          <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
+            <Bell className="h-4.5 w-4.5 text-primary" />
+          </div>
+          <div>
+            <p className="text-xl font-bold text-foreground leading-none">{unreadCount}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Unread</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-border bg-card">
+          <div className={cn(
+            'flex items-center justify-center w-9 h-9 rounded-xl',
+            actionCount > 0 ? 'bg-destructive/10' : 'bg-muted'
+          )}>
+            <AlertTriangle className={cn('h-4.5 w-4.5', actionCount > 0 ? 'text-destructive' : 'text-muted-foreground')} />
+          </div>
+          <div>
+            <p className={cn('text-xl font-bold leading-none', actionCount > 0 ? 'text-destructive' : 'text-foreground')}>{actionCount}</p>
+            <p className="text-[11px] text-muted-foreground mt-0.5">Action needed</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Filter tabs ──────────────────── */}
+      <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1 scrollbar-none">
+        {FILTER_TABS.map(tab => {
+          const count = tabCounts[tab.id];
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={cn(
+                'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all shrink-0',
+                isActive
+                  ? 'bg-foreground text-background'
+                  : 'bg-muted text-muted-foreground hover:bg-accent'
+              )}
+            >
+              {tab.label}
+              {tab.id === 'action' && actionCount > 0 && (
+                <span className={cn(
+                  'inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold',
+                  isActive ? 'bg-destructive text-white' : 'bg-destructive/15 text-destructive'
+                )}>
+                  {actionCount}
+                </span>
+              )}
+            </button>
+          );
+        })}
 
         {isController && unreadCount > 0 && (
           <button
             onClick={markAllAsRead}
-            className="ml-auto flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-muted-foreground bg-muted hover:bg-muted/80 transition-all"
+            className="ml-auto flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-medium text-muted-foreground hover:text-foreground hover:bg-accent transition-all shrink-0"
           >
-            <Check className="h-3.5 w-3.5" />
-            Mark all read
+            <Check className="h-3 w-3" />
+            Read all
           </button>
         )}
       </div>
 
-      {/* Notification Feed */}
+      {/* ── Notification feed ────────────── */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16 bg-white border border-[#E2E8F0] rounded-2xl">
-          <Bell className="mx-auto h-10 w-10 text-[#CBD5E1] mb-3" />
-          <p className="text-sm font-semibold text-[#0F172A]">No notifications</p>
-          <p className="text-xs text-[#64748B] mt-1">You're all caught up!</p>
+        <div className="text-center py-16 bg-card border border-border rounded-2xl">
+          <Bell className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
+          <p className="text-sm font-semibold text-foreground">
+            {activeTab === 'action' ? 'No actions needed' : 'No notifications'}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1">You're all caught up!</p>
         </div>
       ) : (
         <div className="space-y-6">
           {grouped.map(group => (
             <div key={group.label}>
-              {/* Group heading */}
-              <p className="text-xs font-semibold text-[#94A3B8] uppercase tracking-wider mb-3">
-                {group.label}
-              </p>
+              <div className="flex items-center gap-2 mb-2.5">
+                {group.label === 'Action needed' && (
+                  <CircleDot className="h-3 w-3 text-destructive" />
+                )}
+                <p className={cn(
+                  'text-[11px] font-bold uppercase tracking-widest',
+                  group.label === 'Action needed' ? 'text-destructive' : 'text-muted-foreground'
+                )}>
+                  {group.label}
+                </p>
+                <Badge variant="secondary" className="text-[10px] h-4 px-1.5 font-medium">
+                  {group.items.length}
+                </Badge>
+              </div>
+
               <div className="space-y-2">
-                {group.items.map(n => (
-                  <div
-                    key={n.id}
-                    onClick={() => { if (!n.is_read) markAsRead(n.id); }}
-                    className={cn(
-                      'flex gap-0 bg-white border border-[#E2E8F0] rounded-[14px] overflow-hidden shadow-[0_2px_6px_rgba(0,0,0,0.05)] transition-all cursor-pointer',
-                      !n.is_read && 'ring-1 ring-[#1E3A5F]/10'
-                    )}
-                  >
-                    {/* Left colour bar */}
-                    <div className={cn('w-1 flex-shrink-0', getBarColor(n))} />
+                {group.items.map(n => {
+                  const actionable = isActionable(n);
+                  const route = getActionRoute(n);
 
-                    <div className="flex-1 flex items-start gap-3 p-3.5">
-                      {/* Icon */}
-                      <div className="flex-shrink-0 mt-0.5">
-                        {getIcon(n)}
-                      </div>
+                  return (
+                    <div
+                      key={n.id}
+                      onClick={() => {
+                        if (!n.is_read && isController) markAsRead(n.id);
+                        if (route) navigate(route);
+                      }}
+                      className={cn(
+                        'flex bg-card border rounded-2xl overflow-hidden transition-all',
+                        actionable && !n.is_read
+                          ? 'border-destructive/20 shadow-[0_2px_8px_rgba(220,38,38,0.08)]'
+                          : 'border-border shadow-[0_1px_3px_rgba(0,0,0,0.04)]',
+                        route && 'cursor-pointer hover:border-primary/30 active:scale-[0.99]',
+                        !actionable && n.is_read && 'opacity-70'
+                      )}
+                    >
+                      {/* Left colour bar */}
+                      <div className={cn('w-1 shrink-0', getBarColor(n))} />
 
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-[#0F172A] leading-tight">
-                            {n.title}
-                          </p>
-                          {!n.is_read && (
-                            <span className="flex-shrink-0 w-2 h-2 rounded-full bg-[#1E3A5F]" />
-                          )}
+                      <div className="flex-1 flex items-start gap-3 p-3.5">
+                        {/* Icon circle */}
+                        <div className={cn(
+                          'flex items-center justify-center w-8 h-8 rounded-xl shrink-0 mt-0.5',
+                          actionable && !n.is_read ? 'bg-destructive/10' : 'bg-muted'
+                        )}>
+                          {getIcon(n)}
                         </div>
-                        <p className="text-xs text-[#64748B] mt-0.5 leading-relaxed">
-                          {n.message}
-                        </p>
-                        <p className="text-[11px] text-[#94A3B8] mt-1.5">
-                          {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                        </p>
-                      </div>
 
-                      {/* Actions — controller only */}
-                      {isController && (
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          {!n.is_read && (
+                        {/* Content */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className={cn(
+                              'text-[13px] font-semibold leading-tight truncate',
+                              actionable && !n.is_read ? 'text-foreground' : 'text-foreground/80'
+                            )}>
+                              {n.title}
+                            </p>
+                            {!n.is_read && (
+                              <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-primary" />
+                            )}
+                          </div>
+
+                          <p className="text-[12px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
+                            {n.message}
+                          </p>
+
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
+                              <Clock className="h-2.5 w-2.5" />
+                              {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                            </span>
+
+                            {/* Severity badge for actionable items */}
+                            {actionable && !n.is_read && (
+                              <Badge
+                                variant="destructive"
+                                className="text-[9px] h-4 px-1.5 font-semibold"
+                              >
+                                Action needed
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Right side: action button or controls */}
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          {actionable && route && (
                             <button
-                              onClick={e => { e.stopPropagation(); markAsRead(n.id); }}
-                              className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
-                              title="Mark as read"
+                              onClick={(e) => handleCardAction(n, e)}
+                              className={cn(
+                                'flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all',
+                                !n.is_read
+                                  ? 'bg-foreground text-background hover:bg-foreground/90'
+                                  : 'bg-muted text-muted-foreground hover:bg-accent'
+                              )}
                             >
-                              <Check className="h-3.5 w-3.5" />
+                              {getActionLabel(n)}
+                              <ChevronRight className="h-3 w-3" />
                             </button>
                           )}
-                          {/* Only system/general notifications can be dismissed — source-of-truth reminders auto-clear */}
-                          {getCategory(n) === 'system' && (
+
+                          {/* Controller-only dismiss for system messages */}
+                          {isController && getCategory(n) === 'system' && (
                             <button
                               onClick={e => { e.stopPropagation(); deleteNotification(n.id); }}
-                              className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                              className="p-1 rounded-lg text-muted-foreground/50 hover:text-foreground hover:bg-muted transition-all"
                               title="Dismiss"
                             >
-                              <X className="h-3.5 w-3.5" />
+                              <X className="h-3 w-3" />
                             </button>
                           )}
                         </div>
-                      )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           ))}
