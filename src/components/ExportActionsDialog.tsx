@@ -34,8 +34,28 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
 
   const isPdf = result.blob.type === 'application/pdf' || result.fileName.toLowerCase().endsWith('.pdf');
 
-  const handleView = () => {
+  const handleView = async () => {
     if (isPdf) {
+      const signature = await result.blob.slice(0, 8).text();
+      const normalizedPdfBlob = result.blob.type === 'application/pdf'
+        ? result.blob
+        : new Blob([result.blob], { type: 'application/pdf' });
+      const nextUrl = URL.createObjectURL(normalizedPdfBlob);
+
+      console.info('[PDF DEBUG][ImmediateExport] open-view', {
+        fileName: result.fileName,
+        blobSize: result.blob.size,
+        blobType: result.blob.type || '(empty)',
+        normalizedBlobType: normalizedPdfBlob.type,
+        signature,
+        validPdfSignature: signature.startsWith('%PDF-'),
+        viewerSourceType: 'blob-url',
+      });
+
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return nextUrl;
+      });
       setPreviewOpen(true);
       return;
     }
