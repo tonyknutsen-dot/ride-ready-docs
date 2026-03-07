@@ -78,6 +78,25 @@ const isSentDocument = (n: Notification): boolean => {
   return title.includes('sent') || title.includes('shared') || title.includes('document pack');
 };
 
+const isDefectRelatedNotification = (n: Notification): boolean => {
+  const title = n.title?.toLowerCase() ?? '';
+  const message = n.message?.toLowerCase() ?? '';
+  const type = n.type?.toLowerCase() ?? '';
+
+  if (n.related_table === 'defects') return true;
+  if (title.includes('defect') || message.includes('defect')) return true;
+  if (title.includes('stop use') || message.includes('stop use')) return true;
+  if (title.includes('high-priority defect') || title.includes('unresolved defect')) return true;
+  if (type === 'defect') return true;
+
+  return false;
+};
+
+const buildDefectRoute = (defectId?: string | null): string => {
+  if (defectId) return `/defects?defectId=${defectId}&status=open`;
+  return '/defects?status=open';
+};
+
 const getPriority = (n: Notification): number => {
   const title = n.title?.toLowerCase() ?? '';
   if (title.includes('stop use') || title.includes('critical')) return 0;
@@ -130,12 +149,8 @@ const getActionRoute = (n: Notification): string | null => {
   const title = n.title?.toLowerCase() ?? '';
   if (isSentDocument(n)) return '/batch-send';
 
-  // Defect notifications deep-link directly to the defect record in the Defect Register
-  if (title.includes('defect') || n.related_table === 'defects') {
-    const base = '/defects';
-    if (n.related_id) return `${base}?defectId=${n.related_id}&status=open`;
-    return base;
-  }
+  // Hard routing rule: defect-like notifications go to Defects only
+  if (isDefectRelatedNotification(n)) return buildDefectRoute(n.related_id);
 
   if (title.includes('check') || title.includes('missed')) return '/checks';
   if (n.related_table === 'checks') return '/checks';
@@ -153,8 +168,7 @@ const getActionRoute = (n: Notification): string | null => {
 const getActionLabel = (n: Notification): string => {
   const title = n.title?.toLowerCase() ?? '';
   if (isSentDocument(n)) return 'View record';
-  if (title.includes('defect') && (title.includes('new') || title.includes('unresolved') || title.includes('high'))) return 'View defect';
-  if (title.includes('defect') && title.includes('closed')) return 'View';
+  if (isDefectRelatedNotification(n)) return 'View defect';
   if (title.includes('check') && title.includes('missed')) return 'Start check';
   if (title.includes('check') && title.includes('failed')) return 'Review';
   if (title.includes('check') && title.includes('completed')) return 'View';
