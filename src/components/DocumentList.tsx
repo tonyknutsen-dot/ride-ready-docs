@@ -13,11 +13,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
 import ImageViewer from './ImageViewer';
-import PDFViewer from './PDFViewer';
+import DocumentPreviewSheet, { type DocumentPreviewSource } from './DocumentPreviewSheet';
 import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
 import { SendCheckRecordsDialog } from './SendCheckRecordsDialog';
 import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters, isCheckRecord, filterCheckRecords } from './CheckRecordFilters';
-import { createPdfViewerUrlFromStorage, revokeObjectUrl } from '@/utils/exportFileActions';
+import { revokeObjectUrl } from '@/utils/exportFileActions';
 
 type Document = Tables<'documents'>;
 

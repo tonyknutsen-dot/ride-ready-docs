@@ -341,48 +341,25 @@ export const PreviousReportsSection = ({
                   <Button
                     variant="ghost" size="sm"
                     onClick={() => handleView(report)}
-                    disabled={loadingId === report.id}
                     className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]"
                   >
-                    {loadingId === report.id ? (
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
-                    ) : (
-                      <Eye className="h-3 w-3" />
-                    )}
+                    <Eye className="h-3 w-3" />
                     {isPdf ? 'View' : 'Download'}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
                     <Download className="h-3 w-3" /> Save to Device
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleShare(report)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
-                    <Share2 className="h-3 w-3" /> Share
-                  </Button>
                 </div>
-                {!isPdf && (
-                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Link2 className="h-3 w-3" /> Non-PDF reports are download-only.
-                  </p>
-                )}
               </div>
             );
           })
         )}
       </div>
 
-      <PDFViewer
-        isOpen={viewerState.open}
-        onClose={closeViewer}
-        pdfUrl={viewerState.url}
-        pdfName={viewerState.name}
-        onDownload={async () => {
-          if (!viewerState.url) return;
-          const a = document.createElement('a');
-          a.href = viewerState.url;
-          a.download = viewerState.name;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        }}
+      <DocumentPreviewSheet
+        open={previewOpen}
+        onOpenChange={(o) => { if (!o) closeViewer(); }}
+        source={previewSource}
       />
     </>
   );

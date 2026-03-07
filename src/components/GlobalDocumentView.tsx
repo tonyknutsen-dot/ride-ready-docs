@@ -26,10 +26,10 @@ import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
 import ImageViewer from './ImageViewer';
-import PDFViewer from './PDFViewer';
+import DocumentPreviewSheet, { type DocumentPreviewSource } from './DocumentPreviewSheet';
 import { showRequiresConnectionToast } from '@/hooks/useOfflineGuard';
 import { cn } from '@/lib/utils';
-import { createPdfViewerUrlFromStorage, revokeObjectUrl } from '@/utils/exportFileActions';
+import { revokeObjectUrl } from '@/utils/exportFileActions';
 
 type Document = Tables<'documents'>;
 
