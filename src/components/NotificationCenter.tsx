@@ -101,6 +101,11 @@ const buildDefectRoute = (defectId?: string | null): string => {
   return '/defects?status=open';
 };
 
+const buildCheckRoute = (checkId?: string | null): string => {
+  if (checkId) return `/checks?checkId=${checkId}`;
+  return '/checks';
+};
+
 const getPriority = (n: Notification): number => {
   const title = n.title?.toLowerCase() ?? '';
   if (title.includes('stop use') || title.includes('critical')) return 0;
@@ -156,8 +161,8 @@ const getActionRoute = (n: Notification): string | null => {
   // Hard routing rule: defect-like notifications go to Defects only
   if (isDefectRelatedNotification(n)) return buildDefectRoute(n.related_id);
 
+  if (n.related_table === 'checks') return buildCheckRoute(n.related_id);
   if (title.includes('check') || title.includes('missed')) return '/checks';
-  if (n.related_table === 'checks') return '/checks';
   if (title.includes('inspection') || title.includes('ndt')) return '/compliance';
   if (title.includes('document') || title.includes('expir') || title.includes('certificate')) return '/documents';
   if (n.related_table === 'documents') return '/documents';
@@ -249,6 +254,7 @@ const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [linkedDefectByNotification, setLinkedDefectByNotification] = useState<Record<string, string>>({});
   const role = useAppRole();
   const isController = role === 'controller';
 
@@ -258,6 +264,50 @@ const NotificationCenter = () => {
       generateComplianceNotifications();
     }
   }, [user, effectiveUserId]);
+
+  useEffect(() => {
+    const linkCheckNotificationsToDefects = async () => {
+      const checkNotifications = notifications.filter(
+        (n) => n.related_table === 'checks' && !!n.related_id
+      );
+
+      if (checkNotifications.length === 0) {
+        setLinkedDefectByNotification({});
+        return;
+      }
+
+      const checkIds = [...new Set(checkNotifications.map((n) => n.related_id!).filter(Boolean))];
+      const { data, error } = await supabase
+        .from('defects')
+        .select('id, check_id, reported_at')
+        .in('check_id', checkIds)
+        .neq('status', 'resolved')
+        .order('reported_at', { ascending: false });
+
+      if (error) {
+        console.error('Error linking check notifications to defects:', error);
+        return;
+      }
+
+      const latestDefectByCheck = new Map<string, string>();
+      (data || []).forEach((row: any) => {
+        if (row.check_id && !latestDefectByCheck.has(row.check_id)) {
+          latestDefectByCheck.set(row.check_id, row.id);
+        }
+      });
+
+      const mapping: Record<string, string> = {};
+      checkNotifications.forEach((n) => {
+        if (!n.related_id) return;
+        const defectId = latestDefectByCheck.get(n.related_id);
+        if (defectId) mapping[n.id] = defectId;
+      });
+
+      setLinkedDefectByNotification(mapping);
+    };
+
+    void linkCheckNotificationsToDefects();
+  }, [notifications]);
 
   const loadNotifications = async () => {
     try {
@@ -560,6 +610,11 @@ const NotificationCenter = () => {
   }, [notifications]);
 
   const resolveRouteForNotification = useCallback(async (n: Notification): Promise<{ route: string | null; reason: string }> => {
+    // Checks notifications should open checks flow as the primary destination
+    if (n.related_table === 'checks') {
+      return { route: getActionRoute(n), reason: 'checks_primary_route' };
+    }
+
     if (isDefectRelatedNotification(n)) {
       return { route: buildDefectRoute(n.related_id), reason: 'defect_indicators' };
     }
@@ -573,21 +628,6 @@ const NotificationCenter = () => {
 
       if (matchedDefect?.id) {
         return { route: buildDefectRoute(matchedDefect.id), reason: 'related_id_maps_to_defect' };
-      }
-
-      if (n.related_table === 'checks') {
-        const { data: linkedDefect } = await supabase
-          .from('defects')
-          .select('id, severity, reported_at')
-          .eq('check_id', n.related_id)
-          .neq('status', 'resolved')
-          .order('reported_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (linkedDefect?.id) {
-          return { route: buildDefectRoute(linkedDefect.id), reason: 'check_maps_to_open_defect' };
-        }
       }
     }
 
@@ -635,6 +675,22 @@ const NotificationCenter = () => {
     e.stopPropagation();
     await handleNotificationNavigate(n);
   }, [handleNotificationNavigate]);
+
+  const handleOpenLinkedDefect = useCallback(async (n: Notification, defectId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!n.is_read && isController) {
+      await markAsRead(n.id);
+    }
+
+    const route = buildDefectRoute(defectId);
+    console.info('[Notifications] Open linked defect', {
+      notification_id: n.id,
+      defect_id: defectId,
+      action_route: route,
+    });
+    navigate(route);
+  }, [isController, markAsRead, navigate]);
 
   /* ── Render ───────────────────────────── */
 
@@ -766,7 +822,10 @@ const NotificationCenter = () => {
                   const actionable = isActionable(n);
                   const sentDoc = isSentDocument(n);
                   const route = getActionRoute(n);
-                  const hasAction = route != null || !!n.related_id;
+                  const linkedDefectId = linkedDefectByNotification[n.id];
+                  const isCheckNotification = getCategory(n) === 'checks' || n.related_table === 'checks';
+                  const showLinkedDefectAction = Boolean(linkedDefectId) && isCheckNotification;
+                  const hasAction = route != null || !!n.related_id || showLinkedDefectAction;
 
                   return (
                     <div
@@ -824,6 +883,12 @@ const NotificationCenter = () => {
                                 Action needed
                               </Badge>
                             )}
+
+                            {showLinkedDefectAction && (
+                              <Badge variant="secondary" className="text-[9px] h-4 px-1.5 font-semibold">
+                                Linked defect
+                              </Badge>
+                            )}
                           </div>
                         </div>
 
@@ -841,6 +906,16 @@ const NotificationCenter = () => {
                             >
                               {getActionLabel(n)}
                               {sentDoc && !actionable ? <ExternalLink className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                            </button>
+                          )}
+
+                          {showLinkedDefectAction && linkedDefectId && (
+                            <button
+                              onClick={(e) => handleOpenLinkedDefect(n, linkedDefectId, e)}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all bg-muted text-foreground hover:bg-accent"
+                            >
+                              Open linked defect
+                              <ChevronRight className="h-3 w-3" />
                             </button>
                           )}
 
