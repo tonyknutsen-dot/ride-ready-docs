@@ -128,7 +128,7 @@ const RegisterHeader = ({
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
-          className="pl-9 h-10 rounded-xl"
+          className="pl-9 h-10 rounded-xl text-[13px]"
         />
         {searchTerm && (
           <button onClick={() => onSearchChange('')} className="absolute right-3 top-1/2 -translate-y-1/2">
