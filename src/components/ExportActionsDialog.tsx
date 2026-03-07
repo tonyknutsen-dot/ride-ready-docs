@@ -119,7 +119,7 @@ function ActionButton({
   disabled,
   accent,
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: typeof Download;
   label: string;
   description: string;
   onClick: () => void;
