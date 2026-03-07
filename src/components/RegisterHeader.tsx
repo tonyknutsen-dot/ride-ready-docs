@@ -1,16 +1,23 @@
-import { ReactNode, useState } from 'react';
+import { ReactNode, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Eye, Download, Share2 } from 'lucide-react';
+import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Eye, Download, Share2, Link2 } from 'lucide-react';
 import { format, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { supabase } from '@/integrations/supabase/client';
 import PDFViewer from '@/components/PDFViewer';
 import { useToast } from '@/hooks/use-toast';
+import {
+  downloadBlob,
+  getStorageFileBlob,
+  isPdfByMeta,
+  isValidPdfBlob,
+  shareStoredFileOrFallback,
+} from '@/utils/exportFileActions';
 
 interface ActionButton {
   label: string;
@@ -26,6 +33,7 @@ interface SavedReport {
   document_name: string;
   uploaded_at: string;
   file_path: string;
+  mime_type?: string | null;
 }
 
 interface RegisterHeaderProps {
@@ -58,6 +66,10 @@ interface RegisterHeaderProps {
   onViewReport?: (filePath: string) => void;
   /** Extra content between CTA and search */
   extraContent?: ReactNode;
+  /** Collapsed state summary text (e.g. "Status: Open • Last 30 days") */
+  filterSummary?: string;
+  /** Number of active filters for collapsed badge */
+  activeFilterCount?: number;
 }
 
 /** Blur any active input to dismiss keyboard before opening a sheet/dialog */
@@ -83,10 +95,14 @@ const RegisterHeader = ({
   dateTo,
   onDateFromChange,
   onDateToChange,
-  savedReports,
-  onViewReport,
+  filterSummary,
+  activeFilterCount = 0,
   extraContent,
 }: RegisterHeaderProps) => {
+  const collapsedSummaryText = hasActiveFilters
+    ? (filterSummary || `${activeFilterCount || 'Some'} filter${activeFilterCount === 1 ? '' : 's'} active`)
+    : 'No filters applied';
+
   return (
     <>
       {/* ── 1. Primary CTA ── */}
@@ -127,17 +143,32 @@ const RegisterHeader = ({
       <Collapsible open={filtersOpen} onOpenChange={onFiltersOpenChange}>
         <CollapsibleTrigger asChild>
           <button
-            className="w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors mt-3"
-            style={{
-              borderColor: hasActiveFilters ? 'hsl(var(--primary))' : 'hsl(var(--border))',
-              background: hasActiveFilters ? 'hsl(var(--primary) / 0.05)' : 'hsl(var(--background))',
-            }}
+            className={cn(
+              'w-full flex items-center justify-between gap-2 rounded-xl border px-3 py-2.5 text-[13px] font-medium transition-colors mt-3 text-left',
+              hasActiveFilters
+                ? 'border-primary bg-primary/5 text-foreground'
+                : 'border-border bg-background text-muted-foreground hover:text-foreground',
+            )}
           >
-            <div className="flex items-center gap-2">
-              <Filter className="h-3.5 w-3.5" />
-              <span>{hasActiveFilters ? 'Filters active' : 'Filters & date range'}</span>
+            <div className="min-w-0 flex items-center gap-2">
+              <Filter className="h-3.5 w-3.5 shrink-0" />
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span>{hasActiveFilters ? 'Filters active' : 'Filters & date range'}</span>
+                  {hasActiveFilters && activeFilterCount > 0 && (
+                    <Badge className="h-5 px-1.5 py-0 text-[10px] bg-primary/15 text-primary border border-primary/30">
+                      {activeFilterCount}
+                    </Badge>
+                  )}
+                </div>
+                {!filtersOpen && (
+                  <p className="text-[11px] text-muted-foreground truncate mt-0.5">
+                    {collapsedSummaryText}
+                  </p>
+                )}
+              </div>
             </div>
-            <ChevronDown className={cn('h-3.5 w-3.5 transition-transform', filtersOpen && 'rotate-180')} />
+            <ChevronDown className={cn('h-3.5 w-3.5 shrink-0 transition-transform', filtersOpen && 'rotate-180')} />
           </button>
         </CollapsibleTrigger>
         <CollapsibleContent>
@@ -235,7 +266,7 @@ const RegisterHeader = ({
 export const PreviousReportsSection = ({
   reports,
 }: {
-  reports: Array<{ id: string; document_name: string; uploaded_at: string; file_path: string }>;
+  reports: Array<{ id: string; document_name: string; uploaded_at: string; file_path: string; mime_type?: string | null }>;
   /** @deprecated kept for backwards compat but ignored */
   onViewReport?: (filePath: string) => void;
 }) => {
@@ -243,25 +274,35 @@ export const PreviousReportsSection = ({
   const [viewerState, setViewerState] = useState<{ open: boolean; url: string; name: string }>({ open: false, url: '', name: '' });
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  const getSignedUrl = async (filePath: string): Promise<string | null> => {
-    const { data, error } = await supabase.storage
-      .from('ride-documents')
-      .createSignedUrl(filePath, 3600);
-    if (error || !data?.signedUrl) {
-      console.error('Failed to get signed URL:', error);
-      toast({ title: 'Failed to load', description: 'Could not access the report file.', variant: 'destructive' });
-      return null;
-    }
-    return data.signedUrl;
-  };
+  useEffect(() => {
+    return () => {
+      if (viewerState.url) URL.revokeObjectURL(viewerState.url);
+    };
+  }, [viewerState.url]);
 
-  const handleView = async (report: { id: string; file_path: string; document_name: string }) => {
+  const handleView = async (report: { id: string; file_path: string; document_name: string; mime_type?: string | null }) => {
     setLoadingId(report.id);
     try {
-      const url = await getSignedUrl(report.file_path);
-      if (url) {
-        setViewerState({ open: true, url, name: report.document_name });
+      if (!isPdfByMeta(report.document_name, report.mime_type)) {
+        await handleDownload(report.file_path, report.document_name);
+        return;
       }
+
+      const blob = await getStorageFileBlob(report.file_path);
+      const validPdf = await isValidPdfBlob(blob);
+      if (!validPdf) {
+        toast({ title: 'Invalid PDF', description: 'This file is not a valid PDF and cannot be previewed.', variant: 'destructive' });
+        return;
+      }
+
+      const url = URL.createObjectURL(blob);
+      setViewerState((prev) => {
+        if (prev.url) URL.revokeObjectURL(prev.url);
+        return { open: true, url, name: report.document_name };
+      });
+    } catch (error) {
+      console.error('Failed to view report:', error);
+      toast({ title: 'Failed to open', description: 'Could not load the report file.', variant: 'destructive' });
     } finally {
       setLoadingId(null);
     }
@@ -269,37 +310,33 @@ export const PreviousReportsSection = ({
 
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
-      const url = await getSignedUrl(filePath);
-      if (url) {
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = fileName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
-    } catch (err) {
-      console.error('Download failed:', err);
+      const blob = await getStorageFileBlob(filePath);
+      downloadBlob(blob, fileName);
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast({ title: 'Download failed', description: 'Could not download the report file.', variant: 'destructive' });
     }
   };
 
-  const handleShare = async (filePath: string, fileName: string) => {
+  const handleShare = async (report: { file_path: string; document_name: string }) => {
     try {
-      const url = await getSignedUrl(filePath);
-      if (!url) return;
-      if (navigator.share) {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const file = new File([blob], fileName, { type: blob.type });
-        await navigator.share({ files: [file], title: fileName });
-      } else {
-        handleDownload(filePath, fileName);
+      const result = await shareStoredFileOrFallback(report.file_path, report.document_name);
+      if (result === 'copied') {
+        toast({ title: 'Link copied', description: 'Signed link copied to clipboard (valid for 1 hour).' });
+      } else if (result === 'downloaded') {
+        toast({ title: 'Downloaded', description: 'Native sharing unavailable, file downloaded instead.' });
       }
-    } catch (err: any) {
-      if (err?.name !== 'AbortError') {
-        handleDownload(filePath, fileName);
-      }
+    } catch (error) {
+      console.error('Share failed:', error);
+      toast({ title: 'Share failed', description: 'Could not share this report.', variant: 'destructive' });
     }
+  };
+
+  const closeViewer = () => {
+    setViewerState((prev) => {
+      if (prev.url) URL.revokeObjectURL(prev.url);
+      return { open: false, url: '', name: '' };
+    });
   };
 
   return (
@@ -315,51 +352,60 @@ export const PreviousReportsSection = ({
             <p className="text-[11px] text-muted-foreground mt-0.5">Export a PDF and save it to Documents to see it here.</p>
           </div>
         ) : (
-          reports.map((report) => (
-            <div key={report.id} className="bg-card border border-border rounded-xl p-3 space-y-2">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <FileText className="h-4 w-4 text-primary" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
-                    <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
+          reports.map((report) => {
+            const isPdf = isPdfByMeta(report.document_name, report.mime_type);
+            return (
+              <div key={report.id} className="bg-card border border-border rounded-xl p-3 space-y-2">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                      <FileText className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[12px] font-medium text-foreground truncate">{report.document_name}</p>
+                      <p className="text-[10px] text-muted-foreground">{format(parseISO(report.uploaded_at), 'd MMM yyyy')}</p>
+                    </div>
                   </div>
                 </div>
+                <div className="flex items-center gap-1.5">
+                  <Button
+                    variant="ghost" size="sm"
+                    onClick={() => handleView(report)}
+                    disabled={loadingId === report.id}
+                    className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]"
+                  >
+                    {loadingId === report.id ? (
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
+                    ) : (
+                      <Eye className="h-3 w-3" />
+                    )}
+                    {isPdf ? 'View' : 'Download'}
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
+                    <Download className="h-3 w-3" /> Download
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleShare(report)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
+                    <Share2 className="h-3 w-3" /> Share
+                  </Button>
+                </div>
+                {!isPdf && (
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Link2 className="h-3 w-3" /> Non-PDF reports are download-only.
+                  </p>
+                )}
               </div>
-              <div className="flex items-center gap-1.5">
-                <Button
-                  variant="ghost" size="sm"
-                  onClick={() => handleView(report)}
-                  disabled={loadingId === report.id}
-                  className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]"
-                >
-                  {loadingId === report.id ? (
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
-                  ) : (
-                    <Eye className="h-3 w-3" />
-                  )}
-                  View
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
-                  <Download className="h-3 w-3" /> Download
-                </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleShare(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
-                  <Share2 className="h-3 w-3" /> Share
-                </Button>
-              </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
 
       <PDFViewer
         isOpen={viewerState.open}
-        onClose={() => setViewerState({ open: false, url: '', name: '' })}
+        onClose={closeViewer}
         pdfUrl={viewerState.url}
         pdfName={viewerState.name}
         onDownload={() => {
+          if (!viewerState.url) return;
           const a = document.createElement('a');
           a.href = viewerState.url;
           a.download = viewerState.name;
