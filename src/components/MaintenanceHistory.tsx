@@ -820,7 +820,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
                   </div>
 
                   <div className="space-y-2">
-                    <h4 className="text-[14px] font-semibold leading-snug text-foreground line-clamp-2">{record.description}</h4>
+                    <h4 className="text-[13px] font-semibold leading-snug text-foreground line-clamp-2">{record.description}</h4>
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
                       {record.performed_by && <span>By <span className="font-medium text-foreground">{record.performed_by}</span></span>}
                       {record.cost != null && <span>£<span className="font-semibold text-foreground">{record.cost}</span></span>}
