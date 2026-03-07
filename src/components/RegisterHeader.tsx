@@ -280,9 +280,28 @@ export const PreviousReportsSection = ({
     }
   };
 
-  const closeViewer = () => {
-    setPreviewOpen(false);
-    setPreviewSource(null);
+  const handleShare = async (report: { file_path: string; document_name: string }) => {
+    try {
+      const outcome = await shareStoredFileOrFallback(report.file_path, report.document_name);
+      if (outcome === 'copied') {
+        toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+      } else if (outcome === 'downloaded') {
+        toast({ title: 'Downloaded', description: 'Native sharing unavailable, file downloaded instead.' });
+      }
+    } catch {
+      toast({ title: 'Share failed', description: 'Could not share this report.', variant: 'destructive' });
+    }
+  };
+
+  const handleCopyLink = async (report: { file_path: string }) => {
+    try {
+      const signedUrl = await getSignedStorageUrl(report.file_path);
+      if (!signedUrl) throw new Error('No signed URL');
+      await navigator.clipboard.writeText(signedUrl);
+      toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+    } catch {
+      toast({ title: 'Copy link failed', description: 'Could not copy link.', variant: 'destructive' });
+    }
   };
 
   return (
