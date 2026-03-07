@@ -784,18 +784,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     
     return (
       <>
-        <ImageViewer
-          isOpen={viewerState.type === 'image'}
-          onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '', document: null }; })}
-          imageUrl={viewerState.url}
-          imageName={viewerState.name}
-          onDownload={() => viewerState.document && handleDownload(viewerState.document)}
-        />
-        <DocumentPreviewSheet
-          open={viewerState.type === 'pdf'}
-          onOpenChange={(o) => { if (!o) setViewerState({ type: null, url: '', name: '', document: null }); }}
-          source={viewerState.type === 'pdf' ? { name: viewerState.name, storagePath: viewerState.url } : null}
-        />
         
         {/* Send Check Records Dialog */}
         <SendCheckRecordsDialog
