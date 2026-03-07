@@ -300,7 +300,14 @@ const NotificationCenter = () => {
       checkNotifications.forEach((n) => {
         if (!n.related_id) return;
         const defectId = latestDefectByCheck.get(n.related_id);
-        if (defectId) mapping[n.id] = defectId;
+        if (defectId) {
+          mapping[n.id] = defectId;
+          console.info('[Notifications] Linked defect resolved for check notification', {
+            notification_id: n.id,
+            check_id: n.related_id,
+            linked_defect_id: defectId,
+          });
+        }
       });
 
       setLinkedDefectByNotification(mapping);
@@ -642,6 +649,8 @@ const NotificationCenter = () => {
   }, [linkedDefectByNotification]);
 
   const handleNotificationNavigate = useCallback(async (n: Notification) => {
+    const linkedDefectId = linkedDefectByNotification[n.id] || null;
+
     console.info('[Notifications] Clicked notification', {
       id: n.id,
       title: n.title,
@@ -649,6 +658,7 @@ const NotificationCenter = () => {
       category: getCategory(n),
       related_table: n.related_table,
       related_id: n.related_id,
+      linked_defect_id: linkedDefectId,
       is_read: n.is_read,
     });
 
@@ -656,6 +666,7 @@ const NotificationCenter = () => {
 
     console.info('[Notifications] Generated route', {
       id: n.id,
+      linked_defect_id: linkedDefectId,
       action_route: route,
       reason,
     });
@@ -676,7 +687,7 @@ const NotificationCenter = () => {
         search: window.location.search,
       });
     }, 0);
-  }, [isController, markAsRead, navigate, resolveRouteForNotification]);
+  }, [isController, linkedDefectByNotification, markAsRead, navigate, resolveRouteForNotification]);
 
   const handleCardAction = useCallback(async (n: Notification, e: React.MouseEvent) => {
     e.stopPropagation();
