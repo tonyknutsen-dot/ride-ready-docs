@@ -525,7 +525,7 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
         <ImageViewer
           url={viewerState.url}
           alt={viewerState.name}
-          onClose={() => setViewerState({ type: null, url: '', name: '' })}
+          onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '' }; })}
         />
       )}
       {viewerState.type === 'pdf' && (
