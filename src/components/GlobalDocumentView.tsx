@@ -136,11 +136,6 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
   const [search, setSearch] = useState('');
-  const [viewerState, setViewerState] = useState<{
-    type: 'image' | 'pdf' | null;
-    url: string;
-    name: string;
-  }>({ type: null, url: '', name: '' });
 
   /* ─── Fetch ─── */
   useEffect(() => {
