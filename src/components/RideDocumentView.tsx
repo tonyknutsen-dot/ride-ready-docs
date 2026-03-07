@@ -126,11 +126,6 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   const [filter, setFilter] = useState<FilterType>('all');
   const [rideOpen, setRideOpen] = useState(true);
   const [globalOpen, setGlobalOpen] = useState(true);
-  const [viewerState, setViewerState] = useState<{
-    type: 'image' | 'pdf' | null;
-    url: string;
-    name: string;
-  }>({ type: null, url: '', name: '' });
 
   /* ─── Fetch ─── */
   useEffect(() => {
