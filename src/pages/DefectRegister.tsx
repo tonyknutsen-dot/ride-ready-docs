@@ -373,9 +373,44 @@ const DefectRegister = () => {
   // Auto-open detail from URL
   useEffect(() => {
     const defectId = searchParams.get('defectId');
-    if (!defectId || enriched.length === 0) return;
+    const status = searchParams.get('status');
+    const rideId = searchParams.get('rideId');
+
+    console.info('[DefectRegister] URL params', {
+      defectId,
+      status,
+      rideId,
+      pathname: window.location.pathname,
+      search: window.location.search,
+    });
+
+    if (!defectId || enriched.length === 0) {
+      if (defectId) {
+        console.info('[DefectRegister] Waiting for defects data before deep-link lookup', {
+          defectId,
+          loadedDefectCount: enriched.length,
+        });
+      }
+      return;
+    }
+
     const found = enriched.find((d) => d.id === defectId);
-    if (found) openDetail(found);
+
+    console.info('[DefectRegister] Deep-link lookup result', {
+      defectId,
+      found: !!found,
+      loadedDefectCount: enriched.length,
+      foundStatus: found?.status,
+      foundRideId: found?.ride_id,
+    });
+
+    if (found) {
+      console.info('[DefectRegister] Opening detail sheet from deep-link', {
+        defectId: found.id,
+        rideId: found.ride_id,
+      });
+      openDetail(found);
+    }
   }, [searchParams, enriched]);
 
   const updateFilterParams = (next: { status?: string; severity?: string; rideId?: string }) => {
@@ -388,6 +423,13 @@ const DefectRegister = () => {
   };
 
   const openDetail = async (defect: DefectRow) => {
+    console.info('[DefectRegister] openDetail called', {
+      defectId: defect.id,
+      status: defect.status,
+      rideId: defect.ride_id,
+      hasPhotos: !!defect.photo_paths?.length,
+    });
+
     setDetailDefect(defect);
     const params = new URLSearchParams(searchParams);
     params.set('defectId', defect.id);

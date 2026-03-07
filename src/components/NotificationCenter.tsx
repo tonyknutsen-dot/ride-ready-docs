@@ -78,6 +78,25 @@ const isSentDocument = (n: Notification): boolean => {
   return title.includes('sent') || title.includes('shared') || title.includes('document pack');
 };
 
+const isDefectRelatedNotification = (n: Notification): boolean => {
+  const title = n.title?.toLowerCase() ?? '';
+  const message = n.message?.toLowerCase() ?? '';
+  const type = n.type?.toLowerCase() ?? '';
+
+  if (n.related_table === 'defects') return true;
+  if (title.includes('defect') || message.includes('defect')) return true;
+  if (title.includes('stop use') || message.includes('stop use')) return true;
+  if (title.includes('high-priority defect') || title.includes('unresolved defect')) return true;
+  if (type === 'defect') return true;
+
+  return false;
+};
+
+const buildDefectRoute = (defectId?: string | null): string => {
+  if (defectId) return `/defects?defectId=${defectId}&status=open`;
+  return '/defects?status=open';
+};
+
 const getPriority = (n: Notification): number => {
   const title = n.title?.toLowerCase() ?? '';
   if (title.includes('stop use') || title.includes('critical')) return 0;
@@ -130,12 +149,8 @@ const getActionRoute = (n: Notification): string | null => {
   const title = n.title?.toLowerCase() ?? '';
   if (isSentDocument(n)) return '/batch-send';
 
-  // Defect notifications deep-link directly to the defect record in the Defect Register
-  if (title.includes('defect') || n.related_table === 'defects') {
-    const base = '/defects';
-    if (n.related_id) return `${base}?defectId=${n.related_id}&status=open`;
-    return base;
-  }
+  // Hard routing rule: defect-like notifications go to Defects only
+  if (isDefectRelatedNotification(n)) return buildDefectRoute(n.related_id);
 
   if (title.includes('check') || title.includes('missed')) return '/checks';
   if (n.related_table === 'checks') return '/checks';
@@ -153,8 +168,7 @@ const getActionRoute = (n: Notification): string | null => {
 const getActionLabel = (n: Notification): string => {
   const title = n.title?.toLowerCase() ?? '';
   if (isSentDocument(n)) return 'View record';
-  if (title.includes('defect') && (title.includes('new') || title.includes('unresolved') || title.includes('high'))) return 'View defect';
-  if (title.includes('defect') && title.includes('closed')) return 'View';
+  if (isDefectRelatedNotification(n)) return 'View defect';
   if (title.includes('check') && title.includes('missed')) return 'Start check';
   if (title.includes('check') && title.includes('failed')) return 'Review';
   if (title.includes('check') && title.includes('completed')) return 'View';
@@ -512,14 +526,82 @@ const NotificationCenter = () => {
     return counts;
   }, [notifications]);
 
-  const handleCardAction = useCallback((n: Notification, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const route = getActionRoute(n);
-    if (route) {
-      if (!n.is_read) markAsRead(n.id);
-      navigate(route);
+  const resolveRouteForNotification = useCallback(async (n: Notification): Promise<{ route: string | null; reason: string }> => {
+    if (isDefectRelatedNotification(n)) {
+      return { route: buildDefectRoute(n.related_id), reason: 'defect_indicators' };
     }
-  }, [navigate]);
+
+    if (n.related_id) {
+      const { data: matchedDefect } = await supabase
+        .from('defects')
+        .select('id')
+        .eq('id', n.related_id)
+        .maybeSingle();
+
+      if (matchedDefect?.id) {
+        return { route: buildDefectRoute(matchedDefect.id), reason: 'related_id_maps_to_defect' };
+      }
+
+      if (n.related_table === 'checks') {
+        const { data: linkedDefect } = await supabase
+          .from('defects')
+          .select('id, severity, reported_at')
+          .eq('check_id', n.related_id)
+          .neq('status', 'resolved')
+          .order('reported_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (linkedDefect?.id) {
+          return { route: buildDefectRoute(linkedDefect.id), reason: 'check_maps_to_open_defect' };
+        }
+      }
+    }
+
+    return { route: getActionRoute(n), reason: 'default_mapping' };
+  }, []);
+
+  const handleNotificationNavigate = useCallback(async (n: Notification) => {
+    console.info('[Notifications] Clicked notification', {
+      id: n.id,
+      title: n.title,
+      type: n.type,
+      category: getCategory(n),
+      related_table: n.related_table,
+      related_id: n.related_id,
+      is_read: n.is_read,
+    });
+
+    const { route, reason } = await resolveRouteForNotification(n);
+
+    console.info('[Notifications] Generated route', {
+      id: n.id,
+      action_route: route,
+      reason,
+    });
+
+    if (!route) return;
+
+    if (!n.is_read && isController) {
+      await markAsRead(n.id);
+    }
+
+    navigate(route);
+
+    setTimeout(() => {
+      console.info('[Notifications] Navigated', {
+        id: n.id,
+        href: window.location.href,
+        pathname: window.location.pathname,
+        search: window.location.search,
+      });
+    }, 0);
+  }, [isController, markAsRead, navigate, resolveRouteForNotification]);
+
+  const handleCardAction = useCallback(async (n: Notification, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await handleNotificationNavigate(n);
+  }, [handleNotificationNavigate]);
 
   /* ── Render ───────────────────────────── */
 
@@ -651,21 +733,20 @@ const NotificationCenter = () => {
                   const actionable = isActionable(n);
                   const sentDoc = isSentDocument(n);
                   const route = getActionRoute(n);
-                  const hasAction = route != null;
+                  const hasAction = route != null || !!n.related_id;
 
                   return (
                     <div
                       key={n.id}
                       onClick={() => {
-                        if (!n.is_read && isController) markAsRead(n.id);
-                        if (route) navigate(route);
+                        void handleNotificationNavigate(n);
                       }}
                       className={cn(
                         'flex bg-card border rounded-2xl overflow-hidden transition-all',
                         actionable && !n.is_read
                           ? 'border-destructive/20 shadow-[0_2px_8px_rgba(220,38,38,0.06)]'
                           : 'border-border',
-                        route && 'cursor-pointer hover:border-primary/30 active:scale-[0.995]',
+                        hasAction && 'cursor-pointer hover:border-primary/30 active:scale-[0.995]',
                         !actionable && n.is_read && 'opacity-90'
                       )}
                     >
