@@ -12,6 +12,8 @@ export interface ExportResult {
   onSaveToDocuments?: () => Promise<void>;
   /** Label override for save button (e.g. "Save to Asset Documents" vs "Save as Global Document") */
   saveLabel?: string;
+  /** Helper text explaining where the document will be saved */
+  saveHint?: string;
 }
 
 interface ExportActionsDialogProps {

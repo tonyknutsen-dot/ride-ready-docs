@@ -36,7 +36,9 @@ interface RegisterHeaderProps {
   searchTerm: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
-  /** Action buttons */
+  /** Primary CTA (dominant button) — rendered separately above search */
+  primaryAction?: ActionButton;
+  /** Export / secondary action buttons */
   actions: ActionButton[];
   /** Filter section */
   filtersOpen: boolean;
@@ -50,8 +52,15 @@ interface RegisterHeaderProps {
   /** Previously generated reports */
   savedReports: SavedReport[];
   onViewReport: (filePath: string) => void;
-  /** Extra content between stop-use banner and search */
+  /** Extra content between CTA and search */
   extraContent?: ReactNode;
+}
+
+/** Blur any active input to dismiss keyboard before opening a sheet/dialog */
+export function blurActiveInput() {
+  if (document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
 }
 
 const RegisterHeader = ({
@@ -61,6 +70,7 @@ const RegisterHeader = ({
   searchTerm,
   onSearchChange,
   searchPlaceholder = 'Search…',
+  primaryAction,
   actions,
   filtersOpen,
   onFiltersOpenChange,
@@ -75,33 +85,25 @@ const RegisterHeader = ({
 }: RegisterHeaderProps) => {
   return (
     <>
-      {/* ── Action buttons ── */}
-      <div className="flex flex-wrap items-center gap-1.5">
-        {actions.map((action, i) => (
-          <Button
-            key={i}
-            variant={action.variant || (i === 0 ? 'default' : 'outline')}
-            size="sm"
-            onClick={action.onClick}
-            disabled={action.disabled}
-            className={cn(
-              'gap-1.5 h-10 min-h-[44px] text-[12px] px-3',
-              i === 0 && 'sm:w-auto w-full'
-            )}
-          >
-            {action.loading ? (
-              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
-            ) : (
-              action.icon
-            )}
-            {action.label}
-          </Button>
-        ))}
-      </div>
+      {/* ── 1. Primary CTA ── */}
+      {primaryAction && (
+        <Button
+          onClick={() => { blurActiveInput(); primaryAction.onClick(); }}
+          disabled={primaryAction.disabled}
+          className="gap-1.5 h-10 min-h-[44px] w-full sm:w-auto text-[12px]"
+        >
+          {primaryAction.loading ? (
+            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
+          ) : (
+            primaryAction.icon
+          )}
+          {primaryAction.label}
+        </Button>
+      )}
 
       {extraContent}
 
-      {/* ── Search bar ── */}
+      {/* ── 2. Search bar ── */}
       <div className="relative mt-3">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -117,7 +119,7 @@ const RegisterHeader = ({
         )}
       </div>
 
-      {/* ── Collapsible Filters & date range ── */}
+      {/* ── 3. Collapsible Filters & date range ── */}
       <Collapsible open={filtersOpen} onOpenChange={onFiltersOpenChange}>
         <CollapsibleTrigger asChild>
           <button
@@ -188,7 +190,30 @@ const RegisterHeader = ({
         </CollapsibleContent>
       </Collapsible>
 
-      {/* ── Result count + export hint ── */}
+      {/* ── 4. Export actions ── */}
+      {actions.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 mt-3">
+          {actions.map((action, i) => (
+            <Button
+              key={i}
+              variant={action.variant || 'outline'}
+              size="sm"
+              onClick={action.onClick}
+              disabled={action.disabled}
+              className="gap-1.5 h-9 min-h-[40px] text-[12px] px-3"
+            >
+              {action.loading ? (
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
+              ) : (
+                action.icon
+              )}
+              {action.label}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {/* ── 5. Result count + export hint ── */}
       <div className="space-y-1 mt-3">
         <p className="text-[13px] text-muted-foreground">
           {resultCount}
