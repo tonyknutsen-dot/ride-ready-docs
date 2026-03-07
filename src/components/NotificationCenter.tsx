@@ -865,6 +865,7 @@ const NotificationCenter = () => {
                     <div
                       key={n.id}
                       onClick={() => {
+                        if (showLinkedDefectAction) return;
                         void handleNotificationNavigate(n);
                       }}
                       className={cn(
@@ -872,7 +873,7 @@ const NotificationCenter = () => {
                         actionable && !n.is_read
                           ? 'border-destructive/20 shadow-[0_2px_8px_rgba(220,38,38,0.06)]'
                           : 'border-border',
-                        hasAction && 'cursor-pointer hover:border-primary/30 active:scale-[0.995]',
+                        !showLinkedDefectAction && hasAction && 'cursor-pointer hover:border-primary/30 active:scale-[0.995]',
                         !actionable && n.is_read && 'opacity-90'
                       )}
                     >
@@ -928,7 +929,29 @@ const NotificationCenter = () => {
 
                         {/* Right side: action button or controls */}
                         <div className="flex flex-col items-end gap-1.5 shrink-0">
-                          {hasAction && (
+                          {showLinkedDefectAction ? (
+                            <>
+                              <button
+                                onClick={(e) => handleOpenCheckFromNotification(n, e)}
+                                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all bg-muted text-foreground hover:bg-accent"
+                              >
+                                Review check
+                                <ChevronRight className="h-3 w-3" />
+                              </button>
+                              <button
+                                onClick={(e) => handleOpenLinkedDefect(n, linkedDefectId!, e)}
+                                className={cn(
+                                  'flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all',
+                                  actionable && !n.is_read
+                                    ? 'bg-foreground text-background hover:bg-foreground/90'
+                                    : 'bg-muted text-foreground hover:bg-accent'
+                                )}
+                              >
+                                Open linked defect
+                                <ChevronRight className="h-3 w-3" />
+                              </button>
+                            </>
+                          ) : hasAction && (
                             <button
                               onClick={(e) => handleCardAction(n, e)}
                               className={cn(
@@ -938,20 +961,11 @@ const NotificationCenter = () => {
                                   : 'bg-muted text-foreground hover:bg-accent'
                               )}
                             >
-                              {showLinkedDefectAction ? 'Open linked defect' : getActionLabel(n)}
+                              {getActionLabel(n)}
                               {sentDoc && !actionable ? <ExternalLink className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                             </button>
                           )}
 
-                          {showLinkedDefectAction && (
-                            <button
-                              onClick={(e) => handleOpenCheckFromNotification(n, e)}
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all bg-muted text-foreground hover:bg-accent"
-                            >
-                              Review check
-                              <ChevronRight className="h-3 w-3" />
-                            </button>
-                          )}
 
                           {isController && getCategory(n) === 'system' && (
                             <button
