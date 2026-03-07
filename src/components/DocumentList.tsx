@@ -227,41 +227,28 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     }
   };
 
-  const handleView = async (document: Document) => {
+  const handleShare = async (document: Document) => {
     try {
       const displayName = getDocumentDisplayName(document);
-
-      if (isImageDoc(document)) {
-        const { data, error } = await supabase.storage
-          .from('ride-documents')
-          .createSignedUrl(document.file_path, 3600);
-
-        if (error) throw error;
-        if (!data?.signedUrl) throw new Error('Could not create signed URL for image');
-
-        setViewerState({
-          type: 'image',
-          url: data.signedUrl,
-          name: displayName,
-          document,
-        });
-        return;
+      const outcome = await shareStoredFileOrFallback(document.file_path, displayName);
+      if (outcome === 'copied') {
+        toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+      } else if (outcome === 'downloaded') {
+        toast({ title: 'Downloaded', description: 'Native share unavailable, file downloaded instead.' });
       }
+    } catch {
+      toast({ title: 'Share failed', description: 'Could not share this document.', variant: 'destructive' });
+    }
+  };
 
-      // For PDFs and other files, use the shared DocumentPreviewSheet
-      setViewerState({
-        type: 'pdf',
-        url: document.file_path,
-        name: displayName,
-        document,
-      });
-    } catch (error: any) {
-      console.error('View error:', error);
-      toast({
-        title: "Unable to view document",
-        description: error.message,
-        variant: "destructive",
-      });
+  const handleCopyLink = async (document: Document) => {
+    try {
+      const signedUrl = await getSignedStorageUrl(document.file_path);
+      if (!signedUrl) throw new Error('No signed URL');
+      await navigator.clipboard.writeText(signedUrl);
+      toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+    } catch {
+      toast({ title: 'Copy link failed', description: 'Could not copy link.', variant: 'destructive' });
     }
   };
 
