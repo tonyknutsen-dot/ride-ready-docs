@@ -596,7 +596,7 @@ const NotificationCenter = () => {
         search: window.location.search,
       });
     }, 0);
-  }, [isController, navigate, resolveRouteForNotification]);
+  }, [isController, markAsRead, navigate, resolveRouteForNotification]);
 
   const handleCardAction = useCallback(async (n: Notification, e: React.MouseEvent) => {
     e.stopPropagation();
