@@ -316,7 +316,7 @@ export const PreviousReportsSection = ({
           </div>
         ) : (
           reports.map((report) => (
-            <div key={report.id} className="bg-card border border-border rounded-xl p-3 space-y-2">
+            <div key={report.id} className="bg-card border border-border rounded-xl p-3 space-y-2">>
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2.5 min-w-0">
                   <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
