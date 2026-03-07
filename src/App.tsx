@@ -625,6 +625,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
               </Routes>
               </LocationAwareOfflineSuspense>
+              </LockScreenProvider>
               {/* Cookie consent shown globally (lightweight) */}
               <CookieConsentBanner />
               </StaffProvider>
