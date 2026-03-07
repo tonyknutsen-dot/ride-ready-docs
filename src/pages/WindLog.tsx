@@ -146,6 +146,7 @@ const WindLog = () => {
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
   const [generatingCsv, setGeneratingCsv] = useState(false);
   const [savedReports, setSavedReports] = useState<any[]>([]);
+  const [windPickerOpen, setWindPickerOpen] = useState(false);
 
   // Defaults
   const [defaultRecordedBy, setDefaultRecordedBy] = useState('');
