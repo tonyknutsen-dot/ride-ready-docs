@@ -72,50 +72,41 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base">Export ready</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground truncate">
-              {result.fileName}
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-base">Export ready</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground truncate">
+            {result.fileName}
+          </DialogDescription>
+        </DialogHeader>
 
-          <div className="grid gap-2 pt-2">
-            <ActionButton icon={Eye} label="View" description="Open and preview this file" onClick={handleView} />
-            <ActionButton icon={Download} label="Save to Device" description="Download file to your phone or laptop" onClick={handleDownload} />
-            <ActionButton icon={Share2} label="Share" description="Send via native share or copy link" onClick={handleShare} />
+        <div className="grid gap-2 pt-2">
+          <ActionButton icon={Download} label="Save to Device" description="Download file to your phone or laptop" onClick={handleDownload} />
+          <ActionButton icon={Share2} label="Share" description="Send via native share or copy link" onClick={handleShare} />
 
-            {result.onSaveToDocuments && (
-              <>
-                <div className="border-t border-border my-1" />
-                {result.saveHint && (
-                  <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
-                    {result.saveHint}
-                  </p>
-                )}
-                <ActionButton
-                  icon={saved ? CheckCircle2 : FolderPlus}
-                  label={saved ? 'Saved ✓' : (result.saveLabel || 'Save to Documents')}
-                  description={saved ? 'Report saved to your document register' : 'Saves this report inside RideReadyDocs for later access'}
-                  onClick={handleSaveToDocuments}
-                  loading={saving}
-                  disabled={saved}
-                  accent={!saved}
-                />
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <DocumentPreviewSheet
-        open={previewOpen}
-        onOpenChange={setPreviewOpen}
-        source={{ name: result.fileName, blob: result.blob }}
-      />
-    </>
+          {result.onSaveToDocuments && (
+            <>
+              <div className="border-t border-border my-1" />
+              {result.saveHint && (
+                <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
+                  {result.saveHint}
+                </p>
+              )}
+              <ActionButton
+                icon={saved ? CheckCircle2 : FolderPlus}
+                label={saved ? 'Saved ✓' : (result.saveLabel || 'Save to Documents')}
+                description={saved ? 'Report saved to your document register' : 'Saves this report inside RideReadyDocs for later access'}
+                onClick={handleSaveToDocuments}
+                loading={saving}
+                disabled={saved}
+                accent={!saved}
+              />
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
