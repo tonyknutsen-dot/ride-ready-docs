@@ -27,7 +27,32 @@ export function SecuritySettingsSection() {
   const { settings, loading, hasPinSet, updateSettings } = useSecuritySettings();
   const { toast } = useToast();
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
+  const [mfaDialogOpen, setMfaDialogOpen] = useState(false);
   const [signingOutAll, setSigningOutAll] = useState(false);
+  const [mfaEnrolled, setMfaEnrolled] = useState(false);
+  const [mfaLoading, setMfaLoading] = useState(true);
+
+  // Check MFA enrollment status
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.mfa.listFactors();
+      setMfaEnrolled(!!data?.totp?.length);
+      setMfaLoading(false);
+    })();
+  }, []);
+
+  const handleUnenrollMFA = async () => {
+    const { data } = await supabase.auth.mfa.listFactors();
+    if (data?.totp?.[0]) {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId: data.totp[0].id });
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      } else {
+        setMfaEnrolled(false);
+        toast({ title: 'MFA Disabled', description: 'Two-factor authentication has been removed.' });
+      }
+    }
+  };
 
   const handleIdleChange = async (value: string) => {
     const minutes = parseInt(value);
