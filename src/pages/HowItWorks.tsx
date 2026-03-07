@@ -19,7 +19,7 @@ const HowItWorks = () => {
     {
       icon: FileText,
       title: "2. Upload Documents",
-      description: "Upload all your ride documents - safety certificates, insurance, manuals, Declaration of Compliance certificates, test certificates, and technical bulletins. Organize them by ride or keep global documents accessible to all."
+      description: "Upload all your ride documents - safety certificates, insurance, manuals, Declaration of Compliance certificates, test certificates, and technical bulletins. Supports PDF, Word, Excel, images, and more. Organize them by ride or keep global documents accessible to all."
     },
     {
       icon: Calendar,

@@ -74,7 +74,7 @@ const coreModules: HelpTopic[] = [
       "Open your ride's detail page.",
       "Go to the 'Documents' tab.",
       "Click 'Upload Document' and select type, expiry date, and file.",
-      "Supported formats: PDF, JPG, PNG.",
+      "Supported formats: PDF, Word, Excel, JPG, PNG, and many more.",
       "Documents with expiry dates trigger automatic email reminders at 30 days and 7 days.",
       "Use 'Global Documents' for fleet-wide files like insurance policies.",
     ],

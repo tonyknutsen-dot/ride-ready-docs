@@ -63,9 +63,14 @@ const TermsOfService = () => {
                 </p>
 
                 <h3 className="text-xl font-semibold mb-2">4.2 Subscription Plans</h3>
+                <p className="text-muted-foreground mb-2">
+                  Plans are priced by the number of rides you manage. All plans include every feature. Stalls, generators, and support equipment are included free.
+                </p>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
-                  <li><strong>Documents & Compliance:</strong> Basic plan - Up to 5 items, core document management features</li>
-                  <li><strong>Operations & Maintenance:</strong> Professional plan - Up to 10 items, all features including checks, inspections, maintenance tracking, and advanced reporting</li>
+                  <li><strong>Starter:</strong> 1–5 rides — £9.99/month</li>
+                  <li><strong>Operator:</strong> 6–12 rides — £19.99/month</li>
+                  <li><strong>Professional:</strong> 13–25 rides — £34.99/month</li>
+                  <li><strong>Enterprise:</strong> 25+ rides — £44.99/month</li>
                 </ul>
 
                 <h3 className="text-xl font-semibold mb-2">4.3 Payment Terms</h3>
