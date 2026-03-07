@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Download, FolderPlus, Loader2, CheckCircle2 } from 'lucide-react';
+import { Download, FolderPlus, Loader2, CheckCircle2, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { downloadBlob } from '@/utils/exportFileActions';
@@ -8,9 +9,9 @@ import { downloadBlob } from '@/utils/exportFileActions';
 export interface ExportResult {
   blob: Blob;
   fileName: string;
-  /** If provided, enables "Save to Documents" */
-  onSaveToDocuments?: () => Promise<void>;
-  /** Label override for save button (e.g. "Save to Asset Documents" vs "Save as Global Document") */
+  /** If provided, enables "Save to Documents". Return the ride_documents row ID to enable View. */
+  onSaveToDocuments?: () => Promise<string | void>;
+  /** Label override for save button */
   saveLabel?: string;
   /** Helper text explaining where the document will be saved */
   saveHint?: string;
@@ -24,9 +25,10 @@ interface ExportActionsDialogProps {
 
 const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialogProps) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-
+  const [savedDocId, setSavedDocId] = useState<string | null>(null);
 
   if (!result) return null;
 
@@ -39,8 +41,11 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
     if (!result.onSaveToDocuments || saving || saved) return;
     setSaving(true);
     try {
-      await result.onSaveToDocuments();
+      const docId = await result.onSaveToDocuments();
       setSaved(true);
+      if (docId && typeof docId === 'string') {
+        setSavedDocId(docId);
+      }
       toast({ title: 'Saved to Documents', description: 'Report added to your document register' });
     } catch (err) {
       console.error('Failed to save to documents:', err);
@@ -50,10 +55,17 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
     }
   };
 
+  const handleViewDocument = () => {
+    if (!savedDocId) return;
+    onOpenChange(false);
+    navigate(`/document/${savedDocId}`);
+  };
+
   const handleClose = (nextOpen: boolean) => {
     if (!nextOpen) {
       setSaved(false);
       setSaving(false);
+      setSavedDocId(null);
     }
     onOpenChange(nextOpen);
   };
@@ -74,7 +86,7 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
           {result.onSaveToDocuments && (
             <>
               <div className="border-t border-border my-1" />
-              {result.saveHint && (
+              {result.saveHint && !saved && (
                 <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
                   {result.saveHint}
                 </p>
@@ -88,6 +100,15 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
                 disabled={saved}
                 accent={!saved}
               />
+              {saved && savedDocId && (
+                <ActionButton
+                  icon={Eye}
+                  label="View Document"
+                  description="Open in the document viewer"
+                  onClick={handleViewDocument}
+                  accent
+                />
+              )}
             </>
           )}
         </div>
