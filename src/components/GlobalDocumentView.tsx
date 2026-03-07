@@ -18,7 +18,7 @@ import {
   Globe,
   Search,
   Upload,
-  Share2,
+  Link2,
   Link2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
