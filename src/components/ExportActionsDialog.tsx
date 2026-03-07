@@ -51,12 +51,8 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
       setPreviewOpen(true);
       return;
     }
-
-    const opened = window.open(objectUrl, '_blank', 'noopener,noreferrer');
-    if (!opened) {
-      handleDownload();
-      toast({ title: 'Preview blocked', description: 'File downloaded instead' });
-    }
+    // Non-PDF files (e.g. CSV) can't be previewed in-app — download instead
+    handleDownload();
   };
 
   const handleDownload = () => {
