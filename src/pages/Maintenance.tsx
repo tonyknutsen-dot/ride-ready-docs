@@ -33,7 +33,7 @@ const Maintenance = () => {
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(!!rideIdFromUrl);
   const [showGuide, setShowGuide] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  
 
   // Load ride from URL param if present
   useEffect(() => {
