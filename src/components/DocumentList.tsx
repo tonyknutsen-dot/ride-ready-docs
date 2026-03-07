@@ -1031,12 +1031,10 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         imageName={viewerState.name}
         onDownload={() => viewerState.document && handleDownload(viewerState.document)}
       />
-      <PDFViewer
-        isOpen={viewerState.type === 'pdf'}
-        onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '', document: null }; })}
-        pdfUrl={viewerState.url}
-        pdfName={viewerState.name}
-        onDownload={() => viewerState.document && handleDownload(viewerState.document)}
+      <DocumentPreviewSheet
+        open={viewerState.type === 'pdf'}
+        onOpenChange={(o) => { if (!o) setViewerState({ type: null, url: '', name: '', document: null }); }}
+        source={viewerState.type === 'pdf' ? { name: viewerState.name, storagePath: viewerState.url } : null}
       />
       <DocumentRideAssignmentDialog
         document={assignmentDialogDoc}
