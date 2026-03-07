@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, FolderPlus, Loader2, CheckCircle2, Eye, Link2 } from 'lucide-react';
+import { Download, FolderPlus, Loader2, CheckCircle2, Eye, Link2, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { downloadBlob } from '@/utils/exportFileActions';
-import PDFViewer from '@/components/PDFViewer';
-import ShareMenuPopover from '@/components/ShareMenuPopover';
+import QuickSendDialog from '@/components/QuickSendDialog';
 
 export interface ExportResult {
   blob: Blob;
@@ -33,32 +32,59 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const [saved, setSaved] = useState(false);
   const [savedDocId, setSavedDocId] = useState<string | null>(null);
   const [copyingLink, setCopyingLink] = useState(false);
-  const [viewerOpen, setViewerOpen] = useState(false);
-  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+
+  // For auto-save-then-act flows
+  const [autoSaving, setAutoSaving] = useState(false);
 
   if (!result) return null;
 
-  const handleView = () => {
-    const normalizedBlob =
-      result.blob.type === 'application/pdf'
-        ? result.blob
-        : new Blob([result.blob], { type: 'application/pdf' });
-    const url = URL.createObjectURL(normalizedBlob);
-    setBlobUrl(url);
-    setViewerOpen(true);
+  /** Save to documents and return the doc ID */
+  const ensureSaved = async (): Promise<string | null> => {
+    if (savedDocId) return savedDocId;
+    if (!result.onSaveToDocuments) return null;
+
+    setAutoSaving(true);
+    try {
+      const docId = await result.onSaveToDocuments();
+      const id = docId && typeof docId === 'string' ? docId : null;
+      if (id) {
+        setSaved(true);
+        setSavedDocId(id);
+      }
+      return id;
+    } catch (err) {
+      console.error('Auto-save failed:', err);
+      toast({ title: 'Save failed', description: 'Could not save the document first', variant: 'destructive' });
+      return null;
+    } finally {
+      setAutoSaving(false);
+    }
   };
 
-  const handleCloseViewer = () => {
-    setViewerOpen(false);
-    if (blobUrl) {
-      URL.revokeObjectURL(blobUrl);
-      setBlobUrl(null);
+  const handleView = async () => {
+    // Save first, then navigate to the full document viewer page
+    const docId = await ensureSaved();
+    if (docId) {
+      onOpenChange(false);
+      navigate(`/documents/${docId}`);
+    } else {
+      toast({ title: 'Cannot view', description: 'Save the document first to view it', variant: 'destructive' });
     }
   };
 
   const handleDownload = () => {
     downloadBlob(result.blob, result.fileName);
     toast({ title: 'Downloaded', description: result.fileName });
+  };
+
+  const handleSend = async () => {
+    const docId = await ensureSaved();
+    if (docId) {
+      setSendDialogOpen(true);
+    } else {
+      toast({ title: 'Cannot send', description: 'Save the document first to send it', variant: 'destructive' });
+    }
   };
 
   const handleSaveToDocuments = async () => {
@@ -104,12 +130,12 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
       setSaved(false);
       setSaving(false);
       setSavedDocId(null);
-      handleCloseViewer();
+      setAutoSaving(false);
     }
     onOpenChange(nextOpen);
   };
 
-  const savedDocLink = savedDocId ? `${window.location.origin}/documents/${savedDocId}` : undefined;
+  const isLoading = saving || autoSaving;
 
   return (
     <>
@@ -126,10 +152,9 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
             {/* ── Pre-save actions ── */}
             {!saved && (
               <>
-                <ActionButton icon={Eye} label="View" description="Read this report inside the app" onClick={handleView} accent />
+                <ActionButton icon={Eye} label="View" description="Open in the document viewer" onClick={handleView} loading={autoSaving} accent />
                 <ActionButton icon={Download} label="Save to Device" description="Download file to your phone or laptop" onClick={handleDownload} />
-
-                <ShareMenuPopover blob={result.blob} fileName={result.fileName} />
+                <ActionButton icon={Send} label="Send" description="Email this document via secure download link" onClick={handleSend} loading={autoSaving} />
 
                 {result.onSaveToDocuments && (
                   <>
@@ -181,7 +206,9 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
                   onClick={handleDownload}
                 />
 
-                <ShareMenuPopover blob={result.blob} fileName={result.fileName} documentLink={savedDocLink} />
+                {savedDocId && (
+                  <ActionButton icon={Send} label="Send" description="Email via secure download link" onClick={() => setSendDialogOpen(true)} />
+                )}
 
                 {savedDocId && (
                   <ActionButton icon={Link2} label="Copy Link" description="Copy document link to clipboard" onClick={handleCopyLink} loading={copyingLink} />
@@ -202,14 +229,13 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
         </DialogContent>
       </Dialog>
 
-      {/* In-app PDF viewer modal for pre-save View */}
-      {blobUrl && (
-        <PDFViewer
-          isOpen={viewerOpen}
-          onClose={handleCloseViewer}
-          pdfUrl={blobUrl}
-          pdfName={result.fileName}
-          onDownload={handleDownload}
+      {/* Quick send dialog */}
+      {savedDocId && (
+        <QuickSendDialog
+          open={sendDialogOpen}
+          onOpenChange={setSendDialogOpen}
+          documentIds={[savedDocId]}
+          documentName={result.fileName}
         />
       )}
     </>
