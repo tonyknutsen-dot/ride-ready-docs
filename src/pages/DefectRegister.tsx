@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import DefectClosureDialog from '@/components/DefectClosureDialog';
 import RegisterHeader, { PreviousReportsSection } from '@/components/RegisterHeader';
+import EquipmentPickerDialog from '@/components/EquipmentPickerDialog';
 
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 import { useToast } from '@/hooks/use-toast';
