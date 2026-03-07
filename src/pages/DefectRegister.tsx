@@ -423,6 +423,13 @@ const DefectRegister = () => {
   };
 
   const openDetail = async (defect: DefectRow) => {
+    console.info('[DefectRegister] openDetail called', {
+      defectId: defect.id,
+      status: defect.status,
+      rideId: defect.ride_id,
+      hasPhotos: !!defect.photo_paths?.length,
+    });
+
     setDetailDefect(defect);
     const params = new URLSearchParams(searchParams);
     params.set('defectId', defect.id);
