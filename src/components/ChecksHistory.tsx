@@ -81,7 +81,7 @@ interface MonthGroup {
   passedChecks: number;
 }
 
-const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryProps) => {
+const ChecksHistory = ({ rideId, rideName, frequency = 'daily', onStartCheck }: ChecksHistoryProps) => {
   const { user } = useAuth();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
