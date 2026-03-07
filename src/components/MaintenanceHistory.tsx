@@ -732,6 +732,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
         searchPlaceholder="Search records…"
         activeFilterCount={activeFilterCount}
         filterSummary={filterSummary}
+        primaryAction={onLogMaintenance ? { label: 'Log maintenance', icon: <Plus className="h-3.5 w-3.5" />, onClick: onLogMaintenance } : undefined}
         actions={[
           { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline' as const, disabled: generatingCsv || filteredRecords.length === 0 },
           { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline' as const, disabled: generatingPdf || filteredRecords.length === 0, loading: generatingPdf },
