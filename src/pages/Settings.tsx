@@ -33,6 +33,7 @@ import TesterTools from '@/components/TesterTools';
 import BugReportDialog from '@/components/BugReportDialog';
 import ActivityLog from '@/components/ActivityLog';
 import SupportAccessManager from '@/components/SupportAccessManager';
+import { SecuritySettingsSection } from '@/components/SecuritySettingsSection';
 
 const Settings = () => {
   const { user } = useAuth();
