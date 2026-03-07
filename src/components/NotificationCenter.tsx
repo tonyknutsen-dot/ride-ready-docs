@@ -526,14 +526,67 @@ const NotificationCenter = () => {
     return counts;
   }, [notifications]);
 
-  const handleCardAction = useCallback((n: Notification, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const route = getActionRoute(n);
-    if (route) {
-      if (!n.is_read) markAsRead(n.id);
-      navigate(route);
+  const resolveRouteForNotification = useCallback(async (n: Notification): Promise<{ route: string | null; reason: string }> => {
+    if (isDefectRelatedNotification(n)) {
+      return { route: buildDefectRoute(n.related_id), reason: 'defect_indicators' };
     }
-  }, [navigate]);
+
+    if (n.related_id) {
+      const { data: matchedDefect } = await supabase
+        .from('defects')
+        .select('id')
+        .eq('id', n.related_id)
+        .maybeSingle();
+
+      if (matchedDefect?.id) {
+        return { route: buildDefectRoute(matchedDefect.id), reason: 'related_id_maps_to_defect' };
+      }
+    }
+
+    return { route: getActionRoute(n), reason: 'default_mapping' };
+  }, []);
+
+  const handleNotificationNavigate = useCallback(async (n: Notification) => {
+    console.info('[Notifications] Clicked notification', {
+      id: n.id,
+      title: n.title,
+      type: n.type,
+      category: getCategory(n),
+      related_table: n.related_table,
+      related_id: n.related_id,
+      is_read: n.is_read,
+    });
+
+    const { route, reason } = await resolveRouteForNotification(n);
+
+    console.info('[Notifications] Generated route', {
+      id: n.id,
+      action_route: route,
+      reason,
+    });
+
+    if (!route) return;
+
+    if (!n.is_read && isController) {
+      await markAsRead(n.id);
+    }
+
+    navigate(route);
+
+    setTimeout(() => {
+      console.info('[Notifications] Navigated', {
+        id: n.id,
+        href: window.location.href,
+        pathname: window.location.pathname,
+        search: window.location.search,
+      });
+    }, 0);
+  }, [isController, navigate, resolveRouteForNotification]);
+
+  const handleCardAction = useCallback(async (n: Notification, e: React.MouseEvent) => {
+    e.stopPropagation();
+    await handleNotificationNavigate(n);
+  }, [handleNotificationNavigate]);
 
   /* ── Render ───────────────────────────── */
 
