@@ -103,6 +103,7 @@ interface EmailTemplate {
 }
 
 const BatchSendDocuments = () => {
+  const isMobile = window.innerWidth < 768;
   const { user } = useAuth();
   const { effectiveUserId, actualUserId, isStaff } = useEffectiveUserId();
   const { terminology } = useTerminology();
