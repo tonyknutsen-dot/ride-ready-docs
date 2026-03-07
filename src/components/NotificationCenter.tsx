@@ -161,8 +161,8 @@ const getActionRoute = (n: Notification): string | null => {
   // Hard routing rule: defect-like notifications go to Defects only
   if (isDefectRelatedNotification(n)) return buildDefectRoute(n.related_id);
 
+  if (n.related_table === 'checks') return buildCheckRoute(n.related_id);
   if (title.includes('check') || title.includes('missed')) return '/checks';
-  if (n.related_table === 'checks') return '/checks';
   if (title.includes('inspection') || title.includes('ndt')) return '/compliance';
   if (title.includes('document') || title.includes('expir') || title.includes('certificate')) return '/documents';
   if (n.related_table === 'documents') return '/documents';
