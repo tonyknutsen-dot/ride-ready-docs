@@ -582,7 +582,7 @@ const BatchSendDocuments = () => {
     : [];
 
   return (
-    <div className="container mx-auto py-8 px-4 pb-24 md:pb-8" style={{ backgroundColor: 'hsl(210 40% 95%)' }}>
+    <div className="container mx-auto py-8 px-4 pb-24 md:pb-8">
       <PageHeader
         title="Send Compliance Documents"
         subtitle="Submit compliance documents to councils, insurers, and auditors."
