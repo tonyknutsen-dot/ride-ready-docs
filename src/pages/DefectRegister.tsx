@@ -624,7 +624,7 @@ const DefectRegister = () => {
         if (uploadError) throw uploadError;
 
         // Save to documents table for legacy views
-        await supabase
+        const { data: legacyDoc } = await supabase
           .from('documents')
           .insert({
             user_id: user.id,
@@ -636,7 +636,9 @@ const DefectRegister = () => {
             notes: `Defect register: ${filtered.length} records, ${periodLabel}`,
             is_global: false,
             ride_id: isSingleRide ? rideFilter : null,
-          });
+          })
+          .select('id')
+          .single();
 
         // Also store in ride_documents for the proven DocumentViewerPage
         if (isSingleRide) {
@@ -651,10 +653,11 @@ const DefectRegister = () => {
             metadata: { defectCount: filtered.length, period: periodLabel },
           });
           await loadSavedReports();
-          return rideDocId || undefined;
+          return rideDocId || legacyDoc?.id || undefined;
         }
 
         await loadSavedReports();
+        return legacyDoc?.id || undefined;
       };
 
       const saveLabel = isSingleRide

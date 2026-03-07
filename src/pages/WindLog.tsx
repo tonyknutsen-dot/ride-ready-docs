@@ -595,14 +595,14 @@ const WindLog = () => {
       if (uploadError) throw uploadError;
 
       // Save to documents table for legacy views
-      await supabase.from('documents').insert({
+      const { data: legacyDoc } = await supabase.from('documents').insert({
         user_id: user.id, document_name: reportTitle,
         document_type: 'wind_report', file_path: storagePath,
         mime_type: 'application/pdf', file_size: result.blob.size,
         notes: `Wind register: ${filteredLogs.length} readings`,
         is_global: false,
         ride_id: isSingleAsset ? filterInflatable : null,
-      });
+      }).select('id').single();
 
       // Also store in ride_documents for the proven DocumentViewerPage
       if (isSingleAsset) {
@@ -618,10 +618,11 @@ const WindLog = () => {
           metadata: { readingCount: filteredLogs.length },
         });
         loadSavedReports();
-        return rideDocId || undefined;
+        return rideDocId || legacyDoc?.id || undefined;
       }
 
       loadSavedReports();
+      return legacyDoc?.id || undefined;
     };
 
     const saveLabel = isSingleAsset
