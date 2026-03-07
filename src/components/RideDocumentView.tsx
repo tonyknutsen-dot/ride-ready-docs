@@ -34,7 +34,7 @@ import { useStaff } from '@/contexts/StaffContext';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
-import { getSignedStorageUrl, shareStoredFileOrFallback } from '@/utils/exportFileActions';
+import { getSignedStorageUrl } from '@/utils/exportFileActions';
 
 type Document = Tables<'documents'>;
 
