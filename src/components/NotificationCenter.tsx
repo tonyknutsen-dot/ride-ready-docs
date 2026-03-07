@@ -610,8 +610,15 @@ const NotificationCenter = () => {
   }, [notifications]);
 
   const resolveRouteForNotification = useCallback(async (n: Notification): Promise<{ route: string | null; reason: string }> => {
-    // Checks notifications should open checks flow as the primary destination
+    // Checks notifications with a linked open defect must open defect close-out first
     if (n.related_table === 'checks') {
+      const linkedDefectId = linkedDefectByNotification[n.id];
+      if (linkedDefectId) {
+        return {
+          route: buildDefectRoute(linkedDefectId),
+          reason: 'check_has_linked_open_defect',
+        };
+      }
       return { route: getActionRoute(n), reason: 'checks_primary_route' };
     }
 
@@ -632,7 +639,7 @@ const NotificationCenter = () => {
     }
 
     return { route: getActionRoute(n), reason: 'default_mapping' };
-  }, []);
+  }, [linkedDefectByNotification]);
 
   const handleNotificationNavigate = useCallback(async (n: Notification) => {
     console.info('[Notifications] Clicked notification', {
@@ -676,17 +683,17 @@ const NotificationCenter = () => {
     await handleNotificationNavigate(n);
   }, [handleNotificationNavigate]);
 
-  const handleOpenLinkedDefect = useCallback(async (n: Notification, defectId: string, e: React.MouseEvent) => {
+  const handleOpenCheckFromNotification = useCallback(async (n: Notification, e: React.MouseEvent) => {
     e.stopPropagation();
 
     if (!n.is_read && isController) {
       await markAsRead(n.id);
     }
 
-    const route = buildDefectRoute(defectId);
-    console.info('[Notifications] Open linked defect', {
+    const route = buildCheckRoute(n.related_id);
+    console.info('[Notifications] Open check from linked-defect card', {
       notification_id: n.id,
-      defect_id: defectId,
+      check_id: n.related_id,
       action_route: route,
     });
     navigate(route);
@@ -904,17 +911,17 @@ const NotificationCenter = () => {
                                   : 'bg-muted text-foreground hover:bg-accent'
                               )}
                             >
-                              {getActionLabel(n)}
+                              {showLinkedDefectAction ? 'Open linked defect' : getActionLabel(n)}
                               {sentDoc && !actionable ? <ExternalLink className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                             </button>
                           )}
 
-                          {showLinkedDefectAction && linkedDefectId && (
+                          {showLinkedDefectAction && (
                             <button
-                              onClick={(e) => handleOpenLinkedDefect(n, linkedDefectId, e)}
+                              onClick={(e) => handleOpenCheckFromNotification(n, e)}
                               className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all bg-muted text-foreground hover:bg-accent"
                             >
-                              Open linked defect
+                              Review check
                               <ChevronRight className="h-3 w-3" />
                             </button>
                           )}
