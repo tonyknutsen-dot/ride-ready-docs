@@ -291,31 +291,29 @@ export const PreviousReportsSection = ({
         return;
       }
 
-      const blob = await getStorageFileBlob(report.file_path);
-      const signature = await blob.slice(0, 8).text();
-      const validPdf = await isValidPdfBlob(blob);
+      const prepared = await createPdfViewerUrlFromStorage(report.file_path);
 
       console.info('[PDF DEBUG][History] blob-loaded', {
         reportId: report.id,
         downloadSucceeded: true,
-        blobSize: blob.size,
-        blobType: blob.type || '(empty)',
-        signature,
-        validPdfSignature: validPdf,
+        blobSize: prepared.blobSize,
+        blobType: prepared.blobType,
+        signature: prepared.signature,
+        validPdfSignature: prepared.validPdf,
       });
 
-      if (!validPdf) {
+      if (!prepared.validPdf) {
+        revokeObjectUrl(prepared.url);
         toast({ title: 'Invalid PDF', description: 'This file is not a valid PDF and cannot be previewed.', variant: 'destructive' });
         return;
       }
 
-      const pdfBlob = blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' });
-      const url = URL.createObjectURL(pdfBlob);
+      const url = prepared.url;
 
       console.info('[PDF DEBUG][History] viewer-source', {
         reportId: report.id,
         viewerSourceType: 'blob-url',
-        normalizedBlobType: pdfBlob.type,
+        normalizedBlobType: prepared.normalizedBlobType,
         viewerUrlPreview: url.slice(0, 32),
       });
 
