@@ -348,11 +348,6 @@ export const PreviousReportsSection = ({
         )}
       </div>
 
-      <DocumentPreviewSheet
-        open={previewOpen}
-        onOpenChange={(o) => { if (!o) closeViewer(); }}
-        source={previewSource}
-      />
     </>
   );
 };
