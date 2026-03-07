@@ -26,13 +26,6 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-
-  if (!result) return null;
-
-  const handleView = () => {
-    setPreviewOpen(true);
-  };
 
   const handleDownload = () => {
     downloadBlob(result.blob, result.fileName);
