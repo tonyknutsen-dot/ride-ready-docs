@@ -233,7 +233,7 @@ const RegisterHeader = ({
               size="sm"
               onClick={action.onClick}
               disabled={action.disabled}
-              className="gap-1.5 h-9 min-h-[40px] text-[12px] px-3"
+              className="gap-1.5 h-9 min-h-[40px] text-[13px] px-3 rounded-xl"
             >
               {action.loading ? (
                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
