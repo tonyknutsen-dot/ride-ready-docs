@@ -145,10 +145,10 @@ const Maintenance = () => {
             variant="ghost"
             size="sm"
             onClick={() => setShowGuide(true)}
-            className="text-muted-foreground hover:text-foreground h-9 px-2 sm:px-3"
+            className="text-muted-foreground hover:text-foreground h-8 px-2 sm:px-3 text-[13px]"
           >
             <HelpCircle className="h-4 w-4" />
-            <span className="hidden sm:inline ml-1">How does it work?</span>
+            <span className="hidden sm:inline ml-1">How it works</span>
           </Button>
         }
       />
