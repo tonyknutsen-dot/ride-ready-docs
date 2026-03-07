@@ -683,17 +683,17 @@ const NotificationCenter = () => {
     await handleNotificationNavigate(n);
   }, [handleNotificationNavigate]);
 
-  const handleOpenLinkedDefect = useCallback(async (n: Notification, defectId: string, e: React.MouseEvent) => {
+  const handleOpenCheckFromNotification = useCallback(async (n: Notification, e: React.MouseEvent) => {
     e.stopPropagation();
 
     if (!n.is_read && isController) {
       await markAsRead(n.id);
     }
 
-    const route = buildDefectRoute(defectId);
-    console.info('[Notifications] Open linked defect', {
+    const route = buildCheckRoute(n.related_id);
+    console.info('[Notifications] Open check from linked-defect card', {
       notification_id: n.id,
-      defect_id: defectId,
+      check_id: n.related_id,
       action_route: route,
     });
     navigate(route);
