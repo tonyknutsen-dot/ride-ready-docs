@@ -23,6 +23,7 @@ type Ride = Tables<'rides'> & {
 
 const DefectReport = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isStaff } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
