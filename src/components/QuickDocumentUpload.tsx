@@ -75,19 +75,19 @@ export function QuickDocumentUpload({ open, onOpenChange }: QuickDocumentUploadP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Add Document</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
+        <DialogHeader className="pb-1">
+          <DialogTitle className="text-lg font-extrabold tracking-tight">Add Document</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
             Select equipment and upload a document
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Ride Selector */}
           <div className="space-y-2">
-            <Label htmlFor="ride-select" className="flex items-center gap-2">
-              <FolderOpen className="h-4 w-4" />
+            <Label htmlFor="ride-select" className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-foreground/70">
+              <FolderOpen className="h-4 w-4 text-primary" />
               Select Equipment
             </Label>
             {loading ? (
@@ -97,20 +97,20 @@ export function QuickDocumentUpload({ open, onOpenChange }: QuickDocumentUploadP
                 <p className="text-sm text-muted-foreground">
                   No equipment found. Add your first ride or stall to upload documents.
                 </p>
-                <Button onClick={handleAddRide} className="w-full gap-2">
+                <Button onClick={handleAddRide} className="t-btn-primary w-full gap-2 min-h-[44px] font-bold">
                   <Plus className="h-4 w-4" />
                   Add Your First Ride or Stall
                 </Button>
               </div>
             ) : (
               <Select value={selectedRideId} onValueChange={setSelectedRideId}>
-                <SelectTrigger id="ride-select">
+                <SelectTrigger id="ride-select" className="h-12 border-foreground/15 shadow-[inset_0_1px_3px_rgba(0,0,0,0.04)] font-medium">
                   <SelectValue placeholder="Choose equipment..." />
                 </SelectTrigger>
                 <SelectContent>
                   {rides.map((ride) => (
                     <SelectItem key={ride.id} value={ride.id}>
-                      {ride.ride_name} - {ride.ride_categories.name}
+                      {ride.ride_name} – {ride.ride_categories.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
