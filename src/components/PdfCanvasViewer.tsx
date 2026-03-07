@@ -161,7 +161,10 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
 
     pages.forEach((canvas, idx) => {
       const wrapper = document.createElement('div');
-      wrapper.className = 'pdf-page-wrapper mx-auto shadow-md bg-white mb-4 rounded overflow-hidden';
+      wrapper.className = 'pdf-page-wrapper mx-auto shadow-md bg-white mb-4 rounded overflow-hidden max-w-full';
+      // Ensure canvas scales down on small screens
+      canvas.style.maxWidth = '100%';
+      canvas.style.height = 'auto';
       wrapper.appendChild(canvas);
 
       // Page number label
