@@ -67,7 +67,6 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
     if (!nextOpen) {
       setSaved(false);
       setSaving(false);
-      setPreviewOpen(false);
     }
     onOpenChange(nextOpen);
   };
