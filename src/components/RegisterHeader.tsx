@@ -269,35 +269,13 @@ export const PreviousReportsSection = ({
   onViewReport?: (filePath: string) => void;
 }) => {
   const { toast } = useToast();
-  const [previewSource, setPreviewSource] = useState<{ name: string; storagePath: string } | null>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-
-
-  const handleView = (report: { id: string; file_path: string; document_name: string; mime_type?: string | null }) => {
-    if (!isPdfByMeta(report.document_name, report.mime_type)) {
-      handleDownload(report.file_path, report.document_name);
-      return;
-    }
-    setPreviewSource({ name: report.document_name, storagePath: report.file_path });
-    setPreviewOpen(true);
-  };
 
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
       const blob = await getStorageFileBlob(filePath);
-      const signature = await blob.slice(0, 8).text();
-      console.info('[PDF DEBUG][History] direct-download', {
-        storagePath: filePath,
-        fileName,
-        blobSize: blob.size,
-        blobType: blob.type || '(empty)',
-        signature,
-        validPdfSignature: signature.startsWith('%PDF-'),
-      });
       downloadBlob(blob, fileName);
     } catch (error) {
-      console.error('[PDF DEBUG][History] download-failed', { storagePath: filePath, fileName, error });
+      console.error('[History] download-failed', { storagePath: filePath, fileName, error });
       toast({ title: 'Download failed', description: 'Could not download the report file.', variant: 'destructive' });
     }
   };
