@@ -195,34 +195,6 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   const globalCount = classified.globalGenerated.length + classified.globalUploaded.length;
 
   /* ─── Actions ─── */
-  const handleView = async (doc: Document) => {
-    try {
-      const fp = doc.file_path || '';
-
-      if (isImageFile(fp)) {
-        const { data, error } = await supabase.storage
-          .from('ride-documents')
-          .createSignedUrl(doc.file_path, 3600);
-        if (error) throw error;
-        if (!data?.signedUrl) throw new Error('Could not create signed URL for image');
-
-        setViewerState((prev) => {
-          if (prev.url) revokeObjectUrl(prev.url);
-          return { type: 'image', url: data.signedUrl, name: doc.document_name };
-        });
-        return;
-      }
-
-      // For PDFs and other files, use the shared DocumentPreviewSheet
-      setViewerState({ type: 'pdf', url: doc.file_path, name: doc.document_name });
-    } catch (err: any) {
-      if (!navigator.onLine) {
-        showRequiresConnectionToast();
-      } else {
-        toast({ title: 'Unable to view', description: err.message, variant: 'destructive' });
-      }
-    }
-  };
 
   const handleDownload = async (doc: Document) => {
     if (!navigator.onLine) { showRequiresConnectionToast(); return; }
