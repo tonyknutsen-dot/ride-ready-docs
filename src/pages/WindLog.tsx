@@ -908,7 +908,7 @@ const WindLog = () => {
         searchPlaceholder="Search readings…"
         activeFilterCount={activeFilterCount}
         filterSummary={filterSummary}
-        primaryAction={{ label: 'Log wind reading', icon: <Plus className="h-3.5 w-3.5" />, onClick: () => { (document.activeElement as HTMLElement)?.blur(); setWindPickerOpen(true); }, disabled: inflatables.length === 0 }}
+        primaryAction={{ label: 'Log wind reading', icon: <Plus className="h-4 w-4" />, onClick: () => { (document.activeElement as HTMLElement)?.blur(); setWindPickerOpen(true); }, disabled: inflatables.length === 0 }}
         actions={[
           { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filteredLogs.length === 0 },
           { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline', disabled: filteredLogs.length === 0 },
