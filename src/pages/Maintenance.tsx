@@ -107,7 +107,7 @@ const Maintenance = () => {
       <div className="min-h-screen bg-background pb-28 md:pb-8">
         <StaffAccountBanner />
         <MaintenanceOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
-        <header className="border-b-2 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
+      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border">
           <div className="container mx-auto px-4 py-3 sm:py-4">
             <PageHeader
               icon={<Wrench className="h-5 w-5 text-amber-600" />}

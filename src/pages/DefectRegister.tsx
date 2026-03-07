@@ -613,7 +613,7 @@ const DefectRegister = () => {
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search defects…"
         actions={[
-          { label: 'Report defect', icon: <AlertOctagon className="h-3.5 w-3.5" />, onClick: () => navigate('/defect-report') },
+          { label: 'Report defect', icon: <AlertOctagon className="h-3.5 w-3.5" />, onClick: () => setDefectPickerOpen(true) },
           { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filtered.length === 0 },
           { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline', disabled: generatingPdf || filtered.length === 0, loading: generatingPdf },
         ]}
