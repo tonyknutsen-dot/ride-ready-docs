@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Eye, Download, Share2, FolderPlus, Loader2, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import PDFViewer from '@/components/PDFViewer';
 
 export interface ExportResult {
   blob: Blob;
@@ -26,6 +27,7 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // Stable blob URL that only changes when the blob changes
   const objectUrl = useMemo(() => {
@@ -42,15 +44,19 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
 
   if (!result) return null;
 
+  const isPdf = result.blob.type === 'application/pdf' || result.fileName.toLowerCase().endsWith('.pdf');
+
   const handleView = () => {
-    // Use anchor click instead of window.open to avoid popup blockers on mobile
-    const a = document.createElement('a');
-    a.href = objectUrl;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    if (isPdf) {
+      setPreviewOpen(true);
+      return;
+    }
+
+    const opened = window.open(objectUrl, '_blank', 'noopener,noreferrer');
+    if (!opened) {
+      handleDownload();
+      toast({ title: 'Preview blocked', description: 'File downloaded instead' });
+    }
   };
 
   const handleDownload = () => {
@@ -99,47 +105,60 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
     if (!nextOpen) {
       setSaved(false);
       setSaving(false);
+      setPreviewOpen(false);
     }
     onOpenChange(nextOpen);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-base">Export ready</DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground truncate">
-            {result.fileName}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base">Export ready</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground truncate">
+              {result.fileName}
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="grid gap-2 pt-2">
-          <ActionButton icon={Eye} label="View" description="Open in a new tab" onClick={handleView} />
-          <ActionButton icon={Download} label="Download" description="Save file to your device" onClick={handleDownload} />
-          <ActionButton icon={Share2} label="Share" description="Send via email or messaging" onClick={handleShare} />
+          <div className="grid gap-2 pt-2">
+            <ActionButton icon={Eye} label="View" description="Open in a new tab" onClick={handleView} />
+            <ActionButton icon={Download} label="Download" description="Save file to your device" onClick={handleDownload} />
+            <ActionButton icon={Share2} label="Share" description="Send via email or messaging" onClick={handleShare} />
 
-          {result.onSaveToDocuments && (
-            <>
-              <div className="border-t border-border my-1" />
-              {result.saveHint && (
-                <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
-                  {result.saveHint}
-                </p>
-              )}
-              <ActionButton
-                icon={saved ? CheckCircle2 : FolderPlus}
-                label={saved ? 'Saved to Documents' : (result.saveLabel || 'Save to Documents')}
-                description={saved ? 'Added to your document register' : 'Archive in your equipment documents'}
-                onClick={handleSaveToDocuments}
-                loading={saving}
-                disabled={saved}
-                accent={!saved}
-              />
-            </>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+            {result.onSaveToDocuments && (
+              <>
+                <div className="border-t border-border my-1" />
+                {result.saveHint && (
+                  <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
+                    {result.saveHint}
+                  </p>
+                )}
+                <ActionButton
+                  icon={saved ? CheckCircle2 : FolderPlus}
+                  label={saved ? 'Saved to Documents' : (result.saveLabel || 'Save to Documents')}
+                  description={saved ? 'Added to your document register' : 'Archive in your equipment documents'}
+                  onClick={handleSaveToDocuments}
+                  loading={saving}
+                  disabled={saved}
+                  accent={!saved}
+                />
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {isPdf && (
+        <PDFViewer
+          isOpen={previewOpen}
+          onClose={() => setPreviewOpen(false)}
+          pdfUrl={objectUrl}
+          pdfName={result.fileName}
+          onDownload={handleDownload}
+        />
+      )}
+    </>
   );
 };
 
@@ -187,3 +206,4 @@ function ActionButton({
 }
 
 export default ExportActionsDialog;
+
