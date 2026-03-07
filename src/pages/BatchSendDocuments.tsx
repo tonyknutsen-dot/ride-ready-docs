@@ -582,7 +582,7 @@ const BatchSendDocuments = () => {
     : [];
 
   return (
-    <div className="container mx-auto py-8 px-4 pb-24 md:pb-8">
+    <div className="container mx-auto py-6 px-4 pb-24 md:pb-8 space-y-4">
       <PageHeader
         title="Send Compliance Documents"
         subtitle="Submit compliance documents to councils, insurers, and auditors."
@@ -593,68 +593,56 @@ const BatchSendDocuments = () => {
 
       {/* Step 1: Ride Selection (if no ride selected) */}
       {!selectedRide ? (
-        <div className="space-y-5">
-          {/* Submission Summary Pills */}
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="space-y-4">
+          {/* Summary KPI chips */}
+          <div className="flex flex-wrap gap-2">
             <button
-              onClick={() => {
-                const el = document.getElementById('asset-pack-section');
-                el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
-              className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 min-h-[44px] hover:bg-accent/60 active:bg-accent transition-colors group"
+              onClick={() => document.getElementById('asset-pack-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 min-h-[44px] hover:bg-accent/50 active:bg-accent transition-colors shadow-sm"
             >
-              <Package className="h-4 w-4 text-primary" strokeWidth={2} />
-              <span className="text-sm font-semibold text-foreground">{rides.length} {rides.length === 1 ? 'Asset' : 'Assets'}</span>
-              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
+              <Package className="h-4 w-4 text-primary shrink-0" strokeWidth={2} />
+              <span className="text-[13px] font-semibold text-foreground whitespace-nowrap">{rides.length} {rides.length === 1 ? 'Asset' : 'Assets'}</span>
             </button>
             <button
-              onClick={() => {
-                const el = document.getElementById('asset-pack-section');
-                el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }}
-              className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 min-h-[44px] hover:bg-accent/60 active:bg-accent transition-colors group"
+              onClick={() => document.getElementById('asset-pack-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 min-h-[44px] hover:bg-accent/50 active:bg-accent transition-colors shadow-sm"
             >
-              <FileText className="h-4 w-4 text-primary" strokeWidth={2} />
-              <span className="text-sm font-semibold text-foreground">
+              <FileText className="h-4 w-4 text-primary shrink-0" strokeWidth={2} />
+              <span className="text-[13px] font-semibold text-foreground whitespace-nowrap">
                 {rides.reduce((sum, r) => sum + r.documents.length, 0) + checkRecords.length} Documents
               </span>
-              <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
             </button>
-            {globalDocuments.length > 0 && (
-              <button
-                onClick={() => {
-                  const el = document.getElementById('global-docs-section');
-                  el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }}
-                className="flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2.5 min-h-[44px] hover:bg-accent/60 active:bg-accent transition-colors group"
-              >
-                <Building2 className="h-4 w-4 text-primary" strokeWidth={2} />
-                <span className="text-sm font-semibold text-foreground">{globalDocuments.length} Global docs</span>
-                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-              </button>
-            )}
+            <button
+              onClick={() => document.getElementById('global-docs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 min-h-[44px] hover:bg-accent/50 active:bg-accent transition-colors shadow-sm"
+            >
+              <Building2 className="h-4 w-4 text-primary shrink-0" strokeWidth={2} />
+              <span className="text-[13px] font-semibold text-foreground whitespace-nowrap">
+                {globalDocuments.length} Global {globalDocuments.length === 1 ? 'doc' : 'docs'}
+              </span>
+            </button>
           </div>
 
           {/* Asset Compliance Pack Selection */}
-          <div id="asset-pack-section" className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-            <div className="px-5 py-4 border-b border-border flex items-center gap-3">
-              <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
-                <ClipboardCheck className="h-5 w-5 text-primary" strokeWidth={2} />
+          <div id="asset-pack-section" className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
+            <div className="px-4 py-3.5 border-b border-border flex items-center gap-3">
+              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
+                <ClipboardCheck className="h-4 w-4 text-primary" strokeWidth={2} />
               </span>
-              <div>
-                <p className="text-sm font-bold text-foreground">Select Asset Compliance Pack</p>
-                <p className="text-xs mt-0.5 text-muted-foreground">Choose the asset to build a documentation submission for</p>
+              <div className="min-w-0">
+                <p className="text-[13px] font-bold text-foreground">Select Asset Compliance Pack</p>
+                <p className="text-xs text-muted-foreground">Choose an asset to build a submission for</p>
               </div>
             </div>
-            <div className="p-4">
+            <div className="p-3">
               {rides.length === 0 ? (
                 <div className="text-center py-10">
-                  <Package className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <Package className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
                   <p className="text-sm font-medium text-muted-foreground">No assets found</p>
                   <p className="text-xs text-muted-foreground mt-1">Add equipment to start building compliance packs</p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {rides.map(ride => {
                     const docCount = ride.documents.length;
                     const rideCheckRecords = checkRecords.filter(doc => doc.ride_id === ride.id);
@@ -665,9 +653,9 @@ const BatchSendDocuments = () => {
                     const complianceStatus = hasExpired ? 'overdue' : hasExpiringSoon ? 'expiring' : 'compliant';
                     
                     const statusConfig = {
-                      overdue: { label: 'Doc Expiring', color: 'hsl(var(--destructive))', bg: 'hsl(var(--destructive) / 0.1)', icon: AlertTriangle },
-                      expiring: { label: 'Expiring Soon', color: 'hsl(var(--warning))', bg: 'hsl(var(--warning) / 0.1)', icon: Clock },
-                      compliant: { label: 'All Current', color: 'hsl(var(--success))', bg: 'hsl(var(--success) / 0.1)', icon: CheckCircle2 },
+                      overdue: { label: 'Expiring', variant: 'destructive' as const, icon: AlertTriangle },
+                      expiring: { label: 'Expiring Soon', variant: 'outline' as const, icon: Clock },
+                      compliant: { label: 'All Current', variant: 'secondary' as const, icon: CheckCircle2 },
                     }[complianceStatus];
                     
                     const StatusIcon = statusConfig.icon;
@@ -676,44 +664,50 @@ const BatchSendDocuments = () => {
                       <button
                         key={ride.id}
                         onClick={() => setSelectedRide(ride)}
-                        className="w-full text-left group active:scale-[0.99] transition-all"
+                        className="w-full text-left group active:scale-[0.98] transition-all min-h-[44px]"
                       >
-                        <div className="p-4 rounded-2xl border-2 border-border bg-card transition-all group-hover:border-primary/40 shadow-sm">
-                          <div className="flex items-start gap-3">
-                            <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-primary/10">
-                              <ClipboardCheck className="h-5 w-5 text-primary" strokeWidth={2} />
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between gap-2">
-                                <p className="font-bold text-sm text-foreground group-hover:text-primary transition-colors truncate">
-                                  {ride.ride_name}
-                                </p>
-                                <span 
-                                  className="inline-flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1 rounded-full shrink-0"
-                                  style={{ backgroundColor: statusConfig.bg, color: statusConfig.color }}
-                                >
-                                  <StatusIcon className="h-3 w-3" strokeWidth={2} />
-                                  {statusConfig.label}
-                                </span>
-                              </div>
-                              {ride.manufacturer && (
-                                <p className="text-xs mt-0.5 text-muted-foreground truncate">{ride.manufacturer}</p>
+                        <div className="p-3.5 rounded-xl border border-border bg-card transition-all group-hover:border-primary/40 group-hover:shadow-md shadow-sm">
+                          {/* Title row */}
+                          <div className="flex items-center justify-between gap-2">
+                            <p className="font-semibold text-[13px] text-foreground group-hover:text-primary transition-colors truncate">
+                              {ride.ride_name}
+                            </p>
+                            <Badge
+                              variant={statusConfig.variant}
+                              className={cn(
+                                "text-[10px] h-5 px-2 shrink-0 gap-1",
+                                complianceStatus === 'compliant' && "bg-success/10 text-success border-success/20",
+                                complianceStatus === 'expiring' && "bg-warning/10 text-warning border-warning/20"
                               )}
-                              <div className="flex items-center gap-3 mt-2">
-                                <span className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                                  <FileText className="h-3.5 w-3.5" strokeWidth={2} />
-                                  {totalDocs} {totalDocs === 1 ? 'document' : 'documents'}
-                                </span>
-                              </div>
-                            </div>
+                            >
+                              <StatusIcon className="h-2.5 w-2.5" strokeWidth={2.5} />
+                              {statusConfig.label}
+                            </Badge>
                           </div>
-                          {/* Full-width primary CTA */}
-                          <div className="mt-3 pt-3 border-t border-border">
-                            <span className="w-full inline-flex items-center justify-center gap-2 text-xs font-semibold text-primary bg-primary/8 hover:bg-primary/15 rounded-lg py-2.5 min-h-[40px] transition-colors">
+
+                          {/* Sub row */}
+                          <div className="flex items-center gap-2 mt-1">
+                            {ride.manufacturer && (
+                              <span className="text-xs text-muted-foreground truncate">{ride.manufacturer}</span>
+                            )}
+                            {ride.manufacturer && totalDocs > 0 && (
+                              <span className="text-muted-foreground/40">·</span>
+                            )}
+                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                              <FileText className="h-3 w-3" strokeWidth={2} />
+                              {totalDocs > 0
+                                ? `${totalDocs} ${totalDocs === 1 ? 'document' : 'documents'}`
+                                : 'No documents yet'}
+                            </span>
+                          </div>
+
+                          {/* CTA row */}
+                          <div className="mt-2.5 pt-2.5 border-t border-border/60 flex items-center justify-between">
+                            <span className="text-xs font-medium text-primary flex items-center gap-1.5">
                               <Shield className="h-3.5 w-3.5" strokeWidth={2} />
                               Build Compliance Pack
-                              <ChevronRight className="h-3.5 w-3.5" />
                             </span>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                           </div>
                         </div>
                       </button>
@@ -725,33 +719,44 @@ const BatchSendDocuments = () => {
           </div>
 
           {/* Global Documents Panel */}
-          {globalDocuments.length > 0 && (
-            <button
-              id="global-docs-section"
-              className="w-full text-left group active:scale-[0.99] transition-all"
-              onClick={() => setSelectedRide({ id: '__global__', ride_name: 'Global Documents' })}
-            >
-              <div className="p-4 rounded-2xl border-2 border-border bg-card shadow-sm transition-all group-hover:border-primary/40">
-                <div className="flex items-start gap-3">
-                  <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-primary/10">
-                    <Building2 className="h-5 w-5 text-primary" strokeWidth={2} />
+          <button
+            id="global-docs-section"
+            className="w-full text-left group active:scale-[0.98] transition-all min-h-[44px]"
+            onClick={() => setSelectedRide({ id: '__global__', ride_name: 'Global Documents' })}
+          >
+            <div className="p-3.5 rounded-xl border border-border bg-card shadow-sm transition-all group-hover:border-primary/40 group-hover:shadow-md">
+              {/* Title row */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
+                    <Building2 className="h-4 w-4 text-primary" strokeWidth={2} />
                   </span>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">Global Compliance Documents</p>
-                    <p className="text-xs mt-0.5 text-muted-foreground">Insurance, policies &amp; company-wide documents · {globalDocuments.length} files</p>
-                    <p className="text-[11px] mt-1.5 text-muted-foreground/80 italic">These can be included in any submission pack</p>
+                  <div className="min-w-0">
+                    <p className="text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors">Global Compliance Documents</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {globalDocuments.length > 0
+                        ? `Insurance, policies & company-wide docs · ${globalDocuments.length} ${globalDocuments.length === 1 ? 'file' : 'files'}`
+                        : 'No global documents'}
+                    </p>
                   </div>
                 </div>
-                <div className="mt-3 pt-3 border-t border-border">
-                  <span className="w-full inline-flex items-center justify-center gap-2 text-xs font-semibold text-primary bg-primary/8 hover:bg-primary/15 rounded-lg py-2.5 min-h-[40px] transition-colors">
+              </div>
+
+              {/* CTA row */}
+              {globalDocuments.length > 0 && (
+                <div className="mt-2.5 pt-2.5 border-t border-border/60 flex items-center justify-between">
+                  <span className="text-xs font-medium text-primary flex items-center gap-1.5">
                     <Shield className="h-3.5 w-3.5" strokeWidth={2} />
                     Build Compliance Pack
-                    <ChevronRight className="h-3.5 w-3.5" />
                   </span>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
-              </div>
-            </button>
-          )}
+              )}
+              {globalDocuments.length > 0 && (
+                <p className="text-[11px] text-muted-foreground/70 mt-2 italic">These can be included in any submission pack</p>
+              )}
+            </div>
+          </button>
         </div>
       ) : (
         <>
