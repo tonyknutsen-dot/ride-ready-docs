@@ -271,7 +271,8 @@ export const PreviousReportsSection = ({
   onViewReport?: (filePath: string) => void;
 }) => {
   const { toast } = useToast();
-  const [viewerState, setViewerState] = useState<{ open: boolean; url: string; name: string }>({ open: false, url: '', name: '' });
+  const [previewSource, setPreviewSource] = useState<{ name: string; storagePath: string } | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
 
