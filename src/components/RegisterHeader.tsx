@@ -12,11 +12,12 @@ import { cn } from '@/lib/utils';
 import PDFViewer from '@/components/PDFViewer';
 import { useToast } from '@/hooks/use-toast';
 import {
+  createPdfViewerUrlFromStorage,
   downloadBlob,
   getStorageFileBlob,
   isPdfByMeta,
-  isValidPdfBlob,
   shareStoredFileOrFallback,
+  revokeObjectUrl,
 } from '@/utils/exportFileActions';
 
 interface ActionButton {
