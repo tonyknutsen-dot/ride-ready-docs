@@ -250,23 +250,23 @@ const DocumentPreviewSheet = ({ open, onOpenChange, source }: DocumentPreviewShe
                 )}
               </div>
               <div>
-                <p className="text-sm font-medium text-foreground">
-                  {isPdf ? 'Preview unavailable' : 'No in-app preview for this file type'}
-                </p>
+                <p className="text-sm font-medium text-foreground">Preview unavailable</p>
                 <p className="text-[12px] text-muted-foreground mt-1">
-                  You can still open it, save it to your device, or share it.
+                  This file cannot be previewed here, but you can still save it to your device or share it.
                 </p>
               </div>
               <div className="flex flex-col gap-2 w-full max-w-xs">
-                <Button onClick={handleOpenExternal} className="gap-2 h-11">
-                  <ExternalLink className="h-4 w-4" /> Open file
-                </Button>
-                <Button variant="outline" onClick={handleDownload} disabled={downloading} className="gap-2 h-11">
+                <Button onClick={handleDownload} disabled={downloading} className="gap-2 h-11">
                   <Download className="h-4 w-4" /> Save to device
                 </Button>
                 <Button variant="outline" onClick={handleShare} className="gap-2 h-11">
                   <Share2 className="h-4 w-4" /> Share
                 </Button>
+                {source.storagePath && (
+                  <Button variant="outline" onClick={handleCopyLink} className="gap-2 h-11">
+                    <Link2 className="h-4 w-4" /> Copy link
+                  </Button>
+                )}
               </div>
             </div>
           )}
