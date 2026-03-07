@@ -587,7 +587,10 @@ const DefectRegister = () => {
         loadSavedReports();
       };
 
-      setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel });
+      const saveHint = isSingleRide
+        ? 'This report will be saved to the selected asset\'s Documents.'
+        : 'This report will be saved as a Global Document.';
+      setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel, saveHint });
       setExportDialogOpen(true);
     } catch (error) {
       console.error('PDF error:', error);
