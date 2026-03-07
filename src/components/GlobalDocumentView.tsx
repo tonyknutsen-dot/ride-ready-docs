@@ -463,21 +463,6 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
         </div>
       )}
 
-      {/* Viewers */}
-      {viewerState.type === 'image' && (
-        <ImageViewer
-          url={viewerState.url}
-          alt={viewerState.name}
-          onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '' }; })}
-        />
-      )}
-      {viewerState.type === 'pdf' && (
-        <DocumentPreviewSheet
-          open={true}
-          onOpenChange={(o) => { if (!o) setViewerState({ type: null, url: '', name: '' }); }}
-          source={{ name: viewerState.name, storagePath: viewerState.url }}
-        />
-      )}
     </div>
   );
 };
