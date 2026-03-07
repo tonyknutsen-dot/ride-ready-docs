@@ -554,6 +554,9 @@ const WindLog = () => {
       location: filterLocation || undefined,
     });
 
+    const isSingleAsset = filterInflatable !== 'all';
+    const saveLabel = isSingleAsset ? 'Save to Asset Documents' : 'Save as Global Document';
+
     const saveToDocuments = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
@@ -565,13 +568,13 @@ const WindLog = () => {
         document_type: 'wind_report', file_path: storagePath,
         mime_type: 'application/pdf', file_size: result.blob.size,
         notes: `Wind register: ${filteredLogs.length} readings`,
-        is_global: true,
-        ride_id: filterInflatable !== 'all' ? filterInflatable : null,
+        is_global: !isSingleAsset,
+        ride_id: isSingleAsset ? filterInflatable : null,
       });
       loadSavedReports();
     };
 
-    setExportResult({ blob: result.blob, fileName: result.fileName, onSaveToDocuments: saveToDocuments });
+    setExportResult({ blob: result.blob, fileName: result.fileName, onSaveToDocuments: saveToDocuments, saveLabel });
     setExportDialogOpen(true);
   };
 
