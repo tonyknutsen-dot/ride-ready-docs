@@ -9,10 +9,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Eye, Download, Share2, Link2 } from 'lucide-react';
 import { format, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import PDFViewer from '@/components/PDFViewer';
+import DocumentPreviewSheet from '@/components/DocumentPreviewSheet';
 import { useToast } from '@/hooks/use-toast';
 import {
-  createPdfViewerUrlFromStorage,
   downloadBlob,
   getStorageFileBlob,
   isPdfByMeta,
@@ -272,65 +271,18 @@ export const PreviousReportsSection = ({
   onViewReport?: (filePath: string) => void;
 }) => {
   const { toast } = useToast();
-  const [viewerState, setViewerState] = useState<{ open: boolean; url: string; name: string }>({ open: false, url: '', name: '' });
+  const [previewSource, setPreviewSource] = useState<{ name: string; storagePath: string } | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
 
-  const handleView = async (report: { id: string; file_path: string; document_name: string; mime_type?: string | null }) => {
-    setLoadingId(report.id);
-    try {
-      console.info('[PDF DEBUG][History] view-start', {
-        reportId: report.id,
-        storagePath: report.file_path,
-        documentName: report.document_name,
-        mimeTypeFromDb: report.mime_type || '(null)',
-      });
-
-      if (!isPdfByMeta(report.document_name, report.mime_type)) {
-        await handleDownload(report.file_path, report.document_name);
-        return;
-      }
-
-      const prepared = await createPdfViewerUrlFromStorage(report.file_path);
-
-      console.info('[PDF DEBUG][History] blob-loaded', {
-        reportId: report.id,
-        downloadSucceeded: true,
-        blobSize: prepared.blobSize,
-        blobType: prepared.blobType,
-        signature: prepared.signature,
-        validPdfSignature: prepared.validPdf,
-      });
-
-      if (!prepared.validPdf) {
-        revokeObjectUrl(prepared.url);
-        toast({ title: 'Invalid PDF', description: 'This file is not a valid PDF and cannot be previewed.', variant: 'destructive' });
-        return;
-      }
-
-      const url = prepared.url;
-
-      console.info('[PDF DEBUG][History] viewer-source', {
-        reportId: report.id,
-        viewerSourceType: 'blob-url',
-        normalizedBlobType: prepared.normalizedBlobType,
-        viewerUrlPreview: url.slice(0, 32),
-      });
-
-      setViewerState((prev) => {
-        if (prev.url) revokeObjectUrl(prev.url);
-        return { open: true, url, name: report.document_name };
-      });
-    } catch (error) {
-      console.error('[PDF DEBUG][History] view-failed', {
-        reportId: report.id,
-        storagePath: report.file_path,
-        error,
-      });
-      toast({ title: 'Failed to open', description: 'Could not load the report file.', variant: 'destructive' });
-    } finally {
-      setLoadingId(null);
+  const handleView = (report: { id: string; file_path: string; document_name: string; mime_type?: string | null }) => {
+    if (!isPdfByMeta(report.document_name, report.mime_type)) {
+      handleDownload(report.file_path, report.document_name);
+      return;
     }
+    setPreviewSource({ name: report.document_name, storagePath: report.file_path });
+    setPreviewOpen(true);
   };
 
   const handleDownload = async (filePath: string, fileName: string) => {
@@ -352,25 +304,9 @@ export const PreviousReportsSection = ({
     }
   };
 
-  const handleShare = async (report: { file_path: string; document_name: string }) => {
-    try {
-      const result = await shareStoredFileOrFallback(report.file_path, report.document_name);
-      if (result === 'copied') {
-        toast({ title: 'Link copied', description: 'Signed link copied to clipboard (valid for 1 hour).' });
-      } else if (result === 'downloaded') {
-        toast({ title: 'Downloaded', description: 'Native sharing unavailable, file downloaded instead.' });
-      }
-    } catch (error) {
-      console.error('Share failed:', error);
-      toast({ title: 'Share failed', description: 'Could not share this report.', variant: 'destructive' });
-    }
-  };
-
   const closeViewer = () => {
-    setViewerState((prev) => {
-      if (prev.url) revokeObjectUrl(prev.url);
-      return { open: false, url: '', name: '' };
-    });
+    setPreviewOpen(false);
+    setPreviewSource(null);
   };
 
   return (
@@ -405,48 +341,25 @@ export const PreviousReportsSection = ({
                   <Button
                     variant="ghost" size="sm"
                     onClick={() => handleView(report)}
-                    disabled={loadingId === report.id}
                     className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]"
                   >
-                    {loadingId === report.id ? (
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
-                    ) : (
-                      <Eye className="h-3 w-3" />
-                    )}
+                    <Eye className="h-3 w-3" />
                     {isPdf ? 'View' : 'Download'}
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
                     <Download className="h-3 w-3" /> Save to Device
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleShare(report)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
-                    <Share2 className="h-3 w-3" /> Share
-                  </Button>
                 </div>
-                {!isPdf && (
-                  <p className="text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Link2 className="h-3 w-3" /> Non-PDF reports are download-only.
-                  </p>
-                )}
               </div>
             );
           })
         )}
       </div>
 
-      <PDFViewer
-        isOpen={viewerState.open}
-        onClose={closeViewer}
-        pdfUrl={viewerState.url}
-        pdfName={viewerState.name}
-        onDownload={async () => {
-          if (!viewerState.url) return;
-          const a = document.createElement('a');
-          a.href = viewerState.url;
-          a.download = viewerState.name;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-        }}
+      <DocumentPreviewSheet
+        open={previewOpen}
+        onOpenChange={(o) => { if (!o) closeViewer(); }}
+        source={previewSource}
       />
     </>
   );
