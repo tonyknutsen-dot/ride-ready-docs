@@ -28,19 +28,7 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-
-  // Stable blob URL that only changes when the blob changes
-  const objectUrl = useMemo(() => {
-    if (!result) return '';
-    return URL.createObjectURL(result.blob);
-  }, [result?.blob]);
-
-  // Clean up blob URL when it changes or unmounts
-  useEffect(() => {
-    return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [objectUrl]);
+  const [previewUrl, setPreviewUrl] = useState('');
 
   if (!result) return null;
 
