@@ -59,7 +59,7 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const handleViewDocument = () => {
     if (!savedDocId) return;
     onOpenChange(false);
-    navigate(`/document/${savedDocId}`);
+    navigate(`/documents/${savedDocId}`);
   };
 
   const handleClose = (nextOpen: boolean) => {
