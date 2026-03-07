@@ -610,8 +610,15 @@ const NotificationCenter = () => {
   }, [notifications]);
 
   const resolveRouteForNotification = useCallback(async (n: Notification): Promise<{ route: string | null; reason: string }> => {
-    // Checks notifications should open checks flow as the primary destination
+    // Checks notifications with a linked open defect must open defect close-out first
     if (n.related_table === 'checks') {
+      const linkedDefectId = linkedDefectByNotification[n.id];
+      if (linkedDefectId) {
+        return {
+          route: buildDefectRoute(linkedDefectId),
+          reason: 'check_has_linked_open_defect',
+        };
+      }
       return { route: getActionRoute(n), reason: 'checks_primary_route' };
     }
 
@@ -632,7 +639,7 @@ const NotificationCenter = () => {
     }
 
     return { route: getActionRoute(n), reason: 'default_mapping' };
-  }, []);
+  }, [linkedDefectByNotification]);
 
   const handleNotificationNavigate = useCallback(async (n: Notification) => {
     console.info('[Notifications] Clicked notification', {
