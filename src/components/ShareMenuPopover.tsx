@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Button } from '@/components/ui/button';
-import { Share2, Link2, Mail, Download, Loader2, Copy } from 'lucide-react';
+import { Share2, Mail, Download, Loader2, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { downloadBlob, isLikelyMobileOrTablet } from '@/utils/exportFileActions';
 import { cn } from '@/lib/utils';
@@ -12,21 +11,20 @@ interface ShareMenuPopoverProps {
   /** For saved documents: provide a link to copy */
   documentLink?: string;
   children?: React.ReactNode;
-  /** Button variant for the trigger */
-  triggerVariant?: 'action-button' | 'icon';
 }
 
 /**
  * Platform-aware share component:
- * - Mobile/tablet: triggers native share sheet directly
- * - Desktop: shows a small menu with Copy Link, Email, Download options
+ * - Mobile/tablet with native share: triggers share sheet directly
+ * - Desktop: shows a small menu with Email, Copy (if link available), Download
  */
-const ShareMenuPopover = ({ blob, fileName, documentLink, children, triggerVariant = 'action-button' }: ShareMenuPopoverProps) => {
+const ShareMenuPopover = ({ blob, fileName, documentLink, children }: ShareMenuPopoverProps) => {
   const { toast } = useToast();
   const [sharing, setSharing] = useState(false);
   const [open, setOpen] = useState(false);
 
   const isMobile = isLikelyMobileOrTablet();
+  const hasNativeShare = typeof navigator?.share === 'function';
 
   const handleNativeShare = async () => {
     setSharing(true);
@@ -76,8 +74,8 @@ const ShareMenuPopover = ({ blob, fileName, documentLink, children, triggerVaria
     setOpen(false);
   };
 
-  // Mobile: direct native share, no popover
-  if (isMobile && typeof navigator?.share === 'function') {
+  // Mobile with native share: direct trigger, no popover
+  if (isMobile && hasNativeShare) {
     if (children) {
       return <span onClick={handleNativeShare}>{children}</span>;
     }
@@ -86,7 +84,7 @@ const ShareMenuPopover = ({ blob, fileName, documentLink, children, triggerVaria
     );
   }
 
-  // Desktop: show a small share menu
+  // Desktop or no native share: show a share menu
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -98,26 +96,26 @@ const ShareMenuPopover = ({ blob, fileName, documentLink, children, triggerVaria
             Share via
           </p>
 
+          <ShareMenuItem
+            icon={Mail}
+            label="Email"
+            description={documentLink ? 'Send link via email' : 'Open email client'}
+            onClick={handleEmailShare}
+          />
+
           {documentLink && (
             <ShareMenuItem
-              icon={Link2}
+              icon={Copy}
               label="Copy Link"
-              description="Copy document link"
+              description="Copy document link to clipboard"
               onClick={handleCopyLink}
             />
           )}
 
           <ShareMenuItem
-            icon={Mail}
-            label="Email"
-            description={documentLink ? 'Open email with link' : 'Open email client'}
-            onClick={handleEmailShare}
-          />
-
-          <ShareMenuItem
             icon={Download}
             label="Save to Device"
-            description="Download file"
+            description="Download to share manually"
             onClick={handleDownloadFallback}
           />
         </div>
@@ -141,7 +139,7 @@ function ShareActionButton({ onClick, loading }: { onClick: () => void; loading:
       </div>
       <div className="min-w-0">
         <p className="text-sm font-medium text-foreground">Share</p>
-        <p className="text-[11px] text-muted-foreground">Send via share sheet or email</p>
+        <p className="text-[11px] text-muted-foreground">Send via email or copy link</p>
       </div>
     </button>
   );
