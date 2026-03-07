@@ -134,6 +134,37 @@ export function SecuritySettingsSection() {
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
+          {/* MFA (TOTP) */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {mfaEnrolled ? (
+                <ShieldCheck className="h-4 w-4 text-primary" />
+              ) : (
+                <ShieldOff className="h-4 w-4 text-muted-foreground" />
+              )}
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium">Two-Factor Authentication</p>
+                  {mfaEnrolled && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Active</Badge>}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {mfaEnrolled ? 'TOTP authenticator app linked' : 'Add extra security with an authenticator app'}
+                </p>
+              </div>
+            </div>
+            {!mfaLoading && (
+              mfaEnrolled ? (
+                <Button variant="outline" size="sm" onClick={handleUnenrollMFA}>
+                  Disable
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => setMfaDialogOpen(true)}>
+                  Enable
+                </Button>
+              )
+            )}
+          </div>
+
           {/* PIN Status */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
