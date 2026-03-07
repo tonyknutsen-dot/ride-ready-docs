@@ -17,6 +17,7 @@ import PDFViewer from './PDFViewer';
 import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
 import { SendCheckRecordsDialog } from './SendCheckRecordsDialog';
 import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters, isCheckRecord, filterCheckRecords } from './CheckRecordFilters';
+import { createPdfViewerUrlFromStorage, revokeObjectUrl } from '@/utils/exportFileActions';
 
 type Document = Tables<'documents'>;
 
@@ -241,28 +242,61 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const handleView = async (document: Document) => {
     try {
       const displayName = getDocumentDisplayName(document);
-      const { data, error } = await supabase.storage
-        .from('ride-documents')
-        .createSignedUrl(document.file_path, 3600); // 1 hour
 
-      if (error) throw error;
+      if (isImageDoc(document)) {
+        const { data, error } = await supabase.storage
+          .from('ride-documents')
+          .createSignedUrl(document.file_path, 3600); // 1 hour
 
-      if (data?.signedUrl) {
-        if (isImageDoc(document)) {
-          setViewerState({
+        if (error) throw error;
+        if (!data?.signedUrl) throw new Error('Could not create signed URL for image');
+
+        setViewerState((prev) => {
+          if (prev.url) revokeObjectUrl(prev.url);
+          return {
             type: 'image',
             url: data.signedUrl,
             name: displayName,
-            document
+            document,
+          };
+        });
+        return;
+      }
+
+      if (isPDFDoc(document)) {
+        const prepared = await createPdfViewerUrlFromStorage(document.file_path);
+
+        console.info('[PDF DEBUG][Documents] view-pdf', {
+          documentId: document.id,
+          storagePath: document.file_path,
+          fileName: displayName,
+          blobSize: prepared.blobSize,
+          blobType: prepared.blobType,
+          signature: prepared.signature,
+          validPdfSignature: prepared.validPdf,
+          viewerSourceType: 'blob-url',
+          normalizedBlobType: prepared.normalizedBlobType,
+        });
+
+        if (!prepared.validPdf) {
+          revokeObjectUrl(prepared.url);
+          toast({
+            title: 'Invalid PDF',
+            description: 'This file is not a valid PDF and cannot be previewed.',
+            variant: 'destructive',
           });
-        } else if (isPDFDoc(document)) {
-          setViewerState({
-            type: 'pdf',
-            url: data.signedUrl,
-            name: displayName,
-            document
-          });
+          return;
         }
+
+        setViewerState((prev) => {
+          if (prev.url) revokeObjectUrl(prev.url);
+          return {
+            type: 'pdf',
+            url: prepared.url,
+            name: displayName,
+            document,
+          };
+        });
       }
     } catch (error: any) {
       console.error('View error:', error);
@@ -808,14 +842,14 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
       <>
         <ImageViewer
           isOpen={viewerState.type === 'image'}
-          onClose={() => setViewerState({ type: null, url: '', name: '', document: null })}
+          onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '', document: null }; })}
           imageUrl={viewerState.url}
           imageName={viewerState.name}
           onDownload={() => viewerState.document && handleDownload(viewerState.document)}
         />
         <PDFViewer
           isOpen={viewerState.type === 'pdf'}
-          onClose={() => setViewerState({ type: null, url: '', name: '', document: null })}
+          onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '', document: null }; })}
           pdfUrl={viewerState.url}
           pdfName={viewerState.name}
           onDownload={() => viewerState.document && handleDownload(viewerState.document)}
@@ -1025,14 +1059,14 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     <>
       <ImageViewer
         isOpen={viewerState.type === 'image'}
-        onClose={() => setViewerState({ type: null, url: '', name: '', document: null })}
+        onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '', document: null }; })}
         imageUrl={viewerState.url}
         imageName={viewerState.name}
         onDownload={() => viewerState.document && handleDownload(viewerState.document)}
       />
       <PDFViewer
         isOpen={viewerState.type === 'pdf'}
-        onClose={() => setViewerState({ type: null, url: '', name: '', document: null })}
+        onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '', document: null }; })}
         pdfUrl={viewerState.url}
         pdfName={viewerState.name}
         onDownload={() => viewerState.document && handleDownload(viewerState.document)}
