@@ -483,19 +483,10 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
         />
       )}
       {viewerState.type === 'pdf' && (
-        <PDFViewer
-          isOpen={true}
-          pdfUrl={viewerState.url}
-          pdfName={viewerState.name}
-          onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '' }; })}
-          onDownload={() => {
-            const a = document.createElement('a');
-            a.href = viewerState.url;
-            a.download = viewerState.name;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-          }}
+        <DocumentPreviewSheet
+          open={true}
+          onOpenChange={(o) => { if (!o) setViewerState({ type: null, url: '', name: '' }); }}
+          source={{ name: viewerState.name, storagePath: viewerState.url }}
         />
       )}
     </div>
