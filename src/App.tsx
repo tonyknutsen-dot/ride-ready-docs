@@ -120,6 +120,7 @@ const App = () => (
               <StaffProvider>
               {/* Authenticated user components loaded lazily */}
               <AuthenticatedAppShell />
+              <LockScreenProvider>
               <LocationAwareOfflineSuspense>
               <Routes>
               <Route path="/" element={<ComingSoon />} />
