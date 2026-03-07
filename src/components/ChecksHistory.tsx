@@ -367,7 +367,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
     const pdfBlob = doc.output('blob');
     const fileName = buildFileName([rideName, frequency, 'SafetyChecks', format(new Date(), 'yyyyMMdd')]);
 
-    const saveToDocuments = async () => {
+    const saveToDocuments = async (): Promise<string | void> => {
       const storagePath = `${effectiveUserId}/checks-history/${rideId}/${Date.now()}-${fileName}`;
       const { error: uploadError } = await supabase.storage
         .from('ride-documents')
@@ -391,7 +391,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       if (documentError) throw documentError;
 
       const rideCode = await getRideCode(rideId);
-      await storeRideDocument({
+      const rideDocId = await storeRideDocument({
         rideId,
         rideCode,
         documentType: 'CH',
@@ -410,6 +410,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         .order('uploaded_at', { ascending: false })
         .limit(10);
       setSavedReports(refreshed || []);
+      return rideDocId || undefined;
     };
 
     setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel: `Save to ${rideName} Documents`, saveHint: `Saves this report inside ${rideName}'s document register.` });

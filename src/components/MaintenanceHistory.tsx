@@ -677,7 +677,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
       const pdfBlob = doc.output('blob');
 
       // Show export actions dialog (no auto-save)
-      const saveToDocuments = async () => {
+      const saveToDocuments = async (): Promise<string | void> => {
         const storagePath = `${user.id}/maintenance-reports/${ride.id}/${Date.now()}-${fileName}`;
         const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
         if (uploadError) throw uploadError;
@@ -689,12 +689,13 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
           notes: `Maintenance report: ${filteredRecords.length} records, ${periodLabel}`, is_global: false,
         });
         const rideCode = await getRideCode(ride.id);
-        await storeRideDocument({
+        const rideDocId = await storeRideDocument({
           rideId: ride.id, rideCode, documentType: 'MR', documentId: docId,
           fileUrl: storagePath, title: documentName,
           metadata: { recordCount: filteredRecords.length, totalCost },
         });
         loadPreviousReports();
+        return rideDocId || undefined;
       };
 
       setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel: `Save to ${ride.ride_name} Documents`, saveHint: `Saves this report inside ${ride.ride_name}'s document register.` });

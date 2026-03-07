@@ -34,6 +34,8 @@ import EquipmentPickerDialog from '@/components/EquipmentPickerDialog';
 
 import { generateWindLogPdf } from '@/utils/windLogPdf';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
+import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
+import { generateDocumentId } from '@/utils/pdfTemplate';
 
 interface InflatableRide {
   id: string;
@@ -585,12 +587,14 @@ const WindLog = () => {
       ? inflatables.find(r => r.id === filterInflatable)?.ride_name
       : undefined;
 
-    const saveToDocuments = async () => {
+    const saveToDocuments = async (): Promise<string | void> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
       const storagePath = `${user.id}/wind-reports/${Date.now()}-${result.fileName}`;
       const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, result.blob, { contentType: 'application/pdf' });
       if (uploadError) throw uploadError;
+
+      // Save to documents table for legacy views
       await supabase.from('documents').insert({
         user_id: user.id, document_name: reportTitle,
         document_type: 'wind_report', file_path: storagePath,
@@ -599,6 +603,24 @@ const WindLog = () => {
         is_global: false,
         ride_id: isSingleAsset ? filterInflatable : null,
       });
+
+      // Also store in ride_documents for the proven DocumentViewerPage
+      if (isSingleAsset) {
+        const docId = generateDocumentId('WL');
+        const rideCode = await getRideCode(filterInflatable);
+        const rideDocId = await storeRideDocument({
+          rideId: filterInflatable,
+          rideCode,
+          documentType: 'CR' as any,
+          documentId: docId,
+          fileUrl: storagePath,
+          title: reportTitle,
+          metadata: { readingCount: filteredLogs.length },
+        });
+        loadSavedReports();
+        return rideDocId || undefined;
+      }
+
       loadSavedReports();
     };
 

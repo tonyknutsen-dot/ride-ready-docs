@@ -454,7 +454,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
   const pdfBlob = doc.output('blob');
   const fileName = buildFileName([rideName, 'Check_Records', format(new Date(), 'yyyyMMdd')]);
 
-  const saveToDocuments = async () => {
+  const saveToDocuments = async (): Promise<string | void> => {
     const storagePath = `${effectiveUserId}/check-records-reports/${rideId}/${Date.now()}-${fileName}`;
     const { error: uploadError } = await supabase.storage
       .from('ride-documents')
@@ -462,7 +462,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     if (uploadError) throw uploadError;
 
     const rideCode = await getRideCode(rideId);
-    await storeRideDocument({
+    const rideDocId = await storeRideDocument({
       rideId,
       rideCode,
       documentType: 'CH',
@@ -471,6 +471,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
       title: `Check Records – ${rideName} – ${format(new Date(), 'dd MMM yyyy')}`,
       metadata: { checkCount: stats.total, passRate: stats.passRate, period: periodLabel },
     });
+    return rideDocId || undefined;
   };
 
   return { blob: pdfBlob, fileName, saveToDocuments };

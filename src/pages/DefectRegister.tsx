@@ -38,6 +38,7 @@ import {
   PDF_TABLE_HEAD_STYLES, PDF_TABLE_BODY_STYLES, PDF_TABLE_ALT_ROW,
 } from '@/utils/pdfUtils';
 import { drawTemplateHeader, drawTemplateFooters, generateDocumentId } from '@/utils/pdfTemplate';
+import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 
 type DefectSeverity = 'non_urgent' | 'urgent' | 'stop_operation';
 type DefectStatus = 'open' | 'acknowledged' | 'in_progress' | 'awaiting_review' | 'resolved';
@@ -617,13 +618,13 @@ const DefectRegister = () => {
         ? rides.find(r => r.id === rideFilter)?.ride_name
         : undefined;
 
-      const saveToDocuments = async () => {
+      const saveToDocuments = async (): Promise<string | void> => {
         const storagePath = `${user.id}/defect-reports/${Date.now()}-${fileName}`;
         const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
         if (uploadError) throw uploadError;
 
-        // Operational records belong to the ride, not global
-        const { data: insertedDoc, error: insertError } = await supabase
+        // Save to documents table for legacy views
+        await supabase
           .from('documents')
           .insert({
             user_id: user.id,
@@ -635,19 +636,23 @@ const DefectRegister = () => {
             notes: `Defect register: ${filtered.length} records, ${periodLabel}`,
             is_global: false,
             ride_id: isSingleRide ? rideFilter : null,
-          })
-          .select('id, file_path, mime_type, file_size, document_type')
-          .single();
+          });
 
-        if (insertError || !insertedDoc) {
-          console.error('[PDF DEBUG][Defects] saveToDocuments insert failed', { storagePath, insertError });
-          throw insertError || new Error('Failed to create documents row for defect report');
+        // Also store in ride_documents for the proven DocumentViewerPage
+        if (isSingleRide) {
+          const rideCode = await getRideCode(rideFilter);
+          const rideDocId = await storeRideDocument({
+            rideId: rideFilter,
+            rideCode,
+            documentType: 'CR' as any,
+            documentId: docId,
+            fileUrl: storagePath,
+            title: documentName,
+            metadata: { defectCount: filtered.length, period: periodLabel },
+          });
+          await loadSavedReports();
+          return rideDocId || undefined;
         }
-
-        console.info('[PDF DEBUG][Defects] saveToDocuments success', {
-          documentId: insertedDoc.id,
-          storagePath: insertedDoc.file_path,
-        });
 
         await loadSavedReports();
       };

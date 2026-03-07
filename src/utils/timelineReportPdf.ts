@@ -249,9 +249,10 @@ export async function storeTimelineReportPdf(
     }
 
     // If ride-specific, also store in ride document register
+    let rideDocId: string | null = null;
     if (opts.rideId) {
       const rideCode = await getRideCode(opts.rideId);
-      await storeRideDocument({
+      rideDocId = await storeRideDocument({
         rideId: opts.rideId,
         rideCode: rideCode || '—',
         documentType: 'TL',
@@ -266,7 +267,7 @@ export async function storeTimelineReportPdf(
       });
     }
 
-    return filePath;
+    return rideDocId || filePath;
   } catch (err) {
     console.error('Error storing timeline PDF:', err);
     return null;

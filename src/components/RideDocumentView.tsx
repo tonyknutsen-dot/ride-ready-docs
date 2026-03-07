@@ -26,7 +26,6 @@ import {
   File,
   RefreshCw,
   Link2,
-  Link2,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
