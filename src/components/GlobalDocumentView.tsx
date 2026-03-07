@@ -235,7 +235,6 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
   };
 
   const handleDownload = async (doc: Document) => {
-    if (!navigator.onLine) { showRequiresConnectionToast(); return; }
     try {
       const { data, error } = await supabase.storage
         .from('ride-documents')
