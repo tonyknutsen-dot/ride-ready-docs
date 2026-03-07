@@ -121,6 +121,11 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
           {result.onSaveToDocuments && (
             <>
               <div className="border-t border-border my-1" />
+              {result.saveHint && (
+                <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
+                  {result.saveHint}
+                </p>
+              )}
               <ActionButton
                 icon={saved ? CheckCircle2 : FolderPlus}
                 label={saved ? 'Saved to Documents' : (result.saveLabel || 'Save to Documents')}
