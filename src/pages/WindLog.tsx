@@ -34,6 +34,8 @@ import EquipmentPickerDialog from '@/components/EquipmentPickerDialog';
 
 import { generateWindLogPdf } from '@/utils/windLogPdf';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
+import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
+import { generateDocumentId } from '@/utils/pdfTemplate';
 
 interface InflatableRide {
   id: string;
