@@ -454,8 +454,8 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search by name or notes…"
         actions={[
-          { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: exportToPDF, variant: 'outline' },
-          { label: 'Export CSV', icon: <Download className="h-3.5 w-3.5" />, onClick: exportToCSV, variant: 'outline' },
+          { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: exportToPDF, variant: 'outline' as const },
+          { label: 'Export CSV', icon: <Download className="h-3.5 w-3.5" />, onClick: exportToCSV, variant: 'outline' as const },
         ]}
         filtersOpen={filtersOpen}
         onFiltersOpenChange={setFiltersOpen}
