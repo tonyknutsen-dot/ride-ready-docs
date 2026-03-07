@@ -2,16 +2,17 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Download, FolderPlus, Loader2, CheckCircle2, Eye, Share2, Link2 } from 'lucide-react';
+import { Download, FolderPlus, Loader2, CheckCircle2, Eye, Link2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { downloadBlob, shareBlobOrFallback } from '@/utils/exportFileActions';
+import { downloadBlob } from '@/utils/exportFileActions';
 import PDFViewer from '@/components/PDFViewer';
+import ShareMenuPopover from '@/components/ShareMenuPopover';
 
 export interface ExportResult {
   blob: Blob;
   fileName: string;
-  /** If provided, enables "Save to Documents". Return the ride_documents row ID to enable View. */
+  /** If provided, enables "Save to Documents". Return the document row ID to enable View. */
   onSaveToDocuments?: () => Promise<string | void>;
   /** Label override for save button */
   saveLabel?: string;
@@ -31,7 +32,6 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [savedDocId, setSavedDocId] = useState<string | null>(null);
-  const [sharing, setSharing] = useState(false);
   const [copyingLink, setCopyingLink] = useState(false);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
@@ -39,7 +39,6 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   if (!result) return null;
 
   const handleView = () => {
-    // Create a blob URL for the in-app PdfCanvasViewer modal — never open a new tab
     const normalizedBlob =
       result.blob.type === 'application/pdf'
         ? result.blob
@@ -62,24 +61,6 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
     toast({ title: 'Downloaded', description: result.fileName });
   };
 
-  const handleShare = async () => {
-    setSharing(true);
-    try {
-      const outcome = await shareBlobOrFallback(result.blob, result.fileName);
-      if (outcome === 'shared') {
-        toast({ title: 'Shared', description: 'Report sent via share sheet' });
-      } else if (outcome === 'copied') {
-        toast({ title: 'Link copied', description: 'Report link copied — paste into email, Teams, or WhatsApp' });
-      } else if (outcome === 'downloaded') {
-        toast({ title: 'Downloaded', description: 'Share not available — file downloaded instead' });
-      }
-    } catch {
-      toast({ title: 'Share failed', variant: 'destructive' });
-    } finally {
-      setSharing(false);
-    }
-  };
-
   const handleSaveToDocuments = async () => {
     if (!result.onSaveToDocuments || saving || saved) return;
     setSaving(true);
@@ -89,7 +70,7 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
       if (docId && typeof docId === 'string') {
         setSavedDocId(docId);
       }
-      toast({ title: 'Saved to Documents', description: 'Report added to your document register' });
+      toast({ title: 'Saved to Documents', description: result.saveHint || 'Report added to your document register' });
     } catch (err) {
       console.error('Failed to save to documents:', err);
       toast({ title: 'Failed to save', description: 'Could not save to documents', variant: 'destructive' });
@@ -128,6 +109,8 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
     onOpenChange(nextOpen);
   };
 
+  const savedDocLink = savedDocId ? `${window.location.origin}/documents/${savedDocId}` : undefined;
+
   return (
     <>
       <Dialog open={open} onOpenChange={handleClose}>
@@ -145,7 +128,8 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
               <>
                 <ActionButton icon={Eye} label="View" description="Read this report inside the app" onClick={handleView} accent />
                 <ActionButton icon={Download} label="Save to Device" description="Download file to your phone or laptop" onClick={handleDownload} />
-                <ActionButton icon={Share2} label="Share" description="Share via share sheet or copy link" onClick={handleShare} loading={sharing} />
+
+                <ShareMenuPopover blob={result.blob} fileName={result.fileName} />
 
                 {result.onSaveToDocuments && (
                   <>
@@ -175,8 +159,8 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
                     <CheckCircle2 className="h-6 w-6 text-primary" />
                   </div>
                   <p className="text-sm font-medium text-foreground">Report saved successfully</p>
-                  <p className="text-xs text-muted-foreground text-center">
-                    This report is now in your document register and can be viewed anytime.
+                  <p className="text-xs text-muted-foreground text-center max-w-[280px]">
+                    {result.saveHint || 'This report is now in your document register and can be viewed anytime.'}
                   </p>
                 </div>
 
@@ -197,7 +181,7 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
                   onClick={handleDownload}
                 />
 
-                <ActionButton icon={Share2} label="Share" description="Share via share sheet or copy link" onClick={handleShare} loading={sharing} />
+                <ShareMenuPopover blob={result.blob} fileName={result.fileName} documentLink={savedDocLink} />
 
                 {savedDocId && (
                   <ActionButton icon={Link2} label="Copy Link" description="Copy document link to clipboard" onClick={handleCopyLink} loading={copyingLink} />
