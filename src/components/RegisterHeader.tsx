@@ -329,16 +329,16 @@ export const PreviousReportsSection = ({
                 </div>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <Button variant="ghost" size="sm" onClick={() => handleView(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                <Button variant="ghost" size="sm" onClick={() => handleView(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px] rounded-lg">
                   <Eye className="h-3 w-3" /> View
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px] rounded-lg">
                   <Download className="h-3 w-3" /> Save to Device
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleSend(report.id, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                <Button variant="ghost" size="sm" onClick={() => handleSend(report.id, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px] rounded-lg">
                   <Send className="h-3 w-3" /> Send
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px] rounded-lg">
                   <Link2 className="h-3 w-3" /> Copy Link
                 </Button>
               </div>
