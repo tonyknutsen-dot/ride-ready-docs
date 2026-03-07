@@ -35,7 +35,7 @@ import { formatDateUK } from '@/utils/dateFormat';
 import ImageViewer from './ImageViewer';
 import PDFViewer from './PDFViewer';
 import { showRequiresConnectionToast } from '@/hooks/useOfflineGuard';
-import { cn } from '@/lib/utils';
+import { createPdfViewerUrlFromStorage, revokeObjectUrl } from '@/utils/exportFileActions';
 
 type Document = Tables<'documents'>;
 
