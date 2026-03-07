@@ -584,7 +584,7 @@ const BatchSendDocuments = () => {
 
   return (
     <div className="t-page min-h-screen overflow-x-hidden">
-      <div className="container mx-auto py-4 px-4 pb-24 md:pb-8 space-y-3 overflow-x-hidden">
+      <div className="container mx-auto py-4 px-4 pb-24 md:pb-8 space-y-4 overflow-x-hidden">
         <PageHeader
           title="Send Compliance Documents"
           subtitle="Submit compliance documents to councils, insurers, and auditors."
@@ -595,49 +595,52 @@ const BatchSendDocuments = () => {
 
         {/* Step 1: Ride Selection */}
         {!selectedRide ? (
-          <div className="space-y-3">
-            {/* Compact KPI row */}
+          <div className="space-y-4">
+            {/* KPI summary chips */}
             <div className="flex gap-2 flex-wrap">
               <button
                 onClick={() => document.getElementById('asset-pack-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                className="t-card inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer hover:border-primary/40 transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-foreground/10 bg-card px-3.5 py-2 min-h-[40px] hover:border-primary/40 hover:shadow-md active:scale-[0.97] transition-all cursor-pointer shadow-sm"
               >
-                <Package className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />
-                {rides.length} {rides.length === 1 ? 'Asset' : 'Assets'}
-                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                <Package className="h-4 w-4 text-primary" strokeWidth={2.5} />
+                <span className="text-xs font-bold text-foreground">{rides.length} {rides.length === 1 ? 'Asset' : 'Assets'}</span>
+                <ChevronRight className="h-3 w-3 text-muted-foreground/60" />
               </button>
               <button
                 onClick={() => document.getElementById('asset-pack-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                className="t-card inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer hover:border-primary/40 transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-foreground/10 bg-card px-3.5 py-2 min-h-[40px] hover:border-primary/40 hover:shadow-md active:scale-[0.97] transition-all cursor-pointer shadow-sm"
               >
-                <FileText className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />
-                {rides.reduce((sum, r) => sum + r.documents.length, 0) + checkRecords.length} Docs
-                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                <FileText className="h-4 w-4 text-primary" strokeWidth={2.5} />
+                <span className="text-xs font-bold text-foreground">{rides.reduce((sum, r) => sum + r.documents.length, 0) + checkRecords.length} Docs</span>
+                <ChevronRight className="h-3 w-3 text-muted-foreground/60" />
               </button>
               <button
                 onClick={() => document.getElementById('global-docs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-                className="t-card inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer hover:border-primary/40 transition-colors"
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-foreground/10 bg-card px-3.5 py-2 min-h-[40px] hover:border-primary/40 hover:shadow-md active:scale-[0.97] transition-all cursor-pointer shadow-sm"
               >
-                <Building2 className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />
-                {globalDocuments.length} Global
-                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                <Building2 className="h-4 w-4 text-primary" strokeWidth={2.5} />
+                <span className="text-xs font-bold text-foreground">{globalDocuments.length} Global</span>
+                <ChevronRight className="h-3 w-3 text-muted-foreground/60" />
               </button>
             </div>
 
-            {/* Asset list */}
-            <div id="asset-pack-section" className="t-card rounded-xl overflow-hidden">
-              <div className="t-card-header px-4 py-2.5 flex items-center gap-2.5">
-                <ClipboardCheck className="h-4 w-4 text-primary" strokeWidth={2.5} />
+            {/* Asset list card */}
+            <div id="asset-pack-section" className="rounded-2xl border-2 border-foreground/10 bg-card shadow-[0_8px_24px_rgba(15,23,42,0.08)] overflow-hidden">
+              <div className="t-card-header px-4 py-3 flex items-center gap-3">
+                <span className="flex items-center justify-center w-8 h-8 rounded-xl bg-primary/10 shrink-0">
+                  <ClipboardCheck className="h-4 w-4 text-primary" strokeWidth={2.5} />
+                </span>
                 <div>
-                  <p className="text-xs font-bold text-foreground">Select Asset</p>
-                  <p className="text-[10px] text-muted-foreground">Choose an asset to build a compliance pack</p>
+                  <p className="text-sm font-extrabold text-foreground tracking-tight">Select Asset</p>
+                  <p className="text-[11px] text-muted-foreground">Choose an asset to build a compliance pack</p>
                 </div>
               </div>
-              <div className="p-2">
+              <div className="p-2.5">
                 {rides.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Package className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
-                    <p className="text-xs font-medium text-muted-foreground">No assets found</p>
+                  <div className="text-center py-10">
+                    <Package className="h-9 w-9 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-xs font-semibold text-muted-foreground">No assets found</p>
+                    <p className="text-[10px] text-muted-foreground/70 mt-0.5">Add equipment to start building compliance packs</p>
                   </div>
                 ) : (
                   <div className="space-y-1.5">
@@ -658,36 +661,40 @@ const BatchSendDocuments = () => {
                         <button
                           key={ride.id}
                           onClick={() => setSelectedRide(ride)}
-                          className="w-full text-left group active:scale-[0.99] transition-all"
+                          className="w-full text-left group active:scale-[0.98] transition-all"
                         >
-                          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border/80 hover:border-primary/40 hover:bg-accent/30 transition-all">
+                          <div className={cn(
+                            "flex items-center gap-3 px-3.5 py-3 rounded-xl border-2 transition-all",
+                            "border-foreground/8 hover:border-primary/40 hover:shadow-md bg-card"
+                          )}>
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2">
-                                <p className="text-xs font-bold text-foreground truncate">{ride.ride_name}</p>
+                                <p className="text-[13px] font-bold text-foreground truncate">{ride.ride_name}</p>
                                 <Badge
                                   variant={statusConfig.variant}
                                   className={cn(
-                                    "text-[9px] h-4 px-1.5 shrink-0 gap-0.5",
-                                    complianceStatus === 'compliant' && "bg-success/10 text-success border-success/20",
-                                    complianceStatus === 'expiring' && "bg-warning/10 text-warning border-warning/20"
+                                    "text-[9px] h-[18px] px-1.5 shrink-0 gap-0.5 font-bold",
+                                    complianceStatus === 'compliant' && "bg-success/15 text-success border-success/25",
+                                    complianceStatus === 'expiring' && "bg-warning/15 text-warning border-warning/25"
                                   )}
                                   title="Based on expiry dates in the document register"
                                 >
-                                  <StatusIcon className="h-2.5 w-2.5" strokeWidth={2.5} />
+                                  <StatusIcon className="h-2.5 w-2.5" strokeWidth={3} />
                                   {statusConfig.label}
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-1.5 mt-0.5">
+                              <div className="flex items-center gap-1.5 mt-1">
                                 {ride.manufacturer && (
-                                  <span className="text-[10px] text-muted-foreground truncate">{ride.manufacturer}</span>
+                                  <span className="text-[11px] text-muted-foreground truncate">{ride.manufacturer}</span>
                                 )}
-                                {ride.manufacturer && <span className="text-muted-foreground/30 text-[10px]">·</span>}
-                                <span className="text-[10px] text-muted-foreground shrink-0">
+                                {ride.manufacturer && <span className="text-muted-foreground/30">·</span>}
+                                <span className="text-[11px] text-muted-foreground shrink-0 font-medium">
+                                  <FileText className="h-3 w-3 inline mr-0.5 -mt-0.5" strokeWidth={2} />
                                   {totalDocs} {totalDocs === 1 ? 'doc' : 'docs'}
                                 </span>
                               </div>
                             </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary shrink-0" />
+                            <ChevronRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary shrink-0 transition-colors" />
                           </div>
                         </button>
                       );
@@ -697,24 +704,24 @@ const BatchSendDocuments = () => {
               </div>
             </div>
 
-            {/* Global Documents */}
+            {/* Global Documents card */}
             <div id="global-docs-section">
               <button
-                className="w-full text-left group active:scale-[0.99] transition-all"
+                className="w-full text-left group active:scale-[0.98] transition-all"
                 onClick={() => setSelectedRide({ id: '__global__', ride_name: 'Global Documents' })}
               >
-                <div className="t-card rounded-xl overflow-hidden">
-                  <div className="flex items-center gap-3 px-4 py-3">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
-                      <Building2 className="h-4 w-4 text-primary" strokeWidth={2.5} />
+                <div className="rounded-2xl border-2 border-foreground/10 bg-card shadow-[0_8px_24px_rgba(15,23,42,0.08)] overflow-hidden hover:border-primary/40 hover:shadow-lg transition-all">
+                  <div className="flex items-center gap-3.5 px-4 py-3.5">
+                    <span className="flex items-center justify-center w-10 h-10 rounded-xl bg-primary/10 shrink-0">
+                      <Building2 className="h-5 w-5 text-primary" strokeWidth={2.5} />
                     </span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Global Compliance Documents</p>
-                      <p className="text-[10px] text-muted-foreground mt-0.5">
-                        Insurance, policies &amp; company-wide · {globalDocuments.length} {globalDocuments.length === 1 ? 'file' : 'files'}
+                      <p className="text-[13px] font-bold text-foreground group-hover:text-primary transition-colors">Global Compliance Documents</p>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">
+                        Insurance, policies &amp; company-wide · <span className="font-bold">{globalDocuments.length} {globalDocuments.length === 1 ? 'file' : 'files'}</span>
                       </p>
                     </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary shrink-0" />
+                    <ChevronRight className="h-5 w-5 text-muted-foreground/40 group-hover:text-primary shrink-0 transition-colors" />
                   </div>
                 </div>
               </button>
@@ -723,51 +730,55 @@ const BatchSendDocuments = () => {
         ) : (
           <>
             {/* Step 2: Asset context strip */}
-            <div className="t-card rounded-xl px-3 py-2.5">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 shrink-0">
-                    {isGlobalMode ? <Building2 className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} /> : <ClipboardCheck className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />}
+            <div className="rounded-2xl border-2 border-foreground/10 bg-card shadow-sm px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/12 shrink-0">
+                    {isGlobalMode
+                      ? <Building2 className="h-4 w-4 text-primary" strokeWidth={2.5} />
+                      : <ClipboardCheck className="h-4 w-4 text-primary" strokeWidth={2.5} />}
                   </span>
                   <div className="min-w-0">
-                    <p className="text-[10px] text-muted-foreground font-medium">{isGlobalMode ? 'Global' : 'Asset'}</p>
-                    <p className="text-xs font-bold text-foreground truncate">{selectedRide.ride_name}</p>
+                    <p className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">{isGlobalMode ? 'Global' : 'Asset'}</p>
+                    <p className="text-sm font-extrabold text-foreground truncate tracking-tight">{selectedRide.ride_name}</p>
                   </div>
                 </div>
                 <Button
-                  variant="ghost"
+                  variant="outline"
                   size="sm"
                   onClick={() => { setSelectedRide(null); setSelectedDocuments([]); }}
-                  className="gap-1 text-muted-foreground hover:text-foreground shrink-0 text-[10px] h-7 px-2"
+                  className="gap-1.5 shrink-0 text-xs h-8 px-3 font-semibold border-foreground/15"
                 >
                   <ChevronRight className="h-3 w-3 rotate-180" />
                   Back
                 </Button>
               </div>
               {selectedDocuments.length > 0 && (
-                <div className="mt-2 flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold bg-primary/10 text-primary">
+                <div className="mt-2.5 flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-bold bg-primary/10 text-primary border border-primary/20">
                   <FileText className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
-                  {selectedDocuments.length} selected · {formatFileSize(totalFileSize)}
+                  {selectedDocuments.length} document{selectedDocuments.length !== 1 ? 's' : ''} selected
+                  <span className="text-primary/60 font-medium">·</span>
+                  <span className="font-medium text-primary/70">{formatFileSize(totalFileSize)}</span>
                 </div>
               )}
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-3">
+            <div className="grid lg:grid-cols-2 gap-4">
               {/* Left: Document Selection */}
-              <div className="space-y-2">
-                <div className="t-card rounded-xl overflow-hidden">
-                  <div className="t-card-header px-3 py-2 flex items-center justify-between">
-                    <p className="text-xs font-bold text-foreground">Select Documents</p>
+              <div>
+                <div className="rounded-2xl border-2 border-foreground/10 bg-card shadow-[0_8px_24px_rgba(15,23,42,0.08)] overflow-hidden">
+                  <div className="t-card-header px-4 py-2.5 flex items-center justify-between">
+                    <p className="text-sm font-extrabold text-foreground tracking-tight">Select Documents</p>
                     {selectedDocuments.length > 0 && (
-                      <Badge variant="secondary" className="text-[9px] h-4 font-semibold">{selectedDocuments.length} selected</Badge>
+                      <Badge variant="secondary" className="text-[10px] h-5 font-bold px-2">{selectedDocuments.length} selected</Badge>
                     )}
                   </div>
-                  <div className="p-2 space-y-1.5 overflow-x-hidden">
+                  <div className="p-2.5 space-y-2 overflow-x-hidden">
                     {/* Size indicator */}
                     {selectedDocuments.length > 0 && (
-                      <div className="flex items-center justify-between text-[10px] bg-secondary/50 border border-border rounded-md px-2 py-1">
-                        <span className="text-muted-foreground">Total size:</span>
-                        <Badge variant={exceedsEmailLimit ? "destructive" : "outline"} className="text-[9px] h-3.5">
+                      <div className="flex items-center justify-between text-[11px] bg-muted/60 border border-foreground/8 rounded-lg px-3 py-1.5">
+                        <span className="text-muted-foreground font-medium">Total size</span>
+                        <Badge variant={exceedsEmailLimit ? "destructive" : "outline"} className="text-[10px] h-4 font-bold">
                           {formatFileSize(totalFileSize)}
                         </Badge>
                       </div>
@@ -775,71 +786,75 @@ const BatchSendDocuments = () => {
 
                     {/* Send method selector */}
                     {(exceedsEmailLimit || sendMethod !== 'auto') && (
-                      <div className="bg-warning/5 border border-warning/20 rounded-lg p-2">
-                        <p className="text-[10px] font-semibold text-foreground mb-1.5">Large file ({totalSizeMB.toFixed(1)}MB) — choose send method:</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
+                      <div className="bg-warning/8 border-2 border-warning/20 rounded-xl p-3">
+                        <p className="text-[11px] font-bold text-foreground mb-2">
+                          <AlertTriangle className="h-3.5 w-3.5 text-warning inline mr-1 -mt-0.5" />
+                          Large file ({totalSizeMB.toFixed(1)}MB) — choose send method:
+                        </p>
+                        <div className="grid grid-cols-2 gap-1.5">
                           <button
                             type="button"
                             onClick={() => setSendMethod('links')}
                             className={cn(
-                              "flex items-center gap-1.5 p-1.5 rounded-md border text-left text-[10px]",
+                              "flex items-center gap-2 p-2 rounded-lg border-2 text-left text-[11px] font-semibold transition-all",
                               (sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit))
-                                ? "border-primary bg-primary/5 font-semibold"
-                                : "border-border hover:border-primary/50"
+                                ? "border-primary bg-primary/8 text-primary"
+                                : "border-foreground/8 hover:border-primary/40"
                             )}
                           >
-                            <Link className="h-3 w-3 text-primary shrink-0" />
-                            <span>Download Link</span>
+                            <Link className="h-3.5 w-3.5 shrink-0" />
+                            Download Link
                           </button>
                           <button
                             type="button"
                             onClick={() => setSendMethod('attachments')}
                             className={cn(
-                              "flex items-center gap-1.5 p-1.5 rounded-md border text-left text-[10px]",
+                              "flex items-center gap-2 p-2 rounded-lg border-2 text-left text-[11px] font-semibold transition-all",
                               sendMethod === 'attachments'
-                                ? "border-primary bg-primary/5 font-semibold"
-                                : "border-border hover:border-primary/50"
+                                ? "border-primary bg-primary/8 text-primary"
+                                : "border-foreground/8 hover:border-primary/40"
                             )}
                           >
-                            <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
-                            <span>Attachments</span>
+                            <Paperclip className="h-3.5 w-3.5 shrink-0" />
+                            Attachments
                           </button>
                         </div>
                       </div>
                     )}
 
-                    <div className="space-y-1.5 max-h-[40vh] overflow-y-auto pr-1 md:max-h-none md:overflow-visible md:pr-0">
+                    {/* Scrollable document sections */}
+                    <div className="space-y-2 max-h-[40vh] overflow-y-auto pr-0.5 md:max-h-none md:overflow-visible md:pr-0">
                       {/* Check Records */}
                       {currentRideCheckRecords.length > 0 && (
                         <Collapsible open={checkRecordsExpanded} onOpenChange={setCheckRecordsExpanded}>
-                          <div className="border border-success/20 rounded-lg overflow-hidden">
-                            <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-success/5 transition-colors gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <ClipboardCheck className="h-3 w-3 text-success shrink-0" />
-                                <span className="font-semibold text-[11px]">Check Records</span>
-                                <Badge variant="outline" className="text-[9px] h-3.5 border-success/30 text-success">{currentRideCheckRecords.length}</Badge>
+                          <div className="border-2 border-success/20 rounded-xl overflow-hidden bg-success/3">
+                            <CollapsibleTrigger className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-success/8 transition-colors gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <ClipboardCheck className="h-4 w-4 text-success shrink-0" strokeWidth={2.5} />
+                                <span className="font-bold text-xs text-foreground">Check Records</span>
+                                <Badge variant="outline" className="text-[10px] h-4 border-success/30 text-success font-bold">{currentRideCheckRecords.length}</Badge>
                               </div>
-                              <div className="flex items-center gap-1 shrink-0">
+                              <div className="flex items-center gap-1.5 shrink-0">
                                 <span
                                   role="button"
                                   tabIndex={0}
-                                  className="h-5 text-[10px] px-1 inline-flex items-center rounded hover:bg-accent text-muted-foreground cursor-pointer"
+                                  className="h-6 text-[11px] px-2 inline-flex items-center justify-center rounded-md hover:bg-success/15 text-success cursor-pointer font-semibold"
                                   onClick={(e) => { e.stopPropagation(); const ids = currentRideCheckRecords.map(d => d.id); const allSel = ids.every(id => selectedDocuments.includes(id)); setSelectedDocuments(prev => allSel ? prev.filter(id => !ids.includes(id)) : [...new Set([...prev, ...ids])]); }}
                                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); const ids = currentRideCheckRecords.map(d => d.id); const allSel = ids.every(id => selectedDocuments.includes(id)); setSelectedDocuments(prev => allSel ? prev.filter(id => !ids.includes(id)) : [...new Set([...prev, ...ids])]); } }}
                                 >
                                   {currentRideCheckRecords.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
                                 </span>
-                                <ChevronDown className="h-3 w-3" />
+                                <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground transition-transform", checkRecordsExpanded && "rotate-180")} />
                               </div>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                              <div className="px-1.5 pb-1.5 space-y-0.5">
+                              <div className="px-2 pb-2 space-y-0.5 border-t border-success/15">
                                 {currentRideCheckRecords.map(doc => (
-                                  <label key={doc.id} className={cn("flex items-center gap-2 min-w-0 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-[11px]", selectedDocuments.includes(doc.id) ? 'bg-success/8 border border-success/25' : 'hover:bg-muted/50 border border-transparent')}>
-                                    <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0 h-3.5 w-3.5" />
+                                  <label key={doc.id} className={cn("flex items-center gap-2.5 min-w-0 px-2.5 py-2 rounded-lg cursor-pointer transition-all", selectedDocuments.includes(doc.id) ? 'bg-success/12 border border-success/30 shadow-sm' : 'hover:bg-success/5 border border-transparent')}>
+                                    <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0" />
                                     <div className="flex-1 min-w-0 overflow-hidden">
-                                      <p className="font-medium text-foreground truncate">{doc.document_name}</p>
-                                      <p className="text-[9px] text-muted-foreground truncate">{doc.uploaded_at && format(new Date(doc.uploaded_at), 'dd MMM yyyy')}{doc.file_size ? ` · ${formatFileSize(doc.file_size)}` : ''}</p>
+                                      <p className="text-xs font-semibold text-foreground truncate">{doc.document_name}</p>
+                                      <p className="text-[10px] text-muted-foreground truncate">{doc.uploaded_at && format(new Date(doc.uploaded_at), 'dd MMM yyyy')}{doc.file_size ? ` · ${formatFileSize(doc.file_size)}` : ''}</p>
                                     </div>
                                   </label>
                                 ))}
@@ -852,36 +867,36 @@ const BatchSendDocuments = () => {
                       {/* Ride Documents */}
                       {currentRideDocuments.length > 0 && (
                         <Collapsible defaultOpen={!isMobile}>
-                          <div className="border border-border rounded-lg overflow-hidden">
-                            <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <FileText className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
-                                <span className="font-semibold text-[11px]">Documents</span>
-                                <Badge variant="outline" className="text-[9px] h-3.5">{currentRideDocuments.length}</Badge>
+                          <div className="border-2 border-foreground/10 rounded-xl overflow-hidden">
+                            <CollapsibleTrigger className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2 bg-muted/20">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <FileText className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
+                                <span className="font-bold text-xs text-foreground">Documents</span>
+                                <Badge variant="outline" className="text-[10px] h-4 font-bold">{currentRideDocuments.length}</Badge>
                               </div>
-                              <div className="flex items-center gap-1 shrink-0">
+                              <div className="flex items-center gap-1.5 shrink-0">
                                 <span
                                   role="button"
                                   tabIndex={0}
-                                  className="h-5 text-[10px] px-1 inline-flex items-center rounded hover:bg-accent text-muted-foreground cursor-pointer"
+                                  className="h-6 text-[11px] px-2 inline-flex items-center justify-center rounded-md hover:bg-primary/10 text-primary cursor-pointer font-semibold"
                                   onClick={(e) => { e.stopPropagation(); handleSelectAllRide(selectedRide!.id, currentRideDocuments); }}
                                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); handleSelectAllRide(selectedRide!.id, currentRideDocuments); } }}
                                 >
                                   {currentRideDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
                                 </span>
-                                <ChevronDown className="h-3 w-3" />
+                                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                               </div>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                              <div className="px-1.5 pb-1.5 space-y-0.5">
+                              <div className="px-2 pb-2 space-y-0.5 border-t border-foreground/8">
                                 {currentRideDocuments.map(doc => (
-                                  <label key={doc.id} className={cn("flex items-center gap-2 min-w-0 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-[11px]", selectedDocuments.includes(doc.id) ? 'bg-primary/8 border border-primary/25' : 'hover:bg-muted/50 border border-transparent')}>
-                                    <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0 h-3.5 w-3.5" />
+                                  <label key={doc.id} className={cn("flex items-center gap-2.5 min-w-0 px-2.5 py-2 rounded-lg cursor-pointer transition-all", selectedDocuments.includes(doc.id) ? 'bg-primary/8 border border-primary/20 shadow-sm' : 'hover:bg-muted/40 border border-transparent')}>
+                                    <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0" />
                                     <div className="flex-1 min-w-0 overflow-hidden">
-                                      <p className="font-medium text-foreground truncate">{doc.document_name}</p>
-                                      <div className="flex items-center gap-1 text-[9px] text-muted-foreground min-w-0">
+                                      <p className="text-xs font-semibold text-foreground truncate">{doc.document_name}</p>
+                                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground min-w-0">
                                         <span className="truncate">{doc.document_type}</span>
-                                        {doc.expires_at && isExpiringSoon(doc.expires_at) && <Badge variant="destructive" className="text-[8px] h-3 px-1">Exp</Badge>}
+                                        {doc.expires_at && isExpiringSoon(doc.expires_at) && <Badge variant="destructive" className="text-[8px] h-3.5 px-1 font-bold">Expiring</Badge>}
                                         {doc.file_size && <span className="shrink-0">· {formatFileSize(doc.file_size)}</span>}
                                       </div>
                                     </div>
@@ -896,36 +911,36 @@ const BatchSendDocuments = () => {
                       {/* Global Documents */}
                       {globalDocuments.length > 0 && (
                         <Collapsible defaultOpen={!isMobile && currentRideDocuments.length === 0}>
-                          <div className="border border-border rounded-lg overflow-hidden">
-                            <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <Building2 className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
-                                <span className="font-semibold text-[11px]">Global Documents</span>
-                                <Badge variant="outline" className="text-[9px] h-3.5">{globalDocuments.length}</Badge>
+                          <div className="border-2 border-foreground/10 rounded-xl overflow-hidden">
+                            <CollapsibleTrigger className="w-full px-3 py-2.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2 bg-muted/20">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <Building2 className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
+                                <span className="font-bold text-xs text-foreground">Global Documents</span>
+                                <Badge variant="outline" className="text-[10px] h-4 font-bold">{globalDocuments.length}</Badge>
                               </div>
-                              <div className="flex items-center gap-1 shrink-0">
+                              <div className="flex items-center gap-1.5 shrink-0">
                                 <span
                                   role="button"
                                   tabIndex={0}
-                                  className="h-5 text-[10px] px-1 inline-flex items-center rounded hover:bg-accent text-muted-foreground cursor-pointer"
+                                  className="h-6 text-[11px] px-2 inline-flex items-center justify-center rounded-md hover:bg-primary/10 text-primary cursor-pointer font-semibold"
                                   onClick={(e) => { e.stopPropagation(); handleSelectAllGlobal(); }}
                                   onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); handleSelectAllGlobal(); } }}
                                 >
                                   {globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
                                 </span>
-                                <ChevronDown className="h-3 w-3" />
+                                <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />
                               </div>
                             </CollapsibleTrigger>
                             <CollapsibleContent>
-                              <div className="px-1.5 pb-1.5 space-y-0.5">
+                              <div className="px-2 pb-2 space-y-0.5 border-t border-foreground/8">
                                 {globalDocuments.map(doc => (
-                                  <label key={doc.id} className={cn("flex items-center gap-2 min-w-0 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-[11px]", selectedDocuments.includes(doc.id) ? 'bg-primary/8 border border-primary/25' : 'hover:bg-muted/50 border border-transparent')}>
-                                    <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0 h-3.5 w-3.5" />
+                                  <label key={doc.id} className={cn("flex items-center gap-2.5 min-w-0 px-2.5 py-2 rounded-lg cursor-pointer transition-all", selectedDocuments.includes(doc.id) ? 'bg-primary/8 border border-primary/20 shadow-sm' : 'hover:bg-muted/40 border border-transparent')}>
+                                    <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0" />
                                     <div className="flex-1 min-w-0 overflow-hidden">
-                                      <p className="font-medium text-foreground truncate">{doc.document_name}</p>
-                                      <div className="flex items-center gap-1 text-[9px] text-muted-foreground min-w-0">
+                                      <p className="text-xs font-semibold text-foreground truncate">{doc.document_name}</p>
+                                      <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground min-w-0">
                                         <span className="truncate">{doc.document_type}</span>
-                                        {doc.expires_at && isExpiringSoon(doc.expires_at) && <Badge variant="destructive" className="text-[8px] h-3 px-1">Exp</Badge>}
+                                        {doc.expires_at && isExpiringSoon(doc.expires_at) && <Badge variant="destructive" className="text-[8px] h-3.5 px-1 font-bold">Expiring</Badge>}
                                         {doc.file_size && <span className="shrink-0">· {formatFileSize(doc.file_size)}</span>}
                                       </div>
                                     </div>
@@ -940,9 +955,10 @@ const BatchSendDocuments = () => {
 
                     {/* Empty state */}
                     {currentRideDocuments.length === 0 && currentRideCheckRecords.length === 0 && globalDocuments.length === 0 && (
-                      <div className="text-center py-6">
-                        <FileText className="h-7 w-7 text-muted-foreground/40 mx-auto mb-1.5" />
-                        <p className="text-xs text-muted-foreground">No documents available</p>
+                      <div className="text-center py-8">
+                        <FileText className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+                        <p className="text-xs font-semibold text-muted-foreground">No documents available</p>
+                        <p className="text-[10px] text-muted-foreground/70 mt-0.5">Upload documents to this asset first</p>
                       </div>
                     )}
                   </div>
@@ -950,46 +966,46 @@ const BatchSendDocuments = () => {
               </div>
 
               {/* Right: Recipient & Send */}
-              <div className="space-y-2">
+              <div className="space-y-3">
                 {/* Sender Info */}
-                <div className="t-card rounded-xl overflow-hidden">
-                  <div className="t-card-header px-3 py-2 flex items-center gap-2">
-                    <Users className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
-                    <p className="text-xs font-bold text-foreground">Your Information</p>
+                <div className="rounded-2xl border-2 border-foreground/10 bg-card shadow-[0_8px_24px_rgba(15,23,42,0.08)] overflow-hidden">
+                  <div className="t-card-header px-4 py-2.5 flex items-center gap-2.5">
+                    <Users className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
+                    <p className="text-xs font-extrabold text-foreground tracking-tight">Your Information</p>
                   </div>
-                  <div className="px-3 py-2 text-[10px] space-y-0.5 text-muted-foreground">
-                    {profile?.company_name && <p><span className="font-semibold text-foreground">Company:</span> {profile.company_name}</p>}
-                    {profile?.controller_name && <p><span className="font-semibold text-foreground">Controller:</span> {profile.controller_name}</p>}
-                    {user?.email && <p><span className="font-semibold text-foreground">Email:</span> {user.email}</p>}
+                  <div className="px-4 py-3 text-xs space-y-1 text-foreground/70">
+                    {profile?.company_name && <p><span className="font-bold text-foreground">Company:</span> {profile.company_name}</p>}
+                    {profile?.controller_name && <p><span className="font-bold text-foreground">Controller:</span> {profile.controller_name}</p>}
+                    {user?.email && <p><span className="font-bold text-foreground">Email:</span> {user.email}</p>}
                     {!isStaff && !profile?.company_name && !profile?.controller_name && (
-                      <p className="text-destructive italic">Complete your profile in Settings</p>
+                      <p className="text-destructive font-semibold italic text-[11px]">Complete your profile in Settings</p>
                     )}
                   </div>
                 </div>
 
                 {/* Saved Recipients */}
                 {savedRecipients.length > 0 && (
-                  <div className="t-card rounded-xl overflow-hidden">
-                    <div className="t-card-header px-3 py-2 flex items-center gap-2">
-                      <BookUser className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
-                      <p className="text-xs font-bold text-foreground">Saved Recipients</p>
+                  <div className="rounded-2xl border-2 border-foreground/10 bg-card shadow-[0_8px_24px_rgba(15,23,42,0.08)] overflow-hidden">
+                    <div className="t-card-header px-4 py-2.5 flex items-center gap-2.5">
+                      <BookUser className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
+                      <p className="text-xs font-extrabold text-foreground tracking-tight">Saved Recipients</p>
                     </div>
-                    <div className="px-2 py-1.5 max-h-32 overflow-y-auto space-y-0.5">
+                    <div className="px-2.5 py-2 max-h-36 overflow-y-auto space-y-0.5">
                       {savedRecipients.map(recipient => (
                         <div
                           key={recipient.id}
-                          className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer group transition-colors"
+                          className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-muted/50 cursor-pointer group transition-colors"
                           onClick={() => handleSelectRecipient(recipient.id)}
                         >
                           <button onClick={(e) => { e.stopPropagation(); handleToggleFavorite(recipient.id, recipient.is_favorite); }} className="shrink-0">
-                            <Star className={`h-3 w-3 ${recipient.is_favorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+                            <Star className={cn("h-3.5 w-3.5", recipient.is_favorite ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40')} />
                           </button>
                           <div className="flex-1 min-w-0">
-                            <p className="text-[11px] font-semibold text-foreground truncate">{recipient.name}</p>
-                            <p className="text-[9px] text-muted-foreground truncate">{recipient.email}</p>
+                            <p className="text-xs font-bold text-foreground truncate">{recipient.name}</p>
+                            <p className="text-[10px] text-muted-foreground truncate">{recipient.email}</p>
                           </div>
                           <button onClick={(e) => { e.stopPropagation(); handleDeleteRecipient(recipient.id); }} className="opacity-0 group-hover:opacity-100 shrink-0">
-                            <Trash2 className="h-3 w-3 text-destructive" />
+                            <Trash2 className="h-3.5 w-3.5 text-destructive/70" />
                           </button>
                         </div>
                       ))}
@@ -998,27 +1014,27 @@ const BatchSendDocuments = () => {
                 )}
 
                 {/* Recipient Form */}
-                <div className="t-card rounded-xl overflow-hidden">
-                  <div className="t-card-header px-3 py-2 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
-                      <p className="text-xs font-bold text-foreground">Recipient</p>
+                <div className="rounded-2xl border-2 border-foreground/10 bg-card shadow-[0_8px_24px_rgba(15,23,42,0.08)] overflow-hidden">
+                  <div className="t-card-header px-4 py-2.5 flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <Mail className="h-4 w-4 text-primary shrink-0" strokeWidth={2.5} />
+                      <p className="text-xs font-extrabold text-foreground tracking-tight">Recipient</p>
                     </div>
                     <Dialog open={showSaveRecipientDialog} onOpenChange={setShowSaveRecipientDialog}>
                       <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-6 text-[10px] px-1.5" disabled={!recipientEmail || !recipientName}>
-                          <Plus className="h-2.5 w-2.5 mr-0.5" />Save
+                        <Button variant="ghost" size="sm" className="h-7 text-[11px] px-2 font-semibold" disabled={!recipientEmail || !recipientName}>
+                          <Plus className="h-3 w-3 mr-1" />Save
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-sm">
                         <DialogHeader><DialogTitle>Save Recipient</DialogTitle></DialogHeader>
                         <div className="space-y-3 pt-2">
-                          <div><Label className="text-xs">Name</Label><Input value={recipientName} disabled className="mt-1 bg-muted h-8" /></div>
-                          <div><Label className="text-xs">Email</Label><Input value={recipientEmail} disabled className="mt-1 bg-muted h-8" /></div>
+                          <div><Label className="text-xs font-bold">Name</Label><Input value={recipientName} disabled className="mt-1 bg-muted h-9" /></div>
+                          <div><Label className="text-xs font-bold">Email</Label><Input value={recipientEmail} disabled className="mt-1 bg-muted h-9" /></div>
                           <div>
-                            <Label className="text-xs">Organization Type</Label>
+                            <Label className="text-xs font-bold">Organization Type</Label>
                             <Select value={newRecipientOrg} onValueChange={setNewRecipientOrg}>
-                              <SelectTrigger className="mt-1 h-8"><SelectValue placeholder="Select type..." /></SelectTrigger>
+                              <SelectTrigger className="mt-1 h-9"><SelectValue placeholder="Select type..." /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="council">{terminology.isUK ? 'Local Council' : 'Local Authority'}</SelectItem>
                                 <SelectItem value="guild">{terminology.isUK ? 'Guild / Trade Association' : 'Trade Association'}</SelectItem>
@@ -1034,26 +1050,26 @@ const BatchSendDocuments = () => {
                       </DialogContent>
                     </Dialog>
                   </div>
-                  <div className="space-y-2 px-3 py-2.5">
+                  <div className="space-y-3 px-4 py-3">
                     <div>
-                      <Label htmlFor="recipientEmail" className="text-[10px] font-bold">Email Address *</Label>
-                      <Input id="recipientEmail" type="email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} placeholder="council@example.gov.uk" className="mt-0.5 h-8 text-xs" required />
+                      <Label htmlFor="recipientEmail" className="text-xs font-bold text-foreground">Email Address *</Label>
+                      <Input id="recipientEmail" type="email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} placeholder="council@example.gov.uk" className="mt-1 h-10 text-sm border-foreground/15 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)]" required />
                     </div>
                     <div>
-                      <Label htmlFor="recipientName" className="text-[10px] font-bold">Name / Organization</Label>
-                      <Input id="recipientName" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="Local Authority, etc." className="mt-0.5 h-8 text-xs" />
+                      <Label htmlFor="recipientName" className="text-xs font-bold text-foreground">Name / Organization</Label>
+                      <Input id="recipientName" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="Local Authority, etc." className="mt-1 h-10 text-sm border-foreground/15 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)]" />
                     </div>
                     <div>
-                      <div className="flex items-center justify-between mb-0.5">
-                        <Label htmlFor="message" className="text-[10px] font-bold">Message (Optional)</Label>
-                        <div className="flex items-center gap-0.5">
+                      <div className="flex items-center justify-between mb-1">
+                        <Label htmlFor="message" className="text-xs font-bold text-foreground">Message (Optional)</Label>
+                        <div className="flex items-center gap-1">
                           {emailTemplates.length > 0 && (
                             <Select onValueChange={handleSelectTemplate}>
-                              <SelectTrigger className="h-5 text-[9px] w-auto min-w-[70px]"><SelectValue placeholder="Template" /></SelectTrigger>
+                              <SelectTrigger className="h-6 text-[10px] w-auto min-w-[80px] font-semibold"><SelectValue placeholder="Template" /></SelectTrigger>
                               <SelectContent>
                                 {emailTemplates.map(t => (
                                   <SelectItem key={t.id} value={t.id} className="text-xs">
-                                    <span className="flex items-center gap-1">{t.is_default && <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />}{t.name}</span>
+                                    <span className="flex items-center gap-1">{t.is_default && <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />}{t.name}</span>
                                   </SelectItem>
                                 ))}
                               </SelectContent>
@@ -1061,15 +1077,15 @@ const BatchSendDocuments = () => {
                           )}
                           <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
                             <DialogTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-5 text-[9px] px-1" disabled={!message}><Plus className="h-2.5 w-2.5 mr-0.5" />Save</Button>
+                              <Button variant="ghost" size="sm" className="h-6 text-[10px] px-1.5 font-semibold" disabled={!message}><Plus className="h-2.5 w-2.5 mr-0.5" />Save</Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-sm">
                               <DialogHeader><DialogTitle>Save Email Template</DialogTitle></DialogHeader>
                               <div className="space-y-3 pt-2">
-                                <div><Label className="text-xs">Template Name *</Label><Input value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} placeholder="e.g., Council Submission" className="mt-1" /></div>
-                                <div><Label className="text-xs">Message Preview</Label><div className="mt-1 p-2 bg-muted rounded text-xs max-h-20 overflow-y-auto">{message || 'No message'}</div></div>
+                                <div><Label className="text-xs font-bold">Template Name *</Label><Input value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} placeholder="e.g., Council Submission" className="mt-1" /></div>
+                                <div><Label className="text-xs font-bold">Message Preview</Label><div className="mt-1 p-2 bg-muted rounded-lg text-xs max-h-20 overflow-y-auto">{message || 'No message'}</div></div>
                                 <div>
-                                  <Label className="text-xs">Recipient Type</Label>
+                                  <Label className="text-xs font-bold">Recipient Type</Label>
                                   <Select value={newTemplateType} onValueChange={setNewTemplateType}>
                                     <SelectTrigger className="mt-1"><SelectValue placeholder="Select type..." /></SelectTrigger>
                                     <SelectContent>
@@ -1088,26 +1104,26 @@ const BatchSendDocuments = () => {
                           </Dialog>
                         </div>
                       </div>
-                      <Textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Please find attached the requested documentation..." className="resize-none text-xs" rows={2} />
+                      <Textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Please find attached the requested documentation..." className="resize-none text-sm border-foreground/15 shadow-[inset_0_1px_3px_rgba(0,0,0,0.06)]" rows={2} />
                     </div>
 
                     {/* Templates list */}
                     {emailTemplates.length > 0 && (
                       <Collapsible>
-                        <CollapsibleTrigger className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
-                          <ChevronRight className="h-2.5 w-2.5" />
+                        <CollapsibleTrigger className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors font-semibold">
+                          <ChevronRight className="h-3 w-3" />
                           Manage {emailTemplates.length} template{emailTemplates.length !== 1 ? 's' : ''}
                         </CollapsibleTrigger>
-                        <CollapsibleContent className="pt-1.5">
-                          <div className="space-y-0.5 max-h-24 overflow-y-auto">
+                        <CollapsibleContent className="pt-2">
+                          <div className="space-y-1 max-h-28 overflow-y-auto">
                             {emailTemplates.map(template => (
-                              <div key={template.id} className="flex items-center gap-1.5 p-1 border border-border rounded text-[10px] group">
+                              <div key={template.id} className="flex items-center gap-2 p-1.5 border border-foreground/10 rounded-lg text-[11px] group">
                                 <button onClick={() => handleToggleDefaultTemplate(template.id, template.is_default)} className="shrink-0">
-                                  <Star className={`h-2.5 w-2.5 ${template.is_default ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+                                  <Star className={cn("h-3 w-3", template.is_default ? 'fill-amber-400 text-amber-400' : 'text-muted-foreground/40')} />
                                 </button>
-                                <p className="flex-1 min-w-0 font-medium truncate">{template.name}</p>
-                                <Button variant="ghost" size="sm" className="h-4 px-1 text-[9px]" onClick={() => handleSelectTemplate(template.id)}>Use</Button>
-                                <button onClick={() => handleDeleteTemplate(template.id)} className="opacity-0 group-hover:opacity-100 shrink-0"><Trash2 className="h-2.5 w-2.5 text-destructive" /></button>
+                                <p className="flex-1 min-w-0 font-semibold truncate">{template.name}</p>
+                                <Button variant="ghost" size="sm" className="h-5 px-2 text-[10px] font-semibold" onClick={() => handleSelectTemplate(template.id)}>Use</Button>
+                                <button onClick={() => handleDeleteTemplate(template.id)} className="opacity-0 group-hover:opacity-100 shrink-0"><Trash2 className="h-3 w-3 text-destructive/70" /></button>
                               </div>
                             ))}
                           </div>
@@ -1115,24 +1131,24 @@ const BatchSendDocuments = () => {
                       </Collapsible>
                     )}
 
-                    <div className="h-px bg-border" />
+                    <Separator className="bg-foreground/8" />
 
                     <button
                       onClick={handleSend}
                       disabled={sending || !recipientEmail || selectedDocuments.length === 0}
-                      className="t-btn-primary w-full min-h-[44px] rounded-lg text-sm font-semibold flex items-center justify-center gap-2"
+                      className="t-btn-primary w-full min-h-[48px] rounded-xl text-sm font-bold flex items-center justify-center gap-2.5 tracking-tight"
                     >
                       {sending ? (
                         <><Loader2 className="h-4 w-4 animate-spin" />Sending...</>
                       ) : (
-                        <><Send className="h-4 w-4" />Send Pack{selectedDocuments.length > 0 ? ` (${selectedDocuments.length})` : ''}</>
+                        <><Send className="h-4 w-4" />Send Compliance Pack{selectedDocuments.length > 0 ? ` (${selectedDocuments.length})` : ''}</>
                       )}
                     </button>
 
-                    <div className="flex items-center justify-center gap-3">
-                      <span className="text-[9px] flex items-center gap-0.5 text-muted-foreground"><span className="text-success">✓</span>Secure</span>
-                      <span className="text-[9px] flex items-center gap-0.5 text-muted-foreground"><span className="text-success">✓</span>PDF bundle</span>
-                      <span className="text-[9px] flex items-center gap-0.5 text-muted-foreground"><span className="text-success">✓</span>Audit logged</span>
+                    <div className="flex items-center justify-center gap-4 pt-1">
+                      <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><Shield className="h-3 w-3 text-success" />Secure</span>
+                      <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><FileText className="h-3 w-3 text-success" />PDF bundle</span>
+                      <span className="text-[10px] flex items-center gap-1 text-muted-foreground font-medium"><CheckCircle2 className="h-3 w-3 text-success" />Audit logged</span>
                     </div>
                   </div>
                 </div>
