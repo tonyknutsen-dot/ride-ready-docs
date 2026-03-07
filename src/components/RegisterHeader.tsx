@@ -368,7 +368,7 @@ export const PreviousReportsSection = ({
 
   const closeViewer = () => {
     setViewerState((prev) => {
-      if (prev.url) URL.revokeObjectURL(prev.url);
+      if (prev.url) revokeObjectUrl(prev.url);
       return { open: false, url: '', name: '' };
     });
   };
