@@ -1,77 +1,61 @@
+# Page-Family Design System
 
+## 1. Chooser Pages
+**Pages:** Maintenance landing, Checks landing
 
-# Implementation Plan
+**Rules:**
+- `PageHeader` with module icon (40×40 circle, h-5 w-5 icon), bold title, [13px] subtitle
+- Back button → `/overview`
+- Single ghost action: "How it works" (`HelpCircle` icon, h-8 button, `text-[13px]`)
+- `EquipmentSelector` with KPI strip, search, status filter chips, equipment cards
+- Container: `space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8`
+- **NOT allowed:** RegisterHeader, export buttons, PreviousReportsSection
 
-## Tasks
+## 2. Register Pages
+**Pages:** Defect Register, Wind Speed Register, Maintenance (selected asset), Checks (selected asset/history)
 
-1. **Database migration** — Create `wind_speed_logs` table + update 3 library items removing PIPA/ADIPS/RPII
-2. **PIPA/ADIPS code edits** — Update placeholder text in `MarkCompleteSheet.tsx`, `CompletedEventEditSheet.tsx`, and help-chat system prompt
-3. **RA delete confirmation** — Wrap trash button in `RiskItemCard.tsx` with `AlertDialog`
-4. **Wind Log component** — Create `src/components/WindSpeedLog.tsx`
-5. **RideDetail tab update** — Add conditional "Wind Log" tab for inflatables with mobile-safe flex layout
+**Rules — strict vertical order:**
+1. `PageHeader` (provided by parent page for Maintenance/Checks, or self-contained for Defects/Wind)
+2. **KPI cards** — *only* if the module has pass/fail aggregate metrics (Checks). Other registers omit this.
+3. `RegisterHeader` containing in order:
+   - Primary CTA (full-width mobile, auto desktop, `rounded-xl h-10 min-h-[44px]`)
+   - `extraContent` slot (e.g. stop-use banner for Defects)
+   - Search bar (`pl-9 h-10 rounded-xl text-[13px]`, `mt-3`)
+   - Collapsible "Filters & date range" (`mt-3`) with shared date pickers + module-specific dropdowns
+   - **"Clear all filters" link** inside filterContent when filters active (`text-[12px] font-medium text-primary`)
+   - Export actions row (`mt-3`): **CSV then PDF**, both using `FileDown` icon (`h-4 w-4`), `variant="outline"`, `h-9 min-h-[40px] text-[13px] rounded-xl`
+   - Result count + export hint (`mt-3`, `text-[13px]` + `text-[11px]`)
+4. Records list (`space-y-3`)
+5. `PreviousReportsSection` (shared component, View/Save to Device/Send/Copy Link action order)
+- Container: `space-y-3` (all registers)
 
-## 1. Migration: `wind_speed_logs` table + library wording
+**Export icon rule:** All export buttons use `FileDown`, never `Download`.
 
-Single migration with two clean sections:
+## 3. Management Pages
+**Pages:** Risk Assessments, Equipment, Documents, Send Documents
 
-**Section A — Wording updates (3 UPDATEs):**
+**Rules:**
+- `PageHeader` with module icon, title, optional subtitle
+- Module-specific content layout (grids, tabs, lists)
+- No RegisterHeader required — each module owns its own filter/search patterns
+- Consistent card styling: `rounded-xl border bg-card shadow-sm`
 
-| Table | ID | New label |
-|-------|-----|-----------|
-| `risk_library_items` | `22cf1f9d-...` | "Minimum anchor points and anchorage arrangement in accordance with the applicable standard and manufacturer guidance" |
-| `check_library_items` | `ce41a7a4-...` | "Annual inspection certificate valid" |
-| `check_library_items` | `34127147-...` | "Annual independent inspection" |
+## 4. Utility Pages
+**Pages:** Overview, Calendar
 
-**Section B — `wind_speed_logs` table:**
+**Rules:**
+- Minimal/no `PageHeader` (Overview uses custom dashboard header, Calendar uses `CalendarView`)
+- Content-driven layouts, not form/list patterns
+- `StaffAccountBanner` shown where applicable
 
-Columns: `id` (uuid PK), `user_id`, `ride_id` (FK → rides CASCADE), `log_date` (date, default CURRENT_DATE), `log_time` (time), `wind_speed` (numeric, NOT NULL), `wind_unit` (text, default 'mph'), `recorded_by` (text, NOT NULL), `location` (text), `anemometer_make/model/serial` (text), `action_taken` (text), `notes` (text), `created_at` (timestamptz).
+---
 
-Index on `(ride_id, log_date DESC)`. RLS: deny anonymous, owner ALL, staff SELECT+INSERT for assigned rides.
+## Deliberate Exceptions
 
-## 2. PIPA/ADIPS code edits
+| Exception | Page | Reason |
+|-----------|------|--------|
+| KPI cards above RegisterHeader | Checks history | Pass/fail aggregate metrics are core to the checks workflow and provide immediate operational awareness |
+| `extraContent` stop-use banner | Defect Register | Safety-critical alert that must appear prominently before search/filters |
+| Defects show status in subtitle | Defect Register | Open defect count is operationally critical — shown in PageHeader subtitle |
 
-- **`MarkCompleteSheet.tsx`** line 454: placeholder → `"e.g. Independent Inspector, LEAPS, DMG Technical"`
-- **`CompletedEventEditSheet.tsx`** line 250: placeholder → `"e.g. Independent Inspector, LEAPS"`
-- **`help-chat/index.ts`** line 158: → `NEVER mention "ADIPS", "PIPA", or "RPII" - use "Annual Inspection Certificate" or "Annual Independent Inspection" instead`
-
-## 3. RA delete confirmation — `RiskItemCard.tsx`
-
-Replace the bare trash button (lines 95-101) with an `AlertDialog`:
-- Title: "Delete this risk item?"
-- Description: "This will remove this hazard and its controls from this risk assessment."
-- Cancel + destructive Continue button calling `onDelete`
-
-## 4. Wind Log component — `WindSpeedLog.tsx`
-
-Props: `rideId`, `rideName`
-
-**Log list** — Card-based, each entry shows (in order): date, time, speed + unit, recorded by, location (if present). Anemometer details are secondary — shown only in an expandable/collapsible section per entry.
-
-**Add Reading form** (Sheet/Dialog):
-- Date (default today), Time (default now), Wind speed (numeric), Unit selector (mph / km/h / m/s, default mph)
-- Recorded by, Location
-- Collapsible "Anemometer Details": make, model, serial
-- Action taken (optional), Notes (optional)
-
-No enforcement logic — purely a recording tool.
-
-## 5. RideDetail tab update
-
-- Lazy-import `WindSpeedLog`, import `Wind` icon from lucide
-- Determine `isInflatable = ride.ride_categories.category_group === 'Inflatables'`
-- Build tabs array conditionally; append `{ value: 'windlog', label: 'Wind Log', Icon: Wind }` when inflatable
-- **Mobile-safe layout**: When inflatable (5 tabs), switch `TabsList` from `grid grid-cols-4` to `flex w-full overflow-x-auto` with each trigger getting `flex-1 min-w-[72px]` so tabs scroll horizontally on narrow screens. Non-inflatable (4 tabs) keeps the existing grid layout.
-- Add `<TabsContent value="windlog">` rendering `<WindSpeedLog />`
-
-## File change summary
-
-| Action | File |
-|--------|------|
-| Migration | New migration — 3 UPDATEs + CREATE TABLE + RLS |
-| Edit | `MarkCompleteSheet.tsx` — placeholder text |
-| Edit | `CompletedEventEditSheet.tsx` — placeholder text |
-| Edit | `help-chat/index.ts` — system prompt |
-| Edit | `RiskItemCard.tsx` — AlertDialog delete confirmation |
-| Create | `WindSpeedLog.tsx` — wind log component |
-| Edit | `RideDetail.tsx` — conditional Wind Log tab + mobile layout |
-
+All other visual differences across pages within the same family are considered bugs.

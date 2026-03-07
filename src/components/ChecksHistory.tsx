@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { 
-  Download, 
   FileDown,
   FileText,
   TrendingUp,
@@ -483,9 +482,9 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily', onStartCheck }: 
 
   return (
     <>
-    <div className="space-y-4">
+    <div className="space-y-3">
 
-      {/* ── KPI cards ── */}
+      {/* ── KPI cards (deliberate register-family exception: checks surface pass-rate metrics) ── */}
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
         <KpiCard title={frequency === 'daily' ? 'Daily / Pre-Opening' : `${frequency.charAt(0).toUpperCase() + frequency.slice(1)}`} value={overallStats.total} tone="neutral" />
         <KpiCard title="Passed" value={overallStats.passed} tone="good" />
@@ -505,40 +504,48 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily', onStartCheck }: 
         filterSummary={filterSummary}
         primaryAction={onStartCheck ? { label: 'Start check', icon: <Plus className="h-4 w-4" />, onClick: onStartCheck } : undefined}
         actions={[
-          { label: 'Export CSV', icon: <Download className="h-4 w-4" />, onClick: exportToCSV, variant: 'outline' as const },
+          { label: 'Export CSV', icon: <FileDown className="h-4 w-4" />, onClick: exportToCSV, variant: 'outline' as const },
           { label: 'Export PDF', icon: <FileDown className="h-4 w-4" />, onClick: exportToPDF, variant: 'outline' as const },
         ]}
         filtersOpen={filtersOpen}
         onFiltersOpenChange={setFiltersOpen}
         filterContent={
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-            <div className="space-y-1">
-              <Label className="text-[11px] font-medium text-muted-foreground">Frequency</Label>
-              <Select value={frequencyFilter} onValueChange={setFrequencyFilter}>
-                <SelectTrigger className="h-9 text-[12px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Frequencies</SelectItem>
-                  <SelectItem value="daily">Daily</SelectItem>
-                  <SelectItem value="preopening">Pre-Opening</SelectItem>
-                  <SelectItem value="weekly">Weekly</SelectItem>
-                  <SelectItem value="monthly">Monthly</SelectItem>
-                  <SelectItem value="yearly">Yearly</SelectItem>
-                </SelectContent>
-              </Select>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Frequency</Label>
+                <Select value={frequencyFilter} onValueChange={setFrequencyFilter}>
+                  <SelectTrigger className="h-9 text-[12px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Frequencies</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="preopening">Pre-Opening</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="monthly">Monthly</SelectItem>
+                    <SelectItem value="yearly">Yearly</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[11px] font-medium text-muted-foreground">Status</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="h-9 text-[12px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="passed">Passed</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                    <SelectItem value="partial">Partial</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <div className="space-y-1">
-              <Label className="text-[11px] font-medium text-muted-foreground">Status</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger className="h-9 text-[12px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="passed">Passed</SelectItem>
-                  <SelectItem value="failed">Failed</SelectItem>
-                  <SelectItem value="partial">Partial</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+            {hasActiveFilters && (
+              <button onClick={() => { setSearchTerm(''); setFrequencyFilter('all'); setStatusFilter('all'); setDateFrom(undefined); setDateTo(undefined); }}
+                className="text-[12px] font-medium text-primary hover:underline">
+                Clear all filters
+              </button>
+            )}
+          </>
         }
         dateFrom={dateFrom}
         dateTo={dateTo}
