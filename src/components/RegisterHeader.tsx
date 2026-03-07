@@ -7,13 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Download, Link2, Eye, Share2 } from 'lucide-react';
+import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Download, Link2, Eye, Share2, Mail, Loader2 } from 'lucide-react';
 import { format, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { isLikelyMobileOrTablet } from '@/utils/exportFileActions';
 import {
   downloadBlob,
-  getSignedStorageUrl,
   getStorageFileBlob,
   shareStoredFileOrFallback,
 } from '@/utils/exportFileActions';
@@ -286,19 +286,29 @@ export const PreviousReportsSection = ({
     }
   };
 
-  const handleShare = async (filePath: string, fileName: string) => {
-    try {
-      const outcome = await shareStoredFileOrFallback(filePath, fileName);
-      if (outcome === 'shared') {
-        toast({ title: 'Shared', description: 'Report sent via share sheet' });
-      } else if (outcome === 'copied') {
-        toast({ title: 'Link copied', description: 'Signed link copied to clipboard' });
-      } else if (outcome === 'downloaded') {
-        toast({ title: 'Downloaded', description: 'Share not available — file downloaded instead' });
+  const handleShare = async (filePath: string, fileName: string, reportId: string) => {
+    const isMobile = isLikelyMobileOrTablet();
+    
+    if (isMobile && typeof navigator?.share === 'function') {
+      // Mobile: native share
+      try {
+        const blob = await getStorageFileBlob(filePath);
+        const file = new File([blob], fileName, { type: 'application/pdf' });
+        const canShareFiles = typeof navigator.canShare !== 'function' || navigator.canShare({ files: [file] });
+        if (canShareFiles) {
+          await navigator.share({ files: [file], title: fileName });
+          toast({ title: 'Shared', description: 'Report sent via share sheet' });
+          return;
+        }
+      } catch (error: any) {
+        if (error?.name === 'AbortError') return;
       }
-    } catch {
-      toast({ title: 'Share failed', variant: 'destructive' });
+      // Fallback to download
+      const blob = await getStorageFileBlob(filePath);
+      downloadBlob(blob, fileName);
+      toast({ title: 'Downloaded', description: 'Share not available — file downloaded' });
     }
+    // Desktop: handled by popover inline
   };
 
   const handleCopyLink = async (reportId: string) => {
@@ -310,6 +320,15 @@ export const PreviousReportsSection = ({
       toast({ title: 'Copy link failed', variant: 'destructive' });
     }
   };
+
+  const handleEmailShare = (reportId: string, fileName: string) => {
+    const link = `${window.location.origin}/documents/${reportId}`;
+    const subject = encodeURIComponent(fileName);
+    const body = encodeURIComponent(`Here is the document: ${link}`);
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_self');
+  };
+
+  const isMobile = isLikelyMobileOrTablet();
 
   return (
     <>
@@ -344,9 +363,48 @@ export const PreviousReportsSection = ({
                 <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
                   <Download className="h-3 w-3" /> Save to Device
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleShare(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
-                  <Share2 className="h-3 w-3" /> Share
-                </Button>
+
+                {/* Share: mobile = native share, desktop = popover menu */}
+                {isMobile ? (
+                  <Button variant="ghost" size="sm" onClick={() => handleShare(report.file_path, report.document_name, report.id)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                    <Share2 className="h-3 w-3" /> Share
+                  </Button>
+                ) : (
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" size="sm" className="h-8 text-[11px] gap-1 min-h-[36px]">
+                        <Share2 className="h-3 w-3" /> Share
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-48 p-1.5" align="start" side="top">
+                      <div className="space-y-0.5">
+                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-2 pt-1 pb-1">Share via</p>
+                        <button
+                          onClick={() => handleCopyLink(report.id)}
+                          className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-left hover:bg-muted/60 transition-colors"
+                        >
+                          <Link2 className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-foreground">Copy Link</span>
+                        </button>
+                        <button
+                          onClick={() => handleEmailShare(report.id, report.document_name)}
+                          className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-left hover:bg-muted/60 transition-colors"
+                        >
+                          <Mail className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-foreground">Email</span>
+                        </button>
+                        <button
+                          onClick={() => handleDownload(report.file_path, report.document_name)}
+                          className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-left hover:bg-muted/60 transition-colors"
+                        >
+                          <Download className="h-3 w-3 text-muted-foreground" />
+                          <span className="text-xs text-foreground">Save to Device</span>
+                        </button>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                )}
+
                 <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px]">
                   <Link2 className="h-3 w-3" /> Copy Link
                 </Button>

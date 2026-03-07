@@ -634,7 +634,7 @@ const DefectRegister = () => {
             mime_type: 'application/pdf',
             file_size: pdfBlob.size,
             notes: `Defect register: ${filtered.length} records, ${periodLabel}`,
-            is_global: false,
+            is_global: !isSingleRide,
             ride_id: isSingleRide ? rideFilter : null,
           })
           .select('id')
