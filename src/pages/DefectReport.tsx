@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +23,7 @@ type Ride = Tables<'rides'> & {
 
 const DefectReport = () => {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { user } = useAuth();
   const { isStaff } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
@@ -75,6 +77,11 @@ const DefectReport = () => {
   };
 
   const handleDefectReported = () => {
+    queryClient.invalidateQueries({ queryKey: ['defect-register'] });
+    queryClient.invalidateQueries({ queryKey: ['open-critical-defects'] });
+    queryClient.invalidateQueries({ queryKey: ['all-rides-critical-defects'] });
+    queryClient.invalidateQueries({ queryKey: ['all-rides-open-defects'] });
+    queryClient.invalidateQueries({ queryKey: ['needs-attention'] });
     navigate('/defects');
   };
 
