@@ -304,8 +304,8 @@ export const PreviousReportsSection = ({
 
   return (
     <>
-      <div className="space-y-2 pt-4 border-t">
-        <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
+    <div className="space-y-2.5 pt-5 border-t border-border">
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Previously Generated Reports</h4>
         {reports.length === 0 ? (
           <div className="flex flex-col items-center py-6 text-center">
             <div className="h-10 w-10 rounded-full bg-muted/60 flex items-center justify-center mb-2">
