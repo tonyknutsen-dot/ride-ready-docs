@@ -103,6 +103,7 @@ interface EmailTemplate {
 }
 
 const BatchSendDocuments = () => {
+  const isMobile = window.innerWidth < 768;
   const { user } = useAuth();
   const { effectiveUserId, actualUserId, isStaff } = useEffectiveUserId();
   const { terminology } = useTerminology();
@@ -807,7 +808,7 @@ const BatchSendDocuments = () => {
                       </div>
                     )}
 
-                    <div className="space-y-1.5 max-h-[52vh] overflow-y-auto pr-1 md:max-h-none md:overflow-visible md:pr-0">
+                    <div className="space-y-1.5 max-h-[40vh] overflow-y-auto pr-1 md:max-h-none md:overflow-visible md:pr-0">
                       {/* Check Records */}
                       {currentRideCheckRecords.length > 0 && (
                         <Collapsible open={checkRecordsExpanded} onOpenChange={setCheckRecordsExpanded}>
@@ -850,7 +851,7 @@ const BatchSendDocuments = () => {
 
                       {/* Ride Documents */}
                       {currentRideDocuments.length > 0 && (
-                        <Collapsible defaultOpen>
+                        <Collapsible defaultOpen={!isMobile}>
                           <div className="border border-border rounded-lg overflow-hidden">
                             <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
                               <div className="flex items-center gap-1.5 min-w-0">
@@ -894,7 +895,7 @@ const BatchSendDocuments = () => {
 
                       {/* Global Documents */}
                       {globalDocuments.length > 0 && (
-                        <Collapsible defaultOpen={currentRideDocuments.length === 0}>
+                        <Collapsible defaultOpen={!isMobile && currentRideDocuments.length === 0}>
                           <div className="border border-border rounded-lg overflow-hidden">
                             <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
                               <div className="flex items-center gap-1.5 min-w-0">
