@@ -38,6 +38,7 @@ import {
   PDF_TABLE_HEAD_STYLES, PDF_TABLE_BODY_STYLES, PDF_TABLE_ALT_ROW,
 } from '@/utils/pdfUtils';
 import { drawTemplateHeader, drawTemplateFooters, generateDocumentId } from '@/utils/pdfTemplate';
+import { storeRideDocument, getRideCode } from '@/utils/rideDocumentService';
 
 type DefectSeverity = 'non_urgent' | 'urgent' | 'stop_operation';
 type DefectStatus = 'open' | 'acknowledged' | 'in_progress' | 'awaiting_review' | 'resolved';
