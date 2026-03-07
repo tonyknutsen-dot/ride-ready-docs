@@ -610,6 +610,11 @@ const NotificationCenter = () => {
   }, [notifications]);
 
   const resolveRouteForNotification = useCallback(async (n: Notification): Promise<{ route: string | null; reason: string }> => {
+    // Checks notifications should open checks flow as the primary destination
+    if (n.related_table === 'checks') {
+      return { route: getActionRoute(n), reason: 'checks_primary_route' };
+    }
+
     if (isDefectRelatedNotification(n)) {
       return { route: buildDefectRoute(n.related_id), reason: 'defect_indicators' };
     }
@@ -623,21 +628,6 @@ const NotificationCenter = () => {
 
       if (matchedDefect?.id) {
         return { route: buildDefectRoute(matchedDefect.id), reason: 'related_id_maps_to_defect' };
-      }
-
-      if (n.related_table === 'checks') {
-        const { data: linkedDefect } = await supabase
-          .from('defects')
-          .select('id, severity, reported_at')
-          .eq('check_id', n.related_id)
-          .neq('status', 'resolved')
-          .order('reported_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        if (linkedDefect?.id) {
-          return { route: buildDefectRoute(linkedDefect.id), reason: 'check_maps_to_open_defect' };
-        }
       }
     }
 
@@ -685,6 +675,22 @@ const NotificationCenter = () => {
     e.stopPropagation();
     await handleNotificationNavigate(n);
   }, [handleNotificationNavigate]);
+
+  const handleOpenLinkedDefect = useCallback(async (n: Notification, defectId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!n.is_read && isController) {
+      await markAsRead(n.id);
+    }
+
+    const route = buildDefectRoute(defectId);
+    console.info('[Notifications] Open linked defect', {
+      notification_id: n.id,
+      defect_id: defectId,
+      action_route: route,
+    });
+    navigate(route);
+  }, [isController, markAsRead, navigate]);
 
   /* ── Render ───────────────────────────── */
 
