@@ -65,6 +65,7 @@ const Auth = () => {
   const [passwordValidation, setPasswordValidation] = useState<ReturnType<typeof validatePasswordStrength> | null>(null);
   
   const [isOAuthCallback, setIsOAuthCallback] = useState(false);
+  const [showMFA, setShowMFA] = useState(false);
   
   const { signIn, signUp, resetPassword, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
