@@ -134,8 +134,8 @@ export default function Reports({ preFilterRideId, preFilterRideName }: ReportsP
       });
 
       // Save to Documents callback (not auto)
-      const saveToDocuments = async () => {
-        await storeTimelineReportPdf(blob, fileName, documentId, {
+      const saveToDocuments = async (): Promise<string | void> => {
+        const resultId = await storeTimelineReportPdf(blob, fileName, documentId, {
           rideId: selectedRide?.id,
           rideName: selectedRide?.ride_name,
           userId: effectiveUserId,
@@ -143,6 +143,7 @@ export default function Reports({ preFilterRideId, preFilterRideName }: ReportsP
           endDate,
           scope,
         });
+        return resultId || undefined;
       };
 
       setExportResult({ blob, fileName, onSaveToDocuments: saveToDocuments });
