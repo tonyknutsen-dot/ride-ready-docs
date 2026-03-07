@@ -240,9 +240,6 @@ const DocumentPreviewSheet = ({ open, onOpenChange, source }: DocumentPreviewShe
                 <Button onClick={handleDownload} disabled={downloading} className="gap-2 h-11">
                   <Download className="h-4 w-4" /> Save to device
                 </Button>
-                <Button variant="outline" onClick={handleShare} className="gap-2 h-11">
-                  <Share2 className="h-4 w-4" /> Share
-                </Button>
                 {source.storagePath && (
                   <Button variant="outline" onClick={handleCopyLink} className="gap-2 h-11">
                     <Link2 className="h-4 w-4" /> Copy link
