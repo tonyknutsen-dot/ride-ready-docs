@@ -72,9 +72,9 @@ const Checks = () => {
         {/* ── PRIMARY CTA ────────────────────────── */}
         <Button
           onClick={() => setPickerOpen(true)}
-          className="gap-1.5 h-12 min-h-[52px] w-full sm:w-auto text-sm"
+          className="gap-1.5 h-10 min-h-[44px] w-full sm:w-auto text-[12px]"
         >
-          <Plus className="h-4 w-4" />
+          <Plus className="h-3.5 w-3.5" />
           Start Check
         </Button>
 
