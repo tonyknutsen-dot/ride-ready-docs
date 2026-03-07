@@ -254,6 +254,7 @@ const NotificationCenter = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<FilterTab>('all');
+  const [linkedDefectByNotification, setLinkedDefectByNotification] = useState<Record<string, string>>({});
   const role = useAppRole();
   const isController = role === 'controller';
 
@@ -263,6 +264,50 @@ const NotificationCenter = () => {
       generateComplianceNotifications();
     }
   }, [user, effectiveUserId]);
+
+  useEffect(() => {
+    const linkCheckNotificationsToDefects = async () => {
+      const checkNotifications = notifications.filter(
+        (n) => n.related_table === 'checks' && !!n.related_id
+      );
+
+      if (checkNotifications.length === 0) {
+        setLinkedDefectByNotification({});
+        return;
+      }
+
+      const checkIds = [...new Set(checkNotifications.map((n) => n.related_id!).filter(Boolean))];
+      const { data, error } = await supabase
+        .from('defects')
+        .select('id, check_id, reported_at')
+        .in('check_id', checkIds)
+        .neq('status', 'resolved')
+        .order('reported_at', { ascending: false });
+
+      if (error) {
+        console.error('Error linking check notifications to defects:', error);
+        return;
+      }
+
+      const latestDefectByCheck = new Map<string, string>();
+      (data || []).forEach((row: any) => {
+        if (row.check_id && !latestDefectByCheck.has(row.check_id)) {
+          latestDefectByCheck.set(row.check_id, row.id);
+        }
+      });
+
+      const mapping: Record<string, string> = {};
+      checkNotifications.forEach((n) => {
+        if (!n.related_id) return;
+        const defectId = latestDefectByCheck.get(n.related_id);
+        if (defectId) mapping[n.id] = defectId;
+      });
+
+      setLinkedDefectByNotification(mapping);
+    };
+
+    void linkCheckNotificationsToDefects();
+  }, [notifications]);
 
   const loadNotifications = async () => {
     try {
