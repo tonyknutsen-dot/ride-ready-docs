@@ -74,11 +74,6 @@ const Maintenance = () => {
     setSearchParams({ rideId: ride.id });
   };
 
-  const handleLogMaintenancePick = (ride: any) => {
-    setPickerOpen(false);
-    setSelectedRide(ride as Ride);
-    setSearchParams({ rideId: ride.id, tab: 'log' });
-  };
 
   const handleBack = () => {
     setSelectedRide(null);
