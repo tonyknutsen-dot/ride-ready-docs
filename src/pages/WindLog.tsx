@@ -574,7 +574,10 @@ const WindLog = () => {
       loadSavedReports();
     };
 
-    setExportResult({ blob: result.blob, fileName: result.fileName, onSaveToDocuments: saveToDocuments, saveLabel });
+    const saveHint = isSingleAsset
+      ? 'This report will be saved to the selected asset\'s Documents.'
+      : 'This report will be saved as a Global Document.';
+    setExportResult({ blob: result.blob, fileName: result.fileName, onSaveToDocuments: saveToDocuments, saveLabel, saveHint });
     setExportDialogOpen(true);
   };
 

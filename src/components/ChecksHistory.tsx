@@ -386,7 +386,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       });
     };
 
-    setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel: 'Save to Asset Documents' });
+    setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel: 'Save to Asset Documents', saveHint: 'This report will be saved to the selected asset\'s Documents.' });
     setExportDialogOpen(true);
   };
 
