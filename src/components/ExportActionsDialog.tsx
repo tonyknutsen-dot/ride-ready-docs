@@ -88,8 +88,6 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
 
   const handleClose = (nextOpen: boolean) => {
     if (!nextOpen) {
-      // Clean up
-      URL.revokeObjectURL(objectUrl);
       setSaved(false);
       setSaving(false);
     }
