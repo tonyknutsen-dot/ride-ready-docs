@@ -1005,8 +1005,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                 <div className="flex items-start gap-3 min-w-0">
                   {/* Thumbnail */}
                   <div 
-                    className="shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-primary/10 to-info/10 border border-primary/20 flex items-center justify-center cursor-pointer"
-                    onClick={() => isViewable(doc) && handleView(doc)}
+                    className="shrink-0 h-12 w-12 rounded-xl bg-gradient-to-br from-primary/10 to-info/10 border border-primary/20 flex items-center justify-center"
                   >
                     {thumbs[doc.id] ? (
                       <img
