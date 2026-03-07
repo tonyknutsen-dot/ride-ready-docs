@@ -591,6 +591,11 @@ const BatchSendDocuments = () => {
         backTo="/documents"
       />
 
+      {/* Helper text */}
+      <p className="text-xs text-muted-foreground -mt-2">
+        Build a pack for a specific asset, or send company-wide (Global) documents.
+      </p>
+
       {/* Step 1: Ride Selection (if no ride selected) */}
       {!selectedRide ? (
         <div className="space-y-4">
@@ -598,28 +603,31 @@ const BatchSendDocuments = () => {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => document.getElementById('asset-pack-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 min-h-[44px] hover:bg-accent/50 active:bg-accent transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 min-h-[44px] hover:bg-accent/50 active:bg-accent/80 transition-colors shadow-sm cursor-pointer"
             >
               <Package className="h-4 w-4 text-primary shrink-0" strokeWidth={2} />
               <span className="text-[13px] font-semibold text-foreground whitespace-nowrap">{rides.length} {rides.length === 1 ? 'Asset' : 'Assets'}</span>
+              <ChevronRight className="h-3 w-3 text-muted-foreground" />
             </button>
             <button
               onClick={() => document.getElementById('asset-pack-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 min-h-[44px] hover:bg-accent/50 active:bg-accent transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 min-h-[44px] hover:bg-accent/50 active:bg-accent/80 transition-colors shadow-sm cursor-pointer"
             >
               <FileText className="h-4 w-4 text-primary shrink-0" strokeWidth={2} />
               <span className="text-[13px] font-semibold text-foreground whitespace-nowrap">
                 {rides.reduce((sum, r) => sum + r.documents.length, 0) + checkRecords.length} Documents
               </span>
+              <ChevronRight className="h-3 w-3 text-muted-foreground" />
             </button>
             <button
               onClick={() => document.getElementById('global-docs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 min-h-[44px] hover:bg-accent/50 active:bg-accent transition-colors shadow-sm"
+              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 min-h-[44px] hover:bg-accent/50 active:bg-accent/80 transition-colors shadow-sm cursor-pointer"
             >
               <Building2 className="h-4 w-4 text-primary shrink-0" strokeWidth={2} />
               <span className="text-[13px] font-semibold text-foreground whitespace-nowrap">
                 {globalDocuments.length} Global {globalDocuments.length === 1 ? 'doc' : 'docs'}
               </span>
+              <ChevronRight className="h-3 w-3 text-muted-foreground" />
             </button>
           </div>
 
@@ -679,6 +687,7 @@ const BatchSendDocuments = () => {
                                 complianceStatus === 'compliant' && "bg-success/10 text-success border-success/20",
                                 complianceStatus === 'expiring' && "bg-warning/10 text-warning border-warning/20"
                               )}
+                              title="Based on expiry dates in the document register"
                             >
                               <StatusIcon className="h-2.5 w-2.5" strokeWidth={2.5} />
                               {statusConfig.label}
@@ -690,9 +699,7 @@ const BatchSendDocuments = () => {
                             {ride.manufacturer && (
                               <span className="text-xs text-muted-foreground truncate">{ride.manufacturer}</span>
                             )}
-                            {ride.manufacturer && totalDocs > 0 && (
-                              <span className="text-muted-foreground/40">·</span>
-                            )}
+                            {ride.manufacturer && <span className="text-muted-foreground/40">·</span>}
                             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                               <FileText className="h-3 w-3" strokeWidth={2} />
                               {totalDocs > 0
@@ -703,11 +710,14 @@ const BatchSendDocuments = () => {
 
                           {/* CTA row */}
                           <div className="mt-2.5 pt-2.5 border-t border-border/60 flex items-center justify-between">
-                            <span className="text-xs font-medium text-primary flex items-center gap-1.5">
-                              <Shield className="h-3.5 w-3.5" strokeWidth={2} />
-                              Build Compliance Pack
-                            </span>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                            <div>
+                              <span className="text-xs font-medium text-primary flex items-center gap-1.5">
+                                <Shield className="h-3.5 w-3.5" strokeWidth={2} />
+                                Build Compliance Pack
+                              </span>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 ml-5">Choose items and export/share/save a submission pack</p>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
                           </div>
                         </div>
                       </button>
@@ -719,44 +729,49 @@ const BatchSendDocuments = () => {
           </div>
 
           {/* Global Documents Panel */}
-          <button
-            id="global-docs-section"
-            className="w-full text-left group active:scale-[0.98] transition-all min-h-[44px]"
-            onClick={() => setSelectedRide({ id: '__global__', ride_name: 'Global Documents' })}
-          >
-            <div className="p-3.5 rounded-xl border border-border bg-card shadow-sm transition-all group-hover:border-primary/40 group-hover:shadow-md">
-              {/* Title row */}
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
-                    <Building2 className="h-4 w-4 text-primary" strokeWidth={2} />
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors">Global Compliance Documents</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      {globalDocuments.length > 0
-                        ? `Insurance, policies & company-wide docs · ${globalDocuments.length} ${globalDocuments.length === 1 ? 'file' : 'files'}`
-                        : 'No global documents'}
-                    </p>
+          <div id="global-docs-section">
+            <button
+              className="w-full text-left group active:scale-[0.98] transition-all min-h-[44px]"
+              onClick={() => setSelectedRide({ id: '__global__', ride_name: 'Global Documents' })}
+            >
+              <div className="p-3.5 rounded-xl border border-border bg-card shadow-sm transition-all group-hover:border-primary/40 group-hover:shadow-md">
+                {/* Title row */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
+                      <Building2 className="h-4 w-4 text-primary" strokeWidth={2} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors">Global Compliance Documents</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Insurance, policies &amp; company-wide docs
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </div>
-
-              {/* CTA row */}
-              {globalDocuments.length > 0 && (
-                <div className="mt-2.5 pt-2.5 border-t border-border/60 flex items-center justify-between">
-                  <span className="text-xs font-medium text-primary flex items-center gap-1.5">
-                    <Shield className="h-3.5 w-3.5" strokeWidth={2} />
-                    Build Compliance Pack
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+                    <FileText className="h-3 w-3" strokeWidth={2} />
+                    {globalDocuments.length > 0
+                      ? `${globalDocuments.length} ${globalDocuments.length === 1 ? 'file' : 'files'}`
+                      : 'No files'}
                   </span>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
-              )}
-              {globalDocuments.length > 0 && (
-                <p className="text-[11px] text-muted-foreground/70 mt-2 italic">These can be included in any submission pack</p>
-              )}
-            </div>
-          </button>
+
+                {/* CTA row */}
+                {globalDocuments.length > 0 && (
+                  <div className="mt-2.5 pt-2.5 border-t border-border/60 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs font-medium text-primary flex items-center gap-1.5">
+                        <Shield className="h-3.5 w-3.5" strokeWidth={2} />
+                        Build Compliance Pack
+                      </span>
+                      <p className="text-[10px] text-muted-foreground mt-0.5 ml-5">These can be included in any submission pack</p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                  </div>
+                )}
+              </div>
+            </button>
+          </div>
         </div>
       ) : (
         <>
