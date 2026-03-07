@@ -203,20 +203,55 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   /* ─── Actions ─── */
   const handleView = async (doc: Document) => {
     try {
+      const fp = doc.file_path || '';
+
+      if (isImageFile(fp)) {
+        const { data, error } = await supabase.storage
+          .from('ride-documents')
+          .createSignedUrl(doc.file_path, 3600);
+        if (error) throw error;
+        if (!data?.signedUrl) throw new Error('Could not create signed URL for image');
+
+        setViewerState((prev) => {
+          if (prev.url) revokeObjectUrl(prev.url);
+          return { type: 'image', url: data.signedUrl, name: doc.document_name };
+        });
+        return;
+      }
+
+      if (isPDFFile(fp)) {
+        const prepared = await createPdfViewerUrlFromStorage(doc.file_path);
+
+        console.info('[PDF DEBUG][RideDocumentView] view-pdf', {
+          documentId: doc.id,
+          storagePath: doc.file_path,
+          fileName: doc.document_name,
+          blobSize: prepared.blobSize,
+          blobType: prepared.blobType,
+          signature: prepared.signature,
+          validPdfSignature: prepared.validPdf,
+          viewerSourceType: 'blob-url',
+          normalizedBlobType: prepared.normalizedBlobType,
+        });
+
+        if (!prepared.validPdf) {
+          revokeObjectUrl(prepared.url);
+          toast({ title: 'Invalid PDF', description: 'This file is not a valid PDF.', variant: 'destructive' });
+          return;
+        }
+
+        setViewerState((prev) => {
+          if (prev.url) revokeObjectUrl(prev.url);
+          return { type: 'pdf', url: prepared.url, name: doc.document_name };
+        });
+        return;
+      }
+
       const { data, error } = await supabase.storage
         .from('ride-documents')
         .createSignedUrl(doc.file_path, 3600);
       if (error) throw error;
-      if (!data?.signedUrl) return;
-
-      const fp = doc.file_path || '';
-      if (isImageFile(fp)) {
-        setViewerState({ type: 'image', url: data.signedUrl, name: doc.document_name });
-      } else if (isPDFFile(fp)) {
-        setViewerState({ type: 'pdf', url: data.signedUrl, name: doc.document_name });
-      } else {
-        window.open(data.signedUrl, '_blank');
-      }
+      if (data?.signedUrl) window.open(data.signedUrl, '_blank');
     } catch (err: any) {
       if (!navigator.onLine) {
         showRequiresConnectionToast();
