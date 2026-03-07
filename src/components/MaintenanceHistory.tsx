@@ -63,7 +63,7 @@ const MAINTENANCE_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
-const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) => {
+const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: MaintenanceHistoryProps) => {
   const [records, setRecords] = useState<MaintenanceRecord[]>([]);
   const [documents, setDocuments] = useState<Record<string, Document[]>>({});
   const [documentUrls, setDocumentUrls] = useState<Record<string, string>>({});
