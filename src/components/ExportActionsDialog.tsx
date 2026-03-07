@@ -4,7 +4,7 @@ import { Eye, Download, Share2, FolderPlus, Loader2, CheckCircle2 } from 'lucide
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import PDFViewer from '@/components/PDFViewer';
-import { isLikelyMobileOrTablet, shareBlobOrFallback, downloadBlob } from '@/utils/exportFileActions';
+import { isLikelyMobileOrTablet, shareBlobOrFallback, downloadBlob, createPdfViewerUrlFromBlob, revokeObjectUrl } from '@/utils/exportFileActions';
 
 export interface ExportResult {
   blob: Blob;
