@@ -398,7 +398,7 @@ const NotificationCenter = () => {
           </div>
           <div>
             <p className="text-[13px] font-semibold text-foreground">No action needed right now</p>
-            <p className="text-[11px] text-muted-foreground">You're up to date. Older updates are listed below.</p>
+            <p className="text-[11px] text-muted-foreground">{"You're up to date. Older updates are listed below."}</p>
           </div>
         </div>
       )}
