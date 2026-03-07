@@ -757,10 +757,6 @@ const BatchSendDocuments = () => {
               )}
             </div>
           </button>
-                </div>
-              </div>
-            </button>
-          )}
         </div>
       ) : (
         <>
