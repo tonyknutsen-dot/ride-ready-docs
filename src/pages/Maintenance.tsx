@@ -153,15 +153,6 @@ const Maintenance = () => {
         }
       />
 
-      {/* ── Primary CTA ── */}
-      <Button
-        onClick={() => { (document.activeElement as HTMLElement)?.blur(); setPickerOpen(true); }}
-        className="gap-1.5 h-10 min-h-[44px] w-full sm:w-auto text-[12px]"
-      >
-        <Plus className="h-3.5 w-3.5" />
-        Log maintenance
-      </Button>
-
       <MaintenanceRideSelector onRideSelect={handleRideSelect} />
 
       {/* ── EQUIPMENT PICKER ── */}
