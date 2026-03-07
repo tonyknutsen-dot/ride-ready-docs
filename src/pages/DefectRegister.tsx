@@ -854,6 +854,18 @@ const DefectRegister = () => {
         onOpenChange={setExportDialogOpen}
         result={exportResult}
       />
+
+      {/* Equipment picker for reporting */}
+      <EquipmentPickerDialog
+        open={defectPickerOpen}
+        onOpenChange={setDefectPickerOpen}
+        title="Select equipment"
+        subtitle="Choose equipment to report a defect on"
+        onSelect={(ride) => {
+          setDefectPickerOpen(false);
+          navigate(`/defect-report?rideId=${ride.id}`);
+        }}
+      />
     </div>
   );
 };
