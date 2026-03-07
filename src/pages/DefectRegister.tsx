@@ -269,6 +269,9 @@ const DefectRegister = () => {
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
 
+  // Equipment picker for report defect
+  const [defectPickerOpen, setDefectPickerOpen] = useState(false);
+
   // Saved reports
   const [savedReports, setSavedReports] = useState<any[]>([]);
 
