@@ -509,6 +509,9 @@ const Settings = () => {
         {/* Support Access */}
         <SupportAccessManager />
 
+        {/* Session Security */}
+        <SecuritySettingsSection />
+
         {/* ─── SECTION: ACCOUNT & BILLING ─── */}
         <SectionLabel>Account &amp; Billing</SectionLabel>
 
