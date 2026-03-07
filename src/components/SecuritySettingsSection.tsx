@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Shield, Lock, Key, LogOut, Smartphone } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Shield, Lock, Key, LogOut, Smartphone, ShieldCheck, ShieldOff } from 'lucide-react';
 import { useSecuritySettings } from '@/hooks/useSecuritySettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import PinSetupDialog from './PinSetupDialog';
+import MFAEnrollDialog from './MFAEnrollDialog';
 
 const IDLE_OPTIONS = [
   { value: '0', label: 'Off' },
