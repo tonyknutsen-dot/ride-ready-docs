@@ -587,7 +587,10 @@ const DefectRegister = () => {
         loadSavedReports();
       };
 
-      setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel });
+      const saveHint = isSingleRide
+        ? 'This report will be saved to the selected asset\'s Documents.'
+        : 'This report will be saved as a Global Document.';
+      setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel, saveHint });
       setExportDialogOpen(true);
     } catch (error) {
       console.error('PDF error:', error);
@@ -618,8 +621,8 @@ const DefectRegister = () => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search defects…"
+        primaryAction={{ label: 'Report defect', icon: <AlertOctagon className="h-3.5 w-3.5" />, onClick: () => { (document.activeElement as HTMLElement)?.blur(); setDefectPickerOpen(true); } }}
         actions={[
-          { label: 'Report defect', icon: <AlertOctagon className="h-3.5 w-3.5" />, onClick: () => setDefectPickerOpen(true) },
           { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filtered.length === 0 },
           { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline', disabled: generatingPdf || filtered.length === 0, loading: generatingPdf },
         ]}

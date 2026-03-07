@@ -574,7 +574,10 @@ const WindLog = () => {
       loadSavedReports();
     };
 
-    setExportResult({ blob: result.blob, fileName: result.fileName, onSaveToDocuments: saveToDocuments, saveLabel });
+    const saveHint = isSingleAsset
+      ? 'This report will be saved to the selected asset\'s Documents.'
+      : 'This report will be saved as a Global Document.';
+    setExportResult({ blob: result.blob, fileName: result.fileName, onSaveToDocuments: saveToDocuments, saveLabel, saveHint });
     setExportDialogOpen(true);
   };
 
@@ -851,8 +854,8 @@ const WindLog = () => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search readings…"
+        primaryAction={{ label: 'Log wind reading', icon: <Plus className="h-3.5 w-3.5" />, onClick: () => { (document.activeElement as HTMLElement)?.blur(); setWindPickerOpen(true); }, disabled: inflatables.length === 0 }}
         actions={[
-          { label: 'Add wind reading', icon: <Plus className="h-3.5 w-3.5" />, onClick: () => setWindPickerOpen(true), disabled: inflatables.length === 0 },
           { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filteredLogs.length === 0 },
           { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline', disabled: filteredLogs.length === 0 },
         ]}
