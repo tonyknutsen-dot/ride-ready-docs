@@ -129,18 +129,24 @@ const getIcon = (n: Notification) => {
 const getActionRoute = (n: Notification): string | null => {
   const title = n.title?.toLowerCase() ?? '';
   if (isSentDocument(n)) return '/batch-send';
-  if (title.includes('defect')) return '/defects';
+
+  // Defect notifications deep-link directly to the defect record in the Defect Register
+  if (title.includes('defect') || n.related_table === 'defects') {
+    const base = '/defects';
+    if (n.related_id) return `${base}?defectId=${n.related_id}&status=open`;
+    return base;
+  }
+
   if (title.includes('check') || title.includes('missed')) return '/checks';
+  if (n.related_table === 'checks') return '/checks';
   if (title.includes('inspection') || title.includes('ndt')) return '/compliance';
   if (title.includes('document') || title.includes('expir') || title.includes('certificate')) return '/documents';
+  if (n.related_table === 'documents') return '/documents';
   if (title.includes('maintenance')) return '/maintenance';
+  if (n.related_table === 'maintenance_records') return '/maintenance';
   if (title.includes('wind') || title.includes('threshold') || title.includes('pack-away')) return '/wind-log';
   if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return '/plan-billing';
   if (title.includes('security') || title.includes('role')) return '/security';
-  if (n.related_table === 'documents') return '/documents';
-  if (n.related_table === 'maintenance_records') return '/maintenance';
-  if (n.related_table === 'defects') return '/defects';
-  if (n.related_table === 'checks') return '/checks';
   return null;
 };
 
