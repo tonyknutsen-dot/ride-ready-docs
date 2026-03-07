@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { Calendar, Edit, Trash2, FileText, Camera, Download, Filter, Save, Clock, X, FolderOpen, MoreVertical, Paperclip, Image, FileSpreadsheet, File, Search, FileDown, Eye, ChevronDown } from 'lucide-react';
+import { Calendar, Edit, Trash2, FileText, Camera, Download, Filter, Save, Clock, X, FolderOpen, MoreVertical, Paperclip, Image, FileSpreadsheet, File, Search, FileDown, Eye, ChevronDown, Plus } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { format, parseISO, isWithinInterval, startOfDay, endOfDay, subMonths } from 'date-fns';
@@ -42,6 +42,8 @@ type Document = Tables<'documents'>;
 interface MaintenanceHistoryProps {
   ride: Ride;
   refreshTrigger?: number;
+  /** Callback to open the log-maintenance sheet from the parent */
+  onLogMaintenance?: () => void;
 }
 
 const MAINTENANCE_TYPES = [
@@ -61,7 +63,7 @@ const MAINTENANCE_TYPES = [
   { value: 'other', label: 'Other' },
 ];
 
-const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) => {
+const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: MaintenanceHistoryProps) => {
   const [records, setRecords] = useState<MaintenanceRecord[]>([]);
   const [documents, setDocuments] = useState<Record<string, Document[]>>({});
   const [documentUrls, setDocumentUrls] = useState<Record<string, string>>({});
@@ -730,6 +732,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
         searchPlaceholder="Search records…"
         activeFilterCount={activeFilterCount}
         filterSummary={filterSummary}
+        primaryAction={onLogMaintenance ? { label: 'Log maintenance', icon: <Plus className="h-3.5 w-3.5" />, onClick: onLogMaintenance } : undefined}
         actions={[
           { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline' as const, disabled: generatingCsv || filteredRecords.length === 0 },
           { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline' as const, disabled: generatingPdf || filteredRecords.length === 0, loading: generatingPdf },
