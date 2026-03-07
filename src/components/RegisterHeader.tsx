@@ -11,11 +11,9 @@ import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Download, Link2
 import { format, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { isLikelyMobileOrTablet } from '@/utils/exportFileActions';
 import {
   downloadBlob,
   getStorageFileBlob,
-  shareStoredFileOrFallback,
 } from '@/utils/exportFileActions';
 
 interface ActionButton {
