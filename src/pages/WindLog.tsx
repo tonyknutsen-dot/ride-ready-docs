@@ -832,7 +832,7 @@ const WindLog = () => {
   };
 
   return (
-    <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-6">
+    <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
       <PageHeader
         title="Wind Speed Register"
         icon={<Wind className="h-5 w-5 text-primary" />}
