@@ -911,8 +911,8 @@ const NotificationCenter = () => {
                   const sentDoc = isSentDocument(n);
                   const route = getActionRoute(n);
                   const linkedDefectId = linkedDefectByNotification[n.id];
-                  const isCheckNotification = getCategory(n) === 'checks' || n.related_table === 'checks';
-                  const showLinkedDefectAction = Boolean(linkedDefectId) && isCheckNotification;
+                  const isFailedCheckRelated = getCategory(n) === 'checks' || n.related_table === 'checks' || (n.title || '').toLowerCase().includes('check failure') || (n.title || '').toLowerCase().includes('failed check');
+                  const showLinkedDefectAction = Boolean(linkedDefectId) && isFailedCheckRelated;
                   const hasAction = route != null || !!n.related_id || showLinkedDefectAction;
 
                   return (
