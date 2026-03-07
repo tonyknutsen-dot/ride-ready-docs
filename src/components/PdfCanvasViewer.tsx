@@ -3,7 +3,7 @@
  * Replaces all iframe/object/embed PDF rendering for reliable cross-browser viewing.
  */
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Loader2, FileText, Download, ZoomIn, ZoomOut, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Loader2, FileText, Download, ZoomIn, ZoomOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import * as pdfjsLib from 'pdfjs-dist';
@@ -53,7 +53,6 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
       try {
         const loadingTask = pdfjsLib.getDocument({
           url: src,
-          // Improve rendering on high-DPI displays
           cMapUrl: `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/cmaps/`,
           cMapPacked: true,
         });
@@ -76,7 +75,6 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
 
     return () => {
       cancelled = true;
-      // Cancel any in-progress render tasks
       renderTasksRef.current.forEach(task => {
         try { task.cancel(); } catch {}
       });
@@ -111,7 +109,6 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
           const ctx = canvas.getContext('2d');
           if (!ctx) continue;
 
-          // Cancel any previous render for this page
           const prevTask = renderTasksRef.current.get(i);
           if (prevTask) {
             try { prevTask.cancel(); } catch {}
@@ -154,23 +151,22 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
     const container = pagesContainerRef.current;
     if (!container) return;
 
-    // Clear existing children
     while (container.firstChild) {
       container.removeChild(container.firstChild);
     }
 
     pages.forEach((canvas, idx) => {
       const wrapper = document.createElement('div');
-      wrapper.className = 'pdf-page-wrapper mx-auto shadow-md bg-white mb-4 rounded overflow-hidden max-w-full';
-      // Ensure canvas scales down on small screens
+      wrapper.className = 'mx-auto bg-white rounded-lg overflow-hidden shadow-sm mb-3 max-w-full';
       canvas.style.maxWidth = '100%';
       canvas.style.height = 'auto';
+      canvas.style.display = 'block';
       wrapper.appendChild(canvas);
 
-      // Page number label
+      // Page label
       const label = document.createElement('div');
-      label.className = 'text-center text-[10px] text-muted-foreground py-1';
-      label.textContent = `Page ${idx + 1} of ${totalPages}`;
+      label.className = 'text-center text-[10px] text-muted-foreground py-1.5 bg-white/80';
+      label.textContent = `${idx + 1} / ${totalPages}`;
       wrapper.appendChild(label);
 
       container.appendChild(wrapper);
@@ -190,7 +186,7 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
     return (
       <div className={cn('flex items-center justify-center h-full', className)}>
         <div className="text-center space-y-3">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+          <Loader2 className="mx-auto h-7 w-7 animate-spin text-primary" />
           <p className="text-sm text-muted-foreground">Loading document…</p>
         </div>
       </div>
@@ -201,13 +197,13 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
   if (error || !src) {
     return (
       <div className={cn('flex items-center justify-center h-full', className)}>
-        <div className="text-center space-y-3 max-w-xs">
-          <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
+        <div className="text-center space-y-3 max-w-xs px-4">
+          <FileText className="mx-auto h-10 w-10 text-muted-foreground/50" />
           <p className="text-sm font-medium text-foreground">Unable to render PDF</p>
           <p className="text-xs text-muted-foreground">{error || 'No document available'}</p>
           {onDownload && (
-            <Button variant="outline" onClick={onDownload} className="gap-2 mt-2">
-              <Download className="h-4 w-4" /> Save to Device instead
+            <Button variant="outline" size="sm" onClick={onDownload} className="gap-2 mt-2">
+              <Download className="h-3.5 w-3.5" /> Save to Device instead
             </Button>
           )}
         </div>
@@ -218,24 +214,37 @@ const PdfCanvasViewer = ({ src, onDownload, className }: PdfCanvasViewerProps) =
   // ── Rendered PDF ──
   return (
     <div className={cn('flex flex-col h-full', className)}>
-      {/* Toolbar */}
-      <div className="flex items-center justify-center gap-2 py-2 px-3 border-b border-border bg-card shrink-0">
-        <Button variant="outline" size="icon" className="h-7 w-7" onClick={handleZoomOut} disabled={scale <= MIN_ZOOM}>
+      {/* Compact toolbar */}
+      <div className="flex items-center justify-center gap-1.5 py-2 px-3 border-b border-border/50 bg-muted/30 shrink-0">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          onClick={handleZoomOut}
+          disabled={scale <= MIN_ZOOM}
+        >
           <ZoomOut className="h-3.5 w-3.5" />
         </Button>
-        <span className="text-xs font-medium text-muted-foreground min-w-[3.5rem] text-center">
+        <span className="text-[11px] font-medium text-muted-foreground min-w-[3rem] text-center tabular-nums">
           {Math.round(scale * 100)}%
         </span>
-        <Button variant="outline" size="icon" className="h-7 w-7" onClick={handleZoomIn} disabled={scale >= MAX_ZOOM}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-muted-foreground hover:text-foreground"
+          onClick={handleZoomIn}
+          disabled={scale >= MAX_ZOOM}
+        >
           <ZoomIn className="h-3.5 w-3.5" />
         </Button>
-        <span className="text-xs text-muted-foreground ml-2">
-          {totalPages} page{totalPages !== 1 ? 's' : ''}
+        <div className="w-px h-4 bg-border/60 mx-1" />
+        <span className="text-[11px] text-muted-foreground tabular-nums">
+          {totalPages} {totalPages === 1 ? 'page' : 'pages'}
         </span>
       </div>
 
       {/* Scrollable pages */}
-      <div ref={containerRef} className="flex-1 overflow-auto bg-muted/30 p-4">
+      <div ref={containerRef} className="flex-1 overflow-auto bg-muted/20 p-3 sm:p-4">
         <div ref={pagesContainerRef} className="flex flex-col items-center" />
       </div>
     </div>
