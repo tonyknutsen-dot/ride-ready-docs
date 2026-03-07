@@ -1173,6 +1173,23 @@ const WindLog = () => {
       </Dialog>
 
       <ExportActionsDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} result={exportResult} />
+
+      {/* Equipment picker filtered to inflatables */}
+      <EquipmentPickerDialog
+        open={windPickerOpen}
+        onOpenChange={setWindPickerOpen}
+        title="Select inflatable"
+        subtitle="Choose an inflatable to add a wind reading for"
+        onSelect={(ride) => {
+          setWindPickerOpen(false);
+          handleOpenSheet(ride.id);
+        }}
+        filter={(ride) => {
+          const cat = (ride as any).ride_categories;
+          const group = cat?.category_group || '';
+          return group === 'Inflatables';
+        }}
+      />
     </div>
   );
 };
