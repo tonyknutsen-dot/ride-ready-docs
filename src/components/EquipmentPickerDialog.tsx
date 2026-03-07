@@ -15,6 +15,7 @@ type Ride = Tables<'rides'> & {
   ride_categories: {
     name: string;
     description: string | null;
+    category_group?: string;
   };
 };
 
@@ -45,7 +46,7 @@ const EquipmentPickerDialog = ({
     queryFn: async () => {
       let query = supabase
         .from('rides')
-        .select('*, ride_categories(name, description)')
+        .select('*, ride_categories(name, description, category_group)')
         .order('ride_name');
       if (!isStaff) {
         query = query.eq('user_id', effectiveUserId);

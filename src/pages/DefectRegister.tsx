@@ -27,6 +27,7 @@ import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import DefectClosureDialog from '@/components/DefectClosureDialog';
 import RegisterHeader, { PreviousReportsSection } from '@/components/RegisterHeader';
+import EquipmentPickerDialog from '@/components/EquipmentPickerDialog';
 
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -267,6 +268,9 @@ const DefectRegister = () => {
   const [generatingCsv, setGeneratingCsv] = useState(false);
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
+
+  // Equipment picker for report defect
+  const [defectPickerOpen, setDefectPickerOpen] = useState(false);
 
   // Saved reports
   const [savedReports, setSavedReports] = useState<any[]>([]);
@@ -613,7 +617,7 @@ const DefectRegister = () => {
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search defects…"
         actions={[
-          { label: 'Report defect', icon: <AlertOctagon className="h-3.5 w-3.5" />, onClick: () => navigate('/defect-report') },
+          { label: 'Report defect', icon: <AlertOctagon className="h-3.5 w-3.5" />, onClick: () => setDefectPickerOpen(true) },
           { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filtered.length === 0 },
           { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline', disabled: generatingPdf || filtered.length === 0, loading: generatingPdf },
         ]}
@@ -852,6 +856,18 @@ const DefectRegister = () => {
         open={exportDialogOpen}
         onOpenChange={setExportDialogOpen}
         result={exportResult}
+      />
+
+      {/* Equipment picker for reporting */}
+      <EquipmentPickerDialog
+        open={defectPickerOpen}
+        onOpenChange={setDefectPickerOpen}
+        title="Select equipment"
+        subtitle="Choose equipment to report a defect on"
+        onSelect={(ride) => {
+          setDefectPickerOpen(false);
+          navigate(`/defect-report?rideId=${ride.id}`);
+        }}
       />
     </div>
   );

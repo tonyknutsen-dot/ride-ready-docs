@@ -30,6 +30,7 @@ import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import RegisterHeader, { PreviousReportsSection } from '@/components/RegisterHeader';
+import EquipmentPickerDialog from '@/components/EquipmentPickerDialog';
 
 import { generateWindLogPdf } from '@/utils/windLogPdf';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
@@ -145,6 +146,7 @@ const WindLog = () => {
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
   const [generatingCsv, setGeneratingCsv] = useState(false);
   const [savedReports, setSavedReports] = useState<any[]>([]);
+  const [windPickerOpen, setWindPickerOpen] = useState(false);
 
   // Defaults
   const [defaultRecordedBy, setDefaultRecordedBy] = useState('');
@@ -847,7 +849,7 @@ const WindLog = () => {
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search readings…"
         actions={[
-          { label: 'Add wind reading', icon: <Plus className="h-3.5 w-3.5" />, onClick: () => handleOpenSheet(), disabled: inflatables.length === 0 },
+          { label: 'Add wind reading', icon: <Plus className="h-3.5 w-3.5" />, onClick: () => setWindPickerOpen(true), disabled: inflatables.length === 0 },
           { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filteredLogs.length === 0 },
           { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline', disabled: filteredLogs.length === 0 },
         ]}
@@ -1171,6 +1173,23 @@ const WindLog = () => {
       </Dialog>
 
       <ExportActionsDialog open={exportDialogOpen} onOpenChange={setExportDialogOpen} result={exportResult} />
+
+      {/* Equipment picker filtered to inflatables */}
+      <EquipmentPickerDialog
+        open={windPickerOpen}
+        onOpenChange={setWindPickerOpen}
+        title="Select inflatable"
+        subtitle="Choose an inflatable to add a wind reading for"
+        onSelect={(ride) => {
+          setWindPickerOpen(false);
+          handleOpenSheet(ride.id);
+        }}
+        filter={(ride) => {
+          const cat = (ride as any).ride_categories;
+          const group = cat?.category_group || '';
+          return group === 'Inflatables';
+        }}
+      />
     </div>
   );
 };
