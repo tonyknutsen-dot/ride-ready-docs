@@ -599,7 +599,7 @@ const DefectRegister = () => {
   };
 
   return (
-    <div className="space-y-3 px-4 md:px-0 pb-24 md:pb-8">
+    <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
       <PageHeader
         icon={<AlertOctagon className="h-5 w-5 text-destructive" />}
         iconBgClass="from-destructive/20 to-destructive/10"

@@ -88,15 +88,9 @@ const Maintenance = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background pb-28 md:pb-8">
-        <header className="border-b-2 border-amber-500/30 bg-gradient-to-r from-amber-500/5 to-transparent backdrop-blur-sm sticky top-0 z-40">
-          <div className="container mx-auto px-4 py-4">
-            <Skeleton className="h-12 w-64" />
-          </div>
-        </header>
-        <main className="container mx-auto px-4 py-5">
-          <Skeleton className="h-64 w-full" />
-        </main>
+      <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
+        <Skeleton className="h-12 w-64" />
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
@@ -104,79 +98,71 @@ const Maintenance = () => {
   // Show MaintenanceManager when a ride is selected
   if (selectedRide) {
     return (
-      <div className="min-h-screen bg-background pb-28 md:pb-8">
+      <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
         <StaffAccountBanner />
         <MaintenanceOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
-      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border">
-          <div className="container mx-auto px-4 py-3 sm:py-4">
-            <PageHeader
-              icon={<Wrench className="h-5 w-5 text-amber-600" />}
-              iconBgClass="from-amber-500/20 to-amber-500/10"
-              title={selectedRide.ride_name}
-              subtitle="Maintenance Management"
-              showBackButton
-              onBack={handleBack}
-              actions={
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowGuide(true)}
-                  className="text-muted-foreground hover:text-foreground h-9 px-2 sm:px-3"
-                >
-                  <HelpCircle className="h-4 w-4" />
-                  <span className="hidden sm:inline ml-1">How does it work?</span>
-                </Button>
-              }
-            />
-          </div>
-        </header>
-        
-        <main className="container mx-auto px-4 py-5">
-          <MaintenanceManager ride={selectedRide} />
-        </main>
+
+        <PageHeader
+          icon={<Wrench className="h-5 w-5 text-amber-600" />}
+          iconBgClass="from-amber-500/20 to-amber-500/10"
+          title={selectedRide.ride_name}
+          subtitle="Maintenance Management"
+          showBackButton
+          onBack={handleBack}
+          actions={
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowGuide(true)}
+              className="text-muted-foreground hover:text-foreground h-9 px-2 sm:px-3"
+            >
+              <HelpCircle className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">How does it work?</span>
+            </Button>
+          }
+        />
+
+        <MaintenanceManager ride={selectedRide} />
       </div>
     );
   }
 
   // Show ride selector when no ride is selected
   return (
-    <div className="min-h-screen bg-background pb-28 md:pb-8">
+    <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
       <StaffAccountBanner />
       <MaintenanceOnboardingModal forceOpen={showGuide} onClose={() => setShowGuide(false)} />
-      <header className="sticky top-0 z-40 bg-card/95 backdrop-blur-sm border-b border-border">
-        <div className="container mx-auto px-4 py-3 sm:py-4">
-          <PageHeader
-            icon={<Wrench className="h-5 w-5 text-amber-600" />}
-            iconBgClass="from-amber-500/20 to-amber-500/10"
-            title="Maintenance"
-            subtitle="Select equipment to manage maintenance"
-            showBackButton
-            backTo="/overview"
-            actions={
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowGuide(true)}
-                className="text-muted-foreground hover:text-foreground h-9 px-2 sm:px-3"
-              >
-                <HelpCircle className="h-4 w-4" />
-                <span className="hidden sm:inline ml-1">How does it work?</span>
-              </Button>
-            }
-          />
-        </div>
-      </header>
-      
-      <main className="container mx-auto px-4 py-5 space-y-4">
-        <Button
-          onClick={() => setPickerOpen(true)}
-          className="gap-1.5 h-10 min-h-[44px] w-full sm:w-auto text-[12px]"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Log maintenance
-        </Button>
-        <MaintenanceRideSelector onRideSelect={handleRideSelect} />
-      </main>
+
+      <PageHeader
+        icon={<Wrench className="h-5 w-5 text-amber-600" />}
+        iconBgClass="from-amber-500/20 to-amber-500/10"
+        title="Maintenance"
+        subtitle="Select equipment to manage maintenance"
+        showBackButton
+        backTo="/overview"
+        actions={
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowGuide(true)}
+            className="text-muted-foreground hover:text-foreground h-9 px-2 sm:px-3"
+          >
+            <HelpCircle className="h-4 w-4" />
+            <span className="hidden sm:inline ml-1">How does it work?</span>
+          </Button>
+        }
+      />
+
+      {/* ── Primary CTA ── */}
+      <Button
+        onClick={() => setPickerOpen(true)}
+        className="gap-1.5 h-10 min-h-[44px] w-full sm:w-auto text-[12px]"
+      >
+        <Plus className="h-3.5 w-3.5" />
+        Log maintenance
+      </Button>
+
+      <MaintenanceRideSelector onRideSelect={handleRideSelect} />
 
       {/* ── EQUIPMENT PICKER ── */}
       <EquipmentPickerDialog
