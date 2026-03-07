@@ -337,9 +337,18 @@ export const PreviousReportsSection = ({
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
       const blob = await getStorageFileBlob(filePath);
+      const signature = await blob.slice(0, 8).text();
+      console.info('[PDF DEBUG][History] direct-download', {
+        storagePath: filePath,
+        fileName,
+        blobSize: blob.size,
+        blobType: blob.type || '(empty)',
+        signature,
+        validPdfSignature: signature.startsWith('%PDF-'),
+      });
       downloadBlob(blob, fileName);
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error('[PDF DEBUG][History] download-failed', { storagePath: filePath, fileName, error });
       toast({ title: 'Download failed', description: 'Could not download the report file.', variant: 'destructive' });
     }
   };
