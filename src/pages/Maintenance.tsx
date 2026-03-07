@@ -154,15 +154,6 @@ const Maintenance = () => {
       />
 
       <MaintenanceRideSelector onRideSelect={handleRideSelect} />
-
-      {/* ── EQUIPMENT PICKER ── */}
-      <EquipmentPickerDialog
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        title="Select equipment"
-        subtitle="Choose equipment to log maintenance for"
-        onSelect={handleLogMaintenancePick}
-      />
     </div>
   );
 };
