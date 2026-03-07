@@ -59,7 +59,7 @@ const TermsOfService = () => {
                 <h2 className="text-2xl font-semibold mb-4">4. Subscription Plans and Billing</h2>
                 <h3 className="text-xl font-semibold mb-2">4.1 Free Trial</h3>
                 <p className="text-muted-foreground mb-4">
-                  New users receive a 30-day free trial with full access to all features. No credit card is required to start the trial. At the end of the trial, you must select a paid plan to continue using the Service.
+                  New users receive a 14-day free trial with full access to all features. No credit card is required to start the trial. Active users may receive an automatic extension to 21 days. At the end of the trial, you must select a paid plan to continue using the Service.
                 </p>
 
                 <h3 className="text-xl font-semibold mb-2">4.2 Subscription Plans</h3>
