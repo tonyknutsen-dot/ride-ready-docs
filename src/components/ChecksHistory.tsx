@@ -505,8 +505,8 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily', onStartCheck }: 
         filterSummary={filterSummary}
         primaryAction={onStartCheck ? { label: 'Start check', icon: <Plus className="h-4 w-4" />, onClick: onStartCheck } : undefined}
         actions={[
-          { label: 'Export CSV', icon: <Download className="h-3.5 w-3.5" />, onClick: exportToCSV, variant: 'outline' as const },
-          { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: exportToPDF, variant: 'outline' as const },
+          { label: 'Export CSV', icon: <Download className="h-4 w-4" />, onClick: exportToCSV, variant: 'outline' as const },
+          { label: 'Export PDF', icon: <FileDown className="h-4 w-4" />, onClick: exportToPDF, variant: 'outline' as const },
         ]}
         filtersOpen={filtersOpen}
         onFiltersOpenChange={setFiltersOpen}
