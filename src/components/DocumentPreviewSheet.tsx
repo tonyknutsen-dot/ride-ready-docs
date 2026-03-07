@@ -174,11 +174,22 @@ const DocumentPreviewSheet = ({ open, onOpenChange, source }: DocumentPreviewShe
     try {
       const blob = await getBlob();
       const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      // Revoke after a delay to give the new tab time to load
+      window.open(url, '_blank', 'noopener,noreferrer');
       setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch {
       toast({ title: 'Could not open file', variant: 'destructive' });
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (!source?.storagePath) return;
+    try {
+      const signedUrl = await getSignedStorageUrl(source.storagePath);
+      if (!signedUrl) throw new Error('No link available');
+      await navigator.clipboard.writeText(signedUrl);
+      toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+    } catch {
+      toast({ title: 'Copy link failed', description: 'Could not copy a shareable link.', variant: 'destructive' });
     }
   };
 
