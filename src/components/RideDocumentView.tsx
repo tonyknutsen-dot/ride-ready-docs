@@ -497,22 +497,11 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
           onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '' }; })}
         />
       )}
-      {viewerState.type === 'pdf' && (
-        <PDFViewer
-          isOpen={true}
-          pdfUrl={viewerState.url}
-          pdfName={viewerState.name}
-          onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '' }; })}
-          onDownload={() => {
-            const a = document.createElement('a');
-            a.href = viewerState.url;
-            a.download = viewerState.name;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-          }}
-        />
-      )}
+      <DocumentPreviewSheet
+        open={viewerState.type === 'pdf'}
+        onOpenChange={(o) => { if (!o) setViewerState({ type: null, url: '', name: '' }); }}
+        source={viewerState.type === 'pdf' ? { name: viewerState.name, storagePath: viewerState.url } : null}
+      />
     </div>
   );
 };
