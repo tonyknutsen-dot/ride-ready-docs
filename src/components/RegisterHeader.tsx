@@ -15,6 +15,7 @@ import {
   downloadBlob,
   getStorageFileBlob,
 } from '@/utils/exportFileActions';
+import QuickSendDialog from '@/components/QuickSendDialog';
 
 interface ActionButton {
   label: string;
@@ -269,6 +270,8 @@ export const PreviousReportsSection = ({
 }) => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [sendDocId, setSendDocId] = useState<string | null>(null);
+  const [sendDocName, setSendDocName] = useState('');
 
   const handleView = (reportId: string) => {
     navigate(`/documents/${reportId}`);
@@ -292,6 +295,11 @@ export const PreviousReportsSection = ({
     } catch {
       toast({ title: 'Copy link failed', variant: 'destructive' });
     }
+  };
+
+  const handleSend = (reportId: string, name: string) => {
+    setSendDocId(reportId);
+    setSendDocName(name);
   };
 
   return (
@@ -327,7 +335,7 @@ export const PreviousReportsSection = ({
                 <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
                   <Download className="h-3 w-3" /> Save to Device
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => navigate('/send-documents')} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                <Button variant="ghost" size="sm" onClick={() => handleSend(report.id, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
                   <Send className="h-3 w-3" /> Send
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px]">
@@ -338,6 +346,14 @@ export const PreviousReportsSection = ({
           ))
         )}
       </div>
+
+      {/* Quick send dialog for previously generated reports */}
+      <QuickSendDialog
+        open={!!sendDocId}
+        onOpenChange={(open) => { if (!open) setSendDocId(null); }}
+        documentIds={sendDocId ? [sendDocId] : []}
+        documentName={sendDocName}
+      />
     </>
   );
 };
