@@ -316,10 +316,15 @@ const AuditLogs = () => {
                   <SelectItem value="all">All Actions</SelectItem>
                   <SelectItem value="login">Login</SelectItem>
                   <SelectItem value="logout">Logout</SelectItem>
+                  <SelectItem value="lock">Lock</SelectItem>
+                  <SelectItem value="unlock">Unlock</SelectItem>
+                  <SelectItem value="failed_unlock">Failed Unlock</SelectItem>
                   <SelectItem value="view">View</SelectItem>
                   <SelectItem value="download">Download</SelectItem>
                   <SelectItem value="share">Share</SelectItem>
                   <SelectItem value="export">Export</SelectItem>
+                  <SelectItem value="create">Create</SelectItem>
+                  <SelectItem value="delete">Delete</SelectItem>
                   <SelectItem value="support_view">Support View</SelectItem>
                 </SelectContent>
               </Select>
