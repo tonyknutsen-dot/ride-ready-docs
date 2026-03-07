@@ -685,10 +685,8 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
     } finally { setGeneratingPdf(false); }
   };
 
-  const handleViewReport = async (filePath: string) => {
-    const { data } = await supabase.storage.from('ride-documents').createSignedUrl(filePath, 300);
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
-  };
+  // View is now handled internally by PreviousReportsSection
+  const handleViewReport = async (_filePath: string) => {};
 
   if (loading) {
     return (

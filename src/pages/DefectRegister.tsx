@@ -599,10 +599,8 @@ const DefectRegister = () => {
     } finally { setGeneratingPdf(false); }
   };
 
-  const handleViewReport = async (filePath: string) => {
-    const { data } = await supabase.storage.from('ride-documents').createSignedUrl(filePath, 300);
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
-  };
+  // View is now handled internally by PreviousReportsSection
+  const handleViewReport = async (_filePath: string) => {};
 
   return (
     <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">

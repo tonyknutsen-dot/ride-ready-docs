@@ -413,9 +413,8 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
     setExportDialogOpen(true);
   };
 
-  const handleViewReport = (filePath: string) => {
-    window.open(`/documents/view?path=${encodeURIComponent(filePath)}`, '_blank');
-  };
+  // View is now handled internally by PreviousReportsSection
+  const handleViewReport = (_filePath: string) => {};
 
   const monthGroups = groupByMonth();
   const totalPages = Math.ceil(filteredChecks.length / itemsPerPage);
