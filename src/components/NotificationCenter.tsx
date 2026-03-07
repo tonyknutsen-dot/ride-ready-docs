@@ -92,14 +92,14 @@ const getIcon = (n: Notification) => {
   const cls = 'h-[18px] w-[18px]';
   if (title.includes('stop use') || title.includes('critical')) return <AlertOctagon className={cn(cls, 'text-destructive')} />;
   if (title.includes('defect')) return <AlertTriangle className={cn(cls, 'text-destructive')} />;
-  if (title.includes('inspection') || title.includes('check') || title.includes('missed')) return <ClipboardCheck className={cn(cls, 'text-amber-600')} />;
+  if (title.includes('inspection') || title.includes('check') || title.includes('missed')) return <ClipboardCheck className={cn(cls, 'text-accent-foreground')} />;
   if (title.includes('document') || title.includes('expir') || title.includes('certificate')) return <FileText className={cn(cls, 'text-primary')} />;
-  if (title.includes('maintenance') || title.includes('repair')) return <Wrench className={cn(cls, 'text-amber-600')} />;
-  if (title.includes('wind')) return <Wind className={cn(cls, 'text-sky-600')} />;
+  if (title.includes('maintenance') || title.includes('repair')) return <Wrench className={cn(cls, 'text-accent-foreground')} />;
+  if (title.includes('wind')) return <Wind className={cn(cls, 'text-primary')} />;
   if (title.includes('sent') || title.includes('share')) return <Send className={cn(cls, 'text-primary')} />;
-  if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return <CreditCard className={cn(cls, 'text-amber-600')} />;
+  if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return <CreditCard className={cn(cls, 'text-accent-foreground')} />;
   if (title.includes('security') || title.includes('role')) return <Shield className={cn(cls, 'text-primary')} />;
-  if (n.type === 'success') return <CheckCircle className={cn(cls, 'text-emerald-600')} />;
+  if (n.type === 'success') return <CheckCircle className={cn(cls, 'text-primary')} />;
   return <Info className={cn(cls, 'text-muted-foreground')} />;
 };
 
