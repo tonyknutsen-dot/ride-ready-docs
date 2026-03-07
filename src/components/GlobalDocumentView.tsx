@@ -18,6 +18,8 @@ import {
   Globe,
   Search,
   Upload,
+  Share2,
+  Link2,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,11 +27,8 @@ import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
-import ImageViewer from './ImageViewer';
-import DocumentPreviewSheet, { type DocumentPreviewSource } from './DocumentPreviewSheet';
-import { showRequiresConnectionToast } from '@/hooks/useOfflineGuard';
 import { cn } from '@/lib/utils';
-import { revokeObjectUrl } from '@/utils/exportFileActions';
+import { getSignedStorageUrl, shareStoredFileOrFallback } from '@/utils/exportFileActions';
 
 type Document = Tables<'documents'>;
 
@@ -137,11 +136,6 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterType>('all');
   const [search, setSearch] = useState('');
-  const [viewerState, setViewerState] = useState<{
-    type: 'image' | 'pdf' | null;
-    url: string;
-    name: string;
-  }>({ type: null, url: '', name: '' });
 
   /* ─── Fetch ─── */
   useEffect(() => {
@@ -216,37 +210,31 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
   }, [filtered]);
 
   /* ─── Actions ─── */
-  const handleView = async (doc: Document) => {
+  const handleShare = async (doc: Document) => {
     try {
-      const fp = doc.file_path || '';
-
-      if (isImageFile(fp)) {
-        const { data, error } = await supabase.storage
-          .from('ride-documents')
-          .createSignedUrl(doc.file_path, 3600);
-        if (error) throw error;
-        if (!data?.signedUrl) throw new Error('Could not create signed URL for image');
-
-        setViewerState((prev) => {
-          if (prev.url) revokeObjectUrl(prev.url);
-          return { type: 'image', url: data.signedUrl, name: doc.document_name };
-        });
-        return;
+      const outcome = await shareStoredFileOrFallback(doc.file_path, doc.document_name);
+      if (outcome === 'copied') {
+        toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+      } else if (outcome === 'downloaded') {
+        toast({ title: 'Downloaded', description: 'Native share unavailable, file downloaded instead.' });
       }
+    } catch {
+      toast({ title: 'Share failed', description: 'Could not share this document.', variant: 'destructive' });
+    }
+  };
 
-      // For PDFs and other files, use the shared DocumentPreviewSheet
-      setViewerState({ type: 'pdf', url: doc.file_path, name: doc.document_name });
-    } catch (err: any) {
-      if (!navigator.onLine) {
-        showRequiresConnectionToast();
-      } else {
-        toast({ title: 'Unable to view', description: err.message, variant: 'destructive' });
-      }
+  const handleCopyLink = async (doc: Document) => {
+    try {
+      const signedUrl = await getSignedStorageUrl(doc.file_path);
+      if (!signedUrl) throw new Error('No signed URL');
+      await navigator.clipboard.writeText(signedUrl);
+      toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+    } catch {
+      toast({ title: 'Copy link failed', description: 'Could not copy link.', variant: 'destructive' });
     }
   };
 
   const handleDownload = async (doc: Document) => {
-    if (!navigator.onLine) { showRequiresConnectionToast(); return; }
     try {
       const { data, error } = await supabase.storage
         .from('ride-documents')
@@ -312,13 +300,7 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
     const ext = fileExt(doc.file_path || '');
 
     return (
-      <div
-        className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-card hover:bg-accent/40 active:bg-accent/60 transition-colors cursor-pointer"
-        onClick={() => handleView(doc)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && handleView(doc)}
-      >
+      <div className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-card">
         {/* File type icon */}
         <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
           <FileIcon doc={doc} />
@@ -362,7 +344,13 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(doc); }}>
-              <Download className="h-4 w-4 mr-2" /> Download
+              <Download className="h-4 w-4 mr-2" /> Save to Device
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleShare(doc); }}>
+              <Share2 className="h-4 w-4 mr-2" /> Share
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleCopyLink(doc); }}>
+              <Link2 className="h-4 w-4 mr-2" /> Copy Link
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive"
@@ -474,21 +462,6 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
         </div>
       )}
 
-      {/* Viewers */}
-      {viewerState.type === 'image' && (
-        <ImageViewer
-          url={viewerState.url}
-          alt={viewerState.name}
-          onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '' }; })}
-        />
-      )}
-      {viewerState.type === 'pdf' && (
-        <DocumentPreviewSheet
-          open={true}
-          onOpenChange={(o) => { if (!o) setViewerState({ type: null, url: '', name: '' }); }}
-          source={{ name: viewerState.name, storagePath: viewerState.url }}
-        />
-      )}
     </div>
   );
 };

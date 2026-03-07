@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { FileText, Download, Trash2, Calendar, AlertTriangle, Eye, Link2, History, ChevronDown, Globe, Send, Filter } from 'lucide-react';
+import { FileText, Download, Trash2, Calendar, AlertTriangle, Link2, History, ChevronDown, Globe, Send, Filter, Share2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -12,12 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
-import ImageViewer from './ImageViewer';
-import DocumentPreviewSheet, { type DocumentPreviewSource } from './DocumentPreviewSheet';
 import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
 import { SendCheckRecordsDialog } from './SendCheckRecordsDialog';
 import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters, isCheckRecord, filterCheckRecords } from './CheckRecordFilters';
-import { revokeObjectUrl } from '@/utils/exportFileActions';
+import { getSignedStorageUrl, shareStoredFileOrFallback } from '@/utils/exportFileActions';
 
 type Document = Tables<'documents'>;
 
@@ -48,12 +46,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const [assignmentDialogDoc, setAssignmentDialogDoc] = useState<Document | null>(null);
   const [cleanupDialogOpen, setCleanupDialogOpen] = useState(false);
   const [cleaningUp, setCleaningUp] = useState(false);
-  const [viewerState, setViewerState] = useState<{
-    type: 'image' | 'pdf' | null;
-    url: string;
-    name: string;
-    document: Document | null;
-  }>({ type: null, url: '', name: '', document: null });
   
   // Check record filters and send dialog
   const [checkRecordFilters, setCheckRecordFilters] = useState<CheckRecordFiltersState>(defaultCheckRecordFilters);
@@ -76,10 +68,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     return name.endsWith('.pdf');
   };
 
-  // Helper to check if document is viewable
-  const isViewable = (doc: Document) => {
-    return isImageDoc(doc) || isPDFDoc(doc);
-  };
 
   // Some legacy Safety Check Record PDFs were saved with US date strings in the document_name,
   // e.g. "Preopening Check - 1/27/2026". We can't change the already-generated PDF content,
@@ -239,41 +227,28 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     }
   };
 
-  const handleView = async (document: Document) => {
+  const handleShare = async (document: Document) => {
     try {
       const displayName = getDocumentDisplayName(document);
-
-      if (isImageDoc(document)) {
-        const { data, error } = await supabase.storage
-          .from('ride-documents')
-          .createSignedUrl(document.file_path, 3600);
-
-        if (error) throw error;
-        if (!data?.signedUrl) throw new Error('Could not create signed URL for image');
-
-        setViewerState({
-          type: 'image',
-          url: data.signedUrl,
-          name: displayName,
-          document,
-        });
-        return;
+      const outcome = await shareStoredFileOrFallback(document.file_path, displayName);
+      if (outcome === 'copied') {
+        toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+      } else if (outcome === 'downloaded') {
+        toast({ title: 'Downloaded', description: 'Native share unavailable, file downloaded instead.' });
       }
+    } catch {
+      toast({ title: 'Share failed', description: 'Could not share this document.', variant: 'destructive' });
+    }
+  };
 
-      // For PDFs and other files, use the shared DocumentPreviewSheet
-      setViewerState({
-        type: 'pdf',
-        url: document.file_path,
-        name: displayName,
-        document,
-      });
-    } catch (error: any) {
-      console.error('View error:', error);
-      toast({
-        title: "Unable to view document",
-        description: error.message,
-        variant: "destructive",
-      });
+  const handleCopyLink = async (document: Document) => {
+    try {
+      const signedUrl = await getSignedStorageUrl(document.file_path);
+      if (!signedUrl) throw new Error('No signed URL');
+      await navigator.clipboard.writeText(signedUrl);
+      toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+    } catch {
+      toast({ title: 'Copy link failed', description: 'Could not copy link.', variant: 'destructive' });
     }
   };
 
@@ -809,18 +784,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     
     return (
       <>
-        <ImageViewer
-          isOpen={viewerState.type === 'image'}
-          onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '', document: null }; })}
-          imageUrl={viewerState.url}
-          imageName={viewerState.name}
-          onDownload={() => viewerState.document && handleDownload(viewerState.document)}
-        />
-        <DocumentPreviewSheet
-          open={viewerState.type === 'pdf'}
-          onOpenChange={(o) => { if (!o) setViewerState({ type: null, url: '', name: '', document: null }); }}
-          source={viewerState.type === 'pdf' ? { name: viewerState.name, storagePath: viewerState.url } : null}
-        />
         
         {/* Send Check Records Dialog */}
         <SendCheckRecordsDialog
@@ -1024,18 +987,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   // Flat list (default)
   return (
     <>
-      <ImageViewer
-        isOpen={viewerState.type === 'image'}
-        onClose={() => setViewerState((prev) => { if (prev.url) revokeObjectUrl(prev.url); return { type: null, url: '', name: '', document: null }; })}
-        imageUrl={viewerState.url}
-        imageName={viewerState.name}
-        onDownload={() => viewerState.document && handleDownload(viewerState.document)}
-      />
-      <DocumentPreviewSheet
-        open={viewerState.type === 'pdf'}
-        onOpenChange={(o) => { if (!o) setViewerState({ type: null, url: '', name: '', document: null }); }}
-        source={viewerState.type === 'pdf' ? { name: viewerState.name, storagePath: viewerState.url } : null}
-      />
       <DocumentRideAssignmentDialog
         document={assignmentDialogDoc}
         isOpen={!!assignmentDialogDoc}

@@ -6,17 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Eye, Download, Share2, Link2 } from 'lucide-react';
+import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Download, Share2, Link2 } from 'lucide-react';
 import { format, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import DocumentPreviewSheet from '@/components/DocumentPreviewSheet';
 import { useToast } from '@/hooks/use-toast';
 import {
   downloadBlob,
+  getSignedStorageUrl,
   getStorageFileBlob,
-  isPdfByMeta,
   shareStoredFileOrFallback,
-  revokeObjectUrl,
 } from '@/utils/exportFileActions';
 
 interface ActionButton {
@@ -271,42 +269,39 @@ export const PreviousReportsSection = ({
   onViewReport?: (filePath: string) => void;
 }) => {
   const { toast } = useToast();
-  const [previewSource, setPreviewSource] = useState<{ name: string; storagePath: string } | null>(null);
-  const [previewOpen, setPreviewOpen] = useState(false);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-
-
-  const handleView = (report: { id: string; file_path: string; document_name: string; mime_type?: string | null }) => {
-    if (!isPdfByMeta(report.document_name, report.mime_type)) {
-      handleDownload(report.file_path, report.document_name);
-      return;
-    }
-    setPreviewSource({ name: report.document_name, storagePath: report.file_path });
-    setPreviewOpen(true);
-  };
 
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
       const blob = await getStorageFileBlob(filePath);
-      const signature = await blob.slice(0, 8).text();
-      console.info('[PDF DEBUG][History] direct-download', {
-        storagePath: filePath,
-        fileName,
-        blobSize: blob.size,
-        blobType: blob.type || '(empty)',
-        signature,
-        validPdfSignature: signature.startsWith('%PDF-'),
-      });
       downloadBlob(blob, fileName);
     } catch (error) {
-      console.error('[PDF DEBUG][History] download-failed', { storagePath: filePath, fileName, error });
+      console.error('[History] download-failed', { storagePath: filePath, fileName, error });
       toast({ title: 'Download failed', description: 'Could not download the report file.', variant: 'destructive' });
     }
   };
 
-  const closeViewer = () => {
-    setPreviewOpen(false);
-    setPreviewSource(null);
+  const handleShare = async (report: { file_path: string; document_name: string }) => {
+    try {
+      const outcome = await shareStoredFileOrFallback(report.file_path, report.document_name);
+      if (outcome === 'copied') {
+        toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+      } else if (outcome === 'downloaded') {
+        toast({ title: 'Downloaded', description: 'Native sharing unavailable, file downloaded instead.' });
+      }
+    } catch {
+      toast({ title: 'Share failed', description: 'Could not share this report.', variant: 'destructive' });
+    }
+  };
+
+  const handleCopyLink = async (report: { file_path: string }) => {
+    try {
+      const signedUrl = await getSignedStorageUrl(report.file_path);
+      if (!signedUrl) throw new Error('No signed URL');
+      await navigator.clipboard.writeText(signedUrl);
+      toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+    } catch {
+      toast({ title: 'Copy link failed', description: 'Could not copy link.', variant: 'destructive' });
+    }
   };
 
   return (
@@ -323,7 +318,6 @@ export const PreviousReportsSection = ({
           </div>
         ) : (
           reports.map((report) => {
-            const isPdf = isPdfByMeta(report.document_name, report.mime_type);
             return (
               <div key={report.id} className="bg-card border border-border rounded-xl p-3 space-y-2">
                 <div className="flex items-center justify-between gap-3">
@@ -337,17 +331,15 @@ export const PreviousReportsSection = ({
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    variant="ghost" size="sm"
-                    onClick={() => handleView(report)}
-                    className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]"
-                  >
-                    <Eye className="h-3 w-3" />
-                    {isPdf ? 'View' : 'Download'}
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
                     <Download className="h-3 w-3" /> Save to Device
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleShare(report)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                    <Share2 className="h-3 w-3" /> Share
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                    <Link2 className="h-3 w-3" /> Copy Link
                   </Button>
                 </div>
               </div>
@@ -356,11 +348,6 @@ export const PreviousReportsSection = ({
         )}
       </div>
 
-      <DocumentPreviewSheet
-        open={previewOpen}
-        onOpenChange={(o) => { if (!o) closeViewer(); }}
-        source={previewSource}
-      />
     </>
   );
 };

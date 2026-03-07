@@ -1,10 +1,9 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Eye, Download, Share2, FolderPlus, Loader2, CheckCircle2 } from 'lucide-react';
+import { Download, Share2, FolderPlus, Loader2, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import DocumentPreviewSheet, { type DocumentPreviewSource } from '@/components/DocumentPreviewSheet';
-import { isLikelyMobileOrTablet, shareBlobOrFallback, downloadBlob, revokeObjectUrl } from '@/utils/exportFileActions';
+import { isLikelyMobileOrTablet, shareBlobOrFallback, downloadBlob } from '@/utils/exportFileActions';
 
 export interface ExportResult {
   blob: Blob;
@@ -27,13 +26,6 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [previewOpen, setPreviewOpen] = useState(false);
-
-  if (!result) return null;
-
-  const handleView = () => {
-    setPreviewOpen(true);
-  };
 
   const handleDownload = () => {
     downloadBlob(result.blob, result.fileName);
@@ -75,56 +67,46 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
     if (!nextOpen) {
       setSaved(false);
       setSaving(false);
-      setPreviewOpen(false);
     }
     onOpenChange(nextOpen);
   };
 
   return (
-    <>
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base">Export ready</DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground truncate">
-              {result.fileName}
-            </DialogDescription>
-          </DialogHeader>
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="text-base">Export ready</DialogTitle>
+          <DialogDescription className="text-xs text-muted-foreground truncate">
+            {result.fileName}
+          </DialogDescription>
+        </DialogHeader>
 
-          <div className="grid gap-2 pt-2">
-            <ActionButton icon={Eye} label="View" description="Open and preview this file" onClick={handleView} />
-            <ActionButton icon={Download} label="Save to Device" description="Download file to your phone or laptop" onClick={handleDownload} />
-            <ActionButton icon={Share2} label="Share" description="Send via native share or copy link" onClick={handleShare} />
+        <div className="grid gap-2 pt-2">
+          <ActionButton icon={Download} label="Save to Device" description="Download file to your phone or laptop" onClick={handleDownload} />
+          <ActionButton icon={Share2} label="Share" description="Send via native share or copy link" onClick={handleShare} />
 
-            {result.onSaveToDocuments && (
-              <>
-                <div className="border-t border-border my-1" />
-                {result.saveHint && (
-                  <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
-                    {result.saveHint}
-                  </p>
-                )}
-                <ActionButton
-                  icon={saved ? CheckCircle2 : FolderPlus}
-                  label={saved ? 'Saved ✓' : (result.saveLabel || 'Save to Documents')}
-                  description={saved ? 'Report saved to your document register' : 'Saves this report inside RideReadyDocs for later access'}
-                  onClick={handleSaveToDocuments}
-                  loading={saving}
-                  disabled={saved}
-                  accent={!saved}
-                />
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <DocumentPreviewSheet
-        open={previewOpen}
-        onOpenChange={setPreviewOpen}
-        source={{ name: result.fileName, blob: result.blob }}
-      />
-    </>
+          {result.onSaveToDocuments && (
+            <>
+              <div className="border-t border-border my-1" />
+              {result.saveHint && (
+                <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
+                  {result.saveHint}
+                </p>
+              )}
+              <ActionButton
+                icon={saved ? CheckCircle2 : FolderPlus}
+                label={saved ? 'Saved ✓' : (result.saveLabel || 'Save to Documents')}
+                description={saved ? 'Report saved to your document register' : 'Saves this report inside RideReadyDocs for later access'}
+                onClick={handleSaveToDocuments}
+                loading={saving}
+                disabled={saved}
+                accent={!saved}
+              />
+            </>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 
@@ -137,7 +119,7 @@ function ActionButton({
   disabled,
   accent,
 }: {
-  icon: typeof Eye;
+  icon: typeof Download;
   label: string;
   description: string;
   onClick: () => void;
