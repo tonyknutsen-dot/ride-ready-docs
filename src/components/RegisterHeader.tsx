@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -274,34 +274,60 @@ export const PreviousReportsSection = ({
   const [viewerState, setViewerState] = useState<{ open: boolean; url: string; name: string }>({ open: false, url: '', name: '' });
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (viewerState.url) URL.revokeObjectURL(viewerState.url);
-    };
-  }, [viewerState.url]);
 
   const handleView = async (report: { id: string; file_path: string; document_name: string; mime_type?: string | null }) => {
     setLoadingId(report.id);
     try {
+      console.info('[PDF DEBUG][History] view-start', {
+        reportId: report.id,
+        storagePath: report.file_path,
+        documentName: report.document_name,
+        mimeTypeFromDb: report.mime_type || '(null)',
+      });
+
       if (!isPdfByMeta(report.document_name, report.mime_type)) {
         await handleDownload(report.file_path, report.document_name);
         return;
       }
 
       const blob = await getStorageFileBlob(report.file_path);
+      const signature = await blob.slice(0, 8).text();
       const validPdf = await isValidPdfBlob(blob);
+
+      console.info('[PDF DEBUG][History] blob-loaded', {
+        reportId: report.id,
+        downloadSucceeded: true,
+        blobSize: blob.size,
+        blobType: blob.type || '(empty)',
+        signature,
+        validPdfSignature: validPdf,
+      });
+
       if (!validPdf) {
         toast({ title: 'Invalid PDF', description: 'This file is not a valid PDF and cannot be previewed.', variant: 'destructive' });
         return;
       }
 
-      const url = URL.createObjectURL(blob);
+      const pdfBlob = blob.type === 'application/pdf' ? blob : new Blob([blob], { type: 'application/pdf' });
+      const url = URL.createObjectURL(pdfBlob);
+
+      console.info('[PDF DEBUG][History] viewer-source', {
+        reportId: report.id,
+        viewerSourceType: 'blob-url',
+        normalizedBlobType: pdfBlob.type,
+        viewerUrlPreview: url.slice(0, 32),
+      });
+
       setViewerState((prev) => {
         if (prev.url) URL.revokeObjectURL(prev.url);
         return { open: true, url, name: report.document_name };
       });
     } catch (error) {
-      console.error('Failed to view report:', error);
+      console.error('[PDF DEBUG][History] view-failed', {
+        reportId: report.id,
+        storagePath: report.file_path,
+        error,
+      });
       toast({ title: 'Failed to open', description: 'Could not load the report file.', variant: 'destructive' });
     } finally {
       setLoadingId(null);
@@ -311,9 +337,18 @@ export const PreviousReportsSection = ({
   const handleDownload = async (filePath: string, fileName: string) => {
     try {
       const blob = await getStorageFileBlob(filePath);
+      const signature = await blob.slice(0, 8).text();
+      console.info('[PDF DEBUG][History] direct-download', {
+        storagePath: filePath,
+        fileName,
+        blobSize: blob.size,
+        blobType: blob.type || '(empty)',
+        signature,
+        validPdfSignature: signature.startsWith('%PDF-'),
+      });
       downloadBlob(blob, fileName);
     } catch (error) {
-      console.error('Download failed:', error);
+      console.error('[PDF DEBUG][History] download-failed', { storagePath: filePath, fileName, error });
       toast({ title: 'Download failed', description: 'Could not download the report file.', variant: 'destructive' });
     }
   };
@@ -404,7 +439,7 @@ export const PreviousReportsSection = ({
         onClose={closeViewer}
         pdfUrl={viewerState.url}
         pdfName={viewerState.name}
-        onDownload={() => {
+        onDownload={async () => {
           if (!viewerState.url) return;
           const a = document.createElement('a');
           a.href = viewerState.url;

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Eye, Download, Share2, FolderPlus, Loader2, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -28,26 +28,34 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
-
-  // Stable blob URL that only changes when the blob changes
-  const objectUrl = useMemo(() => {
-    if (!result) return '';
-    return URL.createObjectURL(result.blob);
-  }, [result?.blob]);
-
-  // Clean up blob URL when it changes or unmounts
-  useEffect(() => {
-    return () => {
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
-    };
-  }, [objectUrl]);
+  const [previewUrl, setPreviewUrl] = useState('');
 
   if (!result) return null;
 
   const isPdf = result.blob.type === 'application/pdf' || result.fileName.toLowerCase().endsWith('.pdf');
 
-  const handleView = () => {
+  const handleView = async () => {
     if (isPdf) {
+      const signature = await result.blob.slice(0, 8).text();
+      const normalizedPdfBlob = result.blob.type === 'application/pdf'
+        ? result.blob
+        : new Blob([result.blob], { type: 'application/pdf' });
+      const nextUrl = URL.createObjectURL(normalizedPdfBlob);
+
+      console.info('[PDF DEBUG][ImmediateExport] open-view', {
+        fileName: result.fileName,
+        blobSize: result.blob.size,
+        blobType: result.blob.type || '(empty)',
+        normalizedBlobType: normalizedPdfBlob.type,
+        signature,
+        validPdfSignature: signature.startsWith('%PDF-'),
+        viewerSourceType: 'blob-url',
+      });
+
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return nextUrl;
+      });
       setPreviewOpen(true);
       return;
     }
@@ -96,6 +104,10 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
       setSaved(false);
       setSaving(false);
       setPreviewOpen(false);
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return '';
+      });
     }
     onOpenChange(nextOpen);
   };
@@ -142,8 +154,14 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
       {isPdf && (
         <PDFViewer
           isOpen={previewOpen}
-          onClose={() => setPreviewOpen(false)}
-          pdfUrl={objectUrl}
+          onClose={() => {
+            setPreviewOpen(false);
+            setPreviewUrl((prev) => {
+              if (prev) URL.revokeObjectURL(prev);
+              return '';
+            });
+          }}
+          pdfUrl={previewUrl}
           pdfName={result.fileName}
           onDownload={handleDownload}
         />

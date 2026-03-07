@@ -311,12 +311,33 @@ const DefectRegister = () => {
 
   const loadSavedReports = async () => {
     if (!effectiveUserId) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('documents')
-      .select('*')
+      .select('id, document_name, uploaded_at, file_path, mime_type, file_size, document_type')
       .eq('user_id', effectiveUserId)
       .eq('document_type', 'defect_report')
-      .order('uploaded_at', { ascending: false });
+      .order('uploaded_at', { ascending: false })
+      .limit(20);
+
+    if (error) {
+      console.error('[PDF DEBUG][Defects] loadSavedReports failed', { error, userId: effectiveUserId });
+      return;
+    }
+
+    console.info('[PDF DEBUG][Defects] loadSavedReports', {
+      userId: effectiveUserId,
+      count: data?.length || 0,
+      topRow: data?.[0]
+        ? {
+            id: data[0].id,
+            file_path: data[0].file_path,
+            mime_type: data[0].mime_type,
+            file_size: data[0].file_size,
+            document_type: data[0].document_type,
+          }
+        : null,
+    });
+
     setSavedReports(data || []);
   };
 
@@ -599,15 +620,41 @@ const DefectRegister = () => {
         const { error: uploadError } = await supabase.storage.from('ride-documents').upload(storagePath, pdfBlob, { contentType: 'application/pdf' });
         if (uploadError) throw uploadError;
 
-        await supabase.from('documents').insert({
-          user_id: user.id, document_name: documentName,
-          document_type: 'defect_report', file_path: storagePath,
-          mime_type: 'application/pdf', file_size: pdfBlob.size,
-          notes: `Defect register: ${filtered.length} records, ${periodLabel}`,
-          is_global: !isSingleRide,
-          ride_id: isSingleRide ? rideFilter : null,
+        const { data: insertedDoc, error: insertError } = await supabase
+          .from('documents')
+          .insert({
+            user_id: user.id,
+            document_name: documentName,
+            document_type: 'defect_report',
+            file_path: storagePath,
+            mime_type: 'application/pdf',
+            file_size: pdfBlob.size,
+            notes: `Defect register: ${filtered.length} records, ${periodLabel}`,
+            is_global: !isSingleRide,
+            ride_id: isSingleRide ? rideFilter : null,
+          })
+          .select('id, file_path, mime_type, file_size, document_type')
+          .single();
+
+        if (insertError || !insertedDoc) {
+          console.error('[PDF DEBUG][Defects] saveToDocuments insert failed', {
+            storagePath,
+            insertError,
+            rideFilter,
+            isSingleRide,
+          });
+          throw insertError || new Error('Failed to create documents row for defect report');
+        }
+
+        console.info('[PDF DEBUG][Defects] saveToDocuments success', {
+          documentId: insertedDoc.id,
+          storagePath: insertedDoc.file_path,
+          mimeType: insertedDoc.mime_type,
+          fileSize: insertedDoc.file_size,
+          documentType: insertedDoc.document_type,
         });
-        loadSavedReports();
+
+        await loadSavedReports();
       };
 
       const saveHint = isSingleRide
