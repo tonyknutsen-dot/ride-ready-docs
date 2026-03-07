@@ -284,31 +284,6 @@ export const PreviousReportsSection = ({
     }
   };
 
-  const handleShare = async (filePath: string, fileName: string, reportId: string) => {
-    const isMobile = isLikelyMobileOrTablet();
-    
-    if (isMobile && typeof navigator?.share === 'function') {
-      // Mobile: native share
-      try {
-        const blob = await getStorageFileBlob(filePath);
-        const file = new File([blob], fileName, { type: 'application/pdf' });
-        const canShareFiles = typeof navigator.canShare !== 'function' || navigator.canShare({ files: [file] });
-        if (canShareFiles) {
-          await navigator.share({ files: [file], title: fileName });
-          toast({ title: 'Shared', description: 'Report sent via share sheet' });
-          return;
-        }
-      } catch (error: any) {
-        if (error?.name === 'AbortError') return;
-      }
-      // Fallback to download
-      const blob = await getStorageFileBlob(filePath);
-      downloadBlob(blob, fileName);
-      toast({ title: 'Downloaded', description: 'Share not available — file downloaded' });
-    }
-    // Desktop: handled by popover inline
-  };
-
   const handleCopyLink = async (reportId: string) => {
     try {
       const link = `${window.location.origin}/documents/${reportId}`;
@@ -318,15 +293,6 @@ export const PreviousReportsSection = ({
       toast({ title: 'Copy link failed', variant: 'destructive' });
     }
   };
-
-  const handleEmailShare = (reportId: string, fileName: string) => {
-    const link = `${window.location.origin}/documents/${reportId}`;
-    const subject = encodeURIComponent(fileName);
-    const body = encodeURIComponent(`Here is the document: ${link}`);
-    window.open(`mailto:?subject=${subject}&body=${body}`, '_self');
-  };
-
-  const isMobile = isLikelyMobileOrTablet();
 
   return (
     <>
