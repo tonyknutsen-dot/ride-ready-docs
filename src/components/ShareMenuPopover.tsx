@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, forwardRef } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Share2, Mail, Download, Loader2, Copy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -124,26 +124,31 @@ const ShareMenuPopover = ({ blob, fileName, documentLink, children }: ShareMenuP
   );
 };
 
-function ShareActionButton({ onClick, loading }: { onClick: () => void; loading: boolean }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={loading}
-      className={cn(
-        'flex items-center gap-3 w-full rounded-xl border px-4 py-3 text-left transition-colors',
-        'hover:bg-muted/50 active:bg-muted/70 disabled:opacity-60',
-      )}
-    >
-      <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 bg-muted text-muted-foreground">
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
-      </div>
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-foreground">Share</p>
-        <p className="text-[11px] text-muted-foreground">Send via email or copy link</p>
-      </div>
-    </button>
-  );
-}
+const ShareActionButton = forwardRef<HTMLButtonElement, { onClick: () => void; loading: boolean }>(
+  ({ onClick, loading }, ref) => {
+    return (
+      <button
+        ref={ref}
+        type="button"
+        onClick={onClick}
+        disabled={loading}
+        className={cn(
+          'flex items-center gap-3 w-full rounded-xl border px-4 py-3 text-left transition-colors',
+          'hover:bg-muted/50 active:bg-muted/70 disabled:opacity-60',
+        )}
+      >
+        <div className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 bg-muted text-muted-foreground">
+          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Share2 className="h-4 w-4" />}
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">Share</p>
+          <p className="text-[11px] text-muted-foreground">Send via email or copy link</p>
+        </div>
+      </button>
+    );
+  },
+);
+ShareActionButton.displayName = 'ShareActionButton';
 
 function ShareMenuItem({ icon: Icon, label, description, onClick }: {
   icon: typeof Share2;
@@ -153,6 +158,7 @@ function ShareMenuItem({ icon: Icon, label, description, onClick }: {
 }) {
   return (
     <button
+      type="button"
       onClick={onClick}
       className="flex items-center gap-2.5 w-full rounded-lg px-2 py-2 text-left hover:bg-muted/60 transition-colors"
     >
