@@ -37,11 +37,15 @@ const getCategory = (n: Notification): Category => {
   const t = n.type?.toLowerCase() ?? '';
   const title = n.title?.toLowerCase() ?? '';
 
-  // Defects
-  if (title.includes('defect') || title.includes('stop use') || title.includes('stop_operation') || n.related_table === 'defects') return 'defects';
+  // Defects — only if genuinely about a defect record
+  if (n.related_table === 'defects') return 'defects';
+  if (title.includes('defect') || title.includes('stop use defect') || title.includes('unresolved defect')) return 'defects';
+  // "linked defect" from a check still classifies as defect
+  if (title.includes('linked defect')) return 'defects';
 
-  // Checks
-  if (title.includes('check') && (title.includes('completed') || title.includes('failed') || title.includes('missed') || title.includes('overdue'))) return 'checks';
+  // Checks — anything about check execution
+  if (title.includes('check') && !title.includes('defect')) return 'checks';
+  if (title.includes('missed check') || title.includes('failed check')) return 'checks';
   if (n.related_table === 'checks') return 'checks';
 
   // Documents
