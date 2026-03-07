@@ -6,9 +6,9 @@ const Notifications = () => {
   const unreadCount = useUnreadNotifications();
 
   return (
-    <div className="container mx-auto py-6 pb-24 md:pb-8 max-w-2xl">
+    <div className="container mx-auto py-5 pb-24 md:pb-8 max-w-2xl">
       {/* Page Header */}
-      <div className="mb-5">
+      <div className="mb-4">
         <div className="flex items-center gap-3">
           <div className="flex items-center justify-center w-10 h-10 rounded-2xl bg-primary/10">
             <Bell className="h-5 w-5 text-primary" />
@@ -20,7 +20,7 @@ const Notifications = () => {
             <p className="text-[13px] text-muted-foreground">
               {unreadCount > 0
                 ? `${unreadCount} unread notification${unreadCount !== 1 ? 's' : ''}`
-                : 'All caught up'}
+                : 'No action needed'}
             </p>
           </div>
         </div>
