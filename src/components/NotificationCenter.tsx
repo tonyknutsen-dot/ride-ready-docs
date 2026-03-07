@@ -5,14 +5,14 @@ import {
   Bell, Check, X, AlertTriangle, Info, CheckCircle,
   FileText, Wrench, ClipboardCheck, Shield, Wind,
   CreditCard, ChevronRight, Clock, AlertOctagon,
-  CircleDot, Send
+  CircleDot, Send, ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { useAppRole } from '@/hooks/useAppRole';
-import { formatDistanceToNow, isToday, isThisWeek, parseISO } from 'date-fns';
+import { formatDistanceToNow, isToday, isThisWeek } from 'date-fns';
 
 /* ── Types ─────────────────────────────────────── */
 
@@ -48,7 +48,6 @@ const getCategory = (n: Notification): Category => {
 const isActionable = (n: Notification): boolean => {
   const title = n.title?.toLowerCase() ?? '';
   const t = n.type?.toLowerCase() ?? '';
-  // Actionable: overdue, expired, missing, unresolved, missed, high-wind, stop-use, billing
   if (title.includes('overdue') || title.includes('expired') || title.includes('expiring')) return true;
   if (title.includes('missing') || title.includes('missed') || title.includes('stop use')) return true;
   if (title.includes('unresolved') || title.includes('high priority') || title.includes('critical')) return true;
@@ -57,6 +56,11 @@ const isActionable = (n: Notification): boolean => {
   if (title.includes('failed')) return true;
   if (t === 'warning' || t === 'error') return true;
   return false;
+};
+
+const isSentDocument = (n: Notification): boolean => {
+  const title = n.title?.toLowerCase() ?? '';
+  return title.includes('sent') || title.includes('shared') || title.includes('document pack');
 };
 
 const getPriority = (n: Notification): number => {
@@ -93,19 +97,19 @@ const getIcon = (n: Notification) => {
   if (title.includes('stop use') || title.includes('critical')) return <AlertOctagon className={cn(cls, 'text-destructive')} />;
   if (title.includes('defect')) return <AlertTriangle className={cn(cls, 'text-destructive')} />;
   if (title.includes('inspection') || title.includes('check') || title.includes('missed')) return <ClipboardCheck className={cn(cls, 'text-accent-foreground')} />;
+  if (title.includes('sent') || title.includes('shared') || title.includes('document pack')) return <Send className={cn(cls, 'text-primary')} />;
   if (title.includes('document') || title.includes('expir') || title.includes('certificate')) return <FileText className={cn(cls, 'text-primary')} />;
   if (title.includes('maintenance') || title.includes('repair')) return <Wrench className={cn(cls, 'text-accent-foreground')} />;
   if (title.includes('wind')) return <Wind className={cn(cls, 'text-primary')} />;
-  if (title.includes('sent') || title.includes('share')) return <Send className={cn(cls, 'text-primary')} />;
   if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return <CreditCard className={cn(cls, 'text-accent-foreground')} />;
   if (title.includes('security') || title.includes('role')) return <Shield className={cn(cls, 'text-primary')} />;
   if (n.type === 'success') return <CheckCircle className={cn(cls, 'text-primary')} />;
   return <Info className={cn(cls, 'text-muted-foreground')} />;
 };
 
-/** Route to navigate to for an actionable notification */
 const getActionRoute = (n: Notification): string | null => {
   const title = n.title?.toLowerCase() ?? '';
+  if (isSentDocument(n)) return '/batch-send';
   if (title.includes('check') || title.includes('missed')) return '/checks';
   if (title.includes('inspection')) return '/compliance';
   if (title.includes('document') || title.includes('expir') || title.includes('certificate')) return '/documents';
@@ -122,6 +126,7 @@ const getActionRoute = (n: Notification): string | null => {
 
 const getActionLabel = (n: Notification): string => {
   const title = n.title?.toLowerCase() ?? '';
+  if (isSentDocument(n)) return 'View record';
   if (title.includes('check') || title.includes('missed')) return 'Start check';
   if (title.includes('inspection')) return 'View';
   if (title.includes('expir') || title.includes('document') || title.includes('certificate')) return 'Review';
@@ -311,7 +316,7 @@ const NotificationCenter = () => {
 
   if (loading) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-2.5">
         {[1, 2, 3, 4].map(i => (
           <div key={i} className="h-20 rounded-2xl bg-muted animate-pulse" />
         ))}
@@ -320,24 +325,24 @@ const NotificationCenter = () => {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-3.5">
       {/* ── Summary strip ────────────────── */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-border bg-card">
+      <div className="grid grid-cols-2 gap-2.5">
+        <div className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-card">
           <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-primary/10">
-            <Bell className="h-4.5 w-4.5 text-primary" />
+            <Bell className="h-4 w-4 text-primary" />
           </div>
           <div>
             <p className="text-xl font-bold text-foreground leading-none">{unreadCount}</p>
             <p className="text-[11px] text-muted-foreground mt-0.5">Unread</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 p-3.5 rounded-2xl border border-border bg-card">
+        <div className="flex items-center gap-3 p-3 rounded-2xl border border-border bg-card">
           <div className={cn(
             'flex items-center justify-center w-9 h-9 rounded-xl',
             actionCount > 0 ? 'bg-destructive/10' : 'bg-muted'
           )}>
-            <AlertTriangle className={cn('h-4.5 w-4.5', actionCount > 0 ? 'text-destructive' : 'text-muted-foreground')} />
+            <AlertTriangle className={cn('h-4 w-4', actionCount > 0 ? 'text-destructive' : 'text-muted-foreground')} />
           </div>
           <div>
             <p className={cn('text-xl font-bold leading-none', actionCount > 0 ? 'text-destructive' : 'text-foreground')}>{actionCount}</p>
@@ -349,7 +354,6 @@ const NotificationCenter = () => {
       {/* ── Filter tabs ──────────────────── */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1 scrollbar-none">
         {FILTER_TABS.map(tab => {
-          const count = tabCounts[tab.id];
           const isActive = activeTab === tab.id;
           return (
             <button
@@ -366,7 +370,7 @@ const NotificationCenter = () => {
               {tab.id === 'action' && actionCount > 0 && (
                 <span className={cn(
                   'inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold',
-                  isActive ? 'bg-destructive text-white' : 'bg-destructive/15 text-destructive'
+                  isActive ? 'bg-destructive text-destructive-foreground' : 'bg-destructive/15 text-destructive'
                 )}>
                   {actionCount}
                 </span>
@@ -386,20 +390,37 @@ const NotificationCenter = () => {
         )}
       </div>
 
+      {/* ── Action-needed empty state (when tab = all and 0 actions) ── */}
+      {activeTab === 'all' && actionCount === 0 && filtered.length > 0 && (
+        <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card">
+          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/8">
+            <CheckCircle className="h-4 w-4 text-primary" />
+          </div>
+          <div>
+            <p className="text-[13px] font-semibold text-foreground">No action needed right now</p>
+            <p className="text-[11px] text-muted-foreground">You're up to date. Older updates are listed below.</p>
+          </div>
+        </div>
+      )}
+
       {/* ── Notification feed ────────────── */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16 bg-card border border-border rounded-2xl">
-          <Bell className="mx-auto h-10 w-10 text-muted-foreground/30 mb-3" />
+        <div className="text-center py-14 bg-card border border-border rounded-2xl">
+          <Bell className="mx-auto h-9 w-9 text-muted-foreground/30 mb-2.5" />
           <p className="text-sm font-semibold text-foreground">
-            {activeTab === 'action' ? 'No actions needed' : 'No notifications'}
+            {activeTab === 'action' ? 'No action needed' : 'No notifications'}
           </p>
-          <p className="text-xs text-muted-foreground mt-1">You're all caught up!</p>
+          <p className="text-xs text-muted-foreground mt-1 max-w-[240px] mx-auto">
+            {activeTab === 'action'
+              ? 'You're up to date. Recent updates and older notifications are shown below.'
+              : 'Recent updates and older notifications will appear here.'}
+          </p>
         </div>
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-4">
           {grouped.map(group => (
             <div key={group.label}>
-              <div className="flex items-center gap-2 mb-2.5">
+              <div className="flex items-center gap-2 mb-2">
                 {group.label === 'Action needed' && (
                   <CircleDot className="h-3 w-3 text-destructive" />
                 )}
@@ -414,10 +435,12 @@ const NotificationCenter = () => {
                 </Badge>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {group.items.map(n => {
                   const actionable = isActionable(n);
+                  const sentDoc = isSentDocument(n);
                   const route = getActionRoute(n);
+                  const hasAction = (actionable && route) || (sentDoc && route);
 
                   return (
                     <div
@@ -429,16 +452,16 @@ const NotificationCenter = () => {
                       className={cn(
                         'flex bg-card border rounded-2xl overflow-hidden transition-all',
                         actionable && !n.is_read
-                          ? 'border-destructive/20 shadow-[0_2px_8px_rgba(220,38,38,0.08)]'
-                          : 'border-border shadow-[0_1px_3px_rgba(0,0,0,0.04)]',
-                        route && 'cursor-pointer hover:border-primary/30 active:scale-[0.99]',
-                        !actionable && n.is_read && 'opacity-70'
+                          ? 'border-destructive/20 shadow-[0_2px_8px_rgba(220,38,38,0.06)]'
+                          : 'border-border',
+                        route && 'cursor-pointer hover:border-primary/30 active:scale-[0.995]',
+                        !actionable && n.is_read && 'opacity-90'
                       )}
                     >
                       {/* Left colour bar */}
                       <div className={cn('w-1 shrink-0', getBarColor(n))} />
 
-                      <div className="flex-1 flex items-start gap-3 p-3.5">
+                      <div className="flex-1 flex items-start gap-3 p-3">
                         {/* Icon circle */}
                         <div className={cn(
                           'flex items-center justify-center w-8 h-8 rounded-xl shrink-0 mt-0.5',
@@ -452,7 +475,7 @@ const NotificationCenter = () => {
                           <div className="flex items-center gap-2">
                             <p className={cn(
                               'text-[13px] font-semibold leading-tight truncate',
-                              actionable && !n.is_read ? 'text-foreground' : 'text-foreground/80'
+                              actionable && !n.is_read ? 'text-foreground' : 'text-foreground'
                             )}>
                               {n.title}
                             </p>
@@ -465,13 +488,12 @@ const NotificationCenter = () => {
                             {n.message}
                           </p>
 
-                          <div className="flex items-center gap-3 mt-2">
+                          <div className="flex items-center gap-3 mt-1.5">
                             <span className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
                               <Clock className="h-2.5 w-2.5" />
                               {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                             </span>
 
-                            {/* Severity badge for actionable items */}
                             {actionable && !n.is_read && (
                               <Badge
                                 variant="destructive"
@@ -485,22 +507,21 @@ const NotificationCenter = () => {
 
                         {/* Right side: action button or controls */}
                         <div className="flex flex-col items-end gap-1.5 shrink-0">
-                          {actionable && route && (
+                          {hasAction && (
                             <button
                               onClick={(e) => handleCardAction(n, e)}
                               className={cn(
                                 'flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all',
-                                !n.is_read
+                                actionable && !n.is_read
                                   ? 'bg-foreground text-background hover:bg-foreground/90'
-                                  : 'bg-muted text-muted-foreground hover:bg-accent'
+                                  : 'bg-muted text-foreground hover:bg-accent'
                               )}
                             >
                               {getActionLabel(n)}
-                              <ChevronRight className="h-3 w-3" />
+                              {sentDoc && !actionable ? <ExternalLink className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                             </button>
                           )}
 
-                          {/* Controller-only dismiss for system messages */}
                           {isController && getCategory(n) === 'system' && (
                             <button
                               onClick={e => { e.stopPropagation(); deleteNotification(n.id); }}
