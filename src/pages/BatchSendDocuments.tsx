@@ -808,7 +808,7 @@ const BatchSendDocuments = () => {
                       </div>
                     )}
 
-                    <div className="space-y-1.5 max-h-[52vh] overflow-y-auto pr-1 md:max-h-none md:overflow-visible md:pr-0">
+                    <div className="space-y-1.5 max-h-[40vh] overflow-y-auto pr-1 md:max-h-none md:overflow-visible md:pr-0">
                       {/* Check Records */}
                       {currentRideCheckRecords.length > 0 && (
                         <Collapsible open={checkRecordsExpanded} onOpenChange={setCheckRecordsExpanded}>
