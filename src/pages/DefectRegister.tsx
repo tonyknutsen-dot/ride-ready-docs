@@ -288,6 +288,7 @@ const DefectRegister = () => {
       return (data || []) as DefectRow[];
     },
     enabled: !!effectiveUserId,
+    refetchOnMount: 'always',
   });
 
   // Fetch rides for names
