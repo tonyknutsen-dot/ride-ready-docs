@@ -119,7 +119,7 @@ function ActionButton({
   disabled,
   accent,
 }: {
-  icon: typeof Eye;
+  icon: React.ComponentType<{ className?: string }>;
   label: string;
   description: string;
   onClick: () => void;
