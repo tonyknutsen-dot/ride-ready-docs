@@ -149,23 +149,6 @@ const DocumentPreviewSheet = ({ open, onOpenChange, source }: DocumentPreviewShe
     }
   };
 
-  const handleShare = async () => {
-    if (!source) return;
-    try {
-      if (source.storagePath) {
-        const result = await shareStoredFileOrFallback(source.storagePath, source.name);
-        if (result === 'copied') toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
-        else if (result === 'downloaded') toast({ title: 'Downloaded', description: 'File downloaded as share fallback.' });
-      } else if (source.blob) {
-        const result = await shareBlobOrFallback(source.blob, source.name);
-        if (result === 'downloaded') toast({ title: 'Downloaded', description: 'File downloaded as share fallback.' });
-      }
-    } catch (err: any) {
-      if (err?.name !== 'AbortError') {
-        toast({ title: 'Share failed', variant: 'destructive' });
-      }
-    }
-  };
 
   const handleOpenExternal = async () => {
     if (!source) return;
