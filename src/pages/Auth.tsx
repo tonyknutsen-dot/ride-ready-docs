@@ -109,18 +109,28 @@ const Auth = () => {
   }, [activeTab]);
 
   useEffect(() => {
-    // Only redirect if user exists AND we're not in a loading state
-    // This prevents false redirects from stale session data
-    if (user && !authLoading) {
-      setIsOAuthCallback(false);
-      const from = (location.state as any)?.from?.pathname || '/overview';
-      navigate(from, { replace: true });
+    if (user && !authLoading && !showMFA) {
+      // Check if user has MFA factors enrolled
+      (async () => {
+        const { data } = await supabase.auth.mfa.listFactors();
+        if (data?.totp && data.totp.length > 0) {
+          // Check AAL level — if still aal1, need MFA verification
+          const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (aalData?.currentLevel === 'aal1' && aalData?.nextLevel === 'aal2') {
+            setShowMFA(true);
+            return;
+          }
+        }
+        // No MFA or already verified — proceed
+        setIsOAuthCallback(false);
+        const from = (location.state as any)?.from?.pathname || '/overview';
+        navigate(from, { replace: true });
+      })();
     }
-    // Clear OAuth callback state if auth finished loading with no user (failed callback)
     if (!authLoading && !user) {
       setIsOAuthCallback(false);
     }
-  }, [user, authLoading, navigate, location]);
+  }, [user, authLoading, navigate, location, showMFA]);
 
   const validateForm = (data: typeof formData) => {
     try {
