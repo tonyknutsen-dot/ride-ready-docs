@@ -363,48 +363,9 @@ export const PreviousReportsSection = ({
                 <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
                   <Download className="h-3 w-3" /> Save to Device
                 </Button>
-
-                {/* Share: mobile = native share, desktop = popover menu */}
-                {isMobile ? (
-                  <Button variant="ghost" size="sm" onClick={() => handleShare(report.file_path, report.document_name, report.id)} className="h-8 text-[11px] gap-1 min-h-[36px]">
-                    <Share2 className="h-3 w-3" /> Share
-                  </Button>
-                ) : (
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 text-[11px] gap-1 min-h-[36px]">
-                        <Share2 className="h-3 w-3" /> Share
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-48 p-1.5" align="start" side="top">
-                      <div className="space-y-0.5">
-                        <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-2 pt-1 pb-1">Share via</p>
-                        <button
-                          onClick={() => handleCopyLink(report.id)}
-                          className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-left hover:bg-muted/60 transition-colors"
-                        >
-                          <Link2 className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-foreground">Copy Link</span>
-                        </button>
-                        <button
-                          onClick={() => handleEmailShare(report.id, report.document_name)}
-                          className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-left hover:bg-muted/60 transition-colors"
-                        >
-                          <Mail className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-foreground">Email</span>
-                        </button>
-                        <button
-                          onClick={() => handleDownload(report.file_path, report.document_name)}
-                          className="flex items-center gap-2 w-full rounded-md px-2 py-1.5 text-left hover:bg-muted/60 transition-colors"
-                        >
-                          <Download className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-foreground">Save to Device</span>
-                        </button>
-                      </div>
-                    </PopoverContent>
-                  </Popover>
-                )}
-
+                <Button variant="ghost" size="sm" onClick={() => navigate('/send-documents')} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                  <Send className="h-3 w-3" /> Send
+                </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px]">
                   <Link2 className="h-3 w-3" /> Copy Link
                 </Button>
