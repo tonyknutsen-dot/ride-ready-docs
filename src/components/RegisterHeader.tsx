@@ -7,13 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Download, Link2, Eye, Share2 } from 'lucide-react';
+import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Download, Link2, Eye, Share2, Mail, Loader2 } from 'lucide-react';
 import { format, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { isLikelyMobileOrTablet } from '@/utils/exportFileActions';
 import {
   downloadBlob,
-  getSignedStorageUrl,
   getStorageFileBlob,
   shareStoredFileOrFallback,
 } from '@/utils/exportFileActions';
