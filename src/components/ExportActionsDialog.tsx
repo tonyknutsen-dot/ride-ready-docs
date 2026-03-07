@@ -138,8 +138,8 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
                 )}
                 <ActionButton
                   icon={saved ? CheckCircle2 : FolderPlus}
-                  label={saved ? 'Saved to Documents' : (result.saveLabel || 'Save to Documents')}
-                  description={saved ? 'Added to your document register' : 'Archive in your equipment documents'}
+                  label={saved ? 'Saved ✓' : (result.saveLabel || 'Save to Documents')}
+                  description={saved ? 'Report saved to your document register' : 'Saves this report inside RideReadyDocs for later access'}
                   onClick={handleSaveToDocuments}
                   loading={saving}
                   disabled={saved}

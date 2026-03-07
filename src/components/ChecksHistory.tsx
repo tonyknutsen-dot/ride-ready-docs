@@ -412,7 +412,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       setSavedReports(refreshed || []);
     };
 
-    setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel: 'Save to Asset Documents', saveHint: 'This report will be saved to the selected asset\'s Documents.' });
+    setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel: `Save to ${rideName} Documents`, saveHint: `Saves this report inside ${rideName}'s document register.` });
     setExportDialogOpen(true);
   };
 

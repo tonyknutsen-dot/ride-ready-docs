@@ -581,7 +581,9 @@ const WindLog = () => {
     });
 
     const isSingleAsset = filterInflatable !== 'all';
-    const saveLabel = isSingleAsset ? 'Save to Asset Documents' : 'Save as Global Document';
+    const filteredAssetName = isSingleAsset
+      ? inflatables.find(r => r.id === filterInflatable)?.ride_name
+      : undefined;
 
     const saveToDocuments = async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -594,15 +596,18 @@ const WindLog = () => {
         document_type: 'wind_report', file_path: storagePath,
         mime_type: 'application/pdf', file_size: result.blob.size,
         notes: `Wind register: ${filteredLogs.length} readings`,
-        is_global: !isSingleAsset,
+        is_global: false,
         ride_id: isSingleAsset ? filterInflatable : null,
       });
       loadSavedReports();
     };
 
+    const saveLabel = isSingleAsset
+      ? `Save to ${filteredAssetName || 'Asset'} Documents`
+      : 'Save to Documents';
     const saveHint = isSingleAsset
-      ? 'This report will be saved to the selected asset\'s Documents.'
-      : 'This report will be saved as a Global Document.';
+      ? `Saves this report inside ${filteredAssetName || 'this asset'}'s document register.`
+      : 'Saves this report to your document register for later access.';
     setExportResult({ blob: result.blob, fileName: result.fileName, onSaveToDocuments: saveToDocuments, saveLabel, saveHint });
     setExportDialogOpen(true);
   };
