@@ -41,7 +41,14 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   if (!result) return null;
 
   const handleView = () => {
-    window.open(objectUrl, '_blank');
+    // Use anchor click instead of window.open to avoid popup blockers on mobile
+    const a = document.createElement('a');
+    a.href = objectUrl;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   const handleDownload = () => {
