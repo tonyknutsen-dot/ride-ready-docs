@@ -36,25 +36,27 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
 
   const handleView = async () => {
     if (isPdf) {
-      const signature = await result.blob.slice(0, 8).text();
-      const normalizedPdfBlob = result.blob.type === 'application/pdf'
-        ? result.blob
-        : new Blob([result.blob], { type: 'application/pdf' });
-      const nextUrl = URL.createObjectURL(normalizedPdfBlob);
+      const prepared = await createPdfViewerUrlFromBlob(result.blob);
 
       console.info('[PDF DEBUG][ImmediateExport] open-view', {
         fileName: result.fileName,
         blobSize: result.blob.size,
         blobType: result.blob.type || '(empty)',
-        normalizedBlobType: normalizedPdfBlob.type,
-        signature,
-        validPdfSignature: signature.startsWith('%PDF-'),
+        normalizedBlobType: prepared.normalizedBlob.type,
+        signature: prepared.signature,
+        validPdfSignature: prepared.validPdf,
         viewerSourceType: 'blob-url',
       });
 
+      if (!prepared.validPdf) {
+        revokeObjectUrl(prepared.url);
+        toast({ title: 'Invalid PDF', description: 'Generated file is not a valid PDF.', variant: 'destructive' });
+        return;
+      }
+
       setPreviewUrl((prev) => {
-        if (prev) URL.revokeObjectURL(prev);
-        return nextUrl;
+        if (prev) revokeObjectUrl(prev);
+        return prepared.url;
       });
       setPreviewOpen(true);
       return;
