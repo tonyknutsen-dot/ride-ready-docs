@@ -318,7 +318,6 @@ export const PreviousReportsSection = ({
           </div>
         ) : (
           reports.map((report) => {
-            const isPdf = isPdfByMeta(report.document_name, report.mime_type);
             return (
               <div key={report.id} className="bg-card border border-border rounded-xl p-3 space-y-2">
                 <div className="flex items-center justify-between gap-3">
@@ -332,17 +331,15 @@ export const PreviousReportsSection = ({
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Button
-                    variant="ghost" size="sm"
-                    onClick={() => handleView(report)}
-                    className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]"
-                  >
-                    <Eye className="h-3 w-3" />
-                    {isPdf ? 'View' : 'Download'}
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 flex-1 min-h-[36px]">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
                     <Download className="h-3 w-3" /> Save to Device
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleShare(report)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                    <Share2 className="h-3 w-3" /> Share
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                    <Link2 className="h-3 w-3" /> Copy Link
                   </Button>
                 </div>
               </div>
