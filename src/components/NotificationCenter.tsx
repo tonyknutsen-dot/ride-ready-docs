@@ -911,17 +911,17 @@ const NotificationCenter = () => {
                                   : 'bg-muted text-foreground hover:bg-accent'
                               )}
                             >
-                              {getActionLabel(n)}
+                              {showLinkedDefectAction ? 'Open linked defect' : getActionLabel(n)}
                               {sentDoc && !actionable ? <ExternalLink className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
                             </button>
                           )}
 
-                          {showLinkedDefectAction && linkedDefectId && (
+                          {showLinkedDefectAction && (
                             <button
-                              onClick={(e) => handleOpenLinkedDefect(n, linkedDefectId, e)}
+                              onClick={(e) => handleOpenCheckFromNotification(n, e)}
                               className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all bg-muted text-foreground hover:bg-accent"
                             >
-                              Open linked defect
+                              Review check
                               <ChevronRight className="h-3 w-3" />
                             </button>
                           )}
