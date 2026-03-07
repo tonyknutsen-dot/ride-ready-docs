@@ -9,7 +9,6 @@ import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import PageHeader from '@/components/PageHeader';
 import MaintenanceManager from '@/components/MaintenanceManager';
 import MaintenanceRideSelector from '@/components/MaintenanceRideSelector';
-import EquipmentPickerDialog from '@/components/EquipmentPickerDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MaintenanceOnboardingModal } from '@/components/MaintenanceOnboardingModal';
