@@ -63,7 +63,6 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   };
 
   const handleView = async () => {
-    // Save first, then navigate to the full document viewer page
     const docId = await ensureSaved();
     if (docId) {
       onOpenChange(false);
@@ -141,33 +140,32 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
     <>
       <Dialog open={open} onOpenChange={handleClose}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+          <DialogHeader className="pb-0">
             <DialogTitle className="text-base">{saved ? 'Saved to Documents' : 'Export ready'}</DialogTitle>
             <DialogDescription className="text-xs text-muted-foreground truncate">
               {result.fileName}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="grid gap-2 pt-2">
+          <div className="grid gap-1.5 pt-1">
             {/* ── Pre-save actions ── */}
             {!saved && (
               <>
-                <ActionButton icon={Eye} label="View" description="Open in the document viewer" onClick={handleView} loading={autoSaving} accent />
-                <ActionButton icon={Download} label="Save to Device" description="Download file to your phone or laptop" onClick={handleDownload} />
-                <ActionButton icon={Send} label="Send" description="Email this document via secure download link" onClick={handleSend} loading={autoSaving} />
+                <ActionRow icon={Eye} label="View" onClick={handleView} loading={autoSaving} accent />
+                <ActionRow icon={Download} label="Save to Device" onClick={handleDownload} />
+                <ActionRow icon={Send} label="Send" onClick={handleSend} loading={autoSaving} />
 
                 {result.onSaveToDocuments && (
                   <>
-                    <div className="border-t border-border my-1" />
+                    <div className="border-t border-border my-0.5" />
                     {result.saveHint && (
-                      <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
+                      <p className="text-[11px] text-muted-foreground text-center px-2 py-0.5">
                         {result.saveHint}
                       </p>
                     )}
-                    <ActionButton
+                    <ActionRow
                       icon={FolderPlus}
                       label={result.saveLabel || 'Save to Documents'}
-                      description="Saves this report inside RideReadyDocs for later access"
                       onClick={handleSaveToDocuments}
                       loading={saving}
                     />
@@ -179,50 +177,36 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
             {/* ── Post-save success state ── */}
             {saved && (
               <>
-                <div className="flex flex-col items-center py-3 gap-2">
-                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                    <CheckCircle2 className="h-6 w-6 text-primary" />
+                <div className="flex items-center gap-3 py-2 px-1">
+                  <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                    <CheckCircle2 className="h-4.5 w-4.5 text-primary" />
                   </div>
-                  <p className="text-sm font-medium text-foreground">Report saved successfully</p>
-                  <p className="text-xs text-muted-foreground text-center max-w-[280px]">
-                    {result.saveHint || 'This report is now in your document register and can be viewed anytime.'}
-                  </p>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground">Report saved successfully</p>
+                    <p className="text-[11px] text-muted-foreground leading-snug">
+                      {result.saveHint || 'Available in your document register.'}
+                    </p>
+                  </div>
                 </div>
 
                 {savedDocId && (
-                  <ActionButton
-                    icon={Eye}
-                    label="View Saved Document"
-                    description="Open in the document viewer"
-                    onClick={handleViewSavedDocument}
-                    accent
-                  />
+                  <ActionRow icon={Eye} label="View Saved Document" onClick={handleViewSavedDocument} accent />
                 )}
-
-                <ActionButton
-                  icon={Download}
-                  label="Save to Device"
-                  description="Also download a copy to your phone or laptop"
-                  onClick={handleDownload}
-                />
-
+                <ActionRow icon={Download} label="Save to Device" onClick={handleDownload} />
                 {savedDocId && (
-                  <ActionButton icon={Send} label="Send" description="Email via secure download link" onClick={() => setSendDialogOpen(true)} />
+                  <ActionRow icon={Send} label="Send" onClick={() => setSendDialogOpen(true)} />
                 )}
-
                 {savedDocId && (
-                  <ActionButton icon={Link2} label="Copy Link" description="Copy document link to clipboard" onClick={handleCopyLink} loading={copyingLink} />
+                  <ActionRow icon={Link2} label="Copy Link" onClick={handleCopyLink} loading={copyingLink} />
                 )}
 
-                <div className="pt-1">
-                  <Button
-                    variant="outline"
-                    className="w-full h-10 text-sm"
-                    onClick={() => handleClose(false)}
-                  >
-                    Done
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  className="w-full h-9 text-sm mt-1"
+                  onClick={() => handleClose(false)}
+                >
+                  Done
+                </Button>
               </>
             )}
           </div>
@@ -242,10 +226,10 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   );
 };
 
-function ActionButton({
+/** Compact action row — single line with icon + label */
+function ActionRow({
   icon: Icon,
   label,
-  description,
   onClick,
   loading,
   disabled,
@@ -253,7 +237,6 @@ function ActionButton({
 }: {
   icon: typeof Download;
   label: string;
-  description: string;
   onClick: () => void;
   loading?: boolean;
   disabled?: boolean;
@@ -264,23 +247,20 @@ function ActionButton({
       onClick={onClick}
       disabled={disabled || loading}
       className={cn(
-        'flex items-center gap-3 w-full rounded-xl border px-4 py-3 text-left transition-colors',
+        'flex items-center gap-3 w-full rounded-lg border px-3 py-2.5 text-left transition-colors',
         'hover:bg-muted/50 active:bg-muted/70 disabled:opacity-60',
         accent && !disabled && 'border-primary/30 bg-primary/5',
         disabled && 'cursor-default',
       )}
     >
       <div className={cn(
-        'h-9 w-9 rounded-lg flex items-center justify-center shrink-0',
+        'h-8 w-8 rounded-lg flex items-center justify-center shrink-0',
         accent && !disabled ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground',
         disabled && 'text-primary bg-primary/10',
       )}>
-        {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Icon className="h-3.5 w-3.5" />}
       </div>
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-foreground">{label}</p>
-        <p className="text-[11px] text-muted-foreground">{description}</p>
-      </div>
+      <p className="text-sm font-medium text-foreground">{label}</p>
     </button>
   );
 }
