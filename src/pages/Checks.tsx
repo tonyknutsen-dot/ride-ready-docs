@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CheckSquare, HelpCircle, Plus } from 'lucide-react';
+import { CheckSquare, HelpCircle } from 'lucide-react';
 import { Tables } from '@/integrations/supabase/types';
 import { ChecksOnboardingModal } from '@/components/ChecksOnboardingModal';
 import { Button } from '@/components/ui/button';
 import PageHeader from '@/components/PageHeader';
 import StaffAccountBanner from '@/components/StaffAccountBanner';
-import { OfflineStaleAlert } from '@/components/OfflineStaleAlert';
-import EquipmentPickerDialog from '@/components/EquipmentPickerDialog';
 import EquipmentSelector from '@/components/EquipmentSelector';
 
 type Ride = Tables<'rides'> & {
@@ -21,15 +19,9 @@ type Ride = Tables<'rides'> & {
 const Checks = () => {
   const navigate = useNavigate();
   const [showGuide, setShowGuide] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
 
   const handleRideSelect = (ride: Ride) => {
     navigate(`/checks/register?rideId=${ride.id}`);
-  };
-
-  const handleStartCheck = (ride: any) => {
-    setPickerOpen(false);
-    navigate(`/rides/${ride.id}?tab=checks`);
   };
 
   return (
@@ -57,32 +49,10 @@ const Checks = () => {
         }
       />
 
-      <OfflineStaleAlert />
-
-      {/* Primary CTA — matches Maintenance's "Log maintenance" pattern */}
-      <Button
-        onClick={() => setPickerOpen(true)}
-        className="gap-2 h-10 min-h-[44px] w-full sm:w-auto text-[13px] font-semibold rounded-xl"
-      >
-        <Plus className="h-4 w-4" />
-        Start Check
-      </Button>
-
-      {/* Equipment chooser — same component as Maintenance */}
       <EquipmentSelector
         onRideSelect={handleRideSelect}
         placeholderIcon={CheckSquare}
         emptyDescription="Add rides or equipment in the Rides section to start running checks."
-        showKpis={false}
-      />
-
-      {/* Equipment picker dialog for "Start Check" CTA */}
-      <EquipmentPickerDialog
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        title="Select equipment to check"
-        subtitle="Choose a ride or equipment to start a new check"
-        onSelect={handleStartCheck}
       />
     </div>
   );

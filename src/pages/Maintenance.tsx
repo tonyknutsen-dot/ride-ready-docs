@@ -9,7 +9,6 @@ import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import PageHeader from '@/components/PageHeader';
 import MaintenanceManager from '@/components/MaintenanceManager';
 import MaintenanceRideSelector from '@/components/MaintenanceRideSelector';
-import EquipmentPickerDialog from '@/components/EquipmentPickerDialog';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MaintenanceOnboardingModal } from '@/components/MaintenanceOnboardingModal';
@@ -34,7 +33,7 @@ const Maintenance = () => {
   const [selectedRide, setSelectedRide] = useState<Ride | null>(null);
   const [loading, setLoading] = useState(!!rideIdFromUrl);
   const [showGuide, setShowGuide] = useState(false);
-  const [pickerOpen, setPickerOpen] = useState(false);
+  
 
   // Load ride from URL param if present
   useEffect(() => {
@@ -75,11 +74,6 @@ const Maintenance = () => {
     setSearchParams({ rideId: ride.id });
   };
 
-  const handleLogMaintenancePick = (ride: any) => {
-    setPickerOpen(false);
-    setSelectedRide(ride as Ride);
-    setSearchParams({ rideId: ride.id, tab: 'log' });
-  };
 
   const handleBack = () => {
     setSelectedRide(null);
@@ -154,15 +148,6 @@ const Maintenance = () => {
       />
 
       <MaintenanceRideSelector onRideSelect={handleRideSelect} />
-
-      {/* ── EQUIPMENT PICKER ── */}
-      <EquipmentPickerDialog
-        open={pickerOpen}
-        onOpenChange={setPickerOpen}
-        title="Select equipment"
-        subtitle="Choose equipment to log maintenance for"
-        onSelect={handleLogMaintenancePick}
-      />
     </div>
   );
 };
