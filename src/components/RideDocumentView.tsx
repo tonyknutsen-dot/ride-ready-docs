@@ -214,18 +214,6 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     }
   };
 
-  const handleShare = async (doc: Document) => {
-    try {
-      const outcome = await shareStoredFileOrFallback(doc.file_path, doc.document_name);
-      if (outcome === 'copied') {
-        toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
-      } else if (outcome === 'downloaded') {
-        toast({ title: 'Downloaded', description: 'Native share unavailable, file downloaded instead.' });
-      }
-    } catch {
-      toast({ title: 'Share failed', description: 'Could not share this document.', variant: 'destructive' });
-    }
-  };
 
   const handleCopyLink = async (doc: Document) => {
     try {

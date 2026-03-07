@@ -279,18 +279,6 @@ export const PreviousReportsSection = ({
     }
   };
 
-  const handleShare = async (report: { file_path: string; document_name: string }) => {
-    try {
-      const outcome = await shareStoredFileOrFallback(report.file_path, report.document_name);
-      if (outcome === 'copied') {
-        toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
-      } else if (outcome === 'downloaded') {
-        toast({ title: 'Downloaded', description: 'Native sharing unavailable, file downloaded instead.' });
-      }
-    } catch {
-      toast({ title: 'Share failed', description: 'Could not share this report.', variant: 'destructive' });
-    }
-  };
 
   const handleCopyLink = async (report: { file_path: string }) => {
     try {

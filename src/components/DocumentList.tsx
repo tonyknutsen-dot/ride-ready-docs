@@ -1057,17 +1057,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                       <span className="hidden xs:inline">Link</span>
                     </Button>
                   )}
-                  {isViewable(doc) && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 px-2 gap-1.5 text-xs"
-                      onClick={() => handleView(doc)}
-                    >
-                      <Eye className="h-3.5 w-3.5" />
-                      <span className="hidden xs:inline">View</span>
-                    </Button>
-                  )}
                   <Button
                     size="sm"
                     variant="ghost"
