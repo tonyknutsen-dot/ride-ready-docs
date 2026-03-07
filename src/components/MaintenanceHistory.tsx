@@ -42,6 +42,8 @@ type Document = Tables<'documents'>;
 interface MaintenanceHistoryProps {
   ride: Ride;
   refreshTrigger?: number;
+  /** Callback to open the log-maintenance sheet from the parent */
+  onLogMaintenance?: () => void;
 }
 
 const MAINTENANCE_TYPES = [
