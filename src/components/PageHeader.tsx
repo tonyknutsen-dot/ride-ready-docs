@@ -4,6 +4,18 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 
+/**
+ * Standardised page header for all operational modules.
+ *
+ * Visual spec (locked):
+ *  - Icon circle: 40×40 (w-10 h-10), rounded-full, gradient bg
+ *  - Icon inside circle: 20×20 (h-5 w-5) — pass via `icon` prop
+ *  - Title: text-lg (18px) font-bold tracking-tight
+ *  - Subtitle: text-[13px] text-muted-foreground
+ *  - Gap icon↔text: gap-3 (12px)
+ *  - Spacing below header: controlled by parent (space-y-3)
+ */
+
 interface PageHeaderProps {
   icon?: ReactNode;
   iconBgClass?: string;
@@ -35,19 +47,18 @@ const PageHeader = ({
     } else if (backTo) {
       navigate(backTo);
     } else {
-      // Always navigate to overview as fallback instead of relying on history
       navigate('/overview');
     }
   };
 
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
+    <div className={cn("flex flex-col gap-3", className)}>
       {showBackButton && (
         <Button
           variant="ghost"
           size="sm"
           onClick={handleBack}
-          className="w-fit gap-1.5 -ml-2 text-muted-foreground hover:text-foreground"
+          className="w-fit gap-1.5 -ml-2 text-muted-foreground hover:text-foreground h-8 text-[13px]"
         >
           <ArrowLeft className="h-4 w-4" />
           Back
@@ -64,9 +75,9 @@ const PageHeader = ({
             </div>
           )}
           <div className="space-y-0.5">
-            <h1 className="text-xl font-bold tracking-tight">{title}</h1>
+            <h1 className="text-lg font-bold tracking-tight">{title}</h1>
             {subtitle && (
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
+              <p className="text-[13px] text-muted-foreground leading-snug">{subtitle}</p>
             )}
           </div>
         </div>

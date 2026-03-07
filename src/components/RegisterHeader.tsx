@@ -108,10 +108,10 @@ const RegisterHeader = ({
         <Button
           onClick={() => { blurActiveInput(); primaryAction.onClick(); }}
           disabled={primaryAction.disabled}
-          className="gap-1.5 h-10 min-h-[44px] w-full sm:w-auto text-[12px]"
+          className="gap-2 h-10 min-h-[44px] w-full sm:w-auto text-[13px] font-semibold rounded-xl"
         >
           {primaryAction.loading ? (
-            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
+            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current" />
           ) : (
             primaryAction.icon
           )}
@@ -128,7 +128,7 @@ const RegisterHeader = ({
           value={searchTerm}
           onChange={(e) => onSearchChange(e.target.value)}
           placeholder={searchPlaceholder}
-          className="pl-9 h-10 rounded-xl"
+          className="pl-9 h-10 rounded-xl text-[13px]"
         />
         {searchTerm && (
           <button onClick={() => onSearchChange('')} className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -233,7 +233,7 @@ const RegisterHeader = ({
               size="sm"
               onClick={action.onClick}
               disabled={action.disabled}
-              className="gap-1.5 h-9 min-h-[40px] text-[12px] px-3"
+              className="gap-1.5 h-9 min-h-[40px] text-[13px] px-3 rounded-xl"
             >
               {action.loading ? (
                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
@@ -247,12 +247,12 @@ const RegisterHeader = ({
       )}
 
       {/* ── 5. Result count + export hint ── */}
-      <div className="space-y-1 mt-3">
-        <p className="text-[13px] text-muted-foreground">
+      <div className="space-y-0.5 mt-3">
+        <p className="text-[13px] font-medium text-muted-foreground">
           {resultCount}
           {hasActiveFilters && totalCount !== undefined && ` (filtered from ${totalCount})`}
         </p>
-        <p className="text-[11px] text-muted-foreground text-center">
+        <p className="text-[11px] text-muted-foreground">
           Exports include the current filters and date range
         </p>
       </div>
@@ -304,8 +304,8 @@ export const PreviousReportsSection = ({
 
   return (
     <>
-      <div className="space-y-2 pt-4 border-t">
-        <h4 className="text-[13px] font-semibold text-muted-foreground">Previously Generated Reports</h4>
+    <div className="space-y-2.5 pt-5 border-t border-border">
+        <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Previously Generated Reports</h4>
         {reports.length === 0 ? (
           <div className="flex flex-col items-center py-6 text-center">
             <div className="h-10 w-10 rounded-full bg-muted/60 flex items-center justify-center mb-2">
@@ -329,16 +329,16 @@ export const PreviousReportsSection = ({
                 </div>
               </div>
               <div className="flex items-center gap-1.5 flex-wrap">
-                <Button variant="ghost" size="sm" onClick={() => handleView(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                <Button variant="ghost" size="sm" onClick={() => handleView(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px] rounded-lg">
                   <Eye className="h-3 w-3" /> View
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                <Button variant="ghost" size="sm" onClick={() => handleDownload(report.file_path, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px] rounded-lg">
                   <Download className="h-3 w-3" /> Save to Device
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleSend(report.id, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                <Button variant="ghost" size="sm" onClick={() => handleSend(report.id, report.document_name)} className="h-8 text-[11px] gap-1 min-h-[36px] rounded-lg">
                   <Send className="h-3 w-3" /> Send
                 </Button>
-                <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px]">
+                <Button variant="ghost" size="sm" onClick={() => handleCopyLink(report.id)} className="h-8 text-[11px] gap-1 min-h-[36px] rounded-lg">
                   <Link2 className="h-3 w-3" /> Copy Link
                 </Button>
               </div>

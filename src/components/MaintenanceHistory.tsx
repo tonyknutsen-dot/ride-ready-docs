@@ -732,10 +732,10 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
         searchPlaceholder="Search records…"
         activeFilterCount={activeFilterCount}
         filterSummary={filterSummary}
-        primaryAction={onLogMaintenance ? { label: 'Log maintenance', icon: <Plus className="h-3.5 w-3.5" />, onClick: onLogMaintenance } : undefined}
+        primaryAction={onLogMaintenance ? { label: 'Log maintenance', icon: <Plus className="h-4 w-4" />, onClick: onLogMaintenance } : undefined}
         actions={[
-          { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline' as const, disabled: generatingCsv || filteredRecords.length === 0 },
-          { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportPdf, variant: 'outline' as const, disabled: generatingPdf || filteredRecords.length === 0, loading: generatingPdf },
+          { label: 'Export CSV', icon: <FileDown className="h-4 w-4" />, onClick: handleExportCsv, variant: 'outline' as const, disabled: generatingCsv || filteredRecords.length === 0 },
+          { label: 'Export PDF', icon: <FileDown className="h-4 w-4" />, onClick: handleExportPdf, variant: 'outline' as const, disabled: generatingPdf || filteredRecords.length === 0, loading: generatingPdf },
         ]}
         filtersOpen={filtersOpen}
         onFiltersOpenChange={setFiltersOpen}
@@ -792,7 +792,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
           {filteredRecords.map((record) => {
             const recordDocs = documents[record.id] || [];
             return (
-              <div key={record.id} className="bg-card border border-border rounded-2xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.998] transition-all"
+              <div key={record.id} className="bg-card border border-border rounded-xl shadow-sm overflow-hidden cursor-pointer active:scale-[0.998] transition-all"
                 onClick={() => { setSelectedRecord(record); setDetailViewOpen(true); }}>
                 <div className="p-3.5 space-y-2">
                   <div className="flex items-center justify-between gap-2">
@@ -820,8 +820,8 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
                   </div>
 
                   <div className="space-y-2">
-                    <h4 className="text-[14px] font-semibold leading-snug text-foreground line-clamp-2">{record.description}</h4>
-                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-muted-foreground">
+                    <h4 className="text-[13px] font-semibold leading-snug text-foreground line-clamp-2">{record.description}</h4>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
                       {record.performed_by && <span>By <span className="font-medium text-foreground">{record.performed_by}</span></span>}
                       {record.cost != null && <span>£<span className="font-semibold text-foreground">{record.cost}</span></span>}
                     </div>
