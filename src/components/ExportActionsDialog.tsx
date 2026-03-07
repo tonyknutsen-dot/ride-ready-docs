@@ -27,6 +27,9 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
+
+  if (!result) return null;
+
   const handleDownload = () => {
     downloadBlob(result.blob, result.fileName);
     toast({ title: 'Downloaded', description: result.fileName });
