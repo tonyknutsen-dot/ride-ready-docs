@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Download, FolderPlus, Loader2, CheckCircle2, Eye, Share2, Link2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { downloadBlob, shareBlobOrFallback, getSignedStorageUrl } from '@/utils/exportFileActions';
+import { downloadBlob, shareBlobOrFallback } from '@/utils/exportFileActions';
+import PDFViewer from '@/components/PDFViewer';
 
 export interface ExportResult {
   blob: Blob;
@@ -32,24 +33,33 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   const [savedDocId, setSavedDocId] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [copyingLink, setCopyingLink] = useState(false);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
 
   if (!result) return null;
+
+  const handleView = () => {
+    // Create a blob URL for the in-app PdfCanvasViewer modal — never open a new tab
+    const normalizedBlob =
+      result.blob.type === 'application/pdf'
+        ? result.blob
+        : new Blob([result.blob], { type: 'application/pdf' });
+    const url = URL.createObjectURL(normalizedBlob);
+    setBlobUrl(url);
+    setViewerOpen(true);
+  };
+
+  const handleCloseViewer = () => {
+    setViewerOpen(false);
+    if (blobUrl) {
+      URL.revokeObjectURL(blobUrl);
+      setBlobUrl(null);
+    }
+  };
 
   const handleDownload = () => {
     downloadBlob(result.blob, result.fileName);
     toast({ title: 'Downloaded', description: result.fileName });
-  };
-
-  const handleView = () => {
-    // Create a blob URL and open via the PDF viewer
-    const blobUrl = URL.createObjectURL(
-      result.blob.type === 'application/pdf'
-        ? result.blob
-        : new Blob([result.blob], { type: 'application/pdf' })
-    );
-    // Open in a new tab with the blob URL — the PdfCanvasViewer handles it on /documents/:id
-    // For immediate view, open blob directly
-    window.open(blobUrl, '_blank');
   };
 
   const handleShare = async () => {
@@ -58,6 +68,8 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
       const outcome = await shareBlobOrFallback(result.blob, result.fileName);
       if (outcome === 'shared') {
         toast({ title: 'Shared', description: 'Report sent via share sheet' });
+      } else if (outcome === 'copied') {
+        toast({ title: 'Link copied', description: 'Report link copied — paste into email, Teams, or WhatsApp' });
       } else if (outcome === 'downloaded') {
         toast({ title: 'Downloaded', description: 'Share not available — file downloaded instead' });
       }
@@ -96,7 +108,6 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
     if (!savedDocId) return;
     setCopyingLink(true);
     try {
-      // Build the in-app link for the saved document
       const link = `${window.location.origin}/documents/${savedDocId}`;
       await navigator.clipboard.writeText(link);
       toast({ title: 'Link copied', description: 'Document link copied to clipboard' });
@@ -112,98 +123,112 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
       setSaved(false);
       setSaving(false);
       setSavedDocId(null);
+      handleCloseViewer();
     }
     onOpenChange(nextOpen);
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle className="text-base">{saved ? 'Saved to Documents' : 'Export ready'}</DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground truncate">
-            {result.fileName}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={handleClose}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base">{saved ? 'Saved to Documents' : 'Export ready'}</DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground truncate">
+              {result.fileName}
+            </DialogDescription>
+          </DialogHeader>
 
-        <div className="grid gap-2 pt-2">
-          {/* ── Pre-save actions ── */}
-          {!saved && (
-            <>
-              <ActionButton icon={Eye} label="View" description="Read this report inside the app" onClick={handleView} accent />
-              <ActionButton icon={Download} label="Save to Device" description="Download file to your phone or laptop" onClick={handleDownload} />
-              <ActionButton icon={Share2} label="Share" description="Send via share sheet or messaging" onClick={handleShare} loading={sharing} />
+          <div className="grid gap-2 pt-2">
+            {/* ── Pre-save actions ── */}
+            {!saved && (
+              <>
+                <ActionButton icon={Eye} label="View" description="Read this report inside the app" onClick={handleView} accent />
+                <ActionButton icon={Download} label="Save to Device" description="Download file to your phone or laptop" onClick={handleDownload} />
+                <ActionButton icon={Share2} label="Share" description="Share via share sheet or copy link" onClick={handleShare} loading={sharing} />
 
-              {result.onSaveToDocuments && (
-                <>
-                  <div className="border-t border-border my-1" />
-                  {result.saveHint && (
-                    <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
-                      {result.saveHint}
-                    </p>
-                  )}
-                  <ActionButton
-                    icon={FolderPlus}
-                    label={result.saveLabel || 'Save to Documents'}
-                    description="Saves this report inside RideReadyDocs for later access"
-                    onClick={handleSaveToDocuments}
-                    loading={saving}
-                  />
-                </>
-              )}
-            </>
-          )}
+                {result.onSaveToDocuments && (
+                  <>
+                    <div className="border-t border-border my-1" />
+                    {result.saveHint && (
+                      <p className="text-[11px] text-muted-foreground text-center px-2 py-1">
+                        {result.saveHint}
+                      </p>
+                    )}
+                    <ActionButton
+                      icon={FolderPlus}
+                      label={result.saveLabel || 'Save to Documents'}
+                      description="Saves this report inside RideReadyDocs for later access"
+                      onClick={handleSaveToDocuments}
+                      loading={saving}
+                    />
+                  </>
+                )}
+              </>
+            )}
 
-          {/* ── Post-save success state ── */}
-          {saved && (
-            <>
-              <div className="flex flex-col items-center py-3 gap-2">
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                  <CheckCircle2 className="h-6 w-6 text-primary" />
+            {/* ── Post-save success state ── */}
+            {saved && (
+              <>
+                <div className="flex flex-col items-center py-3 gap-2">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <CheckCircle2 className="h-6 w-6 text-primary" />
+                  </div>
+                  <p className="text-sm font-medium text-foreground">Report saved successfully</p>
+                  <p className="text-xs text-muted-foreground text-center">
+                    This report is now in your document register and can be viewed anytime.
+                  </p>
                 </div>
-                <p className="text-sm font-medium text-foreground">Report saved successfully</p>
-                <p className="text-xs text-muted-foreground text-center">
-                  This report is now in your document register and can be viewed anytime.
-                </p>
-              </div>
 
-              {savedDocId && (
+                {savedDocId && (
+                  <ActionButton
+                    icon={Eye}
+                    label="View Saved Document"
+                    description="Open in the document viewer"
+                    onClick={handleViewSavedDocument}
+                    accent
+                  />
+                )}
+
                 <ActionButton
-                  icon={Eye}
-                  label="View Saved Document"
-                  description="Open in the document viewer"
-                  onClick={handleViewSavedDocument}
-                  accent
+                  icon={Download}
+                  label="Save to Device"
+                  description="Also download a copy to your phone or laptop"
+                  onClick={handleDownload}
                 />
-              )}
 
-              <ActionButton
-                icon={Download}
-                label="Save to Device"
-                description="Also download a copy to your phone or laptop"
-                onClick={handleDownload}
-              />
+                <ActionButton icon={Share2} label="Share" description="Share via share sheet or copy link" onClick={handleShare} loading={sharing} />
 
-              <ActionButton icon={Share2} label="Share" description="Send via share sheet or messaging" onClick={handleShare} loading={sharing} />
+                {savedDocId && (
+                  <ActionButton icon={Link2} label="Copy Link" description="Copy document link to clipboard" onClick={handleCopyLink} loading={copyingLink} />
+                )}
 
-              {savedDocId && (
-                <ActionButton icon={Link2} label="Copy Link" description="Copy document link to clipboard" onClick={handleCopyLink} loading={copyingLink} />
-              )}
+                <div className="pt-1">
+                  <Button
+                    variant="outline"
+                    className="w-full h-10 text-sm"
+                    onClick={() => handleClose(false)}
+                  >
+                    Done
+                  </Button>
+                </div>
+              </>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
-              <div className="pt-1">
-                <Button
-                  variant="outline"
-                  className="w-full h-10 text-sm"
-                  onClick={() => handleClose(false)}
-                >
-                  Done
-                </Button>
-              </div>
-            </>
-          )}
-        </div>
-      </DialogContent>
-    </Dialog>
+      {/* In-app PDF viewer modal for pre-save View */}
+      {blobUrl && (
+        <PDFViewer
+          isOpen={viewerOpen}
+          onClose={handleCloseViewer}
+          pdfUrl={blobUrl}
+          pdfName={result.fileName}
+          onDownload={handleDownload}
+        />
+      )}
+    </>
   );
 };
 

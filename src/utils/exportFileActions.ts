@@ -101,11 +101,11 @@ export function isLikelyMobileOrTablet(): boolean {
   return Boolean(coarsePointer || mobileUserAgent);
 }
 
-export async function shareBlobOrFallback(blob: Blob, fileName: string): Promise<'shared' | 'downloaded' | 'cancelled'> {
+export async function shareBlobOrFallback(blob: Blob, fileName: string): Promise<'shared' | 'downloaded' | 'copied' | 'cancelled'> {
   const canUseNativeShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
-  const isMobile = isLikelyMobileOrTablet();
 
-  if (canUseNativeShare && isMobile) {
+  // Try native Web Share API on any platform (mobile gets share sheet, desktop gets share dialog)
+  if (canUseNativeShare) {
     try {
       const file = new File([blob], fileName, { type: blob.type || 'application/octet-stream' });
       const canShareFiles = typeof navigator.canShare !== 'function' || navigator.canShare({ files: [file] });
@@ -115,9 +115,11 @@ export async function shareBlobOrFallback(blob: Blob, fileName: string): Promise
       }
     } catch (error: any) {
       if (error?.name === 'AbortError') return 'cancelled';
+      // Share failed — fall through to download
     }
   }
 
+  // Fallback: download the file
   downloadBlob(blob, fileName);
   return 'downloaded';
 }
