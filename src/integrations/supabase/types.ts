@@ -2886,6 +2886,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_security_settings: {
+        Row: {
+          created_at: string | null
+          id: string
+          idle_lock_minutes: number | null
+          lock_pin_hash: string | null
+          remember_device_enabled: boolean | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          idle_lock_minutes?: number | null
+          lock_pin_hash?: string | null
+          remember_device_enabled?: boolean | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          idle_lock_minutes?: number | null
+          lock_pin_hash?: string | null
+          remember_device_enabled?: boolean | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_submitted_check_items: {
         Row: {
           admin_notes: string | null

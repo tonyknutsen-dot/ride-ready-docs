@@ -19,6 +19,7 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthenticatedAppShell } from "@/components/AuthenticatedAppShell";
 import { PWAUpdateModal } from "@/components/PWAUpdateModal";
+import { LockScreenProvider } from "@/components/LockScreenProvider";
 import { OfflineSuspense } from "@/components/OfflineSuspense";
 import { useLocation } from "react-router-dom";
 
@@ -119,6 +120,7 @@ const App = () => (
               <StaffProvider>
               {/* Authenticated user components loaded lazily */}
               <AuthenticatedAppShell />
+              <LockScreenProvider>
               <LocationAwareOfflineSuspense>
               <Routes>
               <Route path="/" element={<ComingSoon />} />
@@ -623,6 +625,7 @@ const App = () => (
               <Route path="*" element={<NotFound />} />
               </Routes>
               </LocationAwareOfflineSuspense>
+              </LockScreenProvider>
               {/* Cookie consent shown globally (lightweight) */}
               <CookieConsentBanner />
               </StaffProvider>
