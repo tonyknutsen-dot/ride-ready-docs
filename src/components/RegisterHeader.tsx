@@ -9,10 +9,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Eye, Download, Share2, Link2 } from 'lucide-react';
 import { format, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import PDFViewer from '@/components/PDFViewer';
+import DocumentPreviewSheet from '@/components/DocumentPreviewSheet';
 import { useToast } from '@/hooks/use-toast';
 import {
-  createPdfViewerUrlFromStorage,
   downloadBlob,
   getStorageFileBlob,
   isPdfByMeta,
