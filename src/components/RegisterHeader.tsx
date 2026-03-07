@@ -276,61 +276,13 @@ export const PreviousReportsSection = ({
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
 
-  const handleView = async (report: { id: string; file_path: string; document_name: string; mime_type?: string | null }) => {
-    setLoadingId(report.id);
-    try {
-      console.info('[PDF DEBUG][History] view-start', {
-        reportId: report.id,
-        storagePath: report.file_path,
-        documentName: report.document_name,
-        mimeTypeFromDb: report.mime_type || '(null)',
-      });
-
-      if (!isPdfByMeta(report.document_name, report.mime_type)) {
-        await handleDownload(report.file_path, report.document_name);
-        return;
-      }
-
-      const prepared = await createPdfViewerUrlFromStorage(report.file_path);
-
-      console.info('[PDF DEBUG][History] blob-loaded', {
-        reportId: report.id,
-        downloadSucceeded: true,
-        blobSize: prepared.blobSize,
-        blobType: prepared.blobType,
-        signature: prepared.signature,
-        validPdfSignature: prepared.validPdf,
-      });
-
-      if (!prepared.validPdf) {
-        revokeObjectUrl(prepared.url);
-        toast({ title: 'Invalid PDF', description: 'This file is not a valid PDF and cannot be previewed.', variant: 'destructive' });
-        return;
-      }
-
-      const url = prepared.url;
-
-      console.info('[PDF DEBUG][History] viewer-source', {
-        reportId: report.id,
-        viewerSourceType: 'blob-url',
-        normalizedBlobType: prepared.normalizedBlobType,
-        viewerUrlPreview: url.slice(0, 32),
-      });
-
-      setViewerState((prev) => {
-        if (prev.url) revokeObjectUrl(prev.url);
-        return { open: true, url, name: report.document_name };
-      });
-    } catch (error) {
-      console.error('[PDF DEBUG][History] view-failed', {
-        reportId: report.id,
-        storagePath: report.file_path,
-        error,
-      });
-      toast({ title: 'Failed to open', description: 'Could not load the report file.', variant: 'destructive' });
-    } finally {
-      setLoadingId(null);
+  const handleView = (report: { id: string; file_path: string; document_name: string; mime_type?: string | null }) => {
+    if (!isPdfByMeta(report.document_name, report.mime_type)) {
+      handleDownload(report.file_path, report.document_name);
+      return;
     }
+    setPreviewSource({ name: report.document_name, storagePath: report.file_path });
+    setPreviewOpen(true);
   };
 
   const handleDownload = async (filePath: string, fileName: string) => {
