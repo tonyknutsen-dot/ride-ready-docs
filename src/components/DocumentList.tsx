@@ -68,10 +68,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     return name.endsWith('.pdf');
   };
 
-  // Helper to check if document is viewable
-  const isViewable = (doc: Document) => {
-    return isImageDoc(doc) || isPDFDoc(doc);
-  };
 
   // Some legacy Safety Check Record PDFs were saved with US date strings in the document_name,
   // e.g. "Preopening Check - 1/27/2026". We can't change the already-generated PDF content,
