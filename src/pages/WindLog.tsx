@@ -612,10 +612,8 @@ const WindLog = () => {
     } finally { setGeneratingCsv(false); }
   };
 
-  const handleViewReport = async (filePath: string) => {
-    const { data } = await supabase.storage.from('ride-documents').createSignedUrl(filePath, 300);
-    if (data?.signedUrl) window.open(data.signedUrl, '_blank');
-  };
+  // View is now handled internally by PreviousReportsSection
+  const handleViewReport = async (_filePath: string) => {};
 
   const formatAnemometer = (entry: WindLogEntry) => {
     const parts = [entry.anemometer_make, entry.anemometer_model, entry.anemometer_serial ? `S/N ${entry.anemometer_serial}` : null].filter(Boolean);
