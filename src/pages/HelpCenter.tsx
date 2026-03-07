@@ -74,7 +74,7 @@ const coreModules: HelpTopic[] = [
       "Open your ride's detail page.",
       "Go to the 'Documents' tab.",
       "Click 'Upload Document' and select type, expiry date, and file.",
-      "Supported formats: PDF, JPG, PNG.",
+      "Supported formats: PDF, Word, Excel, JPG, PNG, and many more.",
       "Documents with expiry dates trigger automatic email reminders at 30 days and 7 days.",
       "Use 'Global Documents' for fleet-wide files like insurance policies.",
     ],
@@ -384,7 +384,7 @@ const HelpCenter = () => {
                   {
                     category: "Account & Billing",
                     questions: [
-                      { q: "How does pricing work?", a: "Starter (1–5 rides) £9.99/mo · Operator (6–12) £19.99/mo · Professional (13–25) £34.99/mo · Enterprise (25+) £49.99/mo. All plans include every feature. Stalls and generators are free." },
+                      { q: "How does pricing work?", a: "Starter (1–5 rides) £9.99/mo · Operator (6–12) £19.99/mo · Professional (13–25) £34.99/mo · Enterprise (25+) £44.99/mo. All plans include every feature. Stalls and generators are free." },
                       { q: "Can I cancel my subscription?", a: "Yes, cancel anytime from Settings > Plan & Billing. Access continues until the end of your paid period. Data retained for 90 days." },
                     ],
                   },
