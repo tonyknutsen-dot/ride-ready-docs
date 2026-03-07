@@ -6,17 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Eye, Download, Share2, Link2 } from 'lucide-react';
+import { Filter, ChevronDown, Search, X, CalendarIcon, FileText, Download, Share2, Link2 } from 'lucide-react';
 import { format, subMonths, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import DocumentPreviewSheet from '@/components/DocumentPreviewSheet';
 import { useToast } from '@/hooks/use-toast';
 import {
   downloadBlob,
+  getSignedStorageUrl,
   getStorageFileBlob,
-  isPdfByMeta,
   shareStoredFileOrFallback,
-  revokeObjectUrl,
 } from '@/utils/exportFileActions';
 
 interface ActionButton {
