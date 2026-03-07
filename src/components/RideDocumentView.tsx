@@ -25,7 +25,7 @@ import {
   AlertTriangle,
   File,
   RefreshCw,
-  Share2,
+  Link2,
   Link2,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
