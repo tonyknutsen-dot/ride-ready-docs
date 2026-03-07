@@ -108,10 +108,10 @@ const RegisterHeader = ({
         <Button
           onClick={() => { blurActiveInput(); primaryAction.onClick(); }}
           disabled={primaryAction.disabled}
-          className="gap-1.5 h-10 min-h-[44px] w-full sm:w-auto text-[12px]"
+          className="gap-2 h-10 min-h-[44px] w-full sm:w-auto text-[13px] font-semibold rounded-xl"
         >
           {primaryAction.loading ? (
-            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current" />
+            <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-current" />
           ) : (
             primaryAction.icon
           )}
