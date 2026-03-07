@@ -246,58 +246,27 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
       if (isImageDoc(document)) {
         const { data, error } = await supabase.storage
           .from('ride-documents')
-          .createSignedUrl(document.file_path, 3600); // 1 hour
+          .createSignedUrl(document.file_path, 3600);
 
         if (error) throw error;
         if (!data?.signedUrl) throw new Error('Could not create signed URL for image');
 
-        setViewerState((prev) => {
-          if (prev.url) revokeObjectUrl(prev.url);
-          return {
-            type: 'image',
-            url: data.signedUrl,
-            name: displayName,
-            document,
-          };
+        setViewerState({
+          type: 'image',
+          url: data.signedUrl,
+          name: displayName,
+          document,
         });
         return;
       }
 
-      if (isPDFDoc(document)) {
-        const prepared = await createPdfViewerUrlFromStorage(document.file_path);
-
-        console.info('[PDF DEBUG][Documents] view-pdf', {
-          documentId: document.id,
-          storagePath: document.file_path,
-          fileName: displayName,
-          blobSize: prepared.blobSize,
-          blobType: prepared.blobType,
-          signature: prepared.signature,
-          validPdfSignature: prepared.validPdf,
-          viewerSourceType: 'blob-url',
-          normalizedBlobType: prepared.normalizedBlobType,
-        });
-
-        if (!prepared.validPdf) {
-          revokeObjectUrl(prepared.url);
-          toast({
-            title: 'Invalid PDF',
-            description: 'This file is not a valid PDF and cannot be previewed.',
-            variant: 'destructive',
-          });
-          return;
-        }
-
-        setViewerState((prev) => {
-          if (prev.url) revokeObjectUrl(prev.url);
-          return {
-            type: 'pdf',
-            url: prepared.url,
-            name: displayName,
-            document,
-          };
-        });
-      }
+      // For PDFs and other files, use the shared DocumentPreviewSheet
+      setViewerState({
+        type: 'pdf',
+        url: document.file_path,
+        name: displayName,
+        document,
+      });
     } catch (error: any) {
       console.error('View error:', error);
       toast({
