@@ -710,6 +710,22 @@ const NotificationCenter = () => {
     navigate(route);
   }, [isController, markAsRead, navigate]);
 
+  const handleOpenLinkedDefect = useCallback(async (n: Notification, defectId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (!n.is_read && isController) {
+      await markAsRead(n.id);
+    }
+
+    const route = buildDefectRoute(defectId);
+    console.info('[Notifications] Open linked defect action', {
+      notification_id: n.id,
+      linked_defect_id: defectId,
+      action_route: route,
+    });
+    navigate(route);
+  }, [isController, markAsRead, navigate]);
+
   /* ── Render ───────────────────────────── */
 
   if (loading) {
