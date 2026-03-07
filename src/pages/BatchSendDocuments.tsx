@@ -582,8 +582,8 @@ const BatchSendDocuments = () => {
     : [];
 
   return (
-    <div className="t-page min-h-screen">
-      <div className="container mx-auto py-4 px-4 pb-24 md:pb-8 space-y-3">
+    <div className="t-page min-h-screen overflow-x-hidden">
+      <div className="container mx-auto py-4 px-4 pb-24 md:pb-8 space-y-3 overflow-x-hidden">
         <PageHeader
           title="Send Compliance Documents"
           subtitle="Submit compliance documents to councils, insurers, and auditors."
@@ -761,7 +761,7 @@ const BatchSendDocuments = () => {
                       <Badge variant="secondary" className="text-[9px] h-4 font-semibold">{selectedDocuments.length} selected</Badge>
                     )}
                   </div>
-                  <div className="p-2 space-y-1.5">
+                  <div className="p-2 space-y-1.5 overflow-x-hidden">
                     {/* Size indicator */}
                     {selectedDocuments.length > 0 && (
                       <div className="flex items-center justify-between text-[10px] bg-secondary/50 border border-border rounded-md px-2 py-1">
@@ -776,7 +776,7 @@ const BatchSendDocuments = () => {
                     {(exceedsEmailLimit || sendMethod !== 'auto') && (
                       <div className="bg-warning/5 border border-warning/20 rounded-lg p-2">
                         <p className="text-[10px] font-semibold text-foreground mb-1.5">Large file ({totalSizeMB.toFixed(1)}MB) — choose send method:</p>
-                        <div className="grid grid-cols-2 gap-1">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1">
                           <button
                             type="button"
                             onClick={() => setSendMethod('links')}
@@ -807,133 +807,135 @@ const BatchSendDocuments = () => {
                       </div>
                     )}
 
-                    {/* Check Records */}
-                    {currentRideCheckRecords.length > 0 && (
-                      <Collapsible open={checkRecordsExpanded} onOpenChange={setCheckRecordsExpanded}>
-                        <div className="border border-success/20 rounded-lg overflow-hidden">
-                          <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-success/5 transition-colors gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <ClipboardCheck className="h-3 w-3 text-success shrink-0" />
-                              <span className="font-semibold text-[11px]">Check Records</span>
-                              <Badge variant="outline" className="text-[9px] h-3.5 border-success/30 text-success">{currentRideCheckRecords.length}</Badge>
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <span
-                                role="button"
-                                tabIndex={0}
-                                className="h-5 text-[10px] px-1 inline-flex items-center rounded hover:bg-accent text-muted-foreground cursor-pointer"
-                                onClick={(e) => { e.stopPropagation(); const ids = currentRideCheckRecords.map(d => d.id); const allSel = ids.every(id => selectedDocuments.includes(id)); setSelectedDocuments(prev => allSel ? prev.filter(id => !ids.includes(id)) : [...new Set([...prev, ...ids])]); }}
-                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); const ids = currentRideCheckRecords.map(d => d.id); const allSel = ids.every(id => selectedDocuments.includes(id)); setSelectedDocuments(prev => allSel ? prev.filter(id => !ids.includes(id)) : [...new Set([...prev, ...ids])]); } }}
-                              >
-                                {currentRideCheckRecords.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
-                              </span>
-                              <ChevronDown className="h-3 w-3" />
-                            </div>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <div className="px-1.5 pb-1.5 space-y-0.5">
-                              {currentRideCheckRecords.map(doc => (
-                                <label key={doc.id} className={cn("flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-[11px]", selectedDocuments.includes(doc.id) ? 'bg-success/8 border border-success/25' : 'hover:bg-muted/50 border border-transparent')}>
-                                  <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0 h-3.5 w-3.5" />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-foreground truncate">{doc.document_name}</p>
-                                    <p className="text-[9px] text-muted-foreground">{doc.uploaded_at && format(new Date(doc.uploaded_at), 'dd MMM yyyy')}{doc.file_size ? ` · ${formatFileSize(doc.file_size)}` : ''}</p>
-                                  </div>
-                                </label>
-                              ))}
-                            </div>
-                          </CollapsibleContent>
-                        </div>
-                      </Collapsible>
-                    )}
-
-                    {/* Ride Documents */}
-                    {currentRideDocuments.length > 0 && (
-                      <Collapsible defaultOpen>
-                        <div className="border border-border rounded-lg overflow-hidden">
-                          <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <FileText className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
-                              <span className="font-semibold text-[11px]">Documents</span>
-                              <Badge variant="outline" className="text-[9px] h-3.5">{currentRideDocuments.length}</Badge>
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <span
-                                role="button"
-                                tabIndex={0}
-                                className="h-5 text-[10px] px-1 inline-flex items-center rounded hover:bg-accent text-muted-foreground cursor-pointer"
-                                onClick={(e) => { e.stopPropagation(); handleSelectAllRide(selectedRide!.id, currentRideDocuments); }}
-                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); handleSelectAllRide(selectedRide!.id, currentRideDocuments); } }}
-                              >
-                                {currentRideDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
-                              </span>
-                              <ChevronDown className="h-3 w-3" />
-                            </div>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <div className="px-1.5 pb-1.5 space-y-0.5">
-                              {currentRideDocuments.map(doc => (
-                                <label key={doc.id} className={cn("flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-[11px]", selectedDocuments.includes(doc.id) ? 'bg-primary/8 border border-primary/25' : 'hover:bg-muted/50 border border-transparent')}>
-                                  <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0 h-3.5 w-3.5" />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-foreground truncate">{doc.document_name}</p>
-                                    <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
-                                      <span>{doc.document_type}</span>
-                                      {doc.expires_at && isExpiringSoon(doc.expires_at) && <Badge variant="destructive" className="text-[8px] h-3 px-1">Exp</Badge>}
-                                      {doc.file_size && <span>· {formatFileSize(doc.file_size)}</span>}
+                    <div className="space-y-1.5 max-h-[52vh] overflow-y-auto pr-1 md:max-h-none md:overflow-visible md:pr-0">
+                      {/* Check Records */}
+                      {currentRideCheckRecords.length > 0 && (
+                        <Collapsible open={checkRecordsExpanded} onOpenChange={setCheckRecordsExpanded}>
+                          <div className="border border-success/20 rounded-lg overflow-hidden">
+                            <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-success/5 transition-colors gap-2">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <ClipboardCheck className="h-3 w-3 text-success shrink-0" />
+                                <span className="font-semibold text-[11px]">Check Records</span>
+                                <Badge variant="outline" className="text-[9px] h-3.5 border-success/30 text-success">{currentRideCheckRecords.length}</Badge>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  className="h-5 text-[10px] px-1 inline-flex items-center rounded hover:bg-accent text-muted-foreground cursor-pointer"
+                                  onClick={(e) => { e.stopPropagation(); const ids = currentRideCheckRecords.map(d => d.id); const allSel = ids.every(id => selectedDocuments.includes(id)); setSelectedDocuments(prev => allSel ? prev.filter(id => !ids.includes(id)) : [...new Set([...prev, ...ids])]); }}
+                                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); const ids = currentRideCheckRecords.map(d => d.id); const allSel = ids.every(id => selectedDocuments.includes(id)); setSelectedDocuments(prev => allSel ? prev.filter(id => !ids.includes(id)) : [...new Set([...prev, ...ids])]); } }}
+                                >
+                                  {currentRideCheckRecords.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
+                                </span>
+                                <ChevronDown className="h-3 w-3" />
+                              </div>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="px-1.5 pb-1.5 space-y-0.5">
+                                {currentRideCheckRecords.map(doc => (
+                                  <label key={doc.id} className={cn("flex items-center gap-2 min-w-0 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-[11px]", selectedDocuments.includes(doc.id) ? 'bg-success/8 border border-success/25' : 'hover:bg-muted/50 border border-transparent')}>
+                                    <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0 h-3.5 w-3.5" />
+                                    <div className="flex-1 min-w-0 overflow-hidden">
+                                      <p className="font-medium text-foreground truncate">{doc.document_name}</p>
+                                      <p className="text-[9px] text-muted-foreground truncate">{doc.uploaded_at && format(new Date(doc.uploaded_at), 'dd MMM yyyy')}{doc.file_size ? ` · ${formatFileSize(doc.file_size)}` : ''}</p>
                                     </div>
-                                  </div>
-                                </label>
-                              ))}
-                            </div>
-                          </CollapsibleContent>
-                        </div>
-                      </Collapsible>
-                    )}
+                                  </label>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </div>
+                        </Collapsible>
+                      )}
 
-                    {/* Global Documents */}
-                    {globalDocuments.length > 0 && (
-                      <Collapsible defaultOpen={currentRideDocuments.length === 0}>
-                        <div className="border border-border rounded-lg overflow-hidden">
-                          <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
-                            <div className="flex items-center gap-1.5 min-w-0">
-                              <Building2 className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
-                              <span className="font-semibold text-[11px]">Global Documents</span>
-                              <Badge variant="outline" className="text-[9px] h-3.5">{globalDocuments.length}</Badge>
-                            </div>
-                            <div className="flex items-center gap-1 shrink-0">
-                              <span
-                                role="button"
-                                tabIndex={0}
-                                className="h-5 text-[10px] px-1 inline-flex items-center rounded hover:bg-accent text-muted-foreground cursor-pointer"
-                                onClick={(e) => { e.stopPropagation(); handleSelectAllGlobal(); }}
-                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); handleSelectAllGlobal(); } }}
-                              >
-                                {globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
-                              </span>
-                              <ChevronDown className="h-3 w-3" />
-                            </div>
-                          </CollapsibleTrigger>
-                          <CollapsibleContent>
-                            <div className="px-1.5 pb-1.5 space-y-0.5">
-                              {globalDocuments.map(doc => (
-                                <label key={doc.id} className={cn("flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-[11px]", selectedDocuments.includes(doc.id) ? 'bg-primary/8 border border-primary/25' : 'hover:bg-muted/50 border border-transparent')}>
-                                  <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0 h-3.5 w-3.5" />
-                                  <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-foreground truncate">{doc.document_name}</p>
-                                    <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
-                                      <span>{doc.document_type}</span>
-                                      {doc.expires_at && isExpiringSoon(doc.expires_at) && <Badge variant="destructive" className="text-[8px] h-3 px-1">Exp</Badge>}
-                                      {doc.file_size && <span>· {formatFileSize(doc.file_size)}</span>}
+                      {/* Ride Documents */}
+                      {currentRideDocuments.length > 0 && (
+                        <Collapsible defaultOpen>
+                          <div className="border border-border rounded-lg overflow-hidden">
+                            <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <FileText className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
+                                <span className="font-semibold text-[11px]">Documents</span>
+                                <Badge variant="outline" className="text-[9px] h-3.5">{currentRideDocuments.length}</Badge>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  className="h-5 text-[10px] px-1 inline-flex items-center rounded hover:bg-accent text-muted-foreground cursor-pointer"
+                                  onClick={(e) => { e.stopPropagation(); handleSelectAllRide(selectedRide!.id, currentRideDocuments); }}
+                                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); handleSelectAllRide(selectedRide!.id, currentRideDocuments); } }}
+                                >
+                                  {currentRideDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
+                                </span>
+                                <ChevronDown className="h-3 w-3" />
+                              </div>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="px-1.5 pb-1.5 space-y-0.5">
+                                {currentRideDocuments.map(doc => (
+                                  <label key={doc.id} className={cn("flex items-center gap-2 min-w-0 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-[11px]", selectedDocuments.includes(doc.id) ? 'bg-primary/8 border border-primary/25' : 'hover:bg-muted/50 border border-transparent')}>
+                                    <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0 h-3.5 w-3.5" />
+                                    <div className="flex-1 min-w-0 overflow-hidden">
+                                      <p className="font-medium text-foreground truncate">{doc.document_name}</p>
+                                      <div className="flex items-center gap-1 text-[9px] text-muted-foreground min-w-0">
+                                        <span className="truncate">{doc.document_type}</span>
+                                        {doc.expires_at && isExpiringSoon(doc.expires_at) && <Badge variant="destructive" className="text-[8px] h-3 px-1">Exp</Badge>}
+                                        {doc.file_size && <span className="shrink-0">· {formatFileSize(doc.file_size)}</span>}
+                                      </div>
                                     </div>
-                                  </div>
-                                </label>
-                              ))}
-                            </div>
-                          </CollapsibleContent>
-                        </div>
-                      </Collapsible>
-                    )}
+                                  </label>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </div>
+                        </Collapsible>
+                      )}
+
+                      {/* Global Documents */}
+                      {globalDocuments.length > 0 && (
+                        <Collapsible defaultOpen={currentRideDocuments.length === 0}>
+                          <div className="border border-border rounded-lg overflow-hidden">
+                            <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <Building2 className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
+                                <span className="font-semibold text-[11px]">Global Documents</span>
+                                <Badge variant="outline" className="text-[9px] h-3.5">{globalDocuments.length}</Badge>
+                              </div>
+                              <div className="flex items-center gap-1 shrink-0">
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  className="h-5 text-[10px] px-1 inline-flex items-center rounded hover:bg-accent text-muted-foreground cursor-pointer"
+                                  onClick={(e) => { e.stopPropagation(); handleSelectAllGlobal(); }}
+                                  onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); handleSelectAllGlobal(); } }}
+                                >
+                                  {globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
+                                </span>
+                                <ChevronDown className="h-3 w-3" />
+                              </div>
+                            </CollapsibleTrigger>
+                            <CollapsibleContent>
+                              <div className="px-1.5 pb-1.5 space-y-0.5">
+                                {globalDocuments.map(doc => (
+                                  <label key={doc.id} className={cn("flex items-center gap-2 min-w-0 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-[11px]", selectedDocuments.includes(doc.id) ? 'bg-primary/8 border border-primary/25' : 'hover:bg-muted/50 border border-transparent')}>
+                                    <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0 h-3.5 w-3.5" />
+                                    <div className="flex-1 min-w-0 overflow-hidden">
+                                      <p className="font-medium text-foreground truncate">{doc.document_name}</p>
+                                      <div className="flex items-center gap-1 text-[9px] text-muted-foreground min-w-0">
+                                        <span className="truncate">{doc.document_type}</span>
+                                        {doc.expires_at && isExpiringSoon(doc.expires_at) && <Badge variant="destructive" className="text-[8px] h-3 px-1">Exp</Badge>}
+                                        {doc.file_size && <span className="shrink-0">· {formatFileSize(doc.file_size)}</span>}
+                                      </div>
+                                    </div>
+                                  </label>
+                                ))}
+                              </div>
+                            </CollapsibleContent>
+                          </div>
+                        </Collapsible>
+                      )}
+                    </div>
 
                     {/* Empty state */}
                     {currentRideDocuments.length === 0 && currentRideCheckRecords.length === 0 && globalDocuments.length === 0 && (
