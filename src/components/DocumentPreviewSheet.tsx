@@ -1,15 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Download, Share2, ExternalLink, X, FileText, AlertCircle } from 'lucide-react';
+import { Download, Share2, ExternalLink, X, FileText, AlertCircle, Link2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   downloadBlob,
+  getSignedStorageUrl,
   getStorageFileBlob,
   shareBlobOrFallback,
   shareStoredFileOrFallback,
-  isLikelyMobileOrTablet,
-  revokeObjectUrl,
 } from '@/utils/exportFileActions';
 import { useToast } from '@/hooks/use-toast';
 
@@ -175,11 +174,22 @@ const DocumentPreviewSheet = ({ open, onOpenChange, source }: DocumentPreviewShe
     try {
       const blob = await getBlob();
       const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-      // Revoke after a delay to give the new tab time to load
+      window.open(url, '_blank', 'noopener,noreferrer');
       setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch {
       toast({ title: 'Could not open file', variant: 'destructive' });
+    }
+  };
+
+  const handleCopyLink = async () => {
+    if (!source?.storagePath) return;
+    try {
+      const signedUrl = await getSignedStorageUrl(source.storagePath);
+      if (!signedUrl) throw new Error('No link available');
+      await navigator.clipboard.writeText(signedUrl);
+      toast({ title: 'Link copied', description: 'Signed link valid for 1 hour.' });
+    } catch {
+      toast({ title: 'Copy link failed', description: 'Could not copy a shareable link.', variant: 'destructive' });
     }
   };
 
@@ -240,23 +250,23 @@ const DocumentPreviewSheet = ({ open, onOpenChange, source }: DocumentPreviewShe
                 )}
               </div>
               <div>
-                <p className="text-sm font-medium text-foreground">
-                  {isPdf ? 'Preview unavailable' : 'No in-app preview for this file type'}
-                </p>
+                <p className="text-sm font-medium text-foreground">Preview unavailable</p>
                 <p className="text-[12px] text-muted-foreground mt-1">
-                  You can still open it, save it to your device, or share it.
+                  This file cannot be previewed here, but you can still save it to your device or share it.
                 </p>
               </div>
               <div className="flex flex-col gap-2 w-full max-w-xs">
-                <Button onClick={handleOpenExternal} className="gap-2 h-11">
-                  <ExternalLink className="h-4 w-4" /> Open file
-                </Button>
-                <Button variant="outline" onClick={handleDownload} disabled={downloading} className="gap-2 h-11">
+                <Button onClick={handleDownload} disabled={downloading} className="gap-2 h-11">
                   <Download className="h-4 w-4" /> Save to device
                 </Button>
                 <Button variant="outline" onClick={handleShare} className="gap-2 h-11">
                   <Share2 className="h-4 w-4" /> Share
                 </Button>
+                {source.storagePath && (
+                  <Button variant="outline" onClick={handleCopyLink} className="gap-2 h-11">
+                    <Link2 className="h-4 w-4" /> Copy link
+                  </Button>
+                )}
               </div>
             </div>
           )}
