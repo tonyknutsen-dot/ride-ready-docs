@@ -612,21 +612,11 @@ const DocumentViewerPage = () => {
       {/* ── Content: PDF + Sidebar ── */}
       <div className="flex-1 flex overflow-hidden">
         {/* PDF Viewer */}
-        <div className="flex-1 bg-muted/30">
-          {pdfUrl ? (
-            <iframe
-              src={pdfUrl}
-              className="w-full h-full border-0"
-              title={docTitle}
-            />
-          ) : (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center space-y-2">
-                <FileText className="mx-auto h-10 w-10 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Unable to load PDF</p>
-              </div>
-            </div>
-          )}
+        <div className="flex-1">
+          <PdfCanvasViewer
+            src={pdfUrl}
+            onDownload={handleDownload}
+          />
         </div>
 
         {/* Metadata Sidebar */}
