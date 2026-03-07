@@ -247,12 +247,12 @@ const RegisterHeader = ({
       )}
 
       {/* ── 5. Result count + export hint ── */}
-      <div className="space-y-1 mt-3">
-        <p className="text-[13px] text-muted-foreground">
+      <div className="space-y-0.5 mt-3">
+        <p className="text-[13px] font-medium text-muted-foreground">
           {resultCount}
           {hasActiveFilters && totalCount !== undefined && ` (filtered from ${totalCount})`}
         </p>
-        <p className="text-[11px] text-muted-foreground text-center">
+        <p className="text-[11px] text-muted-foreground">
           Exports include the current filters and date range
         </p>
       </div>
