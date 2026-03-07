@@ -19,6 +19,7 @@ import {
   Loader2,
   CloudOff,
   Paperclip,
+  Plus,
 } from 'lucide-react';
 import { format, parseISO, subDays, startOfMonth, endOfMonth, startOfYear } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -69,6 +70,8 @@ interface ChecksHistoryProps {
   rideId: string;
   rideName: string;
   frequency?: string;
+  /** Callback to start a new check — wired as the primary CTA */
+  onStartCheck?: () => void;
 }
 
 interface MonthGroup {
@@ -79,7 +82,7 @@ interface MonthGroup {
   passedChecks: number;
 }
 
-const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryProps) => {
+const ChecksHistory = ({ rideId, rideName, frequency = 'daily', onStartCheck }: ChecksHistoryProps) => {
   const { user } = useAuth();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
@@ -500,9 +503,10 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         searchPlaceholder="Search by name or notes…"
         activeFilterCount={activeFilterCount}
         filterSummary={filterSummary}
+        primaryAction={onStartCheck ? { label: 'Start check', icon: <Plus className="h-4 w-4" />, onClick: onStartCheck } : undefined}
         actions={[
-          { label: 'Export CSV', icon: <Download className="h-3.5 w-3.5" />, onClick: exportToCSV, variant: 'outline' as const },
-          { label: 'Export PDF', icon: <FileDown className="h-3.5 w-3.5" />, onClick: exportToPDF, variant: 'outline' as const },
+          { label: 'Export CSV', icon: <Download className="h-4 w-4" />, onClick: exportToCSV, variant: 'outline' as const },
+          { label: 'Export PDF', icon: <FileDown className="h-4 w-4" />, onClick: exportToPDF, variant: 'outline' as const },
         ]}
         filtersOpen={filtersOpen}
         onFiltersOpenChange={setFiltersOpen}
