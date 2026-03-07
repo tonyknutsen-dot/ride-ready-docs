@@ -19,6 +19,7 @@ import {
   Loader2,
   CloudOff,
   Paperclip,
+  Plus,
 } from 'lucide-react';
 import { format, parseISO, subDays, startOfMonth, endOfMonth, startOfYear } from 'date-fns';
 import { cn } from '@/lib/utils';
