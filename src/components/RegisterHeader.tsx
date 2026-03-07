@@ -274,11 +274,6 @@ export const PreviousReportsSection = ({
   const [viewerState, setViewerState] = useState<{ open: boolean; url: string; name: string }>({ open: false, url: '', name: '' });
   const [loadingId, setLoadingId] = useState<string | null>(null);
 
-  useEffect(() => {
-    return () => {
-      if (viewerState.url) URL.revokeObjectURL(viewerState.url);
-    };
-  }, [viewerState.url]);
 
   const handleView = async (report: { id: string; file_path: string; document_name: string; mime_type?: string | null }) => {
     setLoadingId(report.id);
