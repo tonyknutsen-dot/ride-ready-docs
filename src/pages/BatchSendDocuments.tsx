@@ -1123,25 +1123,23 @@ const BatchSendDocuments = () => {
             </div>
 
             {/* Right Column - Recipient & Send */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Sender Info */}
-              <div className="bg-white border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.08)', borderColor: 'hsl(215 19% 85%)' }}>
-                <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: 'hsl(215 19% 88%)', backgroundColor: 'hsl(210 30% 97%)' }}>
-                  <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.12)' }}>
-                    <Users className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                  </span>
-                  <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Your Information</p>
+              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                <div className="px-4 py-3 border-b border-border flex items-center gap-2.5 bg-muted/30">
+                  <Users className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
+                  <p className="text-[13px] font-bold text-foreground">Your Information</p>
                 </div>
-                <div className="px-5 py-4">
-                  <div className="text-xs space-y-1.5" style={{ color: 'hsl(215 19% 40%)' }}>
+                <div className="px-4 py-3">
+                  <div className="text-xs space-y-1 text-muted-foreground">
                     {profile?.company_name && (
-                      <p className="break-words"><span className="font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Company:</span> {profile.company_name}</p>
+                      <p className="break-words"><span className="font-semibold text-foreground">Company:</span> {profile.company_name}</p>
                     )}
                     {profile?.controller_name && (
-                      <p className="break-words"><span className="font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Controller:</span> {profile.controller_name}</p>
+                      <p className="break-words"><span className="font-semibold text-foreground">Controller:</span> {profile.controller_name}</p>
                     )}
                     {user?.email && (
-                      <p className="break-words"><span className="font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Email:</span> {user.email}</p>
+                      <p className="break-words"><span className="font-semibold text-foreground">Email:</span> {user.email}</p>
                     )}
                     {!isStaff && !profile?.company_name && !profile?.controller_name && (
                       <p className="text-destructive italic">Please complete your profile in Settings</p>
@@ -1152,19 +1150,17 @@ const BatchSendDocuments = () => {
 
               {/* Saved Recipients */}
               {savedRecipients.length > 0 && (
-                <div className="bg-white border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.08)', borderColor: 'hsl(215 19% 85%)' }}>
-                  <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: 'hsl(215 19% 88%)', backgroundColor: 'hsl(210 30% 97%)' }}>
-                    <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.12)' }}>
-                      <BookUser className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                    </span>
-                    <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Saved Recipients</p>
+                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                  <div className="px-4 py-3 border-b border-border flex items-center gap-2.5 bg-muted/30">
+                    <BookUser className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
+                    <p className="text-[13px] font-bold text-foreground">Saved Recipients</p>
                   </div>
-                  <div className="px-5 py-4">
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                  <div className="px-3 py-2.5">
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
                       {savedRecipients.map(recipient => (
                         <div 
                           key={recipient.id}
-                          className="flex items-center gap-2 p-3 border border-border rounded-xl hover:border-primary/50 hover:bg-secondary/50 cursor-pointer group transition-all"
+                          className="flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/50 cursor-pointer group transition-colors min-h-[40px]"
                           onClick={() => handleSelectRecipient(recipient.id)}
                         >
                           <button
@@ -1174,14 +1170,14 @@ const BatchSendDocuments = () => {
                             }}
                             className="shrink-0"
                           >
-                            <Star className={`h-4 w-4 ${recipient.is_favorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+                            <Star className={`h-3.5 w-3.5 ${recipient.is_favorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
                           </button>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold truncate" style={{ color: 'hsl(222 84% 5%)' }}>{recipient.name}</p>
-                            <p className="text-xs truncate" style={{ color: 'hsl(215 19% 50%)' }}>{recipient.email}</p>
+                            <p className="text-xs font-medium text-foreground truncate">{recipient.name}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">{recipient.email}</p>
                           </div>
                           {recipient.organization_type && (
-                            <Badge variant="outline" className="text-xs hidden sm:inline-flex">{recipient.organization_type}</Badge>
+                            <Badge variant="outline" className="text-[10px] h-4 hidden sm:inline-flex">{recipient.organization_type}</Badge>
                           )}
                           <button
                             onClick={(e) => {
@@ -1190,7 +1186,7 @@ const BatchSendDocuments = () => {
                             }}
                             className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </button>
                         </div>
                       ))}
@@ -1200,13 +1196,11 @@ const BatchSendDocuments = () => {
               )}
 
               {/* Recipient Form */}
-              <div className="bg-white border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.08)', borderColor: 'hsl(215 19% 85%)' }}>
-                <div className="px-5 py-4 border-b flex items-center justify-between gap-2" style={{ borderColor: 'hsl(215 19% 88%)', backgroundColor: 'hsl(210 30% 97%)' }}>
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.12)' }}>
-                      <Mail className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                    </span>
-                    <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Recipient Details</p>
+              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2 bg-muted/30">
+                  <div className="flex items-center gap-2.5">
+                    <Mail className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
+                    <p className="text-[13px] font-bold text-foreground">Recipient Details</p>
                   </div>
                 <Dialog open={showSaveRecipientDialog} onOpenChange={setShowSaveRecipientDialog}>
                   <DialogTrigger asChild>
@@ -1217,8 +1211,7 @@ const BatchSendDocuments = () => {
                       disabled={!recipientEmail || !recipientName}
                     >
                       <Plus className="h-3 w-3 mr-1" />
-                      <span className="hidden sm:inline">Save Recipient</span>
-                      <span className="sm:hidden">Save</span>
+                      Save
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-sm">
@@ -1257,36 +1250,36 @@ const BatchSendDocuments = () => {
                   </DialogContent>
                 </Dialog>
                 </div>
-                <div className="space-y-4 px-5 py-4">
+                <div className="space-y-3 px-4 py-3">
               <div>
-                <Label htmlFor="recipientEmail" className="text-[13px] font-semibold">Email Address *</Label>
+                <Label htmlFor="recipientEmail" className="text-xs font-semibold">Email Address *</Label>
                 <Input
                   id="recipientEmail"
                   type="email"
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
                   placeholder="council@example.gov.uk"
-                  className="mt-1.5"
+                  className="mt-1 h-9"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="recipientName" className="text-[13px] font-semibold">Name / Organization</Label>
+                <Label htmlFor="recipientName" className="text-xs font-semibold">Name / Organization</Label>
                 <Input
                   id="recipientName"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   placeholder="Local Authority, Trade Association, etc."
-                  className="mt-1.5"
+                  className="mt-1 h-9"
                 />
               </div>
               <div>
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <Label htmlFor="message" className="text-[13px] font-semibold">Message (Optional)</Label>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <Label htmlFor="message" className="text-xs font-semibold">Message (Optional)</Label>
                   <div className="flex items-center gap-1">
                     {emailTemplates.length > 0 && (
                       <Select onValueChange={handleSelectTemplate}>
-                        <SelectTrigger className="h-7 text-xs w-auto min-w-[100px]">
+                        <SelectTrigger className="h-6 text-[11px] w-auto min-w-[90px]">
                           <SelectValue placeholder="Use template" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1306,11 +1299,11 @@ const BatchSendDocuments = () => {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-7 text-xs px-2"
+                          className="h-6 text-[11px] px-1.5"
                           disabled={!message}
                         >
-                          <Plus className="h-3 w-3 mr-1" />
-                          <span className="hidden sm:inline">Save</span>
+                          <Plus className="h-3 w-3 mr-0.5" />
+                          Save
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-sm">
@@ -1362,7 +1355,7 @@ const BatchSendDocuments = () => {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Please find attached the requested documentation for our equipment..."
-                  className="resize-none"
+                  className="resize-none text-xs"
                   rows={3}
                 />
               </div>
@@ -1370,16 +1363,16 @@ const BatchSendDocuments = () => {
               {/* Saved Templates List */}
               {emailTemplates.length > 0 && (
                 <Collapsible>
-                  <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <CollapsibleTrigger className="flex items-center gap-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
                     <ChevronRight className="h-3 w-3" />
                     Manage {emailTemplates.length} saved template{emailTemplates.length !== 1 ? 's' : ''}
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-2">
-                    <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                    <div className="space-y-1 max-h-28 overflow-y-auto">
                       {emailTemplates.map(template => (
                         <div 
                           key={template.id}
-                          className="flex items-center gap-2 p-2 border rounded text-xs group"
+                          className="flex items-center gap-2 p-1.5 border border-border rounded text-[11px] group"
                         >
                           <button
                             onClick={() => handleToggleDefaultTemplate(template.id, template.is_default)}
@@ -1389,14 +1382,11 @@ const BatchSendDocuments = () => {
                           </button>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate">{template.name}</p>
-                            {template.recipient_type && (
-                              <Badge variant="outline" className="text-xs mt-0.5">{template.recipient_type}</Badge>
-                            )}
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 px-2 text-xs"
+                            className="h-5 px-1.5 text-[11px]"
                             onClick={() => handleSelectTemplate(template.id)}
                           >
                             Use
@@ -1419,8 +1409,8 @@ const BatchSendDocuments = () => {
               <Button 
                 onClick={handleSend} 
                 disabled={sending || !recipientEmail || selectedDocuments.length === 0}
-                className="w-full"
-                size="lg"
+                className="w-full min-h-[44px]"
+                size="default"
               >
                 {sending ? (
                   <>
@@ -1436,15 +1426,15 @@ const BatchSendDocuments = () => {
               </Button>
 
               {/* Compliance reassurance footer */}
-              <div className="flex items-center justify-center gap-4 pt-1">
-                <span className="text-[11px] flex items-center gap-1" style={{ color: 'hsl(215 19% 50%)' }}>
-                  <span className="text-success">✓</span> Secure transmission
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
+                  <span className="text-success">✓</span> Secure
                 </span>
-                <span className="text-[11px] flex items-center gap-1" style={{ color: 'hsl(215 19% 50%)' }}>
-                  <span className="text-success">✓</span> PDF bundle generated
+                <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
+                  <span className="text-success">✓</span> PDF bundle
                 </span>
-                <span className="text-[11px] flex items-center gap-1" style={{ color: 'hsl(215 19% 50%)' }}>
-                  <span className="text-success">✓</span> Audit log recorded
+                <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
+                  <span className="text-success">✓</span> Audit logged
                 </span>
               </div>
                 </div>
