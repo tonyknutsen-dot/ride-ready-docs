@@ -275,6 +275,11 @@ export function SecuritySettingsSection() {
         onOpenChange={setPinDialogOpen}
         isChanging={hasPinSet}
       />
+      <MFAEnrollDialog
+        open={mfaDialogOpen}
+        onOpenChange={setMfaDialogOpen}
+        onEnrolled={() => setMfaEnrolled(true)}
+      />
     </>
   );
 }
