@@ -19,6 +19,7 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 import { AppLayout } from "@/components/AppLayout";
 import { AuthenticatedAppShell } from "@/components/AuthenticatedAppShell";
 import { PWAUpdateModal } from "@/components/PWAUpdateModal";
+import { LockScreenProvider } from "@/components/LockScreenProvider";
 import { OfflineSuspense } from "@/components/OfflineSuspense";
 import { useLocation } from "react-router-dom";
 
