@@ -374,6 +374,22 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         .upload(storagePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
       if (uploadError) throw uploadError;
 
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) throw new Error('User not authenticated');
+
+      const { error: documentError } = await supabase.from('documents').insert({
+        user_id: authUser.id,
+        ride_id: rideId,
+        document_name: fileName,
+        document_type: 'CH',
+        file_path: storagePath,
+        mime_type: 'application/pdf',
+        file_size: pdfBlob.size,
+        notes: `Check records report: ${filteredChecks.length} checks`,
+        is_global: false,
+      });
+      if (documentError) throw documentError;
+
       const rideCode = await getRideCode(rideId);
       await storeRideDocument({
         rideId,
@@ -384,6 +400,16 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
         title: `${frequencyLabel} Safety Checks – ${rideName} – ${format(new Date(), 'dd MMM yyyy')}`,
         metadata: { checkCount: filteredChecks.length, passRate: overallStats.passRate },
       });
+
+      const { data: refreshed } = await supabase
+        .from('documents')
+        .select('id, document_name, uploaded_at, file_path, mime_type')
+        .eq('user_id', authUser.id)
+        .eq('ride_id', rideId)
+        .eq('document_type', 'CH')
+        .order('uploaded_at', { ascending: false })
+        .limit(10);
+      setSavedReports(refreshed || []);
     };
 
     setExportResult({ blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments, saveLabel: 'Save to Asset Documents', saveHint: 'This report will be saved to the selected asset\'s Documents.' });

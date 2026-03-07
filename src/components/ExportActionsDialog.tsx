@@ -1,10 +1,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
 import { Eye, Download, Share2, FolderPlus, Loader2, CheckCircle2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import PDFViewer from '@/components/PDFViewer';
+import { isLikelyMobileOrTablet, shareBlobOrFallback, downloadBlob } from '@/utils/exportFileActions';
 
 export interface ExportResult {
   blob: Blob;

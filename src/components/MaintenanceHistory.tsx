@@ -203,6 +203,26 @@ const MaintenanceHistory = ({ ride, refreshTrigger }: MaintenanceHistoryProps) =
 
   const hasActiveFilters = filterType !== 'all' || filterPerformedBy !== 'all' || !!searchQuery || !!dateFrom || !!dateTo;
 
+  const activeFilterCount = [
+    filterType !== 'all',
+    filterPerformedBy !== 'all',
+    !!dateFrom || !!dateTo,
+    !!searchQuery,
+  ].filter(Boolean).length;
+
+  const filterSummary = [
+    filterType !== 'all' ? `Type: ${getMaintenanceTypeLabel(filterType)}` : null,
+    filterPerformedBy !== 'all' ? `Performed by: ${filterPerformedBy}` : null,
+    dateFrom && dateTo
+      ? `${format(dateFrom, 'd MMM yyyy')} – ${format(dateTo, 'd MMM yyyy')}`
+      : dateFrom
+        ? `From ${format(dateFrom, 'd MMM yyyy')}`
+        : dateTo
+          ? `To ${format(dateTo, 'd MMM yyyy')}`
+          : null,
+    searchQuery ? `Search: “${searchQuery.trim()}”` : null,
+  ].filter(Boolean).join(' • ');
+
   // ── CRUD operations ──
   const handleDelete = async (recordId: string) => {
     try {

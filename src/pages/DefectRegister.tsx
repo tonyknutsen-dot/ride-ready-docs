@@ -407,6 +407,28 @@ const DefectRegister = () => {
 
   const hasActiveFilters = statusFilter !== 'open' || severityFilter !== 'all' || rideFilter !== 'all' || !!searchTerm || !!dateFrom || !!dateTo;
 
+  const activeFilterCount = [
+    statusFilter !== 'open',
+    severityFilter !== 'all',
+    rideFilter !== 'all',
+    !!dateFrom || !!dateTo,
+    !!searchTerm,
+  ].filter(Boolean).length;
+
+  const filterSummary = [
+    statusFilter !== 'open' ? `Status: ${statusFilter === 'closed' ? 'Closed' : 'All'}` : null,
+    severityFilter !== 'all' ? `Severity: ${getSeverityLabel(severityFilter as DefectSeverity)}` : null,
+    rideFilter !== 'all' ? `Equipment: ${rideMap.get(rideFilter)?.name || 'Selected'}` : null,
+    dateFrom && dateTo
+      ? `${format(dateFrom, 'd MMM yyyy')} – ${format(dateTo, 'd MMM yyyy')}`
+      : dateFrom
+        ? `From ${format(dateFrom, 'd MMM yyyy')}`
+        : dateTo
+          ? `To ${format(dateTo, 'd MMM yyyy')}`
+          : null,
+    searchTerm ? `Search: “${searchTerm.trim()}”` : null,
+  ].filter(Boolean).join(' • ');
+
   const filtered = useMemo(() => {
     let list = [...enriched];
     if (statusFilter === 'open') list = list.filter((d) => d.status !== 'resolved');

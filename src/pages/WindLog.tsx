@@ -338,6 +338,32 @@ const WindLog = () => {
 
   const hasFilters = filterDateFrom || filterDateTo || filterLocation || filterInflatable !== 'all' || filterRecordedBy !== 'all' || filterAction !== 'all' || !!searchTerm;
 
+  const activeFilterCount = [
+    !!filterDateFrom || !!filterDateTo,
+    !!filterLocation,
+    filterInflatable !== 'all',
+    filterRecordedBy !== 'all',
+    filterAction !== 'all',
+    !!searchTerm,
+  ].filter(Boolean).length;
+
+  const filterSummary = [
+    filterLocation ? `Location: ${filterLocation}` : null,
+    filterInflatable !== 'all' ? `Asset: ${inflatables.find((r) => r.id === filterInflatable)?.ride_name || 'Selected'}` : null,
+    filterRecordedBy !== 'all' ? `Recorder: ${filterRecordedBy}` : null,
+    filterAction !== 'all'
+      ? `Action: ${filterAction === 'none' ? 'No action recorded' : ACTION_LABEL_MAP[filterAction] || filterAction}`
+      : null,
+    filterDateFrom && filterDateTo
+      ? `${format(filterDateFrom, 'd MMM yyyy')} – ${format(filterDateTo, 'd MMM yyyy')}`
+      : filterDateFrom
+        ? `From ${format(filterDateFrom, 'd MMM yyyy')}`
+        : filterDateTo
+          ? `To ${format(filterDateTo, 'd MMM yyyy')}`
+          : null,
+    searchTerm ? `Search: “${searchTerm.trim()}”` : null,
+  ].filter(Boolean).join(' • ');
+
   const clearFilters = () => {
     setFilterDateFrom(undefined);
     setFilterDateTo(undefined);
