@@ -119,21 +119,11 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
         </DialogContent>
       </Dialog>
 
-      {isPdf && (
-        <PDFViewer
-          isOpen={previewOpen}
-          onClose={() => {
-            setPreviewOpen(false);
-            setPreviewUrl((prev) => {
-              if (prev) revokeObjectUrl(prev);
-              return '';
-            });
-          }}
-          pdfUrl={previewUrl}
-          pdfName={result.fileName}
-          onDownload={handleDownload}
-        />
-      )}
+      <DocumentPreviewSheet
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        source={{ name: result.fileName, blob: result.blob }}
+      />
     </>
   );
 };
