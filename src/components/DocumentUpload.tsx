@@ -271,8 +271,8 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
 
       {/* Replacing banner */}
       {replacingDocumentId && prefillDocName && (
-        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-950/20 border border-amber-300/60 dark:border-amber-700 shadow-sm">
-          <p className="text-xs font-medium text-amber-800 dark:text-amber-200">
+        <div className="flex items-center gap-2.5 px-4 py-3 rounded-xl bg-warning/10 border border-warning/30 shadow-sm">
+          <p className="text-xs font-medium text-warning-foreground">
             Replacing <strong>{prefillDocName}</strong> — the old version will be archived.
           </p>
         </div>
