@@ -311,12 +311,33 @@ const DefectRegister = () => {
 
   const loadSavedReports = async () => {
     if (!effectiveUserId) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('documents')
-      .select('*')
+      .select('id, document_name, uploaded_at, file_path, mime_type, file_size, document_type')
       .eq('user_id', effectiveUserId)
       .eq('document_type', 'defect_report')
-      .order('uploaded_at', { ascending: false });
+      .order('uploaded_at', { ascending: false })
+      .limit(20);
+
+    if (error) {
+      console.error('[PDF DEBUG][Defects] loadSavedReports failed', { error, userId: effectiveUserId });
+      return;
+    }
+
+    console.info('[PDF DEBUG][Defects] loadSavedReports', {
+      userId: effectiveUserId,
+      count: data?.length || 0,
+      topRow: data?.[0]
+        ? {
+            id: data[0].id,
+            file_path: data[0].file_path,
+            mime_type: data[0].mime_type,
+            file_size: data[0].file_size,
+            document_type: data[0].document_type,
+          }
+        : null,
+    });
+
     setSavedReports(data || []);
   };
 
