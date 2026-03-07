@@ -1,14 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Download, Share2, ExternalLink, X, FileText, AlertCircle, Link2 } from 'lucide-react';
+import { Download, ExternalLink, X, FileText, AlertCircle, Link2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   downloadBlob,
   getSignedStorageUrl,
   getStorageFileBlob,
-  shareBlobOrFallback,
-  shareStoredFileOrFallback,
 } from '@/utils/exportFileActions';
 import { useToast } from '@/hooks/use-toast';
 
