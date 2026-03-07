@@ -104,6 +104,10 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
       setSaved(false);
       setSaving(false);
       setPreviewOpen(false);
+      setPreviewUrl((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return '';
+      });
     }
     onOpenChange(nextOpen);
   };
