@@ -365,12 +365,23 @@ const DocumentViewerPage = () => {
       toast({ title: 'Download failed', variant: 'destructive' });
       return;
     }
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = docTitle || 'document.pdf';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+
+    try {
+      // Fetch as blob to avoid Chrome blocking cross-origin navigations
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = docTitle || 'document.pdf';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(blobUrl);
+    } catch (err) {
+      console.error('Download failed:', err);
+      toast({ title: 'Download failed', variant: 'destructive' });
+    }
   };
 
   const handleArchive = async () => {
