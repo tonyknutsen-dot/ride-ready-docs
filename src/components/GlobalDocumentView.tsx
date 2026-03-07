@@ -345,7 +345,13 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(doc); }}>
-              <Download className="h-4 w-4 mr-2" /> Download
+              <Download className="h-4 w-4 mr-2" /> Save to Device
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleShare(doc); }}>
+              <Share2 className="h-4 w-4 mr-2" /> Share
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleCopyLink(doc); }}>
+              <Link2 className="h-4 w-4 mr-2" /> Copy Link
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive"
