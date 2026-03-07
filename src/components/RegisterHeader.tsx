@@ -439,7 +439,7 @@ export const PreviousReportsSection = ({
         onClose={closeViewer}
         pdfUrl={viewerState.url}
         pdfName={viewerState.name}
-        onDownload={() => {
+        onDownload={async () => {
           if (!viewerState.url) return;
           const a = document.createElement('a');
           a.href = viewerState.url;
