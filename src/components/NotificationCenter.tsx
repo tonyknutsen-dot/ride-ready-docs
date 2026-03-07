@@ -267,8 +267,12 @@ const NotificationCenter = () => {
 
   useEffect(() => {
     const linkCheckNotificationsToDefects = async () => {
+      // Gather both checks-table AND defects-table failed-check notifications
       const checkNotifications = notifications.filter(
-        (n) => n.related_table === 'checks' && !!n.related_id
+        (n) => !!n.related_id && (
+          n.related_table === 'checks' ||
+          (n.related_table === 'defects' && (n.title || '').toLowerCase().includes('check failure'))
+        )
       );
 
       if (checkNotifications.length === 0) {
@@ -276,40 +280,90 @@ const NotificationCenter = () => {
         return;
       }
 
-      const checkIds = [...new Set(checkNotifications.map((n) => n.related_id!).filter(Boolean))];
-      const { data, error } = await supabase
-        .from('defects')
-        .select('id, check_id, reported_at')
-        .in('check_id', checkIds)
-        .neq('status', 'resolved')
-        .order('reported_at', { ascending: false });
+      const mapping: Record<string, string> = {};
 
-      if (error) {
-        console.error('Error linking check notifications to defects:', error);
-        return;
+      // ── Type A: notifications pointing directly at a defect (related_table='defects') ──
+      const directDefectNotifications = checkNotifications.filter(n => n.related_table === 'defects');
+      directDefectNotifications.forEach(n => {
+        mapping[n.id] = n.related_id!;
+        console.info('[Notifications] Direct defect link from notification', {
+          notification_id: n.id, linked_defect_id: n.related_id,
+        });
+      });
+
+      // ── Type B: notifications pointing at a check (related_table='checks') ──
+      const checksTableNotifications = checkNotifications.filter(n => n.related_table === 'checks');
+      if (checksTableNotifications.length > 0) {
+        const checkIds = [...new Set(checksTableNotifications.map(n => n.related_id!))];
+
+        // Step 1: try direct check_id match
+        const { data: byCheckId } = await supabase
+          .from('defects')
+          .select('id, check_id, reported_at')
+          .in('check_id', checkIds)
+          .neq('status', 'resolved')
+          .order('reported_at', { ascending: false });
+
+        const defectByCheck = new Map<string, string>();
+        (byCheckId || []).forEach((row: any) => {
+          if (row.check_id && !defectByCheck.has(row.check_id)) {
+            defectByCheck.set(row.check_id, row.id);
+          }
+        });
+
+        // Step 2: for unmatched checks, look up the check's ride_id, then find defects by ride_id
+        const unmatchedCheckIds = checkIds.filter(id => !defectByCheck.has(id));
+        const defectByRide = new Map<string, string>();
+
+        if (unmatchedCheckIds.length > 0) {
+          const { data: checksData } = await supabase
+            .from('checks')
+            .select('id, ride_id')
+            .in('id', unmatchedCheckIds);
+
+          if (checksData && checksData.length > 0) {
+            const rideIds = [...new Set(checksData.map(c => c.ride_id).filter(Boolean))];
+            const checkToRide = new Map<string, string>();
+            checksData.forEach(c => { if (c.ride_id) checkToRide.set(c.id, c.ride_id); });
+
+            if (rideIds.length > 0) {
+              const { data: byRide } = await supabase
+                .from('defects')
+                .select('id, ride_id, reported_at')
+                .in('ride_id', rideIds)
+                .neq('status', 'resolved')
+                .order('reported_at', { ascending: false });
+
+              (byRide || []).forEach((row: any) => {
+                if (row.ride_id && !defectByRide.has(row.ride_id)) {
+                  defectByRide.set(row.ride_id, row.id);
+                }
+              });
+            }
+
+            // Map unmatched checks via ride_id
+            unmatchedCheckIds.forEach(checkId => {
+              const rideId = checkToRide.get(checkId);
+              if (rideId && defectByRide.has(rideId)) {
+                defectByCheck.set(checkId, defectByRide.get(rideId)!);
+              }
+            });
+          }
+        }
+
+        // Build final mapping for checks-table notifications
+        checksTableNotifications.forEach((n) => {
+          const defectId = defectByCheck.get(n.related_id!);
+          if (defectId) {
+            mapping[n.id] = defectId;
+            console.info('[Notifications] Linked defect for check notification', {
+              notification_id: n.id, check_id: n.related_id, linked_defect_id: defectId,
+            });
+          }
+        });
       }
 
-      const latestDefectByCheck = new Map<string, string>();
-      (data || []).forEach((row: any) => {
-        if (row.check_id && !latestDefectByCheck.has(row.check_id)) {
-          latestDefectByCheck.set(row.check_id, row.id);
-        }
-      });
-
-      const mapping: Record<string, string> = {};
-      checkNotifications.forEach((n) => {
-        if (!n.related_id) return;
-        const defectId = latestDefectByCheck.get(n.related_id);
-        if (defectId) {
-          mapping[n.id] = defectId;
-          console.info('[Notifications] Linked defect resolved for check notification', {
-            notification_id: n.id,
-            check_id: n.related_id,
-            linked_defect_id: defectId,
-          });
-        }
-      });
-
+      console.info('[Notifications] Final linked defect mapping', mapping);
       setLinkedDefectByNotification(mapping);
     };
 
@@ -857,8 +911,8 @@ const NotificationCenter = () => {
                   const sentDoc = isSentDocument(n);
                   const route = getActionRoute(n);
                   const linkedDefectId = linkedDefectByNotification[n.id];
-                  const isCheckNotification = getCategory(n) === 'checks' || n.related_table === 'checks';
-                  const showLinkedDefectAction = Boolean(linkedDefectId) && isCheckNotification;
+                  const isFailedCheckRelated = getCategory(n) === 'checks' || n.related_table === 'checks' || (n.title || '').toLowerCase().includes('check failure') || (n.title || '').toLowerCase().includes('failed check');
+                  const showLinkedDefectAction = Boolean(linkedDefectId) && isFailedCheckRelated;
                   const hasAction = route != null || !!n.related_id || showLinkedDefectAction;
 
                   return (
