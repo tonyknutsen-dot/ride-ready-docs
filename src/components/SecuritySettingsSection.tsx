@@ -1,16 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Shield, Lock, Key, LogOut, Smartphone } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Shield, Lock, Key, LogOut, Smartphone, ShieldCheck, ShieldOff } from 'lucide-react';
 import { useSecuritySettings } from '@/hooks/useSecuritySettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import PinSetupDialog from './PinSetupDialog';
+import MFAEnrollDialog from './MFAEnrollDialog';
 
 const IDLE_OPTIONS = [
   { value: '0', label: 'Off' },
@@ -25,7 +27,32 @@ export function SecuritySettingsSection() {
   const { settings, loading, hasPinSet, updateSettings } = useSecuritySettings();
   const { toast } = useToast();
   const [pinDialogOpen, setPinDialogOpen] = useState(false);
+  const [mfaDialogOpen, setMfaDialogOpen] = useState(false);
   const [signingOutAll, setSigningOutAll] = useState(false);
+  const [mfaEnrolled, setMfaEnrolled] = useState(false);
+  const [mfaLoading, setMfaLoading] = useState(true);
+
+  // Check MFA enrollment status
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.auth.mfa.listFactors();
+      setMfaEnrolled(!!data?.totp?.length);
+      setMfaLoading(false);
+    })();
+  }, []);
+
+  const handleUnenrollMFA = async () => {
+    const { data } = await supabase.auth.mfa.listFactors();
+    if (data?.totp?.[0]) {
+      const { error } = await supabase.auth.mfa.unenroll({ factorId: data.totp[0].id });
+      if (error) {
+        toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      } else {
+        setMfaEnrolled(false);
+        toast({ title: 'MFA Disabled', description: 'Two-factor authentication has been removed.' });
+      }
+    }
+  };
 
   const handleIdleChange = async (value: string) => {
     const minutes = parseInt(value);
@@ -107,6 +134,37 @@ export function SecuritySettingsSection() {
           </div>
         </CardHeader>
         <CardContent className="space-y-5">
+          {/* MFA (TOTP) */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {mfaEnrolled ? (
+                <ShieldCheck className="h-4 w-4 text-primary" />
+              ) : (
+                <ShieldOff className="h-4 w-4 text-muted-foreground" />
+              )}
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium">Two-Factor Authentication</p>
+                  {mfaEnrolled && <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Active</Badge>}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {mfaEnrolled ? 'TOTP authenticator app linked' : 'Add extra security with an authenticator app'}
+                </p>
+              </div>
+            </div>
+            {!mfaLoading && (
+              mfaEnrolled ? (
+                <Button variant="outline" size="sm" onClick={handleUnenrollMFA}>
+                  Disable
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" onClick={() => setMfaDialogOpen(true)}>
+                  Enable
+                </Button>
+              )
+            )}
+          </div>
+
           {/* PIN Status */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -216,6 +274,11 @@ export function SecuritySettingsSection() {
         open={pinDialogOpen}
         onOpenChange={setPinDialogOpen}
         isChanging={hasPinSet}
+      />
+      <MFAEnrollDialog
+        open={mfaDialogOpen}
+        onOpenChange={setMfaDialogOpen}
+        onEnrolled={() => setMfaEnrolled(true)}
       />
     </>
   );

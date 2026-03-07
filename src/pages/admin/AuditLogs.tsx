@@ -35,6 +35,9 @@ interface AuditStats {
 const ACTION_ICONS: Record<string, React.ReactNode> = {
   login: <LogIn className="h-4 w-4" />,
   logout: <LogIn className="h-4 w-4 rotate-180" />,
+  lock: <Key className="h-4 w-4" />,
+  unlock: <Key className="h-4 w-4" />,
+  failed_unlock: <Key className="h-4 w-4" />,
   view: <Eye className="h-4 w-4" />,
   download: <Download className="h-4 w-4" />,
   share: <Share2 className="h-4 w-4" />,
@@ -45,6 +48,9 @@ const ACTION_ICONS: Record<string, React.ReactNode> = {
 const ACTION_COLORS: Record<string, string> = {
   login: 'bg-green-500/10 text-green-600 border-green-500/20',
   logout: 'bg-slate-500/10 text-slate-600 border-slate-500/20',
+  lock: 'bg-amber-500/10 text-amber-600 border-amber-500/20',
+  unlock: 'bg-teal-500/10 text-teal-600 border-teal-500/20',
+  failed_unlock: 'bg-red-500/10 text-red-600 border-red-500/20',
   view: 'bg-blue-500/10 text-blue-600 border-blue-500/20',
   download: 'bg-purple-500/10 text-purple-600 border-purple-500/20',
   share: 'bg-orange-500/10 text-orange-600 border-orange-500/20',
@@ -310,10 +316,15 @@ const AuditLogs = () => {
                   <SelectItem value="all">All Actions</SelectItem>
                   <SelectItem value="login">Login</SelectItem>
                   <SelectItem value="logout">Logout</SelectItem>
+                  <SelectItem value="lock">Lock</SelectItem>
+                  <SelectItem value="unlock">Unlock</SelectItem>
+                  <SelectItem value="failed_unlock">Failed Unlock</SelectItem>
                   <SelectItem value="view">View</SelectItem>
                   <SelectItem value="download">Download</SelectItem>
                   <SelectItem value="share">Share</SelectItem>
                   <SelectItem value="export">Export</SelectItem>
+                  <SelectItem value="create">Create</SelectItem>
+                  <SelectItem value="delete">Delete</SelectItem>
                   <SelectItem value="support_view">Support View</SelectItem>
                 </SelectContent>
               </Select>

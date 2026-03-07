@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,6 +18,8 @@ import { COUNTRIES } from '@/constants/profile';
 import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicator';
 import { useAuthRateLimit } from '@/hooks/useAuthRateLimit';
 import { getEmailSuggestion, validatePasswordStrength, type EmailSuggestion } from '@/utils/emailSuggestion';
+
+const MFAVerifyScreen = lazy(() => import('@/components/MFAVerifyScreen'));
 
 const REMEMBER_EMAIL_KEY = 'rrd_remembered_email';
 
@@ -63,6 +65,7 @@ const Auth = () => {
   const [passwordValidation, setPasswordValidation] = useState<ReturnType<typeof validatePasswordStrength> | null>(null);
   
   const [isOAuthCallback, setIsOAuthCallback] = useState(false);
+  const [showMFA, setShowMFA] = useState(false);
   
   const { signIn, signUp, resetPassword, user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -106,18 +109,28 @@ const Auth = () => {
   }, [activeTab]);
 
   useEffect(() => {
-    // Only redirect if user exists AND we're not in a loading state
-    // This prevents false redirects from stale session data
-    if (user && !authLoading) {
-      setIsOAuthCallback(false);
-      const from = (location.state as any)?.from?.pathname || '/overview';
-      navigate(from, { replace: true });
+    if (user && !authLoading && !showMFA) {
+      // Check if user has MFA factors enrolled
+      (async () => {
+        const { data } = await supabase.auth.mfa.listFactors();
+        if (data?.totp && data.totp.length > 0) {
+          // Check AAL level — if still aal1, need MFA verification
+          const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          if (aalData?.currentLevel === 'aal1' && aalData?.nextLevel === 'aal2') {
+            setShowMFA(true);
+            return;
+          }
+        }
+        // No MFA or already verified — proceed
+        setIsOAuthCallback(false);
+        const from = (location.state as any)?.from?.pathname || '/overview';
+        navigate(from, { replace: true });
+      })();
     }
-    // Clear OAuth callback state if auth finished loading with no user (failed callback)
     if (!authLoading && !user) {
       setIsOAuthCallback(false);
     }
-  }, [user, authLoading, navigate, location]);
+  }, [user, authLoading, navigate, location, showMFA]);
 
   const validateForm = (data: typeof formData) => {
     try {
@@ -371,6 +384,29 @@ const Auth = () => {
           <p className="text-muted-foreground">Signing you in...</p>
         </div>
       </div>
+    );
+  }
+
+  // Show MFA verification screen
+  if (showMFA) {
+    return (
+      <Suspense fallback={
+        <div className="min-h-screen bg-background flex items-center justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      }>
+        <MFAVerifyScreen
+          onVerified={() => {
+            setShowMFA(false);
+            const from = (location.state as any)?.from?.pathname || '/overview';
+            navigate(from, { replace: true });
+          }}
+          onCancel={async () => {
+            setShowMFA(false);
+            await supabase.auth.signOut();
+          }}
+        />
+      </Suspense>
     );
   }
 
