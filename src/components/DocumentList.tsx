@@ -651,11 +651,10 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
             <img
               src={thumbs[doc.id]}
               alt={displayName}
-              className="w-10 h-10 object-cover rounded-lg border border-slate-200 cursor-pointer"
-              onClick={() => handleView(doc)}
+              className="w-10 h-10 object-cover rounded-lg border border-slate-200"
             />
           ) : (
-            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200 cursor-pointer" onClick={() => isViewable(doc) && handleView(doc)}>
+            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
               <FileText className="w-5 h-5 text-slate-600" />
             </div>
           )}
