@@ -718,21 +718,20 @@ const NotificationCenter = () => {
                   const actionable = isActionable(n);
                   const sentDoc = isSentDocument(n);
                   const route = getActionRoute(n);
-                  const hasAction = route != null;
+                  const hasAction = route != null || !!n.related_id;
 
                   return (
                     <div
                       key={n.id}
                       onClick={() => {
-                        if (!n.is_read && isController) markAsRead(n.id);
-                        if (route) navigate(route);
+                        void handleNotificationNavigate(n);
                       }}
                       className={cn(
                         'flex bg-card border rounded-2xl overflow-hidden transition-all',
                         actionable && !n.is_read
                           ? 'border-destructive/20 shadow-[0_2px_8px_rgba(220,38,38,0.06)]'
                           : 'border-border',
-                        route && 'cursor-pointer hover:border-primary/30 active:scale-[0.995]',
+                        hasAction && 'cursor-pointer hover:border-primary/30 active:scale-[0.995]',
                         !actionable && n.is_read && 'opacity-90'
                       )}
                     >
