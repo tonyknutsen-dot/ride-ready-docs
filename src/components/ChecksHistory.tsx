@@ -123,7 +123,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
     if (!effectiveUserId || !rideId) return;
     supabase
       .from('documents')
-      .select('id, document_name, uploaded_at, file_path')
+      .select('id, document_name, uploaded_at, file_path, mime_type')
       .eq('user_id', effectiveUserId)
       .eq('ride_id', rideId)
       .eq('document_type', 'CH')
