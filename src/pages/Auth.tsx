@@ -19,6 +19,8 @@ import { PasswordStrengthIndicator } from '@/components/PasswordStrengthIndicato
 import { useAuthRateLimit } from '@/hooks/useAuthRateLimit';
 import { getEmailSuggestion, validatePasswordStrength, type EmailSuggestion } from '@/utils/emailSuggestion';
 
+const MFAVerifyScreen = lazy(() => import('@/components/MFAVerifyScreen'));
+
 const REMEMBER_EMAIL_KEY = 'rrd_remembered_email';
 
 const authSchema = z.object({
