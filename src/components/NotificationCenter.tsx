@@ -822,7 +822,10 @@ const NotificationCenter = () => {
                   const actionable = isActionable(n);
                   const sentDoc = isSentDocument(n);
                   const route = getActionRoute(n);
-                  const hasAction = route != null || !!n.related_id;
+                  const linkedDefectId = linkedDefectByNotification[n.id];
+                  const isCheckNotification = getCategory(n) === 'checks' || n.related_table === 'checks';
+                  const showLinkedDefectAction = Boolean(linkedDefectId) && isCheckNotification;
+                  const hasAction = route != null || !!n.related_id || showLinkedDefectAction;
 
                   return (
                     <div
@@ -880,6 +883,12 @@ const NotificationCenter = () => {
                                 Action needed
                               </Badge>
                             )}
+
+                            {showLinkedDefectAction && (
+                              <Badge variant="secondary" className="text-[9px] h-4 px-1.5 font-semibold">
+                                Linked defect
+                              </Badge>
+                            )}
                           </div>
                         </div>
 
@@ -897,6 +906,16 @@ const NotificationCenter = () => {
                             >
                               {getActionLabel(n)}
                               {sentDoc && !actionable ? <ExternalLink className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                            </button>
+                          )}
+
+                          {showLinkedDefectAction && linkedDefectId && (
+                            <button
+                              onClick={(e) => handleOpenLinkedDefect(n, linkedDefectId, e)}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-all bg-muted text-foreground hover:bg-accent"
+                            >
+                              Open linked defect
+                              <ChevronRight className="h-3 w-3" />
                             </button>
                           )}
 
