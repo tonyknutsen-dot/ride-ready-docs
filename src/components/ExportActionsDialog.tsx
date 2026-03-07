@@ -56,24 +56,18 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
   };
 
   const handleDownload = () => {
-    const a = document.createElement('a');
-    a.href = objectUrl;
-    a.download = result.fileName;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    downloadBlob(result.blob, result.fileName);
     toast({ title: 'Downloaded', description: result.fileName });
   };
 
   const handleShare = async () => {
     try {
-      if (navigator.share) {
-        const file = new File([result.blob], result.fileName, { type: result.blob.type });
-        await navigator.share({ files: [file], title: result.fileName });
-      } else {
-        // Fallback: download
-        handleDownload();
-        toast({ title: 'Sharing not supported', description: 'File downloaded instead' });
+      const outcome = await shareBlobOrFallback(result.blob, result.fileName);
+      if (outcome === 'downloaded') {
+        const mobileHint = isLikelyMobileOrTablet()
+          ? 'Native share is unavailable on this device, so the file was downloaded instead.'
+          : 'Desktop sharing uses download fallback for unsaved exports.';
+        toast({ title: 'Download fallback used', description: mobileHint });
       }
     } catch (err: any) {
       if (err?.name !== 'AbortError') {

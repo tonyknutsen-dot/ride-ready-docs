@@ -134,11 +134,7 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
       });
   }, [effectiveUserId, rideId]);
 
-  useEffect(() => {
-    if (effectiveUserId) {
-      loadChecks();
-    }
-  }, [effectiveUserId, rideId, dateFrom, dateTo]);
+  useEffect(() => { loadChecks(); }, [effectiveUserId, rideId, dateFrom, dateTo]);
 
   useEffect(() => {
     applyFilters();

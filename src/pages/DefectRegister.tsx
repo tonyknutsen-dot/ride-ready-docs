@@ -642,6 +642,8 @@ const DefectRegister = () => {
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
         searchPlaceholder="Search defects…"
+        activeFilterCount={activeFilterCount}
+        filterSummary={filterSummary}
         primaryAction={{ label: 'Report defect', icon: <AlertOctagon className="h-3.5 w-3.5" />, onClick: () => { (document.activeElement as HTMLElement)?.blur(); setDefectPickerOpen(true); } }}
         actions={[
           { label: 'Export CSV', icon: <FileDown className="h-3.5 w-3.5" />, onClick: handleExportCsv, variant: 'outline', disabled: generatingCsv || filtered.length === 0 },
