@@ -445,6 +445,25 @@ const ChecksHistory = ({ rideId, rideName, frequency = 'daily' }: ChecksHistoryP
   const monthGroups = groupByMonth();
   const totalPages = Math.ceil(filteredChecks.length / itemsPerPage);
   const hasActiveFilters = searchTerm !== '' || frequencyFilter !== 'all' || statusFilter !== 'all' || !!dateFrom || !!dateTo;
+  const activeFilterCount = [
+    frequencyFilter !== 'all',
+    statusFilter !== 'all',
+    !!dateFrom || !!dateTo,
+    !!searchTerm,
+  ].filter(Boolean).length;
+
+  const filterSummary = [
+    frequencyFilter !== 'all' ? `Frequency: ${frequencyFilter}` : null,
+    statusFilter !== 'all' ? `Status: ${statusFilter}` : null,
+    dateFrom && dateTo
+      ? `${format(dateFrom, 'd MMM yyyy')} – ${format(dateTo, 'd MMM yyyy')}`
+      : dateFrom
+        ? `From ${format(dateFrom, 'd MMM yyyy')}`
+        : dateTo
+          ? `To ${format(dateTo, 'd MMM yyyy')}`
+          : null,
+    searchTerm ? `Search: “${searchTerm.trim()}”` : null,
+  ].filter(Boolean).join(' • ');
 
   if (loading) {
     return (
