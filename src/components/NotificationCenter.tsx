@@ -412,7 +412,7 @@ const NotificationCenter = () => {
           </p>
           <p className="text-xs text-muted-foreground mt-1 max-w-[240px] mx-auto">
             {activeTab === 'action'
-              ? 'You're up to date. Recent updates and older notifications are shown below.'
+              ? "You're up to date. Recent updates and older notifications are shown below."
               : 'Recent updates and older notifications will appear here.'}
           </p>
         </div>
