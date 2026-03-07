@@ -649,6 +649,8 @@ const NotificationCenter = () => {
   }, [linkedDefectByNotification]);
 
   const handleNotificationNavigate = useCallback(async (n: Notification) => {
+    const linkedDefectId = linkedDefectByNotification[n.id] || null;
+
     console.info('[Notifications] Clicked notification', {
       id: n.id,
       title: n.title,
@@ -656,6 +658,7 @@ const NotificationCenter = () => {
       category: getCategory(n),
       related_table: n.related_table,
       related_id: n.related_id,
+      linked_defect_id: linkedDefectId,
       is_read: n.is_read,
     });
 
@@ -663,6 +666,7 @@ const NotificationCenter = () => {
 
     console.info('[Notifications] Generated route', {
       id: n.id,
+      linked_defect_id: linkedDefectId,
       action_route: route,
       reason,
     });
