@@ -582,759 +582,443 @@ const BatchSendDocuments = () => {
     : [];
 
   return (
-    <div className="container mx-auto py-6 px-4 pb-24 md:pb-8 space-y-4">
-      <PageHeader
-        title="Send Compliance Documents"
-        subtitle="Submit compliance documents to councils, insurers, and auditors."
-        icon={<Send className="h-5 w-5 text-primary" />}
-        showBackButton
-        backTo="/overview"
-      />
+    <div className="t-page min-h-screen">
+      <div className="container mx-auto py-4 px-4 pb-24 md:pb-8 space-y-3">
+        <PageHeader
+          title="Send Compliance Documents"
+          subtitle="Submit compliance documents to councils, insurers, and auditors."
+          icon={<Send className="h-5 w-5 text-primary" />}
+          showBackButton
+          backTo="/overview"
+        />
 
-      {/* Helper text */}
-      <p className="text-xs text-muted-foreground -mt-2">
-        Build a pack for a specific asset, or send company-wide (Global) documents.
-      </p>
+        {/* Step 1: Ride Selection */}
+        {!selectedRide ? (
+          <div className="space-y-3">
+            {/* Compact KPI row */}
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={() => document.getElementById('asset-pack-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="t-card inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer hover:border-primary/40 transition-colors"
+              >
+                <Package className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />
+                {rides.length} {rides.length === 1 ? 'Asset' : 'Assets'}
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+              </button>
+              <button
+                onClick={() => document.getElementById('asset-pack-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="t-card inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer hover:border-primary/40 transition-colors"
+              >
+                <FileText className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />
+                {rides.reduce((sum, r) => sum + r.documents.length, 0) + checkRecords.length} Docs
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+              </button>
+              <button
+                onClick={() => document.getElementById('global-docs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+                className="t-card inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer hover:border-primary/40 transition-colors"
+              >
+                <Building2 className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />
+                {globalDocuments.length} Global
+                <ChevronRight className="h-3 w-3 text-muted-foreground" />
+              </button>
+            </div>
 
-      {/* Step 1: Ride Selection (if no ride selected) */}
-      {!selectedRide ? (
-        <div className="space-y-4">
-          {/* Summary KPI chips */}
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={() => document.getElementById('asset-pack-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 min-h-[44px] hover:bg-accent/50 active:bg-accent/80 transition-colors shadow-sm cursor-pointer"
-            >
-              <Package className="h-4 w-4 text-primary shrink-0" strokeWidth={2} />
-              <span className="text-[13px] font-semibold text-foreground whitespace-nowrap">{rides.length} {rides.length === 1 ? 'Asset' : 'Assets'}</span>
-              <ChevronRight className="h-3 w-3 text-muted-foreground" />
-            </button>
-            <button
-              onClick={() => document.getElementById('asset-pack-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 min-h-[44px] hover:bg-accent/50 active:bg-accent/80 transition-colors shadow-sm cursor-pointer"
-            >
-              <FileText className="h-4 w-4 text-primary shrink-0" strokeWidth={2} />
-              <span className="text-[13px] font-semibold text-foreground whitespace-nowrap">
-                {rides.reduce((sum, r) => sum + r.documents.length, 0) + checkRecords.length} Documents
-              </span>
-              <ChevronRight className="h-3 w-3 text-muted-foreground" />
-            </button>
-            <button
-              onClick={() => document.getElementById('global-docs-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-              className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3.5 py-2 min-h-[44px] hover:bg-accent/50 active:bg-accent/80 transition-colors shadow-sm cursor-pointer"
-            >
-              <Building2 className="h-4 w-4 text-primary shrink-0" strokeWidth={2} />
-              <span className="text-[13px] font-semibold text-foreground whitespace-nowrap">
-                {globalDocuments.length} Global {globalDocuments.length === 1 ? 'doc' : 'docs'}
-              </span>
-              <ChevronRight className="h-3 w-3 text-muted-foreground" />
-            </button>
-          </div>
-
-          {/* Asset Compliance Pack Selection */}
-          <div id="asset-pack-section" className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
-            <div className="px-4 py-3.5 border-b border-border flex items-center gap-3">
-              <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
-                <ClipboardCheck className="h-4 w-4 text-primary" strokeWidth={2} />
-              </span>
-              <div className="min-w-0">
-                <p className="text-[13px] font-bold text-foreground">Select Asset Compliance Pack</p>
-                <p className="text-xs text-muted-foreground">Choose an asset to build a submission for</p>
+            {/* Asset list */}
+            <div id="asset-pack-section" className="t-card rounded-xl overflow-hidden">
+              <div className="t-card-header px-4 py-2.5 flex items-center gap-2.5">
+                <ClipboardCheck className="h-4 w-4 text-primary" strokeWidth={2.5} />
+                <div>
+                  <p className="text-xs font-bold text-foreground">Select Asset</p>
+                  <p className="text-[10px] text-muted-foreground">Choose an asset to build a compliance pack</p>
+                </div>
               </div>
-            </div>
-            <div className="p-3">
-              {rides.length === 0 ? (
-                <div className="text-center py-10">
-                  <Package className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
-                  <p className="text-sm font-medium text-muted-foreground">No assets found</p>
-                  <p className="text-xs text-muted-foreground mt-1">Add equipment to start building compliance packs</p>
-                </div>
-              ) : (
-                <div className="space-y-2.5">
-                  {rides.map(ride => {
-                    const docCount = ride.documents.length;
-                    const rideCheckRecords = checkRecords.filter(doc => doc.ride_id === ride.id);
-                    const totalDocs = docCount + rideCheckRecords.length;
-                    
-                    const hasExpired = ride.documents.some(d => d.expires_at && new Date(d.expires_at) < new Date());
-                    const hasExpiringSoon = ride.documents.some(d => d.expires_at && isExpiringSoon(d.expires_at));
-                    const complianceStatus = hasExpired ? 'overdue' : hasExpiringSoon ? 'expiring' : 'compliant';
-                    
-                    const statusConfig = {
-                      overdue: { label: 'Expiring', variant: 'destructive' as const, icon: AlertTriangle },
-                      expiring: { label: 'Expiring Soon', variant: 'outline' as const, icon: Clock },
-                      compliant: { label: 'All Current', variant: 'secondary' as const, icon: CheckCircle2 },
-                    }[complianceStatus];
-                    
-                    const StatusIcon = statusConfig.icon;
-
-                    return (
-                      <button
-                        key={ride.id}
-                        onClick={() => setSelectedRide(ride)}
-                        className="w-full text-left group active:scale-[0.98] transition-all min-h-[44px]"
-                      >
-                        <div className="p-3.5 rounded-xl border border-border bg-card transition-all group-hover:border-primary/40 group-hover:shadow-md shadow-sm">
-                          {/* Title row */}
-                          <div className="flex items-center justify-between gap-2">
-                            <p className="font-semibold text-[13px] text-foreground group-hover:text-primary transition-colors truncate">
-                              {ride.ride_name}
-                            </p>
-                            <Badge
-                              variant={statusConfig.variant}
-                              className={cn(
-                                "text-[10px] h-5 px-2 shrink-0 gap-1",
-                                complianceStatus === 'compliant' && "bg-success/10 text-success border-success/20",
-                                complianceStatus === 'expiring' && "bg-warning/10 text-warning border-warning/20"
-                              )}
-                              title="Based on expiry dates in the document register"
-                            >
-                              <StatusIcon className="h-2.5 w-2.5" strokeWidth={2.5} />
-                              {statusConfig.label}
-                            </Badge>
-                          </div>
-
-                          {/* Sub row */}
-                          <div className="flex items-center gap-2 mt-1">
-                            {ride.manufacturer && (
-                              <span className="text-xs text-muted-foreground truncate">{ride.manufacturer}</span>
-                            )}
-                            {ride.manufacturer && <span className="text-muted-foreground/40">·</span>}
-                            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                              <FileText className="h-3 w-3" strokeWidth={2} />
-                              {totalDocs > 0
-                                ? `${totalDocs} ${totalDocs === 1 ? 'document' : 'documents'}`
-                                : 'No documents yet'}
-                            </span>
-                          </div>
-
-                          {/* CTA row */}
-                          <div className="mt-2.5 pt-2.5 border-t border-border/60 flex items-center justify-between">
-                            <div>
-                              <span className="text-xs font-medium text-primary flex items-center gap-1.5">
-                                <Shield className="h-3.5 w-3.5" strokeWidth={2} />
-                                Build Compliance Pack
-                              </span>
-                              <p className="text-[10px] text-muted-foreground mt-0.5 ml-5">Choose items and export/share/save a submission pack</p>
-                            </div>
-                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Global Documents Panel */}
-          <div id="global-docs-section">
-            <button
-              className="w-full text-left group active:scale-[0.98] transition-all min-h-[44px]"
-              onClick={() => setSelectedRide({ id: '__global__', ride_name: 'Global Documents' })}
-            >
-              <div className="p-3.5 rounded-xl border border-border bg-card shadow-sm transition-all group-hover:border-primary/40 group-hover:shadow-md">
-                {/* Title row */}
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
-                      <Building2 className="h-4 w-4 text-primary" strokeWidth={2} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="text-[13px] font-semibold text-foreground group-hover:text-primary transition-colors">Global Compliance Documents</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        Insurance, policies &amp; company-wide docs
-                      </p>
-                    </div>
+              <div className="p-2">
+                {rides.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Package className="h-8 w-8 text-muted-foreground/40 mx-auto mb-2" />
+                    <p className="text-xs font-medium text-muted-foreground">No assets found</p>
                   </div>
-                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                    <FileText className="h-3 w-3" strokeWidth={2} />
-                    {globalDocuments.length > 0
-                      ? `${globalDocuments.length} ${globalDocuments.length === 1 ? 'file' : 'files'}`
-                      : 'No files'}
-                  </span>
-                </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    {rides.map(ride => {
+                      const rideCheckRecords = checkRecords.filter(doc => doc.ride_id === ride.id);
+                      const totalDocs = ride.documents.length + rideCheckRecords.length;
+                      const hasExpired = ride.documents.some(d => d.expires_at && new Date(d.expires_at) < new Date());
+                      const hasExpiringSoon = ride.documents.some(d => d.expires_at && isExpiringSoon(d.expires_at));
+                      const complianceStatus = hasExpired ? 'overdue' : hasExpiringSoon ? 'expiring' : 'compliant';
+                      const statusConfig = {
+                        overdue: { label: 'Expired', variant: 'destructive' as const, icon: AlertTriangle },
+                        expiring: { label: 'Expiring', variant: 'outline' as const, icon: Clock },
+                        compliant: { label: 'Current', variant: 'secondary' as const, icon: CheckCircle2 },
+                      }[complianceStatus];
+                      const StatusIcon = statusConfig.icon;
 
-                {/* CTA row */}
-                {globalDocuments.length > 0 && (
-                  <div className="mt-2.5 pt-2.5 border-t border-border/60 flex items-center justify-between">
-                    <div>
-                      <span className="text-xs font-medium text-primary flex items-center gap-1.5">
-                        <Shield className="h-3.5 w-3.5" strokeWidth={2} />
-                        Build Compliance Pack
-                      </span>
-                      <p className="text-[10px] text-muted-foreground mt-0.5 ml-5">These can be included in any submission pack</p>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
+                      return (
+                        <button
+                          key={ride.id}
+                          onClick={() => setSelectedRide(ride)}
+                          className="w-full text-left group active:scale-[0.99] transition-all"
+                        >
+                          <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg border border-border/80 hover:border-primary/40 hover:bg-accent/30 transition-all">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs font-bold text-foreground truncate">{ride.ride_name}</p>
+                                <Badge
+                                  variant={statusConfig.variant}
+                                  className={cn(
+                                    "text-[9px] h-4 px-1.5 shrink-0 gap-0.5",
+                                    complianceStatus === 'compliant' && "bg-success/10 text-success border-success/20",
+                                    complianceStatus === 'expiring' && "bg-warning/10 text-warning border-warning/20"
+                                  )}
+                                  title="Based on expiry dates in the document register"
+                                >
+                                  <StatusIcon className="h-2.5 w-2.5" strokeWidth={2.5} />
+                                  {statusConfig.label}
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-0.5">
+                                {ride.manufacturer && (
+                                  <span className="text-[10px] text-muted-foreground truncate">{ride.manufacturer}</span>
+                                )}
+                                {ride.manufacturer && <span className="text-muted-foreground/30 text-[10px]">·</span>}
+                                <span className="text-[10px] text-muted-foreground shrink-0">
+                                  {totalDocs} {totalDocs === 1 ? 'doc' : 'docs'}
+                                </span>
+                              </div>
+                            </div>
+                            <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary shrink-0" />
+                          </div>
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
-            </button>
-          </div>
-        </div>
-      ) : (
-        <>
-          {/* Asset context strip */}
-          <div className="mb-4 bg-card border border-border rounded-2xl p-4 shadow-sm">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 min-w-0">
-                <span className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0 bg-primary/10">
-                  <ClipboardCheck className="h-4 w-4 text-primary" strokeWidth={2} />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-xs font-medium text-muted-foreground">Asset</p>
-                  <p className="text-sm font-semibold text-foreground truncate">{selectedRide.ride_name}</p>
-                </div>
-                <div className="hidden sm:block h-8 w-px bg-border mx-1" />
-                <div className="hidden sm:block">
-                  <p className="text-xs font-medium text-muted-foreground">Available</p>
-                  <p className="text-sm font-semibold text-foreground">
-                    {currentRideDocuments.length + currentRideCheckRecords.length} documents
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setSelectedRide(null);
-                  setSelectedDocuments([]);
-                }}
-                className="gap-1.5 text-muted-foreground hover:text-foreground shrink-0 text-xs"
-              >
-                <ChevronRight className="h-3.5 w-3.5 rotate-180" />
-                Change
-              </Button>
             </div>
 
-            {/* Selection summary bar */}
-            {selectedDocuments.length > 0 && (
-              <div className="mt-3 flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium bg-primary/10 text-primary">
-                <FileText className="h-4 w-4 shrink-0" strokeWidth={2} />
-                <span>{selectedDocuments.length} document{selectedDocuments.length !== 1 ? 's' : ''} selected</span>
-                <span className="text-xs opacity-70">·</span>
-                <span className="text-xs opacity-70">{formatFileSize(totalFileSize)}</span>
-              </div>
-            )}
-          </div>
-
-          <div className="grid lg:grid-cols-2 gap-4">
-            {/* Left Column - Document Selection */}
-            <div className="space-y-3">
-              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2 bg-muted/30">
-                  <p className="text-[13px] font-bold text-foreground">Select Documents</p>
-                  {selectedDocuments.length > 0 && (
-                    <Badge variant="secondary" className="text-[10px] shrink-0 font-semibold">{selectedDocuments.length} selected</Badge>
-                  )}
-                </div>
-                <div className="space-y-2 p-3">
-                  {/* File size indicator */}
-                  {selectedDocuments.length > 0 && (
-                    <div className="flex items-center justify-between text-xs bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5">
-                      <span className="text-muted-foreground">Total size:</span>
-                      <Badge variant={exceedsEmailLimit ? "destructive" : "outline"} className="text-[10px] h-4">
-                        {formatFileSize(totalFileSize)}
-                      </Badge>
+            {/* Global Documents */}
+            <div id="global-docs-section">
+              <button
+                className="w-full text-left group active:scale-[0.99] transition-all"
+                onClick={() => setSelectedRide({ id: '__global__', ride_name: 'Global Documents' })}
+              >
+                <div className="t-card rounded-xl overflow-hidden">
+                  <div className="flex items-center gap-3 px-4 py-3">
+                    <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 shrink-0">
+                      <Building2 className="h-4 w-4 text-primary" strokeWidth={2.5} />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-bold text-foreground group-hover:text-primary transition-colors">Global Compliance Documents</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">
+                        Insurance, policies &amp; company-wide · {globalDocuments.length} {globalDocuments.length === 1 ? 'file' : 'files'}
+                      </p>
                     </div>
-                  )}
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary shrink-0" />
+                  </div>
+                </div>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Step 2: Asset context strip */}
+            <div className="t-card rounded-xl px-3 py-2.5">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <span className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 shrink-0">
+                    {isGlobalMode ? <Building2 className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} /> : <ClipboardCheck className="h-3.5 w-3.5 text-primary" strokeWidth={2.5} />}
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-[10px] text-muted-foreground font-medium">{isGlobalMode ? 'Global' : 'Asset'}</p>
+                    <p className="text-xs font-bold text-foreground truncate">{selectedRide.ride_name}</p>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => { setSelectedRide(null); setSelectedDocuments([]); }}
+                  className="gap-1 text-muted-foreground hover:text-foreground shrink-0 text-[10px] h-7 px-2"
+                >
+                  <ChevronRight className="h-3 w-3 rotate-180" />
+                  Back
+                </Button>
+              </div>
+              {selectedDocuments.length > 0 && (
+                <div className="mt-2 flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold bg-primary/10 text-primary">
+                  <FileText className="h-3.5 w-3.5 shrink-0" strokeWidth={2.5} />
+                  {selectedDocuments.length} selected · {formatFileSize(totalFileSize)}
+                </div>
+              )}
+            </div>
 
-                  {/* Send method selector */}
-                  {(exceedsEmailLimit || sendMethod !== 'auto') && (
-                    <div className="bg-info/5 border border-info/20 rounded-lg p-2.5">
-                      <div className="flex gap-2 text-info mb-2">
-                        <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                        <div className="text-[11px]">
-                          <p className="font-medium">Large file size ({totalSizeMB.toFixed(1)}MB)</p>
-                          <p className="text-muted-foreground mt-0.5">Choose how to send</p>
+            <div className="grid lg:grid-cols-2 gap-3">
+              {/* Left: Document Selection */}
+              <div className="space-y-2">
+                <div className="t-card rounded-xl overflow-hidden">
+                  <div className="t-card-header px-3 py-2 flex items-center justify-between">
+                    <p className="text-xs font-bold text-foreground">Select Documents</p>
+                    {selectedDocuments.length > 0 && (
+                      <Badge variant="secondary" className="text-[9px] h-4 font-semibold">{selectedDocuments.length} selected</Badge>
+                    )}
+                  </div>
+                  <div className="p-2 space-y-1.5">
+                    {/* Size indicator */}
+                    {selectedDocuments.length > 0 && (
+                      <div className="flex items-center justify-between text-[10px] bg-secondary/50 border border-border rounded-md px-2 py-1">
+                        <span className="text-muted-foreground">Total size:</span>
+                        <Badge variant={exceedsEmailLimit ? "destructive" : "outline"} className="text-[9px] h-3.5">
+                          {formatFileSize(totalFileSize)}
+                        </Badge>
+                      </div>
+                    )}
+
+                    {/* Send method selector */}
+                    {(exceedsEmailLimit || sendMethod !== 'auto') && (
+                      <div className="bg-warning/5 border border-warning/20 rounded-lg p-2">
+                        <p className="text-[10px] font-semibold text-foreground mb-1.5">Large file ({totalSizeMB.toFixed(1)}MB) — choose send method:</p>
+                        <div className="grid grid-cols-2 gap-1">
+                          <button
+                            type="button"
+                            onClick={() => setSendMethod('links')}
+                            className={cn(
+                              "flex items-center gap-1.5 p-1.5 rounded-md border text-left text-[10px]",
+                              (sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit))
+                                ? "border-primary bg-primary/5 font-semibold"
+                                : "border-border hover:border-primary/50"
+                            )}
+                          >
+                            <Link className="h-3 w-3 text-primary shrink-0" />
+                            <span>Download Link</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSendMethod('attachments')}
+                            className={cn(
+                              "flex items-center gap-1.5 p-1.5 rounded-md border text-left text-[10px]",
+                              sendMethod === 'attachments'
+                                ? "border-primary bg-primary/5 font-semibold"
+                                : "border-border hover:border-primary/50"
+                            )}
+                          >
+                            <Paperclip className="h-3 w-3 text-muted-foreground shrink-0" />
+                            <span>Attachments</span>
+                          </button>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setSendMethod('links')}
-                          className={cn(
-                            "flex items-center gap-1.5 p-2 rounded-lg border transition-all text-left",
-                            (sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit))
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50"
-                          )}
-                        >
-                          <Link className="h-3.5 w-3.5 text-primary shrink-0" />
-                          <div>
-                            <p className="text-[11px] font-medium">Download Link</p>
-                            <p className="text-[10px] text-muted-foreground">Recommended</p>
-                          </div>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSendMethod('attachments')}
-                          className={cn(
-                            "flex items-center gap-1.5 p-2 rounded-lg border transition-all text-left",
-                            sendMethod === 'attachments'
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50"
-                          )}
-                        >
-                          <Paperclip className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                          <div>
-                            <p className="text-[11px] font-medium">Attachments</p>
-                            <p className="text-[10px] text-muted-foreground">Multiple emails</p>
-                          </div>
-                        </button>
-                      </div>
-                      {(sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit)) && (
-                        <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
-                          <Link className="h-3 w-3" />
-                          Secure link valid for 7 days
-                        </p>
-                      )}
-                    </div>
-                  )}
+                    )}
 
-                  {/* Check Records for this ride */}
-                  {currentRideCheckRecords.length > 0 && (
-                    <Collapsible open={checkRecordsExpanded} onOpenChange={setCheckRecordsExpanded}>
-                      <div className="border border-success/20 rounded-lg">
-                        <CollapsibleTrigger className="w-full px-3 py-2 flex items-center justify-between hover:bg-success/5 transition-colors gap-2">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <ClipboardCheck className="h-3.5 w-3.5 text-success shrink-0" />
-                            <span className="font-medium text-xs truncate">Safety Check Records</span>
-                            <Badge variant="outline" className="text-[10px] h-4 shrink-0 border-success/30 text-success">
-                              {currentRideCheckRecords.length}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <span 
-                              role="button"
-                              tabIndex={0}
-                              className="h-6 text-[11px] px-1.5 inline-flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                const ids = currentRideCheckRecords.map(d => d.id);
-                                const allSelected = ids.every(id => selectedDocuments.includes(id));
-                                if (allSelected) {
-                                  setSelectedDocuments(prev => prev.filter(id => !ids.includes(id)));
-                                } else {
-                                  setSelectedDocuments(prev => [...new Set([...prev, ...ids])]);
-                                }
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.stopPropagation();
-                                  const ids = currentRideCheckRecords.map(d => d.id);
-                                  const allSelected = ids.every(id => selectedDocuments.includes(id));
-                                  if (allSelected) {
-                                    setSelectedDocuments(prev => prev.filter(id => !ids.includes(id)));
-                                  } else {
-                                    setSelectedDocuments(prev => [...new Set([...prev, ...ids])]);
-                                  }
-                                }
-                              }}
-                            >
-                              {currentRideCheckRecords.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
-                            </span>
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="px-2 pb-2 space-y-1">
-                            {currentRideCheckRecords.map(doc => (
-                              <label 
-                                key={doc.id} 
-                                className={cn(
-                                  "flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors min-h-[40px]",
-                                  selectedDocuments.includes(doc.id)
-                                    ? 'bg-success/10 border border-success/30'
-                                    : 'hover:bg-muted/50 border border-transparent'
-                                )}
+                    {/* Check Records */}
+                    {currentRideCheckRecords.length > 0 && (
+                      <Collapsible open={checkRecordsExpanded} onOpenChange={setCheckRecordsExpanded}>
+                        <div className="border border-success/20 rounded-lg overflow-hidden">
+                          <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-success/5 transition-colors gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <ClipboardCheck className="h-3 w-3 text-success shrink-0" />
+                              <span className="font-semibold text-[11px]">Check Records</span>
+                              <Badge variant="outline" className="text-[9px] h-3.5 border-success/30 text-success">{currentRideCheckRecords.length}</Badge>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                className="h-5 text-[10px] px-1 inline-flex items-center rounded hover:bg-accent text-muted-foreground cursor-pointer"
+                                onClick={(e) => { e.stopPropagation(); const ids = currentRideCheckRecords.map(d => d.id); const allSel = ids.every(id => selectedDocuments.includes(id)); setSelectedDocuments(prev => allSel ? prev.filter(id => !ids.includes(id)) : [...new Set([...prev, ...ids])]); }}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); const ids = currentRideCheckRecords.map(d => d.id); const allSel = ids.every(id => selectedDocuments.includes(id)); setSelectedDocuments(prev => allSel ? prev.filter(id => !ids.includes(id)) : [...new Set([...prev, ...ids])]); } }}
                               >
-                                <Checkbox
-                                  checked={selectedDocuments.includes(doc.id)}
-                                  onCheckedChange={() => handleDocumentToggle(doc.id)}
-                                  className="shrink-0"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-foreground truncate">{doc.document_name}</p>
-                                  <div className="flex items-center gap-1.5 mt-0.5">
-                                    <span className="text-[10px] text-muted-foreground">
-                                      {doc.uploaded_at && format(new Date(doc.uploaded_at), 'dd MMM yyyy')}
-                                    </span>
-                                    {doc.file_size && (
-                                      <span className="text-[10px] text-muted-foreground">· {formatFileSize(doc.file_size)}</span>
-                                    )}
+                                {currentRideCheckRecords.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
+                              </span>
+                              <ChevronDown className="h-3 w-3" />
+                            </div>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="px-1.5 pb-1.5 space-y-0.5">
+                              {currentRideCheckRecords.map(doc => (
+                                <label key={doc.id} className={cn("flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-[11px]", selectedDocuments.includes(doc.id) ? 'bg-success/8 border border-success/25' : 'hover:bg-muted/50 border border-transparent')}>
+                                  <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0 h-3.5 w-3.5" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-foreground truncate">{doc.document_name}</p>
+                                    <p className="text-[9px] text-muted-foreground">{doc.uploaded_at && format(new Date(doc.uploaded_at), 'dd MMM yyyy')}{doc.file_size ? ` · ${formatFileSize(doc.file_size)}` : ''}</p>
                                   </div>
-                                </div>
-                              </label>
-                            ))}
-                          </div>
-                        </CollapsibleContent>
-                      </div>
-                    </Collapsible>
-                  )}
+                                </label>
+                              ))}
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    )}
 
-                  {/* Ride Documents */}
-                  {currentRideDocuments.length > 0 && (
-                    <Collapsible defaultOpen>
-                      <div className="border border-border rounded-lg">
-                        <CollapsibleTrigger className="w-full px-3 py-2 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <FileText className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
-                            <span className="font-medium text-xs text-foreground">Documents</span>
-                            <Badge variant="outline" className="text-[10px] h-4 shrink-0">{currentRideDocuments.length}</Badge>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <span 
-                              role="button"
-                              tabIndex={0}
-                              className="h-6 text-[11px] px-1.5 inline-flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSelectAllRide(selectedRide.id, currentRideDocuments);
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.stopPropagation();
-                                  handleSelectAllRide(selectedRide.id, currentRideDocuments);
-                                }
-                              }}
-                            >
-                              {currentRideDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
-                            </span>
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="px-2 pb-2 space-y-1">
-                            {currentRideDocuments.map(doc => (
-                              <label 
-                                key={doc.id} 
-                                className={cn(
-                                  "flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors min-h-[40px]",
-                                  selectedDocuments.includes(doc.id)
-                                    ? 'bg-primary/8 border border-primary/25'
-                                    : 'hover:bg-muted/50 border border-transparent'
-                                )}
+                    {/* Ride Documents */}
+                    {currentRideDocuments.length > 0 && (
+                      <Collapsible defaultOpen>
+                        <div className="border border-border rounded-lg overflow-hidden">
+                          <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <FileText className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
+                              <span className="font-semibold text-[11px]">Documents</span>
+                              <Badge variant="outline" className="text-[9px] h-3.5">{currentRideDocuments.length}</Badge>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                className="h-5 text-[10px] px-1 inline-flex items-center rounded hover:bg-accent text-muted-foreground cursor-pointer"
+                                onClick={(e) => { e.stopPropagation(); handleSelectAllRide(selectedRide!.id, currentRideDocuments); }}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); handleSelectAllRide(selectedRide!.id, currentRideDocuments); } }}
                               >
-                                <Checkbox
-                                  checked={selectedDocuments.includes(doc.id)}
-                                  onCheckedChange={() => handleDocumentToggle(doc.id)}
-                                  className="shrink-0"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-foreground truncate">{doc.document_name}</p>
-                                  <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                                    <span className="text-[10px] text-muted-foreground">{doc.document_type}</span>
-                                    {doc.expires_at && isExpiringSoon(doc.expires_at) && (
-                                      <Badge variant="destructive" className="text-[9px] h-3.5 px-1">Expiring</Badge>
-                                    )}
-                                    {doc.file_size && (
-                                      <span className="text-[10px] text-muted-foreground">{formatFileSize(doc.file_size)}</span>
-                                    )}
+                                {currentRideDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
+                              </span>
+                              <ChevronDown className="h-3 w-3" />
+                            </div>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="px-1.5 pb-1.5 space-y-0.5">
+                              {currentRideDocuments.map(doc => (
+                                <label key={doc.id} className={cn("flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-[11px]", selectedDocuments.includes(doc.id) ? 'bg-primary/8 border border-primary/25' : 'hover:bg-muted/50 border border-transparent')}>
+                                  <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0 h-3.5 w-3.5" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-foreground truncate">{doc.document_name}</p>
+                                    <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
+                                      <span>{doc.document_type}</span>
+                                      {doc.expires_at && isExpiringSoon(doc.expires_at) && <Badge variant="destructive" className="text-[8px] h-3 px-1">Exp</Badge>}
+                                      {doc.file_size && <span>· {formatFileSize(doc.file_size)}</span>}
+                                    </div>
                                   </div>
-                                </div>
-                              </label>
-                            ))}
-                          </div>
-                        </CollapsibleContent>
-                      </div>
-                    </Collapsible>
-                  )}
+                                </label>
+                              ))}
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    )}
 
-                  {/* Global Documents */}
-                  {globalDocuments.length > 0 && (
-                    <Collapsible defaultOpen={currentRideDocuments.length === 0}>
-                      <div className="border border-border rounded-lg bg-muted/20">
-                        <CollapsibleTrigger className="w-full px-3 py-2 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
-                          <div className="flex items-center gap-1.5 min-w-0">
-                            <Building2 className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
-                            <span className="font-medium text-xs text-foreground">Global Documents</span>
-                            <Badge variant="outline" className="text-[10px] h-4 shrink-0">{globalDocuments.length}</Badge>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            <span 
-                              role="button"
-                              tabIndex={0}
-                              className="h-6 text-[11px] px-1.5 inline-flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground cursor-pointer"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleSelectAllGlobal();
-                              }}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter' || e.key === ' ') {
-                                  e.stopPropagation();
-                                  handleSelectAllGlobal();
-                                }
-                              }}
-                            >
-                              {globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
-                            </span>
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          </div>
-                        </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <div className="px-2 pb-2 space-y-1">
-                            {globalDocuments.map(doc => (
-                              <label 
-                                key={doc.id} 
-                                className={cn(
-                                  "flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors min-h-[40px]",
-                                  selectedDocuments.includes(doc.id)
-                                    ? 'bg-primary/8 border border-primary/25'
-                                    : 'hover:bg-muted/50 border border-transparent'
-                                )}
+                    {/* Global Documents */}
+                    {globalDocuments.length > 0 && (
+                      <Collapsible defaultOpen={currentRideDocuments.length === 0}>
+                        <div className="border border-border rounded-lg overflow-hidden">
+                          <CollapsibleTrigger className="w-full px-2.5 py-1.5 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0">
+                              <Building2 className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
+                              <span className="font-semibold text-[11px]">Global Documents</span>
+                              <Badge variant="outline" className="text-[9px] h-3.5">{globalDocuments.length}</Badge>
+                            </div>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <span
+                                role="button"
+                                tabIndex={0}
+                                className="h-5 text-[10px] px-1 inline-flex items-center rounded hover:bg-accent text-muted-foreground cursor-pointer"
+                                onClick={(e) => { e.stopPropagation(); handleSelectAllGlobal(); }}
+                                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); handleSelectAllGlobal(); } }}
                               >
-                                <Checkbox
-                                  checked={selectedDocuments.includes(doc.id)}
-                                  onCheckedChange={() => handleDocumentToggle(doc.id)}
-                                  className="shrink-0"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-medium text-foreground truncate">{doc.document_name}</p>
-                                  <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
-                                    <span className="text-[10px] text-muted-foreground">{doc.document_type}</span>
-                                    {doc.expires_at && isExpiringSoon(doc.expires_at) && (
-                                      <Badge variant="destructive" className="text-[9px] h-3.5 px-1">Expiring</Badge>
-                                    )}
-                                    {doc.file_size && (
-                                      <span className="text-[10px] text-muted-foreground">{formatFileSize(doc.file_size)}</span>
-                                    )}
+                                {globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
+                              </span>
+                              <ChevronDown className="h-3 w-3" />
+                            </div>
+                          </CollapsibleTrigger>
+                          <CollapsibleContent>
+                            <div className="px-1.5 pb-1.5 space-y-0.5">
+                              {globalDocuments.map(doc => (
+                                <label key={doc.id} className={cn("flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer transition-colors text-[11px]", selectedDocuments.includes(doc.id) ? 'bg-primary/8 border border-primary/25' : 'hover:bg-muted/50 border border-transparent')}>
+                                  <Checkbox checked={selectedDocuments.includes(doc.id)} onCheckedChange={() => handleDocumentToggle(doc.id)} className="shrink-0 h-3.5 w-3.5" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-foreground truncate">{doc.document_name}</p>
+                                    <div className="flex items-center gap-1 text-[9px] text-muted-foreground">
+                                      <span>{doc.document_type}</span>
+                                      {doc.expires_at && isExpiringSoon(doc.expires_at) && <Badge variant="destructive" className="text-[8px] h-3 px-1">Exp</Badge>}
+                                      {doc.file_size && <span>· {formatFileSize(doc.file_size)}</span>}
+                                    </div>
                                   </div>
-                                </div>
-                              </label>
-                            ))}
-                          </div>
-                        </CollapsibleContent>
-                      </div>
-                    </Collapsible>
-                  )}
+                                </label>
+                              ))}
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    )}
 
-                  {/* Empty state */}
-                  {currentRideDocuments.length === 0 && currentRideCheckRecords.length === 0 && globalDocuments.length === 0 && (
-                    <div className="text-center py-8">
-                      <FileText className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
-                      <p className="text-sm text-muted-foreground">No documents available</p>
-                      <p className="text-xs text-muted-foreground mt-1">Upload documents to this item first</p>
-                    </div>
-                  )}
+                    {/* Empty state */}
+                    {currentRideDocuments.length === 0 && currentRideCheckRecords.length === 0 && globalDocuments.length === 0 && (
+                      <div className="text-center py-6">
+                        <FileText className="h-7 w-7 text-muted-foreground/40 mx-auto mb-1.5" />
+                        <p className="text-xs text-muted-foreground">No documents available</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* Right Column - Recipient & Send */}
-            <div className="space-y-3">
-              {/* Sender Info */}
-              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                <div className="px-4 py-3 border-b border-border flex items-center gap-2.5 bg-muted/30">
-                  <Users className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
-                  <p className="text-[13px] font-bold text-foreground">Your Information</p>
-                </div>
-                <div className="px-4 py-3">
-                  <div className="text-xs space-y-1 text-muted-foreground">
-                    {profile?.company_name && (
-                      <p className="break-words"><span className="font-semibold text-foreground">Company:</span> {profile.company_name}</p>
-                    )}
-                    {profile?.controller_name && (
-                      <p className="break-words"><span className="font-semibold text-foreground">Controller:</span> {profile.controller_name}</p>
-                    )}
-                    {user?.email && (
-                      <p className="break-words"><span className="font-semibold text-foreground">Email:</span> {user.email}</p>
-                    )}
+              {/* Right: Recipient & Send */}
+              <div className="space-y-2">
+                {/* Sender Info */}
+                <div className="t-card rounded-xl overflow-hidden">
+                  <div className="t-card-header px-3 py-2 flex items-center gap-2">
+                    <Users className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
+                    <p className="text-xs font-bold text-foreground">Your Information</p>
+                  </div>
+                  <div className="px-3 py-2 text-[10px] space-y-0.5 text-muted-foreground">
+                    {profile?.company_name && <p><span className="font-semibold text-foreground">Company:</span> {profile.company_name}</p>}
+                    {profile?.controller_name && <p><span className="font-semibold text-foreground">Controller:</span> {profile.controller_name}</p>}
+                    {user?.email && <p><span className="font-semibold text-foreground">Email:</span> {user.email}</p>}
                     {!isStaff && !profile?.company_name && !profile?.controller_name && (
-                      <p className="text-destructive italic">Please complete your profile in Settings</p>
+                      <p className="text-destructive italic">Complete your profile in Settings</p>
                     )}
                   </div>
                 </div>
-              </div>
 
-              {/* Saved Recipients */}
-              {savedRecipients.length > 0 && (
-                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                  <div className="px-4 py-3 border-b border-border flex items-center gap-2.5 bg-muted/30">
-                    <BookUser className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
-                    <p className="text-[13px] font-bold text-foreground">Saved Recipients</p>
-                  </div>
-                  <div className="px-3 py-2.5">
-                    <div className="space-y-1 max-h-40 overflow-y-auto">
+                {/* Saved Recipients */}
+                {savedRecipients.length > 0 && (
+                  <div className="t-card rounded-xl overflow-hidden">
+                    <div className="t-card-header px-3 py-2 flex items-center gap-2">
+                      <BookUser className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
+                      <p className="text-xs font-bold text-foreground">Saved Recipients</p>
+                    </div>
+                    <div className="px-2 py-1.5 max-h-32 overflow-y-auto space-y-0.5">
                       {savedRecipients.map(recipient => (
-                        <div 
+                        <div
                           key={recipient.id}
-                          className="flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/50 cursor-pointer group transition-colors min-h-[40px]"
+                          className="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-muted/50 cursor-pointer group transition-colors"
                           onClick={() => handleSelectRecipient(recipient.id)}
                         >
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleFavorite(recipient.id, recipient.is_favorite);
-                            }}
-                            className="shrink-0"
-                          >
-                            <Star className={`h-3.5 w-3.5 ${recipient.is_favorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+                          <button onClick={(e) => { e.stopPropagation(); handleToggleFavorite(recipient.id, recipient.is_favorite); }} className="shrink-0">
+                            <Star className={`h-3 w-3 ${recipient.is_favorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
                           </button>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-medium text-foreground truncate">{recipient.name}</p>
-                            <p className="text-[11px] text-muted-foreground truncate">{recipient.email}</p>
+                            <p className="text-[11px] font-semibold text-foreground truncate">{recipient.name}</p>
+                            <p className="text-[9px] text-muted-foreground truncate">{recipient.email}</p>
                           </div>
-                          {recipient.organization_type && (
-                            <Badge variant="outline" className="text-[10px] h-4 hidden sm:inline-flex">{recipient.organization_type}</Badge>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteRecipient(recipient.id);
-                            }}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                          >
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          <button onClick={(e) => { e.stopPropagation(); handleDeleteRecipient(recipient.id); }} className="opacity-0 group-hover:opacity-100 shrink-0">
+                            <Trash2 className="h-3 w-3 text-destructive" />
                           </button>
                         </div>
                       ))}
                     </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              {/* Recipient Form */}
-              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
-                <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2 bg-muted/30">
-                  <div className="flex items-center gap-2.5">
-                    <Mail className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
-                    <p className="text-[13px] font-bold text-foreground">Recipient Details</p>
-                  </div>
-                <Dialog open={showSaveRecipientDialog} onOpenChange={setShowSaveRecipientDialog}>
-                  <DialogTrigger asChild>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-7 text-xs"
-                      disabled={!recipientEmail || !recipientName}
-                    >
-                      <Plus className="h-3 w-3 mr-1" />
-                      Save
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-sm">
-                    <DialogHeader>
-                      <DialogTitle>Save Recipient</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 pt-2">
-                      <div>
-                        <Label className="text-sm">Name</Label>
-                        <Input value={recipientName} disabled className="mt-1.5 bg-muted" />
-                      </div>
-                      <div>
-                        <Label className="text-sm">Email</Label>
-                        <Input value={recipientEmail} disabled className="mt-1.5 bg-muted" />
-                      </div>
-                      <div>
-                        <Label className="text-sm">Organization Type (Optional)</Label>
-                        <Select value={newRecipientOrg} onValueChange={setNewRecipientOrg}>
-                          <SelectTrigger className="mt-1.5">
-                            <SelectValue placeholder="Select type..." />
-                          </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="council">{terminology.isUK ? 'Local Council' : 'Local Authority'}</SelectItem>
-                              <SelectItem value="guild">{terminology.isUK ? 'Guild / Trade Association' : 'Trade Association'}</SelectItem>
-                              <SelectItem value="insurer">Insurance Company</SelectItem>
-                              <SelectItem value="inspector">Inspection Body</SelectItem>
-                            <SelectItem value="regulatory_body">Regulatory Body</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <Button onClick={handleSaveRecipient} className="w-full">
-                        Save Recipient
-                      </Button>
+                {/* Recipient Form */}
+                <div className="t-card rounded-xl overflow-hidden">
+                  <div className="t-card-header px-3 py-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Mail className="h-3 w-3 text-primary shrink-0" strokeWidth={2.5} />
+                      <p className="text-xs font-bold text-foreground">Recipient</p>
                     </div>
-                  </DialogContent>
-                </Dialog>
-                </div>
-                <div className="space-y-3 px-4 py-3">
-              <div>
-                <Label htmlFor="recipientEmail" className="text-xs font-semibold">Email Address *</Label>
-                <Input
-                  id="recipientEmail"
-                  type="email"
-                  value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                  placeholder="council@example.gov.uk"
-                  className="mt-1 h-9"
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="recipientName" className="text-xs font-semibold">Name / Organization</Label>
-                <Input
-                  id="recipientName"
-                  value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
-                  placeholder="Local Authority, Trade Association, etc."
-                  className="mt-1 h-9"
-                />
-              </div>
-              <div>
-                <div className="flex items-center justify-between gap-2 mb-1">
-                  <Label htmlFor="message" className="text-xs font-semibold">Message (Optional)</Label>
-                  <div className="flex items-center gap-1">
-                    {emailTemplates.length > 0 && (
-                      <Select onValueChange={handleSelectTemplate}>
-                        <SelectTrigger className="h-6 text-[11px] w-auto min-w-[90px]">
-                          <SelectValue placeholder="Use template" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {emailTemplates.map(template => (
-                            <SelectItem key={template.id} value={template.id} className="text-xs">
-                              <div className="flex items-center gap-1">
-                                {template.is_default && <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />}
-                                {template.name}
-                              </div>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                    <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+                    <Dialog open={showSaveRecipientDialog} onOpenChange={setShowSaveRecipientDialog}>
                       <DialogTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          className="h-6 text-[11px] px-1.5"
-                          disabled={!message}
-                        >
-                          <Plus className="h-3 w-3 mr-0.5" />
-                          Save
+                        <Button variant="ghost" size="sm" className="h-6 text-[10px] px-1.5" disabled={!recipientEmail || !recipientName}>
+                          <Plus className="h-2.5 w-2.5 mr-0.5" />Save
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-sm">
-                        <DialogHeader>
-                          <DialogTitle>Save Email Template</DialogTitle>
-                        </DialogHeader>
-                        <div className="space-y-4 pt-2">
+                        <DialogHeader><DialogTitle>Save Recipient</DialogTitle></DialogHeader>
+                        <div className="space-y-3 pt-2">
+                          <div><Label className="text-xs">Name</Label><Input value={recipientName} disabled className="mt-1 bg-muted h-8" /></div>
+                          <div><Label className="text-xs">Email</Label><Input value={recipientEmail} disabled className="mt-1 bg-muted h-8" /></div>
                           <div>
-                            <Label className="text-sm">Template Name *</Label>
-                            <Input 
-                              value={newTemplateName} 
-                              onChange={(e) => setNewTemplateName(e.target.value)}
-                              placeholder="e.g., Council Submission"
-                              className="mt-1.5" 
-                            />
-                          </div>
-                          <div>
-                            <Label className="text-sm">Message Preview</Label>
-                            <div className="mt-1.5 p-2 bg-muted rounded text-xs max-h-24 overflow-y-auto">
-                              {message || 'No message entered'}
-                            </div>
-                          </div>
-                          <div>
-                            <Label className="text-sm">Recipient Type (Optional)</Label>
-                            <Select value={newTemplateType} onValueChange={setNewTemplateType}>
-                              <SelectTrigger className="mt-1.5">
-                                <SelectValue placeholder="Select type..." />
-                              </SelectTrigger>
+                            <Label className="text-xs">Organization Type</Label>
+                            <Select value={newRecipientOrg} onValueChange={setNewRecipientOrg}>
+                              <SelectTrigger className="mt-1 h-8"><SelectValue placeholder="Select type..." /></SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="council">Local Authority</SelectItem>
-                                <SelectItem value="guild">Trade Association</SelectItem>
+                                <SelectItem value="council">{terminology.isUK ? 'Local Council' : 'Local Authority'}</SelectItem>
+                                <SelectItem value="guild">{terminology.isUK ? 'Guild / Trade Association' : 'Trade Association'}</SelectItem>
                                 <SelectItem value="insurer">Insurance Company</SelectItem>
                                 <SelectItem value="inspector">Inspection Body</SelectItem>
                                 <SelectItem value="regulatory_body">Regulatory Body</SelectItem>
@@ -1342,107 +1026,118 @@ const BatchSendDocuments = () => {
                               </SelectContent>
                             </Select>
                           </div>
-                          <Button onClick={handleSaveTemplate} className="w-full">
-                            Save Template
-                          </Button>
+                          <Button onClick={handleSaveRecipient} className="w-full">Save Recipient</Button>
                         </div>
                       </DialogContent>
                     </Dialog>
                   </div>
-                </div>
-                <Textarea
-                  id="message"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Please find attached the requested documentation for our equipment..."
-                  className="resize-none text-xs"
-                  rows={3}
-                />
-              </div>
-
-              {/* Saved Templates List */}
-              {emailTemplates.length > 0 && (
-                <Collapsible>
-                  <CollapsibleTrigger className="flex items-center gap-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
-                    <ChevronRight className="h-3 w-3" />
-                    Manage {emailTemplates.length} saved template{emailTemplates.length !== 1 ? 's' : ''}
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pt-2">
-                    <div className="space-y-1 max-h-28 overflow-y-auto">
-                      {emailTemplates.map(template => (
-                        <div 
-                          key={template.id}
-                          className="flex items-center gap-2 p-1.5 border border-border rounded text-[11px] group"
-                        >
-                          <button
-                            onClick={() => handleToggleDefaultTemplate(template.id, template.is_default)}
-                            className="shrink-0"
-                          >
-                            <Star className={`h-3 w-3 ${template.is_default ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
-                          </button>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium truncate">{template.name}</p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-5 px-1.5 text-[11px]"
-                            onClick={() => handleSelectTemplate(template.id)}
-                          >
-                            Use
-                          </Button>
-                          <button
-                            onClick={() => handleDeleteTemplate(template.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                          >
-                            <Trash2 className="h-3 w-3 text-destructive" />
-                          </button>
-                        </div>
-                      ))}
+                  <div className="space-y-2 px-3 py-2.5">
+                    <div>
+                      <Label htmlFor="recipientEmail" className="text-[10px] font-bold">Email Address *</Label>
+                      <Input id="recipientEmail" type="email" value={recipientEmail} onChange={(e) => setRecipientEmail(e.target.value)} placeholder="council@example.gov.uk" className="mt-0.5 h-8 text-xs" required />
                     </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              )}
+                    <div>
+                      <Label htmlFor="recipientName" className="text-[10px] font-bold">Name / Organization</Label>
+                      <Input id="recipientName" value={recipientName} onChange={(e) => setRecipientName(e.target.value)} placeholder="Local Authority, etc." className="mt-0.5 h-8 text-xs" />
+                    </div>
+                    <div>
+                      <div className="flex items-center justify-between mb-0.5">
+                        <Label htmlFor="message" className="text-[10px] font-bold">Message (Optional)</Label>
+                        <div className="flex items-center gap-0.5">
+                          {emailTemplates.length > 0 && (
+                            <Select onValueChange={handleSelectTemplate}>
+                              <SelectTrigger className="h-5 text-[9px] w-auto min-w-[70px]"><SelectValue placeholder="Template" /></SelectTrigger>
+                              <SelectContent>
+                                {emailTemplates.map(t => (
+                                  <SelectItem key={t.id} value={t.id} className="text-xs">
+                                    <span className="flex items-center gap-1">{t.is_default && <Star className="h-2.5 w-2.5 fill-yellow-400 text-yellow-400" />}{t.name}</span>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                          <Dialog open={showSaveTemplateDialog} onOpenChange={setShowSaveTemplateDialog}>
+                            <DialogTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-5 text-[9px] px-1" disabled={!message}><Plus className="h-2.5 w-2.5 mr-0.5" />Save</Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-sm">
+                              <DialogHeader><DialogTitle>Save Email Template</DialogTitle></DialogHeader>
+                              <div className="space-y-3 pt-2">
+                                <div><Label className="text-xs">Template Name *</Label><Input value={newTemplateName} onChange={(e) => setNewTemplateName(e.target.value)} placeholder="e.g., Council Submission" className="mt-1" /></div>
+                                <div><Label className="text-xs">Message Preview</Label><div className="mt-1 p-2 bg-muted rounded text-xs max-h-20 overflow-y-auto">{message || 'No message'}</div></div>
+                                <div>
+                                  <Label className="text-xs">Recipient Type</Label>
+                                  <Select value={newTemplateType} onValueChange={setNewTemplateType}>
+                                    <SelectTrigger className="mt-1"><SelectValue placeholder="Select type..." /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="council">Local Authority</SelectItem>
+                                      <SelectItem value="guild">Trade Association</SelectItem>
+                                      <SelectItem value="insurer">Insurance Company</SelectItem>
+                                      <SelectItem value="inspector">Inspection Body</SelectItem>
+                                      <SelectItem value="regulatory_body">Regulatory Body</SelectItem>
+                                      <SelectItem value="other">Other</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <Button onClick={handleSaveTemplate} className="w-full">Save Template</Button>
+                              </div>
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+                      <Textarea id="message" value={message} onChange={(e) => setMessage(e.target.value)} placeholder="Please find attached the requested documentation..." className="resize-none text-xs" rows={2} />
+                    </div>
 
-              <div className="h-px bg-border" />
+                    {/* Templates list */}
+                    {emailTemplates.length > 0 && (
+                      <Collapsible>
+                        <CollapsibleTrigger className="flex items-center gap-1 text-[10px] text-muted-foreground hover:text-foreground transition-colors">
+                          <ChevronRight className="h-2.5 w-2.5" />
+                          Manage {emailTemplates.length} template{emailTemplates.length !== 1 ? 's' : ''}
+                        </CollapsibleTrigger>
+                        <CollapsibleContent className="pt-1.5">
+                          <div className="space-y-0.5 max-h-24 overflow-y-auto">
+                            {emailTemplates.map(template => (
+                              <div key={template.id} className="flex items-center gap-1.5 p-1 border border-border rounded text-[10px] group">
+                                <button onClick={() => handleToggleDefaultTemplate(template.id, template.is_default)} className="shrink-0">
+                                  <Star className={`h-2.5 w-2.5 ${template.is_default ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+                                </button>
+                                <p className="flex-1 min-w-0 font-medium truncate">{template.name}</p>
+                                <Button variant="ghost" size="sm" className="h-4 px-1 text-[9px]" onClick={() => handleSelectTemplate(template.id)}>Use</Button>
+                                <button onClick={() => handleDeleteTemplate(template.id)} className="opacity-0 group-hover:opacity-100 shrink-0"><Trash2 className="h-2.5 w-2.5 text-destructive" /></button>
+                              </div>
+                            ))}
+                          </div>
+                        </CollapsibleContent>
+                      </Collapsible>
+                    )}
 
-              <Button 
-                onClick={handleSend} 
-                disabled={sending || !recipientEmail || selectedDocuments.length === 0}
-                className="w-full min-h-[44px]"
-                size="default"
-              >
-                {sending ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Sending...
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    Send Compliance Pack{selectedDocuments.length > 0 ? ` (${selectedDocuments.length})` : ''}
-                  </>
-                )}
-              </Button>
+                    <div className="h-px bg-border" />
 
-              {/* Compliance reassurance footer */}
-              <div className="flex items-center justify-center gap-3 flex-wrap">
-                <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
-                  <span className="text-success">✓</span> Secure
-                </span>
-                <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
-                  <span className="text-success">✓</span> PDF bundle
-                </span>
-                <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
-                  <span className="text-success">✓</span> Audit logged
-                </span>
-              </div>
+                    <button
+                      onClick={handleSend}
+                      disabled={sending || !recipientEmail || selectedDocuments.length === 0}
+                      className="t-btn-primary w-full min-h-[44px] rounded-lg text-sm font-semibold flex items-center justify-center gap-2"
+                    >
+                      {sending ? (
+                        <><Loader2 className="h-4 w-4 animate-spin" />Sending...</>
+                      ) : (
+                        <><Send className="h-4 w-4" />Send Pack{selectedDocuments.length > 0 ? ` (${selectedDocuments.length})` : ''}</>
+                      )}
+                    </button>
+
+                    <div className="flex items-center justify-center gap-3">
+                      <span className="text-[9px] flex items-center gap-0.5 text-muted-foreground"><span className="text-success">✓</span>Secure</span>
+                      <span className="text-[9px] flex items-center gap-0.5 text-muted-foreground"><span className="text-success">✓</span>PDF bundle</span>
+                      <span className="text-[9px] flex items-center gap-0.5 text-muted-foreground"><span className="text-success">✓</span>Audit logged</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </>
-      )}
+          </>
+        )}
+      </div>
     </div>
   );
 };
