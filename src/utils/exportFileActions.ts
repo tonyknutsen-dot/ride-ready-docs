@@ -24,6 +24,12 @@ export function downloadBlob(blob: Blob, fileName: string) {
   URL.revokeObjectURL(url);
 }
 
+export function revokeObjectUrl(url?: string | null) {
+  if (url && url.startsWith('blob:')) {
+    URL.revokeObjectURL(url);
+  }
+}
+
 export async function getStorageFileBlob(filePath: string): Promise<Blob> {
   if (/^https?:\/\//i.test(filePath)) {
     const response = await fetch(filePath);
@@ -51,6 +57,42 @@ export async function isValidPdfBlob(blob: Blob): Promise<boolean> {
   if (blob.size < 5) return false;
   const signature = await blob.slice(0, 5).text();
   return signature === PDF_SIGNATURE;
+}
+
+export async function createPdfViewerUrlFromBlob(blob: Blob): Promise<{ url: string; signature: string; validPdf: boolean; normalizedBlob: Blob }> {
+  const signature = await blob.slice(0, 8).text();
+  const validPdf = signature.startsWith(PDF_SIGNATURE);
+  const normalizedBlob = blob.type === 'application/pdf'
+    ? blob
+    : new Blob([blob], { type: 'application/pdf' });
+
+  return {
+    url: URL.createObjectURL(normalizedBlob),
+    signature,
+    validPdf,
+    normalizedBlob,
+  };
+}
+
+export async function createPdfViewerUrlFromStorage(filePath: string): Promise<{
+  url: string;
+  signature: string;
+  validPdf: boolean;
+  blobSize: number;
+  blobType: string;
+  normalizedBlobType: string;
+}> {
+  const blob = await getStorageFileBlob(filePath);
+  const prepared = await createPdfViewerUrlFromBlob(blob);
+
+  return {
+    url: prepared.url,
+    signature: prepared.signature,
+    validPdf: prepared.validPdf,
+    blobSize: blob.size,
+    blobType: blob.type || '(empty)',
+    normalizedBlobType: prepared.normalizedBlob.type,
+  };
 }
 
 export function isLikelyMobileOrTablet(): boolean {
@@ -111,3 +153,4 @@ export async function shareStoredFileOrFallback(filePath: string, fileName: stri
   downloadBlob(blob, fileName);
   return 'downloaded';
 }
+
