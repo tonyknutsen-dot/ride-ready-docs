@@ -112,9 +112,9 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
           </DialogHeader>
 
           <div className="grid gap-2 pt-2">
-            <ActionButton icon={Eye} label="View" description="Open in a new tab" onClick={handleView} />
+            <ActionButton icon={Eye} label="View" description="Open in the in-app PDF viewer" onClick={handleView} />
             <ActionButton icon={Download} label="Download" description="Save file to your device" onClick={handleDownload} />
-            <ActionButton icon={Share2} label="Share" description="Send via email or messaging" onClick={handleShare} />
+            <ActionButton icon={Share2} label="Share" description="Native share on mobile, fallback on desktop" onClick={handleShare} />
 
             {result.onSaveToDocuments && (
               <>
