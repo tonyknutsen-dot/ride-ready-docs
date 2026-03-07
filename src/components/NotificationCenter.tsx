@@ -101,6 +101,11 @@ const buildDefectRoute = (defectId?: string | null): string => {
   return '/defects?status=open';
 };
 
+const buildCheckRoute = (checkId?: string | null): string => {
+  if (checkId) return `/checks?checkId=${checkId}`;
+  return '/checks';
+};
+
 const getPriority = (n: Notification): number => {
   const title = n.title?.toLowerCase() ?? '';
   if (title.includes('stop use') || title.includes('critical')) return 0;
