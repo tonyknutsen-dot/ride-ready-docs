@@ -301,13 +301,7 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
     const ext = fileExt(doc.file_path || '');
 
     return (
-      <div
-        className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-card hover:bg-accent/40 active:bg-accent/60 transition-colors cursor-pointer"
-        onClick={() => handleView(doc)}
-        role="button"
-        tabIndex={0}
-        onKeyDown={(e) => e.key === 'Enter' && handleView(doc)}
-      >
+      <div className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-card">
         {/* File type icon */}
         <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
           <FileIcon doc={doc} />
