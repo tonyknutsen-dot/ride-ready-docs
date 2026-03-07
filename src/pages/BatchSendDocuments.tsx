@@ -588,7 +588,7 @@ const BatchSendDocuments = () => {
         subtitle="Submit compliance documents to councils, insurers, and auditors."
         icon={<Send className="h-5 w-5 text-primary" />}
         showBackButton
-        backTo="/documents"
+        backTo="/overview"
       />
 
       {/* Helper text */}
