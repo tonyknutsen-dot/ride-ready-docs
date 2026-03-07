@@ -31,37 +31,8 @@ const ExportActionsDialog = ({ open, onOpenChange, result }: ExportActionsDialog
 
   if (!result) return null;
 
-  const isPdf = result.blob.type === 'application/pdf' || result.fileName.toLowerCase().endsWith('.pdf');
-
-  const handleView = async () => {
-    if (isPdf) {
-      const prepared = await createPdfViewerUrlFromBlob(result.blob);
-
-      console.info('[PDF DEBUG][ImmediateExport] open-view', {
-        fileName: result.fileName,
-        blobSize: result.blob.size,
-        blobType: result.blob.type || '(empty)',
-        normalizedBlobType: prepared.normalizedBlob.type,
-        signature: prepared.signature,
-        validPdfSignature: prepared.validPdf,
-        viewerSourceType: 'blob-url',
-      });
-
-      if (!prepared.validPdf) {
-        revokeObjectUrl(prepared.url);
-        toast({ title: 'Invalid PDF', description: 'Generated file is not a valid PDF.', variant: 'destructive' });
-        return;
-      }
-
-      setPreviewUrl((prev) => {
-        if (prev) revokeObjectUrl(prev);
-        return prepared.url;
-      });
-      setPreviewOpen(true);
-      return;
-    }
-    // Non-PDF files (e.g. CSV) can't be previewed in-app — download instead
-    handleDownload();
+  const handleView = () => {
+    setPreviewOpen(true);
   };
 
   const handleDownload = () => {
