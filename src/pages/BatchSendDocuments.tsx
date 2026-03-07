@@ -726,25 +726,31 @@ const BatchSendDocuments = () => {
 
           {/* Global Documents Panel */}
           {globalDocuments.length > 0 && (
-            <div 
-              className="bg-white border border-border rounded-2xl p-4 flex items-center justify-between gap-3 cursor-pointer group hover:border-primary/40 transition-all"
-              style={{ boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}
-              onClick={() => {
-                // Select all global docs and open send panel without a specific ride
-                setSelectedRide({ id: '__global__', ride_name: 'Global Documents' });
-              }}
+            <button
+              id="global-docs-section"
+              className="w-full text-left group active:scale-[0.99] transition-all"
+              onClick={() => setSelectedRide({ id: '__global__', ride_name: 'Global Documents' })}
             >
-              <div className="flex items-center gap-3">
-                <span className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.08)' }}>
-                  <Building2 className="h-5 w-5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                </span>
-                <div>
-                  <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Global Compliance Documents</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'hsl(215 19% 50%)' }}>Insurance, policies &amp; company-wide documents · {globalDocuments.length} files</p>
+              <div className="p-4 rounded-2xl border-2 border-border bg-card shadow-sm transition-all group-hover:border-primary/40">
+                <div className="flex items-start gap-3">
+                  <span className="flex items-center justify-center w-10 h-10 rounded-xl shrink-0 bg-primary/10">
+                    <Building2 className="h-5 w-5 text-primary" strokeWidth={2} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-foreground group-hover:text-primary transition-colors">Global Compliance Documents</p>
+                    <p className="text-xs mt-0.5 text-muted-foreground">Insurance, policies &amp; company-wide documents · {globalDocuments.length} files</p>
+                    <p className="text-[11px] mt-1.5 text-muted-foreground/80 italic">These can be included in any submission pack</p>
+                  </div>
+                </div>
+                <div className="mt-3 pt-3 border-t border-border">
+                  <span className="w-full inline-flex items-center justify-center gap-2 text-xs font-semibold text-primary bg-primary/8 hover:bg-primary/15 rounded-lg py-2.5 min-h-[40px] transition-colors">
+                    <Shield className="h-3.5 w-3.5" strokeWidth={2} />
+                    Build Compliance Pack
+                    <ChevronRight className="h-3.5 w-3.5" />
+                  </span>
                 </div>
               </div>
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground group-hover:text-primary transition-colors" />
-            </div>
+            </button>
           )}
         </div>
       ) : (
