@@ -111,7 +111,19 @@ const QuickSendDialog = ({ open, onOpenChange, documentIds, documentName }: Quic
             </Button>
           </div>
         ) : (
-          <div className="space-y-4 pt-1">
+        <div className="space-y-4 pt-1">
+            {/* Attached document indicator */}
+            {documentName && (
+              <div className="flex items-center gap-2.5 bg-primary/5 border border-primary/20 rounded-xl px-3 py-2.5">
+                <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Mail className="h-4 w-4 text-primary" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-muted-foreground">ATTACHED DOCUMENT</p>
+                  <p className="text-xs font-medium text-foreground truncate">{documentName}</p>
+                </div>
+              </div>
+            )}
             {/* Sender info */}
             {profile && (profile.company_name || profile.controller_name) && (
               <div className="bg-muted/50 border border-border rounded-xl p-3">
