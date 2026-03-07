@@ -819,22 +819,22 @@ const BatchSendDocuments = () => {
             )}
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid lg:grid-cols-2 gap-4">
             {/* Left Column - Document Selection */}
-            <div className="space-y-4">
-              <div className="bg-white border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.08)', borderColor: 'hsl(215 19% 85%)' }}>
-                <div className="px-5 py-4 border-b flex items-center justify-between gap-2" style={{ borderColor: 'hsl(215 19% 88%)', backgroundColor: 'hsl(210 30% 97%)' }}>
-                  <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Select Documents</p>
+            <div className="space-y-3">
+              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2 bg-muted/30">
+                  <p className="text-[13px] font-bold text-foreground">Select Documents</p>
                   {selectedDocuments.length > 0 && (
-                    <Badge variant="secondary" className="text-xs shrink-0 font-semibold">{selectedDocuments.length} selected</Badge>
+                    <Badge variant="secondary" className="text-[10px] shrink-0 font-semibold">{selectedDocuments.length} selected</Badge>
                   )}
                 </div>
-                <div className="space-y-3 p-4">
+                <div className="space-y-2 p-3">
                   {/* File size indicator */}
                   {selectedDocuments.length > 0 && (
-                    <div className="flex items-center justify-between text-xs bg-secondary/50 border border-primary/20 rounded-lg px-2 sm:px-3 py-2">
+                    <div className="flex items-center justify-between text-xs bg-secondary/50 border border-border rounded-lg px-2.5 py-1.5">
                       <span className="text-muted-foreground">Total size:</span>
-                      <Badge variant={exceedsEmailLimit ? "destructive" : "outline"} className="text-xs">
+                      <Badge variant={exceedsEmailLimit ? "destructive" : "outline"} className="text-[10px] h-4">
                         {formatFileSize(totalFileSize)}
                       </Badge>
                     </div>
@@ -842,28 +842,28 @@ const BatchSendDocuments = () => {
 
                   {/* Send method selector */}
                   {(exceedsEmailLimit || sendMethod !== 'auto') && (
-                    <div className="bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-                      <div className="flex gap-2 text-blue-700 dark:text-blue-400 mb-3">
-                        <Info className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                        <div className="text-xs">
+                    <div className="bg-info/5 border border-info/20 rounded-lg p-2.5">
+                      <div className="flex gap-2 text-info mb-2">
+                        <Info className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                        <div className="text-[11px]">
                           <p className="font-medium">Large file size ({totalSizeMB.toFixed(1)}MB)</p>
-                          <p className="text-muted-foreground mt-0.5">Choose how to send these documents</p>
+                          <p className="text-muted-foreground mt-0.5">Choose how to send</p>
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-2 gap-1.5">
                         <button
                           type="button"
                           onClick={() => setSendMethod('links')}
                           className={cn(
-                            "flex items-center gap-2 p-2.5 rounded-lg border-2 transition-all text-left",
+                            "flex items-center gap-1.5 p-2 rounded-lg border transition-all text-left",
                             (sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit))
-                              ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                              ? "border-primary bg-primary/5"
                               : "border-border hover:border-primary/50"
                           )}
                         >
-                          <Link className="h-4 w-4 text-primary shrink-0" />
+                          <Link className="h-3.5 w-3.5 text-primary shrink-0" />
                           <div>
-                            <p className="text-xs font-medium">Download Link</p>
+                            <p className="text-[11px] font-medium">Download Link</p>
                             <p className="text-[10px] text-muted-foreground">Recommended</p>
                           </div>
                         </button>
@@ -871,23 +871,23 @@ const BatchSendDocuments = () => {
                           type="button"
                           onClick={() => setSendMethod('attachments')}
                           className={cn(
-                            "flex items-center gap-2 p-2.5 rounded-lg border-2 transition-all text-left",
+                            "flex items-center gap-1.5 p-2 rounded-lg border transition-all text-left",
                             sendMethod === 'attachments'
-                              ? "border-primary bg-primary/5 ring-1 ring-primary/20"
+                              ? "border-primary bg-primary/5"
                               : "border-border hover:border-primary/50"
                           )}
                         >
-                          <Paperclip className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <Paperclip className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <div>
-                            <p className="text-xs font-medium">Attachments</p>
+                            <p className="text-[11px] font-medium">Attachments</p>
                             <p className="text-[10px] text-muted-foreground">Multiple emails</p>
                           </div>
                         </button>
                       </div>
                       {(sendMethod === 'links' || (sendMethod === 'auto' && exceedsEmailLimit)) && (
-                        <p className="text-[10px] text-muted-foreground mt-2 flex items-center gap-1">
+                        <p className="text-[10px] text-muted-foreground mt-1.5 flex items-center gap-1">
                           <Link className="h-3 w-3" />
-                          Recipient will receive a secure link valid for 7 days
+                          Secure link valid for 7 days
                         </p>
                       )}
                     </div>
@@ -896,20 +896,20 @@ const BatchSendDocuments = () => {
                   {/* Check Records for this ride */}
                   {currentRideCheckRecords.length > 0 && (
                     <Collapsible open={checkRecordsExpanded} onOpenChange={setCheckRecordsExpanded}>
-                      <div className="border-2 border-green-500/20 rounded-lg">
-                        <CollapsibleTrigger className="w-full px-2 sm:px-4 py-2 sm:py-3 flex items-center justify-between hover:bg-green-500/5 transition-colors gap-2">
-                          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-                            <ClipboardCheck className="h-4 w-4 text-green-600 shrink-0" />
-                            <span className="font-medium text-xs sm:text-sm truncate">Safety Check Records</span>
-                            <Badge variant="outline" className="text-xs shrink-0 border-green-500/30 text-green-600">
+                      <div className="border border-success/20 rounded-lg">
+                        <CollapsibleTrigger className="w-full px-3 py-2 flex items-center justify-between hover:bg-success/5 transition-colors gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <ClipboardCheck className="h-3.5 w-3.5 text-success shrink-0" />
+                            <span className="font-medium text-xs truncate">Safety Check Records</span>
+                            <Badge variant="outline" className="text-[10px] h-4 shrink-0 border-success/30 text-success">
                               {currentRideCheckRecords.length}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                          <div className="flex items-center gap-1 shrink-0">
                             <span 
                               role="button"
                               tabIndex={0}
-                              className="h-6 sm:h-7 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground cursor-pointer"
+                              className="h-6 text-[11px] px-1.5 inline-flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 const ids = currentRideCheckRecords.map(d => d.id);
@@ -933,35 +933,36 @@ const BatchSendDocuments = () => {
                                 }
                               }}
                             >
-                              {currentRideCheckRecords.every(d => selectedDocuments.includes(d.id)) ? 'Deselect' : 'Select All'}
+                              {currentRideCheckRecords.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
                             </span>
-                            <ChevronDown className="h-4 w-4" />
+                            <ChevronDown className="h-3.5 w-3.5" />
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <div className="px-3 pb-3 space-y-2">
+                          <div className="px-2 pb-2 space-y-1">
                             {currentRideCheckRecords.map(doc => (
                               <label 
                                 key={doc.id} 
-                                className={`flex items-center gap-3 p-3.5 border-2 rounded-xl cursor-pointer transition-all bg-white ${selectedDocuments.includes(doc.id) ? 'border-green-500 bg-green-50/50' : 'border-border hover:border-green-400/50'}`}
-                                style={{ boxShadow: selectedDocuments.includes(doc.id) ? '0 0 0 3px rgba(22,163,74,0.08)' : '0 2px 6px rgba(0,0,0,0.05)' }}
+                                className={cn(
+                                  "flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors min-h-[40px]",
+                                  selectedDocuments.includes(doc.id)
+                                    ? 'bg-success/10 border border-success/30'
+                                    : 'hover:bg-muted/50 border border-transparent'
+                                )}
                               >
                                 <Checkbox
                                   checked={selectedDocuments.includes(doc.id)}
                                   onCheckedChange={() => handleDocumentToggle(doc.id)}
                                   className="shrink-0"
                                 />
-                                <div className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0" style={{ backgroundColor: 'hsl(142 76% 96%)' }}>
-                                  <FileText className="h-4 w-4" style={{ color: 'hsl(142 76% 36%)' }} strokeWidth={2} />
-                                </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold break-words leading-tight" style={{ color: 'hsl(222 84% 5%)' }}>{doc.document_name}</p>
-                                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
-                                    <span className="text-[11px]" style={{ color: 'hsl(215 19% 55%)' }}>
+                                  <p className="text-xs font-medium text-foreground truncate">{doc.document_name}</p>
+                                  <div className="flex items-center gap-1.5 mt-0.5">
+                                    <span className="text-[10px] text-muted-foreground">
                                       {doc.uploaded_at && format(new Date(doc.uploaded_at), 'dd MMM yyyy')}
                                     </span>
                                     {doc.file_size && (
-                                      <span className="text-[11px]" style={{ color: 'hsl(215 19% 55%)' }}>· {formatFileSize(doc.file_size)}</span>
+                                      <span className="text-[10px] text-muted-foreground">· {formatFileSize(doc.file_size)}</span>
                                     )}
                                   </div>
                                 </div>
@@ -976,20 +977,18 @@ const BatchSendDocuments = () => {
                   {/* Ride Documents */}
                   {currentRideDocuments.length > 0 && (
                     <Collapsible defaultOpen>
-                      <div className="border rounded-xl overflow-hidden" style={{ borderColor: 'hsl(215 19% 85%)' }}>
-                        <CollapsibleTrigger className="w-full px-4 py-3 flex items-center justify-between hover:bg-secondary/50 transition-colors gap-2 bg-white">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="flex items-center justify-center w-6 h-6 rounded-lg" style={{ backgroundColor: 'hsl(217 91% 97%)' }}>
-                              <FileText className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                            </span>
-                            <span className="font-semibold text-xs" style={{ color: 'hsl(222 84% 5%)' }}>Documents</span>
-                            <Badge variant="outline" className="text-xs shrink-0">{currentRideDocuments.length}</Badge>
+                      <div className="border border-border rounded-lg">
+                        <CollapsibleTrigger className="w-full px-3 py-2 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <FileText className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
+                            <span className="font-medium text-xs text-foreground">Documents</span>
+                            <Badge variant="outline" className="text-[10px] h-4 shrink-0">{currentRideDocuments.length}</Badge>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             <span 
                               role="button"
                               tabIndex={0}
-                              className="h-6 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-secondary text-muted-foreground cursor-pointer"
+                              className="h-6 text-[11px] px-1.5 inline-flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSelectAllRide(selectedRide.id, currentRideDocuments);
@@ -1001,37 +1000,37 @@ const BatchSendDocuments = () => {
                                 }
                               }}
                             >
-                              <span className="hidden sm:inline">{currentRideDocuments.every(d => selectedDocuments.includes(d.id)) ? 'Deselect All' : 'Select All'}</span>
-                              <span className="sm:hidden">{currentRideDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}</span>
+                              {currentRideDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
                             </span>
-                            <ChevronDown className="h-4 w-4" />
+                            <ChevronDown className="h-3.5 w-3.5" />
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                         <div className="p-3 pt-2 space-y-2">
+                          <div className="px-2 pb-2 space-y-1">
                             {currentRideDocuments.map(doc => (
                               <label 
                                 key={doc.id} 
-                                className={`flex items-center gap-3 p-3.5 border-2 rounded-xl cursor-pointer transition-all bg-white ${selectedDocuments.includes(doc.id) ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/40'}`}
-                                style={{ boxShadow: selectedDocuments.includes(doc.id) ? '0 0 0 3px rgba(30,58,95,0.08)' : '0 2px 6px rgba(0,0,0,0.05)' }}
+                                className={cn(
+                                  "flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors min-h-[40px]",
+                                  selectedDocuments.includes(doc.id)
+                                    ? 'bg-primary/8 border border-primary/25'
+                                    : 'hover:bg-muted/50 border border-transparent'
+                                )}
                               >
                                 <Checkbox
                                   checked={selectedDocuments.includes(doc.id)}
                                   onCheckedChange={() => handleDocumentToggle(doc.id)}
                                   className="shrink-0"
                                 />
-                                <div className="flex items-center justify-center w-9 h-9 rounded-xl shrink-0" style={{ backgroundColor: selectedDocuments.includes(doc.id) ? 'hsl(213 52% 24% / 0.12)' : 'hsl(217 91% 97%)' }}>
-                                  <FileText className="h-4 w-4" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                                </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-semibold break-words leading-tight" style={{ color: 'hsl(222 84% 5%)' }}>{doc.document_name}</p>
-                                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
-                                    <span className="text-[11px] font-medium px-1.5 py-0.5 rounded-md" style={{ backgroundColor: 'hsl(215 19% 95%)', color: 'hsl(215 19% 40%)' }}>{doc.document_type}</span>
+                                  <p className="text-xs font-medium text-foreground truncate">{doc.document_name}</p>
+                                  <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                    <span className="text-[10px] text-muted-foreground">{doc.document_type}</span>
                                     {doc.expires_at && isExpiringSoon(doc.expires_at) && (
-                                      <Badge variant="destructive" className="text-[10px]">Expiring</Badge>
+                                      <Badge variant="destructive" className="text-[9px] h-3.5 px-1">Expiring</Badge>
                                     )}
                                     {doc.file_size && (
-                                      <span className="text-[11px]" style={{ color: 'hsl(215 19% 55%)' }}>{formatFileSize(doc.file_size)}</span>
+                                      <span className="text-[10px] text-muted-foreground">{formatFileSize(doc.file_size)}</span>
                                     )}
                                   </div>
                                 </div>
@@ -1043,23 +1042,21 @@ const BatchSendDocuments = () => {
                     </Collapsible>
                   )}
 
-                  {/* Global Documents - always available */}
+                  {/* Global Documents */}
                   {globalDocuments.length > 0 && (
                     <Collapsible defaultOpen={currentRideDocuments.length === 0}>
-                      <div className="border rounded-xl overflow-hidden" style={{ backgroundColor: 'hsl(210 40% 98%)', borderColor: 'hsl(215 19% 85%)' }}>
-                        <CollapsibleTrigger className="w-full px-4 py-3 flex items-center justify-between hover:bg-secondary/50 transition-colors gap-2">
-                          <div className="flex items-center gap-2 min-w-0">
-                            <span className="flex items-center justify-center w-6 h-6 rounded-lg" style={{ backgroundColor: 'hsl(213 52% 24% / 0.1)' }}>
-                              <Building2 className="h-3.5 w-3.5 shrink-0" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                            </span>
-                            <span className="font-semibold text-xs" style={{ color: 'hsl(222 84% 5%)' }}>Global Compliance Documents</span>
-                            <Badge variant="outline" className="text-xs shrink-0">{globalDocuments.length}</Badge>
+                      <div className="border border-border rounded-lg bg-muted/20">
+                        <CollapsibleTrigger className="w-full px-3 py-2 flex items-center justify-between hover:bg-muted/50 transition-colors gap-2">
+                          <div className="flex items-center gap-1.5 min-w-0">
+                            <Building2 className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
+                            <span className="font-medium text-xs text-foreground">Global Documents</span>
+                            <Badge variant="outline" className="text-[10px] h-4 shrink-0">{globalDocuments.length}</Badge>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             <span 
                               role="button"
                               tabIndex={0}
-                              className="h-6 text-xs px-2 inline-flex items-center justify-center rounded-md hover:bg-secondary text-muted-foreground cursor-pointer"
+                              className="h-6 text-[11px] px-1.5 inline-flex items-center justify-center rounded-md hover:bg-accent text-muted-foreground cursor-pointer"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleSelectAllGlobal();
@@ -1071,37 +1068,37 @@ const BatchSendDocuments = () => {
                                 }
                               }}
                             >
-                              <span className="hidden sm:inline">{globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'Deselect All' : 'Select All'}</span>
-                              <span className="sm:hidden">{globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}</span>
+                              {globalDocuments.every(d => selectedDocuments.includes(d.id)) ? 'None' : 'All'}
                             </span>
-                            <ChevronDown className="h-4 w-4" />
+                            <ChevronDown className="h-3.5 w-3.5" />
                           </div>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <div className="p-3 space-y-2">
+                          <div className="px-2 pb-2 space-y-1">
                             {globalDocuments.map(doc => (
                               <label 
                                 key={doc.id} 
-                                className="flex items-start gap-3 p-3 border border-border rounded-xl cursor-pointer hover:border-primary/50 hover:bg-secondary/50 transition-all bg-white"
-                                style={{ boxShadow: '0 1px 3px rgba(0,0,0,0.04)' }}
+                                className={cn(
+                                  "flex items-center gap-2.5 px-2.5 py-2 rounded-lg cursor-pointer transition-colors min-h-[40px]",
+                                  selectedDocuments.includes(doc.id)
+                                    ? 'bg-primary/8 border border-primary/25'
+                                    : 'hover:bg-muted/50 border border-transparent'
+                                )}
                               >
                                 <Checkbox
                                   checked={selectedDocuments.includes(doc.id)}
                                   onCheckedChange={() => handleDocumentToggle(doc.id)}
-                                  className="mt-0.5 shrink-0"
+                                  className="shrink-0"
                                 />
-                                <div className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.08)' }}>
-                                  <Building2 className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                                </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-semibold break-words leading-tight" style={{ color: 'hsl(222 84% 5%)' }}>{doc.document_name}</p>
-                                  <div className="flex items-center gap-2 flex-wrap mt-1">
-                                    <Badge variant="outline" className="text-[10px]">{doc.document_type}</Badge>
+                                  <p className="text-xs font-medium text-foreground truncate">{doc.document_name}</p>
+                                  <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
+                                    <span className="text-[10px] text-muted-foreground">{doc.document_type}</span>
                                     {doc.expires_at && isExpiringSoon(doc.expires_at) && (
-                                      <Badge variant="destructive" className="text-[10px]">Expiring</Badge>
+                                      <Badge variant="destructive" className="text-[9px] h-3.5 px-1">Expiring</Badge>
                                     )}
                                     {doc.file_size && (
-                                      <span className="text-[11px]" style={{ color: 'hsl(215 19% 50%)' }}>{formatFileSize(doc.file_size)}</span>
+                                      <span className="text-[10px] text-muted-foreground">{formatFileSize(doc.file_size)}</span>
                                     )}
                                   </div>
                                 </div>
@@ -1116,7 +1113,7 @@ const BatchSendDocuments = () => {
                   {/* Empty state */}
                   {currentRideDocuments.length === 0 && currentRideCheckRecords.length === 0 && globalDocuments.length === 0 && (
                     <div className="text-center py-8">
-                      <FileText className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                      <FileText className="h-8 w-8 text-muted-foreground/50 mx-auto mb-2" />
                       <p className="text-sm text-muted-foreground">No documents available</p>
                       <p className="text-xs text-muted-foreground mt-1">Upload documents to this item first</p>
                     </div>
@@ -1126,25 +1123,23 @@ const BatchSendDocuments = () => {
             </div>
 
             {/* Right Column - Recipient & Send */}
-            <div className="space-y-4">
+            <div className="space-y-3">
               {/* Sender Info */}
-              <div className="bg-white border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.08)', borderColor: 'hsl(215 19% 85%)' }}>
-                <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: 'hsl(215 19% 88%)', backgroundColor: 'hsl(210 30% 97%)' }}>
-                  <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.12)' }}>
-                    <Users className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                  </span>
-                  <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Your Information</p>
+              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                <div className="px-4 py-3 border-b border-border flex items-center gap-2.5 bg-muted/30">
+                  <Users className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
+                  <p className="text-[13px] font-bold text-foreground">Your Information</p>
                 </div>
-                <div className="px-5 py-4">
-                  <div className="text-xs space-y-1.5" style={{ color: 'hsl(215 19% 40%)' }}>
+                <div className="px-4 py-3">
+                  <div className="text-xs space-y-1 text-muted-foreground">
                     {profile?.company_name && (
-                      <p className="break-words"><span className="font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Company:</span> {profile.company_name}</p>
+                      <p className="break-words"><span className="font-semibold text-foreground">Company:</span> {profile.company_name}</p>
                     )}
                     {profile?.controller_name && (
-                      <p className="break-words"><span className="font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Controller:</span> {profile.controller_name}</p>
+                      <p className="break-words"><span className="font-semibold text-foreground">Controller:</span> {profile.controller_name}</p>
                     )}
                     {user?.email && (
-                      <p className="break-words"><span className="font-semibold" style={{ color: 'hsl(222 84% 5%)' }}>Email:</span> {user.email}</p>
+                      <p className="break-words"><span className="font-semibold text-foreground">Email:</span> {user.email}</p>
                     )}
                     {!isStaff && !profile?.company_name && !profile?.controller_name && (
                       <p className="text-destructive italic">Please complete your profile in Settings</p>
@@ -1155,19 +1150,17 @@ const BatchSendDocuments = () => {
 
               {/* Saved Recipients */}
               {savedRecipients.length > 0 && (
-                <div className="bg-white border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.08)', borderColor: 'hsl(215 19% 85%)' }}>
-                  <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: 'hsl(215 19% 88%)', backgroundColor: 'hsl(210 30% 97%)' }}>
-                    <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.12)' }}>
-                      <BookUser className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                    </span>
-                    <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Saved Recipients</p>
+                <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                  <div className="px-4 py-3 border-b border-border flex items-center gap-2.5 bg-muted/30">
+                    <BookUser className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
+                    <p className="text-[13px] font-bold text-foreground">Saved Recipients</p>
                   </div>
-                  <div className="px-5 py-4">
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
+                  <div className="px-3 py-2.5">
+                    <div className="space-y-1 max-h-40 overflow-y-auto">
                       {savedRecipients.map(recipient => (
                         <div 
                           key={recipient.id}
-                          className="flex items-center gap-2 p-3 border border-border rounded-xl hover:border-primary/50 hover:bg-secondary/50 cursor-pointer group transition-all"
+                          className="flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/50 cursor-pointer group transition-colors min-h-[40px]"
                           onClick={() => handleSelectRecipient(recipient.id)}
                         >
                           <button
@@ -1177,14 +1170,14 @@ const BatchSendDocuments = () => {
                             }}
                             className="shrink-0"
                           >
-                            <Star className={`h-4 w-4 ${recipient.is_favorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
+                            <Star className={`h-3.5 w-3.5 ${recipient.is_favorite ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground'}`} />
                           </button>
                           <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold truncate" style={{ color: 'hsl(222 84% 5%)' }}>{recipient.name}</p>
-                            <p className="text-xs truncate" style={{ color: 'hsl(215 19% 50%)' }}>{recipient.email}</p>
+                            <p className="text-xs font-medium text-foreground truncate">{recipient.name}</p>
+                            <p className="text-[11px] text-muted-foreground truncate">{recipient.email}</p>
                           </div>
                           {recipient.organization_type && (
-                            <Badge variant="outline" className="text-xs hidden sm:inline-flex">{recipient.organization_type}</Badge>
+                            <Badge variant="outline" className="text-[10px] h-4 hidden sm:inline-flex">{recipient.organization_type}</Badge>
                           )}
                           <button
                             onClick={(e) => {
@@ -1193,7 +1186,7 @@ const BatchSendDocuments = () => {
                             }}
                             className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
                           >
-                            <Trash2 className="h-4 w-4 text-destructive" />
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
                           </button>
                         </div>
                       ))}
@@ -1203,13 +1196,11 @@ const BatchSendDocuments = () => {
               )}
 
               {/* Recipient Form */}
-              <div className="bg-white border rounded-2xl overflow-hidden" style={{ boxShadow: '0 4px 14px rgba(0,0,0,0.08)', borderColor: 'hsl(215 19% 85%)' }}>
-                <div className="px-5 py-4 border-b flex items-center justify-between gap-2" style={{ borderColor: 'hsl(215 19% 88%)', backgroundColor: 'hsl(210 30% 97%)' }}>
-                  <div className="flex items-center gap-3">
-                    <span className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0" style={{ backgroundColor: 'hsl(213 52% 24% / 0.12)' }}>
-                      <Mail className="h-3.5 w-3.5" style={{ color: 'hsl(213 52% 24%)' }} strokeWidth={2} />
-                    </span>
-                    <p className="text-sm font-bold" style={{ color: 'hsl(222 84% 5%)' }}>Recipient Details</p>
+              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between gap-2 bg-muted/30">
+                  <div className="flex items-center gap-2.5">
+                    <Mail className="h-3.5 w-3.5 text-primary shrink-0" strokeWidth={2} />
+                    <p className="text-[13px] font-bold text-foreground">Recipient Details</p>
                   </div>
                 <Dialog open={showSaveRecipientDialog} onOpenChange={setShowSaveRecipientDialog}>
                   <DialogTrigger asChild>
@@ -1220,8 +1211,7 @@ const BatchSendDocuments = () => {
                       disabled={!recipientEmail || !recipientName}
                     >
                       <Plus className="h-3 w-3 mr-1" />
-                      <span className="hidden sm:inline">Save Recipient</span>
-                      <span className="sm:hidden">Save</span>
+                      Save
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-sm">
@@ -1260,36 +1250,36 @@ const BatchSendDocuments = () => {
                   </DialogContent>
                 </Dialog>
                 </div>
-                <div className="space-y-4 px-5 py-4">
+                <div className="space-y-3 px-4 py-3">
               <div>
-                <Label htmlFor="recipientEmail" className="text-[13px] font-semibold">Email Address *</Label>
+                <Label htmlFor="recipientEmail" className="text-xs font-semibold">Email Address *</Label>
                 <Input
                   id="recipientEmail"
                   type="email"
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
                   placeholder="council@example.gov.uk"
-                  className="mt-1.5"
+                  className="mt-1 h-9"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="recipientName" className="text-[13px] font-semibold">Name / Organization</Label>
+                <Label htmlFor="recipientName" className="text-xs font-semibold">Name / Organization</Label>
                 <Input
                   id="recipientName"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   placeholder="Local Authority, Trade Association, etc."
-                  className="mt-1.5"
+                  className="mt-1 h-9"
                 />
               </div>
               <div>
-                <div className="flex items-center justify-between gap-2 mb-1.5">
-                  <Label htmlFor="message" className="text-[13px] font-semibold">Message (Optional)</Label>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <Label htmlFor="message" className="text-xs font-semibold">Message (Optional)</Label>
                   <div className="flex items-center gap-1">
                     {emailTemplates.length > 0 && (
                       <Select onValueChange={handleSelectTemplate}>
-                        <SelectTrigger className="h-7 text-xs w-auto min-w-[100px]">
+                        <SelectTrigger className="h-6 text-[11px] w-auto min-w-[90px]">
                           <SelectValue placeholder="Use template" />
                         </SelectTrigger>
                         <SelectContent>
@@ -1309,11 +1299,11 @@ const BatchSendDocuments = () => {
                         <Button 
                           variant="ghost" 
                           size="sm" 
-                          className="h-7 text-xs px-2"
+                          className="h-6 text-[11px] px-1.5"
                           disabled={!message}
                         >
-                          <Plus className="h-3 w-3 mr-1" />
-                          <span className="hidden sm:inline">Save</span>
+                          <Plus className="h-3 w-3 mr-0.5" />
+                          Save
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-sm">
@@ -1365,7 +1355,7 @@ const BatchSendDocuments = () => {
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   placeholder="Please find attached the requested documentation for our equipment..."
-                  className="resize-none"
+                  className="resize-none text-xs"
                   rows={3}
                 />
               </div>
@@ -1373,16 +1363,16 @@ const BatchSendDocuments = () => {
               {/* Saved Templates List */}
               {emailTemplates.length > 0 && (
                 <Collapsible>
-                  <CollapsibleTrigger className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  <CollapsibleTrigger className="flex items-center gap-2 text-[11px] text-muted-foreground hover:text-foreground transition-colors">
                     <ChevronRight className="h-3 w-3" />
                     Manage {emailTemplates.length} saved template{emailTemplates.length !== 1 ? 's' : ''}
                   </CollapsibleTrigger>
                   <CollapsibleContent className="pt-2">
-                    <div className="space-y-1.5 max-h-32 overflow-y-auto">
+                    <div className="space-y-1 max-h-28 overflow-y-auto">
                       {emailTemplates.map(template => (
                         <div 
                           key={template.id}
-                          className="flex items-center gap-2 p-2 border rounded text-xs group"
+                          className="flex items-center gap-2 p-1.5 border border-border rounded text-[11px] group"
                         >
                           <button
                             onClick={() => handleToggleDefaultTemplate(template.id, template.is_default)}
@@ -1392,14 +1382,11 @@ const BatchSendDocuments = () => {
                           </button>
                           <div className="flex-1 min-w-0">
                             <p className="font-medium truncate">{template.name}</p>
-                            {template.recipient_type && (
-                              <Badge variant="outline" className="text-xs mt-0.5">{template.recipient_type}</Badge>
-                            )}
                           </div>
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-6 px-2 text-xs"
+                            className="h-5 px-1.5 text-[11px]"
                             onClick={() => handleSelectTemplate(template.id)}
                           >
                             Use
@@ -1422,8 +1409,8 @@ const BatchSendDocuments = () => {
               <Button 
                 onClick={handleSend} 
                 disabled={sending || !recipientEmail || selectedDocuments.length === 0}
-                className="w-full"
-                size="lg"
+                className="w-full min-h-[44px]"
+                size="default"
               >
                 {sending ? (
                   <>
@@ -1439,15 +1426,15 @@ const BatchSendDocuments = () => {
               </Button>
 
               {/* Compliance reassurance footer */}
-              <div className="flex items-center justify-center gap-4 pt-1">
-                <span className="text-[11px] flex items-center gap-1" style={{ color: 'hsl(215 19% 50%)' }}>
-                  <span className="text-success">✓</span> Secure transmission
+              <div className="flex items-center justify-center gap-3 flex-wrap">
+                <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
+                  <span className="text-success">✓</span> Secure
                 </span>
-                <span className="text-[11px] flex items-center gap-1" style={{ color: 'hsl(215 19% 50%)' }}>
-                  <span className="text-success">✓</span> PDF bundle generated
+                <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
+                  <span className="text-success">✓</span> PDF bundle
                 </span>
-                <span className="text-[11px] flex items-center gap-1" style={{ color: 'hsl(215 19% 50%)' }}>
-                  <span className="text-success">✓</span> Audit log recorded
+                <span className="text-[10px] flex items-center gap-1 text-muted-foreground">
+                  <span className="text-success">✓</span> Audit logged
                 </span>
               </div>
                 </div>
