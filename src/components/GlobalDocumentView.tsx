@@ -28,7 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
-import { getSignedStorageUrl, shareStoredFileOrFallback } from '@/utils/exportFileActions';
+import { getSignedStorageUrl } from '@/utils/exportFileActions';
 
 type Document = Tables<'documents'>;
 
