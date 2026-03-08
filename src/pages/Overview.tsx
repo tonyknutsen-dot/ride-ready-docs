@@ -99,23 +99,17 @@ const Overview = () => {
             </button>
           </div>
 
-          {/* ── ACTION NEEDED SUMMARY ──────────────── */}
-          {hasActionNeeded ? (
+          {/* ── Subtle action-needed hint ──────────── */}
+          {hasActionNeeded && (
             <button
               onClick={() => navigate('/notifications?tab=action')}
-              className="w-full flex items-center gap-3 p-3 rounded-xl border border-destructive/30 bg-destructive/5 hover:bg-destructive/10 transition-colors text-left"
+              className="w-full flex items-center gap-2 px-1 py-0.5 text-left"
             >
-              <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
-              <span className="text-sm font-medium text-destructive">
-                {actionNeededCount} item{actionNeededCount !== 1 ? 's' : ''} needing attention
+              <span className="text-xs text-muted-foreground">
+                <span className="font-semibold text-foreground">{actionNeededCount}</span> item{actionNeededCount !== 1 ? 's' : ''} need attention
               </span>
-              <ChevronRight className="h-4 w-4 text-destructive/50 ml-auto shrink-0" />
+              <ChevronRight className="h-3 w-3 text-muted-foreground/60" />
             </button>
-          ) : (
-            <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card/60">
-              <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
-              <span className="text-sm text-muted-foreground">No action needed right now</span>
-            </div>
           )}
 
           <ItemLimitWarning />

@@ -364,6 +364,17 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
           )}
         </div>
 
+        {/* Visible View button */}
+        <Button
+          variant="outline"
+          size="sm"
+          className="shrink-0 gap-1.5 h-8 text-xs font-medium"
+          onClick={(e) => { e.stopPropagation(); handleView(doc); }}
+        >
+          <Eye className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">View</span>
+        </Button>
+
         {/* Overflow menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
@@ -372,9 +383,6 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleView(doc); }}>
-              <Eye className="h-4 w-4 mr-2" /> View
-            </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(doc); }}>
               <Download className="h-4 w-4 mr-2" /> Save to Device
             </DropdownMenuItem>
