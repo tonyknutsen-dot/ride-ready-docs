@@ -141,11 +141,11 @@ const NeedsAttentionPanel = () => {
         const evtDaysUntil = daysUntil(evt.due_date);
         const dateLabel = isOperationalCheck
           ? 'Ready to complete'
-          : isOverdue
-            ? `${Math.abs(daysUntil)}d overdue`
-            : daysUntil === 0 ? 'Due today'
-            : daysUntil === 1 ? 'Due tomorrow'
-            : `Due in ${daysUntil}d`;
+          : evtOverdue
+            ? `${Math.abs(evtDaysUntil)}d overdue`
+            : evtDaysUntil === 0 ? 'Due today'
+            : evtDaysUntil === 1 ? 'Due tomorrow'
+            : `Due in ${evtDaysUntil}d`;
 
         let path = '/calendar';
         if (evtType === 'pre_opening_check' || evtType === 'daily_check') {
@@ -166,7 +166,7 @@ const NeedsAttentionPanel = () => {
           type: isOperationalCheck ? 'check_due' : 'inspection_due',
           label: evt.event_name,
           sublabel: `${dateLabel}${rideName ? ` • ${rideName}` : ''}`,
-          urgency: isOverdue ? 'warning' : 'info',
+          urgency: evtOverdue ? 'warning' : 'info',
           path,
         });
       });
