@@ -16,6 +16,8 @@ import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
 import { SendCheckRecordsDialog } from './SendCheckRecordsDialog';
 import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters, isCheckRecord, filterCheckRecords } from './CheckRecordFilters';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
+import PDFViewer from '@/components/PDFViewer';
+import ImageViewer from '@/components/ImageViewer';
 
 type Document = Tables<'documents'>;
 
