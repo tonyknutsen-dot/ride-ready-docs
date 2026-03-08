@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { FileText, Download, Trash2, Calendar, AlertTriangle, Link2, History, ChevronDown, Globe, Send, Filter } from 'lucide-react';
+import { FileText, Download, Trash2, Calendar, AlertTriangle, Link2, History, ChevronDown, Globe, Send, Filter, Eye } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -16,6 +16,8 @@ import DocumentRideAssignmentDialog from './DocumentRideAssignmentDialog';
 import { SendCheckRecordsDialog } from './SendCheckRecordsDialog';
 import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters, isCheckRecord, filterCheckRecords } from './CheckRecordFilters';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
+import PDFViewer from '@/components/PDFViewer';
+import ImageViewer from '@/components/ImageViewer';
 
 type Document = Tables<'documents'>;
 
@@ -55,6 +57,41 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   // Pagination for large sections (safety check records)
   const [checkRecordDisplayLimit, setCheckRecordDisplayLimit] = useState(20);
   const CHECK_RECORD_PAGE_SIZE = 20;
+
+  // Viewer state for in-app document viewing
+
+  const handleViewDoc = async (doc: Document) => {
+    try {
+      const signedUrl = await getSignedStorageUrl(doc.file_path);
+      if (!signedUrl) throw new Error('Could not get file URL');
+      const fp = (doc.file_path || '').toLowerCase();
+      if (fp.endsWith('.pdf')) {
+        setViewerDoc({ url: signedUrl, name: getDocumentDisplayName(doc), type: 'pdf' });
+      } else if (/\.(jpg|jpeg|png|gif|webp|bmp|tiff?)$/i.test(fp)) {
+        setViewerDoc({ url: signedUrl, name: getDocumentDisplayName(doc), type: 'image' });
+      } else {
+        window.open(signedUrl, '_blank');
+      }
+    } catch (err: any) {
+      toast({ title: 'Failed to open', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleViewerDownload = async () => {
+    if (!viewerDoc) return;
+    try {
+      const response = await fetch(viewerDoc.url);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = viewerDoc.name;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: 'Download failed', variant: 'destructive' });
+    }
+  };
 
   // Helper to identify image documents
   const isImageDoc = (doc: Document) => {
@@ -719,6 +756,14 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
 
         {/* Actions */}
         <div className="flex items-center gap-0.5 shrink-0 ml-2">
+          {/* View button — always first */}
+          <button
+            className="p-2 rounded-lg hover:bg-accent transition-colors text-primary"
+            onClick={() => handleViewDoc(doc)}
+            title="View"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
           {/* Toggle global */}
           {!isOlderVersion && !['photo', 'device_photo', 'maintenance', 'check record', 'check_record'].includes(doc.document_type.toLowerCase()) && !doc.file_path?.includes('/check-records/') && (
             <button
@@ -961,6 +1006,26 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           );
         })}
         </div>
+
+        {/* In-app viewers */}
+        {viewerDoc?.type === 'pdf' && (
+          <PDFViewer
+            isOpen={true}
+            onClose={() => setViewerDoc(null)}
+            pdfUrl={viewerDoc.url}
+            title={viewerDoc.name}
+            onDownload={handleViewerDownload}
+          />
+        )}
+        {viewerDoc?.type === 'image' && (
+          <ImageViewer
+            isOpen={true}
+            onClose={() => setViewerDoc(null)}
+            imageUrl={viewerDoc.url}
+            imageName={viewerDoc.name}
+            onDownload={handleViewerDownload}
+          />
+        )}
       </>
     );
   }
@@ -1108,6 +1173,26 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         </CardContent>
       </Card>
       </div>
+
+      {/* In-app viewers */}
+      {viewerDoc?.type === 'pdf' && (
+        <PDFViewer
+          isOpen={true}
+          onClose={() => setViewerDoc(null)}
+          pdfUrl={viewerDoc.url}
+          title={viewerDoc.name}
+          onDownload={handleViewerDownload}
+        />
+      )}
+      {viewerDoc?.type === 'image' && (
+        <ImageViewer
+          isOpen={true}
+          onClose={() => setViewerDoc(null)}
+          imageUrl={viewerDoc.url}
+          imageName={viewerDoc.name}
+          onDownload={handleViewerDownload}
+        />
+      )}
     </>
   );
 };
