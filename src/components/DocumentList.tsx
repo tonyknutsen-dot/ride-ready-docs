@@ -756,6 +756,14 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
 
         {/* Actions */}
         <div className="flex items-center gap-0.5 shrink-0 ml-2">
+          {/* View button — always first */}
+          <button
+            className="p-2 rounded-lg hover:bg-accent transition-colors text-primary"
+            onClick={() => handleViewDoc(doc)}
+            title="View"
+          >
+            <Eye className="w-4 h-4" />
+          </button>
           {/* Toggle global */}
           {!isOlderVersion && !['photo', 'device_photo', 'maintenance', 'check record', 'check_record'].includes(doc.document_type.toLowerCase()) && !doc.file_path?.includes('/check-records/') && (
             <button
