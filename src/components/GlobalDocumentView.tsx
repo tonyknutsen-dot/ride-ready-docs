@@ -491,6 +491,25 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
         </div>
       )}
 
+      {/* Viewers */}
+      {viewerDoc?.type === 'pdf' && (
+        <PDFViewer
+          isOpen
+          onClose={() => setViewerDoc(null)}
+          pdfUrl={viewerDoc.url}
+          pdfName={viewerDoc.name}
+          onDownload={handleViewerDownload}
+        />
+      )}
+      {viewerDoc?.type === 'image' && (
+        <ImageViewer
+          isOpen
+          onClose={() => setViewerDoc(null)}
+          imageUrl={viewerDoc.url}
+          imageName={viewerDoc.name}
+          onDownload={handleViewerDownload}
+        />
+      )}
     </div>
   );
 };
