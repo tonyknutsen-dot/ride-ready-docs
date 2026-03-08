@@ -292,7 +292,7 @@ export default function AdminDashboard() {
               </h2>
               <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
                 <Link to="/admin/users">
-                  <Card className="h-full transition-colors hover:border-primary/40 cursor-pointer">
+                  <Card className="h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-xs sm:text-sm font-medium">Total Users</CardTitle>
                       <Users className="h-4 w-4 text-muted-foreground" />
