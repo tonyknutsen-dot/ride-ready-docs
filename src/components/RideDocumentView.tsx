@@ -365,49 +365,18 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
           )}
         </div>
 
-        {/* Visible View button */}
-        <Button
-          variant="outline"
-          size="sm"
-          className="shrink-0 gap-1.5 h-8 text-xs font-medium"
-          onClick={(e) => { e.stopPropagation(); handleView(doc); }}
-        >
-          <Eye className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">View</span>
-        </Button>
-
-        {/* Overflow menu */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(doc); }}>
-              <Download className="h-4 w-4 mr-2" /> Save to Device
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleCopyLink(doc); }}>
-              <Link2 className="h-4 w-4 mr-2" /> Copy Link
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={(e) => {
-              e.stopPropagation();
-              window.dispatchEvent(new CustomEvent('rrd:replace-doc', {
-                detail: { docId: doc.id, docType: doc.document_type, docName: doc.document_name }
-              }));
-            }}>
-              <RefreshCw className="h-4 w-4 mr-2" /> Replace
-            </DropdownMenuItem>
-            {!showGlobalBadge && (
-              <DropdownMenuItem
-                className="text-destructive"
-                onClick={(e) => { e.stopPropagation(); handleDelete(doc); }}
-              >
-                <Archive className="h-4 w-4 mr-2" /> Delete
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        {/* Canonical actions */}
+        <DocumentRowActions
+          onView={() => handleView(doc)}
+          onDownload={() => handleDownload(doc)}
+          onCopyLink={() => handleCopyLink(doc)}
+          onReplace={() => {
+            window.dispatchEvent(new CustomEvent('rrd:replace-doc', {
+              detail: { docId: doc.id, docType: doc.document_type, docName: doc.document_name }
+            }));
+          }}
+          onDelete={!showGlobalBadge ? () => handleDelete(doc) : undefined}
+        />
       </div>
     );
   };
