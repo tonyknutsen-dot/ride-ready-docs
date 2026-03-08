@@ -139,6 +139,9 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
   const [filter, setFilter] = useState<FilterType>('all');
   const [search, setSearch] = useState('');
 
+  // Viewer state
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: 'pdf' | 'image' } | null>(null);
+
   /* ─── Fetch ─── */
   useEffect(() => {
     if (!effectiveUserId) return;
