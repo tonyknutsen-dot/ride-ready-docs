@@ -130,6 +130,9 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   const [rideOpen, setRideOpen] = useState(true);
   const [globalOpen, setGlobalOpen] = useState(true);
 
+  // Viewer state
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: 'pdf' | 'image' } | null>(null);
+
   /* ─── Fetch ─── */
   useEffect(() => {
     if (!effectiveUserId) return;
