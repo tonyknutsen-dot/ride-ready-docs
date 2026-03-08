@@ -216,6 +216,39 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
 
   /* ─── Actions ─── */
 
+  const handleView = async (doc: Document) => {
+    try {
+      const signedUrl = await getSignedStorageUrl(doc.file_path);
+      if (!signedUrl) throw new Error('Could not get file URL');
+      const fp = doc.file_path || '';
+      if (isPDFFile(fp)) {
+        setViewerDoc({ url: signedUrl, name: doc.document_name, type: 'pdf' });
+      } else if (isImageFile(fp)) {
+        setViewerDoc({ url: signedUrl, name: doc.document_name, type: 'image' });
+      } else {
+        window.open(signedUrl, '_blank');
+      }
+    } catch (err: any) {
+      toast({ title: 'Failed to open', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleViewerDownload = async () => {
+    if (!viewerDoc) return;
+    try {
+      const response = await fetch(viewerDoc.url);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = viewerDoc.name;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: 'Download failed', variant: 'destructive' });
+    }
+  };
+
   const handleCopyLink = async (doc: Document) => {
     try {
       const signedUrl = await getSignedStorageUrl(doc.file_path);
