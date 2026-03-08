@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { isDocExpired, isDocExpiringSoon } from '@/utils/documentHelpers';
+import { countExpiredDocs, countExpiringSoonDocs } from '@/utils/complianceCounts';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
