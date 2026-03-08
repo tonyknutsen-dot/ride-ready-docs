@@ -19,6 +19,9 @@ import {
   isNotificationActionable,
   type NotificationCategory,
 } from '@/utils/notificationClassification';
+import { isDefectCritical } from '@/hooks/useDefectSummary';
+import { isMaintenanceOverdue, isMaintenanceNotificationWorthy } from '@/hooks/useMaintenanceSummary';
+import { DEFECT_SEVERITY_CONFIG } from '@/utils/uiConstants';
 
 /* ── Types ─────────────────────────────────────── */
 
