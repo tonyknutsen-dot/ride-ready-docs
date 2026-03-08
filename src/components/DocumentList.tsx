@@ -1173,11 +1173,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         </CardContent>
       </Card>
       </div>
-    </>
-  );
-  return (
-    <>
-      {content}
 
       {/* In-app viewers */}
       {viewerDoc?.type === 'pdf' && (
