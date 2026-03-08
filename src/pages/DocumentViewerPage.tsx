@@ -632,14 +632,39 @@ const DocumentViewerPage = () => {
         </div>
       </header>
 
-      {/* ── Content: PDF + Sidebar ── */}
+      {/* ── Content: Document + Sidebar ── */}
       <div className="flex-1 flex overflow-hidden">
-        {/* PDF Viewer */}
+        {/* Document Viewer — file-type aware */}
         <div className="flex-1">
-          <PdfCanvasViewer
-            src={pdfUrl}
-            onDownload={handleDownload}
-          />
+          {fileType === 'pdf' && (
+            <PdfCanvasViewer
+              src={pdfUrl}
+              onDownload={handleDownload}
+            />
+          )}
+          {fileType === 'image' && pdfUrl && (
+            <div className="w-full h-full overflow-auto flex items-center justify-center bg-muted/30 p-4">
+              <img
+                src={pdfUrl}
+                alt={docTitle}
+                className="max-w-full max-h-full object-contain rounded-lg shadow-md"
+              />
+            </div>
+          )}
+          {fileType === 'other' && (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-center space-y-3 max-w-xs px-4">
+                <File className="mx-auto h-12 w-12 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Preview not available</p>
+                <p className="text-xs text-muted-foreground">
+                  This file type cannot be previewed in the app. Use the download button to open it on your device.
+                </p>
+                <Button variant="outline" size="sm" onClick={handleDownload}>
+                  <Download className="h-3.5 w-3.5 mr-1.5" /> Download
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Metadata Sidebar */}
