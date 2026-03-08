@@ -65,15 +65,38 @@ const getCategory = (n: Notification): Category => {
 const isActionable = (n: Notification): boolean => {
   const title = n.title?.toLowerCase() ?? '';
   const t = n.type?.toLowerCase() ?? '';
+
+  // ── Explicitly NOT actionable (passive confirmations) ──
+  if (title.includes('maintenance logged') || title.includes('documents sent') || title.includes('check completed')) return false;
+  if (t === 'success') return false;
+
+  // ── Definitely actionable ──
+  // Any open defect (including non-urgent)
+  if (n.related_table === 'defects') return true;
+  if (title.includes('defect') || title.includes('stop use')) return true;
+
+  // Failed checks
+  if (title.includes('failed check') || title.includes('check failure')) return true;
+
+  // Overdue / expired / expiring
   if (title.includes('overdue') || title.includes('expired') || title.includes('expiring')) return true;
-  if (title.includes('missing') || title.includes('missed') || title.includes('stop use')) return true;
-  if (title.includes('unresolved') || title.includes('high priority') || title.includes('critical')) return true;
-  if (title.includes('new defect') || title.includes('high-priority defect')) return true;
-  if (title.includes('failed check')) return true;
   if (title.includes('due soon') || title.includes('due in')) return true;
+
+  // Missed items
+  if (title.includes('missing') || title.includes('missed')) return true;
+
+  // Safety / priority
+  if (title.includes('unresolved') || title.includes('high priority') || title.includes('critical')) return true;
+
+  // Wind warnings
   if (title.includes('wind') && (title.includes('warning') || title.includes('threshold') || title.includes('pack-away'))) return true;
+
+  // Billing
   if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return true;
+
+  // Type-based fallback (but success already excluded above)
   if (t === 'warning' || t === 'error') return true;
+
   return false;
 };
 

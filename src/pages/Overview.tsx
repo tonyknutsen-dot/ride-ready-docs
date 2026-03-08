@@ -17,10 +17,14 @@ import NeedsAttentionPanel from "@/components/NeedsAttentionPanel";
 import DefectReportDialog from "@/components/DefectReportDialog";
 import { Badge } from "@/components/ui/badge";
 import appLogo from "@/assets/app-logo.jpg";
+import { useUnreadNotifications } from "@/hooks/useUnreadNotifications";
+import { useActionNeededCount } from "@/hooks/useActionNeededCount";
 
 const Overview = () => {
   const navigate = useNavigate();
   const { data, isLoading, refetch } = useOverviewData();
+  const unreadCount = useUnreadNotifications();
+  const actionNeededCount = useActionNeededCount();
 
   const handleRefresh = useCallback(async () => {
     await refetch();
@@ -47,6 +51,9 @@ const Overview = () => {
       </div>
     );
   }
+
+  const hasActionNeeded = actionNeededCount > 0;
+  const hasBadge = unreadCount > 0;
 
   return (
     <>
@@ -75,11 +82,41 @@ const Overview = () => {
 
             <button
               onClick={() => navigate('/notifications')}
-              className="relative p-2.5 rounded-xl border border-border bg-card hover:border-primary hover:bg-secondary transition-all"
+              className={`relative p-2.5 rounded-xl border bg-card hover:bg-secondary transition-all ${
+                hasActionNeeded ? 'border-destructive/40 hover:border-destructive' : 'border-border hover:border-primary'
+              }`}
             >
-              <Bell className="h-5 w-5 text-muted-foreground" strokeWidth={2} />
+              <Bell className={`h-5 w-5 ${hasActionNeeded ? 'text-destructive' : 'text-muted-foreground'}`} strokeWidth={2} />
+              {hasBadge && (
+                <span className={`absolute -top-1.5 -right-1.5 flex items-center justify-center min-w-[18px] h-[18px] rounded-full text-[10px] font-bold px-1 ${
+                  hasActionNeeded
+                    ? 'bg-destructive text-destructive-foreground'
+                    : 'bg-primary text-primary-foreground'
+                }`}>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </button>
           </div>
+
+          {/* ── ACTION NEEDED SUMMARY ──────────────── */}
+          {hasActionNeeded ? (
+            <button
+              onClick={() => navigate('/notifications?tab=action')}
+              className="w-full flex items-center gap-3 p-3 rounded-xl border border-destructive/30 bg-destructive/5 hover:bg-destructive/10 transition-colors text-left"
+            >
+              <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+              <span className="text-sm font-medium text-destructive">
+                {actionNeededCount} item{actionNeededCount !== 1 ? 's' : ''} needing attention
+              </span>
+              <ChevronRight className="h-4 w-4 text-destructive/50 ml-auto shrink-0" />
+            </button>
+          ) : (
+            <div className="flex items-center gap-3 p-3 rounded-xl border border-border bg-card/60">
+              <ShieldCheck className="h-4 w-4 text-primary shrink-0" />
+              <span className="text-sm text-muted-foreground">No action needed right now</span>
+            </div>
+          )}
 
           <ItemLimitWarning />
 
