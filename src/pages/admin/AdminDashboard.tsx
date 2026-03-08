@@ -59,6 +59,7 @@ export default function AdminDashboard() {
     testMaintenanceRecords: 0,
   });
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [excludeTestData, setExcludeTestData] = useState(true);
   const [showTestData, setShowTestData] = useState(false);
@@ -119,6 +120,7 @@ export default function AdminDashboard() {
     };
 
     const fetchPayments = async () => {
+      setPaymentLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke('admin-stripe-data');
         if (!error && data?.summary) {
@@ -131,6 +133,8 @@ export default function AdminDashboard() {
         }
       } catch {
         // Payment data is optional — don't block dashboard
+      } finally {
+        setPaymentLoading(false);
       }
     };
 
@@ -148,32 +152,35 @@ export default function AdminDashboard() {
 
   const needsAttentionTotal = stats.unansweredSupport + stats.bugReportsNeedingTriage + totalPendingApprovals;
 
+  // Payment card state helper
+  const paymentValue = (val: number | undefined) => {
+    if (paymentLoading) return '…';
+    if (paymentSummary === null) return '—';
+    return val ?? 0;
+  };
+
   return (
     <AdminLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="space-y-6">
+        {/* Header — compact */}
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Platform overview and triage</p>
+            <h1 className="text-xl md:text-2xl font-bold leading-tight">Admin Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Platform overview and triage</p>
           </div>
 
           {hasTestData && (
-            <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-border bg-muted/30">
-              <FlaskConical className="h-4 w-4 text-muted-foreground shrink-0" />
-              <Label htmlFor="exclude-test-data" className="text-sm font-medium cursor-pointer whitespace-nowrap">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border/60 bg-muted/20 text-xs shrink-0">
+              <FlaskConical className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+              <Label htmlFor="exclude-test-data" className="text-xs cursor-pointer whitespace-nowrap text-muted-foreground">
                 Exclude test data
               </Label>
               <Switch
                 id="exclude-test-data"
                 checked={excludeTestData}
                 onCheckedChange={setExcludeTestData}
+                className="scale-90"
               />
-              {excludeTestData && (
-                <Badge variant="outline" className="text-xs">
-                  Production
-                </Badge>
-              )}
             </div>
           )}
         </div>
@@ -207,8 +214,8 @@ export default function AdminDashboard() {
                 </Card>
               ) : (
                 <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-                  <Link to="/admin/support">
-                    <Card className={`h-full transition-colors hover:border-primary/40 cursor-pointer ${stats.unansweredSupport > 0 ? 'border-destructive/40 bg-destructive/5' : ''}`}>
+                  <Link to="/admin/support" className="group">
+                    <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${stats.unansweredSupport > 0 ? 'border-destructive/40 bg-destructive/5' : ''}`}>
                       <CardContent className="pt-5 pb-4">
                         <div className="flex items-start justify-between">
                           <div>
@@ -220,12 +227,16 @@ export default function AdminDashboard() {
                             <MessageCircle className="h-5 w-5 text-destructive" />
                           </div>
                         </div>
+                        <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                          <span>Review</span>
+                          <ArrowRight className="h-3 w-3" />
+                        </div>
                       </CardContent>
                     </Card>
                   </Link>
 
-                  <Link to="/admin/bug-reports">
-                    <Card className={`h-full transition-colors hover:border-primary/40 cursor-pointer ${stats.bugReportsNeedingTriage > 0 ? 'border-warning/40 bg-warning/5' : ''}`}>
+                  <Link to="/admin/bug-reports" className="group">
+                    <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${stats.bugReportsNeedingTriage > 0 ? 'border-warning/40 bg-warning/5' : ''}`}>
                       <CardContent className="pt-5 pb-4">
                         <div className="flex items-start justify-between">
                           <div>
@@ -237,16 +248,20 @@ export default function AdminDashboard() {
                             <Bug className="h-5 w-5 text-warning-foreground" />
                           </div>
                         </div>
+                        <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                          <span>Triage</span>
+                          <ArrowRight className="h-3 w-3" />
+                        </div>
                       </CardContent>
                     </Card>
                   </Link>
 
-                  <Link to="/admin/ride-requests">
-                    <Card className={`h-full transition-colors hover:border-primary/40 cursor-pointer ${totalPendingApprovals > 0 ? 'border-primary/40 bg-primary/5' : ''}`}>
+                  <Link to="/admin/ride-requests" className="group">
+                    <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${totalPendingApprovals > 0 ? 'border-primary/40 bg-primary/5' : ''}`}>
                       <CardContent className="pt-5 pb-4">
                         <div className="flex items-start justify-between">
                           <div>
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Approvals</p>
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pending Requests</p>
                             <p className="text-3xl font-bold mt-1">{totalPendingApprovals}</p>
                             <p className="text-xs text-muted-foreground mt-1">
                               {stats.pendingRideRequests > 0 && `${stats.pendingRideRequests} ride`}
@@ -258,6 +273,10 @@ export default function AdminDashboard() {
                           <div className="p-2 rounded-lg bg-primary/10">
                             <Clock className="h-5 w-5 text-primary" />
                           </div>
+                        </div>
+                        <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                          <span>Review</span>
+                          <ArrowRight className="h-3 w-3" />
                         </div>
                       </CardContent>
                     </Card>
@@ -273,7 +292,7 @@ export default function AdminDashboard() {
               </h2>
               <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
                 <Link to="/admin/users">
-                  <Card className="h-full transition-colors hover:border-primary/40 cursor-pointer">
+                  <Card className="h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-xs sm:text-sm font-medium">Total Users</CardTitle>
                       <Users className="h-4 w-4 text-muted-foreground" />
@@ -290,49 +309,46 @@ export default function AdminDashboard() {
                 </Link>
 
                 <Link to="/admin/payments">
-                  <Card className="h-full transition-colors hover:border-primary/40 cursor-pointer">
+                  <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${paymentSummary && paymentSummary.activeSubscriptions > 0 ? 'border-success/30' : ''}`}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-xs sm:text-sm font-medium">Active Subs</CardTitle>
                       <CreditCard className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">
-                        {paymentSummary ? paymentSummary.activeSubscriptions : '—'}
-                      </div>
+                      <div className="text-2xl font-bold">{paymentValue(paymentSummary?.activeSubscriptions)}</div>
                       {paymentSummary && paymentSummary.trialingSubscriptions > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
                           {paymentSummary.trialingSubscriptions} trialing
                         </p>
+                      )}
+                      {paymentSummary === null && !paymentLoading && (
+                        <p className="text-xs text-muted-foreground mt-1">Unavailable</p>
                       )}
                     </CardContent>
                   </Card>
                 </Link>
 
                 <Link to="/admin/payments">
-                  <Card className={`h-full transition-colors hover:border-primary/40 cursor-pointer ${paymentSummary && paymentSummary.pastDueSubscriptions > 0 ? 'border-warning/40' : ''}`}>
+                  <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${paymentSummary && paymentSummary.pastDueSubscriptions > 0 ? 'border-warning/40 bg-warning/5' : ''}`}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-xs sm:text-sm font-medium">Past Due</CardTitle>
-                      <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                      <AlertTriangle className={`h-4 w-4 ${paymentSummary && paymentSummary.pastDueSubscriptions > 0 ? 'text-warning-foreground' : 'text-muted-foreground'}`} />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">
-                        {paymentSummary ? paymentSummary.pastDueSubscriptions : '—'}
-                      </div>
+                      <div className="text-2xl font-bold">{paymentValue(paymentSummary?.pastDueSubscriptions)}</div>
                       <p className="text-xs text-muted-foreground mt-1">subscriptions</p>
                     </CardContent>
                   </Card>
                 </Link>
 
                 <Link to="/admin/payments">
-                  <Card className={`h-full transition-colors hover:border-primary/40 cursor-pointer ${paymentSummary && paymentSummary.failedPaymentsCount > 0 ? 'border-destructive/40' : ''}`}>
+                  <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${paymentSummary && paymentSummary.failedPaymentsCount > 0 ? 'border-destructive/40 bg-destructive/5' : ''}`}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-xs sm:text-sm font-medium">Failed</CardTitle>
-                      <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                      <AlertTriangle className={`h-4 w-4 ${paymentSummary && paymentSummary.failedPaymentsCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">
-                        {paymentSummary ? paymentSummary.failedPaymentsCount : '—'}
-                      </div>
+                      <div className="text-2xl font-bold">{paymentValue(paymentSummary?.failedPaymentsCount)}</div>
                       <p className="text-xs text-muted-foreground mt-1">payments</p>
                     </CardContent>
                   </Card>
