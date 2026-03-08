@@ -14,6 +14,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useAppRole } from '@/hooks/useAppRole';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { formatDistanceToNow, isToday, isThisWeek, differenceInDays, parseISO } from 'date-fns';
+import {
+  getNotificationCategory,
+  isNotificationActionable,
+  type NotificationCategory,
+} from '@/utils/notificationClassification';
 
 /* ── Types ─────────────────────────────────────── */
 
@@ -29,73 +34,13 @@ interface Notification {
 }
 
 type FilterTab = 'all' | 'action' | 'compliance' | 'defects' | 'checks' | 'documents' | 'maintenance' | 'system';
-type Category = 'compliance' | 'defects' | 'checks' | 'documents' | 'maintenance' | 'system';
+type Category = NotificationCategory;
 
-/* ── Classification helpers ────────────────────── */
+/* ── Classification helpers — delegates to shared module ── */
 
-const getCategory = (n: Notification): Category => {
-  const t = n.type?.toLowerCase() ?? '';
-  const title = n.title?.toLowerCase() ?? '';
+const getCategory = (n: Notification): Category => getNotificationCategory(n);
 
-  // Defects — only if genuinely about a defect record
-  if (n.related_table === 'defects') return 'defects';
-  if (title.includes('defect') || title.includes('stop use defect') || title.includes('unresolved defect')) return 'defects';
-  // "linked defect" from a check still classifies as defect
-  if (title.includes('linked defect')) return 'defects';
-
-  // Checks — anything about check execution
-  if (title.includes('check') && !title.includes('defect')) return 'checks';
-  if (title.includes('missed check') || title.includes('failed check')) return 'checks';
-  if (n.related_table === 'checks') return 'checks';
-
-  // Documents
-  if (title.includes('document') || title.includes('certificate') || title.includes('sent') || title.includes('shared') || title.includes('document pack') || n.related_table === 'documents') return 'documents';
-
-  // Maintenance
-  if (title.includes('maintenance') || title.includes('repair') || n.related_table === 'maintenance_records') return 'maintenance';
-
-  // Compliance (inspections, NDT, expiry reminders, wind)
-  if (title.includes('inspection') || title.includes('ndt') || title.includes('expir')) return 'compliance';
-  if (title.includes('wind') || title.includes('anemometer') || title.includes('pack-away') || title.includes('threshold')) return 'compliance';
-  if (t === 'warning' || t === 'error') return 'compliance';
-
-  return 'system';
-};
-
-const isActionable = (n: Notification): boolean => {
-  const title = n.title?.toLowerCase() ?? '';
-  const t = n.type?.toLowerCase() ?? '';
-
-  // ── Explicitly NOT actionable (passive confirmations) ──
-  if (title.includes('maintenance logged') || title.includes('documents sent') || title.includes('check completed')) return false;
-  if (t === 'success') return false;
-
-  // ── Definitely actionable ──
-  // Any open defect (including non-urgent)
-  if (n.related_table === 'defects') return true;
-  if (title.includes('defect') || title.includes('stop use')) return true;
-
-  // Failed checks
-  if (title.includes('failed check') || title.includes('check failure')) return true;
-
-  // Overdue / expired / expiring
-  if (title.includes('overdue') || title.includes('expired') || title.includes('expiring')) return true;
-  if (title.includes('due soon') || title.includes('due in')) return true;
-
-  // Missed items
-  if (title.includes('missing') || title.includes('missed')) return true;
-
-  // Safety / priority
-  if (title.includes('unresolved') || title.includes('high priority') || title.includes('critical')) return true;
-
-  // Wind warnings
-  if (title.includes('wind') && (title.includes('warning') || title.includes('threshold') || title.includes('pack-away'))) return true;
-
-  // Billing
-  if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return true;
-
-  // Type-based fallback (but success already excluded above)
-  if (t === 'warning' || t === 'error') return true;
+const isActionable = (n: Notification): boolean => isNotificationActionable(n);
 
   return false;
 };
