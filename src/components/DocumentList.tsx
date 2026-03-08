@@ -99,17 +99,9 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     }
   };
 
-  // Helper to identify image documents
-  const isImageDoc = (doc: Document) => {
-    const name = (doc.file_path || doc.document_name || '').toLowerCase();
-    return /\.(jpg|jpeg|png|gif|bmp|webp|tif|tiff)$/.test(name);
-  };
-
-  // Helper to identify PDF documents
-  const isPDFDoc = (doc: Document) => {
-    const name = (doc.file_path || doc.document_name || '').toLowerCase();
-    return name.endsWith('.pdf');
-  };
+  // Use shared file-type detection from documentHelpers.ts
+  const isImageDoc = (doc: Document) => isImageFile(doc.file_path || doc.document_name || '');
+  const isPDFDoc = (doc: Document) => isPDFFile(doc.file_path || doc.document_name || '');
 
 
   // Some legacy Safety Check Record PDFs were saved with US date strings in the document_name,
