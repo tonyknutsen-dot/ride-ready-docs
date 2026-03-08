@@ -410,27 +410,36 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
           />
         </div>
 
-        {/* Global Document Toggle */}
-        <div 
-          className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer shadow-sm ${
-            isGlobal 
-              ? 'border-primary/40 bg-primary/5 shadow-primary/5' 
-              : 'border-foreground/8 hover:border-primary/20 bg-card'
-          }`}
-          onClick={() => setIsGlobal(!isGlobal)}
-        >
-          <Checkbox
-            id="is-global"
-            checked={isGlobal}
-            onCheckedChange={(checked) => setIsGlobal(checked as boolean)}
-            disabled={uploading}
-          />
-          <div className="w-8 h-8 rounded-lg bg-muted/60 flex items-center justify-center flex-shrink-0">
-            <Globe2 className="h-4 w-4 text-muted-foreground" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <Label htmlFor="is-global" className="text-sm font-bold cursor-pointer text-foreground">Applies to all equipment</Label>
-            <p className="text-[11px] text-muted-foreground">e.g., company insurance</p>
+        {/* Document Scope Selection */}
+        <div className="space-y-2">
+          <Label className="text-xs font-bold uppercase tracking-wider text-foreground/70">Document Scope</Label>
+          <div 
+            className={`flex items-center gap-3 p-3.5 rounded-xl border-2 transition-all cursor-pointer shadow-sm ${
+              isGlobal 
+                ? 'border-primary/40 bg-primary/5 shadow-primary/5' 
+                : 'border-foreground/8 hover:border-primary/20 bg-card'
+            }`}
+            onClick={() => setIsGlobal(!isGlobal)}
+          >
+            <Checkbox
+              id="is-global"
+              checked={isGlobal}
+              onCheckedChange={(checked) => setIsGlobal(checked as boolean)}
+              disabled={uploading}
+            />
+            <div className="w-8 h-8 rounded-lg bg-muted/60 flex items-center justify-center flex-shrink-0">
+              <Globe2 className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <Label htmlFor="is-global" className="text-sm font-bold cursor-pointer text-foreground">
+                {isGlobal ? 'Global — shared across all equipment' : 'This ride only'}
+              </Label>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {isGlobal 
+                  ? 'Shared document such as insurance or company-wide compliance documents'
+                  : 'Only applies to this specific piece of equipment'}
+              </p>
+            </div>
           </div>
         </div>
 

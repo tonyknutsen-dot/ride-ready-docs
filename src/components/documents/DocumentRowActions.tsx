@@ -41,11 +41,11 @@ const DocumentRowActions = ({
 
   return (
     <div className="flex items-center gap-1 shrink-0">
-      {/* 1. View — always first, always visible */}
+      {/* 1. View — compact secondary utility button */}
       <Button
         variant="outline"
         size="sm"
-        className="shrink-0 gap-1.5 h-8 text-xs font-medium"
+        className="shrink-0 gap-1.5 h-8 text-xs font-medium rounded-lg"
         onClick={(e) => { e.stopPropagation(); onView(); }}
       >
         <Eye className="h-3.5 w-3.5" />

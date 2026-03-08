@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { FileText, Globe, ChevronDown, FolderOpen, Upload, ArrowRight } from 'lucide-react';
+import DocumentHelpDialog from '@/components/documents/DocumentHelpDialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -132,6 +133,7 @@ const Documents = () => {
             subtitle={`${totalDocs} document${totalDocs !== 1 ? 's' : ''} across ${ridesWithDocs.length} ride${ridesWithDocs.length !== 1 ? 's' : ''}`}
             showBackButton
             backTo="/overview"
+            actions={<DocumentHelpDialog />}
           />
         </div>
       </header>

@@ -2,11 +2,11 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from './useEffectiveUserId';
+import { isNotificationActionable } from '@/utils/notificationClassification';
 
 /**
  * Returns the count of unread, action-needed notifications.
- * Action-needed = defects, failed checks, overdue/expired/expiring items, warnings, errors.
- * Excludes: maintenance logged, documents sent, success type.
+ * Uses shared classification logic from notificationClassification.ts
  */
 export function useActionNeededCount() {
   const { user } = useAuth();
@@ -25,40 +25,9 @@ export function useActionNeededCount() {
 
       if (error) return;
 
-      const actionCount = (data || []).filter(n => {
-        const title = (n.title || '').toLowerCase();
-        const t = (n.type || '').toLowerCase();
-
-        // Passive — not action needed
-        if (title.includes('maintenance logged') || title.includes('documents sent') || title.includes('check completed')) return false;
-        if (t === 'success') return false;
-
-        // Defects
-        if (n.related_table === 'defects') return true;
-        if (title.includes('defect') || title.includes('stop use')) return true;
-
-        // Failed checks
-        if (title.includes('failed check') || title.includes('check failure')) return true;
-
-        // Overdue / expired / expiring / due
-        if (title.includes('overdue') || title.includes('expired') || title.includes('expiring')) return true;
-        if (title.includes('due soon') || title.includes('due in')) return true;
-        if (title.includes('missing') || title.includes('missed')) return true;
-
-        // Safety
-        if (title.includes('unresolved') || title.includes('high priority') || title.includes('critical')) return true;
-
-        // Wind warnings
-        if (title.includes('wind') && (title.includes('warning') || title.includes('threshold'))) return true;
-
-        // Billing
-        if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return true;
-
-        // Type fallback
-        if (t === 'warning' || t === 'error') return true;
-
-        return false;
-      }).length;
+      const actionCount = (data || []).filter(n =>
+        isNotificationActionable(n as any)
+      ).length;
 
       setCount(actionCount);
     };
