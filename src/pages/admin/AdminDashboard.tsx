@@ -5,12 +5,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { supabase } from '@/integrations/supabase/client';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from '@/integrations/supabase/client';
 import {
   FolderOpen, FileText, Users, FlaskConical, BarChart3, CheckCircle,
   Loader2, MessageCircle, Bug, CreditCard, ArrowRight, AlertTriangle,
-  ChevronDown, ChevronUp, Clock, Shield,
+  ChevronDown, ChevronUp, Clock, Shield, Info,
 } from 'lucide-react';
 
 interface DashboardStats {
