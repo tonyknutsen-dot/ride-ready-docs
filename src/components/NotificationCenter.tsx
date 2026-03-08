@@ -825,9 +825,15 @@ const NotificationCenter = () => {
 
       {/* ── Filter tabs ──────────────────── */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1 scrollbar-none">
-        {FILTER_TABS.map(tab => {
+      {FILTER_TABS.map(tab => {
           const isActive = activeTab === tab.id;
           const count = tabCounts[tab.id];
+          // Compute unread count for this tab
+          const tabUnread = tab.id === 'all'
+            ? unreadCount
+            : tab.id === 'action'
+              ? actionCount
+              : notifications.filter(n => !n.is_read && getCategory(n) === tab.id).length;
           return (
             <button
               key={tab.id}
@@ -841,12 +847,14 @@ const NotificationCenter = () => {
               )}
             >
               {tab.label}
-              {tab.id === 'action' && actionCount > 0 && (
+              {tabUnread > 0 && (
                 <span className={cn(
                   'inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold',
-                  isActive ? 'bg-destructive text-destructive-foreground' : 'bg-destructive/15 text-destructive'
+                  tab.id === 'action' || isActive
+                    ? 'bg-destructive text-destructive-foreground'
+                    : 'bg-primary/15 text-primary'
                 )}>
-                  {actionCount}
+                  {tabUnread}
                 </span>
               )}
             </button>
