@@ -762,6 +762,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           onDownload={() => handleDownload(doc)}
           onCopyLink={() => handleCopyLink(doc)}
           onDelete={!isOlderVersion ? () => handleDelete(doc) : undefined}
+          isGlobal={doc.is_global ?? false}
+          onToggleGlobal={!isOlderVersion && !isStaff ? () => handleToggleGlobal(doc) : undefined}
         />
       </div>
     );
