@@ -133,6 +133,7 @@ const Documents = () => {
             subtitle={`${totalDocs} document${totalDocs !== 1 ? 's' : ''} across ${ridesWithDocs.length} ride${ridesWithDocs.length !== 1 ? 's' : ''}`}
             showBackButton
             backTo="/overview"
+            actions={<DocumentHelpDialog />}
           />
         </div>
       </header>
