@@ -1072,52 +1072,14 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                   </div>
                 </div>
 
-                {/* Row 2: Actions - on own line for mobile clarity */}
+                {/* Row 2: Actions — canonical pattern */}
                 <div className="flex items-center justify-end gap-1 pt-1 border-t border-border/40">
-                  {isGlobal && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 px-2 gap-1.5 text-xs"
-                      onClick={() => setAssignmentDialogDoc(doc)}
-                    >
-                      <Link2 className="h-3.5 w-3.5" />
-                      <span className="hidden xs:inline">Link</span>
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 px-2 gap-1.5 text-xs"
-                    onClick={() => handleDownload(doc)}
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    <span className="hidden xs:inline">Download</span>
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="ghost" className="h-8 px-2 gap-1.5 text-xs text-muted-foreground hover:text-destructive">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Document</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete "{doc.document_name}"? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(doc)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <DocumentRowActions
+                    onView={() => handleViewDoc(doc)}
+                    onDownload={() => handleDownload(doc)}
+                    onCopyLink={() => handleCopyLink(doc)}
+                    onDelete={() => handleDelete(doc)}
+                  />
                 </div>
                 
                 {/* Show assigned items for global documents */}
