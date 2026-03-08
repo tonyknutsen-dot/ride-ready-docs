@@ -29,6 +29,7 @@ import {
   Link2,
   Eye,
 } from 'lucide-react';
+import DocumentRowActions from '@/components/documents/DocumentRowActions';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useStaff } from '@/contexts/StaffContext';
