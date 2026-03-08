@@ -492,8 +492,9 @@ const NotificationCenter = () => {
       for (const d of openDefects || []) {
         const rideName = d.ride_id ? rideMap.get(d.ride_id) || '' : '';
         const daysOpen = differenceInDays(today, parseISO(d.reported_at));
+        const sevConfig = DEFECT_SEVERITY_CONFIG[d.severity as keyof typeof DEFECT_SEVERITY_CONFIG];
 
-        if (d.severity === 'stop_operation') {
+        if (isDefectCritical(d.severity)) {
           await ensureNotification(
             `Stop Use defect unresolved`,
             `${d.description.slice(0, 80)}${rideName ? ` — ${rideName}` : ''}. Open ${daysLabel(daysOpen)}.`,
@@ -506,7 +507,6 @@ const NotificationCenter = () => {
             'warning', 'defects', d.id
           );
         } else {
-          // non_urgent and other severities still surfaced
           await ensureNotification(
             `Open defect: ${rideName || 'equipment'}`,
             `${d.description.slice(0, 80)}${rideName ? ` — ${rideName}` : ''}. Open ${daysLabel(daysOpen)}.`,
