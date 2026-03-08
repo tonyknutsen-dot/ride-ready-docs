@@ -702,8 +702,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         {/* File info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 min-w-0">
-            {doc.is_global && !isOlderVersion && <Globe className="h-3.5 w-3.5 text-blue-600 shrink-0" />}
-            <p className="text-sm font-semibold text-slate-900 truncate" title={displayName}>
+            <p className="text-sm font-semibold text-foreground truncate" title={displayName}>
               {isOlderVersion
                 ? `📅 ${new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
                 : displayName}
@@ -739,10 +738,16 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
             );
           })()}
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-            {!isOlderVersion && (
-              <span className="text-xs text-slate-500">{uploadedStr}</span>
+            {!isOlderVersion && doc.is_global && (
+              <span className="text-[10px] text-muted-foreground font-medium">Global</span>
             )}
-            {sizeStr && <span className="text-xs text-slate-400">• {sizeStr}</span>}
+            {!isOlderVersion && !doc.is_global && rideId && (
+              <span className="text-[10px] text-muted-foreground font-medium">This ride only</span>
+            )}
+            {!isOlderVersion && (
+              <span className="text-xs text-muted-foreground">{uploadedStr}</span>
+            )}
+            {sizeStr && <span className="text-xs text-muted-foreground">• {sizeStr}</span>}
             {/* Expiry badge */}
             {doc.expires_at && !isOlderVersion && (
               expired ? (
