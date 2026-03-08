@@ -152,32 +152,35 @@ export default function AdminDashboard() {
 
   const needsAttentionTotal = stats.unansweredSupport + stats.bugReportsNeedingTriage + totalPendingApprovals;
 
+  // Payment card state helper
+  const paymentValue = (val: number | undefined) => {
+    if (paymentLoading) return '…';
+    if (paymentSummary === null) return '—';
+    return val ?? 0;
+  };
+
   return (
     <AdminLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="space-y-6">
+        {/* Header — compact */}
+        <div className="flex items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold">Admin Dashboard</h1>
-            <p className="text-muted-foreground mt-1">Platform overview and triage</p>
+            <h1 className="text-xl md:text-2xl font-bold leading-tight">Admin Dashboard</h1>
+            <p className="text-sm text-muted-foreground">Platform overview and triage</p>
           </div>
 
           {hasTestData && (
-            <div className="flex items-center gap-3 px-4 py-2.5 rounded-lg border border-border bg-muted/30">
-              <FlaskConical className="h-4 w-4 text-muted-foreground shrink-0" />
-              <Label htmlFor="exclude-test-data" className="text-sm font-medium cursor-pointer whitespace-nowrap">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border/60 bg-muted/20 text-xs shrink-0">
+              <FlaskConical className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
+              <Label htmlFor="exclude-test-data" className="text-xs cursor-pointer whitespace-nowrap text-muted-foreground">
                 Exclude test data
               </Label>
               <Switch
                 id="exclude-test-data"
                 checked={excludeTestData}
                 onCheckedChange={setExcludeTestData}
+                className="scale-90"
               />
-              {excludeTestData && (
-                <Badge variant="outline" className="text-xs">
-                  Production
-                </Badge>
-              )}
             </div>
           )}
         </div>
