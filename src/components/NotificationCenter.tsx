@@ -430,6 +430,7 @@ const NotificationCenter = () => {
         .select('id, document_name, expires_at, ride_id')
         .eq('user_id', effectiveUserId)
         .eq('is_latest_version', true)
+        .eq('is_test_data', false)
         .not('expires_at', 'is', null);
 
       const { data: rides } = await supabase
