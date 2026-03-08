@@ -164,7 +164,11 @@ const getActionRoute = (n: Notification): string | null => {
   if (n.related_table === 'checks') return buildCheckRoute(n.related_id);
   if (title.includes('check') || title.includes('missed')) return '/checks';
   if (title.includes('inspection') || title.includes('ndt')) return '/compliance';
-  if (title.includes('document') || title.includes('expir') || title.includes('certificate')) return '/documents';
+  if (n.related_table === 'documents' && n.related_id) return `/rides?tab=documents&documentId=${n.related_id}`;
+  if (title.includes('document') || title.includes('expir') || title.includes('certificate')) {
+    if (n.related_id) return `/rides?tab=documents&documentId=${n.related_id}`;
+    return '/documents';
+  }
   if (n.related_table === 'documents') return '/documents';
   if (title.includes('maintenance')) return '/maintenance';
   if (n.related_table === 'maintenance_records') return '/maintenance';
