@@ -278,6 +278,29 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     }
   };
 
+  const handleToggleScope = async (doc: Document) => {
+    try {
+      const newGlobal = !doc.is_global;
+      const { error } = await supabase
+        .from('documents')
+        .update({
+          is_global: newGlobal,
+          ride_id: newGlobal ? null : (doc.ride_id || rideId),
+        })
+        .eq('id', doc.id);
+      if (error) throw error;
+      toast({
+        title: newGlobal ? 'Document is now Global' : 'Document is now Ride-Only',
+        description: newGlobal
+          ? 'This document will appear across all equipment.'
+          : 'This document is now linked to this equipment only.',
+      });
+      onDocumentDeleted(); // triggers refresh
+    } catch (err: any) {
+      toast({ title: 'Update failed', description: err.message, variant: 'destructive' });
+    }
+  };
+
   /* ─── Render helpers ─── */
 
   const getRelativeExpiry = (date: string) => {
