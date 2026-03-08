@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FileText, Download, Trash2, Calendar, AlertTriangle, Link2, History, ChevronDown, Globe, Send, Filter, Eye } from 'lucide-react';
+import DocumentRowActions from '@/components/documents/DocumentRowActions';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -755,51 +756,13 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-0.5 shrink-0 ml-2">
-          {/* View button — always first */}
-          <button
-            className="p-2 rounded-lg hover:bg-accent transition-colors text-primary"
-            onClick={() => handleViewDoc(doc)}
-            title="View"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
-          {/* Toggle global */}
-          {!isOlderVersion && !['photo', 'device_photo', 'maintenance', 'check record', 'check_record'].includes(doc.document_type.toLowerCase()) && !doc.file_path?.includes('/check-records/') && (
-            <button
-              className={`p-2 rounded-lg hover:bg-slate-100 transition-colors ${doc.is_global ? 'text-blue-600' : 'text-slate-400'}`}
-              onClick={() => handleToggleGlobal(doc)}
-              title={doc.is_global ? 'Make ride-specific' : 'Make global'}
-            >
-              <Globe className="w-4 h-4" />
-            </button>
-          )}
-          <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600" onClick={() => handleDownload(doc)}>
-            <Download className="w-4 h-4" />
-          </button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button className="p-2 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600">
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Document</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete "{displayName}"? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDelete(doc)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+        {/* Actions — canonical pattern */}
+        <DocumentRowActions
+          onView={() => handleViewDoc(doc)}
+          onDownload={() => handleDownload(doc)}
+          onCopyLink={() => handleCopyLink(doc)}
+          onDelete={!isOlderVersion ? () => handleDelete(doc) : undefined}
+        />
       </div>
     );
   };
@@ -1013,22 +976,22 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           <PDFViewer
             isOpen={true}
             onClose={() => setViewerDoc(null)}
-            pdfUrl={viewerDoc.url}
-            title={viewerDoc.name}
-            onDownload={handleViewerDownload}
-          />
-        )}
-        {viewerDoc?.type === 'image' && (
-          <ImageViewer
-            isOpen={true}
-            onClose={() => setViewerDoc(null)}
-            imageUrl={viewerDoc.url}
-            imageName={viewerDoc.name}
-            onDownload={handleViewerDownload}
-          />
-        )}
-      </>
-    );
+          pdfUrl={viewerDoc.url}
+          pdfName={viewerDoc.name}
+          onDownload={handleViewerDownload}
+        />
+      )}
+      {viewerDoc?.type === 'image' && (
+        <ImageViewer
+          isOpen={true}
+          onClose={() => setViewerDoc(null)}
+          imageUrl={viewerDoc.url}
+          imageName={viewerDoc.name}
+          onDownload={handleViewerDownload}
+        />
+      )}
+    </>
+  );
   }
 
   // Flat list (default)
@@ -1110,52 +1073,14 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                   </div>
                 </div>
 
-                {/* Row 2: Actions - on own line for mobile clarity */}
+                {/* Row 2: Actions — canonical pattern */}
                 <div className="flex items-center justify-end gap-1 pt-1 border-t border-border/40">
-                  {isGlobal && (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-8 px-2 gap-1.5 text-xs"
-                      onClick={() => setAssignmentDialogDoc(doc)}
-                    >
-                      <Link2 className="h-3.5 w-3.5" />
-                      <span className="hidden xs:inline">Link</span>
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-8 px-2 gap-1.5 text-xs"
-                    onClick={() => handleDownload(doc)}
-                  >
-                    <Download className="h-3.5 w-3.5" />
-                    <span className="hidden xs:inline">Download</span>
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button size="sm" variant="ghost" className="h-8 px-2 gap-1.5 text-xs text-muted-foreground hover:text-destructive">
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Document</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete "{doc.document_name}"? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDelete(doc)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <DocumentRowActions
+                    onView={() => handleViewDoc(doc)}
+                    onDownload={() => handleDownload(doc)}
+                    onCopyLink={() => handleCopyLink(doc)}
+                    onDelete={() => handleDelete(doc)}
+                  />
                 </div>
                 
                 {/* Show assigned items for global documents */}
@@ -1181,7 +1106,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           isOpen={true}
           onClose={() => setViewerDoc(null)}
           pdfUrl={viewerDoc.url}
-          title={viewerDoc.name}
+          pdfName={viewerDoc.name}
           onDownload={handleViewerDownload}
         />
       )}
