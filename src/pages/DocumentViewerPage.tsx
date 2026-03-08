@@ -61,6 +61,7 @@ const DocumentViewerPage = () => {
   const [docTitle, setDocTitle] = useState('');
   const [docDisplayId, setDocDisplayId] = useState('');
   const [meta, setMeta] = useState<DocumentMeta | null>(null);
+  const [fileType, setFileType] = useState<'pdf' | 'image' | 'other'>('pdf');
 
   // Underlying document data
   const [rideDoc, setRideDoc] = useState<RideDocument | null>(null);
