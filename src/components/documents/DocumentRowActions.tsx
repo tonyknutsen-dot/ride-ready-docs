@@ -3,9 +3,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Eye, Download, Link2, RefreshCw, Archive, MoreVertical } from 'lucide-react';
+import { Eye, Download, Link2, RefreshCw, Archive, MoreVertical, Globe, MapPin } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface DocumentRowActionsProps {
   onView: () => void;
@@ -13,15 +15,18 @@ interface DocumentRowActionsProps {
   onCopyLink?: () => void;
   onReplace?: () => void;
   onDelete?: () => void;
+  /** Document scope control — pass to show the global/ride toggle */
+  isGlobal?: boolean;
+  onToggleGlobal?: () => void;
 }
 
 /**
  * Canonical document action pattern used across ALL document lists.
  *
- * Order: View → Download → Overflow (Copy Link / Replace / Delete)
+ * Layout:  [Scope badge]  [View]  [Download]  [⋯ overflow]
  *
- * - Desktop: View button shows icon + label; Download icon button.
- * - Mobile: View shows icon only; same placement.
+ * The scope badge is a separate control from View/Download/More.
+ * It lets users toggle a document between Global and Ride-only.
  */
 const DocumentRowActions = ({
   onView,
@@ -29,11 +34,29 @@ const DocumentRowActions = ({
   onCopyLink,
   onReplace,
   onDelete,
+  isGlobal,
+  onToggleGlobal,
 }: DocumentRowActionsProps) => {
-  const hasOverflow = !!(onCopyLink || onReplace || onDelete);
+  const hasOverflow = !!(onCopyLink || onReplace || onDelete || onToggleGlobal);
 
   return (
     <div className="flex items-center gap-1 shrink-0">
+      {/* Scope indicator — shown when scope info is available */}
+      {typeof isGlobal === 'boolean' && (
+        <span
+          className={cn(
+            'inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold shrink-0 select-none',
+            isGlobal
+              ? 'bg-primary/10 text-primary border border-primary/20'
+              : 'bg-muted text-muted-foreground border border-border/60'
+          )}
+          title={isGlobal ? 'Shared across all equipment' : 'Linked to this equipment only'}
+        >
+          {isGlobal ? <Globe className="h-3 w-3" /> : <MapPin className="h-3 w-3" />}
+          <span className="hidden sm:inline">{isGlobal ? 'Global' : 'Ride'}</span>
+        </span>
+      )}
+
       {/* 1. View — always first, always visible */}
       <Button
         variant="outline"
@@ -65,6 +88,18 @@ const DocumentRowActions = ({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            {onToggleGlobal && (
+              <>
+                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onToggleGlobal(); }}>
+                  {isGlobal ? (
+                    <><MapPin className="h-4 w-4 mr-2" /> Make Ride-Only</>
+                  ) : (
+                    <><Globe className="h-4 w-4 mr-2" /> Make Global (All Equipment)</>
+                  )}
+                </DropdownMenuItem>
+                {(onCopyLink || onReplace || onDelete) && <DropdownMenuSeparator />}
+              </>
+            )}
             {onCopyLink && (
               <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onCopyLink(); }}>
                 <Link2 className="h-4 w-4 mr-2" /> Copy Link
