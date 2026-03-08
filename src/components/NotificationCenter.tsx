@@ -42,8 +42,6 @@ const getCategory = (n: Notification): Category => getNotificationCategory(n);
 
 const isActionable = (n: Notification): boolean => isNotificationActionable(n);
 
-  return false;
-};
 
 const isSentDocument = (n: Notification): boolean => {
   const title = n.title?.toLowerCase() ?? '';
