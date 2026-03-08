@@ -282,6 +282,12 @@ const DocumentViewerPage = () => {
     const ft = detectFileType(doc.file_path || '');
     setFileType(ft);
 
+    const idMatch = doc.document_name?.match(/^([A-Z0-9]+-[A-Z]+-\d{4}-\d{4})/);
+    setDocDisplayId(idMatch?.[1] || doc.id.slice(0, 8));
+
+    const url = await getSignedUrl(doc.file_path);
+    setPdfUrl(url);
+
     const rideName = doc.ride_id ? await getRideName(doc.ride_id) : 'Global';
 
     const notes = doc.notes || '';
