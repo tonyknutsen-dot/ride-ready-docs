@@ -755,51 +755,13 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex items-center gap-0.5 shrink-0 ml-2">
-          {/* View button — always first */}
-          <button
-            className="p-2 rounded-lg hover:bg-accent transition-colors text-primary"
-            onClick={() => handleViewDoc(doc)}
-            title="View"
-          >
-            <Eye className="w-4 h-4" />
-          </button>
-          {/* Toggle global */}
-          {!isOlderVersion && !['photo', 'device_photo', 'maintenance', 'check record', 'check_record'].includes(doc.document_type.toLowerCase()) && !doc.file_path?.includes('/check-records/') && (
-            <button
-              className={`p-2 rounded-lg hover:bg-slate-100 transition-colors ${doc.is_global ? 'text-blue-600' : 'text-slate-400'}`}
-              onClick={() => handleToggleGlobal(doc)}
-              title={doc.is_global ? 'Make ride-specific' : 'Make global'}
-            >
-              <Globe className="w-4 h-4" />
-            </button>
-          )}
-          <button className="p-2 rounded-lg hover:bg-slate-100 transition-colors text-slate-600" onClick={() => handleDownload(doc)}>
-            <Download className="w-4 h-4" />
-          </button>
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <button className="p-2 rounded-lg hover:bg-red-50 transition-colors text-slate-400 hover:text-red-600">
-                <Trash2 className="w-4 h-4" />
-              </button>
-            </AlertDialogTrigger>
-            <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Document</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Are you sure you want to delete "{displayName}"? This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => handleDelete(doc)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </div>
+        {/* Actions — canonical pattern */}
+        <DocumentRowActions
+          onView={() => handleViewDoc(doc)}
+          onDownload={() => handleDownload(doc)}
+          onCopyLink={() => handleCopyLink(doc)}
+          onDelete={!isOlderVersion ? () => handleDelete(doc) : undefined}
+        />
       </div>
     );
   };
