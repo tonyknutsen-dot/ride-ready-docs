@@ -214,8 +214,8 @@ export default function AdminDashboard() {
                 </Card>
               ) : (
                 <div className="grid gap-3 grid-cols-1 sm:grid-cols-3">
-                  <Link to="/admin/support">
-                    <Card className={`h-full transition-colors hover:border-primary/40 cursor-pointer ${stats.unansweredSupport > 0 ? 'border-destructive/40 bg-destructive/5' : ''}`}>
+                  <Link to="/admin/support" className="group">
+                    <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${stats.unansweredSupport > 0 ? 'border-destructive/40 bg-destructive/5' : ''}`}>
                       <CardContent className="pt-5 pb-4">
                         <div className="flex items-start justify-between">
                           <div>
@@ -227,12 +227,16 @@ export default function AdminDashboard() {
                             <MessageCircle className="h-5 w-5 text-destructive" />
                           </div>
                         </div>
+                        <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                          <span>Review</span>
+                          <ArrowRight className="h-3 w-3" />
+                        </div>
                       </CardContent>
                     </Card>
                   </Link>
 
-                  <Link to="/admin/bug-reports">
-                    <Card className={`h-full transition-colors hover:border-primary/40 cursor-pointer ${stats.bugReportsNeedingTriage > 0 ? 'border-warning/40 bg-warning/5' : ''}`}>
+                  <Link to="/admin/bug-reports" className="group">
+                    <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${stats.bugReportsNeedingTriage > 0 ? 'border-warning/40 bg-warning/5' : ''}`}>
                       <CardContent className="pt-5 pb-4">
                         <div className="flex items-start justify-between">
                           <div>
@@ -244,16 +248,20 @@ export default function AdminDashboard() {
                             <Bug className="h-5 w-5 text-warning-foreground" />
                           </div>
                         </div>
+                        <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                          <span>Triage</span>
+                          <ArrowRight className="h-3 w-3" />
+                        </div>
                       </CardContent>
                     </Card>
                   </Link>
 
-                  <Link to="/admin/ride-requests">
-                    <Card className={`h-full transition-colors hover:border-primary/40 cursor-pointer ${totalPendingApprovals > 0 ? 'border-primary/40 bg-primary/5' : ''}`}>
+                  <Link to="/admin/ride-requests" className="group">
+                    <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${totalPendingApprovals > 0 ? 'border-primary/40 bg-primary/5' : ''}`}>
                       <CardContent className="pt-5 pb-4">
                         <div className="flex items-start justify-between">
                           <div>
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Approvals</p>
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Pending Requests</p>
                             <p className="text-3xl font-bold mt-1">{totalPendingApprovals}</p>
                             <p className="text-xs text-muted-foreground mt-1">
                               {stats.pendingRideRequests > 0 && `${stats.pendingRideRequests} ride`}
@@ -265,6 +273,10 @@ export default function AdminDashboard() {
                           <div className="p-2 rounded-lg bg-primary/10">
                             <Clock className="h-5 w-5 text-primary" />
                           </div>
+                        </div>
+                        <div className="flex items-center gap-1 mt-3 text-xs text-muted-foreground group-hover:text-primary transition-colors">
+                          <span>Review</span>
+                          <ArrowRight className="h-3 w-3" />
                         </div>
                       </CardContent>
                     </Card>
