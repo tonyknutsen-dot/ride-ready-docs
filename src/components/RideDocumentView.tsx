@@ -42,74 +42,17 @@ import ImageViewer from '@/components/ImageViewer';
 
 type Document = Tables<'documents'>;
 
-/* ─── Classification helpers ─── */
-
-const GENERATED_TYPES = new Set([
-  'daily_check', 'monthly_check', 'yearly_check',
-  'check_record', 'safety_check',
-  'maintenance_report', 'maintenance_log',
-  'risk_assessment',
-  'doc', 'declaration_of_compliance',
-  'electrical_inspection', 'inservice_inspection',
-  'ndt_report', 'ndt_schedule',
-  'design_review', 'conformity_design',
-  'initial_test_report',
-]);
-
-const isGenerated = (doc: Document) => {
-  const t = (doc.document_type || '').toLowerCase();
-  if (GENERATED_TYPES.has(t)) return true;
-  if (t.includes('check') && !t.includes('checklist')) return true;
-  const fp = (doc.file_path || '').toLowerCase();
-  if (fp.includes('/checks/') || fp.includes('/compliance/') || fp.includes('/reports/')) return true;
-  return false;
-};
-
-const isImageFile = (fp: string) => /\.(jpg|jpeg|png|gif|webp|bmp|tiff?)$/i.test(fp);
-const isPDFFile = (fp: string) => /\.pdf$/i.test(fp);
-const fileExt = (fp: string) => {
-  const m = fp.match(/\.(\w+)$/);
-  return m ? m[1].toUpperCase() : 'FILE';
-};
-
-const isExpiringSoon = (d: string) => {
-  const days = Math.ceil((new Date(d).getTime() - Date.now()) / 86400000);
-  return days > 0 && days <= 30;
-};
-const isExpired = (d: string) => new Date(d) < new Date();
-
-/* ─── Friendly type names ─── */
-const TYPE_LABELS: Record<string, string> = {
-  daily_check: 'Daily Check Record',
-  monthly_check: 'Monthly Check Record',
-  yearly_check: 'Yearly Check Record',
-  maintenance_report: 'Maintenance Report',
-  maintenance_log: 'Maintenance Log',
-  risk_assessment: 'Risk Assessment',
-  doc: 'DOC Certificate',
-  declaration_of_compliance: 'Annual Inspection Certificate',
-  electrical_inspection: 'Electrical Inspection',
-  inservice_inspection: 'In-Service Inspection',
-  ndt_report: 'NDT Report',
-  ndt_schedule: 'NDT Schedule',
-  design_review: 'Design Review',
-  conformity_design: 'Conformity to Design',
-  initial_test_report: 'Initial Test Report',
-  insurance: 'Insurance',
-  safety_certificate: 'Safety Certificate',
-  doc_certificate: 'Declaration of Conformity',
-  pssr_certificate: 'PSSR Certificate',
-  loler_certificate: 'LOLER Certificate',
-  puwer_certificate: 'PUWER Certificate',
-  operator_manual: 'Operator Manual',
-  controller_manual: 'Controller Manual',
-  build_up_down: 'Build Up & Down',
-  emergency_action_plan: 'Emergency Action Plan',
-  evacuation_plan: 'Evacuation Plan',
-  certificate: 'Certificate',
-  manual: 'Manual',
-  other: 'Other',
-};
+/* ─── Shared helpers from single source of truth ─── */
+import {
+  isGeneratedDoc as isGenerated,
+  isImageFile,
+  isPDFFile,
+  fileExtension as fileExt,
+  isDocExpiringSoon as isExpiringSoon,
+  isDocExpired as isExpired,
+  getExpiryLabel,
+  DOC_TYPE_LABELS as TYPE_LABELS,
+} from '@/utils/documentHelpers';
 
 type FilterType = 'all' | 'generated' | 'uploaded' | 'expiring';
 

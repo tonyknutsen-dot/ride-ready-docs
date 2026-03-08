@@ -35,60 +35,18 @@ import ImageViewer from '@/components/ImageViewer';
 
 type Document = Tables<'documents'>;
 
-/* ─── Classification helpers ─── */
-
-const GENERATED_TYPES = new Set([
-  'daily_check', 'monthly_check', 'yearly_check',
-  'check_record', 'safety_check',
-  'maintenance_report', 'maintenance_log',
-  'risk_assessment',
-  'doc', 'declaration_of_compliance',
-  'electrical_inspection', 'inservice_inspection',
-  'ndt_report', 'ndt_schedule',
-  'design_review', 'conformity_design',
-  'initial_test_report',
-]);
-
-const isGenerated = (doc: Document) => {
-  const t = (doc.document_type || '').toLowerCase();
-  if (GENERATED_TYPES.has(t)) return true;
-  if (t.includes('check') && !t.includes('checklist')) return true;
-  const fp = (doc.file_path || '').toLowerCase();
-  return fp.includes('/checks/') || fp.includes('/compliance/') || fp.includes('/reports/');
-};
-
-const isImageFile = (fp: string) => /\.(jpg|jpeg|png|gif|webp|bmp|tiff?)$/i.test(fp);
-const isPDFFile = (fp: string) => /\.pdf$/i.test(fp);
-const fileExt = (fp: string) => {
-  const m = fp.match(/\.(\w+)$/);
-  return m ? m[1].toUpperCase() : 'FILE';
-};
-
-const isExpiringSoon = (d: string) => {
-  const days = Math.ceil((new Date(d).getTime() - Date.now()) / 86400000);
-  return days > 0 && days <= 30;
-};
-const isExpired = (d: string) => new Date(d) < new Date();
-
-/* ─── Category filter mapping ─── */
-const CATEGORY_MAP: Record<string, Set<string>> = {
-  insurance: new Set(['insurance']),
-  policies: new Set(['risk_assessment', 'method_statement', 'emergency_action_plan', 'evacuation_plan']),
-  training: new Set(['certificate', 'safety_certificate']),
-  calibration: new Set(['pssr_certificate', 'loler_certificate', 'puwer_certificate']),
-};
-
-const matchesCategory = (doc: Document, cat: string): boolean => {
-  const types = CATEGORY_MAP[cat];
-  if (!types) return true;
-  const t = (doc.document_type || '').toLowerCase();
-  if (types.has(t)) return true;
-  // Also match by substring for broader coverage
-  if (cat === 'insurance' && t.includes('insur')) return true;
-  if (cat === 'training' && (t.includes('training') || t.includes('cert'))) return true;
-  if (cat === 'calibration' && t.includes('calibr')) return true;
-  return false;
-};
+/* ─── Shared helpers from single source of truth ─── */
+import {
+  isGeneratedDoc as isGenerated,
+  isImageFile,
+  isPDFFile,
+  fileExtension as fileExt,
+  isDocExpiringSoon as isExpiringSoon,
+  isDocExpired as isExpired,
+  DOC_TYPE_LABELS as TYPE_LABELS,
+  matchesGlobalCategory as matchesCategory,
+  GLOBAL_CATEGORY_MAP as CATEGORY_MAP,
+} from '@/utils/documentHelpers';
 
 /* ─── Friendly type names ─── */
 const TYPE_LABELS: Record<string, string> = {
