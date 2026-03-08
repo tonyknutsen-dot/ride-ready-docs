@@ -50,20 +50,51 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     fetchPendingCounts();
   }, [location.pathname]);
 
-  const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: Shield, count: 0 },
-    { name: 'Payments', href: '/admin/payments', icon: CreditCard, count: 0 },
-    { name: 'Bug Reports', href: '/admin/bug-reports', icon: Bug, count: pendingCounts.bugReports },
-    { name: 'Early Access', href: '/admin/early-access', icon: Sparkles, count: 0 },
-    { name: 'Check Items', href: '/admin/check-items', icon: FileText, count: 0 },
-    { name: 'Ride Type Requests', href: '/admin/ride-requests', icon: FolderOpen, count: pendingCounts.rideRequests },
-    { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText, count: pendingCounts.documentRequests },
-    { name: 'Support Messages', href: '/admin/support', icon: MessageCircle, count: pendingCounts.supportMessages },
-    { name: 'Support Access', href: '/admin/support-access', icon: Key, count: 0 },
-    { name: 'User Management', href: '/admin/users', icon: Users, count: 0 },
-    { name: 'Audit Logs', href: '/admin/audit-logs', icon: History, count: 0 },
-    { name: 'Security', href: '/admin/security', icon: Activity, count: 0 },
-    { name: 'Marketing', href: '/marketing', icon: Mail, count: 0 },
+  const navigationGroups = [
+    {
+      label: null,
+      items: [
+        { name: 'Dashboard', href: '/admin', icon: Shield, count: 0 },
+      ],
+    },
+    {
+      label: 'Operations',
+      items: [
+        { name: 'Support Messages', href: '/admin/support', icon: MessageCircle, count: pendingCounts.supportMessages },
+        { name: 'Bug Reports', href: '/admin/bug-reports', icon: Bug, count: pendingCounts.bugReports },
+        { name: 'Payments', href: '/admin/payments', icon: CreditCard, count: 0 },
+      ],
+    },
+    {
+      label: 'Requests & Approvals',
+      items: [
+        { name: 'Check Items', href: '/admin/check-items', icon: FileText, count: 0 },
+        { name: 'Ride Type Requests', href: '/admin/ride-requests', icon: FolderOpen, count: pendingCounts.rideRequests },
+        { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText, count: pendingCounts.documentRequests },
+        { name: 'Risk Items', href: '/admin/risk-items', icon: Activity, count: 0 },
+      ],
+    },
+    {
+      label: 'Users',
+      items: [
+        { name: 'User Management', href: '/admin/users', icon: Users, count: 0 },
+        { name: 'Support Access', href: '/admin/support-access', icon: Key, count: 0 },
+      ],
+    },
+    {
+      label: 'Security',
+      items: [
+        { name: 'Audit Logs', href: '/admin/audit-logs', icon: History, count: 0 },
+        { name: 'Rate Limits & Blocks', href: '/admin/security', icon: Activity, count: 0 },
+      ],
+    },
+    {
+      label: 'Growth',
+      items: [
+        { name: 'Marketing', href: '/marketing', icon: Mail, count: 0 },
+        { name: 'Early Access', href: '/admin/early-access', icon: Sparkles, count: 0 },
+      ],
+    },
   ];
 
   const NavigationContent = () => (
