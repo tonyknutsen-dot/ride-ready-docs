@@ -326,7 +326,10 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
     const ext = fileExt(doc.file_path || '');
 
     return (
-      <div className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-card">
+      <div
+        className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-card cursor-pointer hover:bg-accent/50 transition-colors"
+        onClick={() => handleView(doc)}
+      >
         {/* File type icon */}
         <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
           <FileIcon doc={doc} />
@@ -369,6 +372,9 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleView(doc); }}>
+              <Eye className="h-4 w-4 mr-2" /> View
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(doc); }}>
               <Download className="h-4 w-4 mr-2" /> Save to Device
             </DropdownMenuItem>
