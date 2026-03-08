@@ -2,10 +2,15 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FileText, Download, Trash2, Calendar, AlertTriangle, Link2, History, ChevronDown, Globe, Send, Filter, Eye } from 'lucide-react';
 import DocumentRowActions from '@/components/documents/DocumentRowActions';
+import DocumentRow from '@/components/documents/DocumentRow';
+import VersionCleanupDialog from '@/components/documents/VersionCleanupDialog';
+import {
+  groupDocumentsByName, groupByType, getAllOlderVersions,
+  getOlderVersionsStorageSize, CATEGORY_STYLES, type DocumentGroup,
+} from '@/components/documents/documentGrouping';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -388,146 +393,30 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const getDocumentTypeDisplay = getDocTypeLabel;
   const prettyType = getDocGroupCategory;
 
-  // Group documents by name to detect versions
-  interface DocumentGroup {
-    latestDoc: Document;
-    olderVersions: Document[];
-  }
+  // Grouping, versions, and cleanup now use shared extracted modules
+  // (groupDocumentsByName, groupByType, getAllOlderVersions, getOlderVersionsStorageSize
+  //  are imported from documents/documentGrouping)
 
-  const groupDocumentsByName = (docs: Document[]): DocumentGroup[] => {
-    const nameGroups: Record<string, Document[]> = {};
-    
-    docs.forEach(doc => {
-      // Create a key from document name + type for grouping versions
-      const key = `${doc.document_name}__${doc.document_type}`;
-      if (!nameGroups[key]) nameGroups[key] = [];
-      nameGroups[key].push(doc);
-    });
-
-    // Sort each group by upload date (newest first) and create DocumentGroup objects
-    return Object.values(nameGroups).map(group => {
-      const sorted = group.sort((a, b) => 
-        new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
-      );
-      return {
-        latestDoc: sorted[0],
-        olderVersions: sorted.slice(1)
-      };
-    });
-  };
-
-  // Category colour coding config
-  const CATEGORY_STYLES: Record<string, { iconBg: string; iconColor: string; borderColor: string }> = {
-    "🌐 Global Documents":        { iconBg: "bg-blue-100",   iconColor: "text-blue-700",   borderColor: "border-blue-200" },
-    "📜 Inspection Reports":      { iconBg: "bg-indigo-100", iconColor: "text-indigo-700", borderColor: "border-indigo-200" },
-    "✅ Check Records":           { iconBg: "bg-emerald-100",iconColor: "text-emerald-700",borderColor: "border-emerald-200" },
-    "🔬 NDT":                     { iconBg: "bg-purple-100", iconColor: "text-purple-700", borderColor: "border-purple-200" },
-    "📐 Design & Review":         { iconBg: "bg-sky-100",    iconColor: "text-sky-700",    borderColor: "border-sky-200" },
-    "⚠️ Risk Assessments":        { iconBg: "bg-amber-100",  iconColor: "text-amber-700",  borderColor: "border-amber-200" },
-    "🔧 Maintenance":             { iconBg: "bg-green-100",  iconColor: "text-green-700",  borderColor: "border-green-200" },
-    "📖 Manuals & Procedures":    { iconBg: "bg-slate-100",  iconColor: "text-slate-700",  borderColor: "border-slate-200" },
-    "🛡️ Insurance & Certificates":{ iconBg: "bg-teal-100",   iconColor: "text-teal-700",   borderColor: "border-teal-200" },
-    "📸 Device Photos":           { iconBg: "bg-pink-100",   iconColor: "text-pink-700",   borderColor: "border-pink-200" },
-    "📁 Other":                   { iconBg: "bg-slate-100",  iconColor: "text-slate-600",  borderColor: "border-slate-200" },
-  };
-
-  const groupByType = (docs: Document[]) => {
-    const ORDER = [
-      "📜 Inspection Reports",
-      "✅ Check Records", 
-      "🔬 NDT",
-      "📐 Design & Review",
-      "⚠️ Risk Assessments",
-      "🔧 Maintenance",
-      "📖 Manuals & Procedures",
-      "🛡️ Insurance & Certificates",
-      "📸 Device Photos",
-      "📁 Other"
-    ];
-    const groups: Record<string, DocumentGroup[]> = {};
-    
-    // When isGlobal is true, we're showing ONLY global docs - don't separate them
-    // When showing ride docs, separate global from ride-specific
-    const globalDocs: Document[] = [];
-    const rideDocs: Document[] = [];
-    
-    if (isGlobal) {
-      // All docs are global, group by document type instead
-      docs.forEach(d => rideDocs.push(d)); // Treat as regular docs for grouping by type
-    } else {
-      docs.forEach(d => {
-        if (d.is_global) {
-          globalDocs.push(d);
-        } else {
-          rideDocs.push(d);
-        }
-      });
-    }
-    
-    // Group documents by type, then by name for versions
-    const rideDocGroups = groupDocumentsByName(rideDocs);
-    rideDocGroups.forEach(docGroup => {
-      const k = prettyType(docGroup.latestDoc.document_type);
-      (groups[k] ||= []).push(docGroup);
-    });
-    
-    const keys = Object.keys(groups).sort((a, b) => {
-      const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b);
-      if (ia === -1 && ib === -1) return a.localeCompare(b);
-      if (ia === -1) return 1;
-      if (ib === -1) return -1;
-      return ia - ib;
-    });
-    
-    const result = keys.map(k => ({ type: k, items: groups[k] }));
-    
-    // Add global documents at the top if they exist (only when showing ride docs, not when isGlobal)
-    if (!isGlobal && globalDocs.length > 0) {
-      const globalDocGroups = groupDocumentsByName(globalDocs);
-      result.unshift({ type: "🌐 Global Documents", items: globalDocGroups });
-    }
-    
-    return result;
-  };
-
-  // Get all older versions across all document groups
-  const getAllOlderVersions = (): Document[] => {
-    const allDocGroups = groupDocumentsByName(documents);
-    return allDocGroups.flatMap(group => group.olderVersions);
-  };
-
-  // Calculate storage used by older versions
-  const getOlderVersionsStorageSize = (): number => {
-    const olderVersions = getAllOlderVersions();
-    return olderVersions.reduce((sum, doc) => sum + (doc.file_size || 0), 0);
-  };
-
-  // Clean up all older versions
   const handleCleanupOldVersions = async () => {
-    const olderVersions = getAllOlderVersions();
+    const olderVersions = getAllOlderVersions(documents);
     if (olderVersions.length === 0) return;
 
     setCleaningUp(true);
     try {
-      // Delete from storage
       const filePaths = olderVersions.map(doc => doc.file_path);
       const { error: storageError } = await supabase.storage
         .from('ride-documents')
         .remove(filePaths);
-
       if (storageError) throw storageError;
 
-      // Delete from database
       const docIds = olderVersions.map(doc => doc.id);
       const { error: dbError } = await supabase
         .from('documents')
         .delete()
         .in('id', docIds);
-
       if (dbError) throw dbError;
 
-      const freedSpace = formatFileSize(getOlderVersionsStorageSize());
-      
+      const freedSpace = formatFileSize(getOlderVersionsStorageSize(documents));
       toast({
         title: "Old versions cleaned up",
         description: `Removed ${olderVersions.length} older version${olderVersions.length !== 1 ? 's' : ''}, freeing ${freedSpace}`,
@@ -538,11 +427,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
       loadDocuments();
     } catch (error: any) {
       console.error('Cleanup error:', error);
-      toast({
-        title: "Cleanup failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Cleanup failed", description: error.message, variant: "destructive" });
     } finally {
       setCleaningUp(false);
     }
@@ -577,111 +462,30 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     );
   }
 
-  // Grouped render for mobile-first clarity
-  // Component to render a single document row
-  const DocumentRow = ({ doc, isOlderVersion = false, hasMultipleVersions = false }: { doc: Document; isOlderVersion?: boolean; hasMultipleVersions?: boolean }) => {
-    const displayName = getDocumentDisplayName(doc);
-    const expired = doc.expires_at && isExpired(doc.expires_at);
-    const expiringSoon = doc.expires_at && !expired && isExpiringSoon(doc.expires_at);
-    const uploadedStr = new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-    const sizeStr = doc.file_size ? formatFileSize(doc.file_size) : null;
-
-    return (
-      <div className={`flex items-center gap-3 px-3 py-3 border-b border-slate-100 last:border-b-0 hover:bg-slate-50 transition-colors min-w-0 ${isOlderVersion ? 'opacity-70' : ''}`}>
-        {/* File icon / thumbnail */}
-        <div className="shrink-0">
-          {thumbs[doc.id] ? (
-            <img
-              src={thumbs[doc.id]}
-              alt={displayName}
-              className="w-10 h-10 object-cover rounded-lg border border-slate-200"
-            />
-          ) : (
-            <div className="w-10 h-10 bg-slate-100 rounded-lg flex items-center justify-center border border-slate-200">
-              <FileText className="w-5 h-5 text-slate-600" />
-            </div>
-          )}
-        </div>
-
-        {/* File info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate" title={displayName}>
-              {isOlderVersion
-                ? `📅 ${new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
-                : displayName}
-            </p>
-            {hasMultipleVersions && !isOlderVersion && (
-              <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">Latest</span>
-            )}
-          </div>
-          {/* Compliance subtitle: document ID + inspector + reference parsed from notes */}
-          {!isOlderVersion && (() => {
-            // Extract full_document_id from document_name prefix (e.g. "TC-CR-2026-0004 – ...")
-            const docIdMatch = doc.document_name?.match(/^([A-Z0-9]+-CR-\d{4}-\d{4})/);
-            const fullDocId = docIdMatch ? docIdMatch[1] : null;
-            
-            const parts: string[] = [];
-            if (fullDocId) parts.push(fullDocId);
-            
-            if (doc.notes) {
-              const lines = doc.notes.split('\n');
-              const inspectorLine = lines.find(l => l.startsWith('Inspector: '));
-              const refLine = lines.find(l => l.startsWith('Ref: '));
-              if (rideName && !fullDocId) parts.push(rideName);
-              if (inspectorLine) parts.push(inspectorLine);
-              if (refLine) parts.push(refLine);
-            }
-            
-            if (parts.length === 0) return null;
-            return (
-              <p className="text-xs text-muted-foreground truncate mt-0.5" title={parts.join(' • ')}>
-                {fullDocId && <span className="font-mono font-semibold text-primary mr-1">{fullDocId}</span>}
-                {parts.slice(fullDocId ? 1 : 0).join(' • ')}
-              </p>
-            );
-          })()}
-          <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-            {!isOlderVersion && doc.is_global && (
-              <span className="text-[10px] text-muted-foreground font-medium">Global</span>
-            )}
-            {!isOlderVersion && !doc.is_global && rideId && (
-              <span className="text-[10px] text-muted-foreground font-medium">This ride only</span>
-            )}
-            {!isOlderVersion && (
-              <span className="text-xs text-muted-foreground">{uploadedStr}</span>
-            )}
-            {sizeStr && <span className="text-xs text-muted-foreground">• {sizeStr}</span>}
-            {/* Expiry badge */}
-            {doc.expires_at && !isOlderVersion && (
-              expired ? (
-                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-red-100 text-red-800 border border-red-200">Expired</span>
-              ) : expiringSoon ? (
-                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">Expires soon</span>
-              ) : (
-                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded bg-green-100 text-green-800 border border-green-200">Valid</span>
-              )
-            )}
-          </div>
-        </div>
-
-        {/* Actions — canonical pattern */}
-        <DocumentRowActions
-          onView={() => handleViewDoc(doc)}
-          onDownload={() => handleDownload(doc)}
-          onCopyLink={() => handleCopyLink(doc)}
-          onDelete={!isOlderVersion ? () => handleDelete(doc) : undefined}
-          isGlobal={doc.is_global ?? false}
-          onToggleGlobal={!isOlderVersion && !isStaff ? () => handleToggleGlobal(doc) : undefined}
-        />
-      </div>
-    );
-  };
+  // DocumentRow now uses the extracted component from documents/DocumentRow.tsx
+  const renderDocRow = (doc: Document, isOlderVersion = false, hasMultipleVersions = false) => (
+    <DocumentRow
+      key={doc.id}
+      doc={doc}
+      isOlderVersion={isOlderVersion}
+      hasMultipleVersions={hasMultipleVersions}
+      thumbUrl={thumbs[doc.id]}
+      rideName={rideName}
+      rideId={rideId}
+      isStaff={isStaff}
+      getDocumentDisplayName={getDocumentDisplayName}
+      onView={handleViewDoc}
+      onDownload={handleDownload}
+      onCopyLink={handleCopyLink}
+      onDelete={!isOlderVersion ? handleDelete : undefined}
+      onToggleGlobal={!isStaff ? handleToggleGlobal : undefined}
+    />
+  );
 
   if (grouped) {
-    const groupedDocs = groupByType(documents);
-    const olderVersionsCount = getAllOlderVersions().length;
-    const olderVersionsSize = getOlderVersionsStorageSize();
+    const groupedDocs = groupByType(documents, isGlobal);
+    const olderVersionsCount = getAllOlderVersions(documents).length;
+    const olderVersionsSize = getOlderVersionsStorageSize(documents);
     
     return (
       <>
@@ -832,7 +636,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                           <div className="divide-y divide-slate-100">
                             {itemsToShow.map(docGroup => (
                               <div key={docGroup.latestDoc.id}>
-                                <DocumentRow doc={docGroup.latestDoc} hasMultipleVersions={docGroup.olderVersions.length > 0} />
+                                {renderDocRow(docGroup.latestDoc, false, docGroup.olderVersions.length > 0)}
                                 {docGroup.olderVersions.length > 0 && (
                                   <Collapsible>
                                     <CollapsibleTrigger asChild>
@@ -847,9 +651,9 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                                       </Button>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="border-l-2 border-slate-100 ml-14">
-                                      {docGroup.olderVersions.map(olderDoc => (
-                                        <DocumentRow key={olderDoc.id} doc={olderDoc} isOlderVersion />
-                                      ))}
+                                      {docGroup.olderVersions.map(olderDoc =>
+                                        renderDocRow(olderDoc, true)
+                                      )}
                                     </CollapsibleContent>
                                   </Collapsible>
                                 )}

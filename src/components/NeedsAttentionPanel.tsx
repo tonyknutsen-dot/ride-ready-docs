@@ -5,6 +5,9 @@ import { AlertOctagon, FileText, ClipboardCheck, Clock, CheckCircle, ChevronRigh
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { isDocExpired, daysUntilExpiry, getExpiryLabel } from '@/utils/documentHelpers';
+import { isOverdue, daysUntil } from '@/utils/complianceCounts';
+import { isDefectCritical } from '@/hooks/useDefectSummary';
 
 interface AttentionItem {
   id: string;
@@ -102,19 +105,19 @@ const NeedsAttentionPanel = () => {
       });
 
       (docsRes.data || []).forEach((doc: any) => {
-        const isExpired = doc.expires_at < todayStr;
-        const daysUntil = Math.ceil((new Date(doc.expires_at).getTime() - today.getTime()) / 86400000);
-        const dateLabel = isExpired
-          ? `Expired ${Math.abs(daysUntil)}d ago`
-          : daysUntil === 0 ? 'Expires today'
-          : daysUntil === 1 ? 'Expires tomorrow'
-          : `Expires in ${daysUntil}d`;
+        const expired = isDocExpired(doc.expires_at);
+        const days = daysUntilExpiry(doc.expires_at);
+        const dateLabel = expired
+          ? `Expired ${Math.abs(days)}d ago`
+          : days === 0 ? 'Expires today'
+          : days === 1 ? 'Expires tomorrow'
+          : `Expires in ${days}d`;
         result.push({
           id: `doc-${doc.id}`,
           type: 'doc_expiring',
           label: doc.document_name,
           sublabel: `${dateLabel}${doc.rides?.ride_name ? ` • ${doc.rides.ride_name}` : ''}`,
-          urgency: isExpired || daysUntil <= 7 ? 'warning' : 'info',
+          urgency: expired || days <= 7 ? 'warning' : 'info',
           path: doc.ride_id ? `/rides/${doc.ride_id}?tab=documents` : '/documents',
         });
       });
@@ -134,15 +137,15 @@ const NeedsAttentionPanel = () => {
           if (evt.ride_id && operationalCheckDoneTodayIds.has(evt.ride_id)) return; // already checked today
         }
 
-        const isOverdue = evt.due_date < todayStr;
-        const daysUntil = Math.ceil((new Date(evt.due_date).getTime() - today.getTime()) / 86400000);
+        const evtOverdue = isOverdue(evt.due_date);
+        const evtDaysUntil = daysUntil(evt.due_date);
         const dateLabel = isOperationalCheck
           ? 'Ready to complete'
-          : isOverdue
-            ? `${Math.abs(daysUntil)}d overdue`
-            : daysUntil === 0 ? 'Due today'
-            : daysUntil === 1 ? 'Due tomorrow'
-            : `Due in ${daysUntil}d`;
+          : evtOverdue
+            ? `${Math.abs(evtDaysUntil)}d overdue`
+            : evtDaysUntil === 0 ? 'Due today'
+            : evtDaysUntil === 1 ? 'Due tomorrow'
+            : `Due in ${evtDaysUntil}d`;
 
         let path = '/calendar';
         if (evtType === 'pre_opening_check' || evtType === 'daily_check') {
@@ -163,7 +166,7 @@ const NeedsAttentionPanel = () => {
           type: isOperationalCheck ? 'check_due' : 'inspection_due',
           label: evt.event_name,
           sublabel: `${dateLabel}${rideName ? ` • ${rideName}` : ''}`,
-          urgency: isOverdue ? 'warning' : 'info',
+          urgency: evtOverdue ? 'warning' : 'info',
           path,
         });
       });

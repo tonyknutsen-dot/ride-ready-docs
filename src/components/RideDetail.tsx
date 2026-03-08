@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { isDocExpired, isDocExpiringSoon } from '@/utils/documentHelpers';
+import { countExpiredDocs, countExpiringSoonDocs } from '@/utils/complianceCounts';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -146,12 +148,9 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
         checksQuery, docQuery, defectQuery, overdueQuery,
       ]);
 
-      const thirtyDays = new Date();
-      thirtyDays.setDate(thirtyDays.getDate() + 30);
-      const now = new Date();
       const docs = docRes.data || [];
-      const expiredDocCount = docs.filter(d => d.expires_at && new Date(d.expires_at) < now).length;
-      const expiringSoonDocCount = docs.filter(d => d.expires_at && new Date(d.expires_at) >= now && new Date(d.expires_at) <= thirtyDays).length;
+      const expiredDocCount = countExpiredDocs(docs);
+      const expiringSoonDocCount = countExpiringSoonDocs(docs);
       const hasExpiredDocs = expiredDocCount > 0;
       const hasExpiringSoonDocs = !hasExpiredDocs && expiringSoonDocCount > 0;
 
