@@ -137,8 +137,8 @@ const NeedsAttentionPanel = () => {
           if (evt.ride_id && operationalCheckDoneTodayIds.has(evt.ride_id)) return; // already checked today
         }
 
-        const isOverdue = evt.due_date < todayStr;
-        const daysUntil = Math.ceil((new Date(evt.due_date).getTime() - today.getTime()) / 86400000);
+        const evtOverdue = isOverdue(evt.due_date);
+        const evtDaysUntil = daysUntil(evt.due_date);
         const dateLabel = isOperationalCheck
           ? 'Ready to complete'
           : isOverdue
