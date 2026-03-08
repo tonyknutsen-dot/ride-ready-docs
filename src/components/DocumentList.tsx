@@ -58,6 +58,8 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const [checkRecordDisplayLimit, setCheckRecordDisplayLimit] = useState(20);
   const CHECK_RECORD_PAGE_SIZE = 20;
 
+  // Viewer state for in-app document viewing
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: 'pdf' | 'image' } | null>(null);
   // Helper to identify image documents
   const isImageDoc = (doc: Document) => {
     const name = (doc.file_path || doc.document_name || '').toLowerCase();
