@@ -702,8 +702,11 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
         {/* File info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 min-w-0">
-            {doc.is_global && !isOlderVersion && <Globe className="h-3.5 w-3.5 text-blue-600 shrink-0" />}
-            <p className="text-sm font-semibold text-slate-900 truncate" title={displayName}>
+            <p className="text-sm font-semibold text-foreground truncate" title={displayName}>
+              {isOlderVersion
+                ? `📅 ${new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
+                : displayName}
+            </p>
               {isOlderVersion
                 ? `📅 ${new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
                 : displayName}
