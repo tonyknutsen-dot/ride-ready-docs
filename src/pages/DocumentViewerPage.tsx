@@ -18,6 +18,7 @@ import {
   ArrowLeft, Download, History, Archive, RotateCcw,
   FileText, Calendar, Building2, Hash, Clock, Loader2,
   MapPin, Eye, CheckCircle2, AlertTriangle, WifiOff, HardDrive,
+  Image as ImageIcon, File,
 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { formatDateUK } from '@/utils/dateFormat';
@@ -60,6 +61,7 @@ const DocumentViewerPage = () => {
   const [docTitle, setDocTitle] = useState('');
   const [docDisplayId, setDocDisplayId] = useState('');
   const [meta, setMeta] = useState<DocumentMeta | null>(null);
+  const [fileType, setFileType] = useState<'pdf' | 'image' | 'other'>('pdf');
 
   // Underlying document data
   const [rideDoc, setRideDoc] = useState<RideDocument | null>(null);
@@ -264,11 +266,21 @@ const DocumentViewerPage = () => {
     });
   };
 
+  const detectFileType = (filePath: string): 'pdf' | 'image' | 'other' => {
+    const fp = filePath.toLowerCase();
+    if (/\.pdf$/i.test(fp)) return 'pdf';
+    if (/\.(jpg|jpeg|png|gif|webp|bmp|tiff?)$/i.test(fp)) return 'image';
+    return 'other';
+  };
+
   const loadFromDocumentsTable = async (doc: any) => {
     setFallbackDocId(doc.id);
     setAllVersions([]);
     setLatestVersion(null);
     setDocTitle(doc.document_name);
+
+    const ft = detectFileType(doc.file_path || '');
+    setFileType(ft);
 
     const idMatch = doc.document_name?.match(/^([A-Z0-9]+-[A-Z]+-\d{4}-\d{4})/);
     setDocDisplayId(idMatch?.[1] || doc.id.slice(0, 8));
@@ -620,14 +632,39 @@ const DocumentViewerPage = () => {
         </div>
       </header>
 
-      {/* ── Content: PDF + Sidebar ── */}
+      {/* ── Content: Document + Sidebar ── */}
       <div className="flex-1 flex overflow-hidden">
-        {/* PDF Viewer */}
+        {/* Document Viewer — file-type aware */}
         <div className="flex-1">
-          <PdfCanvasViewer
-            src={pdfUrl}
-            onDownload={handleDownload}
-          />
+          {fileType === 'pdf' && (
+            <PdfCanvasViewer
+              src={pdfUrl}
+              onDownload={handleDownload}
+            />
+          )}
+          {fileType === 'image' && pdfUrl && (
+            <div className="w-full h-full overflow-auto flex items-center justify-center bg-muted/30 p-4">
+              <img
+                src={pdfUrl}
+                alt={docTitle}
+                className="max-w-full max-h-full object-contain rounded-lg shadow-md"
+              />
+            </div>
+          )}
+          {fileType === 'other' && (
+            <div className="w-full h-full flex items-center justify-center">
+              <div className="text-center space-y-3 max-w-xs px-4">
+                <File className="mx-auto h-12 w-12 text-muted-foreground" />
+                <p className="text-sm font-semibold text-foreground">Preview not available</p>
+                <p className="text-xs text-muted-foreground">
+                  This file type cannot be previewed in the app. Use the download button to open it on your device.
+                </p>
+                <Button variant="outline" size="sm" onClick={handleDownload}>
+                  <Download className="h-3.5 w-3.5 mr-1.5" /> Download
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Metadata Sidebar */}

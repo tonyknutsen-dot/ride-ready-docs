@@ -27,6 +27,7 @@ import {
   File,
   RefreshCw,
   Link2,
+  Eye,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -35,6 +36,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
+import PDFViewer from '@/components/PDFViewer';
+import ImageViewer from '@/components/ImageViewer';
 
 type Document = Tables<'documents'>;
 
@@ -127,6 +130,9 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   const [rideOpen, setRideOpen] = useState(true);
   const [globalOpen, setGlobalOpen] = useState(true);
 
+  // Viewer state
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: 'pdf' | 'image' } | null>(null);
+
   /* ─── Fetch ─── */
   useEffect(() => {
     if (!effectiveUserId) return;
@@ -195,6 +201,40 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
   const globalCount = classified.globalGenerated.length + classified.globalUploaded.length;
 
   /* ─── Actions ─── */
+
+  const handleView = async (doc: Document) => {
+    try {
+      const signedUrl = await getSignedStorageUrl(doc.file_path);
+      if (!signedUrl) throw new Error('Could not get file URL');
+      const fp = doc.file_path || '';
+      if (isPDFFile(fp)) {
+        setViewerDoc({ url: signedUrl, name: doc.document_name, type: 'pdf' });
+      } else if (isImageFile(fp)) {
+        setViewerDoc({ url: signedUrl, name: doc.document_name, type: 'image' });
+      } else {
+        // Unsupported type — download directly
+        window.open(signedUrl, '_blank');
+      }
+    } catch (err: any) {
+      toast({ title: 'Failed to open', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleViewerDownload = async () => {
+    if (!viewerDoc) return;
+    try {
+      const response = await fetch(viewerDoc.url);
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = viewerDoc.name;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch {
+      toast({ title: 'Download failed', variant: 'destructive' });
+    }
+  };
 
   const handleDownload = async (doc: Document) => {
     try {
@@ -283,7 +323,10 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
     const ext = fileExt(doc.file_path || '');
 
     return (
-      <div className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-card">
+      <div
+        className="flex items-center gap-3 p-3 rounded-xl border border-border/60 bg-card cursor-pointer hover:bg-accent/50 transition-colors"
+        onClick={() => handleView(doc)}
+      >
         {/* File type icon */}
         <div className="w-10 h-10 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
           <FileIcon doc={doc} />
@@ -329,6 +372,9 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleView(doc); }}>
+              <Eye className="h-4 w-4 mr-2" /> View
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleDownload(doc); }}>
               <Download className="h-4 w-4 mr-2" /> Save to Device
             </DropdownMenuItem>
@@ -463,6 +509,25 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
         </CollapsibleContent>
       </Collapsible>
 
+      {/* Viewers */}
+      {viewerDoc?.type === 'pdf' && (
+        <PDFViewer
+          isOpen
+          onClose={() => setViewerDoc(null)}
+          pdfUrl={viewerDoc.url}
+          pdfName={viewerDoc.name}
+          onDownload={handleViewerDownload}
+        />
+      )}
+      {viewerDoc?.type === 'image' && (
+        <ImageViewer
+          isOpen
+          onClose={() => setViewerDoc(null)}
+          imageUrl={viewerDoc.url}
+          imageName={viewerDoc.name}
+          onDownload={handleViewerDownload}
+        />
+      )}
     </div>
   );
 };

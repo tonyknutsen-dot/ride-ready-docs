@@ -199,14 +199,14 @@ const Rides = () => {
           .in('ride_id', rideIds)
           .eq('user_id', effectiveUserId)
           .not('next_inspection_due', 'is', null),
-        // Expired documents per ride
+        // Expired documents per ride (is_latest_version true or null)
         supabase
           .from('documents')
           .select('ride_id')
           .in('ride_id', rideIds)
           .eq('user_id', effectiveUserId)
           .not('expires_at', 'is', null)
-          .eq('is_latest_version', true)
+          .neq('is_latest_version', false)
           .eq('is_test_data', false)
           .lt('expires_at', todayStr),
         // Due soon documents per ride (within 30 days)
@@ -216,7 +216,7 @@ const Rides = () => {
           .in('ride_id', rideIds)
           .eq('user_id', effectiveUserId)
           .not('expires_at', 'is', null)
-          .eq('is_latest_version', true)
+          .neq('is_latest_version', false)
           .eq('is_test_data', false)
           .gte('expires_at', todayStr)
           .lte('expires_at', thirtyDaysStr),

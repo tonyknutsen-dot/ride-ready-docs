@@ -25,13 +25,13 @@ export function useOverdueCompliance() {
           .eq('status', 'scheduled')
           .eq('event_category', 'regulatory')
           .lt('due_date', today),
-        // Expired documents (latest version, not archived)
+        // Expired documents (latest version or null, not archived)
         supabase
           .from('documents')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
           .eq('is_test_data', false)
-          .eq('is_latest_version', true)
+          .neq('is_latest_version', false)
           .lt('expires_at', today)
           .not('expires_at', 'is', null),
       ]);
