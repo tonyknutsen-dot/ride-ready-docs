@@ -340,10 +340,6 @@ const GlobalDocumentView = ({ refreshKey, onDocumentDeleted }: GlobalDocumentVie
         <div className="flex-1 min-w-0 space-y-0.5">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-semibold truncate">{doc.document_name || typeLabel}</span>
-            <Badge variant="outline" className="text-[10px] h-4 px-1.5 shrink-0 gap-0.5 border-primary/30 text-primary">
-              <Globe className="h-2.5 w-2.5" />
-              Global
-            </Badge>
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5">

@@ -742,10 +742,16 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
             );
           })()}
           <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-            {!isOlderVersion && (
-              <span className="text-xs text-slate-500">{uploadedStr}</span>
+            {!isOlderVersion && doc.is_global && (
+              <span className="text-[10px] text-muted-foreground font-medium">Global</span>
             )}
-            {sizeStr && <span className="text-xs text-slate-400">• {sizeStr}</span>}
+            {!isOlderVersion && !doc.is_global && rideId && (
+              <span className="text-[10px] text-muted-foreground font-medium">This ride only</span>
+            )}
+            {!isOlderVersion && (
+              <span className="text-xs text-muted-foreground">{uploadedStr}</span>
+            )}
+            {sizeStr && <span className="text-xs text-muted-foreground">• {sizeStr}</span>}
             {/* Expiry badge */}
             {doc.expires_at && !isOlderVersion && (
               expired ? (
