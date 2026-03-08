@@ -27,6 +27,7 @@ import {
   File,
   RefreshCw,
   Link2,
+  Eye,
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
@@ -35,6 +36,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
+import PDFViewer from '@/components/PDFViewer';
+import ImageViewer from '@/components/ImageViewer';
 
 type Document = Tables<'documents'>;
 

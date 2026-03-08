@@ -19,7 +19,7 @@ import {
   Search,
   Upload,
   Link2,
-  Link2,
+  Eye,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +29,8 @@ import { Tables } from '@/integrations/supabase/types';
 import { formatDateUK } from '@/utils/dateFormat';
 import { cn } from '@/lib/utils';
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
+import PDFViewer from '@/components/PDFViewer';
+import ImageViewer from '@/components/ImageViewer';
 
 type Document = Tables<'documents'>;
 
