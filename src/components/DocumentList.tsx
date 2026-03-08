@@ -651,9 +651,9 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                                       </Button>
                                     </CollapsibleTrigger>
                                     <CollapsibleContent className="border-l-2 border-slate-100 ml-14">
-                                      {docGroup.olderVersions.map(olderDoc => (
-                                        {renderDocRow(olderDoc, true)}
-                                      ))}
+                                      {docGroup.olderVersions.map(olderDoc =>
+                                        renderDocRow(olderDoc, true)
+                                      )}
                                     </CollapsibleContent>
                                   </Collapsible>
                                 )}
