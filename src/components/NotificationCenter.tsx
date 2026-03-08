@@ -900,7 +900,17 @@ const NotificationCenter = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {grouped.map(group => (
+          {/* Always show section headings for the 3 groups when on 'all' tab */}
+          {(() => {
+            // Ensure all three groups are always visible (even if empty) on the 'all' tab
+            const allGroups = activeTab === 'all'
+              ? (['Action needed', 'Recent updates', 'Older'] as const).map(label => {
+                  const found = grouped.find(g => g.label === label);
+                  return found || { label, items: [] as Notification[] };
+                }).filter(g => g.items.length > 0 || g.label !== 'Older') // hide empty Older
+              : grouped;
+
+            return allGroups.map(group => (
             <div key={group.label}>
               <div className="flex items-center gap-2 mb-2">
                 {group.label === 'Action needed' && (
