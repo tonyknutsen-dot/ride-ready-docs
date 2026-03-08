@@ -13,7 +13,7 @@ const routeLabels: Record<string, string> = {
   '/admin/support-access': 'Support Access',
   '/admin/users': 'User Management',
   '/admin/audit-logs': 'Audit Logs',
-  '/admin/security': 'Security',
+  '/admin/security': 'Rate Limits & Blocks',
   '/admin/payments': 'Payments',
   '/admin/risk-items': 'Risk Items',
 };
