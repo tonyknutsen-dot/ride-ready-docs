@@ -512,11 +512,12 @@ const NotificationCenter = () => {
         }
       }
 
-      // ─── 3. Open critical/high-priority defects ───
+      // ─── 3. ALL open defects ───
       const { data: openDefects } = await supabase
         .from('defects')
         .select('id, description, severity, ride_id, reported_at, status')
         .eq('user_id', effectiveUserId)
+        .eq('is_test_data', false)
         .neq('status', 'resolved');
 
       for (const d of openDefects || []) {
@@ -535,34 +536,57 @@ const NotificationCenter = () => {
             `${d.description.slice(0, 80)}${rideName ? ` — ${rideName}` : ''}. Open ${daysLabel(daysOpen)}.`,
             'warning', 'defects', d.id
           );
+        } else {
+          // non_urgent and other severities still surfaced
+          await ensureNotification(
+            `Open defect: ${rideName || 'equipment'}`,
+            `${d.description.slice(0, 80)}${rideName ? ` — ${rideName}` : ''}. Open ${daysLabel(daysOpen)}.`,
+            'info', 'defects', d.id
+          );
         }
       }
 
-      // ─── 4. Maintenance overdue / due soon ───
+      // ─── 4. Maintenance — overdue/due-soon + recent activity ───
       const { data: maintenanceRecords } = await supabase
         .from('maintenance_records')
-        .select('id, description, ride_id, next_maintenance_due')
+        .select('id, description, ride_id, next_maintenance_due, maintenance_date')
         .eq('user_id', effectiveUserId)
-        .not('next_maintenance_due', 'is', null);
+        .eq('is_test_data', false);
 
       for (const m of maintenanceRecords || []) {
-        if (!m.next_maintenance_due) continue;
-        const dueDate = parseISO(m.next_maintenance_due);
-        const daysUntil = differenceInDays(dueDate, today);
         const rideName = m.ride_id ? rideMap.get(m.ride_id) || '' : '';
 
-        if (daysUntil < 0) {
-          await ensureNotification(
-            `Maintenance overdue`,
-            `${m.description.slice(0, 60)}${rideName ? ` — ${rideName}` : ''} was due ${daysLabel(Math.abs(daysUntil))} ago.`,
-            'warning', 'maintenance_records', m.id
-          );
-        } else if (daysUntil <= 7) {
-          await ensureNotification(
-            `Maintenance due in ${daysLabel(daysUntil)}`,
-            `${m.description.slice(0, 60)}${rideName ? ` — ${rideName}` : ''}.`,
-            'info', 'maintenance_records', m.id
-          );
+        // 4a. Overdue / due-soon (when next_maintenance_due is set)
+        if (m.next_maintenance_due) {
+          const dueDate = parseISO(m.next_maintenance_due);
+          const daysUntil = differenceInDays(dueDate, today);
+
+          if (daysUntil < 0) {
+            await ensureNotification(
+              `Maintenance overdue`,
+              `${m.description.slice(0, 60)}${rideName ? ` — ${rideName}` : ''} was due ${daysLabel(Math.abs(daysUntil))} ago.`,
+              'warning', 'maintenance_records', m.id
+            );
+          } else if (daysUntil <= 7) {
+            await ensureNotification(
+              `Maintenance due in ${daysLabel(daysUntil)}`,
+              `${m.description.slice(0, 60)}${rideName ? ` — ${rideName}` : ''}.`,
+              'info', 'maintenance_records', m.id
+            );
+          }
+        }
+
+        // 4b. Recent maintenance activity (logged within last 7 days) — confirmation
+        if (m.maintenance_date) {
+          const logDate = parseISO(m.maintenance_date);
+          const daysAgo = differenceInDays(today, logDate);
+          if (daysAgo >= 0 && daysAgo <= 7) {
+            await ensureNotification(
+              `Maintenance logged: ${rideName || 'equipment'}`,
+              `${m.description.slice(0, 60)}${rideName ? ` — ${rideName}` : ''}. Logged ${daysAgo === 0 ? 'today' : daysLabel(daysAgo) + ' ago'}.`,
+              'success', 'maintenance_records', m.id
+            );
+          }
         }
       }
 
