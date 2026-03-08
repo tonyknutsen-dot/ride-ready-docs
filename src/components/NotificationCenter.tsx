@@ -1059,7 +1059,8 @@ const NotificationCenter = () => {
                 })}
               </div>
             </div>
-          ))}
+          ));
+          })()}
         </div>
       )}
     </div>
