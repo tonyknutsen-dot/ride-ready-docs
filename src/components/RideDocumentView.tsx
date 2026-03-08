@@ -376,6 +376,8 @@ const RideDocumentView = ({ rideId, rideName, onDocumentDeleted, refreshKey }: R
             }));
           }}
           onDelete={!showGlobalBadge ? () => handleDelete(doc) : undefined}
+          isGlobal={doc.is_global ?? false}
+          onToggleGlobal={!isStaff ? () => handleToggleScope(doc) : undefined}
         />
       </div>
     );
