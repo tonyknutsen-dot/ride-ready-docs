@@ -927,6 +927,11 @@ const NotificationCenter = () => {
                 </Badge>
               </div>
 
+              {group.items.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground/60 pl-5 py-1">
+                  {group.label === 'Action needed' ? 'Nothing needs attention' : 'No items'}
+                </p>
+              ) : (
               <div className="space-y-1.5">
                 {group.items.map(n => {
                   const actionable = isActionable(n);
