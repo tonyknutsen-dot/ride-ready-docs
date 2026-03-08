@@ -2,10 +2,15 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { FileText, Download, Trash2, Calendar, AlertTriangle, Link2, History, ChevronDown, Globe, Send, Filter, Eye } from 'lucide-react';
 import DocumentRowActions from '@/components/documents/DocumentRowActions';
+import DocumentRow from '@/components/documents/DocumentRow';
+import VersionCleanupDialog from '@/components/documents/VersionCleanupDialog';
+import {
+  groupDocumentsByName, groupByType, getAllOlderVersions,
+  getOlderVersionsStorageSize, CATEGORY_STYLES, type DocumentGroup,
+} from '@/components/documents/documentGrouping';
 import { useAuth } from '@/contexts/AuthContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
