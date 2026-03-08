@@ -173,8 +173,16 @@ export default function AdminDashboard() {
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-border/60 bg-muted/20 text-xs shrink-0">
               <FlaskConical className="h-3.5 w-3.5 text-muted-foreground/70 shrink-0" />
               <Label htmlFor="exclude-test-data" className="text-xs cursor-pointer whitespace-nowrap text-muted-foreground">
-                Exclude test data
+                Production-only platform totals
               </Label>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Info className="h-3 w-3 text-muted-foreground/50 cursor-help shrink-0" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[220px] text-xs">
+                  Affects rides, documents, checks, and maintenance totals only.
+                </TooltipContent>
+              </Tooltip>
               <Switch
                 id="exclude-test-data"
                 checked={excludeTestData}
