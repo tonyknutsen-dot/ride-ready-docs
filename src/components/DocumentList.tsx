@@ -59,6 +59,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const CHECK_RECORD_PAGE_SIZE = 20;
 
   // Viewer state for in-app document viewing
+  const [viewerDoc, setViewerDoc] = useState<{ url: string; name: string; type: 'pdf' | 'image' } | null>(null);
 
   const handleViewDoc = async (doc: Document) => {
     try {
