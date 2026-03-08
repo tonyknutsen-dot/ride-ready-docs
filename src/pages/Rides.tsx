@@ -207,6 +207,7 @@ const Rides = () => {
           .eq('user_id', effectiveUserId)
           .not('expires_at', 'is', null)
           .eq('is_latest_version', true)
+          .eq('is_test_data', false)
           .lt('expires_at', todayStr),
         // Due soon documents per ride (within 30 days)
         supabase
@@ -216,6 +217,7 @@ const Rides = () => {
           .eq('user_id', effectiveUserId)
           .not('expires_at', 'is', null)
           .eq('is_latest_version', true)
+          .eq('is_test_data', false)
           .gte('expires_at', todayStr)
           .lte('expires_at', thirtyDaysStr),
         // Overdue inspections per ride

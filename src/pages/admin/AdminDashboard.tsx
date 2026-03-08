@@ -364,71 +364,37 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            {/* ─── 4. PLATFORM DATA ─── */}
-            <section>
-              <div className="flex items-center gap-2 mb-3">
-                <BarChart3 className="h-4 w-4 text-muted-foreground" />
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            {/* ─── 4. PLATFORM DATA (low emphasis) ─── */}
+            <section className="opacity-80">
+              <div className="flex items-center gap-2 mb-2">
+                <BarChart3 className="h-3.5 w-3.5 text-muted-foreground/60" />
+                <h2 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground/70">
                   Platform Data
                 </h2>
                 {excludeTestData && hasTestData && (
-                  <Badge variant="secondary" className="text-xs">
-                    Excluding {stats.testRides + stats.testDocuments + stats.testChecks + stats.testMaintenanceRecords} test records
+                  <Badge variant="secondary" className="text-[10px] h-4 px-1.5">
+                    Excluding {stats.testRides + stats.testDocuments + stats.testChecks + stats.testMaintenanceRecords} test
                   </Badge>
                 )}
               </div>
-              <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
-                <Card className="border-border/60">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Rides</CardTitle>
-                    <FolderOpen className="h-4 w-4 text-muted-foreground/60" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-semibold">{displayedRides}</div>
-                    {excludeTestData && stats.testRides > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">{stats.testRides} test excluded</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/60">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Documents</CardTitle>
-                    <FileText className="h-4 w-4 text-muted-foreground/60" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-semibold">{displayedDocuments}</div>
-                    {excludeTestData && stats.testDocuments > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">{stats.testDocuments} test excluded</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/60">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Checks</CardTitle>
-                    <CheckCircle className="h-4 w-4 text-muted-foreground/60" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-semibold">{displayedChecks}</div>
-                    {excludeTestData && stats.testChecks > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">{stats.testChecks} test excluded</p>
-                    )}
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/60">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-xs sm:text-sm font-medium text-muted-foreground">Maintenance</CardTitle>
-                    <Shield className="h-4 w-4 text-muted-foreground/60" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-xl font-semibold">{displayedMaintenance}</div>
-                    {excludeTestData && stats.testMaintenanceRecords > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">{stats.testMaintenanceRecords} test excluded</p>
-                    )}
-                  </CardContent>
-                </Card>
+              <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
+                {[
+                  { label: 'Rides', value: displayedRides, testCount: stats.testRides, icon: FolderOpen },
+                  { label: 'Documents', value: displayedDocuments, testCount: stats.testDocuments, icon: FileText },
+                  { label: 'Checks', value: displayedChecks, testCount: stats.testChecks, icon: CheckCircle },
+                  { label: 'Maintenance', value: displayedMaintenance, testCount: stats.testMaintenanceRecords, icon: Shield },
+                ].map(item => (
+                  <div key={item.label} className="flex items-center gap-3 p-3 rounded-lg border border-border/40 bg-muted/20">
+                    <item.icon className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                    <div className="min-w-0">
+                      <p className="text-lg font-semibold text-muted-foreground leading-none">{item.value}</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                        {item.label}
+                        {excludeTestData && item.testCount > 0 && ` · ${item.testCount} test excl.`}
+                      </p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </section>
 

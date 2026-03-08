@@ -164,8 +164,12 @@ const getActionRoute = (n: Notification): string | null => {
   if (n.related_table === 'checks') return buildCheckRoute(n.related_id);
   if (title.includes('check') || title.includes('missed')) return '/checks';
   if (title.includes('inspection') || title.includes('ndt')) return '/compliance';
-  if (title.includes('document') || title.includes('expir') || title.includes('certificate')) return '/documents';
-  if (n.related_table === 'documents') return '/documents';
+  if (n.related_table === 'documents' && n.related_id) return `/documents/${n.related_id}`;
+  if (title.includes('document') || title.includes('expir') || title.includes('certificate')) {
+    if (n.related_id) return `/documents/${n.related_id}`;
+    return '/global-documents';
+  }
+  if (n.related_table === 'documents') return '/global-documents';
   if (title.includes('maintenance')) return '/maintenance';
   if (n.related_table === 'maintenance_records') return '/maintenance';
   if (title.includes('wind') || title.includes('threshold') || title.includes('pack-away')) return '/wind-log';
@@ -426,6 +430,7 @@ const NotificationCenter = () => {
         .select('id, document_name, expires_at, ride_id')
         .eq('user_id', effectiveUserId)
         .eq('is_latest_version', true)
+        .eq('is_test_data', false)
         .not('expires_at', 'is', null);
 
       const { data: rides } = await supabase
@@ -821,9 +826,15 @@ const NotificationCenter = () => {
 
       {/* ── Filter tabs ──────────────────── */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 -mx-1 px-1 scrollbar-none">
-        {FILTER_TABS.map(tab => {
+      {FILTER_TABS.map(tab => {
           const isActive = activeTab === tab.id;
           const count = tabCounts[tab.id];
+          // Compute unread count for this tab
+          const tabUnread = tab.id === 'all'
+            ? unreadCount
+            : tab.id === 'action'
+              ? actionCount
+              : notifications.filter(n => !n.is_read && getCategory(n) === tab.id).length;
           return (
             <button
               key={tab.id}
@@ -837,12 +848,14 @@ const NotificationCenter = () => {
               )}
             >
               {tab.label}
-              {tab.id === 'action' && actionCount > 0 && (
+              {tabUnread > 0 && (
                 <span className={cn(
                   'inline-flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold',
-                  isActive ? 'bg-destructive text-destructive-foreground' : 'bg-destructive/15 text-destructive'
+                  tab.id === 'action' || isActive
+                    ? 'bg-destructive text-destructive-foreground'
+                    : 'bg-primary/15 text-primary'
                 )}>
-                  {actionCount}
+                  {tabUnread}
                 </span>
               )}
             </button>
@@ -888,7 +901,17 @@ const NotificationCenter = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          {grouped.map(group => (
+          {/* Always show section headings for the 3 groups when on 'all' tab */}
+          {(() => {
+            // Ensure all three groups are always visible (even if empty) on the 'all' tab
+            const allGroups = activeTab === 'all'
+              ? (['Action needed', 'Recent updates', 'Older'] as const).map(label => {
+                  const found = grouped.find(g => g.label === label);
+                  return found || { label, items: [] as Notification[] };
+                }).filter(g => g.items.length > 0 || g.label !== 'Older') // hide empty Older
+              : grouped;
+
+            return allGroups.map(group => (
             <div key={group.label}>
               <div className="flex items-center gap-2 mb-2">
                 {group.label === 'Action needed' && (
@@ -905,6 +928,11 @@ const NotificationCenter = () => {
                 </Badge>
               </div>
 
+              {group.items.length === 0 ? (
+                <p className="text-[11px] text-muted-foreground/60 pl-5 py-1">
+                  {group.label === 'Action needed' ? 'Nothing needs attention' : 'No items'}
+                </p>
+              ) : (
               <div className="space-y-1.5">
                 {group.items.map(n => {
                   const actionable = isActionable(n);
@@ -1036,8 +1064,10 @@ const NotificationCenter = () => {
                   );
                 })}
               </div>
+              )}
             </div>
-          ))}
+          ));
+          })()}
         </div>
       )}
     </div>
