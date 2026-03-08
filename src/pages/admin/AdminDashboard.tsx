@@ -309,49 +309,46 @@ export default function AdminDashboard() {
                 </Link>
 
                 <Link to="/admin/payments">
-                  <Card className="h-full transition-colors hover:border-primary/40 cursor-pointer">
+                  <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${paymentSummary && paymentSummary.activeSubscriptions > 0 ? 'border-success/30' : ''}`}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-xs sm:text-sm font-medium">Active Subs</CardTitle>
                       <CreditCard className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">
-                        {paymentSummary ? paymentSummary.activeSubscriptions : '—'}
-                      </div>
+                      <div className="text-2xl font-bold">{paymentValue(paymentSummary?.activeSubscriptions)}</div>
                       {paymentSummary && paymentSummary.trialingSubscriptions > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
                           {paymentSummary.trialingSubscriptions} trialing
                         </p>
+                      )}
+                      {paymentSummary === null && !paymentLoading && (
+                        <p className="text-xs text-muted-foreground mt-1">Unavailable</p>
                       )}
                     </CardContent>
                   </Card>
                 </Link>
 
                 <Link to="/admin/payments">
-                  <Card className={`h-full transition-colors hover:border-primary/40 cursor-pointer ${paymentSummary && paymentSummary.pastDueSubscriptions > 0 ? 'border-warning/40' : ''}`}>
+                  <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${paymentSummary && paymentSummary.pastDueSubscriptions > 0 ? 'border-warning/40 bg-warning/5' : ''}`}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-xs sm:text-sm font-medium">Past Due</CardTitle>
-                      <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                      <AlertTriangle className={`h-4 w-4 ${paymentSummary && paymentSummary.pastDueSubscriptions > 0 ? 'text-warning-foreground' : 'text-muted-foreground'}`} />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">
-                        {paymentSummary ? paymentSummary.pastDueSubscriptions : '—'}
-                      </div>
+                      <div className="text-2xl font-bold">{paymentValue(paymentSummary?.pastDueSubscriptions)}</div>
                       <p className="text-xs text-muted-foreground mt-1">subscriptions</p>
                     </CardContent>
                   </Card>
                 </Link>
 
                 <Link to="/admin/payments">
-                  <Card className={`h-full transition-colors hover:border-primary/40 cursor-pointer ${paymentSummary && paymentSummary.failedPaymentsCount > 0 ? 'border-destructive/40' : ''}`}>
+                  <Card className={`h-full transition-all hover:shadow-md hover:border-primary/50 cursor-pointer ${paymentSummary && paymentSummary.failedPaymentsCount > 0 ? 'border-destructive/40 bg-destructive/5' : ''}`}>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-xs sm:text-sm font-medium">Failed</CardTitle>
-                      <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                      <AlertTriangle className={`h-4 w-4 ${paymentSummary && paymentSummary.failedPaymentsCount > 0 ? 'text-destructive' : 'text-muted-foreground'}`} />
                     </CardHeader>
                     <CardContent>
-                      <div className="text-2xl font-bold">
-                        {paymentSummary ? paymentSummary.failedPaymentsCount : '—'}
-                      </div>
+                      <div className="text-2xl font-bold">{paymentValue(paymentSummary?.failedPaymentsCount)}</div>
                       <p className="text-xs text-muted-foreground mt-1">payments</p>
                     </CardContent>
                   </Card>
