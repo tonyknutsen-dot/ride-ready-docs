@@ -389,104 +389,12 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
     }
   };
 
-  const isExpiringSoon = (expiryDate: string) => {
-    const expiry = new Date(expiryDate);
-    const today = new Date();
-    const daysUntilExpiry = Math.ceil((expiry.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-    return daysUntilExpiry <= 30 && daysUntilExpiry > 0;
-  };
-
-  const isExpired = (expiryDate: string) => {
-    const expiry = new Date(expiryDate);
-    const today = new Date();
-    return expiry < today;
-  };
-
-  const getDocumentTypeDisplay = (type: string) => {
-    const types: Record<string, string> = {
-      doc: '📜 DOC Certificate',
-      declaration_of_compliance: '📜 Annual Inspection Certificate',
-      electrical_inspection: 'Electrical Inspection Report',
-      inservice_inspection: 'In-Service Inspection Report',
-      initial_test_report: 'Initial Test Report',
-      daily_check: 'Daily Check Record',
-      monthly_check: 'Monthly Check Record',
-      yearly_check: 'Yearly Check Record',
-      ndt_schedule: 'NDT Schedule',
-      ndt_report: 'NDT Report',
-      design_review: 'Design Review Report',
-      conformity_design: 'Conformity to Design',
-      risk_assessment: 'Risk Assessment',
-      method_statement: 'Method Statement',
-      safety: 'Safety',
-      maintenance: 'Maintenance',
-      maintenance_report: 'Maintenance Report',
-      maintenance_log: 'Maintenance Log',
-      inspection: 'Inspection',
-      manual: 'Manual',
-      operator_manual: 'Operator Manual',
-      controller_manual: 'Controller Manual',
-      build_up_down: 'Build Up & Down Procedure',
-      emergency_action_plan: 'Emergency Action Plan',
-      evacuation_plan: 'Evacuation Plan',
-      insurance: '🛡️ Insurance',
-      safety_certificate: '🏅 Safety Certificate',
-      doc_certificate: '📋 Declaration of Conformity',
-      pssr_certificate: '⚙️ PSSR Certificate',
-      loler_certificate: '🏗️ LOLER Certificate',
-      puwer_certificate: '🔧 PUWER Certificate',
-      certificate: 'Certificate',
-      photo: 'Device Photo',
-      other: 'Other'
-    };
-    return types[type] || type;
-  };
-
-  const formatFileSize = (bytes: number) => {
-    if (!bytes) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-  };
-
-  const prettyType = (raw: string) => {
-    const t = raw.trim().toLowerCase();
-    
-    // Inspection Reports
-    if (t === 'doc' || t === 'declaration_of_compliance') return "📜 Inspection Reports";
-    if (t === 'electrical_inspection' || t === 'inservice_inspection' || t === 'initial_test_report') return "📜 Inspection Reports";
-    
-    // Checks
-    if (t === 'check record' || t === 'check_record' || t.includes('safety check')) return "✅ Check Records";
-    if (t === 'daily_check' || t === 'monthly_check' || t === 'yearly_check') return "✅ Check Records";
-    
-    // NDT
-    if (t === 'ndt_schedule') return "🔬 NDT";
-    if (t === 'ndt_report' || t === 'ndt_inspection') return "🔬 NDT";
-    
-    // Design & Review
-    if (t === 'design_review' || t === 'conformity_design') return "📐 Design & Review";
-    
-    // Risk Assessments
-    if (t === 'risk_assessment' || t.includes('risk')) return "⚠️ Risk Assessments";
-    if (t === 'method_statement' || t.includes('method')) return "⚠️ Risk Assessments";
-    
-    // Maintenance
-    if (t === 'maintenance_report' || t === 'maintenance_log' || t === 'maintenance') return "🔧 Maintenance";
-    
-    // Manuals & Procedures
-    if (t === 'operator_manual' || t === 'controller_manual' || t === 'build_up_down') return "📖 Manuals & Procedures";
-    if (t === 'emergency_action_plan' || t === 'evacuation_plan') return "📖 Manuals & Procedures";
-    
-    // Insurance & Certificates
-    if (t.includes('insur')) return "🛡️ Insurance & Certificates";
-    if (t.includes('cert') || t === 'certificate') return "🛡️ Insurance & Certificates";
-    
-    // Other
-    if (t === 'photo' || t.includes('photo')) return "📸 Device Photos";
-    return "📁 Other";
-  };
+  // Use shared helpers from documentHelpers.ts (eliminates inline duplicates)
+  const isExpiringSoon = isDocExpiringSoon;
+  const isExpired = isDocExpired;
+  const formatFileSize = sharedFormatFileSize;
+  const getDocumentTypeDisplay = getDocTypeLabel;
+  const prettyType = getDocGroupCategory;
 
   // Group documents by name to detect versions
   interface DocumentGroup {
