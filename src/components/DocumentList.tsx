@@ -636,7 +636,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                           <div className="divide-y divide-slate-100">
                             {itemsToShow.map(docGroup => (
                               <div key={docGroup.latestDoc.id}>
-                                <DocumentRow doc={docGroup.latestDoc} hasMultipleVersions={docGroup.olderVersions.length > 0} />
+                                {renderDocRow(docGroup.latestDoc, false, docGroup.olderVersions.length > 0)}
                                 {docGroup.olderVersions.length > 0 && (
                                   <Collapsible>
                                     <CollapsibleTrigger asChild>
