@@ -5,6 +5,9 @@ import { AlertOctagon, FileText, ClipboardCheck, Clock, CheckCircle, ChevronRigh
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { isDocExpired, daysUntilExpiry, getExpiryLabel } from '@/utils/documentHelpers';
+import { isOverdue, daysUntil } from '@/utils/complianceCounts';
+import { isDefectCritical } from '@/hooks/useDefectSummary';
 
 interface AttentionItem {
   id: string;
