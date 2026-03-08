@@ -106,7 +106,7 @@ const Overview = () => {
               className="w-full flex items-center gap-2 px-1 py-0.5 text-left"
             >
               <span className="text-xs text-muted-foreground">
-                <span className="font-semibold text-foreground">{actionNeededCount}</span> item{actionNeededCount !== 1 ? 's' : ''} need attention
+                <span className="font-semibold text-foreground">{actionNeededCount}</span> {actionNeededCount === 1 ? 'item needs' : 'items need'} attention
               </span>
               <ChevronRight className="h-3 w-3 text-muted-foreground/60" />
             </button>
