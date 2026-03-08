@@ -393,146 +393,30 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
   const getDocumentTypeDisplay = getDocTypeLabel;
   const prettyType = getDocGroupCategory;
 
-  // Group documents by name to detect versions
-  interface DocumentGroup {
-    latestDoc: Document;
-    olderVersions: Document[];
-  }
+  // Grouping, versions, and cleanup now use shared extracted modules
+  // (groupDocumentsByName, groupByType, getAllOlderVersions, getOlderVersionsStorageSize
+  //  are imported from documents/documentGrouping)
 
-  const groupDocumentsByName = (docs: Document[]): DocumentGroup[] => {
-    const nameGroups: Record<string, Document[]> = {};
-    
-    docs.forEach(doc => {
-      // Create a key from document name + type for grouping versions
-      const key = `${doc.document_name}__${doc.document_type}`;
-      if (!nameGroups[key]) nameGroups[key] = [];
-      nameGroups[key].push(doc);
-    });
-
-    // Sort each group by upload date (newest first) and create DocumentGroup objects
-    return Object.values(nameGroups).map(group => {
-      const sorted = group.sort((a, b) => 
-        new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime()
-      );
-      return {
-        latestDoc: sorted[0],
-        olderVersions: sorted.slice(1)
-      };
-    });
-  };
-
-  // Category colour coding config
-  const CATEGORY_STYLES: Record<string, { iconBg: string; iconColor: string; borderColor: string }> = {
-    "🌐 Global Documents":        { iconBg: "bg-blue-100",   iconColor: "text-blue-700",   borderColor: "border-blue-200" },
-    "📜 Inspection Reports":      { iconBg: "bg-indigo-100", iconColor: "text-indigo-700", borderColor: "border-indigo-200" },
-    "✅ Check Records":           { iconBg: "bg-emerald-100",iconColor: "text-emerald-700",borderColor: "border-emerald-200" },
-    "🔬 NDT":                     { iconBg: "bg-purple-100", iconColor: "text-purple-700", borderColor: "border-purple-200" },
-    "📐 Design & Review":         { iconBg: "bg-sky-100",    iconColor: "text-sky-700",    borderColor: "border-sky-200" },
-    "⚠️ Risk Assessments":        { iconBg: "bg-amber-100",  iconColor: "text-amber-700",  borderColor: "border-amber-200" },
-    "🔧 Maintenance":             { iconBg: "bg-green-100",  iconColor: "text-green-700",  borderColor: "border-green-200" },
-    "📖 Manuals & Procedures":    { iconBg: "bg-slate-100",  iconColor: "text-slate-700",  borderColor: "border-slate-200" },
-    "🛡️ Insurance & Certificates":{ iconBg: "bg-teal-100",   iconColor: "text-teal-700",   borderColor: "border-teal-200" },
-    "📸 Device Photos":           { iconBg: "bg-pink-100",   iconColor: "text-pink-700",   borderColor: "border-pink-200" },
-    "📁 Other":                   { iconBg: "bg-slate-100",  iconColor: "text-slate-600",  borderColor: "border-slate-200" },
-  };
-
-  const groupByType = (docs: Document[]) => {
-    const ORDER = [
-      "📜 Inspection Reports",
-      "✅ Check Records", 
-      "🔬 NDT",
-      "📐 Design & Review",
-      "⚠️ Risk Assessments",
-      "🔧 Maintenance",
-      "📖 Manuals & Procedures",
-      "🛡️ Insurance & Certificates",
-      "📸 Device Photos",
-      "📁 Other"
-    ];
-    const groups: Record<string, DocumentGroup[]> = {};
-    
-    // When isGlobal is true, we're showing ONLY global docs - don't separate them
-    // When showing ride docs, separate global from ride-specific
-    const globalDocs: Document[] = [];
-    const rideDocs: Document[] = [];
-    
-    if (isGlobal) {
-      // All docs are global, group by document type instead
-      docs.forEach(d => rideDocs.push(d)); // Treat as regular docs for grouping by type
-    } else {
-      docs.forEach(d => {
-        if (d.is_global) {
-          globalDocs.push(d);
-        } else {
-          rideDocs.push(d);
-        }
-      });
-    }
-    
-    // Group documents by type, then by name for versions
-    const rideDocGroups = groupDocumentsByName(rideDocs);
-    rideDocGroups.forEach(docGroup => {
-      const k = prettyType(docGroup.latestDoc.document_type);
-      (groups[k] ||= []).push(docGroup);
-    });
-    
-    const keys = Object.keys(groups).sort((a, b) => {
-      const ia = ORDER.indexOf(a), ib = ORDER.indexOf(b);
-      if (ia === -1 && ib === -1) return a.localeCompare(b);
-      if (ia === -1) return 1;
-      if (ib === -1) return -1;
-      return ia - ib;
-    });
-    
-    const result = keys.map(k => ({ type: k, items: groups[k] }));
-    
-    // Add global documents at the top if they exist (only when showing ride docs, not when isGlobal)
-    if (!isGlobal && globalDocs.length > 0) {
-      const globalDocGroups = groupDocumentsByName(globalDocs);
-      result.unshift({ type: "🌐 Global Documents", items: globalDocGroups });
-    }
-    
-    return result;
-  };
-
-  // Get all older versions across all document groups
-  const getAllOlderVersions = (): Document[] => {
-    const allDocGroups = groupDocumentsByName(documents);
-    return allDocGroups.flatMap(group => group.olderVersions);
-  };
-
-  // Calculate storage used by older versions
-  const getOlderVersionsStorageSize = (): number => {
-    const olderVersions = getAllOlderVersions();
-    return olderVersions.reduce((sum, doc) => sum + (doc.file_size || 0), 0);
-  };
-
-  // Clean up all older versions
   const handleCleanupOldVersions = async () => {
-    const olderVersions = getAllOlderVersions();
+    const olderVersions = getAllOlderVersions(documents);
     if (olderVersions.length === 0) return;
 
     setCleaningUp(true);
     try {
-      // Delete from storage
       const filePaths = olderVersions.map(doc => doc.file_path);
       const { error: storageError } = await supabase.storage
         .from('ride-documents')
         .remove(filePaths);
-
       if (storageError) throw storageError;
 
-      // Delete from database
       const docIds = olderVersions.map(doc => doc.id);
       const { error: dbError } = await supabase
         .from('documents')
         .delete()
         .in('id', docIds);
-
       if (dbError) throw dbError;
 
-      const freedSpace = formatFileSize(getOlderVersionsStorageSize());
-      
+      const freedSpace = formatFileSize(getOlderVersionsStorageSize(documents));
       toast({
         title: "Old versions cleaned up",
         description: `Removed ${olderVersions.length} older version${olderVersions.length !== 1 ? 's' : ''}, freeing ${freedSpace}`,
@@ -543,11 +427,7 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
       loadDocuments();
     } catch (error: any) {
       console.error('Cleanup error:', error);
-      toast({
-        title: "Cleanup failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      toast({ title: "Cleanup failed", description: error.message, variant: "destructive" });
     } finally {
       setCleaningUp(false);
     }
