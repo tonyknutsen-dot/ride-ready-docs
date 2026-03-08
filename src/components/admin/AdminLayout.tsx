@@ -50,53 +50,95 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
     fetchPendingCounts();
   }, [location.pathname]);
 
-  const navigation = [
-    { name: 'Dashboard', href: '/admin', icon: Shield, count: 0 },
-    { name: 'Payments', href: '/admin/payments', icon: CreditCard, count: 0 },
-    { name: 'Bug Reports', href: '/admin/bug-reports', icon: Bug, count: pendingCounts.bugReports },
-    { name: 'Early Access', href: '/admin/early-access', icon: Sparkles, count: 0 },
-    { name: 'Check Items', href: '/admin/check-items', icon: FileText, count: 0 },
-    { name: 'Ride Type Requests', href: '/admin/ride-requests', icon: FolderOpen, count: pendingCounts.rideRequests },
-    { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText, count: pendingCounts.documentRequests },
-    { name: 'Support Messages', href: '/admin/support', icon: MessageCircle, count: pendingCounts.supportMessages },
-    { name: 'Support Access', href: '/admin/support-access', icon: Key, count: 0 },
-    { name: 'User Management', href: '/admin/users', icon: Users, count: 0 },
-    { name: 'Audit Logs', href: '/admin/audit-logs', icon: History, count: 0 },
-    { name: 'Security', href: '/admin/security', icon: Activity, count: 0 },
-    { name: 'Marketing', href: '/marketing', icon: Mail, count: 0 },
+  const navigationGroups = [
+    {
+      label: null,
+      items: [
+        { name: 'Dashboard', href: '/admin', icon: Shield, count: 0 },
+      ],
+    },
+    {
+      label: 'Operations',
+      items: [
+        { name: 'Support Messages', href: '/admin/support', icon: MessageCircle, count: pendingCounts.supportMessages },
+        { name: 'Bug Reports', href: '/admin/bug-reports', icon: Bug, count: pendingCounts.bugReports },
+        { name: 'Payments', href: '/admin/payments', icon: CreditCard, count: 0 },
+      ],
+    },
+    {
+      label: 'Requests & Approvals',
+      items: [
+        { name: 'Check Items', href: '/admin/check-items', icon: FileText, count: 0 },
+        { name: 'Ride Type Requests', href: '/admin/ride-requests', icon: FolderOpen, count: pendingCounts.rideRequests },
+        { name: 'Document Type Requests', href: '/admin/document-requests', icon: FileText, count: pendingCounts.documentRequests },
+        { name: 'Risk Items', href: '/admin/risk-items', icon: Activity, count: 0 },
+      ],
+    },
+    {
+      label: 'Users',
+      items: [
+        { name: 'User Management', href: '/admin/users', icon: Users, count: 0 },
+        { name: 'Support Access', href: '/admin/support-access', icon: Key, count: 0 },
+      ],
+    },
+    {
+      label: 'Security',
+      items: [
+        { name: 'Audit Logs', href: '/admin/audit-logs', icon: History, count: 0 },
+        { name: 'Rate Limits & Blocks', href: '/admin/security', icon: Activity, count: 0 },
+      ],
+    },
+    {
+      label: 'Growth',
+      items: [
+        { name: 'Marketing', href: '/marketing', icon: Mail, count: 0 },
+        { name: 'Early Access', href: '/admin/early-access', icon: Sparkles, count: 0 },
+      ],
+    },
   ];
 
   const NavigationContent = () => (
-    <nav className="p-4 space-y-1">
-      {navigation.map((item) => {
-        const isActive = location.pathname === item.href;
-        return (
-          <Link
-            key={item.name}
-            to={item.href}
-            onClick={() => setMobileMenuOpen(false)}
-            className={cn(
-              'flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors',
-              isActive
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-            )}
-          >
-            <div className="flex items-center space-x-3">
-              <item.icon className="h-5 w-5" />
-              <span>{item.name}</span>
-            </div>
-            {item.count > 0 && (
-              <Badge 
-                variant={isActive ? "secondary" : "destructive"} 
-                className="ml-2 h-5 min-w-[20px] flex items-center justify-center text-xs"
-              >
-                {item.count}
-              </Badge>
-            )}
-          </Link>
-        );
-      })}
+    <nav className="p-4 space-y-4">
+      {navigationGroups.map((group, groupIndex) => (
+        <div key={group.label ?? 'top'}>
+          {group.label && (
+            <p className="px-3 mb-1 text-[9px] uppercase tracking-widest text-muted-foreground/60 font-semibold">
+              {group.label}
+            </p>
+          )}
+          <div className="space-y-0.5">
+            {group.items.map((item) => {
+              const isActive = location.pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={cn(
+                    'flex items-center justify-between px-3 py-2 rounded-md text-sm font-medium transition-colors',
+                    isActive
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  <div className="flex items-center space-x-3">
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.name}</span>
+                  </div>
+                  {item.count > 0 && (
+                    <Badge 
+                      variant={isActive ? "secondary" : "destructive"} 
+                      className="ml-2 h-5 min-w-[20px] flex items-center justify-center text-xs"
+                    >
+                      {item.count}
+                    </Badge>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+      ))}
     </nav>
   );
 
