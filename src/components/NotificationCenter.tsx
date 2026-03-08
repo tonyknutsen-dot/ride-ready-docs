@@ -1063,6 +1063,7 @@ const NotificationCenter = () => {
                   );
                 })}
               </div>
+              )}
             </div>
           ));
           })()}
