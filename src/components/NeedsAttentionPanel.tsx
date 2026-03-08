@@ -105,19 +105,19 @@ const NeedsAttentionPanel = () => {
       });
 
       (docsRes.data || []).forEach((doc: any) => {
-        const isExpired = doc.expires_at < todayStr;
-        const daysUntil = Math.ceil((new Date(doc.expires_at).getTime() - today.getTime()) / 86400000);
-        const dateLabel = isExpired
-          ? `Expired ${Math.abs(daysUntil)}d ago`
-          : daysUntil === 0 ? 'Expires today'
-          : daysUntil === 1 ? 'Expires tomorrow'
-          : `Expires in ${daysUntil}d`;
+        const expired = isDocExpired(doc.expires_at);
+        const days = daysUntilExpiry(doc.expires_at);
+        const dateLabel = expired
+          ? `Expired ${Math.abs(days)}d ago`
+          : days === 0 ? 'Expires today'
+          : days === 1 ? 'Expires tomorrow'
+          : `Expires in ${days}d`;
         result.push({
           id: `doc-${doc.id}`,
           type: 'doc_expiring',
           label: doc.document_name,
           sublabel: `${dateLabel}${doc.rides?.ride_name ? ` • ${doc.rides.ride_name}` : ''}`,
-          urgency: isExpired || daysUntil <= 7 ? 'warning' : 'info',
+          urgency: expired || days <= 7 ? 'warning' : 'info',
           path: doc.ride_id ? `/rides/${doc.ride_id}?tab=documents` : '/documents',
         });
       });
