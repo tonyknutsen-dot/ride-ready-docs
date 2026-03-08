@@ -707,10 +707,6 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
                 ? `📅 ${new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
                 : displayName}
             </p>
-              {isOlderVersion
-                ? `📅 ${new Date(doc.uploaded_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`
-                : displayName}
-            </p>
             {hasMultipleVersions && !isOlderVersion && (
               <span className="shrink-0 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-primary/10 text-primary">Latest</span>
             )}
