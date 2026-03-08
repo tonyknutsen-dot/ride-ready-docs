@@ -19,6 +19,10 @@ import { CheckRecordFilters, CheckRecordFiltersState, defaultCheckRecordFilters,
 import { getSignedStorageUrl } from '@/utils/exportFileActions';
 import PDFViewer from '@/components/PDFViewer';
 import ImageViewer from '@/components/ImageViewer';
+import {
+  isDocExpired, isDocExpiringSoon, formatFileSize as sharedFormatFileSize,
+  getDocTypeLabel, getDocGroupCategory, isImageFile, isPDFFile,
+} from '@/utils/documentHelpers';
 
 type Document = Tables<'documents'>;
 
