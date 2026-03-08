@@ -59,6 +59,7 @@ export default function AdminDashboard() {
     testMaintenanceRecords: 0,
   });
   const [paymentSummary, setPaymentSummary] = useState<PaymentSummary | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(true);
   const [loading, setLoading] = useState(true);
   const [excludeTestData, setExcludeTestData] = useState(true);
   const [showTestData, setShowTestData] = useState(false);
