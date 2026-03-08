@@ -356,39 +356,6 @@ export default function AdminDashboard() {
               </div>
             </section>
 
-            {/* ─── 3. QUICK ACTIONS ─── */}
-            <section>
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground mb-3">
-                Quick Actions
-              </h2>
-              <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                {[
-                  { label: 'Review Support Messages', href: '/admin/support', icon: MessageCircle, count: stats.unansweredSupport },
-                  { label: 'Triage Bug Reports', href: '/admin/bug-reports', icon: Bug, count: stats.bugReportsNeedingTriage },
-                  { label: 'Review Pending Requests', href: '/admin/ride-requests', icon: Clock, count: totalPendingApprovals },
-                  { label: 'Manage Users', href: '/admin/users', icon: Users, count: null },
-                  { label: 'Open Payments', href: '/admin/payments', icon: CreditCard, count: null },
-                ].map((action) => (
-                  <Link key={action.href} to={action.href}>
-                    <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors cursor-pointer group">
-                      <div className="flex items-center gap-3">
-                        <action.icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-                        <span className="text-sm font-medium">{action.label}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {action.count !== null && action.count > 0 && (
-                          <Badge variant="destructive" className="text-xs h-5 min-w-[20px] flex items-center justify-center">
-                            {action.count}
-                          </Badge>
-                        )}
-                        <ArrowRight className="h-3.5 w-3.5 text-muted-foreground group-hover:text-primary transition-colors" />
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            </section>
-
             {/* ─── 4. PLATFORM DATA ─── */}
             <section>
               <div className="flex items-center gap-2 mb-3">
