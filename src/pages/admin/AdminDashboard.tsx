@@ -120,6 +120,7 @@ export default function AdminDashboard() {
     };
 
     const fetchPayments = async () => {
+      setPaymentLoading(true);
       try {
         const { data, error } = await supabase.functions.invoke('admin-stripe-data');
         if (!error && data?.summary) {
@@ -132,6 +133,8 @@ export default function AdminDashboard() {
         }
       } catch {
         // Payment data is optional — don't block dashboard
+      } finally {
+        setPaymentLoading(false);
       }
     };
 
