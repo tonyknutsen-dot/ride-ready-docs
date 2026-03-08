@@ -1006,6 +1006,26 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           );
         })}
         </div>
+
+        {/* In-app viewers */}
+        {viewerDoc?.type === 'pdf' && (
+          <PDFViewer
+            isOpen={true}
+            onClose={() => setViewerDoc(null)}
+            pdfUrl={viewerDoc.url}
+            title={viewerDoc.name}
+            onDownload={handleViewerDownload}
+          />
+        )}
+        {viewerDoc?.type === 'image' && (
+          <ImageViewer
+            isOpen={true}
+            onClose={() => setViewerDoc(null)}
+            imageUrl={viewerDoc.url}
+            imageName={viewerDoc.name}
+            onDownload={handleViewerDownload}
+          />
+        )}
       </>
     );
   }
