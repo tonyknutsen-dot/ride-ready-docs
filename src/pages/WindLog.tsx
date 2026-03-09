@@ -49,6 +49,10 @@ interface AnemometerProfile {
   serial_number: string | null;
   label: string | null;
   is_default: boolean;
+  anemometer_type: string | null;
+  last_calibration_date: string | null;
+  instrument_notes: string | null;
+  unit: string | null;
 }
 
 interface WindLogEntry {
@@ -62,6 +66,9 @@ interface WindLogEntry {
   anemometer_make: string | null;
   anemometer_model: string | null;
   anemometer_serial: string | null;
+  anemometer_type: string | null;
+  anemometer_calibration_date: string | null;
+  anemometer_notes: string | null;
   action_taken: string | null;
   notes: string | null;
   created_at: string;
@@ -166,6 +173,9 @@ const WindLog = () => {
   const [anemometerMake, setAnemometerMake] = useState('');
   const [anemometerModel, setAnemometerModel] = useState('');
   const [anemometerSerial, setAnemometerSerial] = useState('');
+  const [anemometerType, setAnemometerType] = useState('');
+  const [anemometerCalibrationDate, setAnemometerCalibrationDate] = useState('');
+  const [anemometerInstrumentNotes, setAnemometerInstrumentNotes] = useState('');
   const [actionTaken, setActionTaken] = useState('');
   const [actionNotes, setActionNotes] = useState('');
   const [notes, setNotes] = useState('');
@@ -382,12 +392,18 @@ const WindLog = () => {
       setAnemometerMake('');
       setAnemometerModel('');
       setAnemometerSerial('');
+      setAnemometerType('');
+      setAnemometerCalibrationDate('');
+      setAnemometerInstrumentNotes('');
     } else {
       const profile = anemometerProfiles.find(p => p.id === profileId);
       if (profile) {
         setAnemometerMake(profile.make);
         setAnemometerModel(profile.model);
         setAnemometerSerial(profile.serial_number || '');
+        setAnemometerType(profile.anemometer_type || '');
+        setAnemometerCalibrationDate(profile.last_calibration_date || '');
+        setAnemometerInstrumentNotes(profile.instrument_notes || '');
       }
     }
   };
@@ -406,6 +422,9 @@ const WindLog = () => {
           serial_number: anemometerSerial || null,
           label,
           is_default: anemometerProfiles.length === 0,
+          anemometer_type: anemometerType || null,
+          last_calibration_date: anemometerCalibrationDate || null,
+          instrument_notes: anemometerInstrumentNotes || null,
         })
         .select()
         .single();
@@ -440,11 +459,17 @@ const WindLog = () => {
       setAnemometerMake(defaultProfile.make);
       setAnemometerModel(defaultProfile.model);
       setAnemometerSerial(defaultProfile.serial_number || '');
+      setAnemometerType(defaultProfile.anemometer_type || '');
+      setAnemometerCalibrationDate(defaultProfile.last_calibration_date || '');
+      setAnemometerInstrumentNotes(defaultProfile.instrument_notes || '');
     } else {
       setSelectedProfileId('manual');
       setAnemometerMake('');
       setAnemometerModel('');
       setAnemometerSerial('');
+      setAnemometerType('');
+      setAnemometerCalibrationDate('');
+      setAnemometerInstrumentNotes('');
     }
     setSheetOpen(true);
   };
@@ -524,9 +549,12 @@ const WindLog = () => {
         anemometer_make: anemometerMake || null,
         anemometer_model: anemometerModel || null,
         anemometer_serial: anemometerSerial || null,
+        anemometer_type: anemometerType || null,
+        anemometer_calibration_date: anemometerCalibrationDate || null,
+        anemometer_notes: anemometerInstrumentNotes || null,
         action_taken: finalAction,
         notes: notes || null,
-      });
+      } as any);
       if (error) throw error;
 
       const junctionRows = selectedRideIds.map(rideId => ({
@@ -1139,6 +1167,30 @@ const WindLog = () => {
                   <Label className="text-[10px] text-muted-foreground">Serial</Label>
                   <Input placeholder="Serial no." value={anemometerSerial} onChange={(e) => setAnemometerSerial(e.target.value)} maxLength={100} className="h-9 text-xs" />
                 </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Type</Label>
+                  <Select value={anemometerType || '__none__'} onValueChange={(v) => setAnemometerType(v === '__none__' ? '' : v)}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">—</SelectItem>
+                      <SelectItem value="cup">Cup</SelectItem>
+                      <SelectItem value="vane">Vane</SelectItem>
+                      <SelectItem value="hot-wire">Hot wire</SelectItem>
+                      <SelectItem value="digital">Digital</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Last calibration</Label>
+                  <Input type="date" value={anemometerCalibrationDate} onChange={(e) => setAnemometerCalibrationDate(e.target.value)} className="h-9 text-xs" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Instrument notes</Label>
+                <Input placeholder="Optional notes" value={anemometerInstrumentNotes} onChange={(e) => setAnemometerInstrumentNotes(e.target.value)} maxLength={300} className="h-9 text-xs" />
               </div>
               {selectedProfileId === 'manual' && anemometerMake && anemometerModel && (
                 <Button

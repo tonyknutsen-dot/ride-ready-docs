@@ -1,7 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Home, FolderOpen, CheckSquare, MoreHorizontal, Bell,
-  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut, Send, Wrench, Shield, Lightbulb, Users, Download, MessageCircle, Wind, AlertOctagon
+  Calendar as CalendarIcon, CreditCard, HelpCircle, Settings, FileText, PlusCircle, ShieldCheck, LogOut, Send, Wrench, Shield, Lightbulb, Users, Download, MessageCircle, Wind, AlertOctagon, Gauge
 } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { ContactSupportDialog } from "@/components/ContactSupportDialog";
@@ -210,6 +210,7 @@ export default function MobileBottomNav() {
                   )}
                   <MenuItem icon={AlertOctagon} label="Defect Register" onClick={() => go("/defects")} active={isActive(["/defects"])} />
                   <MenuItem icon={Wind} label="Wind Log" onClick={() => go("/wind-log")} active={isActive(["/wind-log"])} />
+                  <MenuItem icon={Gauge} label="Pressure Readings" onClick={() => go("/pressure-readings")} active={isActive(["/pressure-readings"])} />
                 </div>
               )}
 

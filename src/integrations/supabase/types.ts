@@ -3286,9 +3286,12 @@ export type Database = {
       wind_speed_logs: {
         Row: {
           action_taken: string | null
+          anemometer_calibration_date: string | null
           anemometer_make: string | null
           anemometer_model: string | null
+          anemometer_notes: string | null
           anemometer_serial: string | null
+          anemometer_type: string | null
           created_at: string
           id: string
           location: string | null
@@ -3303,9 +3306,12 @@ export type Database = {
         }
         Insert: {
           action_taken?: string | null
+          anemometer_calibration_date?: string | null
           anemometer_make?: string | null
           anemometer_model?: string | null
+          anemometer_notes?: string | null
           anemometer_serial?: string | null
+          anemometer_type?: string | null
           created_at?: string
           id?: string
           location?: string | null
@@ -3320,9 +3326,12 @@ export type Database = {
         }
         Update: {
           action_taken?: string | null
+          anemometer_calibration_date?: string | null
           anemometer_make?: string | null
           anemometer_model?: string | null
+          anemometer_notes?: string | null
           anemometer_serial?: string | null
+          anemometer_type?: string | null
           created_at?: string
           id?: string
           location?: string | null
