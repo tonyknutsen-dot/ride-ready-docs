@@ -59,7 +59,25 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     serial_number: ride?.serial_number || '',
     owner_name: ride?.owner_name || '',
   });
-  
+
+  // Pressure monitoring config
+  const [pressureEnabled, setPressureEnabled] = useState(ride?.pressure_monitoring_enabled ?? false);
+  const [isMultiSectional, setIsMultiSectional] = useState(ride?.is_multi_sectional ?? false);
+  const [sectionCount, setSectionCountState] = useState(ride?.section_count ?? 1);
+  const [sectionConfig, setSectionConfig] = useState<Array<{ name: string; default_reading_point?: string; target_pressure?: number; min_pressure?: number; max_pressure?: number }>>(
+    (ride?.section_config as any[]) || []
+  );
+
+  // Sync section config array length with sectionCount
+  const updateSectionCount = (count: number) => {
+    setSectionCountState(count);
+    setSectionConfig(prev => {
+      const next = [...prev];
+      while (next.length < count) next.push({ name: `Section ${next.length + 1}` });
+      return next.slice(0, count);
+    });
+  };
+
 
   // Pre-fill controller name from profile for new rides
   useEffect(() => {
