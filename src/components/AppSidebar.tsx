@@ -22,6 +22,7 @@ import {
   Bell,
   Wind,
   AlertOctagon,
+  Gauge,
 } from 'lucide-react';
 import {
   Sidebar,
