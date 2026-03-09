@@ -754,7 +754,7 @@ const PressureReadingsRegister = () => {
 
             {/* Session type */}
             <div className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Session type</Label>
+              <Label className="text-[11px] text-muted-foreground">Session type *</Label>
               <Select value={sessionType} onValueChange={setSessionType}>
                 <SelectTrigger className="h-10 text-[13px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -763,6 +763,26 @@ const PressureReadingsRegister = () => {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[10px] text-muted-foreground">When during the day is this session being taken?</p>
+            </div>
+
+            {/* Pressure unit for this session */}
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">Pressure unit for this session *</Label>
+              <Select value={readerUnit} onValueChange={v => {
+                setReaderUnit(v);
+                // Update all lines to match the session unit
+                setLines(prev => prev.map(l => ({ ...l, pressure_unit: v })));
+              }}>
+                <SelectTrigger className="h-10 text-[13px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="psi">PSI</SelectItem>
+                  <SelectItem value="bar">Bar</SelectItem>
+                  <SelectItem value="mmH2O">mmH₂O</SelectItem>
+                  <SelectItem value="kPa">kPa</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">All readings in this session will use this unit.</p>
             </div>
 
             {/* Taken by */}
