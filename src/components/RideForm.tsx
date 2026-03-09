@@ -342,7 +342,10 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             year_manufactured: validatedData.year_manufactured || null,
             serial_number: validatedData.serial_number || null,
             owner_name: validatedData.owner_name || null,
-            
+            pressure_monitoring_enabled: pressureEnabled,
+            is_multi_sectional: isMultiSectional,
+            section_count: isMultiSectional ? sectionCount : 1,
+            section_config: isMultiSectional ? sectionConfig : [],
           })
           .eq('id', ride.id)
           .eq('user_id', user!.id);
