@@ -27,18 +27,26 @@ import { generatePressureReadingsPdf } from '@/utils/pressureReadingsPdf';
 const SESSION_TYPES = [
   { value: 'pre-opening', label: 'Pre-opening' },
   { value: 'during-operation', label: 'During operation' },
-  { value: 'after-adjustment', label: 'After adjustment' },
+  { value: 'end-of-day', label: 'End of day' },
   { value: 'other', label: 'Other' },
 ];
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   'pre-opening': 'Pre-opening',
   'during-operation': 'During operation',
-  'after-adjustment': 'After adjustment',
+  'end-of-day': 'End of day',
+  'after-adjustment': 'End of day', // legacy mapping
   'in-service': 'During operation', // legacy mapping
-  'recheck': 'After adjustment', // legacy mapping
+  'recheck': 'End of day', // legacy mapping
   'other': 'Other',
 };
+
+const PRESSURE_UNITS = [
+  { value: 'psi', label: 'PSI' },
+  { value: 'bar', label: 'Bar' },
+  { value: 'mbar', label: 'mbar' },
+  { value: 'mmH2O', label: 'mmH₂O' },
+];
 
 interface SectionConfig {
   name: string;
