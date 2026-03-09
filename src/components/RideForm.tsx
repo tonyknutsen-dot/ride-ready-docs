@@ -424,6 +424,10 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             serial_number: validatedData.serial_number || null,
             owner_name: validatedData.owner_name || null,
             requires_operational_checks: defaultRequiresChecks,
+            pressure_monitoring_enabled: pressureEnabled,
+            is_multi_sectional: isMultiSectional,
+            section_count: isMultiSectional ? sectionCount : 1,
+            section_config: isMultiSectional ? sectionConfig : [],
           })
           .select()
           .single();
