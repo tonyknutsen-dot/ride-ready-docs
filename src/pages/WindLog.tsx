@@ -49,6 +49,10 @@ interface AnemometerProfile {
   serial_number: string | null;
   label: string | null;
   is_default: boolean;
+  anemometer_type: string | null;
+  last_calibration_date: string | null;
+  instrument_notes: string | null;
+  unit: string | null;
 }
 
 interface WindLogEntry {
