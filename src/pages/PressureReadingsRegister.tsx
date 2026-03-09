@@ -635,6 +635,32 @@ const PressureReadingsRegister = () => {
         savedReports={savedReports}
       />
 
+      {/* Pressure setup summary on register page */}
+      {!loading && (
+        <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
+          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Inflatable Pressure Setup</p>
+          <div className="flex flex-wrap gap-x-5 gap-y-1 text-[12px]">
+            <span className="text-muted-foreground">Monitoring: <span className="font-medium text-foreground">{pressureEnabled ? 'Enabled' : 'Not enabled'}</span></span>
+            <span className="text-muted-foreground">Structure: <span className="font-medium text-foreground">{isMultiSectional ? 'Multi-sectional' : 'Single-section'}</span></span>
+            <span className="text-muted-foreground">Sections: <span className="font-medium text-foreground">{isMultiSectional ? (sectionConfig.length || sectionCount) : 1}</span></span>
+            {isMultiSectional && sectionConfig.length > 0 && (
+              <span className="text-muted-foreground">Names: <span className="font-medium text-foreground">{sectionConfig.map(s => s.name).join(', ')}</span></span>
+            )}
+          </div>
+          {pressureEnabled && isMultiSectional && sectionConfig.length === 0 && (
+            <div className="flex items-center gap-2 mt-1.5 text-[11px] text-warning">
+              <span>⚠ No sections configured.</span>
+              <Button variant="link" size="sm" className="text-[11px] h-auto p-0 text-primary" onClick={() => navigate(`/rides/${rideId}`)}>
+                Configure in inflatable settings →
+              </Button>
+            </div>
+          )}
+          {!pressureEnabled && (
+            <p className="text-[11px] text-warning mt-1">Pressure monitoring is not enabled for this inflatable. You can still log sessions, but consider enabling it in <button type="button" className="underline text-primary" onClick={() => navigate(`/rides/${rideId}`)}>inflatable settings</button>.</p>
+          )}
+        </div>
+      )}
+
       {/* Sessions list */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
