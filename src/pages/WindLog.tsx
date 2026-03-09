@@ -459,11 +459,17 @@ const WindLog = () => {
       setAnemometerMake(defaultProfile.make);
       setAnemometerModel(defaultProfile.model);
       setAnemometerSerial(defaultProfile.serial_number || '');
+      setAnemometerType(defaultProfile.anemometer_type || '');
+      setAnemometerCalibrationDate(defaultProfile.last_calibration_date || '');
+      setAnemometerInstrumentNotes(defaultProfile.instrument_notes || '');
     } else {
       setSelectedProfileId('manual');
       setAnemometerMake('');
       setAnemometerModel('');
       setAnemometerSerial('');
+      setAnemometerType('');
+      setAnemometerCalibrationDate('');
+      setAnemometerInstrumentNotes('');
     }
     setSheetOpen(true);
   };
