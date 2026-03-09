@@ -58,6 +58,7 @@ const EquipmentSelector = ({
   placeholderIcon: PlaceholderIcon = Wrench,
   emptyDescription = 'Add rides or equipment in the Rides section to get started.',
   showKpis = true,
+  categoryGroupFilter,
 }: EquipmentSelectorProps) => {
   const { user } = useAuth();
   const { isStaff } = useStaff();
