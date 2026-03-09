@@ -8,7 +8,7 @@ import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import { 
   ArrowLeft, FileText, CheckSquare, Wrench, Pencil, ImageIcon, Trash2,
   AlertTriangle, AlertOctagon, Clock, History,
-  Loader2, Camera, AlertCircle, Wind
+  Loader2, Camera, AlertCircle, Wind, Gauge
 } from 'lucide-react';
 import {
   Dialog,
