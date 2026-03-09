@@ -145,6 +145,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
   const [readerModel, setReaderModel] = useState('');
   const [readerSerial, setReaderSerial] = useState('');
   const [readerUnit, setReaderUnit] = useState('psi');
+  const [defaultUnit, setDefaultUnit] = useState('psi');
   const [readerCalibration, setReaderCalibration] = useState('');
   const [readerNotes, setReaderNotes] = useState('');
 
