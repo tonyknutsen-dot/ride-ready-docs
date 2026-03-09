@@ -34,6 +34,8 @@ interface EquipmentSelectorProps {
   emptyDescription?: string;
   /** Whether to show the KPI strip and status filters (default: true) */
   showKpis?: boolean;
+  /** Filter to only show equipment matching this category_group value (e.g. 'Inflatables') */
+  categoryGroupFilter?: string;
 }
 
 const normalizeStatus = (status: string): keyof typeof STATUS_CONFIG => {
