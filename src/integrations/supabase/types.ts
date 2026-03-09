@@ -16,35 +16,47 @@ export type Database = {
     Tables: {
       anemometer_profiles: {
         Row: {
+          anemometer_type: string | null
           created_at: string
           id: string
+          instrument_notes: string | null
           is_default: boolean
           label: string | null
+          last_calibration_date: string | null
           make: string
           model: string
           serial_number: string | null
+          unit: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          anemometer_type?: string | null
           created_at?: string
           id?: string
+          instrument_notes?: string | null
           is_default?: boolean
           label?: string | null
+          last_calibration_date?: string | null
           make: string
           model: string
           serial_number?: string | null
+          unit?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          anemometer_type?: string | null
           created_at?: string
           id?: string
+          instrument_notes?: string | null
           is_default?: boolean
           label?: string | null
+          last_calibration_date?: string | null
           make?: string
           model?: string
           serial_number?: string | null
+          unit?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1898,6 +1910,191 @@ export type Database = {
         }
         Relationships: []
       }
+      pressure_reader_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          instrument_notes: string | null
+          is_default: boolean
+          label: string | null
+          last_calibration_date: string | null
+          make: string
+          model: string
+          reader_type: string
+          serial_number: string | null
+          unit: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          instrument_notes?: string | null
+          is_default?: boolean
+          label?: string | null
+          last_calibration_date?: string | null
+          make: string
+          model: string
+          reader_type?: string
+          serial_number?: string | null
+          unit?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          instrument_notes?: string | null
+          is_default?: boolean
+          label?: string | null
+          last_calibration_date?: string | null
+          make?: string
+          model?: string
+          reader_type?: string
+          serial_number?: string | null
+          unit?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pressure_session_lines: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          pressure_unit: string
+          pressure_value: number | null
+          reading_point: string | null
+          reading_taken_at: string | null
+          section_name: string
+          section_number: number
+          session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          pressure_unit?: string
+          pressure_value?: number | null
+          reading_point?: string | null
+          reading_taken_at?: string | null
+          section_name?: string
+          section_number?: number
+          session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          pressure_unit?: string
+          pressure_value?: number | null
+          reading_point?: string | null
+          reading_taken_at?: string | null
+          section_name?: string
+          section_number?: number
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pressure_session_lines_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pressure_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          is_complete: boolean
+          is_test_data: boolean
+          notes: string | null
+          reader_calibration_date: string | null
+          reader_make: string | null
+          reader_model: string | null
+          reader_notes: string | null
+          reader_profile_id: string | null
+          reader_serial: string | null
+          reader_type: string | null
+          reader_unit: string
+          ride_id: string
+          session_date: string
+          session_time: string
+          session_type: string
+          site_address: string
+          site_name: string
+          taken_by: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          is_test_data?: boolean
+          notes?: string | null
+          reader_calibration_date?: string | null
+          reader_make?: string | null
+          reader_model?: string | null
+          reader_notes?: string | null
+          reader_profile_id?: string | null
+          reader_serial?: string | null
+          reader_type?: string | null
+          reader_unit?: string
+          ride_id: string
+          session_date?: string
+          session_time?: string
+          session_type?: string
+          site_address?: string
+          site_name: string
+          taken_by: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_complete?: boolean
+          is_test_data?: boolean
+          notes?: string | null
+          reader_calibration_date?: string | null
+          reader_make?: string | null
+          reader_model?: string | null
+          reader_notes?: string | null
+          reader_profile_id?: string | null
+          reader_serial?: string | null
+          reader_type?: string | null
+          reader_unit?: string
+          ride_id?: string
+          session_date?: string
+          session_time?: string
+          session_type?: string
+          site_address?: string
+          site_name?: string
+          taken_by?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pressure_sessions_reader_profile_id_fkey"
+            columns: ["reader_profile_id"]
+            isOneToOne: false
+            referencedRelation: "pressure_reader_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pressure_sessions_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "rides"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           address: string | null
@@ -2277,13 +2474,17 @@ export type Database = {
           category_id: string
           created_at: string
           id: string
+          is_multi_sectional: boolean
           is_test_data: boolean
           manufacturer: string | null
           owner_name: string | null
           preopening_covers_daily: boolean
+          pressure_monitoring_enabled: boolean
           requires_operational_checks: boolean
           ride_code: string | null
           ride_name: string
+          section_config: Json | null
+          section_count: number
           serial_number: string | null
           updated_at: string
           user_id: string
@@ -2293,13 +2494,17 @@ export type Database = {
           category_id: string
           created_at?: string
           id?: string
+          is_multi_sectional?: boolean
           is_test_data?: boolean
           manufacturer?: string | null
           owner_name?: string | null
           preopening_covers_daily?: boolean
+          pressure_monitoring_enabled?: boolean
           requires_operational_checks?: boolean
           ride_code?: string | null
           ride_name: string
+          section_config?: Json | null
+          section_count?: number
           serial_number?: string | null
           updated_at?: string
           user_id: string
@@ -2309,13 +2514,17 @@ export type Database = {
           category_id?: string
           created_at?: string
           id?: string
+          is_multi_sectional?: boolean
           is_test_data?: boolean
           manufacturer?: string | null
           owner_name?: string | null
           preopening_covers_daily?: boolean
+          pressure_monitoring_enabled?: boolean
           requires_operational_checks?: boolean
           ride_code?: string | null
           ride_name?: string
+          section_config?: Json | null
+          section_count?: number
           serial_number?: string | null
           updated_at?: string
           user_id?: string
