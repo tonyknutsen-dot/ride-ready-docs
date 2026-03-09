@@ -570,7 +570,7 @@ const PressureReadingsRegister = () => {
       <PageHeader
         icon={<Gauge className="h-5 w-5 text-primary" />}
         iconBgClass="from-primary/20 to-primary/10"
-        title={rideName || 'Pressure Readings'}
+        title={rideName || 'Inflatable Pressure Readings'}
         subtitle="Pressure session history"
         showBackButton
         backTo="/pressure-readings"
