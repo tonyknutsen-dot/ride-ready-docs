@@ -40,6 +40,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 
 const RideActivityTimeline = lazy(() => import('@/components/RideActivityTimeline'));
 const WindSpeedLog = lazy(() => import('@/components/WindSpeedLog'));
+const PressureReadingsRegister = lazy(() => import('@/pages/PressureReadingsRegister'));
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
