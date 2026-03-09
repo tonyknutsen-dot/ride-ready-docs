@@ -139,8 +139,10 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
 
   const SESSION_TYPE_LABELS: Record<string, string> = {
     'pre-opening': 'Pre-opening',
-    'in-service': 'In service',
-    'recheck': 'Recheck',
+    'during-operation': 'During operation',
+    'after-adjustment': 'After adjustment',
+    'in-service': 'During operation',
+    'recheck': 'After adjustment',
     'other': 'Other',
   };
 

@@ -26,15 +26,17 @@ import { generatePressureReadingsPdf } from '@/utils/pressureReadingsPdf';
 
 const SESSION_TYPES = [
   { value: 'pre-opening', label: 'Pre-opening' },
-  { value: 'in-service', label: 'In service' },
-  { value: 'recheck', label: 'Recheck' },
+  { value: 'during-operation', label: 'During operation' },
+  { value: 'after-adjustment', label: 'After adjustment' },
   { value: 'other', label: 'Other' },
 ];
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   'pre-opening': 'Pre-opening',
-  'in-service': 'In service',
-  'recheck': 'Recheck',
+  'during-operation': 'During operation',
+  'after-adjustment': 'After adjustment',
+  'in-service': 'During operation', // legacy mapping
+  'recheck': 'After adjustment', // legacy mapping
   'other': 'Other',
 };
 
@@ -568,7 +570,7 @@ const PressureReadingsRegister = () => {
       <PageHeader
         icon={<Gauge className="h-5 w-5 text-primary" />}
         iconBgClass="from-primary/20 to-primary/10"
-        title={rideName || 'Pressure Readings'}
+        title={rideName || 'Inflatable Pressure Readings'}
         subtitle="Pressure session history"
         showBackButton
         backTo="/pressure-readings"
@@ -752,7 +754,7 @@ const PressureReadingsRegister = () => {
 
             {/* Session type */}
             <div className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Session type</Label>
+              <Label className="text-[11px] text-muted-foreground">Session type *</Label>
               <Select value={sessionType} onValueChange={setSessionType}>
                 <SelectTrigger className="h-10 text-[13px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
@@ -761,6 +763,26 @@ const PressureReadingsRegister = () => {
                   ))}
                 </SelectContent>
               </Select>
+              <p className="text-[10px] text-muted-foreground">When during the day is this session being taken?</p>
+            </div>
+
+            {/* Pressure unit for this session */}
+            <div className="space-y-1">
+              <Label className="text-[11px] text-muted-foreground">Pressure unit for this session *</Label>
+              <Select value={readerUnit} onValueChange={v => {
+                setReaderUnit(v);
+                // Update all lines to match the session unit
+                setLines(prev => prev.map(l => ({ ...l, pressure_unit: v })));
+              }}>
+                <SelectTrigger className="h-10 text-[13px]"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="psi">PSI</SelectItem>
+                  <SelectItem value="bar">Bar</SelectItem>
+                  <SelectItem value="mmH2O">mmH₂O</SelectItem>
+                  <SelectItem value="kPa">kPa</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">All readings in this session will use this unit.</p>
             </div>
 
             {/* Taken by */}
@@ -781,7 +803,18 @@ const PressureReadingsRegister = () => {
 
             {/* Reading lines */}
             <div className="space-y-3">
-              <Label className="text-[13px] font-semibold">Pressure Readings</Label>
+              <div>
+                <Label className="text-[13px] font-semibold">Pressure Readings</Label>
+                {isMultiSectional ? (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    This inflatable has {sectionConfig.length || sectionCount} sections — one reading is required per section.
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Single-section inflatable — enter one reading below.
+                  </p>
+                )}
+              </div>
               {lines.map((line, idx) => (
                 <div key={idx} className="rounded-xl border border-border bg-muted/10 p-3 space-y-2">
                   <p className="text-[12px] font-semibold text-foreground">
@@ -789,7 +822,7 @@ const PressureReadingsRegister = () => {
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground">Pressure value *</Label>
+                      <Label className="text-[10px] text-muted-foreground">Pressure value ({readerUnit.toUpperCase()}) *</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -800,13 +833,14 @@ const PressureReadingsRegister = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground">Reading point</Label>
+                      <Label className="text-[10px] text-muted-foreground">Where on this section?</Label>
                       <Input
                         value={line.reading_point}
                         onChange={e => updateLine(idx, 'reading_point', e.target.value)}
-                        placeholder="e.g. Valve A"
+                        placeholder="e.g. Valve A, near seam"
                         className="h-9 text-[13px]"
                       />
+                      <p className="text-[9px] text-muted-foreground">Exact point where the gauge was placed</p>
                     </div>
                   </div>
                   <div className="space-y-1">

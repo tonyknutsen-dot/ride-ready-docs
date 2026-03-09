@@ -32,7 +32,7 @@ const PressureReadings = () => {
       <PageHeader
         icon={<Gauge className="h-5 w-5 text-primary" />}
         iconBgClass="from-primary/20 to-primary/10"
-        title="Pressure Readings"
+        title="Inflatable Pressure Readings"
         subtitle="Select an inflatable to view or log pressure sessions"
         showBackButton
         backTo="/overview"
@@ -54,6 +54,7 @@ const PressureReadings = () => {
         placeholderIcon={Gauge}
         emptyDescription="Add inflatables in the Equipment section to start logging pressure readings."
         showKpis={false}
+        categoryGroupFilter="Inflatables"
       />
     </div>
   );

@@ -34,6 +34,8 @@ interface EquipmentSelectorProps {
   emptyDescription?: string;
   /** Whether to show the KPI strip and status filters (default: true) */
   showKpis?: boolean;
+  /** Filter to only show equipment matching this category_group value (e.g. 'Inflatables') */
+  categoryGroupFilter?: string;
 }
 
 const normalizeStatus = (status: string): keyof typeof STATUS_CONFIG => {
@@ -56,6 +58,7 @@ const EquipmentSelector = ({
   placeholderIcon: PlaceholderIcon = Wrench,
   emptyDescription = 'Add rides or equipment in the Rides section to get started.',
   showKpis = true,
+  categoryGroupFilter,
 }: EquipmentSelectorProps) => {
   const { user } = useAuth();
   const { isStaff } = useStaff();
@@ -86,7 +89,10 @@ const EquipmentSelector = ({
 
       const { data: ridesData, error } = await query;
       if (error) throw error;
-      const typedRides = ridesData as Ride[];
+      const typedRides = (ridesData as Ride[]).filter(r => {
+        if (!categoryGroupFilter) return true;
+        return r.ride_categories?.category_group === categoryGroupFilter;
+      });
       setRides(typedRides);
 
       if (typedRides.length) {
