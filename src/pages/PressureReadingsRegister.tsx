@@ -573,15 +573,17 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
   }
 
   return (
-    <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
-      <PageHeader
-        icon={<Gauge className="h-5 w-5 text-primary" />}
-        iconBgClass="from-primary/20 to-primary/10"
-        title={rideName || 'Inflatable Pressure Readings'}
-        subtitle="Pressure session history"
-        showBackButton
-        backTo="/pressure-readings"
-      />
+    <div className={cn("space-y-3", !embedded && "px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8")}>
+      {!embedded && (
+        <PageHeader
+          icon={<Gauge className="h-5 w-5 text-primary" />}
+          iconBgClass="from-primary/20 to-primary/10"
+          title={rideName || 'Inflatable Pressure Readings'}
+          subtitle="Pressure session history"
+          showBackButton
+          backTo="/pressure-readings"
+        />
+      )}
 
       <RegisterHeader
         resultCount={`${filteredSessions.length} session${filteredSessions.length !== 1 ? 's' : ''}`}
