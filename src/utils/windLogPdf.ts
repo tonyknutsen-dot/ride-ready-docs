@@ -217,9 +217,11 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
 
   const body = entries.map(e => {
     const anemParts: string[] = [];
+    if (e.anemometer_type) anemParts.push(e.anemometer_type);
     if (e.anemometer_make) anemParts.push(e.anemometer_make);
     if (e.anemometer_model) anemParts.push(e.anemometer_model);
     if (e.anemometer_serial) anemParts.push(`S/N: ${e.anemometer_serial}`);
+    if (e.anemometer_calibration_date) anemParts.push(`Cal: ${e.anemometer_calibration_date}`);
     const anemText = anemParts.length > 0 ? anemParts.join(' / ') : '⚠ Missing';
 
     return [
