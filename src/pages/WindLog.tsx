@@ -1168,6 +1168,29 @@ const WindLog = () => {
                   <Input placeholder="Serial no." value={anemometerSerial} onChange={(e) => setAnemometerSerial(e.target.value)} maxLength={100} className="h-9 text-xs" />
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Type</Label>
+                  <Select value={anemometerType || '__none__'} onValueChange={(v) => setAnemometerType(v === '__none__' ? '' : v)}>
+                    <SelectTrigger className="h-9 text-xs"><SelectValue placeholder="Select type" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">—</SelectItem>
+                      <SelectItem value="cup">Cup</SelectItem>
+                      <SelectItem value="vane">Vane</SelectItem>
+                      <SelectItem value="hot-wire">Hot wire</SelectItem>
+                      <SelectItem value="digital">Digital</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] text-muted-foreground">Last calibration</Label>
+                  <Input type="date" value={anemometerCalibrationDate} onChange={(e) => setAnemometerCalibrationDate(e.target.value)} className="h-9 text-xs" />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-[10px] text-muted-foreground">Instrument notes</Label>
+                <Input placeholder="Optional notes" value={anemometerInstrumentNotes} onChange={(e) => setAnemometerInstrumentNotes(e.target.value)} maxLength={300} className="h-9 text-xs" />
               {selectedProfileId === 'manual' && anemometerMake && anemometerModel && (
                 <Button
                   type="button"
