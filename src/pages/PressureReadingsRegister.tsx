@@ -336,7 +336,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
           section_name: sc.name || `Section ${i + 1}`,
           reading_taken_at: format(n, 'HH:mm'),
           pressure_value: '',
-          pressure_unit: readerUnit || 'psi',
+          pressure_unit: defaultUnit || 'psi',
           reading_point: sc.default_reading_point || '',
           notes: '',
         });
