@@ -92,12 +92,13 @@ const RideDetailPage = () => {
     ];
     
     if (initialTab && initialTab !== 'overview' && ride) {
-      const tabLabels: Record<string, string> = {
+    const tabLabels: Record<string, string> = {
         documents: 'Documents',
         checks: 'Checks',
         inspections: 'Checks',
         activity: 'Activity',
         windlog: 'Wind Log',
+        pressure: 'Pressure',
       };
       
       if (tabLabels[initialTab]) {

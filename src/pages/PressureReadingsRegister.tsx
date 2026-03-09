@@ -88,7 +88,14 @@ interface PressureSession {
   }>;
 }
 
-const PressureReadingsRegister = () => {
+interface PressureReadingsRegisterProps {
+  /** When provided, uses this rideId instead of search params */
+  rideIdProp?: string;
+  /** When true, hides the PageHeader (for embedding in tabs) */
+  embedded?: boolean;
+}
+
+const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureReadingsRegisterProps = {}) => {
   const { user } = useAuth();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
@@ -96,7 +103,7 @@ const PressureReadingsRegister = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const rideId = searchParams.get('rideId') || '';
+  const rideId = rideIdProp || searchParams.get('rideId') || '';
 
   // Ride data
   const [rideName, setRideName] = useState('');
@@ -566,15 +573,17 @@ const PressureReadingsRegister = () => {
   }
 
   return (
-    <div className="space-y-3 px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8">
-      <PageHeader
-        icon={<Gauge className="h-5 w-5 text-primary" />}
-        iconBgClass="from-primary/20 to-primary/10"
-        title={rideName || 'Inflatable Pressure Readings'}
-        subtitle="Pressure session history"
-        showBackButton
-        backTo="/pressure-readings"
-      />
+    <div className={cn("space-y-3", !embedded && "px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8")}>
+      {!embedded && (
+        <PageHeader
+          icon={<Gauge className="h-5 w-5 text-primary" />}
+          iconBgClass="from-primary/20 to-primary/10"
+          title={rideName || 'Inflatable Pressure Readings'}
+          subtitle="Pressure session history"
+          showBackButton
+          backTo="/pressure-readings"
+        />
+      )}
 
       <RegisterHeader
         resultCount={`${filteredSessions.length} session${filteredSessions.length !== 1 ? 's' : ''}`}

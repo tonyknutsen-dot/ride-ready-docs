@@ -8,7 +8,7 @@ import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import { 
   ArrowLeft, FileText, CheckSquare, Wrench, Pencil, ImageIcon, Trash2,
   AlertTriangle, AlertOctagon, Clock, History,
-  Loader2, Camera, AlertCircle, Wind
+  Loader2, Camera, AlertCircle, Wind, Gauge
 } from 'lucide-react';
 import {
   Dialog,
@@ -40,6 +40,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 
 const RideActivityTimeline = lazy(() => import('@/components/RideActivityTimeline'));
 const WindSpeedLog = lazy(() => import('@/components/WindSpeedLog'));
+const PressureReadingsRegister = lazy(() => import('@/pages/PressureReadingsRegister'));
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -293,12 +294,14 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         {(() => {
           const isInflatable = ride.ride_categories.category_group === 'Inflatables';
+          const showPressure = isInflatable && ride.pressure_monitoring_enabled;
           const tabs = [
             { value: 'overview', label: 'Home', Icon: FileText },
             { value: 'checks',   label: 'Checks', Icon: CheckSquare },
             { value: 'documents', label: 'Docs', Icon: FileText },
             { value: 'activity', label: 'Activity', Icon: History },
             ...(isInflatable ? [{ value: 'windlog', label: 'Wind', Icon: Wind }] : []),
+            ...(showPressure ? [{ value: 'pressure', label: 'Pressure', Icon: Gauge }] : []),
           ];
           return (
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
@@ -450,6 +453,26 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             </button>
           </div>
 
+          {/* Pressure Monitoring Summary (inflatables with pressure enabled) */}
+          {ride.ride_categories.category_group === 'Inflatables' && ride.pressure_monitoring_enabled && (
+            <button
+              onClick={() => setActiveTab('pressure')}
+              className="w-full bg-card rounded-2xl border border-border shadow-sm p-4 text-left hover:bg-muted/30 active:scale-[0.99] transition-all"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Gauge className="h-4 w-4 text-primary" />
+                  <h2 className="text-sm font-semibold text-foreground">Pressure Monitoring</h2>
+                </div>
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">View →</span>
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px]">
+                <span className="text-muted-foreground">Structure: <span className="font-medium text-foreground">{ride.is_multi_sectional ? 'Multi-sectional' : 'Single-section'}</span></span>
+                <span className="text-muted-foreground">Sections: <span className="font-medium text-foreground">{ride.is_multi_sectional ? (ride.section_count || '—') : '1'}</span></span>
+              </div>
+            </button>
+          )}
+
           {/* ─── DEFECTS SECTION ─── */}
           <div id="ride-defects-section" className="space-y-3">
             <h3 className="text-[13px] font-bold text-foreground tracking-[1px] uppercase">Defects</h3>
@@ -502,6 +525,15 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           <TabsContent value="windlog" className="animate-fade-in">
             <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
               <WindSpeedLog rideId={ride.id} rideName={ride.ride_name} />
+            </Suspense>
+          </TabsContent>
+        )}
+
+        {/* ─── PRESSURE TAB (inflatables with pressure monitoring only) ─── */}
+        {ride.ride_categories.category_group === 'Inflatables' && ride.pressure_monitoring_enabled && (
+          <TabsContent value="pressure" className="animate-fade-in">
+            <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
+              <PressureReadingsRegister rideIdProp={ride.id} embedded />
             </Suspense>
           </TabsContent>
         )}
