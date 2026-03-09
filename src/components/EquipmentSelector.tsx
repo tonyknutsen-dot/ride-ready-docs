@@ -89,7 +89,10 @@ const EquipmentSelector = ({
 
       const { data: ridesData, error } = await query;
       if (error) throw error;
-      const typedRides = ridesData as Ride[];
+      const typedRides = (ridesData as Ride[]).filter(r => {
+        if (!categoryGroupFilter) return true;
+        return r.ride_categories?.category_group === categoryGroupFilter;
+      });
       setRides(typedRides);
 
       if (typedRides.length) {
