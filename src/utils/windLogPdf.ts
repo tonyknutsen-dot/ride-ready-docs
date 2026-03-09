@@ -49,6 +49,9 @@ interface WindLogPdfEntry {
   anemometer_make?: string | null;
   anemometer_model?: string | null;
   anemometer_serial?: string | null;
+  anemometer_type?: string | null;
+  anemometer_calibration_date?: string | null;
+  anemometer_notes?: string | null;
 }
 
 export interface WindLogPdfOptions {
