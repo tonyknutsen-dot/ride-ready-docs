@@ -823,10 +823,9 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
               }}>
                 <SelectTrigger className="h-10 text-[13px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="psi">PSI</SelectItem>
-                  <SelectItem value="bar">Bar</SelectItem>
-                  <SelectItem value="mmH2O">mmH₂O</SelectItem>
-                  <SelectItem value="kPa">kPa</SelectItem>
+                  {PRESSURE_UNITS.map(u => (
+                    <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <p className="text-[10px] text-muted-foreground">All readings in this session will use this unit.</p>

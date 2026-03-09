@@ -769,44 +769,64 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
         {/* ── Section 4: Pressure Monitoring (inflatables only) ── */}
         {formData.category_group === 'Inflatables' && (
         <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
-          <div className="px-4 pt-4 pb-3 border-b border-border">
-            <h3 className="text-sm font-bold text-foreground">Inflatable Pressure Monitoring <span className="font-normal text-muted-foreground">(optional)</span></h3>
+          <div className="px-4 pt-4 pb-3 border-b border-border flex items-center gap-2">
+            <Gauge className="h-4 w-4 text-primary" />
+            <h3 className="text-sm font-bold text-foreground">Pressure Monitoring</h3>
           </div>
           <div className="p-4 space-y-4">
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Label htmlFor="pressure_enabled" className="text-[13px] font-semibold text-foreground cursor-pointer">
+                  Enable pressure monitoring
+                </Label>
+                <p className="text-[11px] text-muted-foreground mt-0.5">
+                  Track and record pressure readings for this inflatable.
+                </p>
+              </div>
+              <Switch
                 id="pressure_enabled"
                 checked={pressureEnabled}
-                onChange={(e) => setPressureEnabled(e.target.checked)}
-                className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                onCheckedChange={setPressureEnabled}
               />
-              <Label htmlFor="pressure_enabled" className="text-[13px] font-semibold text-foreground cursor-pointer">
-                Enable pressure monitoring for this inflatable
-              </Label>
             </div>
 
             {pressureEnabled && (
-              <div className="space-y-4 pl-1">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="multi_sectional"
-                    checked={isMultiSectional}
-                    onChange={(e) => {
-                      setIsMultiSectional(e.target.checked);
-                      if (e.target.checked && sectionCount < 2) updateSectionCount(2);
-                    }}
-                    className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
-                  />
+              <div className="space-y-4 border-t border-border pt-4">
+                {/* Default pressure unit */}
+                <div className="space-y-1.5">
+                  <Label className="text-[13px] font-semibold text-foreground">Default pressure unit</Label>
+                  <Select value={defaultPressureUnit} onValueChange={setDefaultPressureUnit}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="psi">PSI</SelectItem>
+                      <SelectItem value="bar">Bar</SelectItem>
+                      <SelectItem value="mbar">mbar</SelectItem>
+                      <SelectItem value="mmH2O">mmH₂O</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-[11px] text-muted-foreground">This will be pre-selected when you start a new pressure session.</p>
+                </div>
+
+                {/* Multi-sectional toggle */}
+                <div className="flex items-center justify-between gap-3">
                   <div>
-                    <Label htmlFor="multi_sectional" className="text-[13px] text-foreground cursor-pointer">
-                      This is a multi-sectional inflatable
+                    <Label htmlFor="multi_sectional" className="text-[13px] font-semibold text-foreground cursor-pointer">
+                      Multi-sectional inflatable
                     </Label>
                     <p className="text-[11px] text-muted-foreground mt-0.5">
                       Enable if this inflatable has multiple air chambers or sections that each need a separate pressure reading.
                     </p>
                   </div>
+                  <Switch
+                    id="multi_sectional"
+                    checked={isMultiSectional}
+                    onCheckedChange={(checked) => {
+                      setIsMultiSectional(checked);
+                      if (checked && sectionCount < 2) updateSectionCount(2);
+                    }}
+                  />
                 </div>
 
                 {isMultiSectional && (

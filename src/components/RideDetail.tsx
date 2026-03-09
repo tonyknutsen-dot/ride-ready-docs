@@ -455,22 +455,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
 
           {/* Pressure Monitoring Summary (inflatables with pressure enabled) */}
           {ride.ride_categories.category_group === 'Inflatables' && ride.pressure_monitoring_enabled && (
-            <button
-              onClick={() => setActiveTab('pressure')}
-              className="w-full bg-card rounded-2xl border border-border shadow-sm p-4 text-left hover:bg-muted/30 active:scale-[0.99] transition-all"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Gauge className="h-4 w-4 text-primary" />
-                  <h2 className="text-sm font-semibold text-foreground">Pressure Monitoring</h2>
-                </div>
-                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">View →</span>
-              </div>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px]">
-                <span className="text-muted-foreground">Structure: <span className="font-medium text-foreground">{ride.is_multi_sectional ? 'Multi-sectional' : 'Single-section'}</span></span>
-                <span className="text-muted-foreground">Sections: <span className="font-medium text-foreground">{ride.is_multi_sectional ? (ride.section_count || '—') : '1'}</span></span>
-              </div>
-            </button>
+            <PressureSummaryCard ride={ride} onViewPress={() => setActiveTab('pressure')} />
           )}
 
           {/* ─── DEFECTS SECTION ─── */}
