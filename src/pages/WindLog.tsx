@@ -173,6 +173,9 @@ const WindLog = () => {
   const [anemometerMake, setAnemometerMake] = useState('');
   const [anemometerModel, setAnemometerModel] = useState('');
   const [anemometerSerial, setAnemometerSerial] = useState('');
+  const [anemometerType, setAnemometerType] = useState('');
+  const [anemometerCalibrationDate, setAnemometerCalibrationDate] = useState('');
+  const [anemometerInstrumentNotes, setAnemometerInstrumentNotes] = useState('');
   const [actionTaken, setActionTaken] = useState('');
   const [actionNotes, setActionNotes] = useState('');
   const [notes, setNotes] = useState('');
