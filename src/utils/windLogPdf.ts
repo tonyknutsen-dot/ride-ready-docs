@@ -49,6 +49,9 @@ interface WindLogPdfEntry {
   anemometer_make?: string | null;
   anemometer_model?: string | null;
   anemometer_serial?: string | null;
+  anemometer_type?: string | null;
+  anemometer_calibration_date?: string | null;
+  anemometer_notes?: string | null;
 }
 
 export interface WindLogPdfOptions {
@@ -159,6 +162,11 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     }))];
     if (uniqueAnems.length === 1 && missingAnem === 0) {
       detailFields.push({ label: 'Anemometer', value: uniqueAnems[0] });
+      // Show type & calibration for single-instrument reports
+      const ref = anemEntries[0];
+      if (ref.anemometer_type) detailFields.push({ label: 'Anemometer Type', value: ref.anemometer_type });
+      if (ref.anemometer_calibration_date) detailFields.push({ label: 'Last Calibration', value: ref.anemometer_calibration_date });
+      if (ref.anemometer_notes) detailFields.push({ label: 'Instrument Notes', value: ref.anemometer_notes });
     } else if (missingAnem === 0) {
       detailFields.push({ label: 'Anemometer Records', value: `Complete — ${uniqueAnems.length} instruments used` });
     } else {
@@ -209,9 +217,11 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
 
   const body = entries.map(e => {
     const anemParts: string[] = [];
+    if (e.anemometer_type) anemParts.push(e.anemometer_type);
     if (e.anemometer_make) anemParts.push(e.anemometer_make);
     if (e.anemometer_model) anemParts.push(e.anemometer_model);
     if (e.anemometer_serial) anemParts.push(`S/N: ${e.anemometer_serial}`);
+    if (e.anemometer_calibration_date) anemParts.push(`Cal: ${e.anemometer_calibration_date}`);
     const anemText = anemParts.length > 0 ? anemParts.join(' / ') : '⚠ Missing';
 
     return [
