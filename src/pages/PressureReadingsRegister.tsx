@@ -803,7 +803,18 @@ const PressureReadingsRegister = () => {
 
             {/* Reading lines */}
             <div className="space-y-3">
-              <Label className="text-[13px] font-semibold">Pressure Readings</Label>
+              <div>
+                <Label className="text-[13px] font-semibold">Pressure Readings</Label>
+                {isMultiSectional ? (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    This inflatable has {sectionConfig.length || sectionCount} sections — one reading is required per section.
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                    Single-section inflatable — enter one reading below.
+                  </p>
+                )}
+              </div>
               {lines.map((line, idx) => (
                 <div key={idx} className="rounded-xl border border-border bg-muted/10 p-3 space-y-2">
                   <p className="text-[12px] font-semibold text-foreground">
