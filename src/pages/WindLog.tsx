@@ -549,9 +549,12 @@ const WindLog = () => {
         anemometer_make: anemometerMake || null,
         anemometer_model: anemometerModel || null,
         anemometer_serial: anemometerSerial || null,
+        anemometer_type: anemometerType || null,
+        anemometer_calibration_date: anemometerCalibrationDate || null,
+        anemometer_notes: anemometerInstrumentNotes || null,
         action_taken: finalAction,
         notes: notes || null,
-      });
+      } as any);
       if (error) throw error;
 
       const junctionRows = selectedRideIds.map(rideId => ({
