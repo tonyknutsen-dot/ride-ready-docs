@@ -162,6 +162,11 @@ export async function generateWindLogPdf(options: WindLogPdfOptions) {
     }))];
     if (uniqueAnems.length === 1 && missingAnem === 0) {
       detailFields.push({ label: 'Anemometer', value: uniqueAnems[0] });
+      // Show type & calibration for single-instrument reports
+      const ref = anemEntries[0];
+      if (ref.anemometer_type) detailFields.push({ label: 'Anemometer Type', value: ref.anemometer_type });
+      if (ref.anemometer_calibration_date) detailFields.push({ label: 'Last Calibration', value: ref.anemometer_calibration_date });
+      if (ref.anemometer_notes) detailFields.push({ label: 'Instrument Notes', value: ref.anemometer_notes });
     } else if (missingAnem === 0) {
       detailFields.push({ label: 'Anemometer Records', value: `Complete — ${uniqueAnems.length} instruments used` });
     } else {
