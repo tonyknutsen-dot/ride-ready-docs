@@ -294,12 +294,14 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         {(() => {
           const isInflatable = ride.ride_categories.category_group === 'Inflatables';
+          const showPressure = isInflatable && ride.pressure_monitoring_enabled;
           const tabs = [
             { value: 'overview', label: 'Home', Icon: FileText },
             { value: 'checks',   label: 'Checks', Icon: CheckSquare },
             { value: 'documents', label: 'Docs', Icon: FileText },
             { value: 'activity', label: 'Activity', Icon: History },
             ...(isInflatable ? [{ value: 'windlog', label: 'Wind', Icon: Wind }] : []),
+            ...(showPressure ? [{ value: 'pressure', label: 'Pressure', Icon: Gauge }] : []),
           ];
           return (
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
