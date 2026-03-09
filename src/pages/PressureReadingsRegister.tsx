@@ -801,13 +801,55 @@ const PressureReadingsRegister = () => {
               <Input value={siteAddress} onChange={e => setSiteAddress(e.target.value)} placeholder="Address" className="h-10 text-[13px]" />
             </div>
 
+            {/* Pressure setup summary */}
+            <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-1.5">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Pressure Setup</p>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[12px]">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Monitoring</span>
+                  <span className="font-medium text-foreground">{pressureEnabled ? 'Enabled' : 'Disabled'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Structure</span>
+                  <span className="font-medium text-foreground">{isMultiSectional ? 'Multi-sectional' : 'Single-section'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Sections</span>
+                  <span className="font-medium text-foreground">{isMultiSectional ? (sectionConfig.length || sectionCount) : 1}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Unit</span>
+                  <span className="font-medium text-foreground">{readerUnit.toUpperCase()}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Warning if multi-sectional but no sections configured */}
+            {pressureEnabled && isMultiSectional && sectionConfig.length === 0 && (
+              <div className="rounded-xl border border-warning/40 bg-warning/10 p-3 space-y-2">
+                <p className="text-[12px] font-semibold text-warning">Pressure setup incomplete</p>
+                <p className="text-[11px] text-muted-foreground">
+                  This inflatable is marked as multi-sectional but no sections have been configured. Reading rows cannot be auto-generated.
+                </p>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="text-[11px] h-7"
+                  onClick={() => { setSheetOpen(false); navigate(`/rides/${rideId}`); }}
+                >
+                  Go to inflatable settings
+                </Button>
+              </div>
+            )}
+
             {/* Reading lines */}
             <div className="space-y-3">
               <div>
                 <Label className="text-[13px] font-semibold">Pressure Readings</Label>
                 {isMultiSectional ? (
                   <p className="text-[11px] text-muted-foreground mt-0.5">
-                    This inflatable has {sectionConfig.length || sectionCount} sections — one reading is required per section.
+                    Multi-sectional inflatable — {sectionConfig.length || sectionCount} sections. One reading required per section.
                   </p>
                 ) : (
                   <p className="text-[11px] text-muted-foreground mt-0.5">
