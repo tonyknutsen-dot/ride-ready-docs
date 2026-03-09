@@ -42,6 +42,52 @@ const RideActivityTimeline = lazy(() => import('@/components/RideActivityTimelin
 const WindSpeedLog = lazy(() => import('@/components/WindSpeedLog'));
 const PressureReadingsRegister = lazy(() => import('@/pages/PressureReadingsRegister'));
 
+/** Pressure summary card for the Home tab */
+const PressureSummaryCard = ({ ride, onViewPress }: { ride: Ride; onViewPress: () => void }) => {
+  const [lastSession, setLastSession] = useState<string | null>(null);
+  const { effectiveUserId } = useEffectiveUserId();
+
+  useEffect(() => {
+    if (!ride.id || !effectiveUserId) return;
+    const load = async () => {
+      const { data } = await supabase
+        .from('pressure_sessions')
+        .select('session_date, session_time')
+        .eq('ride_id', ride.id)
+        .order('session_date', { ascending: false })
+        .order('session_time', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (data) {
+        setLastSession(`${data.session_date} ${(data.session_time || '').slice(0, 5)}`);
+      }
+    };
+    load();
+  }, [ride.id, effectiveUserId]);
+
+  return (
+    <button
+      onClick={onViewPress}
+      className="w-full bg-card rounded-2xl border border-border shadow-sm p-4 text-left hover:bg-muted/30 active:scale-[0.99] transition-all"
+    >
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <Gauge className="h-4 w-4 text-primary" />
+          <h2 className="text-sm font-semibold text-foreground">Pressure Monitoring</h2>
+        </div>
+        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wide">View →</span>
+      </div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[12px]">
+        <span className="text-muted-foreground">Structure: <span className="font-medium text-foreground">{ride.is_multi_sectional ? 'Multi-sectional' : 'Single-section'}</span></span>
+        <span className="text-muted-foreground">Sections: <span className="font-medium text-foreground">{ride.is_multi_sectional ? (ride.section_count || '—') : '1'}</span></span>
+        {lastSession && (
+          <span className="text-muted-foreground">Last session: <span className="font-medium text-foreground">{lastSession}</span></span>
+        )}
+      </div>
+    </button>
+  );
+};
+
 type Ride = Tables<'rides'> & {
   ride_categories: {
     name: string;

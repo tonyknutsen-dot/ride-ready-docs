@@ -431,6 +431,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             is_multi_sectional: isMultiSectional,
             section_count: isMultiSectional ? sectionCount : 1,
             section_config: isMultiSectional ? sectionConfig : [],
+            default_pressure_unit: pressureEnabled ? defaultPressureUnit : null,
           })
           .select()
           .single();
