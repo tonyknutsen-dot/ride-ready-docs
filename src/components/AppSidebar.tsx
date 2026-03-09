@@ -71,6 +71,7 @@ const toolsNavItems: NavItemDef[] = [
   { title: 'Defect Register', url: '/defects', icon: AlertOctagon },
   { title: 'Maintenance', url: '/maintenance', icon: Wrench, feature: 'maintenance' },
   { title: 'Wind Log', url: '/wind-log', icon: Wind },
+  { title: 'Pressure Readings', url: '/pressure-readings', icon: Gauge },
   { title: 'Risk Assessments', url: '/risk-assessments', icon: ShieldCheck, feature: 'risk_assessments' },
   { title: 'Send Documents', url: '/send-documents', icon: Send, feature: 'send_documents' },
 ];

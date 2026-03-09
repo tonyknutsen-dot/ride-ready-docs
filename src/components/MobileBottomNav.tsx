@@ -210,6 +210,7 @@ export default function MobileBottomNav() {
                   )}
                   <MenuItem icon={AlertOctagon} label="Defect Register" onClick={() => go("/defects")} active={isActive(["/defects"])} />
                   <MenuItem icon={Wind} label="Wind Log" onClick={() => go("/wind-log")} active={isActive(["/wind-log"])} />
+                  <MenuItem icon={Gauge} label="Pressure Readings" onClick={() => go("/pressure-readings")} active={isActive(["/pressure-readings"])} />
                 </div>
               )}
 
