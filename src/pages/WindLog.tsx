@@ -1191,6 +1191,7 @@ const WindLog = () => {
               <div className="space-y-1">
                 <Label className="text-[10px] text-muted-foreground">Instrument notes</Label>
                 <Input placeholder="Optional notes" value={anemometerInstrumentNotes} onChange={(e) => setAnemometerInstrumentNotes(e.target.value)} maxLength={300} className="h-9 text-xs" />
+              </div>
               {selectedProfileId === 'manual' && anemometerMake && anemometerModel && (
                 <Button
                   type="button"
