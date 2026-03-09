@@ -422,6 +422,9 @@ const WindLog = () => {
           serial_number: anemometerSerial || null,
           label,
           is_default: anemometerProfiles.length === 0,
+          anemometer_type: anemometerType || null,
+          last_calibration_date: anemometerCalibrationDate || null,
+          instrument_notes: anemometerInstrumentNotes || null,
         })
         .select()
         .single();
