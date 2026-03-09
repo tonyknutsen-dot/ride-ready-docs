@@ -764,10 +764,11 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           </div>
         </section>
 
-        {/* ── Section 4: Pressure Monitoring ── */}
+        {/* ── Section 4: Pressure Monitoring (inflatables only) ── */}
+        {formData.category_group === 'Inflatables' && (
         <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
           <div className="px-4 pt-4 pb-3 border-b border-border">
-            <h3 className="text-sm font-bold text-foreground">Pressure Monitoring <span className="font-normal text-muted-foreground">(optional)</span></h3>
+            <h3 className="text-sm font-bold text-foreground">Inflatable Pressure Monitoring <span className="font-normal text-muted-foreground">(optional)</span></h3>
           </div>
           <div className="p-4 space-y-4">
             <div className="flex items-center gap-3">
@@ -796,15 +797,20 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                     }}
                     className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
                   />
-                  <Label htmlFor="multi_sectional" className="text-[13px] text-foreground cursor-pointer">
-                    Multi-sectional inflatable
-                  </Label>
+                  <div>
+                    <Label htmlFor="multi_sectional" className="text-[13px] text-foreground cursor-pointer">
+                      This is a multi-sectional inflatable
+                    </Label>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Enable if this inflatable has multiple air chambers or sections that each need a separate pressure reading.
+                    </p>
+                  </div>
                 </div>
 
                 {isMultiSectional && (
                   <div className="space-y-3">
                     <div className="space-y-1.5">
-                      <Label className="text-[13px] font-semibold text-foreground">Number of sections</Label>
+                      <Label className="text-[13px] font-semibold text-foreground">How many sections?</Label>
                       <Input
                         type="number"
                         min={2}
@@ -813,6 +819,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                         onChange={e => updateSectionCount(Math.max(2, Math.min(20, parseInt(e.target.value) || 2)))}
                         className="w-24"
                       />
+                      <p className="text-[11px] text-muted-foreground">Each section will require its own pressure reading during a session.</p>
                     </div>
                     <div className="space-y-2">
                       {sectionConfig.map((sc, idx) => (
@@ -828,7 +835,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                                   next[idx] = { ...next[idx], name: e.target.value };
                                   setSectionConfig(next);
                                 }}
-                                placeholder={`Section ${idx + 1}`}
+                                placeholder={`e.g. Front Arch, Rear Chamber`}
                                 className="h-9 text-[13px]"
                               />
                             </div>
@@ -841,9 +848,10 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                                   next[idx] = { ...next[idx], default_reading_point: e.target.value };
                                   setSectionConfig(next);
                                 }}
-                                placeholder="e.g. Valve A"
+                                placeholder="e.g. Valve A, Near seam"
                                 className="h-9 text-[13px]"
                               />
+                              <p className="text-[10px] text-muted-foreground">Where on this section readings are typically taken</p>
                             </div>
                           </div>
                           <div className="grid grid-cols-3 gap-2">
@@ -898,13 +906,20 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                     </div>
                   </div>
                 )}
+
+                {!isMultiSectional && (
+                  <p className="text-[11px] text-muted-foreground bg-muted/30 rounded-lg p-3">
+                    Single-section inflatable — pressure sessions will show one reading row. If this inflatable has multiple air chambers, enable "multi-sectional" above.
+                  </p>
+                )}
               </div>
             )}
             <p className="text-xs text-foreground/55">
-              Enable this to log pressure readings for this inflatable via the Pressure Readings module.
+              Enable this to log pressure readings for this inflatable via the Pressure Readings module. Only visible for inflatables.
             </p>
           </div>
         </section>
+        )}
 
         {/* ── Section 5: Photo ── */}
         <section className="rounded-xl border border-foreground/10 bg-card shadow-[0_2px_8px_rgba(0,0,0,0.08)] overflow-hidden">
