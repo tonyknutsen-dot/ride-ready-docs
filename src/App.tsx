@@ -88,6 +88,8 @@ const Compliance = lazy(() => import("./pages/Compliance"));
 const DocumentViewerPage = lazy(() => import("./pages/DocumentViewerPage"));
 const InspectionRecordPage = lazy(() => import("./pages/InspectionRecordPage"));
 const Reports = lazy(() => import("./pages/Reports"));
+const PressureReadings = lazy(() => import("./pages/PressureReadings"));
+const PressureReadingsRegister = lazy(() => import("./pages/PressureReadingsRegister"));
 
 // PageLoader is now inside OfflineSuspense
 
