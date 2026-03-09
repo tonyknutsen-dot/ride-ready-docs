@@ -1,7 +1,7 @@
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from '@/components/ui/dialog';
-import { Gauge, MapPin, Layers, Clock, Wrench, FileText, Ruler } from 'lucide-react';
+import { Gauge, MapPin, Layers, Clock, Wrench, FileText, Ruler, HelpCircle } from 'lucide-react';
 
 interface Props {
   open: boolean;
@@ -29,52 +29,52 @@ export const PressureReadingsHelpDialog = ({ open, onOpenChange }: Props) => (
           </div>
         </div>
         <div className="flex gap-3">
-          <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <HelpCircle className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-foreground">Site / location required</p>
-            <p>Every session records where the inflatable was operating when readings were taken.</p>
+            <p className="font-medium text-foreground">What is a pressure session?</p>
+            <p>A pressure session is a single event where you take pressure readings from one inflatable at a specific site and time. You can log multiple sessions per day — for example before opening, during operation, and at end of day.</p>
           </div>
         </div>
         <div className="flex gap-3">
-          <Layers className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <Clock className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-foreground">Multi-sectional inflatables</p>
-            <p>Some inflatables have multiple air chambers or sections (e.g. Front Arch, Rear Arch). If yours is multi-sectional, you'll configure each section in the equipment setup — then every pressure session will require one reading per section before it can be marked complete.</p>
+            <p className="font-medium text-foreground">Session types</p>
+            <p><strong>Pre-opening</strong> — before the public arrives. <strong>During operation</strong> — while the inflatable is in use. <strong>End of day</strong> — after the last users have left. Choose the one that matches when readings are being taken.</p>
           </div>
         </div>
         <div className="flex gap-3">
           <Ruler className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
             <p className="font-medium text-foreground">Pressure unit</p>
-            <p>Each session has a unit (PSI, Bar, mmH₂O, or kPa). All readings in a session use the same unit. Choose this when starting a new session.</p>
+            <p>Each session uses one unit for all readings: <strong>PSI</strong>, <strong>Bar</strong>, <strong>mbar</strong>, or <strong>mmH₂O</strong>. Choose whichever your pressure gauge displays. You can set a default unit in the inflatable setup so it's pre-selected each time.</p>
+          </div>
+        </div>
+        <div className="flex gap-3">
+          <Layers className="h-4 w-4 text-primary shrink-0 mt-0.5" />
+          <div>
+            <p className="font-medium text-foreground">Multi-sectional inflatables</p>
+            <p>Some inflatables have multiple air chambers (e.g. Front Arch, Rear Arch). Configure sections in the <strong>inflatable setup page</strong> — then every pressure session will automatically show one reading row per section. You cannot complete a session until every section has a reading.</p>
           </div>
         </div>
         <div className="flex gap-3">
           <MapPin className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
             <p className="font-medium text-foreground">Reading point / location</p>
-            <p>For each section, you can record exactly where on the inflatable the reading was taken (e.g. "Valve A", "Near seam"). This helps with consistency across sessions.</p>
-          </div>
-        </div>
-        <div className="flex gap-3">
-          <Clock className="h-4 w-4 text-primary shrink-0 mt-0.5" />
-          <div>
-            <p className="font-medium text-foreground">Session types & multiple sessions per day</p>
-            <p>Choose when the session happens: Pre-opening, During operation, or After adjustment. You can log as many sessions as needed on the same day.</p>
+            <p><strong>Site / location</strong> is where the inflatable is operating (e.g. "Riverside Park"). <strong>Reading point</strong> is the exact spot on each section where the gauge was placed (e.g. "Valve A", "Near seam"). This helps ensure consistency across sessions.</p>
           </div>
         </div>
         <div className="flex gap-3">
           <Wrench className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
-            <p className="font-medium text-foreground">Instrument traceability</p>
-            <p>Every session records the pressure reader used (make, model, serial number, calibration date) for full traceability. You can save instruments to your library for quick selection.</p>
+            <p className="font-medium text-foreground">Pressure reader details</p>
+            <p>Every session records the pressure gauge used — make, model, serial number, and calibration date. This provides full instrument traceability for compliance and audit purposes. Save your instruments to the library for quick selection.</p>
           </div>
         </div>
         <div className="flex gap-3">
           <FileText className="h-4 w-4 text-primary shrink-0 mt-0.5" />
           <div>
             <p className="font-medium text-foreground">Reports & documents</p>
-            <p>Export CSV or PDF reports, save them to Documents, send or share — following the same workflow as all other modules.</p>
+            <p>Export CSV or PDF reports, save them to the inflatable's document register, or share them — following the same workflow as all other modules in the app.</p>
           </div>
         </div>
       </div>

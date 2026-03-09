@@ -27,18 +27,26 @@ import { generatePressureReadingsPdf } from '@/utils/pressureReadingsPdf';
 const SESSION_TYPES = [
   { value: 'pre-opening', label: 'Pre-opening' },
   { value: 'during-operation', label: 'During operation' },
-  { value: 'after-adjustment', label: 'After adjustment' },
+  { value: 'end-of-day', label: 'End of day' },
   { value: 'other', label: 'Other' },
 ];
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   'pre-opening': 'Pre-opening',
   'during-operation': 'During operation',
-  'after-adjustment': 'After adjustment',
+  'end-of-day': 'End of day',
+  'after-adjustment': 'End of day', // legacy mapping
   'in-service': 'During operation', // legacy mapping
-  'recheck': 'After adjustment', // legacy mapping
+  'recheck': 'End of day', // legacy mapping
   'other': 'Other',
 };
+
+const PRESSURE_UNITS = [
+  { value: 'psi', label: 'PSI' },
+  { value: 'bar', label: 'Bar' },
+  { value: 'mbar', label: 'mbar' },
+  { value: 'mmH2O', label: 'mmH₂O' },
+];
 
 interface SectionConfig {
   name: string;
@@ -137,6 +145,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
   const [readerModel, setReaderModel] = useState('');
   const [readerSerial, setReaderSerial] = useState('');
   const [readerUnit, setReaderUnit] = useState('psi');
+  const [defaultUnit, setDefaultUnit] = useState('psi');
   const [readerCalibration, setReaderCalibration] = useState('');
   const [readerNotes, setReaderNotes] = useState('');
 
@@ -163,7 +172,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
     const load = async () => {
       const { data } = await supabase
         .from('rides')
-        .select('ride_name, pressure_monitoring_enabled, is_multi_sectional, section_count, section_config')
+        .select('ride_name, pressure_monitoring_enabled, is_multi_sectional, section_count, section_config, default_pressure_unit')
         .eq('id', rideId)
         .single();
       if (data) {
@@ -172,6 +181,9 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
         setIsMultiSectional(data.is_multi_sectional ?? false);
         setSectionCount(data.section_count ?? 1);
         setSectionConfig((data.section_config as SectionConfig[]) || []);
+        const unit = (data as any).default_pressure_unit || 'psi';
+        setDefaultUnit(unit);
+        setReaderUnit(unit);
       }
     };
     load();
@@ -324,7 +336,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
           section_name: sc.name || `Section ${i + 1}`,
           reading_taken_at: format(n, 'HH:mm'),
           pressure_value: '',
-          pressure_unit: readerUnit || 'psi',
+          pressure_unit: defaultUnit || 'psi',
           reading_point: sc.default_reading_point || '',
           notes: '',
         });
@@ -336,7 +348,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
           section_name: `Section ${i + 1}`,
           reading_taken_at: format(n, 'HH:mm'),
           pressure_value: '',
-          pressure_unit: readerUnit || 'psi',
+          pressure_unit: defaultUnit || 'psi',
           reading_point: '',
           notes: '',
         });
@@ -347,7 +359,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
         section_name: 'Main',
         reading_taken_at: format(n, 'HH:mm'),
         pressure_value: '',
-        pressure_unit: readerUnit || 'psi',
+        pressure_unit: defaultUnit || 'psi',
         reading_point: '',
         notes: '',
       });
@@ -362,7 +374,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
       setReaderMake(defaultProfile.make);
       setReaderModel(defaultProfile.model);
       setReaderSerial(defaultProfile.serial_number || '');
-      setReaderUnit(defaultProfile.unit || 'psi');
+      setReaderUnit(defaultProfile.unit || defaultUnit || 'psi');
       setReaderCalibration(defaultProfile.last_calibration_date || '');
       setReaderNotes(defaultProfile.instrument_notes || '');
     } else {
@@ -371,7 +383,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
       setReaderMake('');
       setReaderModel('');
       setReaderSerial('');
-      setReaderUnit('psi');
+      setReaderUnit(defaultUnit || 'psi');
       setReaderCalibration('');
       setReaderNotes('');
     }
@@ -811,10 +823,9 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
               }}>
                 <SelectTrigger className="h-10 text-[13px]"><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="psi">PSI</SelectItem>
-                  <SelectItem value="bar">Bar</SelectItem>
-                  <SelectItem value="mmH2O">mmH₂O</SelectItem>
-                  <SelectItem value="kPa">kPa</SelectItem>
+                  {PRESSURE_UNITS.map(u => (
+                    <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <p className="text-[10px] text-muted-foreground">All readings in this session will use this unit.</p>
