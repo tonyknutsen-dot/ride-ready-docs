@@ -88,7 +88,14 @@ interface PressureSession {
   }>;
 }
 
-const PressureReadingsRegister = () => {
+interface PressureReadingsRegisterProps {
+  /** When provided, uses this rideId instead of search params */
+  rideIdProp?: string;
+  /** When true, hides the PageHeader (for embedding in tabs) */
+  embedded?: boolean;
+}
+
+const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureReadingsRegisterProps = {}) => {
   const { user } = useAuth();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
@@ -96,7 +103,7 @@ const PressureReadingsRegister = () => {
   const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const rideId = searchParams.get('rideId') || '';
+  const rideId = rideIdProp || searchParams.get('rideId') || '';
 
   // Ride data
   const [rideName, setRideName] = useState('');
