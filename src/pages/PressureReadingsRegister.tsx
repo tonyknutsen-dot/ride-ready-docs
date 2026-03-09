@@ -26,15 +26,17 @@ import { generatePressureReadingsPdf } from '@/utils/pressureReadingsPdf';
 
 const SESSION_TYPES = [
   { value: 'pre-opening', label: 'Pre-opening' },
-  { value: 'in-service', label: 'In service' },
-  { value: 'recheck', label: 'Recheck' },
+  { value: 'during-operation', label: 'During operation' },
+  { value: 'after-adjustment', label: 'After adjustment' },
   { value: 'other', label: 'Other' },
 ];
 
 const SESSION_TYPE_LABELS: Record<string, string> = {
   'pre-opening': 'Pre-opening',
-  'in-service': 'In service',
-  'recheck': 'Recheck',
+  'during-operation': 'During operation',
+  'after-adjustment': 'After adjustment',
+  'in-service': 'During operation', // legacy mapping
+  'recheck': 'After adjustment', // legacy mapping
   'other': 'Other',
 };
 
