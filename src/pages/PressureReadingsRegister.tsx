@@ -822,7 +822,7 @@ const PressureReadingsRegister = () => {
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground">Pressure value *</Label>
+                      <Label className="text-[10px] text-muted-foreground">Pressure value ({readerUnit.toUpperCase()}) *</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -833,13 +833,14 @@ const PressureReadingsRegister = () => {
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground">Reading point</Label>
+                      <Label className="text-[10px] text-muted-foreground">Where on this section?</Label>
                       <Input
                         value={line.reading_point}
                         onChange={e => updateLine(idx, 'reading_point', e.target.value)}
-                        placeholder="e.g. Valve A"
+                        placeholder="e.g. Valve A, near seam"
                         className="h-9 text-[13px]"
                       />
+                      <p className="text-[9px] text-muted-foreground">Exact point where the gauge was placed</p>
                     </div>
                   </div>
                   <div className="space-y-1">
