@@ -392,12 +392,18 @@ const WindLog = () => {
       setAnemometerMake('');
       setAnemometerModel('');
       setAnemometerSerial('');
+      setAnemometerType('');
+      setAnemometerCalibrationDate('');
+      setAnemometerInstrumentNotes('');
     } else {
       const profile = anemometerProfiles.find(p => p.id === profileId);
       if (profile) {
         setAnemometerMake(profile.make);
         setAnemometerModel(profile.model);
         setAnemometerSerial(profile.serial_number || '');
+        setAnemometerType(profile.anemometer_type || '');
+        setAnemometerCalibrationDate(profile.last_calibration_date || '');
+        setAnemometerInstrumentNotes(profile.instrument_notes || '');
       }
     }
   };
