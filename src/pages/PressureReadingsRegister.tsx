@@ -374,7 +374,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
       setReaderMake(defaultProfile.make);
       setReaderModel(defaultProfile.model);
       setReaderSerial(defaultProfile.serial_number || '');
-      setReaderUnit(defaultProfile.unit || 'psi');
+      setReaderUnit(defaultProfile.unit || defaultUnit || 'psi');
       setReaderCalibration(defaultProfile.last_calibration_date || '');
       setReaderNotes(defaultProfile.instrument_notes || '');
     } else {
