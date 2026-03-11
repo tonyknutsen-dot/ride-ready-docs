@@ -672,7 +672,7 @@ const NotificationCenter = () => {
             const sectionNames = outOfRange.map(l => l.section_name).join(', ');
             await ensureNotification(
               `Pressure out of range — ${psRideName || 'inflatable'}`,
-              `${outOfRange.length} section${outOfRange.length > 1 ? 's' : ''} outside configured limits (${sectionNames}). Session ${ps.session_date}.`,
+              `${outOfRange.length} section${outOfRange.length > 1 ? 's' : ''} outside configured limits (${sectionNames}). Retake readings and inspect the inflatable. Raise a defect if the issue remains.`,
               'warning', 'pressure_sessions', ps.id
             );
           }
