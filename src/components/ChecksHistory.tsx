@@ -757,8 +757,8 @@ function OfflineCheckRow({ check }: { check: OfflineCheckDisplay }) {
           {check.checkDate} · <span className="font-semibold capitalize">{check.checkFrequency}</span>
         </div>
         <div className="font-bold text-foreground truncate text-sm">{check.inspectorName}</div>
-        {check.itemCount && (
-          <div className="text-xs text-muted-foreground">{check.itemCount} items checked</div>
+        {check.resultCount > 0 && (
+          <div className="text-xs text-muted-foreground">{check.resultCount} items checked</div>
         )}
       </div>
       <div className="shrink-0">
