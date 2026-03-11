@@ -158,6 +158,8 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
       description: null,
       template_type: cached.checkFrequency,
       custom_interval_days: null,
+      start_notice_required: false,
+      start_notice_text: null,
       daily_check_template_items: cached.items.map(item => ({
         id: item.id,
         template_id: cached.id,

@@ -51,7 +51,7 @@ const InspectionRecordPage = () => {
         .eq('id', recordId!)
         .single();
       if (error) throw error;
-      return data as InspectionRecord;
+      return data as unknown as InspectionRecord;
     },
     enabled: !!recordId,
   });

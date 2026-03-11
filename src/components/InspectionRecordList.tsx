@@ -175,7 +175,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
             ? `To ${format(dateTo, 'dd MMM yyyy')}`
             : 'All records';
 
-      const { blob, fileName, saveToDocuments } = await generateCheckRecordsPdf({
+      const result = await generateCheckRecordsPdf({
         rideId,
         rideName,
         userId: user.id,

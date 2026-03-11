@@ -171,7 +171,7 @@ export default function Reports({ preFilterRideId, preFilterRideName }: ReportsP
       {!isRideScoped && (
         <PageHeader
           title="Reports"
-          description="Generate timeline reports across all activities"
+          subtitle="Generate timeline reports across all activities"
           icon={<FileText className="h-5 w-5" />}
         />
       )}

@@ -479,6 +479,9 @@ const DefectRegister = () => {
     !!searchTerm,
   ].filter(Boolean).length;
 
+  const getSeverityLabel = (s: DefectSeverity) => SEVERITY_CONFIG[s]?.label || s;
+  const getStatusLabel = (s: DefectStatus) => s === 'resolved' ? 'Closed' : 'Open';
+
   const filterSummary = [
     statusFilter !== 'open' ? `Status: ${statusFilter === 'closed' ? 'Closed' : 'All'}` : null,
     severityFilter !== 'all' ? `Severity: ${getSeverityLabel(severityFilter as DefectSeverity)}` : null,

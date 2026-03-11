@@ -26,8 +26,8 @@ const ComingSoon = () => {
       if (!navigator.onLine) {
         try {
           // Try to find any cached identity in IndexedDB
-          const { db } = await import('@/lib/offlineDb');
-          const allCached = await db.table('identityCache').toArray();
+          const { offlineDb } = await import('@/lib/offlineDb');
+          const allCached = await offlineDb.table('identityCache').toArray();
           if (allCached.length > 0) {
             const cached = allCached[0];
             const target = cached?.lastVisitedRoute || '/overview';

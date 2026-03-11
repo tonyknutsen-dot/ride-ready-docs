@@ -212,6 +212,9 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
     !!searchQuery,
   ].filter(Boolean).length;
 
+  const getMaintenanceTypeLabel = (type: string) =>
+    MAINTENANCE_TYPES.find(t => t.value === type)?.label || type;
+
   const filterSummary = [
     filterType !== 'all' ? `Type: ${getMaintenanceTypeLabel(filterType)}` : null,
     filterPerformedBy !== 'all' ? `Performed by: ${filterPerformedBy}` : null,

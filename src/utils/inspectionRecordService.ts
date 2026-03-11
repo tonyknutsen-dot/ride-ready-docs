@@ -375,5 +375,5 @@ export async function fetchRecordVersions(checkId: string): Promise<InspectionRe
     return [];
   }
 
-  return (data || []) as InspectionRecord[];
+  return (data || []) as unknown as InspectionRecord[];
 }

@@ -474,7 +474,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     return rideDocId || undefined;
   };
 
-  return { blob: pdfBlob, fileName, saveToDocuments };
+  return { blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments };
 }
 
 // ─── CSV Generator ───────────────────────────────────────────────────────────

@@ -54,7 +54,7 @@ const RideDocumentRegister = ({ rideId, rideName }: RideDocumentRegisterProps) =
 
   const grouped = useMemo(() => {
     const groups: Record<RideDocType, RideDocument[]> = {
-      CR: [], MR: [], TL: [], CH: [], IC: [], RA: [],
+      CR: [], MR: [], TL: [], CH: [], IC: [], RA: [], IR: [],
     };
     documents.forEach(doc => {
       if (groups[doc.document_type as RideDocType]) {

@@ -634,7 +634,7 @@ const WindLog = () => {
 
       // Also store in ride_documents for the proven DocumentViewerPage
       if (isSingleAsset) {
-        const docId = generateDocumentId('WL');
+        const docId = await generateDocumentId(filterInflatable, 'CR' as any);
         const rideCode = await getRideCode(filterInflatable);
         const rideDocId = await storeRideDocument({
           rideId: filterInflatable,

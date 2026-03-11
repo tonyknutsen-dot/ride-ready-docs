@@ -48,8 +48,6 @@ export function StaffRoute({ children, requiredPermission, ownerOnly = false }: 
     
     const permissionHierarchy: Record<StaffRole, number> = {
       'staff': 1,
-      'supervisor': 2,
-      'manager': 3,
     };
 
     const userLevel = permissionHierarchy[permissionLevel];
