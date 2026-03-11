@@ -106,7 +106,7 @@ interface PressureReadingsRegisterProps {
   onEditRide?: () => void;
 }
 
-const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureReadingsRegisterProps = {}) => {
+const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: PressureReadingsRegisterProps = {}) => {
   const { user } = useAuth();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
