@@ -269,6 +269,13 @@ const NeedsAttentionPanel = () => {
         defaultOpen: false,
         headerStyle: { bg: 'bg-card', border: 'border-border', iconColor: 'text-muted-foreground', text: 'text-foreground' },
       },
+      {
+        type: 'pressure_failed',
+        title: 'Pressure Action Needed',
+        icon: Gauge,
+        defaultOpen: true,
+        headerStyle: { bg: 'bg-red-50 dark:bg-red-950/20', border: 'border-red-200 dark:border-red-800', iconColor: 'text-red-600', text: 'text-foreground' },
+      },
     ];
 
     return groupDefs
