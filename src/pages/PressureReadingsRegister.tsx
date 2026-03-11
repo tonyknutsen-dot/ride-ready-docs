@@ -894,6 +894,11 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
                       </div>
                     )}
                     {session.notes && (
+                      <div>
+                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Notes</span>
+                        <p className="text-[11px] text-muted-foreground break-words">{session.notes}</p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
