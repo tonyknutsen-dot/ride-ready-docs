@@ -8,8 +8,14 @@ import { ChecksOnboardingModal } from './ChecksOnboardingModal';
 import { 
   ArrowLeft, FileText, CheckSquare, Wrench, Pencil, ImageIcon, Trash2,
   AlertTriangle, AlertOctagon, Clock, History,
-  Loader2, Camera, AlertCircle, Wind, Gauge
+  Loader2, Camera, AlertCircle, Wind, Gauge, MoreHorizontal
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Dialog,
   DialogContent,
