@@ -5,7 +5,7 @@ import {
   Bell, Check, X, AlertTriangle, Info, CheckCircle,
   FileText, Wrench, ClipboardCheck, Shield, Wind,
   CreditCard, ChevronRight, Clock, AlertOctagon,
-  CircleDot, Send, ExternalLink
+  CircleDot, Send, ExternalLink, Gauge
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
