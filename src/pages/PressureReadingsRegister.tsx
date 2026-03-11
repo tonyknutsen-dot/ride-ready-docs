@@ -162,6 +162,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
   const [exportDialogOpen, setExportDialogOpen] = useState(false);
   const [exportResult, setExportResult] = useState<ExportResult | null>(null);
   const [savedReports, setSavedReports] = useState<any[]>([]);
+  const [showHelp, setShowHelp] = useState(false);
 
   // Defaults
   const [defaultTakenBy, setDefaultTakenBy] = useState('');
