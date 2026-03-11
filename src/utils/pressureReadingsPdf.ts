@@ -329,6 +329,24 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
     y = (doc as any).lastAutoTable?.finalY + 5 || y + 20;
   }
 
+  // Action line if any sessions failed
+  if (outOfRangeCount > 0) {
+    const pageH = doc.internal.pageSize.getHeight();
+    if (y + 15 > pageH - 22) { doc.addPage(); y = 28; }
+    doc.setFontSize(8);
+    doc.setTextColor(220, 38, 38);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ACTION REQUIRED', mL, y);
+    y += 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text(
+      'One or more readings were outside configured limits. Review inflatable condition and retake readings or raise a defect.',
+      mL, y, { maxWidth: pageWidth - mL * 2 }
+    );
+    y += 8;
+  }
+
   drawTemplateFooters(templateOpts);
 
   const filename = buildFileName(['pressure-readings', inflatableName, format(new Date(), 'yyyy-MM-dd')]);
