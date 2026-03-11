@@ -69,6 +69,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     (ride?.section_config as any[]) || []
   );
   const [defaultPressureUnit, setDefaultPressureUnit] = useState((ride as any)?.default_pressure_unit || 'psi');
+  const [pressureErrors, setPressureErrors] = useState<Record<string, string>>({});
 
   // Sync section config array length with sectionCount
   const updateSectionCount = (count: number) => {
