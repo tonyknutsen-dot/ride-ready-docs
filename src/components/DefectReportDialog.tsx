@@ -35,10 +35,11 @@ interface DefectReportDialogProps {
 
 const DefectReportDialog = ({ 
   rideId, rideName, checkId, checkFrequency,
-  onDefectReported, onCriticalDefectReported, trigger 
+  onDefectReported, onCriticalDefectReported, trigger,
+  defaultDescription,
 }: DefectReportDialogProps) => {
   const [open, setOpen] = useState(false);
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(defaultDescription || '');
   const [severity, setSeverity] = useState<DefectSeverity>('non_urgent');
   const [locationOnRide, setLocationOnRide] = useState('');
   const [photos, setPhotos] = useState<File[]>([]);
