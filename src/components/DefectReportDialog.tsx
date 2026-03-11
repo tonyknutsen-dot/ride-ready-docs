@@ -330,8 +330,8 @@ const DefectReportDialog = ({
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Describe the defect..."
-                    rows={3}
-                    className="rounded-xl"
+                    rows={Math.max(4, Math.min(10, description.split('\n').length + 1))}
+                    className="rounded-xl min-h-[120px] max-h-[280px] overflow-y-auto whitespace-pre-wrap break-words"
                     onFocus={(e) => requestAnimationFrame(() => setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120))}
                   />
                 </div>
