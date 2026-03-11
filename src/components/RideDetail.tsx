@@ -350,16 +350,17 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             { value: 'overview', label: 'Home', Icon: FileText },
             { value: 'checks',   label: 'Checks', Icon: CheckSquare },
             { value: 'documents', label: 'Docs', Icon: FileText },
-            { value: 'activity', label: 'Activity', Icon: History },
           ];
-          const secondaryTabs = [
+          const moreTabs = [
+            { value: 'activity', label: 'Activity', Icon: History },
             ...(isInflatable ? [{ value: 'windlog', label: 'Wind', Icon: Wind }] : []),
             ...(isInflatable ? [{ value: 'pressure', label: 'Pressure', Icon: Gauge }] : []),
           ];
-          const isSecondaryActive = secondaryTabs.some(t => t.value === activeTab);
+          const isMoreActive = moreTabs.some(t => t.value === activeTab);
+          const activeMoreLabel = moreTabs.find(t => t.value === activeTab)?.label;
           return (
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-              <TabsList className="w-full h-auto p-0.5 bg-transparent rounded-none grid" style={{ gridTemplateColumns: `repeat(${primaryTabs.length + (secondaryTabs.length > 0 ? 1 : 0)}, 1fr)` }}>
+              <TabsList className="w-full h-auto p-0.5 bg-transparent rounded-none grid grid-cols-4">
                 {primaryTabs.map(({ value, label, Icon }) => (
                   <TabsTrigger
                     key={value}
@@ -370,35 +371,33 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                     {label}
                   </TabsTrigger>
                 ))}
-                {secondaryTabs.length > 0 && (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <button
-                        type="button"
-                        className={`flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold rounded-lg transition-all min-h-[44px] ${
-                          isSecondaryActive
-                            ? 'bg-primary/10 text-primary'
-                            : 'text-muted-foreground hover:text-foreground'
-                        }`}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      className={`flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold rounded-lg transition-all min-h-[44px] ${
+                        isMoreActive
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={2} />
+                      {isMoreActive ? activeMoreLabel : 'More'}
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="min-w-[160px]">
+                    {moreTabs.map(({ value, label, Icon }) => (
+                      <DropdownMenuItem
+                        key={value}
+                        onClick={() => setActiveTab(value)}
+                        className={`gap-2 ${activeTab === value ? 'bg-primary/10 text-primary' : ''}`}
                       >
-                        <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={2} />
-                        {isSecondaryActive ? secondaryTabs.find(t => t.value === activeTab)?.label || 'More' : 'More'}
-                      </button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="min-w-[140px]">
-                      {secondaryTabs.map(({ value, label, Icon }) => (
-                        <DropdownMenuItem
-                          key={value}
-                          onClick={() => setActiveTab(value)}
-                          className={activeTab === value ? 'bg-primary/10 text-primary' : ''}
-                        >
-                          <Icon className="h-4 w-4 mr-2" />
-                          {label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
+                        <Icon className="h-4 w-4" />
+                        {label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TabsList>
             </div>
           );
