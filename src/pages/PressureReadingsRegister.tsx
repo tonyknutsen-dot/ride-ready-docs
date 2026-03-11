@@ -102,6 +102,8 @@ interface PressureReadingsRegisterProps {
   rideIdProp?: string;
   /** When true, hides the PageHeader (for embedding in tabs) */
   embedded?: boolean;
+  /** Callback to trigger edit mode on parent (used when embedded) */
+  onEditRide?: () => void;
 }
 
 const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureReadingsRegisterProps = {}) => {
