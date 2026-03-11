@@ -168,7 +168,7 @@ const DefectReportDialog = ({
         variant: severity === 'stop_operation' ? 'destructive' : 'default'
       });
 
-      setDescription('');
+      setDescription(defaultDescription || '');
       setSeverity('non_urgent');
       setLocationOnRide('');
       setSelectedRideId(null);
