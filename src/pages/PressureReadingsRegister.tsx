@@ -711,7 +711,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
             </div>
           )}
           {!pressureEnabled && (
-            <p className="text-[11px] text-warning mt-1">Pressure monitoring is not enabled for this inflatable. You can still log sessions, but consider enabling it in <button type="button" className="underline text-primary" onClick={() => navigate(`/rides/${rideId}`)}>inflatable settings</button>.</p>
+            <p className="text-[11px] text-warning mt-1">Pressure monitoring is not enabled for this equipment. You can still log sessions, but consider enabling it in <a href={`/rides/${rideId}?tab=overview`} onClick={(e) => { e.preventDefault(); navigate(`/rides/${rideId}?tab=overview`); setTimeout(() => { const el = document.querySelector('[data-edit-ride]'); if (el instanceof HTMLElement) el.click(); }, 300); }} className="underline text-primary cursor-pointer">equipment settings</a>.</p>
           )}
         </div>
       )}
