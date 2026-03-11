@@ -173,6 +173,7 @@ const getActionLabel = (n: Notification): string => {
   if (title.includes('check') && title.includes('completed')) return 'View check';
   if (n.related_table === 'checks') return 'View check';
   // Other categories
+  if (title.includes('pressure')) return 'Review readings';
   if (title.includes('inspection') || title.includes('ndt')) return 'View';
   if (title.includes('expir') || title.includes('document') || title.includes('certificate')) return 'Review certificate';
   if (title.includes('maintenance') && (title.includes('overdue') || title.includes('due'))) return 'View';
