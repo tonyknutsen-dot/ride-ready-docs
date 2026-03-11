@@ -340,28 +340,59 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         {(() => {
           const isInflatable = ride.ride_categories.category_group === 'Inflatables';
-          const showPressure = isInflatable;
-          const tabs = [
+          const primaryTabs = [
             { value: 'overview', label: 'Home', Icon: FileText },
             { value: 'checks',   label: 'Checks', Icon: CheckSquare },
             { value: 'documents', label: 'Docs', Icon: FileText },
             { value: 'activity', label: 'Activity', Icon: History },
-            ...(isInflatable ? [{ value: 'windlog', label: 'Wind', Icon: Wind }] : []),
-            ...(showPressure ? [{ value: 'pressure', label: 'Pressure', Icon: Gauge }] : []),
           ];
+          const secondaryTabs = [
+            ...(isInflatable ? [{ value: 'windlog', label: 'Wind', Icon: Wind }] : []),
+            ...(isInflatable ? [{ value: 'pressure', label: 'Pressure', Icon: Gauge }] : []),
+          ];
+          const isSecondaryActive = secondaryTabs.some(t => t.value === activeTab);
           return (
             <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
-              <TabsList className={`w-full h-auto p-0.5 bg-transparent rounded-none ${isInflatable ? 'flex overflow-x-auto' : 'grid grid-cols-4'}`}>
-                {tabs.map(({ value, label, Icon }) => (
+              <TabsList className="w-full h-auto p-0.5 bg-transparent rounded-none grid" style={{ gridTemplateColumns: `repeat(${primaryTabs.length + (secondaryTabs.length > 0 ? 1 : 0)}, 1fr)` }}>
+                {primaryTabs.map(({ value, label, Icon }) => (
                   <TabsTrigger
                     key={value}
                     value={value}
-                    className={`flex flex-col items-center gap-1 py-2 text-[11px] font-semibold rounded-lg border-b-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground data-[state=active]:shadow-none data-[state=inactive]:bg-transparent transition-all min-h-[44px] ${isInflatable ? 'flex-1 min-w-[64px]' : ''}`}
+                    className="flex flex-col items-center gap-1 py-2 text-[11px] font-semibold rounded-lg border-b-0 data-[state=active]:bg-primary/10 data-[state=active]:text-primary data-[state=inactive]:text-muted-foreground data-[state=active]:shadow-none data-[state=inactive]:bg-transparent transition-all min-h-[44px]"
                   >
                     <Icon className="h-3.5 w-3.5" strokeWidth={2} />
                     {label}
                   </TabsTrigger>
                 ))}
+                {secondaryTabs.length > 0 && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className={`flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold rounded-lg transition-all min-h-[44px] ${
+                          isSecondaryActive
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:text-foreground'
+                        }`}
+                      >
+                        <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={2} />
+                        {isSecondaryActive ? secondaryTabs.find(t => t.value === activeTab)?.label || 'More' : 'More'}
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="min-w-[140px]">
+                      {secondaryTabs.map(({ value, label, Icon }) => (
+                        <DropdownMenuItem
+                          key={value}
+                          onClick={() => setActiveTab(value)}
+                          className={activeTab === value ? 'bg-primary/10 text-primary' : ''}
+                        >
+                          <Icon className="h-4 w-4 mr-2" />
+                          {label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
               </TabsList>
             </div>
           );
