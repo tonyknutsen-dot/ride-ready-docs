@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  Gauge, Plus, MapPin, ChevronDown, Loader2, FileDown, HelpCircle, ArrowLeft,
+  Gauge, Plus, MapPin, ChevronDown, Loader2, FileDown, HelpCircle, ArrowLeft, AlertTriangle, RotateCcw, ClipboardList,
 } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
