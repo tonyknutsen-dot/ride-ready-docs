@@ -174,13 +174,16 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
     const load = async () => {
       const { data } = await supabase
         .from('rides')
-        .select('ride_name, pressure_monitoring_enabled, is_multi_sectional, section_count, section_config')
+        .select('ride_name, pressure_monitoring_enabled, is_multi_sectional, section_count, section_config, default_pressure_unit, ride_categories!inner(category_group)')
         .eq('id', rideId)
         .single();
       if (data) {
         const d = data as any;
+        const categoryGroup = d.ride_categories?.category_group;
+        const isInflatable = categoryGroup === 'Inflatables';
         setRideName(d.ride_name);
-        setPressureEnabled(d.pressure_monitoring_enabled ?? false);
+        // All inflatables have pressure enabled by default
+        setPressureEnabled(isInflatable ? true : (d.pressure_monitoring_enabled ?? false));
         setIsMultiSectional(d.is_multi_sectional ?? false);
         setSectionCount(d.section_count ?? 1);
         setSectionConfig((d.section_config as SectionConfig[]) || []);
