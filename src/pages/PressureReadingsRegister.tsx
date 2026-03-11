@@ -715,7 +715,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
             </div>
           )}
           {!pressureEnabled && (
-            <p className="text-[11px] text-warning mt-1">Pressure monitoring is not enabled for this equipment. You can still log sessions, but consider enabling it in <a href={`/rides/${rideId}?tab=overview`} onClick={(e) => { e.preventDefault(); navigate(`/rides/${rideId}?tab=overview`); setTimeout(() => { const el = document.querySelector('[data-edit-ride]'); if (el instanceof HTMLElement) el.click(); }, 300); }} className="underline text-primary cursor-pointer">equipment settings</a>.</p>
+            <p className="text-[11px] text-warning mt-1">Pressure monitoring is not enabled for this equipment. You can still log sessions, but consider enabling it in <button type="button" className="underline text-primary cursor-pointer" onClick={() => { if (onEditRide) { onEditRide(); } else { navigate(`/rides/${rideId}`); } }}>equipment settings</button>.</p>
           )}
         </div>
       )}
