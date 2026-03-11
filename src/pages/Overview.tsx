@@ -138,10 +138,10 @@ const Overview = () => {
                 path: '/documents',
                 accent: (data?.expiredDocsCount ?? 0) > 0,
               },
-            ].map(({ label, value, icon: Icon, path, accent }) => (
+            ].map(({ label, value, icon: Icon, path, accent, search: searchStr }) => (
               <button
                 key={label}
-                onClick={() => navigate(path)}
+                onClick={() => navigate({ pathname: path, search: searchStr })}
                 className="flex flex-col items-center gap-1.5 p-4 rounded-2xl border border-border bg-card hover:border-primary active:scale-[0.97] transition-all"
                 style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.06)' }}
               >
