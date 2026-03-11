@@ -333,6 +333,26 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
         return;
       }
 
+      // Validate pressure config for inflatables
+      if (pressureEnabled) {
+        const pErrors: Record<string, string> = {};
+        if (!defaultPressureUnit) {
+          pErrors.unit = 'Please select a pressure unit';
+        }
+        if (isMultiSectional) {
+          sectionConfig.forEach((sc, idx) => {
+            if (!sc.name?.trim()) {
+              pErrors[`section_name_${idx}`] = 'Section name is required';
+            }
+          });
+        }
+        if (Object.keys(pErrors).length > 0) {
+          setPressureErrors(pErrors);
+          toast({ title: 'Missing pressure setup fields', description: 'Please complete the highlighted fields.', variant: 'destructive' });
+          return;
+        }
+      }
+
       setLoading(true);
 
       if (isEditMode && ride) {
