@@ -111,6 +111,7 @@ const getIcon = (n: Notification) => {
   const cls = 'h-[18px] w-[18px]';
   if (title.includes('stop use') || title.includes('critical')) return <AlertOctagon className={cn(cls, 'text-destructive')} />;
   if (title.includes('defect')) return <AlertTriangle className={cn(cls, 'text-destructive')} />;
+  if (title.includes('pressure')) return <Gauge className={cn(cls, 'text-red-600 dark:text-red-400')} />;
   if (title.includes('wind') || title.includes('threshold') || title.includes('pack-away')) return <Wind className={cn(cls, 'text-primary')} />;
   if (title.includes('check') || title.includes('missed')) return <ClipboardCheck className={cn(cls, 'text-accent-foreground')} />;
   if (title.includes('inspection') || title.includes('ndt')) return <Shield className={cn(cls, 'text-primary')} />;
