@@ -344,11 +344,12 @@ const DefectReportDialog = ({
                   <Label htmlFor="defect-description" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Description *</Label>
                   <Textarea
                     id="defect-description"
+                    ref={descriptionRef}
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(e) => { setDescription(e.target.value); autoResizeDescription(); }}
                     placeholder="Describe the defect..."
-                    rows={Math.max(4, Math.min(10, description.split('\n').length + 1))}
-                    className="rounded-xl min-h-[120px] max-h-[280px] overflow-y-auto whitespace-pre-wrap break-words"
+                    className="rounded-xl min-h-[120px] overflow-y-auto whitespace-pre-wrap break-words resize-none"
+                    style={{ maxHeight: '360px' }}
                     onFocus={(e) => requestAnimationFrame(() => setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120))}
                   />
                 </div>
