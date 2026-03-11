@@ -888,10 +888,14 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                               const next = [...sectionConfig];
                               next[idx] = { ...next[idx], name: e.target.value };
                               setSectionConfig(next);
+                              if (e.target.value.trim()) {
+                                setPressureErrors(prev => { const n = {...prev}; delete n[`section_name_${idx}`]; return n; });
+                              }
                             }}
                             placeholder={`e.g. Front Arch, Rear Chamber`}
-                            className="h-9 text-[13px]"
+                            className={`h-9 text-[13px] ${pressureErrors[`section_name_${idx}`] ? 'border-destructive' : ''}`}
                           />
+                          {pressureErrors[`section_name_${idx}`] && <p className="text-[10px] text-destructive">{pressureErrors[`section_name_${idx}`]}</p>}
                         </div>
                         <div className="space-y-1">
                           <Label className="text-[11px] text-muted-foreground">Reading point for this section</Label>
