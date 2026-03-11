@@ -200,14 +200,14 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
     const completedLines = s.lines.filter(l => l.pressure_value != null).length;
 
     // Compute overall session status
-    let sessionResult = s.is_complete ? 'Complete' : 'Incomplete';
+    let sessionResult = s.is_complete ? 'PASS' : 'INCOMPLETE';
     if (sectionConfig && sectionConfig.length > 0) {
       const lineStatuses = s.lines.map((l, idx) => {
         const limits = findSectionLimits(sectionConfig, idx);
         return getPressureStatus(l.pressure_value, limits);
       });
       const overall = getSessionOverallStatus(lineStatuses, s.is_complete);
-      sessionResult = overall.label;
+      sessionResult = overall.resultLabel;
     }
 
     return [
