@@ -238,10 +238,10 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
       if (data.section !== 'body') return;
       if (data.column.index === 6) {
         const raw = String(data.cell.raw);
-        if (raw === 'Incomplete' || raw === 'Out of range') {
-          data.cell.styles.textColor = raw === 'Out of range' ? [220, 38, 38] : [217, 119, 6];
+        if (raw === 'INCOMPLETE' || raw === 'FAILED') {
+          data.cell.styles.textColor = raw === 'FAILED' ? [220, 38, 38] : [217, 119, 6];
           data.cell.styles.fontStyle = 'bold';
-        } else if (raw === 'Within range') {
+        } else if (raw === 'PASS') {
           data.cell.styles.textColor = [5, 150, 105];
           data.cell.styles.fontStyle = 'bold';
         }
