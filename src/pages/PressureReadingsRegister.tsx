@@ -861,12 +861,39 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
                         })}
                       </div>
                     )}
-                    {session.notes && (
-                      <div>
-                        <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-0.5">Notes</span>
-                        <p className="text-[11px] text-muted-foreground break-words">{session.notes}</p>
+                    {/* Action prompt for failed / out-of-range sessions */}
+                    {sessionStatus.status === 'out_of_range' && (
+                      <div className="rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/20 p-2.5 space-y-2">
+                        <div className="flex items-start gap-2">
+                          <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-[12px] font-semibold text-red-700 dark:text-red-300">Action needed — readings out of range</p>
+                            <p className="text-[11px] text-red-600/80 dark:text-red-400/80 mt-0.5">
+                              One or more readings are outside configured limits. Review inflatable condition and take action.
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-[11px] h-7 gap-1 border-red-300 dark:border-red-700"
+                            onClick={(e) => { e.stopPropagation(); handleOpenSheet(); }}
+                          >
+                            <RotateCcw className="h-3 w-3" /> Retake readings
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-[11px] h-7 gap-1 border-red-300 dark:border-red-700"
+                            onClick={(e) => { e.stopPropagation(); navigate(`/defects/report?rideId=${rideId}`); }}
+                          >
+                            <ClipboardList className="h-3 w-3" /> Raise defect
+                          </Button>
+                        </div>
                       </div>
                     )}
+                    {session.notes && (
                   </div>
                 )}
               </div>
