@@ -590,15 +590,43 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
 
   return (
     <div className={cn("space-y-3", !embedded && "px-4 md:px-0 pb-[calc(env(safe-area-inset-bottom)+5.5rem)] md:pb-8")}>
+      <PressureReadingsHelpDialog open={showHelp} onOpenChange={setShowHelp} />
+
       {!embedded && (
         <PageHeader
           icon={<Gauge className="h-5 w-5 text-primary" />}
           iconBgClass="from-primary/20 to-primary/10"
           title={rideName || 'Inflatable Pressure Readings'}
-          subtitle="Pressure session history"
+          subtitle="Pressure session history — inflatables only"
           showBackButton
           backTo="/pressure-readings"
+          actions={
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowHelp(true)}
+              className="text-muted-foreground hover:text-foreground h-8 px-2 sm:px-3 text-[13px]"
+            >
+              <HelpCircle className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">How it works</span>
+            </Button>
+          }
         />
+      )}
+
+      {embedded && (
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] text-muted-foreground">Inflatable pressure session history</p>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowHelp(true)}
+            className="text-muted-foreground hover:text-foreground h-7 px-2 text-[12px]"
+          >
+            <HelpCircle className="h-3.5 w-3.5 mr-1" />
+            Help
+          </Button>
+        </div>
       )}
 
       <RegisterHeader
