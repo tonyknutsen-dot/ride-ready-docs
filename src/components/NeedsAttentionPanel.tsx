@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { AlertOctagon, FileText, ClipboardCheck, Clock, CheckCircle, ChevronRight, ChevronDown } from 'lucide-react';
+import { AlertOctagon, FileText, ClipboardCheck, Clock, CheckCircle, ChevronRight, ChevronDown, Gauge } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
