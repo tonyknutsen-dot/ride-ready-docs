@@ -499,8 +499,8 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             </button>
           </div>
 
-          {/* Pressure Monitoring Summary (inflatables with pressure enabled) */}
-          {ride.ride_categories.category_group === 'Inflatables' && ride.pressure_monitoring_enabled && (
+          {/* Pressure Monitoring Summary (all inflatables) */}
+          {ride.ride_categories.category_group === 'Inflatables' && (
             <PressureSummaryCard ride={ride} onViewPress={() => setActiveTab('pressure')} />
           )}
 
