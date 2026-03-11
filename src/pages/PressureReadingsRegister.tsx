@@ -707,8 +707,10 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
           {pressureEnabled && isMultiSectional && sectionConfig.length === 0 && (
             <div className="flex items-center gap-2 mt-1.5 text-[11px] text-warning">
               <span>⚠ No sections configured.</span>
-              <Button variant="link" size="sm" className="text-[11px] h-auto p-0 text-primary" onClick={() => navigate(`/rides/${rideId}`)}>
-                Configure in inflatable settings →
+              <Button variant="link" size="sm" className="text-[11px] h-auto p-0 text-primary" onClick={() => {
+                if (onEditRide) { onEditRide(); } else { navigate(`/rides/${rideId}`); }
+              }}>
+                Configure in equipment settings →
               </Button>
             </div>
           )}
