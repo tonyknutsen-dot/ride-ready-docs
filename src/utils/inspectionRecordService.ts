@@ -319,7 +319,7 @@ export async function fetchInspectionRecordsPaginated(
     return { records: [], totalCount: 0, hasMore: false };
   }
 
-  let records = (data || []) as InspectionRecord[];
+  let records = (data || []) as unknown as InspectionRecord[];
   const totalCount = count || 0;
 
   // Filter by defects client-side (can't do array length check in PostgREST easily)
