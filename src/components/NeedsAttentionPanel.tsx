@@ -11,7 +11,7 @@ import { isDefectCritical } from '@/hooks/useDefectSummary';
 
 interface AttentionItem {
   id: string;
-  type: 'stop_use' | 'doc_expiring' | 'check_due' | 'inspection_due';
+  type: 'stop_use' | 'doc_expiring' | 'check_due' | 'inspection_due' | 'pressure_failed';
   label: string;
   sublabel?: string;
   urgency: 'critical' | 'warning' | 'info';
