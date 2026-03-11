@@ -938,9 +938,19 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                 )}
               </div>
             )}
-            <p className="text-xs text-foreground/55">
-              Enable this to log pressure readings for this inflatable via the Pressure Readings module. Only visible for inflatables.
-            </p>
+            <div className="rounded-lg bg-muted/30 p-3 space-y-1.5">
+              <p className="text-xs text-foreground/55">
+                Enable this to log pressure readings for this inflatable via the Pressure tab. Only visible for inflatables.
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                <strong>What is a pressure session?</strong> A pressure session records one or more gauge readings at a specific site and time. You can log sessions before opening, during operation, or at end of day. Each session also records the pressure gauge used for full instrument traceability.
+              </p>
+              {!pressureEnabled && (
+                <p className="text-[11px] text-muted-foreground">
+                  <strong>Multi-sectional?</strong> If your inflatable has multiple air chambers (e.g. front arch, rear arch), enable pressure monitoring first, then toggle "Multi-sectional" to define each section and its default reading point.
+                </p>
+              )}
+            </div>
           </div>
         </section>
         )}
