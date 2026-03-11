@@ -69,6 +69,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     (ride?.section_config as any[]) || []
   );
   const [defaultPressureUnit, setDefaultPressureUnit] = useState((ride as any)?.default_pressure_unit || 'psi');
+  const [pressureErrors, setPressureErrors] = useState<Record<string, string>>({});
 
   // Sync section config array length with sectionCount
   const updateSectionCount = (count: number) => {
@@ -300,6 +301,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     }
     
     setErrors({});
+    setPressureErrors({});
 
     try {
       // Resolve category_id: if not explicitly selected, use first type in group
@@ -329,6 +331,26 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       if (!finalCategoryId) {
         setErrors({ category_group: 'Please select an equipment group' });
         return;
+      }
+
+      // Validate pressure config for inflatables
+      if (pressureEnabled) {
+        const pErrors: Record<string, string> = {};
+        if (!defaultPressureUnit) {
+          pErrors.unit = 'Please select a pressure unit';
+        }
+        if (isMultiSectional) {
+          sectionConfig.forEach((sc, idx) => {
+            if (!sc.name?.trim()) {
+              pErrors[`section_name_${idx}`] = 'Section name is required';
+            }
+          });
+        }
+        if (Object.keys(pErrors).length > 0) {
+          setPressureErrors(pErrors);
+          toast({ title: 'Missing pressure setup fields', description: 'Please complete the highlighted fields.', variant: 'destructive' });
+          return;
+        }
       }
 
       setLoading(true);
@@ -787,11 +809,11 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               Pressure monitoring is available for all inflatables. Log pressure readings via the Pressure tab once this equipment is saved.
             </p>
 
-            {/* Default pressure unit */}
+             {/* Default pressure unit */}
             <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold text-foreground">Default pressure unit</Label>
-              <Select value={defaultPressureUnit} onValueChange={setDefaultPressureUnit}>
-                <SelectTrigger className="w-40">
+              <Label className="text-[13px] font-semibold text-foreground">Pressure unit *</Label>
+              <Select value={defaultPressureUnit} onValueChange={(v) => { setDefaultPressureUnit(v); setPressureErrors(prev => { const n = {...prev}; delete n.unit; return n; }); }}>
+                <SelectTrigger className={`w-40 ${pressureErrors.unit ? 'border-destructive' : ''}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -801,6 +823,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                   <SelectItem value="mmH2O">mmH₂O</SelectItem>
                 </SelectContent>
               </Select>
+              {pressureErrors.unit && <p className="text-xs text-destructive">{pressureErrors.unit}</p>}
               <p className="text-[11px] text-muted-foreground">Pre-selected when you start a new pressure session.</p>
             </div>
 
@@ -865,10 +888,14 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                               const next = [...sectionConfig];
                               next[idx] = { ...next[idx], name: e.target.value };
                               setSectionConfig(next);
+                              if (e.target.value.trim()) {
+                                setPressureErrors(prev => { const n = {...prev}; delete n[`section_name_${idx}`]; return n; });
+                              }
                             }}
                             placeholder={`e.g. Front Arch, Rear Chamber`}
-                            className="h-9 text-[13px]"
+                            className={`h-9 text-[13px] ${pressureErrors[`section_name_${idx}`] ? 'border-destructive' : ''}`}
                           />
+                          {pressureErrors[`section_name_${idx}`] && <p className="text-[10px] text-destructive">{pressureErrors[`section_name_${idx}`]}</p>}
                         </div>
                         <div className="space-y-1">
                           <Label className="text-[11px] text-muted-foreground">Reading point for this section</Label>
