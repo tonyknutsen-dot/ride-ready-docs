@@ -776,181 +776,165 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             <h3 className="text-sm font-bold text-foreground">Pressure Monitoring</h3>
           </div>
           <div className="p-4 space-y-4">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <Label htmlFor="pressure_enabled" className="text-[13px] font-semibold text-foreground cursor-pointer">
-                  Enable pressure monitoring
-                </Label>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Track and record pressure readings for this inflatable.
-                </p>
-              </div>
-              <Switch
-                id="pressure_enabled"
-                checked={pressureEnabled}
-                onCheckedChange={setPressureEnabled}
-              />
+            <p className="text-[11px] text-muted-foreground">
+              Pressure monitoring is available for all inflatables. Log pressure readings via the Pressure tab once this equipment is saved.
+            </p>
+
+            {/* Default pressure unit */}
+            <div className="space-y-1.5">
+              <Label className="text-[13px] font-semibold text-foreground">Default pressure unit</Label>
+              <Select value={defaultPressureUnit} onValueChange={setDefaultPressureUnit}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="psi">PSI</SelectItem>
+                  <SelectItem value="bar">Bar</SelectItem>
+                  <SelectItem value="mbar">mbar</SelectItem>
+                  <SelectItem value="mmH2O">mmH₂O</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[11px] text-muted-foreground">Pre-selected when you start a new pressure session.</p>
             </div>
 
-            {pressureEnabled && (
-              <div className="space-y-4 border-t border-border pt-4">
-                {/* Default pressure unit */}
+            {/* Single vs Multi-section selector */}
+            <div className="space-y-2">
+              <Label className="text-[13px] font-semibold text-foreground">Inflatable structure</Label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsMultiSectional(false)}
+                  className={`rounded-xl border p-3 text-left transition-all ${
+                    !isMultiSectional
+                      ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                      : 'border-border hover:bg-muted/30'
+                  }`}
+                >
+                  <p className="text-[13px] font-semibold text-foreground">Single-section</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">One air chamber</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMultiSectional(true);
+                    if (sectionCount < 2) updateSectionCount(2);
+                  }}
+                  className={`rounded-xl border p-3 text-left transition-all ${
+                    isMultiSectional
+                      ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                      : 'border-border hover:bg-muted/30'
+                  }`}
+                >
+                  <p className="text-[13px] font-semibold text-foreground">Multi-section</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Multiple air chambers</p>
+                </button>
+              </div>
+            </div>
+
+            {isMultiSectional && (
+              <div className="space-y-3 border-t border-border pt-4">
                 <div className="space-y-1.5">
-                  <Label className="text-[13px] font-semibold text-foreground">Default pressure unit</Label>
-                  <Select value={defaultPressureUnit} onValueChange={setDefaultPressureUnit}>
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="psi">PSI</SelectItem>
-                      <SelectItem value="bar">Bar</SelectItem>
-                      <SelectItem value="mbar">mbar</SelectItem>
-                      <SelectItem value="mmH2O">mmH₂O</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <p className="text-[11px] text-muted-foreground">This will be pre-selected when you start a new pressure session.</p>
-                </div>
-
-                {/* Multi-sectional toggle */}
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <Label htmlFor="multi_sectional" className="text-[13px] font-semibold text-foreground cursor-pointer">
-                      Multi-sectional inflatable
-                    </Label>
-                    <p className="text-[11px] text-muted-foreground mt-0.5">
-                      Enable if this inflatable has multiple air chambers or sections that each need a separate pressure reading.
-                    </p>
-                  </div>
-                  <Switch
-                    id="multi_sectional"
-                    checked={isMultiSectional}
-                    onCheckedChange={(checked) => {
-                      setIsMultiSectional(checked);
-                      if (checked && sectionCount < 2) updateSectionCount(2);
-                    }}
+                  <Label className="text-[13px] font-semibold text-foreground">How many sections does this inflatable have?</Label>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={20}
+                    value={sectionCount}
+                    onChange={e => updateSectionCount(Math.max(2, Math.min(20, parseInt(e.target.value) || 2)))}
+                    className="w-24"
                   />
+                  <p className="text-[11px] text-muted-foreground">Each section will require its own pressure reading during a session.</p>
                 </div>
-
-                {isMultiSectional && (
-                  <div className="space-y-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-[13px] font-semibold text-foreground">How many sections?</Label>
-                      <Input
-                        type="number"
-                        min={2}
-                        max={20}
-                        value={sectionCount}
-                        onChange={e => updateSectionCount(Math.max(2, Math.min(20, parseInt(e.target.value) || 2)))}
-                        className="w-24"
-                      />
-                      <p className="text-[11px] text-muted-foreground">Each section will require its own pressure reading during a session.</p>
-                    </div>
-                    <div className="space-y-2">
-                      {sectionConfig.map((sc, idx) => (
-                        <div key={idx} className="rounded-lg border border-border bg-muted/10 p-3 space-y-2">
-                          <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Section {idx + 1}</p>
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="space-y-1">
-                              <Label className="text-[11px] text-muted-foreground">Section name *</Label>
-                              <Input
-                                value={sc.name}
-                                onChange={e => {
-                                  const next = [...sectionConfig];
-                                  next[idx] = { ...next[idx], name: e.target.value };
-                                  setSectionConfig(next);
-                                }}
-                                placeholder={`e.g. Front Arch, Rear Chamber`}
-                                className="h-9 text-[13px]"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-[11px] text-muted-foreground">Default reading point</Label>
-                              <Input
-                                value={sc.default_reading_point || ''}
-                                onChange={e => {
-                                  const next = [...sectionConfig];
-                                  next[idx] = { ...next[idx], default_reading_point: e.target.value };
-                                  setSectionConfig(next);
-                                }}
-                                placeholder="e.g. Valve A, Near seam"
-                                className="h-9 text-[13px]"
-                              />
-                              <p className="text-[10px] text-muted-foreground">Where on this section readings are typically taken</p>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-3 gap-2">
-                            <div className="space-y-1">
-                              <Label className="text-[11px] text-muted-foreground">Target pressure</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={sc.target_pressure ?? ''}
-                                onChange={e => {
-                                  const next = [...sectionConfig];
-                                  next[idx] = { ...next[idx], target_pressure: e.target.value ? parseFloat(e.target.value) : undefined };
-                                  setSectionConfig(next);
-                                }}
-                                placeholder="e.g. 1.5"
-                                className="h-9 text-[13px]"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-[11px] text-muted-foreground">Min pressure</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={sc.min_pressure ?? ''}
-                                onChange={e => {
-                                  const next = [...sectionConfig];
-                                  next[idx] = { ...next[idx], min_pressure: e.target.value ? parseFloat(e.target.value) : undefined };
-                                  setSectionConfig(next);
-                                }}
-                                placeholder="e.g. 1.0"
-                                className="h-9 text-[13px]"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-[11px] text-muted-foreground">Max pressure</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={sc.max_pressure ?? ''}
-                                onChange={e => {
-                                  const next = [...sectionConfig];
-                                  next[idx] = { ...next[idx], max_pressure: e.target.value ? parseFloat(e.target.value) : undefined };
-                                  setSectionConfig(next);
-                                }}
-                                placeholder="e.g. 2.0"
-                                className="h-9 text-[13px]"
-                              />
-                            </div>
-                          </div>
+                <div className="space-y-2">
+                  {sectionConfig.map((sc, idx) => (
+                    <div key={idx} className="rounded-lg border border-border bg-muted/10 p-3 space-y-2">
+                      <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Section {idx + 1}</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-[11px] text-muted-foreground">Section name *</Label>
+                          <Input
+                            value={sc.name}
+                            onChange={e => {
+                              const next = [...sectionConfig];
+                              next[idx] = { ...next[idx], name: e.target.value };
+                              setSectionConfig(next);
+                            }}
+                            placeholder={`e.g. Front Arch, Rear Chamber`}
+                            className="h-9 text-[13px]"
+                          />
                         </div>
-                      ))}
+                        <div className="space-y-1">
+                          <Label className="text-[11px] text-muted-foreground">Reading point for this section</Label>
+                          <Input
+                            value={sc.default_reading_point || ''}
+                            onChange={e => {
+                              const next = [...sectionConfig];
+                              next[idx] = { ...next[idx], default_reading_point: e.target.value };
+                              setSectionConfig(next);
+                            }}
+                            placeholder="e.g. Valve A, Near seam"
+                            className="h-9 text-[13px]"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="space-y-1">
+                          <Label className="text-[11px] text-muted-foreground">Target pressure</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={sc.target_pressure ?? ''}
+                            onChange={e => {
+                              const next = [...sectionConfig];
+                              next[idx] = { ...next[idx], target_pressure: e.target.value ? parseFloat(e.target.value) : undefined };
+                              setSectionConfig(next);
+                            }}
+                            placeholder="e.g. 1.5"
+                            className="h-9 text-[13px]"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px] text-muted-foreground">Min pressure</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={sc.min_pressure ?? ''}
+                            onChange={e => {
+                              const next = [...sectionConfig];
+                              next[idx] = { ...next[idx], min_pressure: e.target.value ? parseFloat(e.target.value) : undefined };
+                              setSectionConfig(next);
+                            }}
+                            placeholder="e.g. 1.0"
+                            className="h-9 text-[13px]"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-[11px] text-muted-foreground">Max pressure</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={sc.max_pressure ?? ''}
+                            onChange={e => {
+                              const next = [...sectionConfig];
+                              next[idx] = { ...next[idx], max_pressure: e.target.value ? parseFloat(e.target.value) : undefined };
+                              setSectionConfig(next);
+                            }}
+                            placeholder="e.g. 2.0"
+                            className="h-9 text-[13px]"
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                )}
-
-                {!isMultiSectional && (
-                  <p className="text-[11px] text-muted-foreground bg-muted/30 rounded-lg p-3">
-                    Single-section inflatable — pressure sessions will show one reading row. If this inflatable has multiple air chambers, enable "multi-sectional" above.
-                  </p>
-                )}
+                  ))}
+                </div>
               </div>
             )}
-            <div className="rounded-lg bg-muted/30 p-3 space-y-1.5">
-              <p className="text-xs text-foreground/55">
-                Enable this to log pressure readings for this inflatable via the Pressure tab. Only visible for inflatables.
+
+            {!isMultiSectional && (
+              <p className="text-[11px] text-muted-foreground bg-muted/30 rounded-lg p-3">
+                Single-section inflatable — pressure sessions will show one reading row.
               </p>
-              <p className="text-[11px] text-muted-foreground">
-                <strong>What is a pressure session?</strong> A pressure session records one or more gauge readings at a specific site and time. You can log sessions before opening, during operation, or at end of day. Each session also records the pressure gauge used for full instrument traceability.
-              </p>
-              {!pressureEnabled && (
-                <p className="text-[11px] text-muted-foreground">
-                  <strong>Multi-sectional?</strong> If your inflatable has multiple air chambers (e.g. front arch, rear arch), enable pressure monitoring first, then toggle "Multi-sectional" to define each section and its default reading point.
-                </p>
-              )}
-            </div>
+            )}
           </div>
         </section>
         )}
