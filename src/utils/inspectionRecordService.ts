@@ -205,7 +205,7 @@ export async function createAmendment(
         template_id: original.template_id,
         template_name: original.template_name,
         overall_result: updates.overallResult || original.overall_result,
-        item_results: updates.itemResults || original.item_results,
+        item_results: (updates.itemResults || original.item_results) as any,
         notes: updates.notes !== undefined ? updates.notes : original.notes,
         weather_conditions: updates.weatherConditions !== undefined ? updates.weatherConditions : original.weather_conditions,
         location: updates.location !== undefined ? updates.location : original.location,
@@ -214,7 +214,7 @@ export async function createAmendment(
         signature_data: original.signature_data,
         defect_ids: original.defect_ids || [],
         photo_paths: original.photo_paths || [],
-      })
+      } as any)
       .select('id')
       .single();
 
