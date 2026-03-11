@@ -340,7 +340,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         {(() => {
           const isInflatable = ride.ride_categories.category_group === 'Inflatables';
-          const showPressure = isInflatable && ride.pressure_monitoring_enabled;
+          const showPressure = isInflatable;
           const tabs = [
             { value: 'overview', label: 'Home', Icon: FileText },
             { value: 'checks',   label: 'Checks', Icon: CheckSquare },
@@ -499,8 +499,8 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
             </button>
           </div>
 
-          {/* Pressure Monitoring Summary (inflatables with pressure enabled) */}
-          {ride.ride_categories.category_group === 'Inflatables' && ride.pressure_monitoring_enabled && (
+          {/* Pressure Monitoring Summary (all inflatables) */}
+          {ride.ride_categories.category_group === 'Inflatables' && (
             <PressureSummaryCard ride={ride} onViewPress={() => setActiveTab('pressure')} />
           )}
 
@@ -560,8 +560,8 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
           </TabsContent>
         )}
 
-        {/* ─── PRESSURE TAB (inflatables with pressure monitoring only) ─── */}
-        {ride.ride_categories.category_group === 'Inflatables' && ride.pressure_monitoring_enabled && (
+        {/* ─── PRESSURE TAB (all inflatables) ─── */}
+        {ride.ride_categories.category_group === 'Inflatables' && (
           <TabsContent value="pressure" className="animate-fade-in">
             <Suspense fallback={<div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>}>
               <PressureReadingsRegister rideIdProp={ride.id} embedded />
