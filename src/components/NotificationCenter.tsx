@@ -1014,7 +1014,7 @@ const NotificationCenter = () => {
                       {/* Left colour bar */}
                       <div className={cn('w-1 shrink-0', getBarColor(n))} />
 
-                      <div className="flex-1 flex items-start gap-3 p-3">
+                      <div className="flex-1 flex items-start gap-3 p-3 min-w-0 overflow-hidden">
                         {/* Icon circle */}
                         <div className={cn(
                           'flex items-center justify-center w-8 h-8 rounded-xl shrink-0 mt-0.5',
@@ -1024,9 +1024,9 @@ const NotificationCenter = () => {
                         </div>
 
                         {/* Content */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="text-[13px] font-semibold leading-tight truncate text-foreground">
+                        <div className="flex-1 min-w-0 overflow-hidden">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <p className="text-[13px] font-semibold leading-tight text-foreground break-words line-clamp-2">
                               {n.title}
                             </p>
                             {!n.is_read && (
@@ -1034,11 +1034,11 @@ const NotificationCenter = () => {
                             )}
                           </div>
 
-                          <p className="text-[12px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">
+                          <p className="text-[12px] text-muted-foreground mt-0.5 leading-relaxed line-clamp-2 break-words">
                             {n.message}
                           </p>
 
-                          <div className="flex items-center gap-3 mt-1.5">
+                          <div className="flex items-center flex-wrap gap-2 mt-1.5">
                             <span className="text-[10px] text-muted-foreground/70 flex items-center gap-1">
                               <Clock className="h-2.5 w-2.5" />
                               {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
