@@ -127,6 +127,15 @@ const getActionRoute = (n: Notification): string | null => {
   const title = n.title?.toLowerCase() ?? '';
   if (isSentDocument(n)) return '/batch-send';
 
+  // Pressure out-of-range → pressure register for that ride
+  if (n.related_table === 'pressure_sessions' || title.includes('pressure out of range') || title.includes('pressure')) {
+    if (n.related_id) {
+      // We have a session ID — try to route to the pressure register
+      return `/pressure-readings`;
+    }
+    return '/pressure-readings';
+  }
+
   // Hard routing rule: defect-like notifications go to Defects only
   if (isDefectRelatedNotification(n)) return buildDefectRoute(n.related_id);
 
