@@ -14,7 +14,6 @@ import {
   type MetadataField,
 } from './pdfTemplate';
 import {
-  PDF_COLORS,
   drawSummaryBox,
   generateDocId,
   buildFileName,
@@ -23,6 +22,10 @@ import {
   PDF_TABLE_ALT_ROW,
 } from './pdfUtils';
 import { fetchEquipmentPhoto, drawEquipmentPhotoInHeader } from './pdfEquipmentPhoto';
+import {
+  getPressureStatus, getSessionOverallStatus, findSectionLimits,
+  type SectionLimits,
+} from './pressureValidation';
 
 interface PressureSessionPdfEntry {
   session_date: string;
@@ -57,13 +60,24 @@ export interface PressureReadingsPdfOptions {
   rideId: string;
   companyName?: string;
   controllerName?: string;
+  defaultUnit?: string;
+  sectionConfig?: SectionLimits[];
   dateRange?: { from?: string; to?: string };
 }
 
-export async function generatePressureReadingsPdf(options: PressureReadingsPdfOptions) {
-  const { sessions, inflatableName, rideId, companyName, controllerName, dateRange } = options;
+const SESSION_TYPE_LABELS: Record<string, string> = {
+  'pre-opening': 'Pre-opening',
+  'during-operation': 'During operation',
+  'end-of-day': 'End of day',
+  'after-adjustment': 'End of day',
+  'in-service': 'During operation',
+  'recheck': 'End of day',
+  'other': 'Other',
+};
 
-  // Equipment photo
+export async function generatePressureReadingsPdf(options: PressureReadingsPdfOptions) {
+  const { sessions, inflatableName, rideId, companyName, controllerName, defaultUnit, sectionConfig, dateRange } = options;
+
   let equipmentPhoto: { dataUrl: string; naturalW: number; naturalH: number } | null = null;
   equipmentPhoto = await fetchEquipmentPhoto(rideId);
 
@@ -72,13 +86,11 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
   const docId = generateDocId('CHECK');
   const mL = 15;
 
-  // Period
   let period = '';
   if (dateRange?.from && dateRange?.to) period = `${dateRange.from} – ${dateRange.to}`;
   else if (dateRange?.from) period = `From ${dateRange.from}`;
   else if (dateRange?.to) period = `To ${dateRange.to}`;
 
-  // Header
   const templateOpts: PdfTemplateOptions = {
     doc,
     title: 'PRESSURE READINGS REGISTER',
@@ -88,18 +100,17 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
   };
   let y = drawTemplateHeader(templateOpts);
 
-  // Equipment photo
   if (equipmentPhoto) {
     drawEquipmentPhotoInHeader(doc, equipmentPhoto, pageWidth - mL - 30, y, 28, 20);
   }
 
-  // Report details
   y = drawSection(doc, 'Report Details', y, mL);
 
   const detailFields: MetadataField[] = [];
   if (companyName) detailFields.push({ label: 'Company', value: companyName });
   if (controllerName) detailFields.push({ label: 'Controller / Duty Holder', value: controllerName });
   detailFields.push({ label: 'Inflatable', value: inflatableName });
+  if (defaultUnit) detailFields.push({ label: 'Pressure Unit', value: defaultUnit.toUpperCase() });
   if (period) detailFields.push({ label: 'Period', value: period });
 
   // Instrument summary
@@ -121,30 +132,63 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
 
   y = drawMetadataRows(doc, detailFields, y, mL);
 
+  // Section limits summary (if configured)
+  const hasLimits = sectionConfig && sectionConfig.some(sc => sc.min_pressure != null || sc.max_pressure != null);
+  if (hasLimits && sectionConfig) {
+    y = drawSection(doc, 'Configured Pressure Limits', y, mL);
+    const limitsHead = [['Section', 'Target', 'Minimum', 'Maximum', 'Unit']];
+    const limitsBody = sectionConfig.map((sc, i) => [
+      `Section ${i + 1}`,
+      sc.target_pressure != null ? String(sc.target_pressure) : '—',
+      sc.min_pressure != null ? String(sc.min_pressure) : '—',
+      sc.max_pressure != null ? String(sc.max_pressure) : '—',
+      defaultUnit?.toUpperCase() || 'PSI',
+    ]);
+    autoTable(doc, {
+      startY: y,
+      head: limitsHead,
+      body: limitsBody,
+      theme: 'grid',
+      styles: { ...PDF_TABLE_BODY_STYLES, fontSize: 7, cellPadding: 2 },
+      headStyles: { ...PDF_TABLE_HEAD_STYLES, fontSize: 7, cellPadding: 2 },
+      alternateRowStyles: { ...PDF_TABLE_ALT_ROW },
+      margin: { left: mL, right: mL },
+    });
+    y = (doc as any).lastAutoTable?.finalY + 5 || y + 15;
+  }
+
   // Summary box
   const totalSessions = sessions.length;
   const completeSessions = sessions.filter(s => s.is_complete).length;
   const totalReadings = sessions.reduce((acc, s) => acc + s.lines.filter(l => l.pressure_value != null).length, 0);
 
-  y = drawSummaryBox(doc, [
+  // Count out-of-range readings
+  let outOfRangeCount = 0;
+  if (sectionConfig) {
+    for (const s of sessions) {
+      for (const l of s.lines) {
+        const limits = findSectionLimits(sectionConfig, l.section_number - 1);
+        const status = getPressureStatus(l.pressure_value, limits);
+        if (status.status === 'below_minimum' || status.status === 'above_maximum') outOfRangeCount++;
+      }
+    }
+  }
+
+  const summaryItems = [
     { label: 'Sessions', value: String(totalSessions), accent: true },
     { label: 'Complete', value: String(completeSessions) },
     { label: 'Readings', value: String(totalReadings) },
-  ], y, mL);
+  ];
+  if (hasLimits) {
+    summaryItems.push({ label: 'Out of range', value: String(outOfRangeCount), accent: outOfRangeCount > 0 });
+  }
 
-  // Sessions register
+  y = drawSummaryBox(doc, summaryItems, y, mL);
+
+  // Sessions register table
   y = drawSection(doc, 'Pressure Sessions', y, mL);
 
-  const head = [['Date', 'Time', 'Type', 'Site / Location', 'Taken By', 'Sections', 'Status', 'Instrument', 'Notes']];
-
-  const SESSION_TYPE_LABELS: Record<string, string> = {
-    'pre-opening': 'Pre-opening',
-    'during-operation': 'During operation',
-    'after-adjustment': 'After adjustment',
-    'in-service': 'During operation',
-    'recheck': 'After adjustment',
-    'other': 'Other',
-  };
+  const head = [['Date', 'Time', 'Type', 'Site / Location', 'Taken By', 'Sections', 'Result', 'Instrument', 'Notes']];
 
   const body = sessions.map(s => {
     const instrumentParts: string[] = [];
@@ -155,6 +199,17 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
 
     const completedLines = s.lines.filter(l => l.pressure_value != null).length;
 
+    // Compute overall session status
+    let sessionResult = s.is_complete ? 'Complete' : 'Incomplete';
+    if (sectionConfig && sectionConfig.length > 0) {
+      const lineStatuses = s.lines.map((l, idx) => {
+        const limits = findSectionLimits(sectionConfig, idx);
+        return getPressureStatus(l.pressure_value, limits);
+      });
+      const overall = getSessionOverallStatus(lineStatuses, s.is_complete);
+      sessionResult = overall.label;
+    }
+
     return [
       s.session_date,
       s.session_time.slice(0, 5),
@@ -162,7 +217,7 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
       `${s.site_name}${s.site_address ? `, ${s.site_address}` : ''}`,
       s.taken_by,
       `${completedLines}/${s.lines.length}`,
-      s.is_complete ? 'Complete' : 'Incomplete',
+      sessionResult,
       instrumentText,
       s.notes || '—',
     ];
@@ -181,10 +236,15 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
     showHead: 'everyPage',
     didParseCell: (data) => {
       if (data.section !== 'body') return;
-      // Incomplete sessions highlighted
-      if (data.column.index === 6 && data.cell.raw === 'Incomplete') {
-        data.cell.styles.textColor = [217, 119, 6];
-        data.cell.styles.fontStyle = 'bold';
+      if (data.column.index === 6) {
+        const raw = String(data.cell.raw);
+        if (raw === 'Incomplete' || raw === 'Out of range') {
+          data.cell.styles.textColor = raw === 'Out of range' ? [220, 38, 38] : [217, 119, 6];
+          data.cell.styles.fontStyle = 'bold';
+        } else if (raw === 'Within range') {
+          data.cell.styles.textColor = [5, 150, 105];
+          data.cell.styles.fontStyle = 'bold';
+        }
       }
     },
   });
@@ -195,7 +255,6 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
   for (const session of sessions) {
     if (session.lines.length === 0) continue;
 
-    // Check if we need a new page
     const pageH = doc.internal.pageSize.getHeight();
     if (y + 30 > pageH - 22) {
       doc.addPage();
@@ -204,15 +263,36 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
 
     y = drawSection(doc, `Session: ${session.session_date} ${session.session_time.slice(0, 5)} — ${SESSION_TYPE_LABELS[session.session_type] || session.session_type}`, y, mL);
 
-    const readingsHead = [['Section', 'Reading Point', 'Time', 'Value', 'Unit', 'Notes']];
-    const readingsBody = session.lines.map(l => [
-      `${l.section_number}. ${l.section_name}`,
-      l.reading_point || '—',
-      l.reading_taken_at ? l.reading_taken_at.slice(0, 5) : '—',
-      l.pressure_value != null ? String(l.pressure_value) : '—',
-      l.pressure_unit,
-      l.notes || '—',
-    ]);
+    const readingsHead = hasLimits
+      ? [['Section', 'Reading Point', 'Time', 'Value', 'Target', 'Min', 'Max', 'Status', 'Notes']]
+      : [['Section', 'Reading Point', 'Time', 'Value', 'Unit', 'Notes']];
+
+    const readingsBody = session.lines.map((l, idx) => {
+      const limits = sectionConfig ? findSectionLimits(sectionConfig, idx) : undefined;
+      const lineStatus = getPressureStatus(l.pressure_value, limits);
+
+      if (hasLimits) {
+        return [
+          `${l.section_number}. ${l.section_name}`,
+          l.reading_point || '—',
+          l.reading_taken_at ? l.reading_taken_at.slice(0, 5) : '—',
+          l.pressure_value != null ? `${l.pressure_value} ${l.pressure_unit}` : '—',
+          limits?.target_pressure != null ? String(limits.target_pressure) : '—',
+          limits?.min_pressure != null ? String(limits.min_pressure) : '—',
+          limits?.max_pressure != null ? String(limits.max_pressure) : '—',
+          lineStatus.label,
+          l.notes || '—',
+        ];
+      }
+      return [
+        `${l.section_number}. ${l.section_name}`,
+        l.reading_point || '—',
+        l.reading_taken_at ? l.reading_taken_at.slice(0, 5) : '—',
+        l.pressure_value != null ? String(l.pressure_value) : '—',
+        l.pressure_unit,
+        l.notes || '—',
+      ];
+    });
 
     autoTable(doc, {
       startY: y,
@@ -225,7 +305,21 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
       margin: { left: mL, right: mL },
       showHead: 'everyPage',
       didParseCell: (data) => {
-        if (data.section === 'body' && data.column.index === 3 && data.cell.raw === '—') {
+        if (data.section !== 'body') return;
+        const statusCol = hasLimits ? 7 : -1;
+        if (data.column.index === statusCol) {
+          const raw = String(data.cell.raw);
+          if (raw === 'Below minimum' || raw === 'Above maximum') {
+            data.cell.styles.textColor = [220, 38, 38];
+            data.cell.styles.fontStyle = 'bold';
+          } else if (raw === 'Within range') {
+            data.cell.styles.textColor = [5, 150, 105];
+            data.cell.styles.fontStyle = 'bold';
+          }
+        }
+        // Missing value highlight
+        const valueCol = hasLimits ? 3 : 3;
+        if (data.column.index === valueCol && data.cell.raw === '—') {
           data.cell.styles.textColor = [217, 119, 6];
           data.cell.styles.fontStyle = 'bold';
         }
@@ -235,7 +329,6 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
     y = (doc as any).lastAutoTable?.finalY + 5 || y + 20;
   }
 
-  // Footers
   drawTemplateFooters(templateOpts);
 
   const filename = buildFileName(['pressure-readings', inflatableName, format(new Date(), 'yyyy-MM-dd')]);
