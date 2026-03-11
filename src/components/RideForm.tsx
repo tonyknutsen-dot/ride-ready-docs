@@ -604,6 +604,13 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                   const typesInGroup = categories.filter(c => c.category_group === value);
                   const autoId = typesInGroup.length === 1 ? typesInGroup[0].id : '';
                   setFormData({ ...formData, category_group: value, category_id: autoId });
+                  // Auto-enable pressure monitoring for inflatables
+                  if (value === 'Inflatables') {
+                    setPressureEnabled(true);
+                  } else {
+                    setPressureEnabled(false);
+                    setIsMultiSectional(false);
+                  }
                 }}
               >
                 <SelectTrigger className={errors.category_group ? "border-destructive" : ""}>
