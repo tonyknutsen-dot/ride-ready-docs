@@ -1062,7 +1062,7 @@ const NotificationCenter = () => {
                         </div>
 
                         {/* Right side: action button or controls */}
-                        <div className="flex flex-col items-end gap-1.5 shrink-0">
+                        <div className="flex flex-col items-end gap-1.5 shrink-0 ml-1 max-w-[140px]">
                           {showLinkedDefectAction ? (
                             <>
                               <button
