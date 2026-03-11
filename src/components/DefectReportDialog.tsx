@@ -46,6 +46,23 @@ const DefectReportDialog = ({
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea to fit content
+  const autoResizeDescription = useCallback(() => {
+    const el = descriptionRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 360)}px`;
+  }, []);
+
+  // Re-measure when description changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      // Small delay to let dialog render
+      requestAnimationFrame(() => setTimeout(autoResizeDescription, 50));
+    }
+  }, [open, description, autoResizeDescription]);
   const { toast } = useToast();
   const { user } = useAuth();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
