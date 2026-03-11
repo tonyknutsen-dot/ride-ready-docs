@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  Gauge, Plus, MapPin, Clock, ChevronDown, Loader2, FileDown, Search, ArrowLeft,
+  Gauge, Plus, MapPin, Clock, ChevronDown, Loader2, FileDown, Search, ArrowLeft, HelpCircle,
 } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -24,7 +24,6 @@ import PressureReaderPicker, { type PressureReaderProfile } from '@/components/P
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 import { generatePressureReadingsPdf } from '@/utils/pressureReadingsPdf';
 import { PressureReadingsHelpDialog } from '@/components/PressureReadingsHelpDialog';
-import { HelpCircle } from 'lucide-react';
 
 const SESSION_TYPES = [
   { value: 'pre-opening', label: 'Pre-opening' },
