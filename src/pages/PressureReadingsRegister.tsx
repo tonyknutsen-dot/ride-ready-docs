@@ -102,9 +102,11 @@ interface PressureReadingsRegisterProps {
   rideIdProp?: string;
   /** When true, hides the PageHeader (for embedding in tabs) */
   embedded?: boolean;
+  /** Callback to trigger edit mode on parent (used when embedded) */
+  onEditRide?: () => void;
 }
 
-const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureReadingsRegisterProps = {}) => {
+const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: PressureReadingsRegisterProps = {}) => {
   const { user } = useAuth();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
@@ -174,13 +176,16 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
     const load = async () => {
       const { data } = await supabase
         .from('rides')
-        .select('ride_name, pressure_monitoring_enabled, is_multi_sectional, section_count, section_config')
+        .select('ride_name, pressure_monitoring_enabled, is_multi_sectional, section_count, section_config, default_pressure_unit, ride_categories!inner(category_group)')
         .eq('id', rideId)
         .single();
       if (data) {
         const d = data as any;
+        const categoryGroup = d.ride_categories?.category_group;
+        const isInflatable = categoryGroup === 'Inflatables';
         setRideName(d.ride_name);
-        setPressureEnabled(d.pressure_monitoring_enabled ?? false);
+        // All inflatables have pressure enabled by default
+        setPressureEnabled(isInflatable ? true : (d.pressure_monitoring_enabled ?? false));
         setIsMultiSectional(d.is_multi_sectional ?? false);
         setSectionCount(d.section_count ?? 1);
         setSectionConfig((d.section_config as SectionConfig[]) || []);
@@ -702,13 +707,15 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
           {pressureEnabled && isMultiSectional && sectionConfig.length === 0 && (
             <div className="flex items-center gap-2 mt-1.5 text-[11px] text-warning">
               <span>⚠ No sections configured.</span>
-              <Button variant="link" size="sm" className="text-[11px] h-auto p-0 text-primary" onClick={() => navigate(`/rides/${rideId}`)}>
-                Configure in inflatable settings →
+              <Button variant="link" size="sm" className="text-[11px] h-auto p-0 text-primary" onClick={() => {
+                if (onEditRide) { onEditRide(); } else { navigate(`/rides/${rideId}`); }
+              }}>
+                Configure in equipment settings →
               </Button>
             </div>
           )}
           {!pressureEnabled && (
-            <p className="text-[11px] text-warning mt-1">Pressure monitoring is not enabled for this inflatable. You can still log sessions, but consider enabling it in <button type="button" className="underline text-primary" onClick={() => navigate(`/rides/${rideId}`)}>inflatable settings</button>.</p>
+            <p className="text-[11px] text-warning mt-1">Pressure monitoring is not enabled for this equipment. You can still log sessions, but consider enabling it in <button type="button" className="underline text-primary cursor-pointer" onClick={() => { if (onEditRide) { onEditRide(); } else { navigate(`/rides/${rideId}`); } }}>equipment settings</button>.</p>
           )}
         </div>
       )}
@@ -913,9 +920,9 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
                   variant="outline"
                   size="sm"
                   className="text-[11px] h-7"
-                  onClick={() => { setSheetOpen(false); navigate(`/rides/${rideId}`); }}
+                  onClick={() => { setSheetOpen(false); if (onEditRide) { onEditRide(); } else { navigate(`/rides/${rideId}`); } }}
                 >
-                  Go to inflatable settings
+                  Go to equipment settings
                 </Button>
               </div>
             )}
