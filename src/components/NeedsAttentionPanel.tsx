@@ -41,7 +41,7 @@ const NeedsAttentionPanel = () => {
       const todayStr = today.toISOString().split('T')[0];
       const thirtyDaysStr = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
 
-      const [defectsRes, docsRes, eventsRes, operatingRes, checksRes] = await Promise.all([
+      const [defectsRes, docsRes, eventsRes, operatingRes, checksRes, pressureRes] = await Promise.all([
         supabase
           .from('defects')
           .select('id, description, ride_id, rides(ride_name)')
@@ -79,6 +79,14 @@ const NeedsAttentionPanel = () => {
           .eq('user_id', effectiveUserId)
           .eq('check_date', todayStr)
           .in('check_frequency', ['daily', 'preopening']),
+        // Fetch recent pressure sessions that are out of range (last 7 days)
+        supabase
+          .from('pressure_sessions')
+          .select('id, ride_id, session_date, session_time, is_complete, rides(ride_name)')
+          .eq('user_id', effectiveUserId)
+          .gte('session_date', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0])
+          .order('session_date', { ascending: false })
+          .limit(100),
       ]);
 
       // Build set of rides operating today
