@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Gauge, Plus, MapPin, ChevronDown, Loader2, FileDown, HelpCircle, ArrowLeft, AlertTriangle, RotateCcw, ClipboardList,
 } from 'lucide-react';
+import DefectReportDialog from '@/components/DefectReportDialog';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
