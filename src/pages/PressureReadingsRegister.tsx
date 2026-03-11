@@ -172,16 +172,17 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false }: PressureRead
     const load = async () => {
       const { data } = await supabase
         .from('rides')
-        .select('ride_name, pressure_monitoring_enabled, is_multi_sectional, section_count, section_config, default_pressure_unit')
+        .select('ride_name, pressure_monitoring_enabled, is_multi_sectional, section_count, section_config')
         .eq('id', rideId)
         .single();
       if (data) {
-        setRideName(data.ride_name);
-        setPressureEnabled(data.pressure_monitoring_enabled ?? false);
-        setIsMultiSectional(data.is_multi_sectional ?? false);
-        setSectionCount(data.section_count ?? 1);
-        setSectionConfig((data.section_config as SectionConfig[]) || []);
-        const unit = (data as any).default_pressure_unit || 'psi';
+        const d = data as any;
+        setRideName(d.ride_name);
+        setPressureEnabled(d.pressure_monitoring_enabled ?? false);
+        setIsMultiSectional(d.is_multi_sectional ?? false);
+        setSectionCount(d.section_count ?? 1);
+        setSectionConfig((d.section_config as SectionConfig[]) || []);
+        const unit = d.default_pressure_unit || 'psi';
         setDefaultUnit(unit);
         setReaderUnit(unit);
       }

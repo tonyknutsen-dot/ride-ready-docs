@@ -205,7 +205,7 @@ export async function createAmendment(
         template_id: original.template_id,
         template_name: original.template_name,
         overall_result: updates.overallResult || original.overall_result,
-        item_results: updates.itemResults || original.item_results,
+        item_results: (updates.itemResults || original.item_results) as any,
         notes: updates.notes !== undefined ? updates.notes : original.notes,
         weather_conditions: updates.weatherConditions !== undefined ? updates.weatherConditions : original.weather_conditions,
         location: updates.location !== undefined ? updates.location : original.location,
@@ -214,7 +214,7 @@ export async function createAmendment(
         signature_data: original.signature_data,
         defect_ids: original.defect_ids || [],
         photo_paths: original.photo_paths || [],
-      })
+      } as any)
       .select('id')
       .single();
 
@@ -319,7 +319,7 @@ export async function fetchInspectionRecordsPaginated(
     return { records: [], totalCount: 0, hasMore: false };
   }
 
-  let records = (data || []) as InspectionRecord[];
+  let records = (data || []) as unknown as InspectionRecord[];
   const totalCount = count || 0;
 
   // Filter by defects client-side (can't do array length check in PostgREST easily)
@@ -375,5 +375,5 @@ export async function fetchRecordVersions(checkId: string): Promise<InspectionRe
     return [];
   }
 
-  return (data || []) as InspectionRecord[];
+  return (data || []) as unknown as InspectionRecord[];
 }

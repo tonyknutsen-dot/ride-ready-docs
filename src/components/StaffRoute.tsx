@@ -46,17 +46,8 @@ export function StaffRoute({ children, requiredPermission, ownerOnly = false }: 
   if (isStaff && permissionLevel) {
     const requiredPermissions = Array.isArray(requiredPermission) ? requiredPermission : [requiredPermission];
     
-    const permissionHierarchy: Record<StaffRole, number> = {
-      'staff': 1,
-      'supervisor': 2,
-      'manager': 3,
-    };
-
-    const userLevel = permissionHierarchy[permissionLevel];
-    const hasAccess = requiredPermissions.some(perm => {
-      const requiredLevel = permissionHierarchy[perm];
-      return userLevel >= requiredLevel;
-    });
+    // Simple check — staff role matches any required permission
+    const hasAccess = requiredPermissions.includes(permissionLevel);
 
     if (hasAccess) {
       return <>{children}</>;

@@ -498,29 +498,14 @@ const DocumentList = ({ rideId, rideName, isGlobal = false, grouped = false, sho
           rideName={rideName}
         />
         
-        {/* Cleanup old versions dialog */}
-        <AlertDialog open={cleanupDialogOpen} onOpenChange={setCleanupDialogOpen}>
-          <AlertDialogContent className="w-[95vw] max-w-[95vw] sm:max-w-lg">
-            <AlertDialogHeader>
-              <AlertDialogTitle>Clean Up Old Versions</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete {olderVersionsCount} older document version{olderVersionsCount !== 1 ? 's' : ''}, 
-                freeing up {formatFileSize(olderVersionsSize)} of storage. Latest versions will be kept.
-                This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={cleaningUp}>Cancel</AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleCleanupOldVersions}
-                disabled={cleaningUp}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                {cleaningUp ? 'Cleaning up...' : 'Delete Old Versions'}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <VersionCleanupDialog
+          open={cleanupDialogOpen}
+          onOpenChange={setCleanupDialogOpen}
+          olderVersionsCount={olderVersionsCount}
+          olderVersionsSize={olderVersionsSize}
+          cleaningUp={cleaningUp}
+          onCleanup={handleCleanupOldVersions}
+        />
         
         <div className="space-y-6 pb-24 md:pb-0">
         {/* Cleanup button - only show if there are old versions */}

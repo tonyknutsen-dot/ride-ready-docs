@@ -175,7 +175,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
             ? `To ${format(dateTo, 'dd MMM yyyy')}`
             : 'All records';
 
-      const { blob, fileName, saveToDocuments } = await generateCheckRecordsPdf({
+      const result = await generateCheckRecordsPdf({
         rideId,
         rideName,
         userId: user.id,
@@ -185,7 +185,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         periodLabel,
       });
 
-      setExportResult({ blob, fileName, onSaveToDocuments: saveToDocuments });
+      setExportResult(result);
       setExportDialogOpen(true);
     } catch (err: any) {
       console.error('PDF export failed:', err);

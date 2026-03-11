@@ -78,12 +78,14 @@ export function SecuritySettingsSection() {
   };
 
   const handleSignOut = async () => {
-    await supabase.rpc('log_audit_event', {
-      p_action: 'logout',
-      p_resource_type: 'session',
-      p_resource_id: null,
-      p_details: { method: 'manual', scope: 'this_device' },
-    }).catch(() => {});
+    try {
+      await supabase.rpc('log_audit_event', {
+        p_action: 'logout',
+        p_resource_type: 'session',
+        p_resource_id: null,
+        p_details: { method: 'manual', scope: 'this_device' },
+      });
+    } catch {}
     await signOut();
     window.location.href = '/';
   };

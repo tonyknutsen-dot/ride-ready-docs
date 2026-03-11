@@ -88,7 +88,7 @@ export function useOptimisticDocumentUpload() {
 
       const { data, error: dbError } = await supabase
         .from('documents')
-        .insert(documentData)
+        .insert(documentData as any)
         .select()
         .single();
 

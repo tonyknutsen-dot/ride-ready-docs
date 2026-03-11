@@ -153,7 +153,7 @@ function itemResultLabel(result: string): string {
 
 // ─── PDF Generator ───────────────────────────────────────────────────────────
 
-export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): Promise<{ blob: Blob; fileName: string; storagePath: string | null }> {
+export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): Promise<{ blob: Blob; fileName: string; onSaveToDocuments: () => Promise<string | void> }> {
   const { rideId, rideName, userId, effectiveUserId, filters, records } = opts;
   const doc = new jsPDF();
   const docId = await generateDocumentId(rideId, 'CH');
@@ -474,7 +474,7 @@ export async function generateCheckRecordsPdf(opts: CheckRecordsReportOptions): 
     return rideDocId || undefined;
   };
 
-  return { blob: pdfBlob, fileName, saveToDocuments };
+  return { blob: pdfBlob, fileName, onSaveToDocuments: saveToDocuments };
 }
 
 // ─── CSV Generator ───────────────────────────────────────────────────────────

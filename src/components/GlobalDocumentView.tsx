@@ -43,7 +43,7 @@ import {
   fileExtension as fileExt,
   isDocExpiringSoon as isExpiringSoon,
   isDocExpired as isExpired,
-  DOC_TYPE_LABELS as TYPE_LABELS,
+  DOC_TYPE_LABELS,
   matchesGlobalCategory as matchesCategory,
   GLOBAL_CATEGORY_MAP as CATEGORY_MAP,
 } from '@/utils/documentHelpers';
