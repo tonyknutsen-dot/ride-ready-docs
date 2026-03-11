@@ -301,6 +301,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     }
     
     setErrors({});
+    setPressureErrors({});
 
     try {
       // Resolve category_id: if not explicitly selected, use first type in group
