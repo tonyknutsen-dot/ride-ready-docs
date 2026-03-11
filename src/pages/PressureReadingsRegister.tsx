@@ -869,8 +869,10 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
                           <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 shrink-0 mt-0.5" />
                           <div>
                             <p className="text-[12px] font-semibold text-red-700 dark:text-red-300">Action needed — readings out of range</p>
-                            <p className="text-[11px] text-red-600/80 dark:text-red-400/80 mt-0.5">
-                              One or more readings are outside configured limits. Review inflatable condition and take action.
+                            <p className="text-[11px] text-red-600/80 dark:text-red-400/80 mt-0.5 space-y-0.5">
+                              <span className="block">One or more sections are outside the configured pressure range.</span>
+                              <span className="block">Retake readings and inspect the inflatable.</span>
+                              <span className="block">Raise a defect if the issue remains.</span>
                             </p>
                           </div>
                         </div>

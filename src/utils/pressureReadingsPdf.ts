@@ -329,10 +329,11 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
     y = (doc as any).lastAutoTable?.finalY + 5 || y + 20;
   }
 
-  // Action line if any sessions failed
+  // Summary line
+  const pageH2 = doc.internal.pageSize.getHeight();
+  if (y + 15 > pageH2 - 22) { doc.addPage(); y = 28; }
+
   if (outOfRangeCount > 0) {
-    const pageH = doc.internal.pageSize.getHeight();
-    if (y + 15 > pageH - 22) { doc.addPage(); y = 28; }
     doc.setFontSize(8);
     doc.setTextColor(220, 38, 38);
     doc.setFont('helvetica', 'bold');
@@ -341,7 +342,20 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(80, 80, 80);
     doc.text(
-      'One or more readings were outside configured limits. Review inflatable condition and retake readings or raise a defect.',
+      'One or more sections are outside the configured pressure range. Retake readings and inspect the inflatable. Raise a defect if the issue remains.',
+      mL, y, { maxWidth: pageWidth - mL * 2 }
+    );
+    y += 8;
+  } else if (totalSessions > 0) {
+    doc.setFontSize(8);
+    doc.setTextColor(5, 150, 105);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ALL READINGS WITHIN RANGE', mL, y);
+    y += 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text(
+      'All recorded pressure readings are within the configured limits for this period.',
       mL, y, { maxWidth: pageWidth - mL * 2 }
     );
     y += 8;
