@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,6 +46,23 @@ const DefectReportDialog = ({
   const [photoPreviewUrls, setPhotoPreviewUrls] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const descriptionRef = useRef<HTMLTextAreaElement>(null);
+
+  // Auto-resize textarea to fit content
+  const autoResizeDescription = useCallback(() => {
+    const el = descriptionRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 360)}px`;
+  }, []);
+
+  // Re-measure when description changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      // Small delay to let dialog render
+      requestAnimationFrame(() => setTimeout(autoResizeDescription, 50));
+    }
+  }, [open, description, autoResizeDescription]);
   const { toast } = useToast();
   const { user } = useAuth();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
@@ -327,11 +344,12 @@ const DefectReportDialog = ({
                   <Label htmlFor="defect-description" className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Description *</Label>
                   <Textarea
                     id="defect-description"
+                    ref={descriptionRef}
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(e) => { setDescription(e.target.value); autoResizeDescription(); }}
                     placeholder="Describe the defect..."
-                    rows={Math.max(4, Math.min(10, description.split('\n').length + 1))}
-                    className="rounded-xl min-h-[120px] max-h-[280px] overflow-y-auto whitespace-pre-wrap break-words"
+                    className="rounded-xl min-h-[120px] overflow-y-auto whitespace-pre-wrap break-words resize-none"
+                    style={{ maxHeight: '360px' }}
                     onFocus={(e) => requestAnimationFrame(() => setTimeout(() => e.target.scrollIntoView({ block: 'center', behavior: 'smooth' }), 120))}
                   />
                 </div>
