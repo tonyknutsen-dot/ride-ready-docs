@@ -1,0 +1,1 @@
+ALTER TABLE public.rides ADD COLUMN IF NOT EXISTS default_pressure_unit text DEFAULT 'psi';

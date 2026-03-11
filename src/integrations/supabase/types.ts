@@ -2473,6 +2473,7 @@ export type Database = {
         Row: {
           category_id: string
           created_at: string
+          default_pressure_unit: string | null
           id: string
           is_multi_sectional: boolean
           is_test_data: boolean
@@ -2493,6 +2494,7 @@ export type Database = {
         Insert: {
           category_id: string
           created_at?: string
+          default_pressure_unit?: string | null
           id?: string
           is_multi_sectional?: boolean
           is_test_data?: boolean
@@ -2513,6 +2515,7 @@ export type Database = {
         Update: {
           category_id?: string
           created_at?: string
+          default_pressure_unit?: string | null
           id?: string
           is_multi_sectional?: boolean
           is_test_data?: boolean
