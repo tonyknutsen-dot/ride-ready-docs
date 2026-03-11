@@ -30,6 +30,7 @@ interface DefectReportDialogProps {
   onDefectReported?: () => void;
   onCriticalDefectReported?: () => void;
   trigger?: React.ReactNode;
+  defaultDescription?: string;
 }
 
 const DefectReportDialog = ({ 
