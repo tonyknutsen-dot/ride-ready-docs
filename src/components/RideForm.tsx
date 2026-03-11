@@ -809,11 +809,11 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               Pressure monitoring is available for all inflatables. Log pressure readings via the Pressure tab once this equipment is saved.
             </p>
 
-            {/* Default pressure unit */}
+             {/* Default pressure unit */}
             <div className="space-y-1.5">
-              <Label className="text-[13px] font-semibold text-foreground">Default pressure unit</Label>
-              <Select value={defaultPressureUnit} onValueChange={setDefaultPressureUnit}>
-                <SelectTrigger className="w-40">
+              <Label className="text-[13px] font-semibold text-foreground">Pressure unit *</Label>
+              <Select value={defaultPressureUnit} onValueChange={(v) => { setDefaultPressureUnit(v); setPressureErrors(prev => { const n = {...prev}; delete n.unit; return n; }); }}>
+                <SelectTrigger className={`w-40 ${pressureErrors.unit ? 'border-destructive' : ''}`}>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -823,6 +823,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                   <SelectItem value="mmH2O">mmH₂O</SelectItem>
                 </SelectContent>
               </Select>
+              {pressureErrors.unit && <p className="text-xs text-destructive">{pressureErrors.unit}</p>}
               <p className="text-[11px] text-muted-foreground">Pre-selected when you start a new pressure session.</p>
             </div>
 
