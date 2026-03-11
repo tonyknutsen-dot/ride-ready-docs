@@ -356,8 +356,7 @@ const MaintenanceHistory = ({ ride, refreshTrigger, onLogMaintenance }: Maintena
     }
   };
 
-  const getMaintenanceTypeLabel = (type: string) =>
-    MAINTENANCE_TYPES.find(t => t.value === type)?.label || type;
+  // getMaintenanceTypeLabel moved above filterSummary
 
   const getFileIcon = (mimeType: string | null) => {
     if (!mimeType) return <File className="h-4 w-4 text-muted-foreground" />;

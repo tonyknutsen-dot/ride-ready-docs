@@ -185,7 +185,7 @@ const InspectionRecordList = ({ rideId, rideName, frequency = 'daily', rideCateg
         periodLabel,
       });
 
-      setExportResult({ blob, fileName, onSaveToDocuments: saveToDocuments });
+      setExportResult(result);
       setExportDialogOpen(true);
     } catch (err: any) {
       console.error('PDF export failed:', err);

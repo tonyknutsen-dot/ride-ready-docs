@@ -538,8 +538,7 @@ const DefectRegister = () => {
   const openCount = enriched.filter((d) => d.status !== 'resolved').length;
   const stopUseCount = enriched.filter((d) => d.severity === 'stop_operation' && d.status !== 'resolved').length;
 
-  const getSeverityLabel = (s: DefectSeverity) => SEVERITY_CONFIG[s]?.label || s;
-  const getStatusLabel = (s: DefectStatus) => s === 'resolved' ? 'Closed' : 'Open';
+  // getSeverityLabel and getStatusLabel moved above filterSummary
 
   // ── Export CSV ──
   const handleExportCsv = () => {
