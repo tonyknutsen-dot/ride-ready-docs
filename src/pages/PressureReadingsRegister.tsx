@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-  Gauge, Plus, MapPin, Clock, ChevronDown, Loader2, FileDown, Search, ArrowLeft, HelpCircle,
+  Gauge, Plus, MapPin, ChevronDown, Loader2, FileDown, HelpCircle, ArrowLeft,
 } from 'lucide-react';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,10 @@ import PressureReaderPicker, { type PressureReaderProfile } from '@/components/P
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 import { generatePressureReadingsPdf } from '@/utils/pressureReadingsPdf';
 import { PressureReadingsHelpDialog } from '@/components/PressureReadingsHelpDialog';
+import {
+  getPressureStatus, getSessionOverallStatus, findSectionLimits,
+  type SectionLimits, type PressureStatusResult,
+} from '@/utils/pressureValidation';
 
 const SESSION_TYPES = [
   { value: 'pre-opening', label: 'Pre-opening' },
@@ -36,18 +40,11 @@ const SESSION_TYPE_LABELS: Record<string, string> = {
   'pre-opening': 'Pre-opening',
   'during-operation': 'During operation',
   'end-of-day': 'End of day',
-  'after-adjustment': 'End of day', // legacy mapping
-  'in-service': 'During operation', // legacy mapping
-  'recheck': 'End of day', // legacy mapping
+  'after-adjustment': 'End of day',
+  'in-service': 'During operation',
+  'recheck': 'End of day',
   'other': 'Other',
 };
-
-const PRESSURE_UNITS = [
-  { value: 'psi', label: 'PSI' },
-  { value: 'bar', label: 'Bar' },
-  { value: 'mbar', label: 'mbar' },
-  { value: 'mmH2O', label: 'mmH₂O' },
-];
 
 interface SectionConfig {
   name: string;
@@ -98,12 +95,22 @@ interface PressureSession {
 }
 
 interface PressureReadingsRegisterProps {
-  /** When provided, uses this rideId instead of search params */
   rideIdProp?: string;
-  /** When true, hides the PageHeader (for embedding in tabs) */
   embedded?: boolean;
-  /** Callback to trigger edit mode on parent (used when embedded) */
   onEditRide?: () => void;
+}
+
+/* ─── Status badge helper ─── */
+function StatusDot({ color }: { color: 'green' | 'red' | 'grey' | 'yellow' }) {
+  const cls = color === 'green' ? 'bg-emerald-500' : color === 'red' ? 'bg-red-500' : color === 'yellow' ? 'bg-amber-500' : 'bg-muted-foreground/40';
+  return <span className={cn('inline-block h-2 w-2 rounded-full shrink-0', cls)} />;
+}
+
+function StatusBadge({ result }: { result: PressureStatusResult }) {
+  const textCls = result.color === 'green' ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+    : result.color === 'red' ? 'text-red-700 dark:text-red-400 bg-red-500/10 border-red-500/30'
+    : 'text-muted-foreground bg-muted/30 border-border';
+  return <Badge variant="outline" className={cn('text-[9px] px-1.5 py-0', textCls)}>{result.label}</Badge>;
 }
 
 const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: PressureReadingsRegisterProps = {}) => {
@@ -122,6 +129,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
   const [sectionCount, setSectionCount] = useState(1);
   const [sectionConfig, setSectionConfig] = useState<SectionConfig[]>([]);
   const [pressureEnabled, setPressureEnabled] = useState(false);
+  const [defaultUnit, setDefaultUnit] = useState('psi');
 
   // Sessions
   const [sessions, setSessions] = useState<PressureSession[]>([]);
@@ -148,7 +156,6 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
   const [readerModel, setReaderModel] = useState('');
   const [readerSerial, setReaderSerial] = useState('');
   const [readerUnit, setReaderUnit] = useState('psi');
-  const [defaultUnit, setDefaultUnit] = useState('psi');
   const [readerCalibration, setReaderCalibration] = useState('');
   const [readerNotes, setReaderNotes] = useState('');
 
@@ -184,7 +191,6 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
         const categoryGroup = d.ride_categories?.category_group;
         const isInflatable = categoryGroup === 'Inflatables';
         setRideName(d.ride_name);
-        // All inflatables have pressure enabled by default
         setPressureEnabled(isInflatable ? true : (d.pressure_monitoring_enabled ?? false));
         setIsMultiSectional(d.is_multi_sectional ?? false);
         setSectionCount(d.section_count ?? 1);
@@ -291,6 +297,19 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
     load();
   }, [effectiveUserId, rideId]);
 
+  // ─── Validation helpers ───
+  /** Get status for a line reading against its section config */
+  const getLineStatus = useCallback((sectionIndex: number, value: number | null | undefined): PressureStatusResult => {
+    const limits = findSectionLimits(sectionConfig as SectionLimits[], sectionIndex);
+    return getPressureStatus(value, limits);
+  }, [sectionConfig]);
+
+  /** Compute session-level status for a saved session */
+  const getSessionStatus = useCallback((session: PressureSession) => {
+    const lineStatuses = (session.lines || []).map((l, idx) => getLineStatus(idx, l.pressure_value));
+    return getSessionOverallStatus(lineStatuses, session.is_complete);
+  }, [getLineStatus]);
+
   // Filtered sessions
   const filteredSessions = useMemo(() => {
     return sessions.filter(s => {
@@ -324,7 +343,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
     setSearchTerm('');
   };
 
-  // Open form
+  // Open form — auto-fill unit from equipment setup (no duplicate unit selector)
   const handleOpenSheet = () => {
     const n = new Date();
     setSessionDate(format(n, 'yyyy-MM-dd'));
@@ -335,7 +354,8 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
     setSiteAddress('');
     setSessionNotes('');
 
-    // Build lines from section config
+    // Build lines from section config — unit always from equipment setup
+    const unit = defaultUnit || 'psi';
     const newLines: SessionLine[] = [];
     if (isMultiSectional && sectionConfig.length > 0) {
       sectionConfig.forEach((sc, i) => {
@@ -344,7 +364,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
           section_name: sc.name || `Section ${i + 1}`,
           reading_taken_at: format(n, 'HH:mm'),
           pressure_value: '',
-          pressure_unit: defaultUnit || 'psi',
+          pressure_unit: unit,
           reading_point: sc.default_reading_point || '',
           notes: '',
         });
@@ -356,7 +376,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
           section_name: `Section ${i + 1}`,
           reading_taken_at: format(n, 'HH:mm'),
           pressure_value: '',
-          pressure_unit: defaultUnit || 'psi',
+          pressure_unit: unit,
           reading_point: '',
           notes: '',
         });
@@ -367,14 +387,17 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
         section_name: 'Main',
         reading_taken_at: format(n, 'HH:mm'),
         pressure_value: '',
-        pressure_unit: defaultUnit || 'psi',
+        pressure_unit: unit,
         reading_point: '',
         notes: '',
       });
     }
     setLines(newLines);
 
-    // Default reader
+    // Set reader unit to match equipment default
+    setReaderUnit(unit);
+
+    // Default reader profile
     const defaultProfile = readerProfiles.find(p => p.is_default);
     if (defaultProfile) {
       setSelectedReaderId(defaultProfile.id);
@@ -382,7 +405,6 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
       setReaderMake(defaultProfile.make);
       setReaderModel(defaultProfile.model);
       setReaderSerial(defaultProfile.serial_number || '');
-      setReaderUnit(defaultProfile.unit || defaultUnit || 'psi');
       setReaderCalibration(defaultProfile.last_calibration_date || '');
       setReaderNotes(defaultProfile.instrument_notes || '');
     } else {
@@ -391,7 +413,6 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
       setReaderMake('');
       setReaderModel('');
       setReaderSerial('');
-      setReaderUnit(defaultUnit || 'psi');
       setReaderCalibration('');
       setReaderNotes('');
     }
@@ -409,7 +430,6 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
     if (!siteName) { toast({ title: 'Missing fields', description: 'Site / location name is required.', variant: 'destructive' }); return; }
     if (!readerMake || !readerModel) { toast({ title: 'Missing fields', description: 'Pressure reader make and model are required.', variant: 'destructive' }); return; }
 
-    // Check all sections have readings if multi-sectional
     if (isMultiSectional) {
       const missingLines = lines.filter(l => !l.pressure_value);
       if (missingLines.length > 0) {
@@ -423,6 +443,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
     }
 
     const isComplete = lines.every(l => !!l.pressure_value);
+    const unit = defaultUnit || 'psi';
 
     setSaving(true);
     try {
@@ -443,7 +464,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
         reader_make: readerMake,
         reader_model: readerModel,
         reader_serial: readerSerial || null,
-        reader_unit: readerUnit,
+        reader_unit: unit,
         reader_calibration_date: readerCalibration || null,
         reader_notes: readerNotes || null,
         reader_profile_id: selectedReaderId !== 'manual' ? selectedReaderId : null,
@@ -456,7 +477,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
         section_name: l.section_name,
         reading_taken_at: l.reading_taken_at ? l.reading_taken_at + ':00' : null,
         pressure_value: l.pressure_value ? parseFloat(l.pressure_value) : null,
-        pressure_unit: l.pressure_unit || readerUnit,
+        pressure_unit: unit,
         reading_point: l.reading_point || null,
         notes: l.notes || null,
       }));
@@ -512,6 +533,8 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
       rideId,
       companyName: companyName || undefined,
       controllerName: controllerName || undefined,
+      defaultUnit,
+      sectionConfig: sectionConfig as SectionLimits[],
       dateRange: {
         from: filterDateFrom ? format(filterDateFrom, 'd MMM yyyy') : undefined,
         to: filterDateTo ? format(filterDateTo, 'd MMM yyyy') : undefined,
@@ -553,10 +576,13 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
       toast({ title: 'Nothing to export', variant: 'destructive' });
       return;
     }
-    const headers = ['Date', 'Time', 'Type', 'Site', 'Address', 'Taken By', 'Section', 'Reading Point', 'Value', 'Unit', 'Status', 'Instrument', 'Notes'];
+    const headers = ['Date', 'Time', 'Type', 'Site', 'Address', 'Taken By', 'Section', 'Reading Point', 'Value', 'Unit', 'Target', 'Min', 'Max', 'Status', 'Instrument', 'Notes'];
     const rows: string[][] = [];
     for (const s of filteredSessions) {
       for (const l of (s.lines || [])) {
+        const sectionIdx = l.section_number - 1;
+        const limits = findSectionLimits(sectionConfig as SectionLimits[], sectionIdx);
+        const lineStatus = getPressureStatus(l.pressure_value, limits);
         rows.push([
           s.session_date,
           s.session_time.slice(0, 5),
@@ -568,7 +594,10 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
           l.reading_point || '',
           l.pressure_value != null ? String(l.pressure_value) : '',
           l.pressure_unit,
-          s.is_complete ? 'Complete' : 'Incomplete',
+          limits?.target_pressure != null ? String(limits.target_pressure) : '',
+          limits?.min_pressure != null ? String(limits.min_pressure) : '',
+          limits?.max_pressure != null ? String(limits.max_pressure) : '',
+          lineStatus.label,
           [s.reader_make, s.reader_model, s.reader_serial].filter(Boolean).join(' '),
           `"${(l.notes || '').replace(/"/g, '""')}"`,
         ]);
@@ -692,7 +721,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
         savedReports={savedReports}
       />
 
-      {/* Pressure setup summary on register page */}
+      {/* Pressure setup summary */}
       {!loading && (
         <div className="rounded-xl border border-border bg-card p-3 space-y-1.5">
           <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Inflatable Pressure Setup</p>
@@ -700,10 +729,27 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
             <span className="text-muted-foreground">Monitoring: <span className="font-medium text-foreground">{pressureEnabled ? 'Enabled' : 'Not enabled'}</span></span>
             <span className="text-muted-foreground">Structure: <span className="font-medium text-foreground">{isMultiSectional ? 'Multi-sectional' : 'Single-section'}</span></span>
             <span className="text-muted-foreground">Sections: <span className="font-medium text-foreground">{isMultiSectional ? (sectionConfig.length || sectionCount) : 1}</span></span>
+            <span className="text-muted-foreground">Unit: <span className="font-medium text-foreground">{defaultUnit.toUpperCase()}</span></span>
             {isMultiSectional && sectionConfig.length > 0 && (
               <span className="text-muted-foreground">Names: <span className="font-medium text-foreground">{sectionConfig.map(s => s.name).join(', ')}</span></span>
             )}
           </div>
+          {/* Show configured limits summary */}
+          {sectionConfig.some(sc => sc.min_pressure != null || sc.max_pressure != null) && (
+            <div className="flex flex-wrap gap-x-4 gap-y-0.5 text-[11px] text-muted-foreground mt-1">
+              {sectionConfig.map((sc, i) => (
+                (sc.min_pressure != null || sc.max_pressure != null || sc.target_pressure != null) && (
+                  <span key={i}>
+                    {sc.name || `Section ${i+1}`}:
+                    {sc.target_pressure != null && ` target ${sc.target_pressure}`}
+                    {sc.min_pressure != null && ` min ${sc.min_pressure}`}
+                    {sc.max_pressure != null && ` max ${sc.max_pressure}`}
+                    {' '}{defaultUnit}
+                  </span>
+                )
+              ))}
+            </div>
+          )}
           {pressureEnabled && isMultiSectional && sectionConfig.length === 0 && (
             <div className="flex items-center gap-2 mt-1.5 text-[11px] text-warning">
               <span>⚠ No sections configured.</span>
@@ -737,18 +783,19 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
             const isExpanded = expandedId === session.id;
             const completedLines = (session.lines || []).filter(l => l.pressure_value != null).length;
             const totalLines = (session.lines || []).length;
+            const sessionStatus = getSessionStatus(session);
 
             return (
               <div key={session.id} className={cn(
                 "border border-border rounded-xl bg-card overflow-hidden transition-colors",
-                !session.is_complete && "border-l-2 border-l-warning"
+                sessionStatus.color === 'red' && "border-l-2 border-l-red-500",
+                sessionStatus.color === 'yellow' && "border-l-2 border-l-amber-500",
               )}>
                 <button
                   type="button"
                   className="w-full text-left px-3 py-3 min-h-[56px] active:bg-muted/20 transition-colors"
                   onClick={() => setExpandedId(isExpanded ? null : session.id)}
                 >
-                  {/* Row 1: Date + Time + Type + Status */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 min-w-0">
                       <span className="text-[12px] font-medium text-foreground tabular-nums whitespace-nowrap">{formatDate(session.session_date)}</span>
@@ -757,15 +804,13 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 tabular-nums">{completedLines}/{totalLines}</Badge>
-                      {session.is_complete ? (
-                        <Badge className="text-[10px] px-1.5 py-0 bg-primary/10 text-primary border-primary/30">Complete</Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-warning border-warning/30">Incomplete</Badge>
-                      )}
+                      <div className="flex items-center gap-1">
+                        <StatusDot color={sessionStatus.color} />
+                        <span className="text-[10px] font-medium">{sessionStatus.label}</span>
+                      </div>
                       <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/40 transition-transform shrink-0", isExpanded && "rotate-180")} />
                     </div>
                   </div>
-                  {/* Row 2: Site */}
                   <p className="text-[10px] text-muted-foreground mt-0.5 break-words leading-snug">
                     <MapPin className="h-2.5 w-2.5 inline-block mr-0.5 -mt-px" />
                     {session.site_name}{session.site_address ? `, ${session.site_address}` : ''}
@@ -786,18 +831,34 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
                         </p>
                       </div>
                     </div>
-                    {/* Reading lines */}
+                    {/* Reading lines with status */}
                     {(session.lines || []).length > 0 && (
                       <div className="mt-2 space-y-1">
                         <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block mb-1">Readings</span>
-                        {(session.lines || []).map(line => (
-                          <div key={line.id} className="flex items-center justify-between gap-2 text-[11px] py-1 border-b border-border/30 last:border-0">
-                            <span className="text-muted-foreground">{line.section_number}. {line.section_name}</span>
-                            <span className={cn("font-semibold tabular-nums", line.pressure_value == null && "text-warning")}>
-                              {line.pressure_value != null ? `${line.pressure_value} ${line.pressure_unit}` : 'No reading'}
-                            </span>
-                          </div>
-                        ))}
+                        {(session.lines || []).map((line, idx) => {
+                          const lineStatus = getLineStatus(idx, line.pressure_value);
+                          const limits = findSectionLimits(sectionConfig as SectionLimits[], idx);
+                          return (
+                            <div key={line.id} className="flex items-center justify-between gap-2 text-[11px] py-1 border-b border-border/30 last:border-0">
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <StatusDot color={lineStatus.color} />
+                                <span className="text-muted-foreground">{line.section_number}. {line.section_name}</span>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                {limits?.target_pressure != null && (
+                                  <span className="text-[9px] text-muted-foreground/60">target {limits.target_pressure}</span>
+                                )}
+                                <span className={cn("font-semibold tabular-nums",
+                                  lineStatus.color === 'red' && "text-red-600 dark:text-red-400",
+                                  lineStatus.color === 'green' && "text-emerald-600 dark:text-emerald-400",
+                                  line.pressure_value == null && "text-muted-foreground/50",
+                                )}>
+                                  {line.pressure_value != null ? `${line.pressure_value} ${line.pressure_unit}` : 'No reading'}
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     )}
                     {session.notes && (
@@ -821,7 +882,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
         <SheetContent side={isMobile ? 'bottom' : 'right'} className={cn("overflow-y-auto", isMobile ? 'max-h-[90vh] rounded-t-2xl' : 'sm:max-w-lg')}>
           <SheetHeader>
             <SheetTitle>Log Pressure Session</SheetTitle>
-            <SheetDescription>{rideName}</SheetDescription>
+            <SheetDescription>{rideName} · Unit: {defaultUnit.toUpperCase()}</SheetDescription>
           </SheetHeader>
 
           <div className="space-y-4 py-4">
@@ -851,23 +912,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
               <p className="text-[10px] text-muted-foreground">When during the day is this session being taken?</p>
             </div>
 
-            {/* Pressure unit for this session */}
-            <div className="space-y-1">
-              <Label className="text-[11px] text-muted-foreground">Pressure unit for this session *</Label>
-              <Select value={readerUnit} onValueChange={v => {
-                setReaderUnit(v);
-                // Update all lines to match the session unit
-                setLines(prev => prev.map(l => ({ ...l, pressure_unit: v })));
-              }}>
-                <SelectTrigger className="h-10 text-[13px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {PRESSURE_UNITS.map(u => (
-                    <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-[10px] text-muted-foreground">All readings in this session will use this unit.</p>
-            </div>
+            {/* NO duplicate unit selector — unit auto-filled from equipment setup */}
 
             {/* Taken by */}
             <div className="space-y-1">
@@ -883,29 +928,6 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
             <div className="space-y-1">
               <Label className="text-[11px] text-muted-foreground">Site address</Label>
               <Input value={siteAddress} onChange={e => setSiteAddress(e.target.value)} placeholder="Address" className="h-10 text-[13px]" />
-            </div>
-
-            {/* Pressure setup summary */}
-            <div className="rounded-xl border border-border bg-muted/20 p-3 space-y-1.5">
-              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Pressure Setup</p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[12px]">
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Monitoring</span>
-                  <span className="font-medium text-foreground">{pressureEnabled ? 'Enabled' : 'Disabled'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Structure</span>
-                  <span className="font-medium text-foreground">{isMultiSectional ? 'Multi-sectional' : 'Single-section'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Sections</span>
-                  <span className="font-medium text-foreground">{isMultiSectional ? (sectionConfig.length || sectionCount) : 1}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Unit</span>
-                  <span className="font-medium text-foreground">{readerUnit.toUpperCase()}</span>
-                </div>
-              </div>
             </div>
 
             {/* Warning if multi-sectional but no sections configured */}
@@ -927,10 +949,10 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
               </div>
             )}
 
-            {/* Reading lines */}
+            {/* Reading lines with live validation */}
             <div className="space-y-3">
               <div>
-                <Label className="text-[13px] font-semibold">Pressure Readings</Label>
+                <Label className="text-[13px] font-semibold">Pressure Readings ({defaultUnit.toUpperCase()})</Label>
                 {isMultiSectional ? (
                   <p className="text-[11px] text-muted-foreground mt-0.5">
                     Multi-sectional inflatable — {sectionConfig.length || sectionCount} sections. One reading required per section.
@@ -941,54 +963,79 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
                   </p>
                 )}
               </div>
-              {lines.map((line, idx) => (
-                <div key={idx} className="rounded-xl border border-border bg-muted/10 p-3 space-y-2">
-                  <p className="text-[12px] font-semibold text-foreground">
-                    {line.section_number}. {line.section_name}
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
+              {lines.map((line, idx) => {
+                const numericValue = line.pressure_value ? parseFloat(line.pressure_value) : null;
+                const lineStatus = numericValue != null ? getLineStatus(idx, numericValue) : null;
+                const limits = findSectionLimits(sectionConfig as SectionLimits[], idx);
+                const hasLimits = limits?.min_pressure != null || limits?.max_pressure != null;
+
+                return (
+                  <div key={idx} className={cn(
+                    "rounded-xl border bg-muted/10 p-3 space-y-2",
+                    lineStatus?.color === 'red' ? 'border-red-400/60' : lineStatus?.color === 'green' ? 'border-emerald-400/60' : 'border-border',
+                  )}>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[12px] font-semibold text-foreground">
+                        {line.section_number}. {line.section_name}
+                      </p>
+                      {lineStatus && <StatusBadge result={lineStatus} />}
+                    </div>
+                    {/* Show limits hint */}
+                    {hasLimits && (
+                      <p className="text-[9px] text-muted-foreground -mt-1">
+                        {limits?.target_pressure != null && `Target: ${limits.target_pressure} ${defaultUnit} · `}
+                        {limits?.min_pressure != null && `Min: ${limits.min_pressure} ${defaultUnit}`}
+                        {limits?.min_pressure != null && limits?.max_pressure != null && ' · '}
+                        {limits?.max_pressure != null && `Max: ${limits.max_pressure} ${defaultUnit}`}
+                      </p>
+                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Pressure value ({defaultUnit.toUpperCase()}) *</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={line.pressure_value}
+                          onChange={e => updateLine(idx, 'pressure_value', e.target.value)}
+                          placeholder="e.g. 1.5"
+                          className={cn("h-9 text-[13px]",
+                            lineStatus?.color === 'red' && "border-red-400 focus-visible:ring-red-400",
+                            lineStatus?.color === 'green' && "border-emerald-400 focus-visible:ring-emerald-400",
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Where on this section?</Label>
+                        <Input
+                          value={line.reading_point}
+                          onChange={e => updateLine(idx, 'reading_point', e.target.value)}
+                          placeholder="e.g. Valve A, near seam"
+                          className="h-9 text-[13px]"
+                        />
+                        <p className="text-[9px] text-muted-foreground">Exact point where the gauge was placed</p>
+                      </div>
+                    </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground">Pressure value ({readerUnit.toUpperCase()}) *</Label>
+                      <Label className="text-[10px] text-muted-foreground">Time taken</Label>
                       <Input
-                        type="number"
-                        step="0.01"
-                        value={line.pressure_value}
-                        onChange={e => updateLine(idx, 'pressure_value', e.target.value)}
-                        placeholder="e.g. 1.5"
+                        type="time"
+                        value={line.reading_taken_at}
+                        onChange={e => updateLine(idx, 'reading_taken_at', e.target.value)}
                         className="h-9 text-[13px]"
                       />
                     </div>
                     <div className="space-y-1">
-                      <Label className="text-[10px] text-muted-foreground">Where on this section?</Label>
+                      <Label className="text-[10px] text-muted-foreground">Notes</Label>
                       <Input
-                        value={line.reading_point}
-                        onChange={e => updateLine(idx, 'reading_point', e.target.value)}
-                        placeholder="e.g. Valve A, near seam"
+                        value={line.notes}
+                        onChange={e => updateLine(idx, 'notes', e.target.value)}
+                        placeholder="Optional"
                         className="h-9 text-[13px]"
                       />
-                      <p className="text-[9px] text-muted-foreground">Exact point where the gauge was placed</p>
                     </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">Time taken</Label>
-                    <Input
-                      type="time"
-                      value={line.reading_taken_at}
-                      onChange={e => updateLine(idx, 'reading_taken_at', e.target.value)}
-                      className="h-9 text-[13px]"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-[10px] text-muted-foreground">Notes</Label>
-                    <Input
-                      value={line.notes}
-                      onChange={e => updateLine(idx, 'notes', e.target.value)}
-                      placeholder="Optional"
-                      className="h-9 text-[13px]"
-                    />
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Pressure reader picker */}
