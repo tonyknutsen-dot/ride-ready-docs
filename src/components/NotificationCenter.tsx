@@ -620,6 +620,54 @@ const NotificationCenter = () => {
         }
       }
 
+      // ─── 7. Pressure sessions — out-of-range readings (last 7 days) ───
+      const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const { data: pressureSessions } = await supabase
+        .from('pressure_sessions')
+        .select('id, ride_id, session_date, session_time, site_name, is_complete')
+        .eq('user_id', effectiveUserId)
+        .gte('session_date', sevenDaysAgo);
+
+      if (pressureSessions && pressureSessions.length > 0) {
+        const sessionIds = pressureSessions.map(s => s.id);
+        const { data: allPressureLines } = await supabase
+          .from('pressure_session_lines')
+          .select('session_id, section_number, section_name, pressure_value, pressure_unit')
+          .in('session_id', sessionIds);
+
+        for (const ps of pressureSessions) {
+          const psLines = (allPressureLines || []).filter(l => l.session_id === ps.id);
+          const psRideName = ps.ride_id ? rideMap.get(ps.ride_id) || '' : '';
+
+          // Get ride section config for limits
+          const { data: rideData } = await supabase
+            .from('rides')
+            .select('section_config')
+            .eq('id', ps.ride_id)
+            .single();
+          const sConfig = (rideData?.section_config as any[]) || [];
+
+          const outOfRange = psLines.filter((l, idx) => {
+            const limits = sConfig[l.section_number - 1];
+            if (!limits) return false;
+            const val = l.pressure_value;
+            if (val == null) return false;
+            if (limits.min_pressure != null && val < limits.min_pressure) return true;
+            if (limits.max_pressure != null && val > limits.max_pressure) return true;
+            return false;
+          });
+
+          if (outOfRange.length > 0) {
+            const sectionNames = outOfRange.map(l => l.section_name).join(', ');
+            await ensureNotification(
+              `Pressure out of range — ${psRideName || 'inflatable'}`,
+              `${outOfRange.length} section${outOfRange.length > 1 ? 's' : ''} outside configured limits (${sectionNames}). Session ${ps.session_date}.`,
+              'warning', 'pressure_sessions', ps.id
+            );
+          }
+        }
+      }
+
       // Done — reload notifications
       await loadNotifications();
     } catch (error) {
