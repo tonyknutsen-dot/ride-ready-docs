@@ -920,9 +920,9 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
                   variant="outline"
                   size="sm"
                   className="text-[11px] h-7"
-                  onClick={() => { setSheetOpen(false); navigate(`/rides/${rideId}`); }}
+                  onClick={() => { setSheetOpen(false); if (onEditRide) { onEditRide(); } else { navigate(`/rides/${rideId}`); } }}
                 >
-                  Go to inflatable settings
+                  Go to equipment settings
                 </Button>
               </div>
             )}
