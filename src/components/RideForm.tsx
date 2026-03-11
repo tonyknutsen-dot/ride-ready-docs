@@ -61,7 +61,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     owner_name: ride?.owner_name || '',
   });
 
-  // Pressure monitoring config
+  // Pressure monitoring config — enabled by default for inflatables
   const [pressureEnabled, setPressureEnabled] = useState(ride?.pressure_monitoring_enabled ?? false);
   const [isMultiSectional, setIsMultiSectional] = useState(ride?.is_multi_sectional ?? false);
   const [sectionCount, setSectionCountState] = useState(ride?.section_count ?? 1);
