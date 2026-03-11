@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
-import { AlertOctagon, FileText, ClipboardCheck, Clock, CheckCircle, ChevronRight, ChevronDown } from 'lucide-react';
+import { AlertOctagon, FileText, ClipboardCheck, Clock, CheckCircle, ChevronRight, ChevronDown, Gauge } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -11,7 +11,7 @@ import { isDefectCritical } from '@/hooks/useDefectSummary';
 
 interface AttentionItem {
   id: string;
-  type: 'stop_use' | 'doc_expiring' | 'check_due' | 'inspection_due';
+  type: 'stop_use' | 'doc_expiring' | 'check_due' | 'inspection_due' | 'pressure_failed';
   label: string;
   sublabel?: string;
   urgency: 'critical' | 'warning' | 'info';
@@ -41,7 +41,7 @@ const NeedsAttentionPanel = () => {
       const todayStr = today.toISOString().split('T')[0];
       const thirtyDaysStr = new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0];
 
-      const [defectsRes, docsRes, eventsRes, operatingRes, checksRes] = await Promise.all([
+      const [defectsRes, docsRes, eventsRes, operatingRes, checksRes, pressureRes] = await Promise.all([
         supabase
           .from('defects')
           .select('id, description, ride_id, rides(ride_name)')
@@ -79,6 +79,14 @@ const NeedsAttentionPanel = () => {
           .eq('user_id', effectiveUserId)
           .eq('check_date', todayStr)
           .in('check_frequency', ['daily', 'preopening']),
+        // Fetch recent pressure sessions that are out of range (last 7 days)
+        supabase
+          .from('pressure_sessions')
+          .select('id, ride_id, session_date, session_time, is_complete, rides(ride_name)')
+          .eq('user_id', effectiveUserId)
+          .gte('session_date', new Date(Date.now() - 7 * 86400000).toISOString().split('T')[0])
+          .order('session_date', { ascending: false })
+          .limit(100),
       ]);
 
       // Build set of rides operating today
@@ -171,6 +179,59 @@ const NeedsAttentionPanel = () => {
         });
       });
 
+      // Pressure out-of-range sessions
+      // We need to check session lines against ride limits — fetch lines for recent sessions
+      const pressureSessions = (pressureRes.data || []) as any[];
+      if (pressureSessions.length > 0) {
+        const sessionIds = pressureSessions.map((s: any) => s.id);
+        // Fetch lines in chunks
+        const allLines: any[] = [];
+        for (let i = 0; i < sessionIds.length; i += 100) {
+          const chunk = sessionIds.slice(i, i + 100);
+          const { data: lineData } = await supabase
+            .from('pressure_session_lines')
+            .select('session_id, pressure_value')
+            .in('session_id', chunk);
+          if (lineData) allLines.push(...lineData);
+        }
+        // Fetch ride configs for these rides
+        const rideIds = [...new Set(pressureSessions.map((s: any) => s.ride_id))];
+        const { data: rideConfigs } = await supabase
+          .from('rides')
+          .select('id, section_config')
+          .in('id', rideIds);
+        const rideConfigMap = new Map((rideConfigs || []).map((r: any) => [r.id, (r.section_config || []) as Array<{ min_pressure?: number; max_pressure?: number }>]));
+
+        const linesBySession: Record<string, any[]> = {};
+        for (const l of allLines) {
+          if (!linesBySession[l.session_id]) linesBySession[l.session_id] = [];
+          linesBySession[l.session_id].push(l);
+        }
+
+        for (const s of pressureSessions) {
+          const sLines = linesBySession[s.id] || [];
+          const config = rideConfigMap.get(s.ride_id) || [];
+          if (config.length === 0) continue;
+          const hasOutOfRange = sLines.some((l: any, idx: number) => {
+            const sc = config[idx];
+            if (!sc || l.pressure_value == null) return false;
+            if (sc.min_pressure != null && l.pressure_value < sc.min_pressure) return true;
+            if (sc.max_pressure != null && l.pressure_value > sc.max_pressure) return true;
+            return false;
+          });
+          if (hasOutOfRange) {
+            result.push({
+              id: `pressure-${s.id}`,
+              type: 'pressure_failed',
+              label: `Pressure — ${(s as any).rides?.ride_name || 'Equipment'}`,
+              sublabel: `Out of range · ${s.session_date}`,
+              urgency: 'warning',
+              path: `/pressure-readings/register?rideId=${s.ride_id}`,
+            });
+          }
+        }
+      }
+
       return result;
     },
     enabled: !!effectiveUserId,
@@ -207,6 +268,13 @@ const NeedsAttentionPanel = () => {
         icon: Clock,
         defaultOpen: false,
         headerStyle: { bg: 'bg-card', border: 'border-border', iconColor: 'text-muted-foreground', text: 'text-foreground' },
+      },
+      {
+        type: 'pressure_failed',
+        title: 'Pressure Action Needed',
+        icon: Gauge,
+        defaultOpen: true,
+        headerStyle: { bg: 'bg-red-50 dark:bg-red-950/20', border: 'border-red-200 dark:border-red-800', iconColor: 'text-red-600', text: 'text-foreground' },
       },
     ];
 

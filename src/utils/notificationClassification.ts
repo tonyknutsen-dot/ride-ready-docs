@@ -78,6 +78,9 @@ export const isNotificationActionable = (n: NotificationBase): boolean => {
 
   if (title.includes('wind') && (title.includes('warning') || title.includes('threshold') || title.includes('pack-away'))) return true;
 
+  // Pressure out-of-range
+  if (title.includes('pressure') && (title.includes('out of range') || title.includes('action needed') || title.includes('failed'))) return true;
+
   if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return true;
 
   if (t === 'warning' || t === 'error') return true;

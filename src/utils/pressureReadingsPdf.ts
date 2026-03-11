@@ -200,14 +200,14 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
     const completedLines = s.lines.filter(l => l.pressure_value != null).length;
 
     // Compute overall session status
-    let sessionResult = s.is_complete ? 'Complete' : 'Incomplete';
+    let sessionResult = s.is_complete ? 'PASS' : 'INCOMPLETE';
     if (sectionConfig && sectionConfig.length > 0) {
       const lineStatuses = s.lines.map((l, idx) => {
         const limits = findSectionLimits(sectionConfig, idx);
         return getPressureStatus(l.pressure_value, limits);
       });
       const overall = getSessionOverallStatus(lineStatuses, s.is_complete);
-      sessionResult = overall.label;
+      sessionResult = overall.resultLabel;
     }
 
     return [
@@ -238,10 +238,10 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
       if (data.section !== 'body') return;
       if (data.column.index === 6) {
         const raw = String(data.cell.raw);
-        if (raw === 'Incomplete' || raw === 'Out of range') {
-          data.cell.styles.textColor = raw === 'Out of range' ? [220, 38, 38] : [217, 119, 6];
+        if (raw === 'INCOMPLETE' || raw === 'FAILED') {
+          data.cell.styles.textColor = raw === 'FAILED' ? [220, 38, 38] : [217, 119, 6];
           data.cell.styles.fontStyle = 'bold';
-        } else if (raw === 'Within range') {
+        } else if (raw === 'PASS') {
           data.cell.styles.textColor = [5, 150, 105];
           data.cell.styles.fontStyle = 'bold';
         }
@@ -327,6 +327,24 @@ export async function generatePressureReadingsPdf(options: PressureReadingsPdfOp
     });
 
     y = (doc as any).lastAutoTable?.finalY + 5 || y + 20;
+  }
+
+  // Action line if any sessions failed
+  if (outOfRangeCount > 0) {
+    const pageH = doc.internal.pageSize.getHeight();
+    if (y + 15 > pageH - 22) { doc.addPage(); y = 28; }
+    doc.setFontSize(8);
+    doc.setTextColor(220, 38, 38);
+    doc.setFont('helvetica', 'bold');
+    doc.text('ACTION REQUIRED', mL, y);
+    y += 4;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+    doc.text(
+      'One or more readings were outside configured limits. Review inflatable condition and retake readings or raise a defect.',
+      mL, y, { maxWidth: pageWidth - mL * 2 }
+    );
+    y += 8;
   }
 
   drawTemplateFooters(templateOpts);
