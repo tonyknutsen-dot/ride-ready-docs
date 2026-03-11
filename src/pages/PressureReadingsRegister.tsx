@@ -23,6 +23,8 @@ import RegisterHeader, { PreviousReportsSection } from '@/components/RegisterHea
 import PressureReaderPicker, { type PressureReaderProfile } from '@/components/PressureReaderPicker';
 import ExportActionsDialog, { type ExportResult } from '@/components/ExportActionsDialog';
 import { generatePressureReadingsPdf } from '@/utils/pressureReadingsPdf';
+import { PressureReadingsHelpDialog } from '@/components/PressureReadingsHelpDialog';
+import { HelpCircle } from 'lucide-react';
 
 const SESSION_TYPES = [
   { value: 'pre-opening', label: 'Pre-opening' },
