@@ -5,7 +5,7 @@ import {
   Bell, Check, X, AlertTriangle, Info, CheckCircle,
   FileText, Wrench, ClipboardCheck, Shield, Wind,
   CreditCard, ChevronRight, Clock, AlertOctagon,
-  CircleDot, Send, ExternalLink
+  CircleDot, Send, ExternalLink, Gauge
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
@@ -111,6 +111,7 @@ const getIcon = (n: Notification) => {
   const cls = 'h-[18px] w-[18px]';
   if (title.includes('stop use') || title.includes('critical')) return <AlertOctagon className={cn(cls, 'text-destructive')} />;
   if (title.includes('defect')) return <AlertTriangle className={cn(cls, 'text-destructive')} />;
+  if (title.includes('pressure')) return <Gauge className={cn(cls, 'text-red-600 dark:text-red-400')} />;
   if (title.includes('wind') || title.includes('threshold') || title.includes('pack-away')) return <Wind className={cn(cls, 'text-primary')} />;
   if (title.includes('check') || title.includes('missed')) return <ClipboardCheck className={cn(cls, 'text-accent-foreground')} />;
   if (title.includes('inspection') || title.includes('ndt')) return <Shield className={cn(cls, 'text-primary')} />;
@@ -126,6 +127,15 @@ const getIcon = (n: Notification) => {
 const getActionRoute = (n: Notification): string | null => {
   const title = n.title?.toLowerCase() ?? '';
   if (isSentDocument(n)) return '/batch-send';
+
+  // Pressure out-of-range → pressure register for that ride
+  if (n.related_table === 'pressure_sessions' || title.includes('pressure out of range') || title.includes('pressure')) {
+    if (n.related_id) {
+      // We have a session ID — try to route to the pressure register
+      return `/pressure-readings`;
+    }
+    return '/pressure-readings';
+  }
 
   // Hard routing rule: defect-like notifications go to Defects only
   if (isDefectRelatedNotification(n)) return buildDefectRoute(n.related_id);
@@ -163,6 +173,7 @@ const getActionLabel = (n: Notification): string => {
   if (title.includes('check') && title.includes('completed')) return 'View check';
   if (n.related_table === 'checks') return 'View check';
   // Other categories
+  if (title.includes('pressure')) return 'Review readings';
   if (title.includes('inspection') || title.includes('ndt')) return 'View';
   if (title.includes('expir') || title.includes('document') || title.includes('certificate')) return 'Review certificate';
   if (title.includes('maintenance') && (title.includes('overdue') || title.includes('due'))) return 'View';
@@ -617,6 +628,54 @@ const NotificationCenter = () => {
             `A check for ${rideName || 'an asset'} failed today. Review the check result and take corrective action.`,
             'warning', 'checks', fc.id
           );
+        }
+      }
+
+      // ─── 7. Pressure sessions — out-of-range readings (last 7 days) ───
+      const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+      const { data: pressureSessions } = await supabase
+        .from('pressure_sessions')
+        .select('id, ride_id, session_date, session_time, site_name, is_complete')
+        .eq('user_id', effectiveUserId)
+        .gte('session_date', sevenDaysAgo);
+
+      if (pressureSessions && pressureSessions.length > 0) {
+        const sessionIds = pressureSessions.map(s => s.id);
+        const { data: allPressureLines } = await supabase
+          .from('pressure_session_lines')
+          .select('session_id, section_number, section_name, pressure_value, pressure_unit')
+          .in('session_id', sessionIds);
+
+        for (const ps of pressureSessions) {
+          const psLines = (allPressureLines || []).filter(l => l.session_id === ps.id);
+          const psRideName = ps.ride_id ? rideMap.get(ps.ride_id) || '' : '';
+
+          // Get ride section config for limits
+          const { data: rideData } = await supabase
+            .from('rides')
+            .select('section_config')
+            .eq('id', ps.ride_id)
+            .single();
+          const sConfig = (rideData?.section_config as any[]) || [];
+
+          const outOfRange = psLines.filter((l, idx) => {
+            const limits = sConfig[l.section_number - 1];
+            if (!limits) return false;
+            const val = l.pressure_value;
+            if (val == null) return false;
+            if (limits.min_pressure != null && val < limits.min_pressure) return true;
+            if (limits.max_pressure != null && val > limits.max_pressure) return true;
+            return false;
+          });
+
+          if (outOfRange.length > 0) {
+            const sectionNames = outOfRange.map(l => l.section_name).join(', ');
+            await ensureNotification(
+              `Pressure out of range — ${psRideName || 'inflatable'}`,
+              `${outOfRange.length} section${outOfRange.length > 1 ? 's' : ''} outside configured limits (${sectionNames}). Session ${ps.session_date}.`,
+              'warning', 'pressure_sessions', ps.id
+            );
+          }
         }
       }
 

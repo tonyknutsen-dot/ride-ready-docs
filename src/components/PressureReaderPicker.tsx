@@ -181,26 +181,20 @@ const PressureReaderPicker = ({
         </div>
       </div>
 
-      {/* Serial & Unit */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground">Serial number</Label>
-          <Input value={serial} onChange={e => setSerial(e.target.value)} placeholder="S/N" className="h-10 text-[13px]" />
-        </div>
-        <div className="space-y-1">
-          <Label className="text-[11px] text-muted-foreground">Unit</Label>
-          <Select value={unit} onValueChange={setUnit}>
-            <SelectTrigger className="h-10 text-[13px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {UNIT_OPTIONS.map(u => (
-                <SelectItem key={u.value} value={u.value}>{u.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Serial */}
+      <div className="space-y-1">
+        <Label className="text-[11px] text-muted-foreground">Serial number</Label>
+        <Input value={serial} onChange={e => setSerial(e.target.value)} placeholder="S/N" className="h-10 text-[13px]" />
       </div>
+
+      {/* Reader native unit — read-only metadata */}
+      {unit && (
+        <div className="space-y-1">
+          <Label className="text-[11px] text-muted-foreground">Reader display unit</Label>
+          <p className="text-[13px] text-foreground px-3 py-2 rounded-md border border-border bg-muted/30">{unit.toUpperCase()}</p>
+          <p className="text-[9px] text-muted-foreground">Session unit is set from your equipment setup. This is the reader's native unit for traceability.</p>
+        </div>
+      )}
 
       {/* Calibration date */}
       <div className="space-y-1">

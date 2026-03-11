@@ -16,6 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import {
   Gauge, Plus, MapPin, ChevronDown, Loader2, FileDown, HelpCircle, ArrowLeft, AlertTriangle, RotateCcw, ClipboardList,
 } from 'lucide-react';
+import DefectReportDialog from '@/components/DefectReportDialog';
 import { format, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import PageHeader from '@/components/PageHeader';
@@ -882,14 +883,33 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
                           >
                             <RotateCcw className="h-3 w-3" /> Retake readings
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-[11px] h-7 gap-1 border-red-300 dark:border-red-700"
-                            onClick={(e) => { e.stopPropagation(); navigate(`/defects/report?rideId=${rideId}`); }}
-                          >
-                            <ClipboardList className="h-3 w-3" /> Raise defect
-                          </Button>
+                          <DefectReportDialog
+                            rideId={rideId}
+                            rideName={rideName}
+                            onDefectReported={() => loadSessions()}
+                            trigger={
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-[11px] h-7 gap-1 border-red-300 dark:border-red-700"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <ClipboardList className="h-3 w-3" /> Raise defect
+                              </Button>
+                            }
+                            defaultDescription={(() => {
+                              const failedLines = (session.lines || [])
+                                .map((l, idx) => ({ ...l, status: getLineStatus(idx, l.pressure_value) }))
+                                .filter(l => l.status.status === 'below_minimum' || l.status.status === 'above_maximum');
+                              const sectionNames = failedLines.map(l => `${l.section_name} (${l.pressure_value} ${l.pressure_unit} — ${l.status.label})`).join('; ');
+                              const limitsInfo = failedLines.map(l => {
+                                const limits = findSectionLimits(sectionConfig as SectionLimits[], l.section_number - 1);
+                                return `${l.section_name}: ${limits?.min_pressure != null ? `min ${limits.min_pressure}` : ''}${limits?.max_pressure != null ? ` max ${limits.max_pressure}` : ''} ${defaultUnit}`;
+                              }).join('; ');
+                              const reader = [session.reader_make, session.reader_model, session.reader_serial ? `S/N ${session.reader_serial}` : null].filter(Boolean).join(' ');
+                              return `Pressure reading out of range — ${rideName}\n\nSession: ${session.session_date} ${session.session_time.slice(0,5)} (${SESSION_TYPE_LABELS[session.session_type] || session.session_type})\nSite: ${session.site_name}${session.site_address ? ', ' + session.site_address : ''}\n\nFailed sections: ${sectionNames}\nConfigured limits: ${limitsInfo}\nReader: ${reader}\n\nOne or more readings were outside configured limits. Review inflatable condition.`;
+                            })()}
+                          />
                         </div>
                       </div>
                     )}
