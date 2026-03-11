@@ -340,7 +340,7 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         {(() => {
           const isInflatable = ride.ride_categories.category_group === 'Inflatables';
-          const showPressure = isInflatable && ride.pressure_monitoring_enabled;
+          const showPressure = isInflatable;
           const tabs = [
             { value: 'overview', label: 'Home', Icon: FileText },
             { value: 'checks',   label: 'Checks', Icon: CheckSquare },
