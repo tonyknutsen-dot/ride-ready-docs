@@ -55,6 +55,8 @@ export type SessionOverallStatus =
 export interface SessionOverallResult {
   status: SessionOverallStatus;
   label: string;
+  /** Short operational result for PDF/formal output */
+  resultLabel: string;
   color: 'green' | 'red' | 'yellow' | 'grey';
 }
 
@@ -66,21 +68,21 @@ export function getSessionOverallStatus(
   isComplete: boolean,
 ): SessionOverallResult {
   if (!isComplete) {
-    return { status: 'incomplete', label: 'Incomplete', color: 'yellow' };
+    return { status: 'incomplete', label: 'Incomplete', resultLabel: 'INCOMPLETE', color: 'yellow' };
   }
 
   const hasOutOfRange = lineStatuses.some(s => s.status === 'below_minimum' || s.status === 'above_maximum');
   const allNoLimits = lineStatuses.every(s => s.status === 'no_limits');
 
   if (hasOutOfRange) {
-    return { status: 'out_of_range', label: 'Out of range', color: 'red' };
+    return { status: 'out_of_range', label: 'Action needed', resultLabel: 'FAILED', color: 'red' };
   }
 
   if (allNoLimits) {
-    return { status: 'complete_in_range', label: 'Complete', color: 'green' };
+    return { status: 'complete_in_range', label: 'Complete', resultLabel: 'PASS', color: 'green' };
   }
 
-  return { status: 'complete_in_range', label: 'Within range', color: 'green' };
+  return { status: 'complete_in_range', label: 'Pass', resultLabel: 'PASS', color: 'green' };
 }
 
 /**
