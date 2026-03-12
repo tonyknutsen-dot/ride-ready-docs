@@ -4,7 +4,7 @@ import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Wrench, AlertTriangle, Clock, CheckCircle2, Search, Filter, CalendarDays, Sparkles, ChevronRight, Gauge } from 'lucide-react';
+import { Wrench, AlertTriangle, Clock, CheckCircle2, Search, Filter, CalendarDays, Sparkles, ChevronRight, Gauge, AlertOctagon } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { EmptyState } from '@/components/EmptyState';
@@ -35,6 +35,15 @@ interface PressureSummary {
   lastDate: string | null;
 }
 
+type DefectPriority = 'stop-use' | 'open-defects' | 'low-severity' | 'no-defects';
+
+interface DefectSummary {
+  priority: DefectPriority;
+  label: string;
+  count: number;
+  hasCritical: boolean;
+}
+
 interface EquipmentSelectorProps {
   onRideSelect: (ride: Ride) => void;
   placeholderIcon?: React.ComponentType<{ className?: string }>;
@@ -43,6 +52,8 @@ interface EquipmentSelectorProps {
   categoryGroupFilter?: string;
   /** When true, shows pressure session status instead of maintenance schedule */
   pressureMode?: boolean;
+  /** When true, shows defect severity status */
+  defectMode?: boolean;
 }
 
 const normalizeStatus = (status: string): keyof typeof STATUS_CONFIG => {
@@ -54,10 +65,10 @@ const normalizeStatus = (status: string): keyof typeof STATUS_CONFIG => {
 };
 
 const STATUS_CONFIG = {
-  overdue:      { label: 'Overdue',      chipClass: 'bg-destructive/10 text-destructive border-destructive/30',              accent: 'border-l-destructive' },
-  'due-soon':   { label: 'Due soon',     chipClass: 'bg-warning/10 text-warning border-warning/30',                          accent: 'border-l-warning' },
-  'up-to-date': { label: 'Up to date',   chipClass: 'bg-primary/10 text-primary border-primary/30',                          accent: 'border-l-primary' },
-  'no-data':    { label: 'No schedule',   chipClass: 'bg-muted/60 text-muted-foreground border-border',                      accent: 'border-l-muted-foreground/30' },
+  overdue:      { label: 'Overdue',      chipClass: 'bg-destructive/10 text-destructive border-destructive/30',              accent: 'border-l-destructive',            dotClass: 'bg-destructive',       textClass: 'text-destructive',                  iconClass: 'text-destructive' },
+  'due-soon':   { label: 'Due soon',     chipClass: 'bg-warning/10 text-warning border-warning/30',                          accent: 'border-l-warning',                dotClass: 'bg-amber-500',         textClass: 'text-amber-700 dark:text-amber-400', iconClass: 'text-amber-500' },
+  'up-to-date': { label: 'Up to date',   chipClass: 'bg-primary/10 text-primary border-primary/30',                          accent: 'border-l-primary',                dotClass: 'bg-emerald-500',       textClass: 'text-emerald-700 dark:text-emerald-400', iconClass: 'text-emerald-500' },
+  'no-data':    { label: 'No schedule',   chipClass: 'bg-muted/60 text-muted-foreground border-border',                      accent: 'border-l-muted-foreground/30',    dotClass: 'bg-muted-foreground/30', textClass: 'text-muted-foreground',           iconClass: 'text-muted-foreground/40' },
 } as const;
 
 const PRESSURE_STATUS_CONFIG: Record<PressureStatus, { label: string; chipClass: string; accent: string; iconClass: string }> = {
@@ -87,6 +98,37 @@ const PRESSURE_STATUS_CONFIG: Record<PressureStatus, { label: string; chipClass:
   },
 };
 
+const DEFECT_PRIORITY_CONFIG: Record<DefectPriority, { label: string; accent: string; dotClass: string; textClass: string; iconClass: string }> = {
+  'stop-use': {
+    label: 'Stop use defect open',
+    accent: 'border-l-destructive',
+    dotClass: 'bg-destructive',
+    textClass: 'text-destructive font-semibold',
+    iconClass: 'text-destructive',
+  },
+  'open-defects': {
+    label: 'Open defects',
+    accent: 'border-l-red-500',
+    dotClass: 'bg-red-500',
+    textClass: 'text-red-700 dark:text-red-400',
+    iconClass: 'text-red-500',
+  },
+  'low-severity': {
+    label: 'Low severity open',
+    accent: 'border-l-amber-500',
+    dotClass: 'bg-amber-500',
+    textClass: 'text-amber-700 dark:text-amber-400',
+    iconClass: 'text-amber-500',
+  },
+  'no-defects': {
+    label: 'No open defects',
+    accent: 'border-l-muted-foreground/30',
+    dotClass: 'bg-muted-foreground/30',
+    textClass: 'text-muted-foreground',
+    iconClass: 'text-muted-foreground/40',
+  },
+};
+
 const EquipmentSelector = ({
   onRideSelect,
   placeholderIcon: PlaceholderIcon = Wrench,
@@ -94,6 +136,7 @@ const EquipmentSelector = ({
   showKpis = true,
   categoryGroupFilter,
   pressureMode = false,
+  defectMode = false,
 }: EquipmentSelectorProps) => {
   const { user } = useAuth();
   const { isStaff } = useStaff();
@@ -102,6 +145,7 @@ const EquipmentSelector = ({
   const [rides, setRides] = useState<Ride[]>([]);
   const [summaries, setSummaries] = useState<Record<string, MaintenanceSummary>>({});
   const [pressureSummaries, setPressureSummaries] = useState<Record<string, PressureSummary>>({});
+  const [defectSummaries, setDefectSummaries] = useState<Record<string, DefectSummary>>({});
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -139,6 +183,9 @@ const EquipmentSelector = ({
         if (pressureMode) {
           loaders.push(loadPressureSummaries(typedRides));
         }
+        if (defectMode) {
+          loaders.push(loadDefectSummaries(typedRides));
+        }
         await Promise.all(loaders);
       }
     } catch (e) {
@@ -148,10 +195,48 @@ const EquipmentSelector = ({
     }
   };
 
+  const loadDefectSummaries = async (ridesList: Ride[]) => {
+    try {
+      const rideIds = ridesList.map(r => r.id);
+      const { data: defects } = await supabase
+        .from('defects')
+        .select('ride_id, severity, status')
+        .eq('user_id', effectiveUserId)
+        .in('ride_id', rideIds)
+        .in('status', ['open', 'acknowledged', 'in_progress']);
+
+      const result: Record<string, DefectSummary> = {};
+
+      for (const ride of ridesList) {
+        const rideDefects = (defects || []).filter(d => d.ride_id === ride.id);
+        const count = rideDefects.length;
+
+        if (count === 0) {
+          result[ride.id] = { priority: 'no-defects', label: 'No open defects', count: 0, hasCritical: false };
+          continue;
+        }
+
+        const hasCritical = rideDefects.some(d => d.severity === 'stop_operation');
+        const hasUrgent = rideDefects.some(d => d.severity === 'urgent');
+
+        if (hasCritical) {
+          result[ride.id] = { priority: 'stop-use', label: `Stop use defect open`, count, hasCritical: true };
+        } else if (hasUrgent) {
+          result[ride.id] = { priority: 'open-defects', label: `${count} open defect${count > 1 ? 's' : ''}`, count, hasCritical: false };
+        } else {
+          result[ride.id] = { priority: 'low-severity', label: `${count} low severity open`, count, hasCritical: false };
+        }
+      }
+
+      setDefectSummaries(result);
+    } catch (e) {
+      console.warn('Could not load defect summaries:', e);
+    }
+  };
+
   const loadPressureSummaries = async (ridesList: Ride[]) => {
     try {
       const rideIds = ridesList.map(r => r.id);
-      // Get the latest session per ride with its lines
       const { data: sessions } = await supabase
         .from('pressure_sessions')
         .select('id, ride_id, session_date, session_time, is_complete')
@@ -168,20 +253,17 @@ const EquipmentSelector = ({
         return;
       }
 
-      // Get latest session per ride
       const latestByRide: Record<string, typeof sessions[0]> = {};
       for (const s of sessions) {
         if (!latestByRide[s.ride_id]) latestByRide[s.ride_id] = s;
       }
 
-      // Load lines for latest sessions
       const latestIds = Object.values(latestByRide).map(s => s.id);
       const { data: lines } = await supabase
         .from('pressure_session_lines')
         .select('session_id, pressure_value')
         .in('session_id', latestIds);
 
-      // Load section configs for validation
       const result: Record<string, PressureSummary> = {};
 
       for (const ride of ridesList) {
@@ -199,7 +281,6 @@ const EquipmentSelector = ({
           continue;
         }
 
-        // Check for out-of-range using ride's section_config
         const sectionCfg = ((ride as any).section_config as Array<{ min_pressure?: number; max_pressure?: number }>) || [];
         let hasOutOfRange = false;
 
@@ -335,7 +416,7 @@ const EquipmentSelector = ({
     return matchesSearch && matchesFilter;
   });
 
-  // In pressure mode, sort by priority: action-needed first, then incomplete, then no-sessions, then passed
+  // Sort by priority based on mode
   const sortedRides = pressureMode
     ? [...filteredRides].sort((a, b) => {
         const order: Record<PressureStatus, number> = { 'action-needed': 0, 'incomplete': 1, 'no-sessions': 2, 'passed': 3 };
@@ -343,7 +424,36 @@ const EquipmentSelector = ({
         const sb = pressureSummaries[b.id]?.status ?? 'no-sessions';
         return order[sa] - order[sb];
       })
+    : defectMode
+    ? [...filteredRides].sort((a, b) => {
+        const order: Record<DefectPriority, number> = { 'stop-use': 0, 'open-defects': 1, 'low-severity': 2, 'no-defects': 3 };
+        const sa = defectSummaries[a.id]?.priority ?? 'no-defects';
+        const sb = defectSummaries[b.id]?.priority ?? 'no-defects';
+        return order[sa] - order[sb];
+      })
     : filteredRides;
+
+  // Determine accent and icon class for a card
+  const getCardConfig = (ride: Ride) => {
+    const summary = summaries[ride.id];
+    const statusKey = normalizeStatus(summary?.status ?? 'no-data');
+    const statusCfg = STATUS_CONFIG[statusKey];
+
+    if (pressureMode) {
+      const pSummary = pressureSummaries[ride.id] ?? { status: 'no-sessions' as PressureStatus, label: 'No pressure sessions logged yet', lastDate: null };
+      const pCfg = PRESSURE_STATUS_CONFIG[pSummary.status];
+      return { accent: pCfg.accent, iconClass: pCfg.iconClass, statusCfg, statusKey, pSummary, pCfg, dSummary: null, dCfg: null };
+    }
+
+    if (defectMode) {
+      const dSummary = defectSummaries[ride.id] ?? { priority: 'no-defects' as DefectPriority, label: 'No open defects', count: 0, hasCritical: false };
+      const dCfg = DEFECT_PRIORITY_CONFIG[dSummary.priority];
+      return { accent: dCfg.accent, iconClass: dCfg.iconClass, statusCfg, statusKey, pSummary: null, pCfg: null, dSummary, dCfg };
+    }
+
+    // Standard mode — use maintenance status for accent and icon
+    return { accent: statusCfg.accent, iconClass: statusCfg.iconClass, statusCfg, statusKey, pSummary: null, pCfg: null, dSummary: null, dCfg: null };
+  };
 
   if (loading) {
     return (
@@ -425,16 +535,13 @@ const EquipmentSelector = ({
       ) : (
         <div className="space-y-2">
           {sortedRides.map((ride) => {
+            const { accent, iconClass, statusCfg, statusKey, pSummary, pCfg, dSummary, dCfg } = getCardConfig(ride);
             const summary = summaries[ride.id];
             const defectCount = summary?.openDefects ?? 0;
-            const pSummary = pressureMode ? (pressureSummaries[ride.id] ?? { status: 'no-sessions' as PressureStatus, label: 'No pressure sessions logged yet', lastDate: null }) : null;
-            const pCfg = pSummary ? PRESSURE_STATUS_CONFIG[pSummary.status] : null;
-
-            // In pressure mode, use pressure accent; otherwise use maintenance accent
-            const statusKey = normalizeStatus(summary?.status ?? 'no-data');
-            const statusCfg = STATUS_CONFIG[statusKey];
-            const accentClass = pressureMode && pCfg ? pCfg.accent : statusCfg.accent;
             const hasThumb = !!thumbs[ride.id];
+
+            // Pick the right icon for current mode
+            const IconComponent = pressureMode ? Gauge : defectMode ? AlertOctagon : PlaceholderIcon;
 
             return (
               <button
@@ -443,11 +550,11 @@ const EquipmentSelector = ({
                 onClick={() => onRideSelect(ride)}
                 className={cn(
                   'w-full text-left rounded-lg border border-border border-l-4 bg-card hover:bg-accent/30 active:bg-accent/50 active:scale-[0.99] transition-all',
-                  accentClass,
+                  accent,
                 )}
               >
                 <div className="flex items-center gap-3 p-3">
-                  {/* Thumbnail or icon — tinted by pressure status */}
+                  {/* Thumbnail or icon — tinted by status */}
                   {hasThumb ? (
                     <img
                       src={thumbs[ride.id]}
@@ -459,13 +566,15 @@ const EquipmentSelector = ({
                       "w-14 h-14 rounded-lg flex items-center justify-center shrink-0",
                       pressureMode && pSummary?.status === 'action-needed' ? 'bg-red-500/10' :
                       pressureMode && pSummary?.status === 'passed' ? 'bg-emerald-500/10' :
+                      defectMode && dSummary?.priority === 'stop-use' ? 'bg-destructive/10' :
+                      defectMode && dSummary?.priority === 'open-defects' ? 'bg-red-500/10' :
+                      defectMode && dSummary?.priority === 'low-severity' ? 'bg-amber-500/10' :
+                      !pressureMode && !defectMode && statusKey === 'overdue' ? 'bg-destructive/10' :
+                      !pressureMode && !defectMode && statusKey === 'due-soon' ? 'bg-amber-500/10' :
+                      !pressureMode && !defectMode && statusKey === 'up-to-date' ? 'bg-emerald-500/10' :
                       'bg-muted/60',
                     )}>
-                      {pressureMode ? (
-                        <Gauge className={cn("h-5 w-5", pCfg?.iconClass ?? 'text-muted-foreground/50')} />
-                      ) : (
-                        <PlaceholderIcon className="h-5 w-5 text-muted-foreground/50" />
-                      )}
+                      <IconComponent className={cn("h-5 w-5", iconClass)} />
                     </div>
                   )}
 
@@ -477,12 +586,14 @@ const EquipmentSelector = ({
                         <p className="text-[10px] text-muted-foreground">{ride.ride_categories.name}</p>
                       </div>
                       <div className="flex items-center gap-1.5 shrink-0">
-                        {defectCount > 0 && (
+                        {/* Defect pill (shown in standard + pressure mode, not defect mode since it has its own line) */}
+                        {!defectMode && defectCount > 0 && (
                           <span className="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border bg-destructive/10 text-destructive border-destructive/30">
                             {defectCount} defect{defectCount > 1 ? 's' : ''}
                           </span>
                         )}
-                        {!pressureMode && (
+                        {/* Status chip (non-pressure, non-defect mode) */}
+                        {!pressureMode && !defectMode && (
                           <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border ${statusCfg.chipClass}`}>
                             {statusCfg.label}
                           </span>
@@ -517,22 +628,31 @@ const EquipmentSelector = ({
                       </div>
                     )}
 
-                    {/* Maintenance summary row (non-pressure mode) */}
-                    {!pressureMode && (
-                      <div className="flex items-center gap-3 mt-1.5 text-[11px]">
-                        <span className="text-muted-foreground flex items-center gap-1">
-                          <CalendarDays className="h-3 w-3" />
-                          {summary?.lastServiceDate
-                            ? format(new Date(summary.lastServiceDate), 'd MMM yyyy')
-                            : <span className="italic">No maintenance logged</span>}
+                    {/* Defect status line (defect mode) */}
+                    {defectMode && dSummary && dCfg && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className={cn('inline-block h-2 w-2 rounded-full shrink-0', dCfg.dotClass)} />
+                        <span className={cn('text-[11px] font-medium', dCfg.textClass)}>
+                          {dSummary.label}
                         </span>
-                        <span className="text-muted-foreground">·</span>
-                        <span className={`flex items-center gap-1 ${statusKey === 'overdue' ? 'text-destructive font-medium' : statusKey === 'due-soon' ? 'text-warning font-medium' : 'text-muted-foreground'}`}>
-                          <Clock className="h-3 w-3" />
-                          {summary?.nextDueDate
-                            ? format(new Date(summary.nextDueDate), 'd MMM yyyy')
-                            : <span className="italic">No due date set</span>}
+                      </div>
+                    )}
+
+                    {/* Status line for standard mode (Checks / Maintenance) */}
+                    {!pressureMode && !defectMode && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className={cn('inline-block h-2 w-2 rounded-full shrink-0', statusCfg.dotClass)} />
+                        <span className={cn('text-[11px] font-medium', statusCfg.textClass)}>
+                          {statusKey === 'overdue' ? 'Overdue – service needed' :
+                           statusKey === 'due-soon' ? 'Due soon' :
+                           statusKey === 'up-to-date' ? 'Up to date' :
+                           summary?.lastServiceDate ? 'No due date set' : 'No maintenance logged'}
                         </span>
+                        {summary?.nextDueDate && statusKey !== 'no-data' && (
+                          <span className="text-[10px] text-muted-foreground ml-1">
+                            · {format(new Date(summary.nextDueDate), 'd MMM yyyy')}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
