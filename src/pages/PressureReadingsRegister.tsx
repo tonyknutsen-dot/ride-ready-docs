@@ -107,6 +107,19 @@ function StatusDot({ color }: { color: 'green' | 'red' | 'grey' | 'yellow' }) {
   return <span className={cn('inline-block h-2 w-2 rounded-full shrink-0', cls)} />;
 }
 
+function SessionStatusChip({ status }: { status: { label: string; color: 'green' | 'red' | 'yellow' | 'grey' } }) {
+  const chipCls =
+    status.color === 'green' ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
+    : status.color === 'red' ? 'text-red-700 dark:text-red-400 bg-red-500/15 border-red-500/40 font-semibold'
+    : status.color === 'yellow' ? 'text-amber-700 dark:text-amber-400 bg-amber-500/10 border-amber-500/30'
+    : 'text-muted-foreground bg-muted/30 border-border';
+  return (
+    <Badge variant="outline" className={cn('text-[10px] px-1.5 py-0', chipCls)}>
+      {status.label}
+    </Badge>
+  );
+}
+
 function StatusBadge({ result }: { result: PressureStatusResult }) {
   const textCls = result.color === 'green' ? 'text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 border-emerald-500/30'
     : result.color === 'red' ? 'text-red-700 dark:text-red-400 bg-red-500/10 border-red-500/30'
