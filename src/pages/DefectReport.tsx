@@ -152,6 +152,7 @@ const DefectReport = () => {
           placeholderIcon={AlertTriangle}
           emptyDescription="Add rides or equipment in the Rides section to report defects."
           showKpis={false}
+          defectMode
         />
       </main>
     </div>
