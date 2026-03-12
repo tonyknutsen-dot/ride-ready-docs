@@ -55,6 +55,7 @@ const PressureReadings = () => {
         emptyDescription="Add inflatables in the Equipment section to start logging pressure readings."
         showKpis={false}
         categoryGroupFilter="Inflatables"
+        pressureMode
       />
     </div>
   );
