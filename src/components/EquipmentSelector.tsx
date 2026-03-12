@@ -4,11 +4,12 @@ import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Wrench, AlertTriangle, Clock, CheckCircle2, Search, Filter, CalendarDays, Sparkles, ChevronRight } from 'lucide-react';
+import { Wrench, AlertTriangle, Clock, CheckCircle2, Search, Filter, CalendarDays, Sparkles, ChevronRight, Gauge } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { EmptyState } from '@/components/EmptyState';
 import { format, isBefore, addDays } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -26,16 +27,22 @@ interface MaintenanceSummary {
   status: 'up-to-date' | 'due-soon' | 'overdue' | 'no-data';
 }
 
+type PressureStatus = 'action-needed' | 'passed' | 'incomplete' | 'no-sessions';
+
+interface PressureSummary {
+  status: PressureStatus;
+  label: string;
+  lastDate: string | null;
+}
+
 interface EquipmentSelectorProps {
   onRideSelect: (ride: Ride) => void;
-  /** Icon shown in placeholder thumbnails */
   placeholderIcon?: React.ComponentType<{ className?: string }>;
-  /** Empty state description */
   emptyDescription?: string;
-  /** Whether to show the KPI strip and status filters (default: true) */
   showKpis?: boolean;
-  /** Filter to only show equipment matching this category_group value (e.g. 'Inflatables') */
   categoryGroupFilter?: string;
+  /** When true, shows pressure session status instead of maintenance schedule */
+  pressureMode?: boolean;
 }
 
 const normalizeStatus = (status: string): keyof typeof STATUS_CONFIG => {
@@ -53,12 +60,40 @@ const STATUS_CONFIG = {
   'no-data':    { label: 'No schedule',   chipClass: 'bg-muted/60 text-muted-foreground border-border',                      accent: 'border-l-muted-foreground/30' },
 } as const;
 
+const PRESSURE_STATUS_CONFIG: Record<PressureStatus, { label: string; chipClass: string; accent: string; iconClass: string }> = {
+  'action-needed': {
+    label: 'Action needed',
+    chipClass: 'bg-red-500/10 text-red-700 dark:text-red-400 border-red-500/30',
+    accent: 'border-l-red-500',
+    iconClass: 'text-red-500',
+  },
+  'incomplete': {
+    label: 'Incomplete',
+    chipClass: 'bg-amber-500/10 text-amber-700 dark:text-amber-400 border-amber-500/30',
+    accent: 'border-l-amber-500',
+    iconClass: 'text-amber-500',
+  },
+  'passed': {
+    label: 'Last session passed',
+    chipClass: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30',
+    accent: 'border-l-emerald-500',
+    iconClass: 'text-emerald-500',
+  },
+  'no-sessions': {
+    label: 'No sessions yet',
+    chipClass: 'bg-muted/60 text-muted-foreground border-border',
+    accent: 'border-l-muted-foreground/30',
+    iconClass: 'text-muted-foreground/40',
+  },
+};
+
 const EquipmentSelector = ({
   onRideSelect,
   placeholderIcon: PlaceholderIcon = Wrench,
   emptyDescription = 'Add rides or equipment in the Rides section to get started.',
   showKpis = true,
   categoryGroupFilter,
+  pressureMode = false,
 }: EquipmentSelectorProps) => {
   const { user } = useAuth();
   const { isStaff } = useStaff();
@@ -66,6 +101,7 @@ const EquipmentSelector = ({
 
   const [rides, setRides] = useState<Ride[]>([]);
   const [summaries, setSummaries] = useState<Record<string, MaintenanceSummary>>({});
+  const [pressureSummaries, setPressureSummaries] = useState<Record<string, PressureSummary>>({});
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -96,15 +132,95 @@ const EquipmentSelector = ({
       setRides(typedRides);
 
       if (typedRides.length) {
-        await Promise.all([
+        const loaders: Promise<void>[] = [
           loadMaintenanceSummaries(typedRides),
           loadThumbnails(typedRides),
-        ]);
+        ];
+        if (pressureMode) {
+          loaders.push(loadPressureSummaries(typedRides));
+        }
+        await Promise.all(loaders);
       }
     } catch (e) {
       console.error('Error loading rides:', e);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPressureSummaries = async (ridesList: Ride[]) => {
+    try {
+      const rideIds = ridesList.map(r => r.id);
+      // Get the latest session per ride with its lines
+      const { data: sessions } = await supabase
+        .from('pressure_sessions')
+        .select('id, ride_id, session_date, session_time, is_complete')
+        .in('ride_id', rideIds)
+        .order('session_date', { ascending: false })
+        .order('session_time', { ascending: false });
+
+      if (!sessions?.length) {
+        const empty: Record<string, PressureSummary> = {};
+        for (const r of ridesList) {
+          empty[r.id] = { status: 'no-sessions', label: 'No pressure sessions logged yet', lastDate: null };
+        }
+        setPressureSummaries(empty);
+        return;
+      }
+
+      // Get latest session per ride
+      const latestByRide: Record<string, typeof sessions[0]> = {};
+      for (const s of sessions) {
+        if (!latestByRide[s.ride_id]) latestByRide[s.ride_id] = s;
+      }
+
+      // Load lines for latest sessions
+      const latestIds = Object.values(latestByRide).map(s => s.id);
+      const { data: lines } = await supabase
+        .from('pressure_session_lines')
+        .select('session_id, pressure_value')
+        .in('session_id', latestIds);
+
+      // Load section configs for validation
+      const result: Record<string, PressureSummary> = {};
+
+      for (const ride of ridesList) {
+        const latest = latestByRide[ride.id];
+        if (!latest) {
+          result[ride.id] = { status: 'no-sessions', label: 'No pressure sessions logged yet', lastDate: null };
+          continue;
+        }
+
+        const sessionLines = (lines || []).filter(l => l.session_id === latest.id);
+        const lastDate = latest.session_date;
+
+        if (!latest.is_complete) {
+          result[ride.id] = { status: 'incomplete', label: 'Incomplete', lastDate };
+          continue;
+        }
+
+        // Check for out-of-range using ride's section_config
+        const sectionCfg = ((ride as any).section_config as Array<{ min_pressure?: number; max_pressure?: number }>) || [];
+        let hasOutOfRange = false;
+
+        sessionLines.forEach((line, idx) => {
+          if (line.pressure_value == null) return;
+          const limits = sectionCfg[idx];
+          if (!limits) return;
+          if (limits.min_pressure != null && line.pressure_value < limits.min_pressure) hasOutOfRange = true;
+          if (limits.max_pressure != null && line.pressure_value > limits.max_pressure) hasOutOfRange = true;
+        });
+
+        if (hasOutOfRange) {
+          result[ride.id] = { status: 'action-needed', label: 'Pressure action needed', lastDate };
+        } else {
+          result[ride.id] = { status: 'passed', label: 'Last session passed', lastDate };
+        }
+      }
+
+      setPressureSummaries(result);
+    } catch (e) {
+      console.warn('Could not load pressure summaries:', e);
     }
   };
 
@@ -219,6 +335,16 @@ const EquipmentSelector = ({
     return matchesSearch && matchesFilter;
   });
 
+  // In pressure mode, sort by priority: action-needed first, then incomplete, then no-sessions, then passed
+  const sortedRides = pressureMode
+    ? [...filteredRides].sort((a, b) => {
+        const order: Record<PressureStatus, number> = { 'action-needed': 0, 'incomplete': 1, 'no-sessions': 2, 'passed': 3 };
+        const sa = pressureSummaries[a.id]?.status ?? 'no-sessions';
+        const sb = pressureSummaries[b.id]?.status ?? 'no-sessions';
+        return order[sa] - order[sb];
+      })
+    : filteredRides;
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -291,29 +417,37 @@ const EquipmentSelector = ({
           title="No equipment found"
           description={emptyDescription}
         />
-      ) : filteredRides.length === 0 ? (
+      ) : sortedRides.length === 0 ? (
         <div className="text-center py-10 text-muted-foreground">
           <Filter className="h-6 w-6 mx-auto mb-1.5 opacity-40" />
           <p className="text-sm">No equipment matches your filter.</p>
         </div>
       ) : (
         <div className="space-y-2">
-          {filteredRides.map((ride) => {
+          {sortedRides.map((ride) => {
             const summary = summaries[ride.id];
+            const defectCount = summary?.openDefects ?? 0;
+            const pSummary = pressureMode ? (pressureSummaries[ride.id] ?? { status: 'no-sessions' as PressureStatus, label: 'No pressure sessions logged yet', lastDate: null }) : null;
+            const pCfg = pSummary ? PRESSURE_STATUS_CONFIG[pSummary.status] : null;
+
+            // In pressure mode, use pressure accent; otherwise use maintenance accent
             const statusKey = normalizeStatus(summary?.status ?? 'no-data');
             const statusCfg = STATUS_CONFIG[statusKey];
+            const accentClass = pressureMode && pCfg ? pCfg.accent : statusCfg.accent;
             const hasThumb = !!thumbs[ride.id];
-            const defectCount = summary?.openDefects ?? 0;
 
             return (
               <button
                 key={ride.id}
                 type="button"
                 onClick={() => onRideSelect(ride)}
-                className={`w-full text-left rounded-lg border border-border border-l-4 ${statusCfg.accent} bg-card hover:bg-accent/30 active:bg-accent/50 active:scale-[0.99] transition-all`}
+                className={cn(
+                  'w-full text-left rounded-lg border border-border border-l-4 bg-card hover:bg-accent/30 active:bg-accent/50 active:scale-[0.99] transition-all',
+                  accentClass,
+                )}
               >
                 <div className="flex items-center gap-3 p-3">
-                  {/* Thumbnail or compact icon */}
+                  {/* Thumbnail or icon — tinted by pressure status */}
                   {hasThumb ? (
                     <img
                       src={thumbs[ride.id]}
@@ -321,8 +455,17 @@ const EquipmentSelector = ({
                       className="w-14 h-14 rounded-lg object-cover shrink-0"
                     />
                   ) : (
-                    <div className="w-14 h-14 rounded-lg bg-muted/60 flex items-center justify-center shrink-0">
-                      <PlaceholderIcon className="h-5 w-5 text-muted-foreground/50" />
+                    <div className={cn(
+                      "w-14 h-14 rounded-lg flex items-center justify-center shrink-0",
+                      pressureMode && pSummary?.status === 'action-needed' ? 'bg-red-500/10' :
+                      pressureMode && pSummary?.status === 'passed' ? 'bg-emerald-500/10' :
+                      'bg-muted/60',
+                    )}>
+                      {pressureMode ? (
+                        <Gauge className={cn("h-5 w-5", pCfg?.iconClass ?? 'text-muted-foreground/50')} />
+                      ) : (
+                        <PlaceholderIcon className="h-5 w-5 text-muted-foreground/50" />
+                      )}
                     </div>
                   )}
 
@@ -339,28 +482,59 @@ const EquipmentSelector = ({
                             {defectCount} defect{defectCount > 1 ? 's' : ''}
                           </span>
                         )}
-                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border ${statusCfg.chipClass}`}>
-                          {statusCfg.label}
-                        </span>
+                        {!pressureMode && (
+                          <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded-full border ${statusCfg.chipClass}`}>
+                            {statusCfg.label}
+                          </span>
+                        )}
                       </div>
                     </div>
 
-                    {/* Compact summary row */}
-                    <div className="flex items-center gap-3 mt-1.5 text-[11px]">
-                      <span className="text-muted-foreground flex items-center gap-1">
-                        <CalendarDays className="h-3 w-3" />
-                        {summary?.lastServiceDate
-                          ? format(new Date(summary.lastServiceDate), 'd MMM yyyy')
-                          : <span className="italic">No maintenance logged</span>}
-                      </span>
-                      <span className="text-muted-foreground">·</span>
-                      <span className={`flex items-center gap-1 ${statusKey === 'overdue' ? 'text-destructive font-medium' : statusKey === 'due-soon' ? 'text-warning font-medium' : 'text-muted-foreground'}`}>
-                        <Clock className="h-3 w-3" />
-                        {summary?.nextDueDate
-                          ? format(new Date(summary.nextDueDate), 'd MMM yyyy')
-                          : <span className="italic">No due date set</span>}
-                      </span>
-                    </div>
+                    {/* Pressure status line (pressure mode) */}
+                    {pressureMode && pSummary && pCfg && (
+                      <div className="flex items-center gap-1.5 mt-1.5">
+                        <span className={cn(
+                          'inline-block h-2 w-2 rounded-full shrink-0',
+                          pSummary.status === 'action-needed' ? 'bg-red-500' :
+                          pSummary.status === 'passed' ? 'bg-emerald-500' :
+                          pSummary.status === 'incomplete' ? 'bg-amber-500' :
+                          'bg-muted-foreground/30',
+                        )} />
+                        <span className={cn(
+                          'text-[11px] font-medium',
+                          pSummary.status === 'action-needed' ? 'text-red-700 dark:text-red-400' :
+                          pSummary.status === 'passed' ? 'text-emerald-700 dark:text-emerald-400' :
+                          pSummary.status === 'incomplete' ? 'text-amber-700 dark:text-amber-400' :
+                          'text-muted-foreground',
+                        )}>
+                          {pSummary.label}
+                        </span>
+                        {pSummary.lastDate && (
+                          <span className="text-[10px] text-muted-foreground ml-1">
+                            · {format(new Date(pSummary.lastDate), 'd MMM yyyy')}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Maintenance summary row (non-pressure mode) */}
+                    {!pressureMode && (
+                      <div className="flex items-center gap-3 mt-1.5 text-[11px]">
+                        <span className="text-muted-foreground flex items-center gap-1">
+                          <CalendarDays className="h-3 w-3" />
+                          {summary?.lastServiceDate
+                            ? format(new Date(summary.lastServiceDate), 'd MMM yyyy')
+                            : <span className="italic">No maintenance logged</span>}
+                        </span>
+                        <span className="text-muted-foreground">·</span>
+                        <span className={`flex items-center gap-1 ${statusKey === 'overdue' ? 'text-destructive font-medium' : statusKey === 'due-soon' ? 'text-warning font-medium' : 'text-muted-foreground'}`}>
+                          <Clock className="h-3 w-3" />
+                          {summary?.nextDueDate
+                            ? format(new Date(summary.nextDueDate), 'd MMM yyyy')
+                            : <span className="italic">No due date set</span>}
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   {/* Chevron */}
