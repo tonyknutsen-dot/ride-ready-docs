@@ -375,14 +375,17 @@ const RideDetail = ({ ride, onBack, onUpdate, initialTab = "overview" }: RideDet
                   <DropdownMenuTrigger asChild>
                     <button
                       type="button"
-                      className={`flex flex-col items-center justify-center gap-1 py-2 text-[11px] font-semibold rounded-lg transition-all min-h-[44px] ${
+                      className={`relative flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-semibold rounded-lg transition-all min-h-[44px] ${
                         isMoreActive
                           ? 'bg-primary/10 text-primary'
                           : 'text-muted-foreground hover:text-foreground'
                       }`}
                     >
                       <MoreHorizontal className="h-3.5 w-3.5" strokeWidth={2} />
-                      {isMoreActive ? activeMoreLabel : 'More'}
+                      <span>More</span>
+                      {isMoreActive && activeMoreLabel && (
+                        <span className="text-[9px] font-medium text-primary/70 leading-none">{activeMoreLabel}</span>
+                      )}
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="min-w-[160px]">
