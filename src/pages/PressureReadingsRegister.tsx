@@ -801,9 +801,11 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
 
             return (
               <div key={session.id} className={cn(
-                "border border-border rounded-xl bg-card overflow-hidden transition-colors",
-                sessionStatus.color === 'red' && "border-l-2 border-l-red-500",
-                sessionStatus.color === 'yellow' && "border-l-2 border-l-amber-500",
+                "border rounded-xl bg-card overflow-hidden transition-colors",
+                sessionStatus.color === 'red' && "border-l-[3px] border-l-red-500 border-t-border border-r-border border-b-border",
+                sessionStatus.color === 'yellow' && "border-l-[3px] border-l-amber-500 border-t-border border-r-border border-b-border",
+                sessionStatus.color === 'green' && "border-border",
+                sessionStatus.color === 'grey' && "border-border",
               )}>
                 <button
                   type="button"
@@ -818,10 +820,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <Badge variant="outline" className="text-[10px] px-1.5 py-0 tabular-nums">{completedLines}/{totalLines}</Badge>
-                      <div className="flex items-center gap-1">
-                        <StatusDot color={sessionStatus.color} />
-                        <span className="text-[10px] font-medium">{sessionStatus.label}</span>
-                      </div>
+                      <SessionStatusChip status={sessionStatus} />
                       <ChevronDown className={cn("h-3.5 w-3.5 text-muted-foreground/40 transition-transform shrink-0", isExpanded && "rotate-180")} />
                     </div>
                   </div>
