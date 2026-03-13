@@ -106,8 +106,8 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
       {/* Pricing Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Ride-Based Pricing</CardTitle>
-          <CardDescription>Your plan adjusts automatically based on ride count</CardDescription>
+          <CardTitle>Item-Based Pricing</CardTitle>
+          <CardDescription>Your plan adjusts automatically based on registered item count</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="divide-y">
