@@ -54,6 +54,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [loading, setLoading] = useState(false);
   const [openRequest, setOpenRequest] = useState(false);
   const [showOverLimitDialog, setShowOverLimitDialog] = useState(false);
+  const [showTierUpgradeDialog, setShowTierUpgradeDialog] = useState(false);
   const [profileData, setProfileData] = useState<{ company_name?: string; full_name?: string } | null>(null);
   const [formData, setFormData] = useState({
     ride_name: ride?.ride_name || '',
