@@ -20,9 +20,11 @@ export type { RideTier } from '@/config/stripePricing';
 
 import {
   RIDE_TIERS,
+  SELF_SERVE_MAX,
   getRideTier,
   getTierLabel,
   getTierPrice,
+  exceedsSelfServe,
   type RideTier,
 } from '@/config/stripePricing';
 
