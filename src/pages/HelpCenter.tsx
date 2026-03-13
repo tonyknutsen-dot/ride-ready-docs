@@ -43,7 +43,7 @@ const coreModules: HelpTopic[] = [
       "Open any ride to upload documents, schedule inspections, and log maintenance.",
     ],
     faqs: [
-      { q: "How many rides can I add?", a: "Your plan tier is based on the number of billable rides. Starter: 1–5, Operator: 6–12, Professional: 13–25, Enterprise: 25+. Stalls, generators, and trailers are included free." },
+      { q: "How many items can I add?", a: "Each registered item counts toward your plan allowance. Starter: 1–5, Operator: 6–12, Professional: 13–25, Business: 26–50. Need more than 50 items? Contact us for a larger operator plan. Stalls, generators, and trailers are included free." },
       { q: "Can I manage different types of equipment?", a: "Yes — rides, stalls, inflatables, generators, food units, and more are all supported." },
     ],
   },
