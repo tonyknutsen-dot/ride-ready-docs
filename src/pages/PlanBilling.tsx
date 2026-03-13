@@ -401,7 +401,7 @@ export default function PlanBilling() {
                   <span className="font-semibold">{billable}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Free assets (stalls, generators, etc.)</span>
+                  <span className="text-sm text-muted-foreground">Non-billable items</span>
                   <span className="font-semibold">{subscription?.freeAssetCount ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
