@@ -1,6 +1,6 @@
 import { TrendingUp } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useSubscription, RIDE_TIERS, getRideTier, getTierLabel } from '@/hooks/useSubscription';
+import { useSubscription, RIDE_TIERS, getRideTier, getTierLabel, SELF_SERVE_MAX } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
