@@ -99,7 +99,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
           {hasActiveSubscription ? 'Manage Your Plan' : 'Choose Your Plan'}
         </h2>
         <p className="text-muted-foreground mt-2">
-          All-in-one compliance & operations system — priced by number of rides
+          All-in-one compliance & operations system — priced by registered items
         </p>
       </div>
 
