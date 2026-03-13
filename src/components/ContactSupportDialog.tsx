@@ -27,6 +27,9 @@ interface ContactSupportDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: ReactNode;
+  defaultSubject?: string;
+  defaultMessage?: string;
+  defaultPriority?: string;
 }
 
 export const ContactSupportDialog = ({ 
