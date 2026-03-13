@@ -64,14 +64,17 @@ export const OverLimitDialog = ({
               <div className="p-2 bg-warning/20 rounded-full">
                 <ShieldAlert className="h-5 w-5 text-warning" />
               </div>
-              <AlertDialogTitle>Self-serve plan limit reached</AlertDialogTitle>
+              <AlertDialogTitle>You've reached your plan limit</AlertDialogTitle>
             </div>
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-left">
-                <p>You've reached the maximum for self-serve plans.</p>
                 <p>
-                  Need more than {SELF_SERVE_MAX} items? Contact us and we'll help
-                  move you onto a larger operator plan.
+                  You've reached the maximum number of items included in
+                  self-serve plans.
+                </p>
+                <p>
+                  If you need more than {SELF_SERVE_MAX} items, contact us and
+                  we'll help you move onto a larger operator plan.
                 </p>
                 <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-1">
                   <div className="flex justify-between">
@@ -92,7 +95,7 @@ export const OverLimitDialog = ({
             </Button>
             <Button onClick={handleContactSupport}>
               <MessageCircle className="mr-2 h-4 w-4" />
-              Contact Support
+              Contact us about larger plans
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
