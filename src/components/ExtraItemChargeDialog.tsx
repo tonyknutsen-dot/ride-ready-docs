@@ -100,7 +100,7 @@ export const ExtraItemChargeDialog = ({
                 Processing...
               </>
             ) : (
-              tierChanging ? `Add Ride (moves to ${getTierLabel(newTier)})` : 'Add Ride'
+              tierChanging ? `Add Item (moves to ${getTierLabel(newTier)})` : 'Add Item'
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

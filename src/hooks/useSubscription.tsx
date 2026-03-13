@@ -76,7 +76,7 @@ export const useSubscription = () => {
         ? staffMembership.ownerId 
         : user.id;
 
-      // Fetch profile, total ride count, and billable ride count in parallel
+      // Fetch profile, total item count, and billable item count in parallel
       const [profileResult, totalRideResult, billableRideResult] = await Promise.all([
         supabase
           .from('profiles')

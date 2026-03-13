@@ -121,7 +121,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     ? categories.filter(c => c.category_group === formData.category_group)
     : [];
 
-  // Check if adding a billable ride would cross a pricing tier boundary
+  // Check if adding a billable item would cross a pricing tier boundary
   const selectedCategory = categories.find(c => c.id === formData.category_id);
   const selectedGroupCategories = categories.filter(c => c.category_group === formData.category_group);
   const isSelectedCategoryBillable = formData.category_id

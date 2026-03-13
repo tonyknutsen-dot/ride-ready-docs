@@ -181,7 +181,7 @@ const Pricing = () => {
                 Are any features locked behind higher plans?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
-                No. Every paying user gets access to every feature — documents, checks, maintenance, risk assessments, calendar, reports, and more. The only difference between tiers is the number of rides you can manage.
+                No. Every paying user gets access to every feature — documents, checks, maintenance, risk assessments, calendar, reports, and more. The only difference between tiers is the number of items you can manage.
               </AccordionContent>
             </AccordionItem>
 
