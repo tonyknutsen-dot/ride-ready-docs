@@ -368,7 +368,7 @@ export default function PlanBilling() {
                 </div>
                 <div>
                   <CardTitle className="text-base">Equipment Usage</CardTitle>
-                  <CardDescription className="text-xs">Your pricing is based on billable rides.</CardDescription>
+                  <CardDescription className="text-xs">Your pricing is based on billable registered items.</CardDescription>
                 </div>
               </div>
             </CardHeader>
