@@ -61,7 +61,7 @@ export const ExtraItemChargeDialog = ({
           <AlertDialogDescription asChild>
             <div className="space-y-4 text-left">
               <p>
-                You currently have <strong>{currentCount} billable rides</strong> on the{" "}
+                You currently have <strong>{currentCount} billable items</strong> on the{" "}
                 <strong>{getTierLabel(currentTier)}</strong> tier.
               </p>
               
