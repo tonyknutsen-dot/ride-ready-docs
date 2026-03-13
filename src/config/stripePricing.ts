@@ -52,8 +52,12 @@ export const getRideTier = (billableRideCount: number): RideTier => {
   if (billableRideCount <= 5) return 'starter';
   if (billableRideCount <= 12) return 'operator';
   if (billableRideCount <= 25) return 'professional';
-  return 'enterprise';
+  return 'business';
 };
+
+/** Whether the count exceeds self-serve tiers (requires custom plan) */
+export const exceedsSelfServe = (billableRideCount: number): boolean =>
+  billableRideCount > SELF_SERVE_MAX;
 
 export const getTierPrice = (tier: RideTier): number => RIDE_TIERS[tier].monthly;
 
