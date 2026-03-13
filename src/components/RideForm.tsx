@@ -586,10 +586,10 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           {wouldExceedTier && (
             <Alert className="mt-3 border-warning/30 bg-warning/10">
               <AlertTriangle className="h-4 w-4 text-warning" />
-              <AlertTitle className="text-warning">Tier limit reached</AlertTitle>
+              <AlertTitle className="text-warning">Self-serve plan limit reached</AlertTitle>
               <AlertDescription>
-                You have {subscription!.billableRideCount} of {subscription!.rideLimit} billable items on the {subscription!.tierLabel} tier. 
-                To add more, <button type="button" className="underline font-medium" onClick={() => navigate('/billing')}>upgrade your plan</button>.
+                You've reached the maximum for self-serve plans ({SELF_SERVE_MAX} items).
+                Need more? <button type="button" className="underline font-medium" onClick={() => setShowOverLimitDialog(true)}>Contact us</button> for a larger operator plan.
               </AlertDescription>
             </Alert>
           )}
