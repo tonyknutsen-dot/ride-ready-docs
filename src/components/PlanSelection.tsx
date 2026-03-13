@@ -153,7 +153,11 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
       </Card>
 
       <p className="text-xs text-center text-muted-foreground">
-        Stalls, kiosks & generators included free within paid plans.
+        Each registered item counts toward your plan allowance. Stalls, kiosks & generators included free.
+      </p>
+
+      <p className="text-xs text-center text-muted-foreground">
+        Need more than {SELF_SERVE_MAX} items? Contact us for a larger operator plan.
       </p>
 
       {!hasActiveSubscription && subscription && subscription.billableRideCount > 0 && (

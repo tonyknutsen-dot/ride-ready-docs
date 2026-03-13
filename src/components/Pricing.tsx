@@ -154,7 +154,7 @@ const Pricing = () => {
                 How does ride-based pricing work?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
-                Your plan is based on the number of rides you manage. Stalls, kiosks, generators, and support equipment are included free within any paid plan and don't count toward your ride total. Your billing adjusts automatically as you add or remove rides.
+                Your plan is based on the number of registered items you manage. Each item counts toward your plan allowance. Stalls, kiosks, generators, and support equipment are included free within any paid plan and don't count toward your total. Your billing adjusts automatically as you add or remove items. Need more than {SELF_SERVE_MAX} items? Contact us for a custom plan.
               </AccordionContent>
             </AccordionItem>
 
