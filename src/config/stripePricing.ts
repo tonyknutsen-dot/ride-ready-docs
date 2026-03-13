@@ -34,7 +34,7 @@ export const STRIPE_PRODUCT_IDS: Record<RideTier, string> = {
   starter: "prod_TzSQ7dF4G0dKJD",
   operator: "prod_TzSQDJ4tk7rqMD",
   professional: "prod_TzSQRtud9y5adH",
-  enterprise: "prod_TzSQUajo9gq5iY",
+  business: "prod_TzSQUajo9gq5iY",
 };
 
 // ── Product ID → tier reverse lookup ────────────────────────────────────────
