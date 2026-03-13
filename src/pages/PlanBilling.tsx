@@ -377,7 +377,7 @@ export default function PlanBilling() {
               {limit !== Infinity && (
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Billable rides used</span>
+                    <span className="text-sm text-muted-foreground">Billable items used</span>
                     <span className="text-sm font-bold text-foreground">{billable} of {limit}</span>
                   </div>
                   <div className="h-2 rounded-full bg-[#E2E8F0] overflow-hidden">
