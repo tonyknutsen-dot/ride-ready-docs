@@ -77,7 +77,7 @@ export const ExtraItemChargeDialog = ({
                   </div>
                   <div className="border-t pt-2 mt-2">
                     <p className="text-sm text-muted-foreground">
-                      Adding this ride will move you to the {getTierLabel(newTier)} tier. Your billing will adjust automatically.
+                      Adding this item will move you to the {getTierLabel(newTier)} tier. Your billing will adjust automatically.
                     </p>
                   </div>
                 </div>
