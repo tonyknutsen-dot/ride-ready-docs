@@ -45,6 +45,5 @@ export const formatTierName = (rideCount: number): string => {
 
 export const getTierDescription = (tier: RideTier): string => {
   const t = RIDE_TIERS[tier];
-  if (tier === 'enterprise') return `${t.min}+ rides`;
-  return `${t.min}–${t.max} rides`;
+  return `${t.min}–${t.max} items`;
 };

@@ -131,12 +131,13 @@ const Pricing = () => {
           </p>
         </div>
 
-        {/* Contact */}
-        <div className="text-center mt-8">
-          <p className="text-muted-foreground mb-4">Need a custom solution for your business?</p>
+        {/* Contact for 51+ */}
+        <div className="text-center mt-8 bg-muted/50 rounded-xl p-6 max-w-3xl mx-auto">
+          <p className="font-semibold mb-1">Need more than {SELF_SERVE_MAX} items?</p>
+          <p className="text-muted-foreground mb-4 text-sm">Contact us for a larger operator plan tailored to your operation.</p>
           <PublicContactDialog
-            triggerLabel="Contact Sales →"
-            triggerVariant="ghost"
+            triggerLabel="Talk to Us →"
+            triggerVariant="outline"
             triggerClassName="text-primary hover:text-primary hover:bg-primary/5"
           />
         </div>

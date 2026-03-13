@@ -9,10 +9,12 @@ export {
   RIDE_TIERS,
   STRIPE_PRICE_IDS,
   STRIPE_PRODUCT_IDS,
+  SELF_SERVE_MAX,
   getRideTier,
   getTierPrice,
   getTierLabel,
   getTierForRideCount,
+  exceedsSelfServe,
 } from '@/config/stripePricing';
 export type { RideTier } from '@/config/stripePricing';
 
