@@ -86,7 +86,7 @@ export const UpgradePrompt: React.FC<UpgradePromptProps> = ({
             <Zap className="mr-2 h-4 w-4" />
             View Plans
           </Button>
-          <p className="text-xs text-muted-foreground">Priced by number of rides • All features included</p>
+          <p className="text-xs text-muted-foreground">Priced by registered items • All features included</p>
         </div>
       </CardContent>
     </Card>

@@ -5,7 +5,7 @@
  * When changing pricing in Stripe, update ONLY this file.
  */
 
-// ── Ride-based pricing tiers ────────────────────────────────────────────────
+// ── Item-based pricing tiers ────────────────────────────────────────────────
 
 export const RIDE_TIERS = {
   starter: { min: 1, max: 5, monthly: 9.99, label: 'Starter' },

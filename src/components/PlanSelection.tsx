@@ -99,15 +99,15 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
           {hasActiveSubscription ? 'Manage Your Plan' : 'Choose Your Plan'}
         </h2>
         <p className="text-muted-foreground mt-2">
-          All-in-one compliance & operations system — priced by number of rides
+          All-in-one compliance & operations system — priced by registered items
         </p>
       </div>
 
       {/* Pricing Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Ride-Based Pricing</CardTitle>
-          <CardDescription>Your plan adjusts automatically based on ride count</CardDescription>
+          <CardTitle>Item-Based Pricing</CardTitle>
+          <CardDescription>Your plan adjusts automatically based on registered item count</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="divide-y">
@@ -162,7 +162,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
 
       {!hasActiveSubscription && subscription && subscription.billableRideCount > 0 && (
         <p className="text-sm text-center text-muted-foreground bg-muted/50 rounded-lg p-3">
-          You currently have <strong>{subscription.billableRideCount} billable ride{subscription.billableRideCount !== 1 ? 's' : ''}</strong>, 
+          You currently have <strong>{subscription.billableRideCount} billable item{subscription.billableRideCount !== 1 ? 's' : ''}</strong>, 
           so you'll be subscribed to the <strong>{subscription.tierLabel}</strong> tier (£{subscription.tierPrice.toFixed(2)}/mo).
         </p>
       )}

@@ -242,7 +242,7 @@ export default function PlanBilling() {
             </div>
             <div>
               <CardTitle className="text-base">Plan & Billing</CardTitle>
-              <CardDescription className="text-xs">Manage your ride-based subscription.</CardDescription>
+              <CardDescription className="text-xs">Manage your subscription.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -368,7 +368,7 @@ export default function PlanBilling() {
                 </div>
                 <div>
                   <CardTitle className="text-base">Equipment Usage</CardTitle>
-                  <CardDescription className="text-xs">Your pricing is based on billable rides.</CardDescription>
+                  <CardDescription className="text-xs">Your pricing is based on billable registered items.</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -377,7 +377,7 @@ export default function PlanBilling() {
               {limit !== Infinity && (
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm text-muted-foreground">Billable rides used</span>
+                    <span className="text-sm text-muted-foreground">Billable items used</span>
                     <span className="text-sm font-bold text-foreground">{billable} of {limit}</span>
                   </div>
                   <div className="h-2 rounded-full bg-[#E2E8F0] overflow-hidden">
@@ -397,17 +397,17 @@ export default function PlanBilling() {
               {/* Stats row */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Billable rides</span>
+                  <span className="text-sm text-muted-foreground">Billable items</span>
                   <span className="font-semibold">{billable}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Free assets (stalls, generators, etc.)</span>
+                  <span className="text-sm text-muted-foreground">Non-billable items</span>
                   <span className="font-semibold">{subscription?.freeAssetCount ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-sm font-medium">Current tier</span>
                   <Badge variant="outline" className="bg-[#EEF2FF] border-[#C7D2FE] text-[#4F46E5] text-[11px]">
-                    {subscription?.tierLabel} — up to {limit === Infinity ? 'unlimited' : limit} rides
+                    {subscription?.tierLabel} — up to {limit === Infinity ? 'unlimited' : limit} items
                   </Badge>
                 </div>
               </div>
