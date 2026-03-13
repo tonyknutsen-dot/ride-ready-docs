@@ -127,7 +127,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     setSuggestionsLoading(true);
     try {
       const cat = ride.category_id || null;
-      const resolvedGroup = equipmentGroup || 'rides';
+      const resolvedGroup = equipmentGroup;
+      if (!resolvedGroup) { setSuggestionsLoading(false); return; }
       let query = supabase
         .from('check_library_items')
         .select('id,label,hint,risk_level,ride_category_id')
