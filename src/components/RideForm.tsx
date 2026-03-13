@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
 import { useSubscription, getRideTier, getTierLabel, RIDE_TIERS, SELF_SERVE_MAX } from '@/hooks/useSubscription';
 import { OverLimitDialog } from '@/components/OverLimitDialog';
+import { TierUpgradeDialog, getTierCrossing } from '@/components/TierUpgradeDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
 import { compressImage } from '@/utils/imageCompression';
@@ -53,6 +54,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [loading, setLoading] = useState(false);
   const [openRequest, setOpenRequest] = useState(false);
   const [showOverLimitDialog, setShowOverLimitDialog] = useState(false);
+  const [showTierUpgradeDialog, setShowTierUpgradeDialog] = useState(false);
   const [profileData, setProfileData] = useState<{ company_name?: string; full_name?: string } | null>(null);
   const [formData, setFormData] = useState({
     ride_name: ride?.ride_name || '',
@@ -119,13 +121,17 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     ? categories.filter(c => c.category_group === formData.category_group)
     : [];
 
-  // Check if adding a billable ride would exceed the current tier
+  // Check if adding a billable ride would cross a pricing tier boundary
   const selectedCategory = categories.find(c => c.id === formData.category_id);
   const selectedGroupCategories = categories.filter(c => c.category_group === formData.category_group);
   const isSelectedCategoryBillable = formData.category_id
     ? selectedCategory?.is_billable !== false
     : selectedGroupCategories.length > 0 ? selectedGroupCategories[0]?.is_billable !== false : false;
-  const wouldExceedTier = !isEditMode && subscription && isSelectedCategoryBillable && !subscription.canAddRide && subscription.subscriptionStatus === 'active';
+  
+  const tierCrossing = !isEditMode && subscription && isSelectedCategoryBillable
+    ? getTierCrossing(subscription.billableRideCount)
+    : null;
+  const wouldExceedTier = !!tierCrossing;
 
   // Soft mismatch warning: if name suggests a billable item but category is non-billable
   const BILLABLE_KEYWORDS = [
@@ -294,9 +300,9 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       return;
     }
     
-    // If adding a billable ride would exceed self-serve cap, show over-limit dialog
+    // If adding a billable item would cross a tier boundary, show upgrade dialog BEFORE insert
     if (wouldExceedTier) {
-      setShowOverLimitDialog(true);
+      setShowTierUpgradeDialog(true);
       return;
     }
     
@@ -588,13 +594,18 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               {subscription.billableRideCount} of {subscription.rideLimit} billable items on {subscription.tierLabel} tier
             </p>
           )}
-          {wouldExceedTier && (
+          {wouldExceedTier && tierCrossing && (
             <Alert className="mt-3 border-warning/30 bg-warning/10">
               <AlertTriangle className="h-4 w-4 text-warning" />
-              <AlertTitle className="text-warning">You've reached your plan limit</AlertTitle>
+              <AlertTitle className="text-warning">
+                {tierCrossing.type === 'self_serve_cap'
+                  ? "You've reached your plan limit"
+                  : `${subscription!.tierLabel} plan limit reached`}
+              </AlertTitle>
               <AlertDescription>
-                You've reached the self-serve plan limit of {SELF_SERVE_MAX} items.
-                Need more capacity? <button type="button" className="underline font-medium" onClick={() => setShowOverLimitDialog(true)}>Contact us</button> about a larger operator plan.
+                {tierCrossing.type === 'self_serve_cap'
+                  ? `You've reached the self-serve plan limit of ${SELF_SERVE_MAX} items. Contact us about a larger operator plan.`
+                  : `Your ${subscription!.tierLabel} plan allows up to ${tierCrossing.fromMax} items. Adding this item requires upgrading to the ${tierCrossing.toTier ? getTierLabel(tierCrossing.toTier) : 'next'} tier.`}
               </AlertDescription>
             </Alert>
           )}
@@ -1120,7 +1131,19 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       {/* Request Category dialog */}
       <RequestRideTypeDialog open={openRequest} onOpenChange={setOpenRequest} />
 
-      {/* Over-limit dialog */}
+      {/* Tier upgrade / over-limit dialog */}
+      {subscription && (
+        <TierUpgradeDialog
+          open={showTierUpgradeDialog}
+          onOpenChange={setShowTierUpgradeDialog}
+          currentBillableCount={subscription.billableRideCount}
+          currentTierLabel={subscription.tierLabel}
+          organisationName={profileData?.company_name}
+          userEmail={user?.email}
+        />
+      )}
+
+      {/* Fallback: RLS-level block still shows OverLimitDialog */}
       {subscription && (
         <OverLimitDialog
           open={showOverLimitDialog}
