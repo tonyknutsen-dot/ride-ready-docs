@@ -29,10 +29,10 @@ const allFeatures = [
 ];
 
 const tiers: { key: RideTier; rides: string }[] = [
-  { key: "starter", rides: "1–5 rides" },
-  { key: "operator", rides: "6–12 rides" },
-  { key: "professional", rides: "13–25 rides" },
-  { key: "enterprise", rides: "25+ rides" },
+  { key: "starter", rides: "1–5 items" },
+  { key: "operator", rides: "6–12 items" },
+  { key: "professional", rides: "13–25 items" },
+  { key: "business", rides: "26–50 items" },
 ];
 
 const Pricing = () => {
