@@ -61,7 +61,7 @@ export const ExtraItemChargeDialog = ({
           <AlertDialogDescription asChild>
             <div className="space-y-4 text-left">
               <p>
-                You currently have <strong>{currentCount} billable rides</strong> on the{" "}
+                You currently have <strong>{currentCount} billable items</strong> on the{" "}
                 <strong>{getTierLabel(currentTier)}</strong> tier.
               </p>
               
@@ -77,14 +77,14 @@ export const ExtraItemChargeDialog = ({
                   </div>
                   <div className="border-t pt-2 mt-2">
                     <p className="text-sm text-muted-foreground">
-                      Adding this ride will move you to the {getTierLabel(newTier)} tier. Your billing will adjust automatically.
+                      Adding this item will move you to the {getTierLabel(newTier)} tier. Your billing will adjust automatically.
                     </p>
                   </div>
                 </div>
               ) : (
                 <div className="bg-muted/50 rounded-lg p-4">
                   <p className="text-sm text-muted-foreground">
-                    This ride fits within your current {getTierLabel(currentTier)} tier (up to {RIDE_TIERS[currentTier].max} rides). No pricing change.
+                    This item fits within your current {getTierLabel(currentTier)} tier (up to {RIDE_TIERS[currentTier].max} items). No pricing change.
                   </p>
                 </div>
               )}
@@ -100,7 +100,7 @@ export const ExtraItemChargeDialog = ({
                 Processing...
               </>
             ) : (
-              tierChanging ? `Add Ride (moves to ${getTierLabel(newTier)})` : 'Add Ride'
+              tierChanging ? `Add Item (moves to ${getTierLabel(newTier)})` : 'Add Item'
             )}
           </AlertDialogAction>
         </AlertDialogFooter>

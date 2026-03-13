@@ -51,7 +51,7 @@ const Pricing = () => {
             Each registered item counts toward your plan allowance. Every feature included.
           </p>
           <p className="text-sm text-muted-foreground">
-            Stalls, kiosks & generators included free within paid plans.
+            Billable items include rides, inflatables, stalls, attractions, food stalls, games, and equipment.
           </p>
         </div>
 
@@ -60,7 +60,7 @@ const Pricing = () => {
           <CardContent className="p-0">
             {/* Table Header */}
             <div className="grid grid-cols-3 gap-4 px-6 py-4 bg-primary/5 border-b font-semibold text-sm">
-              <span>Ride Count</span>
+              <span>Item Count</span>
               <span className="text-center">Monthly Price</span>
               <span className="text-right">Includes</span>
             </div>
@@ -151,7 +151,7 @@ const Pricing = () => {
           <Accordion type="single" collapsible className="space-y-3">
             <AccordionItem value="pricing" className="border-2 border-primary/20 rounded-lg px-6 bg-gradient-to-r from-card to-primary/[0.02]">
               <AccordionTrigger className="text-left font-medium hover:no-underline py-4">
-                How does ride-based pricing work?
+                How does item-based pricing work?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
                 Your plan is based on the number of registered items you manage. Each item counts toward your plan allowance. Stalls, kiosks, generators, and support equipment are included free within any paid plan and don't count toward your total. Your billing adjusts automatically as you add or remove items. Need more than {SELF_SERVE_MAX} items? Contact us for a custom plan.
@@ -172,7 +172,7 @@ const Pricing = () => {
                 Do stalls and generators count toward my plan?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
-                No. Stalls, kiosks, generators, trailers, and support equipment are included free within any paid plan. Only rides and inflatables count toward your ride tier pricing.
+                All registered items count toward your plan allowance. Your billing adjusts automatically as you add or remove items.
               </AccordionContent>
             </AccordionItem>
 
@@ -181,7 +181,7 @@ const Pricing = () => {
                 Are any features locked behind higher plans?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
-                No. Every paying user gets access to every feature — documents, checks, maintenance, risk assessments, calendar, reports, and more. The only difference between tiers is the number of rides you can manage.
+                No. Every paying user gets access to every feature — documents, checks, maintenance, risk assessments, calendar, reports, and more. The only difference between tiers is the number of items you can manage.
               </AccordionContent>
             </AccordionItem>
 
