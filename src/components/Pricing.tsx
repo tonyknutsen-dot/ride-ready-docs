@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Check, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { RIDE_TIERS, getTierLabel, type RideTier } from "@/hooks/useSubscription";
+import { RIDE_TIERS, getTierLabel, SELF_SERVE_MAX, type RideTier } from "@/hooks/useSubscription";
 import {
   Accordion,
   AccordionContent,
