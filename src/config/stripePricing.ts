@@ -43,7 +43,7 @@ export const PRODUCT_TO_TIER: Record<string, RideTier> = {
   [STRIPE_PRODUCT_IDS.starter]: "starter",
   [STRIPE_PRODUCT_IDS.operator]: "operator",
   [STRIPE_PRODUCT_IDS.professional]: "professional",
-  [STRIPE_PRODUCT_IDS.enterprise]: "enterprise",
+  [STRIPE_PRODUCT_IDS.business]: "business",
 };
 
 // ── Tier helpers ────────────────────────────────────────────────────────────
