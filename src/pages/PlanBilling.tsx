@@ -242,7 +242,7 @@ export default function PlanBilling() {
             </div>
             <div>
               <CardTitle className="text-base">Plan & Billing</CardTitle>
-              <CardDescription className="text-xs">Manage your ride-based subscription.</CardDescription>
+              <CardDescription className="text-xs">Manage your subscription.</CardDescription>
             </div>
           </div>
         </CardHeader>
