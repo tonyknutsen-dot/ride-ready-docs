@@ -48,7 +48,7 @@ const Pricing = () => {
             All-in-One Ride <span className="text-primary">Compliance System</span>
           </h2>
           <p className="text-lg text-muted-foreground mb-2">
-            Priced fairly by number of rides. Every feature included.
+            Each registered item counts toward your plan allowance. Every feature included.
           </p>
           <p className="text-sm text-muted-foreground">
             Stalls, kiosks & generators included free within paid plans.
