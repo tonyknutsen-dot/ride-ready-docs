@@ -121,13 +121,17 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     ? categories.filter(c => c.category_group === formData.category_group)
     : [];
 
-  // Check if adding a billable ride would exceed the current tier
+  // Check if adding a billable ride would cross a pricing tier boundary
   const selectedCategory = categories.find(c => c.id === formData.category_id);
   const selectedGroupCategories = categories.filter(c => c.category_group === formData.category_group);
   const isSelectedCategoryBillable = formData.category_id
     ? selectedCategory?.is_billable !== false
     : selectedGroupCategories.length > 0 ? selectedGroupCategories[0]?.is_billable !== false : false;
-  const wouldExceedTier = !isEditMode && subscription && isSelectedCategoryBillable && !subscription.canAddRide && subscription.subscriptionStatus === 'active';
+  
+  const tierCrossing = !isEditMode && subscription && isSelectedCategoryBillable
+    ? getTierCrossing(subscription.billableRideCount)
+    : null;
+  const wouldExceedTier = !!tierCrossing;
 
   // Soft mismatch warning: if name suggests a billable item but category is non-billable
   const BILLABLE_KEYWORDS = [
