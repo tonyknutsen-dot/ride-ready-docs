@@ -594,13 +594,18 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               {subscription.billableRideCount} of {subscription.rideLimit} billable items on {subscription.tierLabel} tier
             </p>
           )}
-          {wouldExceedTier && (
+          {wouldExceedTier && tierCrossing && (
             <Alert className="mt-3 border-warning/30 bg-warning/10">
               <AlertTriangle className="h-4 w-4 text-warning" />
-              <AlertTitle className="text-warning">You've reached your plan limit</AlertTitle>
+              <AlertTitle className="text-warning">
+                {tierCrossing.type === 'self_serve_cap'
+                  ? "You've reached your plan limit"
+                  : `${subscription!.tierLabel} plan limit reached`}
+              </AlertTitle>
               <AlertDescription>
-                You've reached the self-serve plan limit of {SELF_SERVE_MAX} items.
-                Need more capacity? <button type="button" className="underline font-medium" onClick={() => setShowOverLimitDialog(true)}>Contact us</button> about a larger operator plan.
+                {tierCrossing.type === 'self_serve_cap'
+                  ? `You've reached the self-serve plan limit of ${SELF_SERVE_MAX} items. Contact us about a larger operator plan.`
+                  : `Your ${subscription!.tierLabel} plan allows up to ${tierCrossing.fromMax} items. Adding this item requires upgrading to the ${tierCrossing.toTier ? getTierLabel(tierCrossing.toTier) : 'next'} tier.`}
               </AlertDescription>
             </Alert>
           )}
