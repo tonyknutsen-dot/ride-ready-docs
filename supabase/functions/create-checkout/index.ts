@@ -86,6 +86,25 @@ serve(async (req) => {
     if (customers.data.length > 0) {
       customerId = customers.data[0].id;
       logStep("Existing customer found", { customerId });
+
+      // Guard: prevent duplicate subscriptions — one customer, one active subscription
+      const existingSubs = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "active",
+        limit: 1,
+      });
+      if (existingSubs.data.length > 0) {
+        logStep("Active subscription already exists — blocking new checkout", {
+          subscriptionId: existingSubs.data[0].id,
+        });
+        return new Response(
+          JSON.stringify({
+            error: "You already have an active subscription. Use the customer portal to change your plan.",
+            existingSubscription: true,
+          }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 409 }
+        );
+      }
     }
 
     const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = [
