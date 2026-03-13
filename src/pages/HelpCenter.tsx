@@ -43,7 +43,7 @@ const coreModules: HelpTopic[] = [
       "Open any ride to upload documents, schedule inspections, and log maintenance.",
     ],
     faqs: [
-      { q: "How many rides can I add?", a: "Your plan tier is based on the number of billable rides. Starter: 1–5, Operator: 6–12, Professional: 13–25, Enterprise: 25+. Stalls, generators, and trailers are included free." },
+      { q: "How many items can I add?", a: "Each registered item counts toward your plan allowance. Starter: 1–5, Operator: 6–12, Professional: 13–25, Business: 26–50. Need more than 50 items? Contact us for a larger operator plan. Stalls, generators, and trailers are included free." },
       { q: "Can I manage different types of equipment?", a: "Yes — rides, stalls, inflatables, generators, food units, and more are all supported." },
     ],
   },
@@ -384,7 +384,7 @@ const HelpCenter = () => {
                   {
                     category: "Account & Billing",
                     questions: [
-                      { q: "How does pricing work?", a: "Starter (1–5 rides) £9.99/mo · Operator (6–12) £19.99/mo · Professional (13–25) £34.99/mo · Enterprise (25+) £44.99/mo. All plans include every feature. Stalls and generators are free." },
+                      { q: "How does pricing work?", a: "Starter (1–5 items) £9.99/mo · Operator (6–12) £19.99/mo · Professional (13–25) £34.99/mo · Business (26–50) £44.99/mo. All plans include every feature. Stalls and generators are free. Need more than 50 items? Contact us." },
                       { q: "Can I cancel my subscription?", a: "Yes, cancel anytime from Settings > Plan & Billing. Access continues until the end of your paid period. Data retained for 90 days." },
                     ],
                   },

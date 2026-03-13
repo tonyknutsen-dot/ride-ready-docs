@@ -75,7 +75,7 @@ serve(async (req) => {
 
     const priceId = TIER_PRICE_IDS[tier as RideTier];
     if (!priceId) {
-      throw new Error(`Invalid tier: ${tier}. Valid tiers: starter, operator, professional, enterprise`);
+      throw new Error(`Invalid tier: ${tier}. Valid tiers: starter, operator, professional, business`);
     }
     logStep("Price ID determined", { tier, priceId });
 

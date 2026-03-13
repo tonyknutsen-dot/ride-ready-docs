@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Check, Star } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { RIDE_TIERS, getTierLabel, type RideTier } from "@/hooks/useSubscription";
+import { RIDE_TIERS, getTierLabel, SELF_SERVE_MAX, type RideTier } from "@/hooks/useSubscription";
 import {
   Accordion,
   AccordionContent,
@@ -29,10 +29,10 @@ const allFeatures = [
 ];
 
 const tiers: { key: RideTier; rides: string }[] = [
-  { key: "starter", rides: "1–5 rides" },
-  { key: "operator", rides: "6–12 rides" },
-  { key: "professional", rides: "13–25 rides" },
-  { key: "enterprise", rides: "25+ rides" },
+  { key: "starter", rides: "1–5 items" },
+  { key: "operator", rides: "6–12 items" },
+  { key: "professional", rides: "13–25 items" },
+  { key: "business", rides: "26–50 items" },
 ];
 
 const Pricing = () => {
@@ -48,7 +48,7 @@ const Pricing = () => {
             All-in-One Ride <span className="text-primary">Compliance System</span>
           </h2>
           <p className="text-lg text-muted-foreground mb-2">
-            Priced fairly by number of rides. Every feature included.
+            Each registered item counts toward your plan allowance. Every feature included.
           </p>
           <p className="text-sm text-muted-foreground">
             Stalls, kiosks & generators included free within paid plans.
@@ -131,12 +131,13 @@ const Pricing = () => {
           </p>
         </div>
 
-        {/* Contact */}
-        <div className="text-center mt-8">
-          <p className="text-muted-foreground mb-4">Need a custom solution for your business?</p>
+        {/* Contact for 51+ */}
+        <div className="text-center mt-8 bg-muted/50 rounded-xl p-6 max-w-3xl mx-auto">
+          <p className="font-semibold mb-1">Need more than {SELF_SERVE_MAX} items?</p>
+          <p className="text-muted-foreground mb-4 text-sm">Contact us for a larger operator plan tailored to your operation.</p>
           <PublicContactDialog
-            triggerLabel="Contact Sales →"
-            triggerVariant="ghost"
+            triggerLabel="Talk to Us →"
+            triggerVariant="outline"
             triggerClassName="text-primary hover:text-primary hover:bg-primary/5"
           />
         </div>
@@ -153,7 +154,7 @@ const Pricing = () => {
                 How does ride-based pricing work?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
-                Your plan is based on the number of rides you manage. Stalls, kiosks, generators, and support equipment are included free within any paid plan and don't count toward your ride total. Your billing adjusts automatically as you add or remove rides.
+                Your plan is based on the number of registered items you manage. Each item counts toward your plan allowance. Stalls, kiosks, generators, and support equipment are included free within any paid plan and don't count toward your total. Your billing adjusts automatically as you add or remove items. Need more than {SELF_SERVE_MAX} items? Contact us for a custom plan.
               </AccordionContent>
             </AccordionItem>
 

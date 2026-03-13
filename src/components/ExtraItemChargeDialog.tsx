@@ -8,7 +8,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { RIDE_TIERS, getRideTier, getTierLabel, getTierPrice } from "@/hooks/useSubscription";
+import { RIDE_TIERS, getRideTier, getTierLabel, getTierPrice, SELF_SERVE_MAX } from "@/hooks/useSubscription";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useState } from "react";
 

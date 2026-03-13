@@ -1,6 +1,6 @@
 import { TrendingUp } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useSubscription, RIDE_TIERS, getRideTier, getTierLabel } from '@/hooks/useSubscription';
+import { useSubscription, RIDE_TIERS, getRideTier, getTierLabel, SELF_SERVE_MAX } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -23,13 +23,31 @@ export const ItemLimitWarning = ({ className }: ItemLimitWarningProps) => {
   const tierInfo = RIDE_TIERS[currentTier];
   
   // Check if nearing tier boundary (within 1 ride of next tier)
-  if (currentTier === 'enterprise') return null; // Already at highest tier
+  if (currentTier === 'business') {
+    // Near the self-serve cap?
+    const ridesUntilCap = SELF_SERVE_MAX - billableRideCount;
+    if (ridesUntilCap <= 2 && ridesUntilCap > 0) {
+      return (
+        <Alert className={`border-blue-500/30 bg-blue-50/50 dark:bg-blue-950/20 ${className}`}>
+          <TrendingUp className="h-4 w-4 text-blue-600" />
+          <AlertTitle className="text-blue-800 dark:text-blue-200">
+            {ridesUntilCap} {ridesUntilCap === 1 ? 'item' : 'items'} until plan limit
+          </AlertTitle>
+          <AlertDescription className="text-blue-700 dark:text-blue-300">
+            You have {billableRideCount} of {SELF_SERVE_MAX} items in the {getTierLabel(currentTier)} tier (£{tierInfo.monthly}/mo). 
+            Need more than {SELF_SERVE_MAX} items? Contact us for a larger operator plan.
+          </AlertDescription>
+        </Alert>
+      );
+    }
+    return null;
+  }
   
   const ridesUntilNextTier = tierInfo.max - billableRideCount;
   
   if (ridesUntilNextTier > 2) return null; // Not near limit
 
-  const nextTierKey = currentTier === 'starter' ? 'operator' : currentTier === 'operator' ? 'professional' : 'enterprise';
+  const nextTierKey = currentTier === 'starter' ? 'operator' : currentTier === 'operator' ? 'professional' : 'business';
   const nextTier = RIDE_TIERS[nextTierKey as keyof typeof RIDE_TIERS];
 
   if (ridesUntilNextTier <= 0) {

@@ -67,10 +67,11 @@ const TermsOfService = () => {
                   Plans are priced by the number of rides you manage. All plans include every feature. Stalls, generators, and support equipment are included free.
                 </p>
                 <ul className="list-disc pl-6 text-muted-foreground space-y-2 mb-4">
-                  <li><strong>Starter:</strong> 1–5 rides — £9.99/month</li>
-                  <li><strong>Operator:</strong> 6–12 rides — £19.99/month</li>
-                  <li><strong>Professional:</strong> 13–25 rides — £34.99/month</li>
-                  <li><strong>Enterprise:</strong> 25+ rides — £44.99/month</li>
+                  <li><strong>Starter:</strong> 1–5 items — £9.99/month</li>
+                  <li><strong>Operator:</strong> 6–12 items — £19.99/month</li>
+                  <li><strong>Professional:</strong> 13–25 items — £34.99/month</li>
+                  <li><strong>Business:</strong> 26–50 items — £44.99/month</li>
+                  <li>For more than 50 items, contact us for a custom plan.</li>
                 </ul>
 
                 <h3 className="text-xl font-semibold mb-2">4.3 Payment Terms</h3>

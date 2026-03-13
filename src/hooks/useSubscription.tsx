@@ -9,18 +9,22 @@ export {
   RIDE_TIERS,
   STRIPE_PRICE_IDS,
   STRIPE_PRODUCT_IDS,
+  SELF_SERVE_MAX,
   getRideTier,
   getTierPrice,
   getTierLabel,
   getTierForRideCount,
+  exceedsSelfServe,
 } from '@/config/stripePricing';
 export type { RideTier } from '@/config/stripePricing';
 
 import {
   RIDE_TIERS,
+  SELF_SERVE_MAX,
   getRideTier,
   getTierLabel,
   getTierPrice,
+  exceedsSelfServe,
   type RideTier,
 } from '@/config/stripePricing';
 
@@ -167,8 +171,8 @@ export const useSubscription = () => {
           rideCount: totalRideCount,
           billableRideCount,
           freeAssetCount,
-          rideLimit: RIDE_TIERS[currentTier].max === Infinity ? 999 : RIDE_TIERS[currentTier].max,
-          canAddRide: mappedStatus === 'trial' || (mappedStatus === 'active' && billableRideCount < (RIDE_TIERS[currentTier].max === Infinity ? 999 : RIDE_TIERS[currentTier].max)),
+          rideLimit: RIDE_TIERS[currentTier].max,
+          canAddRide: mappedStatus === 'trial' || (mappedStatus === 'active' && billableRideCount < SELF_SERVE_MAX),
           extraItemsCount: data.extra_items_count || 0,
           currentPeriodEnd: data.current_period_end,
           hasStripeCustomer: mappedStatus === 'active' || mappedStatus === 'past_due',
