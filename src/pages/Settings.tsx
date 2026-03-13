@@ -544,7 +544,7 @@ const Settings = () => {
         {!isStaff && (
           <Card
             className="cursor-pointer hover:border-primary/40 transition-colors"
-            onClick={() => navigate('/plan-billing')}
+            onClick={() => navigate('/billing')}
           >
             <CardContent className="flex items-center justify-between py-4 px-5">
               <div className="flex items-center gap-3">

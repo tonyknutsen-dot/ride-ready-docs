@@ -74,7 +74,7 @@ export const TierUpgradeDialog = ({
     onOpenChange(false);
     // Store return path so user can come back after upgrading
     sessionStorage.setItem('upgrade_return_path', window.location.pathname);
-    navigate('/plan-billing');
+    navigate('/billing');
   };
 
   const handleContactSupport = () => {

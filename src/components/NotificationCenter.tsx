@@ -152,7 +152,7 @@ const getActionRoute = (n: Notification): string | null => {
   if (title.includes('maintenance')) return '/maintenance';
   if (n.related_table === 'maintenance_records') return '/maintenance';
   if (title.includes('wind') || title.includes('threshold') || title.includes('pack-away')) return '/wind-log';
-  if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return '/plan-billing';
+  if (title.includes('billing') || title.includes('plan') || title.includes('limit')) return '/billing';
   if (title.includes('security') || title.includes('role')) return '/security';
   return null;
 };

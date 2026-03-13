@@ -77,7 +77,7 @@ export const ItemLimitWarning = ({ className }: ItemLimitWarningProps) => {
             Adding more items will move you to the {getTierLabel(nextTierKey as any)} tier at £{nextTier.monthly}/mo.
           </p>
           <div className="flex gap-2 pt-1">
-            <Button size="sm" variant="outline" onClick={() => navigate('/plan-billing')}>
+            <Button size="sm" variant="outline" onClick={() => navigate('/billing')}>
               Upgrade plan
             </Button>
           </div>
