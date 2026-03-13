@@ -397,7 +397,7 @@ export default function PlanBilling() {
               {/* Stats row */}
               <div className="space-y-2">
                 <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Billable rides</span>
+                  <span className="text-sm text-muted-foreground">Billable items</span>
                   <span className="font-semibold">{billable}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b border-border">
