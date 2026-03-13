@@ -51,7 +51,7 @@ const Pricing = () => {
             Each registered item counts toward your plan allowance. Every feature included.
           </p>
           <p className="text-sm text-muted-foreground">
-            Stalls, kiosks & generators included free within paid plans.
+            Billable items include rides, inflatables, stalls, attractions, food stalls, games, and equipment.
           </p>
         </div>
 
