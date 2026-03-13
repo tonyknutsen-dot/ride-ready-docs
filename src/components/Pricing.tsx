@@ -172,7 +172,7 @@ const Pricing = () => {
                 Do stalls and generators count toward my plan?
               </AccordionTrigger>
               <AccordionContent className="text-muted-foreground pb-4">
-                No. Stalls, kiosks, generators, trailers, and support equipment are included free within any paid plan. Only rides and inflatables count toward your ride tier pricing.
+                All registered items count toward your plan allowance. Your billing adjusts automatically as you add or remove items.
               </AccordionContent>
             </AccordionItem>
 
