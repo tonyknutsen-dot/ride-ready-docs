@@ -85,25 +85,27 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   };
 
 
-  // Pre-fill controller name from profile for new rides
+  // Pre-fill controller name from profile for new rides + load profile data for over-limit dialog
   useEffect(() => {
-    if (isEditMode || formData.owner_name) return;
-    const loadControllerName = async () => {
-      if (!user) return;
+    if (!user) return;
+    const loadProfile = async () => {
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('controller_name')
+          .select('controller_name, company_name, full_name')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (data?.controller_name) {
-          setFormData(prev => ({ ...prev, owner_name: data.controller_name! }));
+        if (data) {
+          setProfileData({ company_name: data.company_name ?? undefined, full_name: data.full_name ?? undefined });
+          if (!isEditMode && !formData.owner_name && data.controller_name) {
+            setFormData(prev => ({ ...prev, owner_name: data.controller_name! }));
+          }
         }
       } catch (e) {
         // Non-critical, ignore
       }
     };
-    loadControllerName();
+    loadProfile();
   }, [user, isEditMode]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoFile, setPhotoFile] = useState<File | null>(null);
