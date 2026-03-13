@@ -300,9 +300,9 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       return;
     }
     
-    // If adding a billable ride would exceed self-serve cap, show over-limit dialog
+    // If adding a billable item would cross a tier boundary, show upgrade dialog BEFORE insert
     if (wouldExceedTier) {
-      setShowOverLimitDialog(true);
+      setShowTierUpgradeDialog(true);
       return;
     }
     
