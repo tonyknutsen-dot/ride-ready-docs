@@ -27,12 +27,18 @@ interface ContactSupportDialogProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   trigger?: ReactNode;
+  defaultSubject?: string;
+  defaultMessage?: string;
+  defaultPriority?: string;
 }
 
 export const ContactSupportDialog = ({ 
   open: controlledOpen, 
   onOpenChange: controlledOnOpenChange,
-  trigger
+  trigger,
+  defaultSubject,
+  defaultMessage,
+  defaultPriority,
 }: ContactSupportDialogProps = {}) => {
   const { user } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
@@ -50,9 +56,9 @@ export const ContactSupportDialog = ({
   };
 
   const [formData, setFormData] = useState({
-    subject: '',
-    message: '',
-    priority: 'normal',
+    subject: defaultSubject || '',
+    message: defaultMessage || '',
+    priority: defaultPriority || 'normal',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {

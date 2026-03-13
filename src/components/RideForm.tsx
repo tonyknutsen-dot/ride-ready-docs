@@ -13,7 +13,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { z } from 'zod';
 import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
-import { useSubscription, getRideTier, getTierLabel, RIDE_TIERS } from '@/hooks/useSubscription';
+import { useSubscription, getRideTier, getTierLabel, RIDE_TIERS, SELF_SERVE_MAX } from '@/hooks/useSubscription';
+import { OverLimitDialog } from '@/components/OverLimitDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
 import { compressImage } from '@/utils/imageCompression';
@@ -51,6 +52,8 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [categories, setCategories] = useState<RideCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [openRequest, setOpenRequest] = useState(false);
+  const [showOverLimitDialog, setShowOverLimitDialog] = useState(false);
+  const [profileData, setProfileData] = useState<{ company_name?: string; full_name?: string } | null>(null);
   const [formData, setFormData] = useState({
     ride_name: ride?.ride_name || '',
     category_group: '',
@@ -82,25 +85,27 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   };
 
 
-  // Pre-fill controller name from profile for new rides
+  // Pre-fill controller name from profile for new rides + load profile data for over-limit dialog
   useEffect(() => {
-    if (isEditMode || formData.owner_name) return;
-    const loadControllerName = async () => {
-      if (!user) return;
+    if (!user) return;
+    const loadProfile = async () => {
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('controller_name')
+          .select('controller_name, company_name')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (data?.controller_name) {
-          setFormData(prev => ({ ...prev, owner_name: data.controller_name! }));
+        if (data) {
+          setProfileData({ company_name: data.company_name ?? undefined });
+          if (!isEditMode && !formData.owner_name && data.controller_name) {
+            setFormData(prev => ({ ...prev, owner_name: data.controller_name! }));
+          }
         }
       } catch (e) {
         // Non-critical, ignore
       }
     };
-    loadControllerName();
+    loadProfile();
   }, [user, isEditMode]);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -289,14 +294,9 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       return;
     }
     
-    // If adding a billable ride would exceed tier, block and redirect
+    // If adding a billable ride would exceed self-serve cap, show over-limit dialog
     if (wouldExceedTier) {
-      const nextTierKey = subscription!.currentTier === 'starter' ? 'operator' : subscription!.currentTier === 'operator' ? 'professional' : 'business';
-      toast({
-        title: "Upgrade required",
-        description: `You've reached ${subscription!.rideLimit} rides on the ${subscription!.tierLabel} tier. Upgrade to ${getTierLabel(nextTierKey)} to add more.`,
-      });
-      navigate('/billing');
+      setShowOverLimitDialog(true);
       return;
     }
     
@@ -586,10 +586,10 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           {wouldExceedTier && (
             <Alert className="mt-3 border-warning/30 bg-warning/10">
               <AlertTriangle className="h-4 w-4 text-warning" />
-              <AlertTitle className="text-warning">Tier limit reached</AlertTitle>
+              <AlertTitle className="text-warning">Self-serve plan limit reached</AlertTitle>
               <AlertDescription>
-                You have {subscription!.billableRideCount} of {subscription!.rideLimit} billable items on the {subscription!.tierLabel} tier. 
-                To add more, <button type="button" className="underline font-medium" onClick={() => navigate('/billing')}>upgrade your plan</button>.
+                You've reached the maximum for self-serve plans ({SELF_SERVE_MAX} items).
+                Need more? <button type="button" className="underline font-medium" onClick={() => setShowOverLimitDialog(true)}>Contact us</button> for a larger operator plan.
               </AlertDescription>
             </Alert>
           )}
@@ -1114,6 +1114,19 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
       {/* Request Category dialog */}
       <RequestRideTypeDialog open={openRequest} onOpenChange={setOpenRequest} />
+
+      {/* Over-limit dialog */}
+      {subscription && (
+        <OverLimitDialog
+          open={showOverLimitDialog}
+          onOpenChange={setShowOverLimitDialog}
+          currentPlan={subscription.tierLabel}
+          currentItemCount={subscription.billableRideCount}
+          attemptedItemCount={subscription.billableRideCount + 1}
+          organisationName={profileData?.company_name}
+          userEmail={user?.email}
+        />
+      )}
 
     </div>
   );
