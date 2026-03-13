@@ -153,7 +153,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
       </Card>
 
       <p className="text-xs text-center text-muted-foreground">
-        Each registered item counts toward your plan allowance. Stalls, kiosks & generators included free.
+        Every registered item counts toward your plan allowance.
       </p>
 
       <p className="text-xs text-center text-muted-foreground">
