@@ -1115,6 +1115,19 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       {/* Request Category dialog */}
       <RequestRideTypeDialog open={openRequest} onOpenChange={setOpenRequest} />
 
+      {/* Over-limit dialog */}
+      {subscription && (
+        <OverLimitDialog
+          open={showOverLimitDialog}
+          onOpenChange={setShowOverLimitDialog}
+          currentPlan={subscription.tierLabel}
+          currentItemCount={subscription.billableRideCount}
+          attemptedItemCount={subscription.billableRideCount + 1}
+          organisationName={profileData?.company_name}
+          userEmail={user?.email}
+        />
+      )}
+
     </div>
   );
 };

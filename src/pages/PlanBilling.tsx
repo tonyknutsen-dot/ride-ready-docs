@@ -388,7 +388,7 @@ export default function PlanBilling() {
                   </div>
                   {(isNearLimit || isAtLimit) && (
                     <p className="text-[11px] font-medium" style={{ color: barColor }}>
-                      {isAtLimit ? "Plan limit reached — upgrade to add more rides." : "Approaching plan limit."}
+                      {isAtLimit ? "Plan limit reached — contact us for a larger plan." : "Approaching plan limit."}
                     </p>
                   )}
                 </div>
