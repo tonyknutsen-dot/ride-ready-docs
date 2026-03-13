@@ -35,7 +35,10 @@ interface ContactSupportDialogProps {
 export const ContactSupportDialog = ({ 
   open: controlledOpen, 
   onOpenChange: controlledOnOpenChange,
-  trigger
+  trigger,
+  defaultSubject,
+  defaultMessage,
+  defaultPriority,
 }: ContactSupportDialogProps = {}) => {
   const { user } = useAuth();
   const [internalOpen, setInternalOpen] = useState(false);
