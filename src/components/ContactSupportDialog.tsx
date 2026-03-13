@@ -56,9 +56,9 @@ export const ContactSupportDialog = ({
   };
 
   const [formData, setFormData] = useState({
-    subject: '',
-    message: '',
-    priority: 'normal',
+    subject: defaultSubject || '',
+    message: defaultMessage || '',
+    priority: defaultPriority || 'normal',
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
