@@ -15,6 +15,7 @@ import { z } from 'zod';
 import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
 import { useSubscription, getRideTier, getTierLabel, RIDE_TIERS, SELF_SERVE_MAX } from '@/hooks/useSubscription';
 import { OverLimitDialog } from '@/components/OverLimitDialog';
+import { TierUpgradeDialog, getTierCrossing } from '@/components/TierUpgradeDialog';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
 import { compressImage } from '@/utils/imageCompression';
