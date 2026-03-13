@@ -44,7 +44,7 @@ export default function CheckLibraryDialog({
   const [tab, setTab] = useState<FilterTab>("all");
   const { toast } = useToast();
 
-  const resolvedGroup = equipmentGroup || 'rides';
+  const resolvedGroup = equipmentGroup || 'rides'; // fallback only for legacy rides without equipmentGroup prop
   const specificLabel = categoryGroupLabel || (resolvedGroup === 'inflatables' ? 'Inflatables' : 'Equipment-specific');
 
   useEffect(() => {

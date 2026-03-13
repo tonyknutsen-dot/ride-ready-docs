@@ -60,10 +60,16 @@ const STEPS = [
 
 /** Map ride category_group to the check library equipment_group */
 const getEquipmentGroup = (categoryGroup: string): string | null => {
-  const g = categoryGroup.toLowerCase();
-  if (g === 'rides' || g === 'attractions') return 'rides';
-  if (g === 'inflatables') return 'inflatables';
-  return null; // stalls, games, kiosks, etc. — no library
+  const map: Record<string, string> = {
+    'rides': 'rides',
+    'inflatables': 'inflatables',
+    'stalls': 'stalls',
+    'attractions': 'attractions',
+    'food stalls': 'food_stalls',
+    'games': 'games',
+    'equipment': 'equipment',
+  };
+  return map[categoryGroup.toLowerCase()] ?? null;
 };
 
 const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCancel }: TemplateBuilderProps) => {
@@ -121,7 +127,8 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
     setSuggestionsLoading(true);
     try {
       const cat = ride.category_id || null;
-      const resolvedGroup = equipmentGroup || 'rides';
+      const resolvedGroup = equipmentGroup;
+      if (!resolvedGroup) { setSuggestionsLoading(false); return; }
       let query = supabase
         .from('check_library_items')
         .select('id,label,hint,risk_level,ride_category_id')
