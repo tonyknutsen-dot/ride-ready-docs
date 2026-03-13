@@ -407,7 +407,7 @@ export default function PlanBilling() {
                 <div className="flex justify-between items-center py-2">
                   <span className="text-sm font-medium">Current tier</span>
                   <Badge variant="outline" className="bg-[#EEF2FF] border-[#C7D2FE] text-[#4F46E5] text-[11px]">
-                    {subscription?.tierLabel} — up to {limit === Infinity ? 'unlimited' : limit} rides
+                    {subscription?.tierLabel} — up to {limit === Infinity ? 'unlimited' : limit} items
                   </Badge>
                 </div>
               </div>

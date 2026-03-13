@@ -162,7 +162,7 @@ export const PlanSelection: React.FC<PlanSelectionProps> = ({ onClose }) => {
 
       {!hasActiveSubscription && subscription && subscription.billableRideCount > 0 && (
         <p className="text-sm text-center text-muted-foreground bg-muted/50 rounded-lg p-3">
-          You currently have <strong>{subscription.billableRideCount} billable ride{subscription.billableRideCount !== 1 ? 's' : ''}</strong>, 
+          You currently have <strong>{subscription.billableRideCount} billable item{subscription.billableRideCount !== 1 ? 's' : ''}</strong>, 
           so you'll be subscribed to the <strong>{subscription.tierLabel}</strong> tier (£{subscription.tierPrice.toFixed(2)}/mo).
         </p>
       )}
