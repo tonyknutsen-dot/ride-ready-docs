@@ -84,7 +84,7 @@ export const ExtraItemChargeDialog = ({
               ) : (
                 <div className="bg-muted/50 rounded-lg p-4">
                   <p className="text-sm text-muted-foreground">
-                    This ride fits within your current {getTierLabel(currentTier)} tier (up to {RIDE_TIERS[currentTier].max} rides). No pricing change.
+                    This item fits within your current {getTierLabel(currentTier)} tier (up to {RIDE_TIERS[currentTier].max} items). No pricing change.
                   </p>
                 </div>
               )}
