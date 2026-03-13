@@ -60,7 +60,7 @@ const Pricing = () => {
           <CardContent className="p-0">
             {/* Table Header */}
             <div className="grid grid-cols-3 gap-4 px-6 py-4 bg-primary/5 border-b font-semibold text-sm">
-              <span>Ride Count</span>
+              <span>Item Count</span>
               <span className="text-center">Monthly Price</span>
               <span className="text-right">Includes</span>
             </div>
