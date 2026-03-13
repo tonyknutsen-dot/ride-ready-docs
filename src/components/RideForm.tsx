@@ -294,14 +294,9 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       return;
     }
     
-    // If adding a billable ride would exceed tier, block and redirect
+    // If adding a billable ride would exceed self-serve cap, show over-limit dialog
     if (wouldExceedTier) {
-      const nextTierKey = subscription!.currentTier === 'starter' ? 'operator' : subscription!.currentTier === 'operator' ? 'professional' : 'business';
-      toast({
-        title: "Upgrade required",
-        description: `You've reached ${subscription!.rideLimit} rides on the ${subscription!.tierLabel} tier. Upgrade to ${getTierLabel(nextTierKey)} to add more.`,
-      });
-      navigate('/billing');
+      setShowOverLimitDialog(true);
       return;
     }
     
