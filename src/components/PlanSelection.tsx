@@ -3,7 +3,7 @@ import { Check, Loader2, ExternalLink, FlaskConical, Unlock } from 'lucide-react
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { useSubscription, RIDE_TIERS, getRideTier, getTierLabel, type RideTier } from '@/hooks/useSubscription';
+import { useSubscription, RIDE_TIERS, getRideTier, getTierLabel, SELF_SERVE_MAX, type RideTier } from '@/hooks/useSubscription';
 import { useTester } from '@/contexts/TesterContext';
 import { toast } from 'sonner';
 import { StripeInstructionModal } from '@/components/StripeInstructionModal';
