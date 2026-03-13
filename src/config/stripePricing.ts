@@ -25,7 +25,7 @@ export const STRIPE_PRICE_IDS: Record<RideTier, string> = {
   starter: "price_1T1TVLAG8uIRefcZ1nMRWRVV",
   operator: "price_1T1TVMAG8uIRefcZKyL8XcLz",
   professional: "price_1T1TVNAG8uIRefcZviQXUgrA",
-  enterprise: "price_1T1TVOAG8uIRefcZKAcqeqNw",
+  business: "price_1T1TVOAG8uIRefcZKAcqeqNw",
 };
 
 // ── Stripe Product IDs ──────────────────────────────────────────────────────
