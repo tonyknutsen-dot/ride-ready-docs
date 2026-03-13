@@ -92,11 +92,11 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       try {
         const { data } = await supabase
           .from('profiles')
-          .select('controller_name, company_name, full_name')
+          .select('controller_name, company_name')
           .eq('user_id', user.id)
           .maybeSingle();
         if (data) {
-          setProfileData({ company_name: data.company_name ?? undefined, full_name: data.full_name ?? undefined });
+          setProfileData({ company_name: data.company_name ?? undefined });
           if (!isEditMode && !formData.owner_name && data.controller_name) {
             setFormData(prev => ({ ...prev, owner_name: data.controller_name! }));
           }
