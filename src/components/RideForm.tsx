@@ -459,11 +459,16 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           .single();
 
         if (error) {
-          toast({
-            title: "Error adding ride",
-            description: error.message,
-            variant: "destructive",
-          });
+          // Intercept RLS tier-limit block and show user-friendly dialog
+          if (error.message?.includes('row-level security') || error.code === '42501') {
+            setShowOverLimitDialog(true);
+          } else {
+            toast({
+              title: "Error adding ride",
+              description: error.message,
+              variant: "destructive",
+            });
+          }
         } else {
           // Upload photo if provided
           if (photoFile && newRide?.id && user) {
