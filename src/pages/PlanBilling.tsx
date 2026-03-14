@@ -364,7 +364,7 @@ export default function PlanBilling() {
                 <DialogTrigger asChild>
                   <Button className="w-full bg-gradient-to-r from-accent to-primary hover:opacity-90 text-white shadow-md">
                     <Crown className="w-4 h-4 mr-2" />
-                    {status === "expired" ? "Reactivate Subscription" : "Subscribe Now"}
+                    {status === "expired" && subscription?.wasPaidCustomer ? "Reactivate Subscription" : "Subscribe Now"}
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
