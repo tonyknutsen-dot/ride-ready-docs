@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Tables } from '@/integrations/supabase/types';
 import { compressImage } from '@/utils/imageCompression';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {

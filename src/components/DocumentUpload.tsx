@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { compressImage } from '@/utils/imageCompression';
 import { EmptyState } from '@/components/EmptyState';
 import { useOptimisticDocumentUpload } from '@/hooks/useOptimisticMutations';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 
 // Simplified showmen-friendly categories
 const DOCUMENT_CATEGORIES = {
