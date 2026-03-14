@@ -8,7 +8,7 @@ import { useTester } from "@/contexts/TesterContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock, RefreshCw, X, ShieldAlert, Lock, Gauge, TrendingUp, FileText, Users, Bell, Shield, Wrench } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock, RefreshCw, X, ShieldAlert, Gauge, TrendingUp, Users, Shield, Wrench } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -18,12 +18,12 @@ import { StripeInstructionModal } from "@/components/StripeInstructionModal";
 import { format } from "date-fns";
 
 const PLAN_FEATURES = [
-  { icon: Shield, label: "Equipment Register & Compliance" },
-  { icon: CheckCircle2, label: "Safety Checks & Audit Logs" },
-  { icon: FileText, label: "Document Storage & Expiry Alerts" },
-  { icon: Shield, label: "Risk Assessments" },
-  { icon: Users, label: "Staff Management & Permissions" },
-  { icon: Bell, label: "Inspection Scheduling & Reminders" },
+  { icon: CheckCircle2, label: "Billable items determine your current plan" },
+  { icon: Gauge, label: "Each plan has an item limit and next tier" },
+  { icon: Wrench, label: "Registered items are tracked across all categories" },
+  { icon: Shield, label: "Non-billable items are tracked separately" },
+  { icon: TrendingUp, label: "Upgrade plan when nearing your item limit" },
+  { icon: Users, label: "Self-serve limit is 50 billable items" },
 ];
 
 import { RIDE_TIERS } from '@/config/stripePricing';
@@ -246,7 +246,7 @@ export default function PlanBilling() {
             </div>
             <div>
               <CardTitle className="text-base">Plan & Billing</CardTitle>
-              <CardDescription className="text-xs">Manage your subscription.</CardDescription>
+              <CardDescription className="text-xs">Manage your current plan, item limit, and invoices.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -264,10 +264,10 @@ export default function PlanBilling() {
               </div>
               <p className="text-xs text-muted-foreground">
                 {status === 'active'
-                  ? `All-in-one compliance & operations platform`
+                  ? `Your pricing is based on billable items in your current plan.`
                   : status === "trial"
                   ? `${subscription?.daysRemaining} days remaining in trial`
-                  : "Your trial has expired — subscribe to continue"}
+                  : "Your trial has expired — choose an upgrade plan to continue."}
               </p>
             </div>
             {!isTrialOrExpired && subscription?.tierPrice && (
@@ -304,13 +304,13 @@ export default function PlanBilling() {
             </div>
           )}
 
-          {/* What's included */}
+          {/* Billing model */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Includes</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Billing model</p>
             <div className="grid grid-cols-1 gap-1.5">
               {PLAN_FEATURES.map(({ icon: Icon, label }) => (
                 <div key={label} className="flex items-center gap-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-[#16A34A] shrink-0" />
+                  <Icon className="h-3.5 w-3.5 text-[#16A34A] shrink-0" />
                   <span className="text-xs text-muted-foreground">{label}</span>
                 </div>
               ))}
@@ -392,7 +392,7 @@ export default function PlanBilling() {
                   </div>
                   {(isNearLimit || isAtLimit) && (
                     <p className="text-[11px] font-medium" style={{ color: barColor }}>
-                      {isAtLimit ? "You've reached the item limit for your current plan. Upgrade to add more items, or contact us for a custom plan." : "Approaching your plan's item limit."}
+                      {isAtLimit ? "You've reached the item limit for your current plan. Choose an upgrade plan to move to the next tier, or contact support for capacity above the self-serve limit." : "Approaching your item limit — review the next tier and upgrade plan options."}
                     </p>
                   )}
                 </div>
@@ -409,12 +409,15 @@ export default function PlanBilling() {
                   <span className="font-semibold">{subscription?.freeAssetCount ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-sm font-medium">Current tier</span>
+                  <span className="text-sm font-medium">Current plan</span>
                   <Badge variant="outline" className="bg-[#EEF2FF] border-[#C7D2FE] text-[#4F46E5] text-[11px]">
-                    {subscription?.tierLabel} — up to {limit === Infinity ? 'unlimited' : limit} items
+                    {subscription?.tierLabel} — item limit {limit === Infinity ? 'unlimited' : limit}
                   </Badge>
                 </div>
-              </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Self-serve limit: 50 billable items. Need more capacity? Contact support.
+                </p>
 
               {/* Upgrade nudge */}
               {(isNearLimit || isAtLimit) && !isTrialOrExpired && (

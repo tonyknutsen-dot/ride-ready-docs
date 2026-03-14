@@ -225,6 +225,17 @@ export const useSubscription = () => {
     await fetchSubscriptionData();
   };
 
+  const getBillingReturnUrl = () => {
+    const billingUrl = new URL(`${window.location.origin}/billing`);
+    const previewToken = new URL(window.location.href).searchParams.get('__lovable_token');
+
+    if (previewToken) {
+      billingUrl.searchParams.set('__lovable_token', previewToken);
+    }
+
+    return billingUrl.toString();
+  };
+
   // Create Stripe checkout session based on ride tier
   const createCheckout = async (tier: RideTier = 'starter') => {
     if (!user) throw new Error('User not authenticated');
@@ -234,7 +245,7 @@ export const useSubscription = () => {
       return { blocked: true, reason: 'tester_account' };
     }
 
-    const returnUrl = `${window.location.origin}/billing`;
+    const returnUrl = getBillingReturnUrl();
     
     const { data, error } = await supabase.functions.invoke('create-checkout', {
       body: { tier, returnUrl },
@@ -257,7 +268,7 @@ export const useSubscription = () => {
       return { blocked: true, reason: 'tester_account' };
     }
 
-    const returnUrl = `${window.location.origin}/billing`;
+    const returnUrl = getBillingReturnUrl();
     
     const { data, error } = await supabase.functions.invoke('customer-portal', {
       body: { returnUrl },
