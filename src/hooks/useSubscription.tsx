@@ -229,10 +229,7 @@ export const useSubscription = () => {
       return { blocked: true, reason: 'tester_account' };
     }
 
-    const currentOrigin = window.location.origin;
-    const returnUrl = currentOrigin.includes('localhost') || currentOrigin.includes('lovableproject.com')
-      ? 'https://ride-ready-docs.lovable.app'
-      : currentOrigin;
+    const returnUrl = window.location.origin;
     
     const { data, error } = await supabase.functions.invoke('create-checkout', {
       body: { tier, returnUrl },
@@ -255,10 +252,7 @@ export const useSubscription = () => {
       return { blocked: true, reason: 'tester_account' };
     }
 
-    const currentOrigin = window.location.origin;
-    const returnUrl = currentOrigin.includes('localhost') || currentOrigin.includes('lovableproject.com')
-      ? 'https://ride-ready-docs.lovable.app'
-      : currentOrigin;
+    const returnUrl = window.location.origin;
     
     const { data, error } = await supabase.functions.invoke('customer-portal', {
       body: { returnUrl },

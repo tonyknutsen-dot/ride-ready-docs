@@ -189,8 +189,8 @@ export default function PlanBilling() {
             <div className="bg-muted/50 rounded-lg p-4 text-sm space-y-2">
               <p className="font-medium">Tester Benefits:</p>
               <ul className="list-disc list-inside space-y-1 text-muted-foreground">
-                <li>Full access to Operations & Maintenance features</li>
-                <li>Unlimited items (no billing for extras)</li>
+                <li>Full access to all features</li>
+                <li>Unlimited registered items</li>
                 <li>No Stripe checkout or invoices</li>
                 <li>Activity flagged as test data</li>
               </ul>
@@ -392,7 +392,7 @@ export default function PlanBilling() {
                   </div>
                   {(isNearLimit || isAtLimit) && (
                     <p className="text-[11px] font-medium" style={{ color: barColor }}>
-                      {isAtLimit ? "You've reached the self-serve plan limit of 50 items. Need more capacity? Contact us about a larger operator plan." : "Approaching plan limit."}
+                      {isAtLimit ? "You've reached the item limit for your current plan. Upgrade to add more items, or contact us for a custom plan." : "Approaching your plan's item limit."}
                     </p>
                   )}
                 </div>
