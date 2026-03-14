@@ -42,6 +42,7 @@ export interface SubscriptionData {
   freeAssetCount: number;
   rideLimit: number;
   canAddRide: boolean;
+  /** @deprecated Legacy field — no longer used in tier-based billing */
   extraItemsCount: number;
   currentPeriodEnd: string | null;
   hasStripeCustomer: boolean;
