@@ -304,13 +304,13 @@ export default function PlanBilling() {
             </div>
           )}
 
-          {/* What's included */}
+          {/* Billing model */}
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Includes</p>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Billing model</p>
             <div className="grid grid-cols-1 gap-1.5">
               {PLAN_FEATURES.map(({ icon: Icon, label }) => (
                 <div key={label} className="flex items-center gap-2">
-                  <CheckCircle2 className="h-3.5 w-3.5 text-[#16A34A] shrink-0" />
+                  <Icon className="h-3.5 w-3.5 text-[#16A34A] shrink-0" />
                   <span className="text-xs text-muted-foreground">{label}</span>
                 </div>
               ))}
