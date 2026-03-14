@@ -1,4 +1,4 @@
-import { AlertTriangle, Clock, FlaskConical, CreditCard } from 'lucide-react';
+import { AlertTriangle, Clock, FlaskConical, CreditCard, CalendarX } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -66,6 +66,30 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
                 Ask your Controller to update payment details.
               </p>
             )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (subscriptionStatus === 'active' && subscription.cancelAtPeriodEnd) {
+    const endDate = subscription.cancelAt || subscription.currentPeriodEnd;
+    const endLabel = endDate
+      ? new Date(endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+      : 'the end of your billing period';
+    return (
+      <Card className="mb-4 md:mb-6 border-[#F59E0B]/50 bg-[#FFFBEB]">
+        <CardContent className="p-3 md:p-4">
+          <div className="flex items-center gap-3">
+            <CalendarX className="h-5 w-5 text-[#F59E0B] flex-shrink-0" />
+            <div>
+              <span className="text-sm font-medium text-[#92400E]">
+                Subscription ending {endLabel}
+              </span>
+              <span className="text-xs text-[#92400E]/70 ml-1">
+                — access remains active until then
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>

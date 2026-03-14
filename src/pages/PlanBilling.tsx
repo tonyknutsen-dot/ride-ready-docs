@@ -8,7 +8,7 @@ import { useTester } from "@/contexts/TesterContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock, RefreshCw, X, ShieldAlert, Gauge, TrendingUp, Users, Shield, Wrench } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock, RefreshCw, X, ShieldAlert, Gauge, TrendingUp, Users, Shield, Wrench, AlertTriangle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -202,12 +202,19 @@ export default function PlanBilling() {
   }
 
   const status = subscription?.subscriptionStatus ?? "trial";
+  const isCancelScheduled = subscription?.cancelAtPeriodEnd === true && status === 'active';
   const isTrialOrExpired = status === "trial" || status === "expired" || !subscription?.hasStripeSubscription;
 
   const getPlanName = () => {
     if (status === 'active') return `${subscription?.tierLabel || 'Starter'} Plan`;
     if (status === "trial") return "Free Trial";
     return "Expired";
+  };
+
+  const getCancelDate = () => {
+    const dateStr = subscription?.cancelAt || subscription?.currentPeriodEnd;
+    if (!dateStr) return null;
+    return format(new Date(dateStr), "MMMM d, yyyy");
   };
 
   return (
@@ -237,6 +244,18 @@ export default function PlanBilling() {
         </Alert>
       )}
 
+      {/* Scheduled Cancellation Banner */}
+      {isCancelScheduled && (
+        <Alert className="border-2 border-[#F59E0B] bg-[#FFFBEB]">
+          <AlertTriangle className="h-5 w-5 text-[#F59E0B]" />
+          <AlertTitle className="text-[#92400E] font-semibold">Cancellation Scheduled</AlertTitle>
+          <AlertDescription className="text-sm text-[#92400E]/80 mt-1">
+            Your subscription is scheduled to end on <strong>{getCancelDate()}</strong>.
+            Your access remains active until then. To undo this, open the Stripe billing portal and reactivate your plan.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Current Plan Card */}
       <Card className="border border-[#BFDBFE] bg-card shadow-sm">
         <CardHeader className="pb-3">
@@ -257,8 +276,10 @@ export default function PlanBilling() {
               <div className="flex items-center gap-2">
                 <span className="font-bold text-foreground">{getPlanName()}</span>
                 {!isTrialOrExpired && (
-                  <Badge className="text-[10px] px-2 py-0 bg-[#DBEAFE] text-[#1D4ED8] border-[#BFDBFE] hover:bg-[#DBEAFE]">
-                    Active
+                  <Badge className={`text-[10px] px-2 py-0 ${isCancelScheduled
+                    ? 'bg-[#FEF3C7] text-[#92400E] border-[#F59E0B] hover:bg-[#FEF3C7]'
+                    : 'bg-[#DBEAFE] text-[#1D4ED8] border-[#BFDBFE] hover:bg-[#DBEAFE]'}`}>
+                    {isCancelScheduled ? 'Cancelling' : 'Active'}
                   </Badge>
                 )}
               </div>
@@ -291,10 +312,14 @@ export default function PlanBilling() {
                 </div>
               </div>
               {subscription?.currentPeriodEnd && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE]">
-                  <Calendar className="w-4 h-4 text-[#1D4ED8] shrink-0" />
+                <div className={`flex items-center gap-2 p-3 rounded-lg ${isCancelScheduled
+                  ? 'bg-[#FFFBEB] border border-[#FDE68A]'
+                  : 'bg-[#EFF6FF] border border-[#BFDBFE]'}`}>
+                  <Calendar className={`w-4 h-4 shrink-0 ${isCancelScheduled ? 'text-[#F59E0B]' : 'text-[#1D4ED8]'}`} />
                   <div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Renews</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                      {isCancelScheduled ? 'Ends' : 'Renews'}
+                    </div>
                     <div className="text-sm font-semibold">
                       {format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}
                     </div>

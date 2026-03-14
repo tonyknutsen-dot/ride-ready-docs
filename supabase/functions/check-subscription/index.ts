@@ -87,7 +87,11 @@ serve(async (req) => {
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
       const productId = subscription.items.data[0]?.price.product as string;
       tier = PRODUCT_TO_TIER[productId] || 'starter';
-      logStep("Subscription found", { subscriptionId: subscription.id, tier, productId, status: subStatus });
+      const cancelAtPeriodEnd = subscription.cancel_at_period_end ?? false;
+      const cancelAt = subscription.cancel_at
+        ? new Date(subscription.cancel_at * 1000).toISOString()
+        : null;
+      logStep("Subscription found", { subscriptionId: subscription.id, tier, productId, status: subStatus, cancelAtPeriodEnd });
 
       const { error: updateError } = await supabaseClient
         .from("profiles")
@@ -98,6 +102,8 @@ serve(async (req) => {
           subscription_plan: tier,
           billing_cycle: 'monthly',
           current_period_end: subscriptionEnd,
+          cancel_at_period_end: cancelAtPeriodEnd,
+          cancel_at: cancelAt,
         })
         .eq("user_id", user.id);
 

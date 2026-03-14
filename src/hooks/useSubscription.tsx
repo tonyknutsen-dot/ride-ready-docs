@@ -52,6 +52,8 @@ export interface SubscriptionData {
   currentTier: RideTier;
   tierLabel: string;
   tierPrice: number;
+  cancelAtPeriodEnd: boolean;
+  cancelAt: string | null;
 }
 
 export const useSubscription = () => {
@@ -81,7 +83,7 @@ export const useSubscription = () => {
       const [profileResult, totalRideResult, billableRideResult] = await Promise.all([
         supabase
           .from('profiles')
-          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, current_period_end')
+          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, current_period_end, cancel_at_period_end, cancel_at')
           .eq('user_id', profileUserId)
           .maybeSingle(),
         supabase
@@ -138,6 +140,8 @@ export const useSubscription = () => {
             currentTier,
             tierLabel: getTierLabel(currentTier),
             tierPrice: getTierPrice(currentTier),
+            cancelAtPeriodEnd: false,
+            cancelAt: null,
           };
           setSubscription(testerSubscription);
           setLoading(false);
@@ -188,6 +192,8 @@ export const useSubscription = () => {
           currentTier,
           tierLabel: getTierLabel(currentTier),
           tierPrice: getTierPrice(currentTier),
+          cancelAtPeriodEnd: data.cancel_at_period_end ?? false,
+          cancelAt: data.cancel_at ?? null,
         };
 
         setSubscription(subscriptionData);
