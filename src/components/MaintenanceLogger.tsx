@@ -320,6 +320,8 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
   };
 
   const handleSubmit = async () => {
+    if (guardWrite()) return;
+
     if (!formData.maintenance_type || !formData.description || !formData.performed_by) {
       toast({ title: "Validation Error", description: "Please fill in all required fields.", variant: "destructive" });
       return;

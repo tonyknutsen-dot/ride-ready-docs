@@ -161,6 +161,8 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
   };
 
   const handleUpload = async () => {
+    if (guardWrite()) return;
+
     if (!selectedFile || !documentType || !documentName || !user) {
       toast({
         title: "Missing information",

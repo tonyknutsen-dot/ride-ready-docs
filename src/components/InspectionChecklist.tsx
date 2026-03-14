@@ -720,6 +720,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   };
 
   const handleSubmitChecks = async () => {
+    if (guardWrite()) return;
     if (!activeTemplate) return;
 
     // Validation
