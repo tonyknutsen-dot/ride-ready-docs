@@ -49,6 +49,7 @@ const INSPECTION_TYPES = [
 
 const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => {
   const [events, setEvents] = useState<ComplianceEvent[]>([]);
+  const { guardWrite } = useBillingWriteGuard();
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ComplianceEvent | null>(null);
