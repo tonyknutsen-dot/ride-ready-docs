@@ -52,12 +52,14 @@ export default function PlanBilling() {
     const canceled = searchParams.get('canceled');
 
     if (success === 'true') {
+      // Refresh the auth session in case the JWT expired while user was in Stripe
+      supabase.auth.refreshSession().then(() => {
+        checkSubscriptionStatus();
+      });
       toast({ 
         title: "Subscription activated!", 
         description: "Thank you for subscribing. Your plan is now active.",
       });
-      // Sync subscription status
-      checkSubscriptionStatus();
       // Clear URL params
       nav('/billing', { replace: true });
     } else if (canceled === 'true') {
