@@ -10,27 +10,52 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
 }
 
+const REFRESH_SESSION_TIMEOUT_MS = 10000;
+const REDIRECT_GRACE_MS = 1500;
+const LOADER_FAILSAFE_MS = 15000;
+
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
   const { isTester } = useTester();
   const location = useLocation();
   const [refreshAttempted, setRefreshAttempted] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [canRedirectToAuth, setCanRedirectToAuth] = useState(false);
+  const [loaderTimedOut, setLoaderTimedOut] = useState(false);
 
   useEffect(() => {
     if (loading || user || refreshAttempted || refreshing) return;
 
     let isMounted = true;
+    let redirectTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number): Promise<T> => {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) => {
+          setTimeout(() => reject(new Error('refresh_session_timeout')), timeoutMs);
+        }),
+      ]);
+    };
 
     const tryRefresh = async () => {
       setRefreshing(true);
+      setCanRedirectToAuth(false);
+
       try {
-        await supabase.auth.refreshSession();
+        await withTimeout(supabase.auth.refreshSession(), REFRESH_SESSION_TIMEOUT_MS);
+      } catch (error) {
+        console.warn('[ProtectedRoute] refreshSession failed or timed out:', error);
       } finally {
-        if (isMounted) {
-          setRefreshing(false);
-          setRefreshAttempted(true);
-        }
+        if (!isMounted) return;
+
+        setRefreshing(false);
+        setRefreshAttempted(true);
+        redirectTimer = setTimeout(() => {
+          if (isMounted) {
+            setCanRedirectToAuth(true);
+          }
+        }, REDIRECT_GRACE_MS);
       }
     };
 
@@ -38,10 +63,34 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
 
     return () => {
       isMounted = false;
+      if (redirectTimer) {
+        clearTimeout(redirectTimer);
+      }
     };
   }, [loading, user, refreshAttempted, refreshing]);
 
-  if (loading || refreshing || (!user && !refreshAttempted)) {
+  const isWaitingForAuth =
+    loading ||
+    refreshing ||
+    (!user && !refreshAttempted) ||
+    (!user && refreshAttempted && !canRedirectToAuth);
+
+  useEffect(() => {
+    if (!isWaitingForAuth) {
+      setLoaderTimedOut(false);
+      return;
+    }
+
+    setLoaderTimedOut(false);
+    const timer = setTimeout(() => {
+      setLoaderTimedOut(true);
+      console.warn('[ProtectedRoute] Auth loading timed out on route:', location.pathname);
+    }, LOADER_FAILSAFE_MS);
+
+    return () => clearTimeout(timer);
+  }, [isWaitingForAuth, location.pathname]);
+
+  if (isWaitingForAuth && !loaderTimedOut) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -53,16 +102,39 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
+  if (isWaitingForAuth && loaderTimedOut) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-6">
+        <div className="max-w-sm text-center space-y-3">
+          <img src={appLogo} alt="Ride Ready Docs" className="mx-auto h-20 w-20 rounded-full shadow-lg" />
+          <p className="text-foreground font-medium">We couldn't restore your session automatically.</p>
+          <div className="flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="px-3 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:opacity-90"
+            >
+              Retry
+            </button>
+            <button
+              type="button"
+              onClick={() => setCanRedirectToAuth(true)}
+              className="px-3 py-2 text-sm rounded-md border border-border text-foreground hover:bg-muted"
+            >
+              Go to sign in
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   // No user at all (no session) – redirect to auth
   if (!user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  return (
-    <div className={isTester ? 'pt-8' : ''}>
-      {children}
-    </div>
-  );
+  return <div className={isTester ? 'pt-8' : ''}>{children}</div>;
 };
 
 export default ProtectedRoute;
