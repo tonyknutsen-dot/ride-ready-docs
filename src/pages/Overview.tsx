@@ -113,6 +113,7 @@ const Overview = () => {
             </button>
           )}
 
+          <TrialStatus onUpgrade={() => navigate('/billing')} />
           <ItemLimitWarning />
 
           {/* ── STATS — 3 simple cards ──────────────── */}
