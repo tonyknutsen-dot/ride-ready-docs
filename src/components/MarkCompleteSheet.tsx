@@ -62,6 +62,7 @@ const MarkCompleteSheet = ({
   onCompleted,
 }: MarkCompleteSheetProps) => {
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isOnline } = useOnlineStatus();
