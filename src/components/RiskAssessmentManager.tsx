@@ -287,6 +287,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
 
   const handleCreateAssessment = async () => {
     if (!user) return;
+    if (guardWrite()) return;
 
     // Prepare data, converting empty strings to null for date fields
     const insertData = {
