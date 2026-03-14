@@ -2100,6 +2100,8 @@ export type Database = {
           address: string | null
           app_mode: string
           billing_cycle: string | null
+          cancel_at: string | null
+          cancel_at_period_end: boolean
           company_logo_path: string | null
           company_name: string | null
           controller_name: string | null
@@ -2134,6 +2136,8 @@ export type Database = {
           address?: string | null
           app_mode?: string
           billing_cycle?: string | null
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean
           company_logo_path?: string | null
           company_name?: string | null
           controller_name?: string | null
@@ -2168,6 +2172,8 @@ export type Database = {
           address?: string | null
           app_mode?: string
           billing_cycle?: string | null
+          cancel_at?: string | null
+          cancel_at_period_end?: boolean
           company_logo_path?: string | null
           company_name?: string | null
           controller_name?: string | null
