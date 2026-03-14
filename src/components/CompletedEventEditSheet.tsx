@@ -13,6 +13,7 @@ import { CalendarIcon, Save, Loader2, Upload, Camera, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { formatDateUK } from "@/utils/dateFormat";
 import { compressImage } from "@/utils/imageCompression";
 import { createComplianceDocument, categoryToDocTypeCode } from "@/utils/complianceDocumentCreator";

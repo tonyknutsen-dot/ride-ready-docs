@@ -18,6 +18,7 @@ import { format, differenceInDays, isBefore } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useQueryClient } from '@tanstack/react-query';
 import { EmptyState } from '@/components/EmptyState';
 import { Tables } from '@/integrations/supabase/types';

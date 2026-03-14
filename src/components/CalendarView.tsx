@@ -32,6 +32,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, isSameDay, addDays, startOfMonth, endOfMonth } from 'date-fns';
