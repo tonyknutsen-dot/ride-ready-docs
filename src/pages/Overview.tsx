@@ -77,12 +77,16 @@ const Overview = () => {
                 <Badge
                   variant={userPlan === 'trial' ? 'secondary' : 'default'}
                   className={`text-[10px] mt-0.5 ${
-                    subscription?.cancelAtPeriodEnd
+                    subscription?.subscriptionStatus === 'past_due'
+                      ? 'bg-destructive/10 text-destructive border-destructive/30'
+                      : subscription?.cancelAtPeriodEnd
                       ? 'bg-[#FEF3C7] text-[#92400E] border-[#F59E0B]'
                       : userPlan !== 'trial' ? 'bg-primary/10 text-primary border-primary/20' : ''
                   }`}
                 >
-                  {subscription?.cancelAtPeriodEnd
+                  {subscription?.subscriptionStatus === 'past_due'
+                    ? 'Payment Failed'
+                    : subscription?.cancelAtPeriodEnd
                     ? 'Cancelling'
                     : formatPlanWithDescription(userPlan)}
                 </Badge>
