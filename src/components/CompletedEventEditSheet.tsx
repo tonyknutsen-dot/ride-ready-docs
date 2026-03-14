@@ -42,6 +42,7 @@ interface CompletedEventEditSheetProps {
 
 const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEditSheetProps) => {
   const queryClient = useQueryClient();
+  const { guardWrite } = useBillingWriteGuard();
   const [saving, setSaving] = useState(false);
   const [completionDate, setCompletionDate] = useState<Date>(
     event.completedAt ? new Date(event.completedAt) : new Date()
