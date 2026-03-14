@@ -86,6 +86,7 @@ const FREQUENCY_LABELS: Record<string, string> = {
 
 const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediately = false }: InspectionChecklistProps) => {
   const navigate = useNavigate();
+  const { guardWrite } = useBillingWriteGuard();
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
   const [recentChecks, setRecentChecks] = useState<Check[]>([]);
   const [itemResults, setItemResults] = useState<{ [key: string]: CheckItemResult }>({});
