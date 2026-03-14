@@ -54,6 +54,7 @@ export interface SubscriptionData {
   tierPrice: number;
   cancelAtPeriodEnd: boolean;
   cancelAt: string | null;
+  wasPaidCustomer: boolean;
 }
 
 export const useSubscription = () => {
