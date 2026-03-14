@@ -41,6 +41,12 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
 
   // PAST DUE — payment failed, read-only mode
   if (subscriptionStatus === 'past_due') {
+    const periodEnd = subscription.currentPeriodEnd;
+    const graceActive = periodEnd && new Date(periodEnd) > new Date();
+    const endLabel = periodEnd
+      ? new Date(periodEnd).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
+      : null;
+
     return (
       <Card className="mb-4 md:mb-6 border-destructive/50 bg-destructive/5">
         <CardContent className="p-3 md:p-4">
@@ -50,7 +56,9 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
               <div className="min-w-0 flex-1">
                 <p className="font-semibold text-destructive">Payment Failed</p>
                 <p className="text-sm text-muted-foreground">
-                  Please update your billing to continue using RideReadyDocs. Your data is safe; you can still view it.
+                  {graceActive
+                    ? `Please update your payment method. Access remains active until ${endLabel}.`
+                    : 'Your billing period has ended and payment was not collected. Please update your billing to restore access.'}
                 </p>
               </div>
             </div>
@@ -120,6 +128,7 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
   }
 
   if (isExpired) {
+    const wasPaid = subscription.wasPaidCustomer;
     return (
       <Card className="mb-4 md:mb-6 border-destructive/50 bg-destructive/5">
         <CardContent className="p-3 md:p-4">
@@ -127,15 +136,19 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-destructive">Trial Expired</p>
+                <p className="font-semibold text-destructive">
+                  {wasPaid ? 'Subscription Expired' : 'Trial Expired'}
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  Your free trial has ended. Subscribe to continue using all features.
+                  {wasPaid
+                    ? 'Your subscription has ended. Resubscribe to restore full access. Your data is safe.'
+                    : 'Your free trial has ended. Subscribe to continue using all features.'}
                 </p>
               </div>
             </div>
             {canAccessBilling ? (
               <Button onClick={onUpgrade} variant="destructive" size="sm" className="flex-shrink-0 self-start sm:self-center">
-                Subscribe Now
+                {wasPaid ? 'Resubscribe' : 'Subscribe Now'}
               </Button>
             ) : (
               <p className="text-xs text-muted-foreground flex-shrink-0 self-start sm:self-center">

@@ -54,6 +54,7 @@ export interface SubscriptionData {
   tierPrice: number;
   cancelAtPeriodEnd: boolean;
   cancelAt: string | null;
+  wasPaidCustomer: boolean;
 }
 
 export const useSubscription = () => {
@@ -83,7 +84,7 @@ export const useSubscription = () => {
       const [profileResult, totalRideResult, billableRideResult] = await Promise.all([
         supabase
           .from('profiles')
-          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, current_period_end, cancel_at_period_end, cancel_at')
+          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, current_period_end, cancel_at_period_end, cancel_at, stripe_customer_id')
           .eq('user_id', profileUserId)
           .maybeSingle(),
         supabase
@@ -142,6 +143,7 @@ export const useSubscription = () => {
             tierPrice: getTierPrice(currentTier),
             cancelAtPeriodEnd: false,
             cancelAt: null,
+            wasPaidCustomer: false,
           };
           setSubscription(testerSubscription);
           setLoading(false);
@@ -194,6 +196,7 @@ export const useSubscription = () => {
           tierPrice: getTierPrice(currentTier),
           cancelAtPeriodEnd: data.cancel_at_period_end ?? false,
           cancelAt: data.cancel_at ?? null,
+          wasPaidCustomer: !!data.stripe_customer_id,
         };
 
         setSubscription(subscriptionData);
