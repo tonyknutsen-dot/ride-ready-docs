@@ -129,6 +129,7 @@ const CalendarView = () => {
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const { subscription } = useSubscription();
+  const { guardWrite } = useBillingWriteGuard();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
