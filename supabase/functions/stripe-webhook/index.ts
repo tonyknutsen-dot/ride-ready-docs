@@ -87,7 +87,11 @@ serve(async (req) => {
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        logStep("Subscription updated", { subscriptionId: subscription.id });
+        logStep("Subscription updated", {
+          subscriptionId: subscription.id,
+          cancel_at_period_end: subscription.cancel_at_period_end,
+          cancel_at: subscription.cancel_at,
+        });
         
         const productId = subscription.items.data[0]?.price.product as string;
         const tier = PRODUCT_TO_TIER[productId] || 'starter';
@@ -104,13 +108,17 @@ serve(async (req) => {
             subscription_status: mappedStatus,
             subscription_plan: tier,
             current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscription.cancel_at_period_end ?? false,
+            cancel_at: subscription.cancel_at
+              ? new Date(subscription.cancel_at * 1000).toISOString()
+              : null,
           })
           .eq("stripe_subscription_id", subscription.id);
 
         if (error) {
           logStep("Error updating subscription", { error: error.message });
         } else {
-          logStep("Subscription updated in database", { tier });
+          logStep("Subscription updated in database", { tier, cancel_at_period_end: subscription.cancel_at_period_end });
         }
         break;
       }
