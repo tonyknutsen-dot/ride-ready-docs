@@ -143,6 +143,7 @@ export const useSubscription = () => {
             tierPrice: getTierPrice(currentTier),
             cancelAtPeriodEnd: false,
             cancelAt: null,
+            wasPaidCustomer: false,
           };
           setSubscription(testerSubscription);
           setLoading(false);
