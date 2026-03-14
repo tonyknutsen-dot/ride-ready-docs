@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useStaff } from '@/contexts/StaffContext';
 import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 
 const MAX_PHOTOS_PER_DEFECT = 5;
 
