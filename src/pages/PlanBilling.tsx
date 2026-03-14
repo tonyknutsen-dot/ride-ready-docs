@@ -249,9 +249,22 @@ export default function PlanBilling() {
         <Alert className="border-2 border-[#F59E0B] bg-[#FFFBEB]">
           <AlertTriangle className="h-5 w-5 text-[#F59E0B]" />
           <AlertTitle className="text-[#92400E] font-semibold">Cancellation Scheduled</AlertTitle>
-          <AlertDescription className="text-sm text-[#92400E]/80 mt-1">
-            Your subscription is scheduled to end on <strong>{getCancelDate()}</strong>.
-            Your access remains active until then. To undo this, open the Stripe billing portal and reactivate your plan.
+          <AlertDescription className="text-sm text-[#92400E]/80 mt-1 space-y-3">
+            <p>
+              Your subscription is scheduled to end on <strong>{getCancelDate()}</strong>.
+              Your access remains active until then.
+            </p>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-[#F59E0B] text-[#92400E] hover:bg-[#FEF3C7]"
+              onClick={handleManageSubscriptionClick}
+              disabled={portalLoading}
+            >
+              {portalLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />}
+              Reactivate in Billing Portal
+              <ExternalLink className="w-3 h-3 ml-1" />
+            </Button>
           </AlertDescription>
         </Alert>
       )}
