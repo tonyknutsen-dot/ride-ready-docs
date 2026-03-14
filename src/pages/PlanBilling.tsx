@@ -18,12 +18,12 @@ import { StripeInstructionModal } from "@/components/StripeInstructionModal";
 import { format } from "date-fns";
 
 const PLAN_FEATURES = [
-  { icon: Shield, label: "Equipment Register & Compliance" },
-  { icon: CheckCircle2, label: "Safety Checks & Audit Logs" },
-  { icon: FileText, label: "Document Storage & Expiry Alerts" },
-  { icon: Shield, label: "Risk Assessments" },
-  { icon: Users, label: "Staff Management & Permissions" },
-  { icon: Bell, label: "Inspection Scheduling & Reminders" },
+  { icon: CheckCircle2, label: "Billable items determine your current plan" },
+  { icon: Gauge, label: "Each plan has an item limit and next tier" },
+  { icon: Wrench, label: "Registered items are tracked across all categories" },
+  { icon: Shield, label: "Non-billable items are tracked separately" },
+  { icon: TrendingUp, label: "Upgrade plan when nearing your item limit" },
+  { icon: Users, label: "Self-serve limit is 50 billable items" },
 ];
 
 import { RIDE_TIERS } from '@/config/stripePricing';
