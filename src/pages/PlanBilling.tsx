@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useTester } from "@/contexts/TesterContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -51,12 +52,14 @@ export default function PlanBilling() {
     const canceled = searchParams.get('canceled');
 
     if (success === 'true') {
+      // Refresh the auth session in case the JWT expired while user was in Stripe
+      supabase.auth.refreshSession().then(() => {
+        checkSubscriptionStatus();
+      });
       toast({ 
         title: "Subscription activated!", 
         description: "Thank you for subscribing. Your plan is now active.",
       });
-      // Sync subscription status
-      checkSubscriptionStatus();
       // Clear URL params
       nav('/billing', { replace: true });
     } else if (canceled === 'true') {
@@ -94,6 +97,7 @@ export default function PlanBilling() {
   };
 
   const handleRefreshAndDismiss = async () => {
+    await supabase.auth.refreshSession();
     await checkSubscriptionStatus();
     setShowReturnBanner(false);
     toast({ title: "Subscription status updated", description: "Your billing information is now current." });

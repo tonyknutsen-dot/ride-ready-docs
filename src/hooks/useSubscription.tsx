@@ -42,6 +42,7 @@ export interface SubscriptionData {
   freeAssetCount: number;
   rideLimit: number;
   canAddRide: boolean;
+  /** @deprecated Legacy field — no longer used in tier-based billing */
   extraItemsCount: number;
   currentPeriodEnd: string | null;
   hasStripeCustomer: boolean;
@@ -80,7 +81,7 @@ export const useSubscription = () => {
       const [profileResult, totalRideResult, billableRideResult] = await Promise.all([
         supabase
           .from('profiles')
-          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, extra_items_count, current_period_end')
+          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, current_period_end')
           .eq('user_id', profileUserId)
           .maybeSingle(),
         supabase
@@ -173,7 +174,7 @@ export const useSubscription = () => {
           freeAssetCount,
           rideLimit: RIDE_TIERS[currentTier].max,
           canAddRide: mappedStatus === 'trial' || (mappedStatus === 'active' && billableRideCount < SELF_SERVE_MAX),
-          extraItemsCount: data.extra_items_count || 0,
+          extraItemsCount: 0,
           currentPeriodEnd: data.current_period_end,
           hasStripeCustomer: mappedStatus === 'active' || mappedStatus === 'past_due',
           hasStripeSubscription: mappedStatus === 'active' || mappedStatus === 'past_due',
