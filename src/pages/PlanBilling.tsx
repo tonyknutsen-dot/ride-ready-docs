@@ -203,12 +203,20 @@ export default function PlanBilling() {
 
   const status = subscription?.subscriptionStatus ?? "trial";
   const isCancelScheduled = subscription?.cancelAtPeriodEnd === true && status === 'active';
-  const isTrialOrExpired = status === "trial" || status === "expired" || !subscription?.hasStripeSubscription;
+  const isPastDue = status === 'past_due';
+  const pastDueGraceActive = isPastDue && subscription?.currentPeriodEnd && new Date(subscription.currentPeriodEnd) > new Date();
+  const isTrialOrExpired = !isPastDue && (status === "trial" || status === "expired" || !subscription?.hasStripeSubscription);
 
   const getPlanName = () => {
+    if (isPastDue) return `${subscription?.tierLabel || 'Starter'} Plan`;
     if (status === 'active') return `${subscription?.tierLabel || 'Starter'} Plan`;
     if (status === "trial") return "Free Trial";
     return "Expired";
+  };
+
+  const getGraceEndDate = () => {
+    if (!subscription?.currentPeriodEnd) return null;
+    return format(new Date(subscription.currentPeriodEnd), "MMMM d, yyyy");
   };
 
   const getCancelDate = () => {
