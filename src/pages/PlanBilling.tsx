@@ -361,24 +361,30 @@ export default function PlanBilling() {
             )}
           </div>
 
-          {/* Price + renewal tiles (active only) */}
-          {!isTrialOrExpired && (
+          {/* Price + renewal tiles (active or past_due) */}
+          {(!isTrialOrExpired || isPastDue) && (
             <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0]">
-                <CreditCard className="w-4 h-4 text-[#16A34A] shrink-0" />
+              <div className={`flex items-center gap-2 p-3 rounded-lg ${isPastDue
+                ? 'bg-destructive/5 border border-destructive/20'
+                : 'bg-[#F0FDF4] border border-[#BBF7D0]'}`}>
+                <CreditCard className={`w-4 h-4 shrink-0 ${isPastDue ? 'text-destructive' : 'text-[#16A34A]'}`} />
                 <div>
                   <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Price</div>
                   <div className="text-sm font-semibold">£{subscription?.tierPrice?.toFixed(2)}/mo</div>
                 </div>
               </div>
               {subscription?.currentPeriodEnd && (
-                <div className={`flex items-center gap-2 p-3 rounded-lg ${isCancelScheduled
-                  ? 'bg-[#FFFBEB] border border-[#FDE68A]'
-                  : 'bg-[#EFF6FF] border border-[#BFDBFE]'}`}>
-                  <Calendar className={`w-4 h-4 shrink-0 ${isCancelScheduled ? 'text-[#F59E0B]' : 'text-[#1D4ED8]'}`} />
+                <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                  isPastDue
+                    ? 'bg-destructive/5 border border-destructive/20'
+                    : isCancelScheduled
+                    ? 'bg-[#FFFBEB] border border-[#FDE68A]'
+                    : 'bg-[#EFF6FF] border border-[#BFDBFE]'}`}>
+                  <Calendar className={`w-4 h-4 shrink-0 ${
+                    isPastDue ? 'text-destructive' : isCancelScheduled ? 'text-[#F59E0B]' : 'text-[#1D4ED8]'}`} />
                   <div>
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                      {isCancelScheduled ? 'Ends' : 'Renews'}
+                      {isPastDue ? 'Grace ends' : isCancelScheduled ? 'Ends' : 'Renews'}
                     </div>
                     <div className="text-sm font-semibold">
                       {format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}
