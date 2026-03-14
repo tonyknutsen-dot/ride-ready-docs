@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { TrialStatus } from "@/components/TrialStatus";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   FileText, Cog, Calendar, Wrench, CheckSquare,
   Settings, Bell, AlertTriangle, ChevronRight, Clock, ShieldCheck
