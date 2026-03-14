@@ -326,7 +326,12 @@ export default function PlanBilling() {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-foreground">{getPlanName()}</span>
-                {!isTrialOrExpired && (
+                {isPastDue && (
+                  <Badge className="text-[10px] px-2 py-0 bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/10">
+                    Payment Failed
+                  </Badge>
+                )}
+                {!isTrialOrExpired && !isPastDue && (
                   <Badge className={`text-[10px] px-2 py-0 ${isCancelScheduled
                     ? 'bg-[#FEF3C7] text-[#92400E] border-[#F59E0B] hover:bg-[#FEF3C7]'
                     : 'bg-[#DBEAFE] text-[#1D4ED8] border-[#BFDBFE] hover:bg-[#DBEAFE]'}`}>
