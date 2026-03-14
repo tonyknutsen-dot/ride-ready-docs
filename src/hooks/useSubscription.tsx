@@ -158,7 +158,12 @@ export const useSubscription = () => {
           mappedStatus = 'expired';
         }
 
-        const currentTier = getRideTier(billableRideCount);
+        // For active/past_due subscribers, use the plan stored by check-subscription (matches Stripe).
+        // For trial/expired users, calculate from ride count.
+        const stripeTier = data.subscription_plan as RideTier | null;
+        const currentTier = (mappedStatus === 'active' || mappedStatus === 'past_due') && stripeTier && RIDE_TIERS[stripeTier]
+          ? stripeTier
+          : getRideTier(billableRideCount);
 
         const subscriptionData: SubscriptionData = {
           trialStartedAt: data.trial_started_at,
