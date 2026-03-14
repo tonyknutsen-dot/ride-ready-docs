@@ -291,6 +291,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (guardWrite()) return;
     
     // Only staff without manager role are blocked from adding equipment
     if (!canAddRides && !isEditMode) {
