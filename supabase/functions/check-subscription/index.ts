@@ -70,24 +70,31 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    const subscriptions = await stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 });
-    const hasActiveSub = subscriptions.data.length > 0;
+    // Check for active OR past_due subscriptions
+    const [activeSubs, pastDueSubs] = await Promise.all([
+      stripe.subscriptions.list({ customer: customerId, status: "active", limit: 1 }),
+      stripe.subscriptions.list({ customer: customerId, status: "past_due", limit: 1 }),
+    ]);
+
+    const subscription = activeSubs.data[0] || pastDueSubs.data[0];
+    const hasActiveSub = !!subscription;
     let tier: string | null = null;
     let subscriptionEnd: string | null = null;
+    let subStatus: 'active' | 'past_due' = 'active';
 
     if (hasActiveSub) {
-      const subscription = subscriptions.data[0];
+      subStatus = subscription.status === 'past_due' ? 'past_due' : 'active';
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
       const productId = subscription.items.data[0]?.price.product as string;
       tier = PRODUCT_TO_TIER[productId] || 'starter';
-      logStep("Active subscription found", { subscriptionId: subscription.id, tier, productId });
+      logStep("Subscription found", { subscriptionId: subscription.id, tier, productId, status: subStatus });
 
       const { error: updateError } = await supabaseClient
         .from("profiles")
         .update({
           stripe_customer_id: customerId,
           stripe_subscription_id: subscription.id,
-          subscription_status: 'active',
+          subscription_status: subStatus,
           subscription_plan: tier,
           billing_cycle: 'monthly',
           current_period_end: subscriptionEnd,
