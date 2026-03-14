@@ -414,7 +414,10 @@ export default function PlanBilling() {
                     {subscription?.tierLabel} — item limit {limit === Infinity ? 'unlimited' : limit}
                   </Badge>
                 </div>
-              </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Self-serve limit: 50 billable items. Need more capacity? Contact support.
+                </p>
 
               {/* Upgrade nudge */}
               {(isNearLimit || isAtLimit) && !isTrialOrExpired && (
