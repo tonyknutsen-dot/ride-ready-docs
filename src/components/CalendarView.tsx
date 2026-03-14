@@ -404,6 +404,7 @@ const CalendarView = () => {
   };
 
   const handleAddEvent = async () => {
+    if (guardWrite()) return;
     setFormErrors({});
     try {
       if (formData.inspection_type.includes('check')) {
