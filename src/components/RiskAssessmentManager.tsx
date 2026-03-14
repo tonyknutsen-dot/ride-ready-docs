@@ -371,6 +371,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     };
 
     try {
+      if (guardWrite()) return;
       // Submit custom hazards and controls for admin review
       const submitCustomItems = async () => {
         if (!user || !selectedAssessment) return;
