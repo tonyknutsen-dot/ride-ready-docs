@@ -120,6 +120,7 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
   }
 
   if (isExpired) {
+    const wasPaid = subscription.wasPaidCustomer;
     return (
       <Card className="mb-4 md:mb-6 border-destructive/50 bg-destructive/5">
         <CardContent className="p-3 md:p-4">
@@ -127,15 +128,19 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
             <div className="flex items-start gap-3">
               <AlertTriangle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-destructive">Trial Expired</p>
+                <p className="font-semibold text-destructive">
+                  {wasPaid ? 'Subscription Expired' : 'Trial Expired'}
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  Your free trial has ended. Subscribe to continue using all features.
+                  {wasPaid
+                    ? 'Your subscription has ended. Resubscribe to restore full access. Your data is safe.'
+                    : 'Your free trial has ended. Subscribe to continue using all features.'}
                 </p>
               </div>
             </div>
             {canAccessBilling ? (
               <Button onClick={onUpgrade} variant="destructive" size="sm" className="flex-shrink-0 self-start sm:self-center">
-                Subscribe Now
+                {wasPaid ? 'Resubscribe' : 'Subscribe Now'}
               </Button>
             ) : (
               <p className="text-xs text-muted-foreground flex-shrink-0 self-start sm:self-center">
