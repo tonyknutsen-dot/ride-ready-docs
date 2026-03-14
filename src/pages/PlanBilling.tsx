@@ -392,7 +392,7 @@ export default function PlanBilling() {
                   </div>
                   {(isNearLimit || isAtLimit) && (
                     <p className="text-[11px] font-medium" style={{ color: barColor }}>
-                      {isAtLimit ? "You've reached the self-serve plan limit of 50 items. Need more capacity? Contact us about a larger operator plan." : "Approaching plan limit."}
+                      {isAtLimit ? "You've reached the item limit for your current plan. Upgrade to add more items, or contact us for a custom plan." : "Approaching your plan's item limit."}
                     </p>
                   )}
                 </div>
