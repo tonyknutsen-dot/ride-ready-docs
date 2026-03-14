@@ -13,6 +13,7 @@ interface TrialStatusProps {
 export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
   const { subscription, loading, openCustomerPortal } = useSubscription();
   const { canAccessBilling } = useStaff();
+  const navigate = useNavigate();
 
   if (loading || !subscription) return null;
   const { isTrialActive, isExpired, daysRemaining, subscriptionStatus, isTesterAccount, currentTier, billableRideCount } = subscription;
