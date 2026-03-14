@@ -96,145 +96,154 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let isMounted = true;
     let initialLoadDone = false;
+    let bootstrapTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const finalizeInitialLoad = () => {
+      if (!isMounted || initialLoadDone) return;
+      initialLoadDone = true;
+      setLoading(false);
+    };
+
+    const withTimeout = async <T,>(promise: Promise<T>, timeoutMs: number, label: string): Promise<T> => {
+      return Promise.race([
+        promise,
+        new Promise<T>((_, reject) => {
+          setTimeout(() => reject(new Error(`${label}_timeout`)), timeoutMs);
+        }),
+      ]);
+    };
+
+    const hydrateAuthenticatedState = async (session: Session, source: 'init' | 'event') => {
+      if (!isMounted) return;
+
+      try {
+        const cached = await getIdentityCache(session.user.id);
+        if (!isMounted) return;
+        if (cached) {
+          console.log('[AUTH] Loaded identity cache for', session.user.id, { source });
+          setCachedIdentity(cached);
+        }
+      } catch (error) {
+        console.warn('[AUTH] Failed to load identity cache:', error);
+      }
+
+      if (!navigator.onLine) {
+        if (isMounted) {
+          setIsOfflineMode(true);
+        }
+        return;
+      }
+
+      try {
+        const { suspended, reason } = await withTimeout(
+          checkSuspensionStatus(session.user.id),
+          8000,
+          'check_suspension'
+        );
+
+        if (!isMounted) return;
+        setIsSuspended(suspended);
+        setSuspensionReason(reason);
+
+        if (suspended) {
+          await supabase.auth.signOut();
+        }
+      } catch (error) {
+        console.warn('[AUTH] Suspension check timed out or failed:', error);
+      }
+    };
 
     console.log('[AUTH] Initializing auth', {
       pathname: window.location.pathname,
       hasHash: !!window.location.hash,
-      origin: window.location.origin
+      origin: window.location.origin,
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        if (!isMounted) return;
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!isMounted) return;
 
-        setSession(session);
-        setUser(session?.user ?? null);
+      setSession(session);
+      setUser(session?.user ?? null);
 
-        // Only clear offline mode if we're actually online
-        if (navigator.onLine) {
-          setIsOfflineMode(false);
-        }
-
-        if (session?.user) {
-          // Only run network-dependent checks when online
-          if (navigator.onLine) {
-            setTimeout(async () => {
-              if (!isMounted) return;
-              try {
-                const { suspended, reason } = await checkSuspensionStatus(session.user.id);
-                if (!isMounted) return;
-                setIsSuspended(suspended);
-                setSuspensionReason(reason);
-
-                if (suspended) {
-                  await supabase.auth.signOut();
-                } else if (event === 'SIGNED_IN') {
-                  syncSubscriptionStatus(session.user.id);
-                }
-              } catch {
-                // Network failed during check – ignore, don't block
-              }
-            }, 0);
-          }
-        } else {
-          setIsSuspended(false);
-          setSuspensionReason(null);
-        }
-
-        if (!initialLoadDone) {
-          initialLoadDone = true;
-          setLoading(false);
-        }
+      if (navigator.onLine) {
+        setIsOfflineMode(false);
       }
-    );
+
+      if (session?.user) {
+        void hydrateAuthenticatedState(session, 'event');
+        if (event === 'SIGNED_IN') {
+          syncSubscriptionStatus(session.user.id);
+        }
+      } else {
+        setIsSuspended(false);
+        setSuspensionReason(null);
+      }
+
+      finalizeInitialLoad();
+    });
 
     const initializeAuth = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        const { data } = await withTimeout(supabase.auth.getSession(), 10000, 'get_session');
         if (!isMounted) return;
 
-        if (session?.user) {
-          // We have a valid Supabase session. Set user immediately.
-          setSession(session);
-          setUser(session.user);
-
-          // Try to load cached identity from IndexedDB
-          try {
-            const cached = await getIdentityCache(session.user.id);
-            if (cached) {
-              console.log('[AUTH] Loaded identity cache for', session.user.id);
-              setCachedIdentity(cached);
-            }
-          } catch (e) {
-            console.warn('[AUTH] Failed to load identity cache:', e);
-          }
-
-          // If online, check suspension (profile fetch will happen in useProfileComplete)
-          if (navigator.onLine) {
-            try {
-              const { suspended, reason } = await checkSuspensionStatus(session.user.id);
-              if (!isMounted) return;
-              setIsSuspended(suspended);
-              setSuspensionReason(reason);
-            } catch {
-              // Suspension check failed but we have a session – continue
-            }
-          } else {
-            // Offline with session – mark offline mode
-            console.log('[AUTH] Offline boot with valid session');
-            setIsOfflineMode(true);
-          }
-
-          if (!initialLoadDone) {
-            initialLoadDone = true;
-            setLoading(false);
-          }
+        const activeSession = data.session;
+        if (activeSession?.user) {
+          setSession(activeSession);
+          setUser(activeSession.user);
+          finalizeInitialLoad();
+          void hydrateAuthenticatedState(activeSession, 'init');
           return;
         }
 
-        // No session returned
         if (!navigator.onLine) {
-          // Offline with no session – can't do anything
           console.log('[AUTH] Offline boot with no session');
-          if (!initialLoadDone) {
-            initialLoadDone = true;
-            setLoading(false);
-          }
+          setIsOfflineMode(true);
           return;
         }
 
-        // Online with no session – check for OAuth callback
-        if (!initialLoadDone) {
-          const hash = window.location.hash;
-          const hasAuthCallback = hash.includes('access_token') || hash.includes('error_description');
+        const hash = window.location.hash;
+        const hasAuthCallback = hash.includes('access_token') || hash.includes('error_description');
 
-          if (hasAuthCallback) {
-            console.log('[AUTH] OAuth callback detected, waiting for session from hash...');
-            setTimeout(() => {
-              if (isMounted && !initialLoadDone) {
-                console.log('[AUTH] OAuth callback timeout - setting loading false');
-                initialLoadDone = true;
-                setLoading(false);
-              }
-            }, 5000);
-            return;
-          }
+        if (hasAuthCallback) {
+          console.log('[AUTH] OAuth callback detected, waiting for session from hash...');
+          setTimeout(() => {
+            if (isMounted) {
+              console.log('[AUTH] OAuth callback timeout - clearing auth loading');
+              finalizeInitialLoad();
+            }
+          }, 5000);
+          return;
+        }
 
+        setSession(null);
+        setUser(null);
+      } catch (error) {
+        console.warn('[AUTH] initializeAuth failed or timed out:', error);
+        if (isMounted) {
           setSession(null);
           setUser(null);
         }
       } finally {
-        if (isMounted && !initialLoadDone) {
-          initialLoadDone = true;
-          setLoading(false);
-        }
+        finalizeInitialLoad();
       }
     };
 
-    initializeAuth();
+    bootstrapTimeout = setTimeout(() => {
+      if (!isMounted || initialLoadDone) return;
+      console.warn('[AUTH] Bootstrap timeout reached, forcing loading=false');
+      finalizeInitialLoad();
+    }, 15000);
+
+    void initializeAuth();
 
     return () => {
       isMounted = false;
+      if (bootstrapTimeout) {
+        clearTimeout(bootstrapTimeout);
+      }
       subscription.unsubscribe();
     };
   }, []);
