@@ -203,12 +203,20 @@ export default function PlanBilling() {
 
   const status = subscription?.subscriptionStatus ?? "trial";
   const isCancelScheduled = subscription?.cancelAtPeriodEnd === true && status === 'active';
-  const isTrialOrExpired = status === "trial" || status === "expired" || !subscription?.hasStripeSubscription;
+  const isPastDue = status === 'past_due';
+  const pastDueGraceActive = isPastDue && subscription?.currentPeriodEnd && new Date(subscription.currentPeriodEnd) > new Date();
+  const isTrialOrExpired = !isPastDue && (status === "trial" || status === "expired" || !subscription?.hasStripeSubscription);
 
   const getPlanName = () => {
+    if (isPastDue) return `${subscription?.tierLabel || 'Starter'} Plan`;
     if (status === 'active') return `${subscription?.tierLabel || 'Starter'} Plan`;
     if (status === "trial") return "Free Trial";
     return "Expired";
+  };
+
+  const getGraceEndDate = () => {
+    if (!subscription?.currentPeriodEnd) return null;
+    return format(new Date(subscription.currentPeriodEnd), "MMMM d, yyyy");
   };
 
   const getCancelDate = () => {
@@ -240,6 +248,36 @@ export default function PlanBilling() {
                 <X className="w-4 h-4" />
               </Button>
             </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Payment Failed Banner */}
+      {isPastDue && (
+        <Alert className="border-2 border-destructive bg-destructive/10">
+          <AlertTriangle className="h-5 w-5 text-destructive" />
+          <AlertTitle className="text-destructive font-semibold">Payment Failed</AlertTitle>
+          <AlertDescription className="text-sm text-destructive/80 mt-1 space-y-3">
+            {pastDueGraceActive ? (
+              <p>
+                Your last payment failed. You have until <strong>{getGraceEndDate()}</strong> to update your payment method before access is restricted.
+              </p>
+            ) : (
+              <p>
+                Your payment failed and the grace period has ended. Please update your payment method to restore full access.
+              </p>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-destructive text-destructive hover:bg-destructive/10"
+              onClick={handleManageSubscriptionClick}
+              disabled={portalLoading}
+            >
+              {portalLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
+              Update Payment Method
+              <ExternalLink className="w-3 h-3 ml-1" />
+            </Button>
           </AlertDescription>
         </Alert>
       )}
@@ -288,7 +326,12 @@ export default function PlanBilling() {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-foreground">{getPlanName()}</span>
-                {!isTrialOrExpired && (
+                {isPastDue && (
+                  <Badge className="text-[10px] px-2 py-0 bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/10">
+                    Payment Failed
+                  </Badge>
+                )}
+                {!isTrialOrExpired && !isPastDue && (
                   <Badge className={`text-[10px] px-2 py-0 ${isCancelScheduled
                     ? 'bg-[#FEF3C7] text-[#92400E] border-[#F59E0B] hover:bg-[#FEF3C7]'
                     : 'bg-[#DBEAFE] text-[#1D4ED8] border-[#BFDBFE] hover:bg-[#DBEAFE]'}`}>
@@ -297,7 +340,11 @@ export default function PlanBilling() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                {status === 'active'
+                {isPastDue
+                  ? pastDueGraceActive
+                    ? `Payment failed — grace period until ${getGraceEndDate()}.`
+                    : "Payment failed — grace period has ended."
+                  : status === 'active'
                   ? `Your pricing is based on billable items in your current plan.`
                   : status === "trial"
                   ? `${subscription?.daysRemaining} days remaining in trial`
@@ -314,24 +361,30 @@ export default function PlanBilling() {
             )}
           </div>
 
-          {/* Price + renewal tiles (active only) */}
-          {!isTrialOrExpired && (
+          {/* Price + renewal tiles (active or past_due) */}
+          {(!isTrialOrExpired || isPastDue) && (
             <div className="grid grid-cols-2 gap-2">
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-[#F0FDF4] border border-[#BBF7D0]">
-                <CreditCard className="w-4 h-4 text-[#16A34A] shrink-0" />
+              <div className={`flex items-center gap-2 p-3 rounded-lg ${isPastDue
+                ? 'bg-destructive/5 border border-destructive/20'
+                : 'bg-[#F0FDF4] border border-[#BBF7D0]'}`}>
+                <CreditCard className={`w-4 h-4 shrink-0 ${isPastDue ? 'text-destructive' : 'text-[#16A34A]'}`} />
                 <div>
                   <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Price</div>
                   <div className="text-sm font-semibold">£{subscription?.tierPrice?.toFixed(2)}/mo</div>
                 </div>
               </div>
               {subscription?.currentPeriodEnd && (
-                <div className={`flex items-center gap-2 p-3 rounded-lg ${isCancelScheduled
-                  ? 'bg-[#FFFBEB] border border-[#FDE68A]'
-                  : 'bg-[#EFF6FF] border border-[#BFDBFE]'}`}>
-                  <Calendar className={`w-4 h-4 shrink-0 ${isCancelScheduled ? 'text-[#F59E0B]' : 'text-[#1D4ED8]'}`} />
+                <div className={`flex items-center gap-2 p-3 rounded-lg ${
+                  isPastDue
+                    ? 'bg-destructive/5 border border-destructive/20'
+                    : isCancelScheduled
+                    ? 'bg-[#FFFBEB] border border-[#FDE68A]'
+                    : 'bg-[#EFF6FF] border border-[#BFDBFE]'}`}>
+                  <Calendar className={`w-4 h-4 shrink-0 ${
+                    isPastDue ? 'text-destructive' : isCancelScheduled ? 'text-[#F59E0B]' : 'text-[#1D4ED8]'}`} />
                   <div>
                     <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
-                      {isCancelScheduled ? 'Ends' : 'Renews'}
+                      {isPastDue ? 'Grace ends' : isCancelScheduled ? 'Ends' : 'Renews'}
                     </div>
                     <div className="text-sm font-semibold">
                       {format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}
@@ -371,6 +424,20 @@ export default function PlanBilling() {
                   <PlanSelection onClose={() => setDialogOpen(false)} />
                 </DialogContent>
               </Dialog>
+            ) : isPastDue ? (
+              <Button
+                className="w-full bg-destructive hover:bg-destructive/90 text-white shadow-md"
+                onClick={handleManageSubscriptionClick}
+                disabled={portalLoading}
+              >
+                {portalLoading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <CreditCard className="w-4 h-4 mr-2" />
+                )}
+                Update Payment Method
+                <ExternalLink className="w-3 h-3 ml-1" />
+              </Button>
             ) : (
               <Button
                 variant="outline"
