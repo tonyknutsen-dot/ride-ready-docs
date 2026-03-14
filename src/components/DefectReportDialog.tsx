@@ -40,6 +40,7 @@ const DefectReportDialog = ({
   defaultDescription,
 }: DefectReportDialogProps) => {
   const [open, setOpen] = useState(false);
+  const { guardWrite } = useBillingWriteGuard();
   const [description, setDescription] = useState(defaultDescription || '');
   const [severity, setSeverity] = useState<DefectSeverity>('non_urgent');
   const [locationOnRide, setLocationOnRide] = useState('');
