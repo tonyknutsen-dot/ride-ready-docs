@@ -196,6 +196,7 @@ export const useSubscription = () => {
           tierPrice: getTierPrice(currentTier),
           cancelAtPeriodEnd: data.cancel_at_period_end ?? false,
           cancelAt: data.cancel_at ?? null,
+          wasPaidCustomer: !!data.stripe_customer_id,
         };
 
         setSubscription(subscriptionData);
