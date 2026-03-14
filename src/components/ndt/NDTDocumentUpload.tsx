@@ -26,6 +26,7 @@ const NDTDocumentUpload = ({
 }: NDTDocumentUploadProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [documentName, setDocumentName] = useState('');
