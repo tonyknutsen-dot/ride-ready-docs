@@ -81,6 +81,7 @@ interface DocumentUploadProps {
 const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, prefillDocName, replacingDocumentId }: DocumentUploadProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const uploadMutation = useOptimisticDocumentUpload();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState(prefillDocType || '');
