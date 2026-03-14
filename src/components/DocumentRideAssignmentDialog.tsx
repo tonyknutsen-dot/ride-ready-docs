@@ -40,6 +40,7 @@ const DocumentRideAssignmentDialog = ({
   const { isStaff } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [rides, setRides] = useState<RideAssignment[]>([]);
