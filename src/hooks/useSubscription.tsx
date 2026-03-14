@@ -257,7 +257,7 @@ export const useSubscription = () => {
       return { blocked: true, reason: 'tester_account' };
     }
 
-    const returnUrl = window.location.origin;
+    const returnUrl = `${window.location.origin}/billing`;
     
     const { data, error } = await supabase.functions.invoke('customer-portal', {
       body: { returnUrl },
@@ -266,7 +266,7 @@ export const useSubscription = () => {
     if (error) throw error;
     
     if (data?.url) {
-      window.open(data.url, '_blank');
+      window.location.href = data.url;
     }
 
     return data;
