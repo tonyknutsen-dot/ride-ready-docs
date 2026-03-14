@@ -92,10 +92,16 @@ serve(async (req) => {
         const productId = subscription.items.data[0]?.price.product as string;
         const tier = PRODUCT_TO_TIER[productId] || 'starter';
         
+        const mappedStatus = subscription.status === 'active'
+          ? 'active'
+          : subscription.status === 'past_due'
+          ? 'past_due'
+          : 'expired';
+
         const { error } = await supabaseAdmin
           .from("profiles")
           .update({
-            subscription_status: subscription.status === 'active' ? 'active' : 'expired',
+            subscription_status: mappedStatus,
             subscription_plan: tier,
             current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
           })
