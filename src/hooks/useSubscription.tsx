@@ -52,6 +52,8 @@ export interface SubscriptionData {
   currentTier: RideTier;
   tierLabel: string;
   tierPrice: number;
+  cancelAtPeriodEnd: boolean;
+  cancelAt: string | null;
 }
 
 export const useSubscription = () => {
