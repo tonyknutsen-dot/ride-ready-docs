@@ -81,7 +81,7 @@ export const useSubscription = () => {
       const [profileResult, totalRideResult, billableRideResult] = await Promise.all([
         supabase
           .from('profiles')
-          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, extra_items_count, current_period_end')
+          .select('trial_started_at, trial_ends_at, subscription_status, subscription_plan, billing_cycle, current_period_end')
           .eq('user_id', profileUserId)
           .maybeSingle(),
         supabase
