@@ -10,6 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { CheckCircle2, Calendar as CalendarIcon, Repeat, Camera, Upload, X, FileText, Image as ImageIcon, ArrowLeft, ExternalLink, Building2, Hash, CloudOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
@@ -61,6 +62,7 @@ const MarkCompleteSheet = ({
   onCompleted,
 }: MarkCompleteSheetProps) => {
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { isOnline } = useOnlineStatus();
@@ -138,6 +140,7 @@ const MarkCompleteSheet = ({
   const isInspectionCategory = eventCategory === 'inspection' || eventCategory === 'ndt';
 
   const handleConfirm = async () => {
+    if (guardWrite()) return;
     if (isInspectionCategory && !inspectorCompany.trim()) {
       toast({ title: "Inspector / Company required", description: "Please enter the inspector or company name for this inspection.", variant: "destructive" });
       return;

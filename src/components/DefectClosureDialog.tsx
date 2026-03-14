@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { Loader2, CheckCircle, Camera, Upload, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -69,6 +70,7 @@ const DefectClosureDialog = ({
 }: DefectClosureDialogProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -130,6 +132,7 @@ const DefectClosureDialog = ({
   };
 
   const handleCloseDefect = async () => {
+    if (guardWrite()) return;
     if (!defect) return;
 
     if (!closureReason) {

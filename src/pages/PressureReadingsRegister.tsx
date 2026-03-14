@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useToast } from '@/hooks/use-toast';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useDateTimeSettings } from '@/hooks/useDateTimeSettings';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
@@ -131,6 +132,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
   const { user } = useAuth();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const { formatDate } = useDateTimeSettings();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
@@ -439,6 +441,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
   };
 
   const handleSave = async () => {
+    if (guardWrite()) return;
     if (!effectiveUserId || !rideId) return;
     if (!takenBy) { toast({ title: 'Missing fields', description: '"Taken by" is required.', variant: 'destructive' }); return; }
     if (!siteName) { toast({ title: 'Missing fields', description: 'Site / location name is required.', variant: 'destructive' }); return; }

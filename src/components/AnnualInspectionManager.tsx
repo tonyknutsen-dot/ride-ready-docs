@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Building, Plus, Edit, Trash2, Calendar, Upload, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { format } from 'date-fns';
@@ -31,6 +32,7 @@ interface AnnualInspectionManagerProps {
 const AnnualInspectionManager = ({ ride }: AnnualInspectionManagerProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const [reports, setReports] = useState<AnnualInspectionReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
@@ -113,6 +115,7 @@ const AnnualInspectionManager = ({ ride }: AnnualInspectionManagerProps) => {
   };
 
   const handleSave = async () => {
+    if (guardWrite()) return;
     if (!formData.inspector_name.trim() || !formData.inspection_company.trim() || !formData.inspection_date) {
       toast({
         title: "Missing information",

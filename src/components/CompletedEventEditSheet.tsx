@@ -13,6 +13,7 @@ import { CalendarIcon, Save, Loader2, Upload, Camera, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { formatDateUK } from "@/utils/dateFormat";
 import { compressImage } from "@/utils/imageCompression";
 import { createComplianceDocument, categoryToDocTypeCode } from "@/utils/complianceDocumentCreator";
@@ -41,6 +42,7 @@ interface CompletedEventEditSheetProps {
 
 const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEditSheetProps) => {
   const queryClient = useQueryClient();
+  const { guardWrite } = useBillingWriteGuard();
   const [saving, setSaving] = useState(false);
   const [completionDate, setCompletionDate] = useState<Date>(
     event.completedAt ? new Date(event.completedAt) : new Date()
@@ -68,6 +70,7 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
   };
 
   const handleSave = async () => {
+    if (guardWrite()) return;
     if (!canSave) {
       toast.error("Edit reason is required");
       return;

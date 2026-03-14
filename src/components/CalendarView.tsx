@@ -32,6 +32,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useStaff } from '@/contexts/StaffContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useToast } from '@/hooks/use-toast';
 import { useQueryClient } from '@tanstack/react-query';
 import { format, parseISO, isSameDay, addDays, startOfMonth, endOfMonth } from 'date-fns';
@@ -128,6 +129,7 @@ const CalendarView = () => {
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
   const { subscription } = useSubscription();
+  const { guardWrite } = useBillingWriteGuard();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
@@ -305,6 +307,7 @@ const CalendarView = () => {
   };
 
   const handleDeleteEvent = async (event: CalendarEvent) => {
+    if (guardWrite()) return;
     try {
       const { error } = await supabase
         .from('compliance_events')
@@ -402,6 +405,7 @@ const CalendarView = () => {
   };
 
   const handleAddEvent = async () => {
+    if (guardWrite()) return;
     setFormErrors({});
     try {
       if (formData.inspection_type.includes('check')) {

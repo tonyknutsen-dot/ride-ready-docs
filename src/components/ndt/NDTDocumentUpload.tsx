@@ -7,6 +7,7 @@ import { Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 
 interface NDTDocumentUploadProps {
   open: boolean;
@@ -25,6 +26,7 @@ const NDTDocumentUpload = ({
 }: NDTDocumentUploadProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const [uploading, setUploading] = useState(false);
   const [file, setFile] = useState<File | null>(null);
   const [documentName, setDocumentName] = useState('');
@@ -38,6 +40,7 @@ const NDTDocumentUpload = ({
     : 'e.g., NDT Report - January 2025';
 
   const handleUpload = async () => {
+    if (guardWrite()) return;
     if (!file || !user) return;
 
     setUploading(true);

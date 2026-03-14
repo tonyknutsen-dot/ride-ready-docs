@@ -11,6 +11,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { ArrowLeft, ArrowRight, Plus, Trash2, Save, Library, Pencil, Check, X, Sparkles, CheckSquare, ListChecks, AlertTriangle, Search, ChevronDown, ChevronUp, GripVertical } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import CheckLibraryDialog from './CheckLibraryDialog';
@@ -75,6 +76,7 @@ const getEquipmentGroup = (categoryGroup: string): string | null => {
 const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCancel }: TemplateBuilderProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const freqLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
   const equipmentGroup = getEquipmentGroup(ride.ride_categories?.category_group ?? '');
   const defaultTemplateName = `${freqLabel} Safety Check`;
@@ -278,6 +280,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   };
 
   const handleSaveTemplate = async () => {
+    if (guardWrite()) return;
     if (!templateName.trim()) {
       toast({ title: 'Missing name', description: 'Please enter a checklist name', variant: 'destructive' });
       return;

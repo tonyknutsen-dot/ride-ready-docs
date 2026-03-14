@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -110,6 +111,7 @@ interface AuditLogEntry {
 export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ride }) => {
   const { user } = useAuth();
   const { terminology } = useTerminology();
+  const { guardWrite } = useBillingWriteGuard();
   const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
   const [selectedAssessment, setSelectedAssessment] = useState<RiskAssessment | null>(null);
   const [assessmentItems, setAssessmentItems] = useState<RiskAssessmentItem[]>([]);
@@ -285,6 +287,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
 
   const handleCreateAssessment = async () => {
     if (!user) return;
+    if (guardWrite()) return;
 
     // Prepare data, converting empty strings to null for date fields
     const insertData = {
@@ -368,6 +371,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
     };
 
     try {
+      if (guardWrite()) return;
       // Submit custom hazards and controls for admin review
       const submitCustomItems = async () => {
         if (!user || !selectedAssessment) return;
@@ -496,6 +500,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
 
   const handleStatusChange = async (newStatus: string) => {
     if (!selectedAssessment) return;
+    if (guardWrite()) return;
 
     // Block completion if any items are still open or in progress
     if (newStatus === 'completed') {
@@ -542,6 +547,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
 
   const handleEditAssessment = async () => {
     if (!selectedAssessment || !user) return;
+    if (guardWrite()) return;
 
     const oldData = {
       assessor_name: selectedAssessment.assessor_name,

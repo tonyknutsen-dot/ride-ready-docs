@@ -18,6 +18,7 @@ import { format, differenceInDays, isBefore } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useQueryClient } from '@tanstack/react-query';
 import { EmptyState } from '@/components/EmptyState';
 import { Tables } from '@/integrations/supabase/types';
@@ -48,6 +49,7 @@ const INSPECTION_TYPES = [
 
 const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => {
   const [events, setEvents] = useState<ComplianceEvent[]>([]);
+  const { guardWrite } = useBillingWriteGuard();
   const [loading, setLoading] = useState(true);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<ComplianceEvent | null>(null);
@@ -139,6 +141,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
   };
 
   const handleSave = async () => {
+    if (guardWrite()) return;
     if (!formData.inspection_type || !formData.inspection_name || !formData.due_date) {
       toast({
         title: "Missing fields",

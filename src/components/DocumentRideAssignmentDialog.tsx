@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -39,6 +40,7 @@ const DocumentRideAssignmentDialog = ({
   const { isStaff } = useStaff();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [rides, setRides] = useState<RideAssignment[]>([]);
@@ -109,6 +111,7 @@ const DocumentRideAssignmentDialog = ({
   };
 
   const handleSave = async () => {
+    if (guardWrite()) return;
     if (!document || !user) return;
 
     setSaving(true);

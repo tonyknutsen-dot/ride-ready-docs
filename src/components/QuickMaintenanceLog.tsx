@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Wrench, Loader2, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -35,10 +36,12 @@ const QuickMaintenanceLog = ({ rideId, rideName, checkItemText, onLogged, onCanc
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
   const queryClient = useQueryClient();
 
   const handleSubmit = async () => {
+    if (guardWrite()) return;
     if (!description.trim()) return;
     setSubmitting(true);
 
