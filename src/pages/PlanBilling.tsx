@@ -246,7 +246,7 @@ export default function PlanBilling() {
             </div>
             <div>
               <CardTitle className="text-base">Plan & Billing</CardTitle>
-              <CardDescription className="text-xs">Manage your subscription.</CardDescription>
+              <CardDescription className="text-xs">Manage your current plan, item limit, and invoices.</CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -264,10 +264,10 @@ export default function PlanBilling() {
               </div>
               <p className="text-xs text-muted-foreground">
                 {status === 'active'
-                  ? `All-in-one compliance & operations platform`
+                  ? `Your pricing is based on billable items in your current plan.`
                   : status === "trial"
                   ? `${subscription?.daysRemaining} days remaining in trial`
-                  : "Your trial has expired — subscribe to continue"}
+                  : "Your trial has expired — choose an upgrade plan to continue."}
               </p>
             </div>
             {!isTrialOrExpired && subscription?.tierPrice && (
