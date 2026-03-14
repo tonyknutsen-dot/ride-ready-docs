@@ -236,6 +236,40 @@ export const useSubscription = () => {
     return billingUrl.toString();
   };
 
+  const navigateToStripeUrl = (rawUrl: string) => {
+    let safeUrl: string;
+
+    try {
+      const parsed = new URL(rawUrl);
+      if (parsed.protocol !== 'https:') {
+        throw new Error('invalid_protocol');
+      }
+      safeUrl = parsed.toString();
+    } catch {
+      throw new Error('Invalid Stripe redirect URL');
+    }
+
+    // In Lovable preview (embedded iframe), navigating current frame to Stripe can render a grey blocked page.
+    // Force top-level navigation first, then fall back to opening a new tab.
+    if (window.self !== window.top) {
+      try {
+        if (window.top) {
+          window.top.location.href = safeUrl;
+          return;
+        }
+      } catch (navigationError) {
+        console.warn('Top-level Stripe navigation failed; falling back to new tab', navigationError);
+      }
+
+      const popup = window.open(safeUrl, '_blank', 'noopener,noreferrer');
+      if (popup) return;
+
+      throw new Error('Unable to open Stripe. Please allow pop-ups and try again.');
+    }
+
+    window.location.href = safeUrl;
+  };
+
   // Create Stripe checkout session based on ride tier
   const createCheckout = async (tier: RideTier = 'starter') => {
     if (!user) throw new Error('User not authenticated');
@@ -252,11 +286,12 @@ export const useSubscription = () => {
     });
 
     if (error) throw error;
-    
-    if (data?.url) {
-      window.location.href = data.url;
+
+    if (!data?.url || typeof data.url !== 'string') {
+      throw new Error('Checkout URL was not returned by Stripe');
     }
-    
+
+    navigateToStripeUrl(data.url);
     return data;
   };
 
@@ -275,11 +310,12 @@ export const useSubscription = () => {
     });
 
     if (error) throw error;
-    
-    if (data?.url) {
-      window.location.href = data.url;
+
+    if (!data?.url || typeof data.url !== 'string') {
+      throw new Error('Customer portal URL was not returned by Stripe');
     }
 
+    navigateToStripeUrl(data.url);
     return data;
   };
 

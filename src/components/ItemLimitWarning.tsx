@@ -1,6 +1,6 @@
 import { TrendingUp, ShieldAlert } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useSubscription, RIDE_TIERS, getRideTier, getTierLabel, SELF_SERVE_MAX } from '@/hooks/useSubscription';
+import { useSubscription, RIDE_TIERS, getTierLabel, SELF_SERVE_MAX } from '@/hooks/useSubscription';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 
@@ -14,12 +14,11 @@ export const ItemLimitWarning = ({ className }: ItemLimitWarningProps) => {
 
   if (!subscription) return null;
 
-  const { billableRideCount, subscriptionStatus, isTesterAccount, isStaffMember } = subscription;
+  const { billableRideCount, subscriptionStatus, isTesterAccount, isStaffMember, currentTier } = subscription;
   
   if (isTesterAccount || isStaffMember) return null;
   if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trial') return null;
 
-  const currentTier = getRideTier(billableRideCount);
   const tierInfo = RIDE_TIERS[currentTier];
   
   // ── Over self-serve cap ──────────────────────────────────────────────
