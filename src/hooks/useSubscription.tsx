@@ -225,13 +225,48 @@ export const useSubscription = () => {
     await fetchSubscriptionData();
   };
 
+  const isLovablePreviewHost = (hostname: string) => hostname === 'lovable.app' || hostname.endsWith('.lovable.app');
+
+  const getPreviewWrapperUrl = (currentUrl: URL): URL | null => {
+    if (window.self === window.top) return null;
+
+    try {
+      const referrerUrl = new URL(document.referrer);
+      if (!isLovablePreviewHost(referrerUrl.hostname)) {
+        return null;
+      }
+
+      // Keep the preview shell host so return lands in the same preview context.
+      return referrerUrl;
+    } catch {
+      return null;
+    }
+  };
+
   const getBillingReturnUrl = () => {
-    const billingUrl = new URL(`${window.location.origin}/billing`);
-    const previewToken = new URL(window.location.href).searchParams.get('__lovable_token');
+    const currentUrl = new URL(window.location.href);
+    const previewWrapperUrl = getPreviewWrapperUrl(currentUrl);
+    const baseUrl = previewWrapperUrl ?? currentUrl;
+
+    const billingUrl = new URL(baseUrl.toString());
+    billingUrl.pathname = '/billing';
+    billingUrl.hash = '';
+    billingUrl.search = '';
+
+    const previewToken = currentUrl.searchParams.get('__lovable_token')
+      ?? previewWrapperUrl?.searchParams.get('__lovable_token')
+      ?? null;
 
     if (previewToken) {
       billingUrl.searchParams.set('__lovable_token', previewToken);
     }
+
+    console.info('[Subscription] Resolved Stripe billing return URL', {
+      returnUrl: billingUrl.toString(),
+      usedPreviewWrapper: Boolean(previewWrapperUrl),
+      currentHost: currentUrl.hostname,
+      referrerHost: previewWrapperUrl?.hostname ?? null,
+    });
 
     return billingUrl.toString();
   };
