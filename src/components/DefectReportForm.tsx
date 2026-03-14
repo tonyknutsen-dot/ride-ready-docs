@@ -96,6 +96,7 @@ const DefectReportForm = ({
   };
 
   const handleSubmit = async () => {
+    if (guardWrite()) return;
     if (!description.trim()) {
       toast({ title: "Description required", description: "Please describe the defect", variant: "destructive" });
       return;
