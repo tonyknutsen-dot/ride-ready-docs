@@ -52,6 +52,7 @@ import QuickMaintenanceLog from './QuickMaintenanceLog';
 import { createInspectionRecord, updateInspectionRecordPdf, type InspectionRecord, type ItemResultSnapshot } from '@/utils/inspectionRecordService';
 
 import InspectionRecordList from './InspectionRecordList';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 // CriticalDefectModal removed in showmen simplification
 import { useQueryClient as useQueryClientImport } from '@tanstack/react-query';
 type Ride = Tables<'rides'> & {
@@ -85,6 +86,7 @@ const FREQUENCY_LABELS: Record<string, string> = {
 
 const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediately = false }: InspectionChecklistProps) => {
   const navigate = useNavigate();
+  const { guardWrite } = useBillingWriteGuard();
   const [activeTemplate, setActiveTemplate] = useState<Template | null>(null);
   const [recentChecks, setRecentChecks] = useState<Check[]>([]);
   const [itemResults, setItemResults] = useState<{ [key: string]: CheckItemResult }>({});
@@ -718,6 +720,7 @@ const InspectionChecklist = ({ ride, frequency, onChecklistSaved, startImmediate
   };
 
   const handleSubmitChecks = async () => {
+    if (guardWrite()) return;
     if (!activeTemplate) return;
 
     // Validation

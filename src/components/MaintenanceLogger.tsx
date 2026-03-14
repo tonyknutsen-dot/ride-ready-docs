@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { Tables } from '@/integrations/supabase/types';
 import { compressImage } from '@/utils/imageCompression';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 
 type Ride = Tables<'rides'> & {
   ride_categories: {
@@ -175,6 +176,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
   const [someoneElse, setSomeoneElse] = useState(false);
   const [loggedInUserName, setLoggedInUserName] = useState('');
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const { user } = useAuth();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
 
@@ -318,6 +320,8 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
   };
 
   const handleSubmit = async () => {
+    if (guardWrite()) return;
+
     if (!formData.maintenance_type || !formData.description || !formData.performed_by) {
       toast({ title: "Validation Error", description: "Please fill in all required fields.", variant: "destructive" });
       return;

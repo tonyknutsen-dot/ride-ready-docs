@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { compressImage } from '@/utils/imageCompression';
 import { EmptyState } from '@/components/EmptyState';
 import { useOptimisticDocumentUpload } from '@/hooks/useOptimisticMutations';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 
 // Simplified showmen-friendly categories
 const DOCUMENT_CATEGORIES = {
@@ -80,6 +81,7 @@ interface DocumentUploadProps {
 const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, prefillDocName, replacingDocumentId }: DocumentUploadProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const uploadMutation = useOptimisticDocumentUpload();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [documentType, setDocumentType] = useState(prefillDocType || '');
@@ -159,6 +161,8 @@ const DocumentUpload = ({ rideId, rideName, onUploadSuccess, prefillDocType, pre
   };
 
   const handleUpload = async () => {
+    if (guardWrite()) return;
+
     if (!selectedFile || !documentType || !documentName || !user) {
       toast({
         title: "Missing information",

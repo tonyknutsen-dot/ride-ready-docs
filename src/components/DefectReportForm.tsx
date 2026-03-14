@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffectiveUserId } from '@/hooks/useEffectiveUserId';
 import { useStaff } from '@/contexts/StaffContext';
 import { compressImage, isLikelyCameraPhoto } from '@/utils/imageCompression';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 
 const MAX_PHOTOS_PER_DEFECT = 5;
 
@@ -48,6 +49,7 @@ const DefectReportForm = ({
   const [submitting, setSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const { user } = useAuth();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
 
@@ -94,6 +96,7 @@ const DefectReportForm = ({
   };
 
   const handleSubmit = async () => {
+    if (guardWrite()) return;
     if (!description.trim()) {
       toast({ title: "Description required", description: "Please describe the defect", variant: "destructive" });
       return;
