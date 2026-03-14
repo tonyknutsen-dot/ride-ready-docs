@@ -176,6 +176,7 @@ const MaintenanceLogger = ({ ride, onMaintenanceLogged }: MaintenanceLoggerProps
   const [someoneElse, setSomeoneElse] = useState(false);
   const [loggedInUserName, setLoggedInUserName] = useState('');
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const { user } = useAuth();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
 
