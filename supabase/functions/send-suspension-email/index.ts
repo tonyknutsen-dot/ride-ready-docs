@@ -122,7 +122,7 @@ const handler = async (req: Request): Promise<Response> => {
         <p style="margin: 0; font-size: 15px; color: #166534; font-weight: 600;">✓ You can now log in and access all your features.</p>
       </div>
       
-      <p style="font-size: 15px;">All your data, documents, and settings remain intact. You can continue managing your rides and compliance documentation as before.</p>
+      <p style="font-size: 15px;">All your data, documents, and settings remain intact. You can continue managing your registered items and compliance documentation as before.</p>
       
       <div style="text-align: center; margin: 32px 0;">
         <a href="https://ridereadydocs.com/auth" style="display: inline-block; background: linear-gradient(135deg, ${success} 0%, #15803d 100%); color: white; padding: 14px 40px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">Log In Now</a>
