@@ -252,6 +252,36 @@ export default function PlanBilling() {
         </Alert>
       )}
 
+      {/* Payment Failed Banner */}
+      {isPastDue && (
+        <Alert className="border-2 border-destructive bg-destructive/10">
+          <AlertTriangle className="h-5 w-5 text-destructive" />
+          <AlertTitle className="text-destructive font-semibold">Payment Failed</AlertTitle>
+          <AlertDescription className="text-sm text-destructive/80 mt-1 space-y-3">
+            {pastDueGraceActive ? (
+              <p>
+                Your last payment failed. You have until <strong>{getGraceEndDate()}</strong> to update your payment method before access is restricted.
+              </p>
+            ) : (
+              <p>
+                Your payment failed and the grace period has ended. Please update your payment method to restore full access.
+              </p>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-destructive text-destructive hover:bg-destructive/10"
+              onClick={handleManageSubscriptionClick}
+              disabled={portalLoading}
+            >
+              {portalLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
+              Update Payment Method
+              <ExternalLink className="w-3 h-3 ml-1" />
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Scheduled Cancellation Banner */}
       {isCancelScheduled && (
         <Alert className="border-2 border-[#F59E0B] bg-[#FFFBEB]">
