@@ -36,6 +36,7 @@ const QuickMaintenanceLog = ({ rideId, rideName, checkItemText, onLogged, onCanc
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const { effectiveUserId, isStaff, actualUserId } = useEffectiveUserId();
   const queryClient = useQueryClient();
 
