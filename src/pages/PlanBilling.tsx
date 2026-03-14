@@ -202,12 +202,19 @@ export default function PlanBilling() {
   }
 
   const status = subscription?.subscriptionStatus ?? "trial";
+  const isCancelScheduled = subscription?.cancelAtPeriodEnd === true && status === 'active';
   const isTrialOrExpired = status === "trial" || status === "expired" || !subscription?.hasStripeSubscription;
 
   const getPlanName = () => {
     if (status === 'active') return `${subscription?.tierLabel || 'Starter'} Plan`;
     if (status === "trial") return "Free Trial";
     return "Expired";
+  };
+
+  const getCancelDate = () => {
+    const dateStr = subscription?.cancelAt || subscription?.currentPeriodEnd;
+    if (!dateStr) return null;
+    return format(new Date(dateStr), "MMMM d, yyyy");
   };
 
   return (
