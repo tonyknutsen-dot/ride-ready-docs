@@ -245,7 +245,7 @@ export const useSubscription = () => {
 
   const getBillingReturnUrl = () => {
     const currentUrl = new URL(window.location.href);
-    const previewWrapperUrl = getPreviewWrapperUrl(currentUrl);
+    const previewWrapperUrl = getPreviewWrapperUrl();
     const baseUrl = previewWrapperUrl ?? currentUrl;
 
     const billingUrl = new URL(baseUrl.toString());
