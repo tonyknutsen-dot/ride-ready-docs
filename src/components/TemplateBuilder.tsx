@@ -76,6 +76,7 @@ const getEquipmentGroup = (categoryGroup: string): string | null => {
 const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCancel }: TemplateBuilderProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const freqLabel = frequency === 'preopening' ? 'Pre-Opening' : frequency.charAt(0).toUpperCase() + frequency.slice(1);
   const equipmentGroup = getEquipmentGroup(ride.ride_categories?.category_group ?? '');
   const defaultTemplateName = `${freqLabel} Safety Check`;
