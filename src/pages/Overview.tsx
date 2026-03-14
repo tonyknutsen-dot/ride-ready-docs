@@ -27,6 +27,7 @@ const Overview = () => {
   const { data, isLoading, refetch } = useOverviewData();
   const unreadCount = useUnreadNotifications();
   const actionNeededCount = useActionNeededCount();
+  const { subscription } = useSubscription();
 
   const handleRefresh = useCallback(async () => {
     await refetch();
