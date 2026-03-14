@@ -174,7 +174,7 @@ export const useSubscription = () => {
           freeAssetCount,
           rideLimit: RIDE_TIERS[currentTier].max,
           canAddRide: mappedStatus === 'trial' || (mappedStatus === 'active' && billableRideCount < SELF_SERVE_MAX),
-          extraItemsCount: data.extra_items_count || 0,
+          extraItemsCount: 0,
           currentPeriodEnd: data.current_period_end,
           hasStripeCustomer: mappedStatus === 'active' || mappedStatus === 'past_due',
           hasStripeSubscription: mappedStatus === 'active' || mappedStatus === 'past_due',

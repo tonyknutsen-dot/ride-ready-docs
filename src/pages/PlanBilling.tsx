@@ -97,6 +97,7 @@ export default function PlanBilling() {
   };
 
   const handleRefreshAndDismiss = async () => {
+    await supabase.auth.refreshSession();
     await checkSubscriptionStatus();
     setShowReturnBanner(false);
     toast({ title: "Subscription status updated", description: "Your billing information is now current." });
