@@ -227,7 +227,7 @@ export const useSubscription = () => {
 
   const isLovablePreviewHost = (hostname: string) => hostname === 'lovable.app' || hostname.endsWith('.lovable.app');
 
-  const getPreviewWrapperUrl = (currentUrl: URL): URL | null => {
+  const getPreviewWrapperUrl = (): URL | null => {
     if (window.self === window.top) return null;
 
     try {
