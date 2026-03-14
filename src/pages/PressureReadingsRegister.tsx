@@ -132,6 +132,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
   const { user } = useAuth();
   const { effectiveUserId } = useEffectiveUserId();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const { formatDate } = useDateTimeSettings();
   const isMobile = useIsMobile();
   const navigate = useNavigate();
