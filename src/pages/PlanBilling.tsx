@@ -312,10 +312,14 @@ export default function PlanBilling() {
                 </div>
               </div>
               {subscription?.currentPeriodEnd && (
-                <div className="flex items-center gap-2 p-3 rounded-lg bg-[#EFF6FF] border border-[#BFDBFE]">
-                  <Calendar className="w-4 h-4 text-[#1D4ED8] shrink-0" />
+                <div className={`flex items-center gap-2 p-3 rounded-lg ${isCancelScheduled
+                  ? 'bg-[#FFFBEB] border border-[#FDE68A]'
+                  : 'bg-[#EFF6FF] border border-[#BFDBFE]'}`}>
+                  <Calendar className={`w-4 h-4 shrink-0 ${isCancelScheduled ? 'text-[#F59E0B]' : 'text-[#1D4ED8]'}`} />
                   <div>
-                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Renews</div>
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide">
+                      {isCancelScheduled ? 'Ends' : 'Renews'}
+                    </div>
                     <div className="text-sm font-semibold">
                       {format(new Date(subscription.currentPeriodEnd), "MMM d, yyyy")}
                     </div>
