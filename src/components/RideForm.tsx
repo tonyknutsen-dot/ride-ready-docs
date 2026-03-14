@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Tables } from '@/integrations/supabase/types';
 import { z } from 'zod';
 import { RequestRideTypeDialog } from '@/components/RequestRideTypeDialog';
+import { useBillingWriteGuard } from '@/hooks/useBillingWriteGuard';
 import { useSubscription, getRideTier, getTierLabel, RIDE_TIERS, SELF_SERVE_MAX } from '@/hooks/useSubscription';
 import { OverLimitDialog } from '@/components/OverLimitDialog';
 import { TierUpgradeDialog, getTierCrossing } from '@/components/TierUpgradeDialog';
