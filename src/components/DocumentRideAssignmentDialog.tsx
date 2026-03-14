@@ -111,6 +111,7 @@ const DocumentRideAssignmentDialog = ({
   };
 
   const handleSave = async () => {
+    if (guardWrite()) return;
     if (!document || !user) return;
 
     setSaving(true);

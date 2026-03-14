@@ -441,6 +441,7 @@ const PressureReadingsRegister = ({ rideIdProp, embedded = false, onEditRide }: 
   };
 
   const handleSave = async () => {
+    if (guardWrite()) return;
     if (!effectiveUserId || !rideId) return;
     if (!takenBy) { toast({ title: 'Missing fields', description: '"Taken by" is required.', variant: 'destructive' }); return; }
     if (!siteName) { toast({ title: 'Missing fields', description: 'Site / location name is required.', variant: 'destructive' }); return; }
