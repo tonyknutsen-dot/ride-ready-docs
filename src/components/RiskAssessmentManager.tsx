@@ -111,6 +111,7 @@ interface AuditLogEntry {
 export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ride }) => {
   const { user } = useAuth();
   const { terminology } = useTerminology();
+  const { guardWrite } = useBillingWriteGuard();
   const [assessments, setAssessments] = useState<RiskAssessment[]>([]);
   const [selectedAssessment, setSelectedAssessment] = useState<RiskAssessment | null>(null);
   const [assessmentItems, setAssessmentItems] = useState<RiskAssessmentItem[]>([]);
