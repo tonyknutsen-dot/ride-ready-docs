@@ -77,8 +77,7 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    // Prefer an explicit returnUrl (sent by the app) so users always return to the correct environment.
-    // Fallback to request origin / referer, then the published Lovable URL.
+    // Prefer explicit returnUrl from the app (can include preview token for preview domains).
     let returnUrlFromBody: string | undefined;
     try {
       const body = await req.clone().json();
@@ -87,9 +86,30 @@ serve(async (req) => {
       // ignore (body may be empty)
     }
 
-    const returnUrl =
-      returnUrlFromBody ||
-      `${req.headers.get("origin") || req.headers.get("referer")?.split('/').slice(0, 3).join('/') || "https://ride-ready-docs.lovable.app"}/billing`;
+    const fallbackReturnUrl = (() => {
+      const referer = req.headers.get("referer");
+      if (referer) return referer;
+
+      const reqOrigin = req.headers.get("origin");
+      return reqOrigin ? `${reqOrigin}/billing` : null;
+    })();
+
+    const rawReturnUrl = returnUrlFromBody || fallbackReturnUrl;
+    if (!rawReturnUrl) {
+      throw new Error("No valid return URL provided");
+    }
+
+    let returnUrl: string;
+    try {
+      const parsed = new URL(rawReturnUrl);
+      parsed.pathname = "/billing";
+      parsed.searchParams.delete("success");
+      parsed.searchParams.delete("canceled");
+      returnUrl = parsed.toString();
+    } catch {
+      throw new Error("Invalid return URL provided");
+    }
+
     logStep("Using return_url", { returnUrl });
 
     const portalSession = await stripe.billingPortal.sessions.create({

@@ -111,16 +111,48 @@ serve(async (req) => {
       { price: priceId, quantity: 1 }
     ];
 
-    const baseUrl = returnUrl || req.headers.get("origin") || req.headers.get("referer")?.split('/').slice(0, 3).join('/') || "https://ride-ready-docs.lovable.app";
-    logStep("Using base URL for redirects", { baseUrl });
-    
+    const fallbackReturnUrl = (() => {
+      const referer = req.headers.get("referer");
+      if (referer) return referer;
+      const reqOrigin = req.headers.get("origin");
+      return reqOrigin ? `${reqOrigin}/billing` : null;
+    })();
+
+    const rawReturnUrl = typeof returnUrl === "string" ? returnUrl : fallbackReturnUrl;
+    if (!rawReturnUrl) {
+      throw new Error("Missing return URL");
+    }
+
+    let billingReturnUrl: URL;
+    try {
+      billingReturnUrl = new URL(rawReturnUrl);
+    } catch {
+      throw new Error("Invalid return URL");
+    }
+
+    billingReturnUrl.pathname = "/billing";
+    billingReturnUrl.searchParams.delete("success");
+    billingReturnUrl.searchParams.delete("canceled");
+
+    const successUrl = new URL(billingReturnUrl.toString());
+    successUrl.searchParams.set("success", "true");
+
+    const cancelUrl = new URL(billingReturnUrl.toString());
+    cancelUrl.searchParams.set("canceled", "true");
+
+    logStep("Using redirect URLs", {
+      billingReturnUrl: billingReturnUrl.toString(),
+      successUrl: successUrl.toString(),
+      cancelUrl: cancelUrl.toString(),
+    });
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: lineItems,
       mode: "subscription",
-      success_url: `${baseUrl}/billing?success=true`,
-      cancel_url: `${baseUrl}/billing?canceled=true`,
+      success_url: successUrl.toString(),
+      cancel_url: cancelUrl.toString(),
       metadata: {
         user_id: user.id,
         tier,

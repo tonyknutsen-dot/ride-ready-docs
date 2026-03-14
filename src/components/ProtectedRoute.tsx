@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
 import { useTester } from '@/contexts/TesterContext';
+import { supabase } from '@/integrations/supabase/client';
 import appLogo from '@/assets/app-logo.jpg';
 
 interface ProtectedRouteProps {
@@ -12,8 +14,34 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
   const { isTester } = useTester();
   const location = useLocation();
+  const [refreshAttempted, setRefreshAttempted] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  if (loading) {
+  useEffect(() => {
+    if (loading || user || refreshAttempted || refreshing) return;
+
+    let isMounted = true;
+
+    const tryRefresh = async () => {
+      setRefreshing(true);
+      try {
+        await supabase.auth.refreshSession();
+      } finally {
+        if (isMounted) {
+          setRefreshing(false);
+          setRefreshAttempted(true);
+        }
+      }
+    };
+
+    void tryRefresh();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [loading, user, refreshAttempted, refreshing]);
+
+  if (loading || refreshing || (!user && !refreshAttempted)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center space-y-4">
