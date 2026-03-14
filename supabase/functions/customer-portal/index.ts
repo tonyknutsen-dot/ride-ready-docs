@@ -87,17 +87,14 @@ serve(async (req) => {
       // ignore (body may be empty)
     }
 
-    const baseUrl =
+    const returnUrl =
       returnUrlFromBody ||
-      req.headers.get("origin") ||
-      req.headers.get("referer")?.split('/').slice(0, 3).join('/') ||
-      "https://ride-ready-docs.lovable.app";
-    logStep("Using base URL for return_url", { baseUrl });
+      `${req.headers.get("origin") || req.headers.get("referer")?.split('/').slice(0, 3).join('/') || "https://ride-ready-docs.lovable.app"}/billing`;
+    logStep("Using return_url", { returnUrl });
 
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: customerId,
-      // We use /billing (not /plan-billing) to match the app route.
-      return_url: `${baseUrl}/billing`,
+      return_url: returnUrl,
     });
     logStep("Customer portal session created", { sessionId: portalSession.id, url: portalSession.url });
 
