@@ -424,6 +424,20 @@ export default function PlanBilling() {
                   <PlanSelection onClose={() => setDialogOpen(false)} />
                 </DialogContent>
               </Dialog>
+            ) : isPastDue ? (
+              <Button
+                className="w-full bg-destructive hover:bg-destructive/90 text-white shadow-md"
+                onClick={handleManageSubscriptionClick}
+                disabled={portalLoading}
+              >
+                {portalLoading ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <CreditCard className="w-4 h-4 mr-2" />
+                )}
+                Update Payment Method
+                <ExternalLink className="w-3 h-3 ml-1" />
+              </Button>
             ) : (
               <Button
                 variant="outline"
