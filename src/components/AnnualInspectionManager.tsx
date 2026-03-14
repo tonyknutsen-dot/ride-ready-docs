@@ -32,6 +32,7 @@ interface AnnualInspectionManagerProps {
 const AnnualInspectionManager = ({ ride }: AnnualInspectionManagerProps) => {
   const { user } = useAuth();
   const { toast } = useToast();
+  const { guardWrite } = useBillingWriteGuard();
   const [reports, setReports] = useState<AnnualInspectionReport[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
