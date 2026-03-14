@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { AlertTriangle, Clock, FlaskConical, CreditCard, CalendarX } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,7 @@ interface TrialStatusProps {
 export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
   const { subscription, loading, openCustomerPortal } = useSubscription();
   const { canAccessBilling } = useStaff();
+  const navigate = useNavigate();
 
   if (loading || !subscription) return null;
   const { isTrialActive, isExpired, daysRemaining, subscriptionStatus, isTesterAccount, currentTier, billableRideCount } = subscription;
@@ -78,11 +80,14 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
       ? new Date(endDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
       : 'the end of your billing period';
     return (
-      <Card className="mb-4 md:mb-6 border-[#F59E0B]/50 bg-[#FFFBEB]">
+      <Card
+        className="mb-4 md:mb-6 border-[#F59E0B]/50 bg-[#FFFBEB] cursor-pointer hover:border-[#F59E0B] transition-colors"
+        onClick={() => navigate('/billing')}
+      >
         <CardContent className="p-3 md:p-4">
           <div className="flex items-center gap-3">
             <CalendarX className="h-5 w-5 text-[#F59E0B] flex-shrink-0" />
-            <div>
+            <div className="flex-1">
               <span className="text-sm font-medium text-[#92400E]">
                 Subscription ending {endLabel}
               </span>
@@ -90,6 +95,7 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
                 — access remains active until then
               </span>
             </div>
+            <span className="text-xs text-[#92400E]/60 shrink-0">View billing →</span>
           </div>
         </CardContent>
       </Card>

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { TrialStatus } from "@/components/TrialStatus";
+import { useSubscription } from "@/hooks/useSubscription";
 import {
   FileText, Cog, Calendar, Wrench, CheckSquare,
   Settings, Bell, AlertTriangle, ChevronRight, Clock, ShieldCheck
@@ -26,6 +27,7 @@ const Overview = () => {
   const { data, isLoading, refetch } = useOverviewData();
   const unreadCount = useUnreadNotifications();
   const actionNeededCount = useActionNeededCount();
+  const { subscription } = useSubscription();
 
   const handleRefresh = useCallback(async () => {
     await refetch();
@@ -74,9 +76,15 @@ const Overview = () => {
                 <h1 className="text-xl font-bold tracking-tight text-foreground">Dashboard</h1>
                 <Badge
                   variant={userPlan === 'trial' ? 'secondary' : 'default'}
-                  className={`text-[10px] mt-0.5 ${userPlan !== 'trial' ? 'bg-primary/10 text-primary border-primary/20' : ''}`}
+                  className={`text-[10px] mt-0.5 ${
+                    subscription?.cancelAtPeriodEnd
+                      ? 'bg-[#FEF3C7] text-[#92400E] border-[#F59E0B]'
+                      : userPlan !== 'trial' ? 'bg-primary/10 text-primary border-primary/20' : ''
+                  }`}
                 >
-                  {formatPlanWithDescription(userPlan)}
+                  {subscription?.cancelAtPeriodEnd
+                    ? 'Cancelling'
+                    : formatPlanWithDescription(userPlan)}
                 </Badge>
               </div>
             </div>
