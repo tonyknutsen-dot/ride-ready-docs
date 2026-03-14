@@ -409,9 +409,9 @@ export default function PlanBilling() {
                   <span className="font-semibold">{subscription?.freeAssetCount ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
-                  <span className="text-sm font-medium">Current tier</span>
+                  <span className="text-sm font-medium">Current plan</span>
                   <Badge variant="outline" className="bg-[#EEF2FF] border-[#C7D2FE] text-[#4F46E5] text-[11px]">
-                    {subscription?.tierLabel} — up to {limit === Infinity ? 'unlimited' : limit} items
+                    {subscription?.tierLabel} — item limit {limit === Infinity ? 'unlimited' : limit}
                   </Badge>
                 </div>
               </div>
