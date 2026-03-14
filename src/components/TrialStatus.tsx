@@ -81,7 +81,7 @@ export const TrialStatus: React.FC<TrialStatusProps> = ({ onUpgrade }) => {
               {getTierLabel(currentTier)} Plan
             </Badge>
             <span className="text-sm text-muted-foreground truncate">
-              Managing {billableRideCount} {billableRideCount === 1 ? 'ride' : 'rides'}
+              Managing {billableRideCount} {billableRideCount === 1 ? 'item' : 'items'}
             </span>
           </div>
         </CardContent>
