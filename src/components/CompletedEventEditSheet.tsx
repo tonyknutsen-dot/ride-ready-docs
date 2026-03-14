@@ -70,6 +70,7 @@ const CompletedEventEditSheet = ({ open, onOpenChange, event }: CompletedEventEd
   };
 
   const handleSave = async () => {
+    if (guardWrite()) return;
     if (!canSave) {
       toast.error("Edit reason is required");
       return;

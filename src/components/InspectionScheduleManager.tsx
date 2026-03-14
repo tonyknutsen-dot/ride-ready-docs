@@ -141,6 +141,7 @@ const InspectionScheduleManager = ({ ride }: InspectionScheduleManagerProps) => 
   };
 
   const handleSave = async () => {
+    if (guardWrite()) return;
     if (!formData.inspection_type || !formData.inspection_name || !formData.due_date) {
       toast({
         title: "Missing fields",

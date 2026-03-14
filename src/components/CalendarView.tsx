@@ -307,6 +307,7 @@ const CalendarView = () => {
   };
 
   const handleDeleteEvent = async (event: CalendarEvent) => {
+    if (guardWrite()) return;
     try {
       const { error } = await supabase
         .from('compliance_events')

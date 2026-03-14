@@ -115,6 +115,7 @@ const AnnualInspectionManager = ({ ride }: AnnualInspectionManagerProps) => {
   };
 
   const handleSave = async () => {
+    if (guardWrite()) return;
     if (!formData.inspector_name.trim() || !formData.inspection_company.trim() || !formData.inspection_date) {
       toast({
         title: "Missing information",

@@ -132,6 +132,7 @@ const DefectClosureDialog = ({
   };
 
   const handleCloseDefect = async () => {
+    if (guardWrite()) return;
     if (!defect) return;
 
     if (!closureReason) {

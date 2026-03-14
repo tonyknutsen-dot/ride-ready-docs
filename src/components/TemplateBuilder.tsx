@@ -279,6 +279,7 @@ const TemplateBuilder = ({ ride, template, frequency = 'daily', onSuccess, onCan
   };
 
   const handleSaveTemplate = async () => {
+    if (guardWrite()) return;
     if (!templateName.trim()) {
       toast({ title: 'Missing name', description: 'Please enter a checklist name', variant: 'destructive' });
       return;

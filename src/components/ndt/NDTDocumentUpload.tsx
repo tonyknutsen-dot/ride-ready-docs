@@ -40,6 +40,7 @@ const NDTDocumentUpload = ({
     : 'e.g., NDT Report - January 2025';
 
   const handleUpload = async () => {
+    if (guardWrite()) return;
     if (!file || !user) return;
 
     setUploading(true);

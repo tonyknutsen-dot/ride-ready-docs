@@ -546,6 +546,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
 
   const handleEditAssessment = async () => {
     if (!selectedAssessment || !user) return;
+    if (guardWrite()) return;
 
     const oldData = {
       assessor_name: selectedAssessment.assessor_name,

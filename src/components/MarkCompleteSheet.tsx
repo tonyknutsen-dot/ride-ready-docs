@@ -140,6 +140,7 @@ const MarkCompleteSheet = ({
   const isInspectionCategory = eventCategory === 'inspection' || eventCategory === 'ndt';
 
   const handleConfirm = async () => {
+    if (guardWrite()) return;
     if (isInspectionCategory && !inspectorCompany.trim()) {
       toast({ title: "Inspector / Company required", description: "Please enter the inspector or company name for this inspection.", variant: "destructive" });
       return;

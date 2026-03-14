@@ -41,6 +41,7 @@ const QuickMaintenanceLog = ({ rideId, rideName, checkItemText, onLogged, onCanc
   const queryClient = useQueryClient();
 
   const handleSubmit = async () => {
+    if (guardWrite()) return;
     if (!description.trim()) return;
     setSubmitting(true);
 
