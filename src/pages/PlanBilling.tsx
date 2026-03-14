@@ -340,7 +340,11 @@ export default function PlanBilling() {
                 )}
               </div>
               <p className="text-xs text-muted-foreground">
-                {status === 'active'
+                {isPastDue
+                  ? pastDueGraceActive
+                    ? `Payment failed — grace period until ${getGraceEndDate()}.`
+                    : "Payment failed — grace period has ended."
+                  : status === 'active'
                   ? `Your pricing is based on billable items in your current plan.`
                   : status === "trial"
                   ? `${subscription?.daysRemaining} days remaining in trial`
