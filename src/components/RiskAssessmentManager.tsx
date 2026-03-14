@@ -500,6 +500,7 @@ export const RiskAssessmentManager: React.FC<RiskAssessmentManagerProps> = ({ ri
 
   const handleStatusChange = async (newStatus: string) => {
     if (!selectedAssessment) return;
+    if (guardWrite()) return;
 
     // Block completion if any items are still open or in progress
     if (newStatus === 'completed') {
