@@ -244,6 +244,18 @@ export default function PlanBilling() {
         </Alert>
       )}
 
+      {/* Scheduled Cancellation Banner */}
+      {isCancelScheduled && (
+        <Alert className="border-2 border-[#F59E0B] bg-[#FFFBEB]">
+          <AlertTriangle className="h-5 w-5 text-[#F59E0B]" />
+          <AlertTitle className="text-[#92400E] font-semibold">Cancellation Scheduled</AlertTitle>
+          <AlertDescription className="text-sm text-[#92400E]/80 mt-1">
+            Your subscription is scheduled to end on <strong>{getCancelDate()}</strong>.
+            Your access remains active until then. To undo this, open the Stripe billing portal and reactivate your plan.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Current Plan Card */}
       <Card className="border border-[#BFDBFE] bg-card shadow-sm">
         <CardHeader className="pb-3">
