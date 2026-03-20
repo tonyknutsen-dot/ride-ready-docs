@@ -386,7 +386,7 @@ export function useOfflineSync() {
     } finally {
       setIsSyncing(false);
     }
-  }, [isOnline, user, isSyncing, toast, refreshPendingCount]);
+  }, [isOnline, user, isSyncing, isBillingBlocked, toast, refreshPendingCount]);
 
   // Auto-sync when coming back online
   useEffect(() => {
