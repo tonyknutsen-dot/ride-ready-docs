@@ -29,12 +29,18 @@ export function useOfflineSync() {
 
   // Update pending count
   const refreshPendingCount = useCallback(async () => {
+    const MAX_SYNC_ATTEMPTS = 5;
     const [checks, defects, completions] = await Promise.all([
       getPendingChecks(),
       getPendingDefects(),
       getPendingComplianceCompletions(),
     ]);
-    setPendingCount(checks.length + defects.length + completions.length);
+    // Exclude items that have exhausted their retry limit — syncAll skips these,
+    // so they should not inflate the actionable pending count or keep the banner visible.
+    const actionableChecks = checks.filter(c => (c.syncAttempts || 0) < MAX_SYNC_ATTEMPTS);
+    const actionableDefects = defects.filter(d => (d.syncAttempts || 0) < MAX_SYNC_ATTEMPTS);
+    const actionableCompletions = completions.filter(c => (c.syncAttempts || 0) < MAX_SYNC_ATTEMPTS);
+    setPendingCount(actionableChecks.length + actionableDefects.length + actionableCompletions.length);
   }, []);
 
   // Resolve address from coordinates using OpenStreetMap Nominatim
