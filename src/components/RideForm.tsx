@@ -48,13 +48,13 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [categories, setCategories] = useState<RideCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [openRequest, setOpenRequest] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [formData, setFormData] = useState({
     ride_name: ride?.ride_name || '',
     category_id: ride?.category_id || '',
     manufacturer: ride?.manufacturer || '',
     year_manufactured: ride?.year_manufactured?.toString() || '',
     serial_number: ride?.serial_number || '',
-    owner_name: ride?.owner_name || '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoFile, setPhotoFile] = useState<File | null>(null);
