@@ -236,7 +236,6 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
         year_manufactured: formData.year_manufactured ? parseInt(formData.year_manufactured) : undefined,
         manufacturer: formData.manufacturer || undefined,
         serial_number: formData.serial_number || undefined,
-        owner_name: formData.owner_name || undefined,
       };
 
       // Validate form data
