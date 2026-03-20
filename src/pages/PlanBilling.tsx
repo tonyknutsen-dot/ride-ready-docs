@@ -33,7 +33,7 @@ const TIER_LIMITS: Record<string, number> = Object.fromEntries(
 );
 
 export default function PlanBilling() {
-  const { user } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const { isTester } = useTester();
   const { isStaff, isOwner } = useStaff();
   const { toast } = useToast();
@@ -46,14 +46,16 @@ export default function PlanBilling() {
   const [showStripeModal, setShowStripeModal] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  // Auto-sync subscription status on billing page mount (covers return-from-Stripe portal)
+  const hasValidAuthSession = !authLoading && !!user && !!session?.access_token && session.user.id === user.id;
+
+  // Auto-sync subscription status only after auth is fully restored and valid.
   useEffect(() => {
-    if (!user || isTester) return;
+    if (!hasValidAuthSession || isTester) return;
+
     let cancelled = false;
     const sync = async () => {
       setIsSyncing(true);
       try {
-        await supabase.auth.refreshSession();
         await checkSubscriptionStatus();
       } catch (e) {
         console.warn('[Billing] Auto-sync failed:', e);
@@ -61,25 +63,31 @@ export default function PlanBilling() {
         if (!cancelled) setIsSyncing(false);
       }
     };
-    sync();
-    return () => { cancelled = true; };
-  }, [user, isTester, checkSubscriptionStatus]);
 
-  // Handle success/cancel from Stripe checkout — must be before any early returns
+    const timer = window.setTimeout(() => {
+      void sync();
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [hasValidAuthSession, isTester, checkSubscriptionStatus]);
+
+  // Handle success/cancel from Stripe checkout — only after auth is valid.
   useEffect(() => {
+    if (!hasValidAuthSession) return;
+
     const success = searchParams.get('success');
     const canceled = searchParams.get('canceled');
 
     if (success === 'true') {
-      // Refresh the auth session in case the JWT expired while user was in Stripe
-      supabase.auth.refreshSession().then(() => {
-        checkSubscriptionStatus();
-      });
+      setIsSyncing(true);
+      void checkSubscriptionStatus().finally(() => setIsSyncing(false));
       toast({ 
         title: "Subscription activated!", 
         description: "Thank you for subscribing. Your plan is now active.",
       });
-      // Clear URL params
       nav('/billing', { replace: true });
     } else if (canceled === 'true') {
       toast({ 
@@ -89,7 +97,7 @@ export default function PlanBilling() {
       });
       nav('/billing', { replace: true });
     }
-  }, [searchParams, toast, nav, checkSubscriptionStatus]);
+  }, [hasValidAuthSession, searchParams, toast, nav, checkSubscriptionStatus]);
 
   // Show the instruction modal instead of directly opening Stripe
   const handleManageSubscriptionClick = () => {
