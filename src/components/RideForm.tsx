@@ -188,7 +188,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   };
 
   // Staff with full_access can add rides, others cannot
-  const canAddRides = !isStaff || permissionLevel === 'full_access';
+  const canAddRides = !isStaff || permissionLevel === 'manager';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
