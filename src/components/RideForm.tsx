@@ -64,8 +64,22 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [deletingPhoto, setDeletingPhoto] = useState(false);
   // Check if adding a billable ride would exceed the current tier
   const selectedCategory = categories.find(c => c.id === formData.category_id);
-  const isSelectedCategoryBillable = selectedCategory?.is_billable !== false; // Default to billable if unknown
+  const isSelectedCategoryBillable = selectedCategory?.is_billable !== false;
   const wouldExceedTier = !isEditMode && subscription && isSelectedCategoryBillable && !subscription.canAddRide && subscription.subscriptionStatus === 'active';
+
+  // Derive unique category groups from loaded categories
+  const categoryGroups = [...new Set(categories.map(c => c.category_group).filter(Boolean))].sort();
+  const filteredTypes = selectedGroup ? categories.filter(c => c.category_group === selectedGroup) : [];
+
+  // On edit, pre-select the group from the existing category
+  useEffect(() => {
+    if (isEditMode && formData.category_id && categories.length > 0 && !selectedGroup) {
+      const existing = categories.find(c => c.id === formData.category_id);
+      if (existing?.category_group) {
+        setSelectedGroup(existing.category_group);
+      }
+    }
+  }, [isEditMode, formData.category_id, categories]);
 
   useEffect(() => {
     loadCategories();
