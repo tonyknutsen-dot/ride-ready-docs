@@ -489,16 +489,39 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category_id">Category *</Label>
+              <Label htmlFor="category_group">Category *</Label>
               <Select
-                value={formData.category_id}
-                onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                value={selectedGroup}
+                onValueChange={(value) => {
+                  setSelectedGroup(value);
+                  setFormData({ ...formData, category_id: '' });
+                }}
               >
-                <SelectTrigger className={errors.category_id ? "border-destructive" : ""}>
+                <SelectTrigger>
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
+                  {categoryGroups.map((group) => (
+                    <SelectItem key={group} value={group}>
+                      {group}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category_id">Type *</Label>
+              <Select
+                value={formData.category_id}
+                onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                disabled={!selectedGroup}
+              >
+                <SelectTrigger className={errors.category_id ? "border-destructive" : ""}>
+                  <SelectValue placeholder={selectedGroup ? "Select a type" : "Select a category first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredTypes.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
                     </SelectItem>
@@ -508,9 +531,6 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               {errors.category_id && (
                 <p className="text-sm text-destructive">{errors.category_id}</p>
               )}
-              <p className="text-xs text-muted-foreground">
-                Categories help match relevant bulletins
-              </p>
               <Button 
                 type="button" 
                 variant="ghost" 
@@ -519,7 +539,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                 className="h-auto py-1 px-2 text-xs w-fit"
               >
                 <Plus className="w-3 h-3 mr-1" />
-                Request category
+                Request type
               </Button>
             </div>
           </div>
