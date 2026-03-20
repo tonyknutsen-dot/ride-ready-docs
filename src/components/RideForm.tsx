@@ -36,7 +36,6 @@ const rideSchema = z.object({
   manufacturer: z.string().trim().max(100, "Manufacturer must be less than 100 characters").optional(),
   year_manufactured: z.number().int().min(1800).max(new Date().getFullYear() + 1).optional(),
   serial_number: z.string().trim().max(50, "Serial number must be less than 50 characters").optional(),
-  owner_name: z.string().trim().max(100, "Owner name must be less than 100 characters").optional(),
 });
 
 const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
@@ -49,13 +48,13 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [categories, setCategories] = useState<RideCategory[]>([]);
   const [loading, setLoading] = useState(false);
   const [openRequest, setOpenRequest] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<string>('');
   const [formData, setFormData] = useState({
     ride_name: ride?.ride_name || '',
     category_id: ride?.category_id || '',
     manufacturer: ride?.manufacturer || '',
     year_manufactured: ride?.year_manufactured?.toString() || '',
     serial_number: ride?.serial_number || '',
-    owner_name: ride?.owner_name || '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [photoFile, setPhotoFile] = useState<File | null>(null);
@@ -65,8 +64,22 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   const [deletingPhoto, setDeletingPhoto] = useState(false);
   // Check if adding a billable ride would exceed the current tier
   const selectedCategory = categories.find(c => c.id === formData.category_id);
-  const isSelectedCategoryBillable = selectedCategory?.is_billable !== false; // Default to billable if unknown
+  const isSelectedCategoryBillable = selectedCategory?.is_billable !== false;
   const wouldExceedTier = !isEditMode && subscription && isSelectedCategoryBillable && !subscription.canAddRide && subscription.subscriptionStatus === 'active';
+
+  // Derive unique category groups from loaded categories
+  const categoryGroups = [...new Set(categories.map(c => c.category_group).filter(Boolean))].sort();
+  const filteredTypes = selectedGroup ? categories.filter(c => c.category_group === selectedGroup) : [];
+
+  // On edit, pre-select the group from the existing category
+  useEffect(() => {
+    if (isEditMode && formData.category_id && categories.length > 0 && !selectedGroup) {
+      const existing = categories.find(c => c.id === formData.category_id);
+      if (existing?.category_group) {
+        setSelectedGroup(existing.category_group);
+      }
+    }
+  }, [isEditMode, formData.category_id, categories]);
 
   useEffect(() => {
     loadCategories();
@@ -208,7 +221,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       const nextTierKey = subscription!.currentTier === 'starter' ? 'operator' : subscription!.currentTier === 'operator' ? 'professional' : 'business';
       toast({
         title: "Upgrade required",
-        description: `You've reached ${subscription!.rideLimit} rides on the ${subscription!.tierLabel} tier. Upgrade to ${getTierLabel(nextTierKey)} to add more.`,
+        description: `You've reached ${subscription!.rideLimit} items on the ${subscription!.tierLabel} tier. Upgrade to ${getTierLabel(nextTierKey)} to add more.`,
       });
       navigate('/billing');
       return;
@@ -223,7 +236,6 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
         year_manufactured: formData.year_manufactured ? parseInt(formData.year_manufactured) : undefined,
         manufacturer: formData.manufacturer || undefined,
         serial_number: formData.serial_number || undefined,
-        owner_name: formData.owner_name || undefined,
       };
 
       // Validate form data
@@ -241,7 +253,6 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             manufacturer: validatedData.manufacturer || null,
             year_manufactured: validatedData.year_manufactured || null,
             serial_number: validatedData.serial_number || null,
-            owner_name: validatedData.owner_name || null,
           })
           .eq('id', ride.id)
           .eq('user_id', user!.id);
@@ -313,7 +324,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             manufacturer: validatedData.manufacturer || null,
             year_manufactured: validatedData.year_manufactured || null,
             serial_number: validatedData.serial_number || null,
-            owner_name: validatedData.owner_name || null,
+            
           })
           .select()
           .single();
@@ -440,15 +451,15 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           </p>
           {subscription && !isEditMode && subscription.subscriptionStatus === 'active' && (
             <p className="text-xs text-muted-foreground mt-2">
-              {subscription.billableRideCount} of {subscription.rideLimit} billable rides on {subscription.tierLabel} tier
+              {subscription.billableRideCount} of {subscription.rideLimit} billable items on {subscription.tierLabel} tier
             </p>
           )}
           {wouldExceedTier && (
             <Alert className="mt-3 border-warning/30 bg-warning/10">
               <AlertTriangle className="h-4 w-4 text-warning" />
-              <AlertTitle className="text-warning">Tier limit reached</AlertTitle>
+              <AlertTitle className="text-warning">Item limit reached</AlertTitle>
               <AlertDescription>
-                You have {subscription!.billableRideCount} of {subscription!.rideLimit} billable rides on the {subscription!.tierLabel} tier. 
+                You have {subscription!.billableRideCount} of {subscription!.rideLimit} billable items on the {subscription!.tierLabel} tier. 
                 To add more, <button type="button" className="underline font-medium" onClick={() => navigate('/billing')}>upgrade your plan</button>.
               </AlertDescription>
             </Alert>
@@ -477,16 +488,39 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="category_id">Category *</Label>
+              <Label htmlFor="category_group">Category *</Label>
               <Select
-                value={formData.category_id}
-                onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                value={selectedGroup}
+                onValueChange={(value) => {
+                  setSelectedGroup(value);
+                  setFormData({ ...formData, category_id: '' });
+                }}
               >
-                <SelectTrigger className={errors.category_id ? "border-destructive" : ""}>
+                <SelectTrigger>
                   <SelectValue placeholder="Select a category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {categories.map((category) => (
+                  {categoryGroups.map((group) => (
+                    <SelectItem key={group} value={group}>
+                      {group}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="category_id">Type *</Label>
+              <Select
+                value={formData.category_id}
+                onValueChange={(value) => setFormData({ ...formData, category_id: value })}
+                disabled={!selectedGroup}
+              >
+                <SelectTrigger className={errors.category_id ? "border-destructive" : ""}>
+                  <SelectValue placeholder={selectedGroup ? "Select a type" : "Select a category first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {filteredTypes.map((category) => (
                     <SelectItem key={category.id} value={category.id}>
                       {category.name}
                     </SelectItem>
@@ -496,9 +530,6 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
               {errors.category_id && (
                 <p className="text-sm text-destructive">{errors.category_id}</p>
               )}
-              <p className="text-xs text-muted-foreground">
-                Categories help match relevant bulletins
-              </p>
               <Button 
                 type="button" 
                 variant="ghost" 
@@ -507,7 +538,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
                 className="h-auto py-1 px-2 text-xs w-fit"
               >
                 <Plus className="w-3 h-3 mr-1" />
-                Request category
+                Request type
               </Button>
             </div>
           </div>
@@ -565,27 +596,6 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           </div>
         </div>
 
-        {/* Ownership */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Ownership (Optional)</h3>
-          
-          <div className="space-y-2">
-            <Label htmlFor="owner_name">Owner Name</Label>
-            <Input
-              id="owner_name"
-              value={formData.owner_name}
-              onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
-              placeholder="If different from controller"
-              className={errors.owner_name ? "border-destructive" : ""}
-            />
-            {errors.owner_name && (
-              <p className="text-sm text-destructive">{errors.owner_name}</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              May differ from the controller (safety) or showmen (operator) in your profile
-            </p>
-          </div>
-        </div>
 
         {/* Photo Upload */}
         <div className="space-y-4">
