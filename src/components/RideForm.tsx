@@ -597,27 +597,6 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           </div>
         </div>
 
-        {/* Ownership */}
-        <div className="space-y-4">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Ownership (Optional)</h3>
-          
-          <div className="space-y-2">
-            <Label htmlFor="owner_name">Owner Name</Label>
-            <Input
-              id="owner_name"
-              value={formData.owner_name}
-              onChange={(e) => setFormData({ ...formData, owner_name: e.target.value })}
-              placeholder="If different from controller"
-              className={errors.owner_name ? "border-destructive" : ""}
-            />
-            {errors.owner_name && (
-              <p className="text-sm text-destructive">{errors.owner_name}</p>
-            )}
-            <p className="text-xs text-muted-foreground">
-              May differ from the controller (safety) or showmen (operator) in your profile
-            </p>
-          </div>
-        </div>
 
         {/* Photo Upload */}
         <div className="space-y-4">
