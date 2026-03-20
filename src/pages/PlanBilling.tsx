@@ -8,7 +8,7 @@ import { useTester } from "@/contexts/TesterContext";
 import { useStaff } from "@/contexts/StaffContext";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock, RefreshCw, X, ShieldAlert, Gauge, TrendingUp, Users, Shield, Wrench, AlertTriangle } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle2, Crown, Receipt, CreditCard, Calendar, ExternalLink, Settings, FlaskConical, Unlock, RefreshCw, X, ShieldAlert, Gauge, TrendingUp, Users, Wrench, AlertTriangle } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -21,7 +21,6 @@ const PLAN_FEATURES = [
   { icon: CheckCircle2, label: "Billable items determine your current plan" },
   { icon: Gauge, label: "Each plan has an item limit and next tier" },
   { icon: Wrench, label: "Registered items are tracked across all categories" },
-  { icon: Shield, label: "Non-billable items are tracked separately" },
   { icon: TrendingUp, label: "Upgrade plan when nearing your item limit" },
   { icon: Users, label: "Self-serve limit is 50 billable items" },
 ];
@@ -508,10 +507,6 @@ export default function PlanBilling() {
                 <div className="flex justify-between items-center py-2 border-b border-border">
                   <span className="text-sm text-muted-foreground">Billable items</span>
                   <span className="font-semibold">{billable}</span>
-                </div>
-                <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Non-billable items</span>
-                  <span className="font-semibold">{subscription?.freeAssetCount ?? 0}</span>
                 </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-sm font-medium">Current plan</span>
