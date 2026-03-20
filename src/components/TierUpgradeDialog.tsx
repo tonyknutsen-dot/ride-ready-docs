@@ -19,6 +19,7 @@ interface TierUpgradeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentBillableCount: number;
+  currentTier: RideTier;
   currentTierLabel: string;
   organisationName?: string;
   userEmail?: string;
@@ -28,23 +29,32 @@ interface TierUpgradeDialogProps {
  * Determines if adding one more billable item would cross a pricing tier boundary.
  * Returns null if no boundary is crossed.
  */
-export function getTierCrossing(billableCount: number): {
+export function getTierCrossing(
+  billableCount: number,
+  currentTierOverride?: RideTier | null,
+): {
   type: ThresholdType;
   fromTier: RideTier;
   toTier: RideTier | null;
   fromMax: number;
 } | null {
-  const currentTier = getRideTier(billableCount);
-  const nextTier = getRideTier(billableCount + 1);
+  const currentTier = currentTierOverride && RIDE_TIERS[currentTierOverride]
+    ? currentTierOverride
+    : getRideTier(billableCount);
+  const nextCount = billableCount + 1;
+  const fromMax = RIDE_TIERS[currentTier].max;
 
-  // Crossing self-serve cap (50 → 51)
-  if (billableCount >= SELF_SERVE_MAX) {
+  if (nextCount > SELF_SERVE_MAX) {
     return { type: 'self_serve_cap', fromTier: currentTier, toTier: null, fromMax: SELF_SERVE_MAX };
   }
 
-  // Crossing a tier boundary
-  if (currentTier !== nextTier) {
-    return { type: 'tier_upgrade', fromTier: currentTier, toTier: nextTier, fromMax: RIDE_TIERS[currentTier].max };
+  if (nextCount > fromMax) {
+    return {
+      type: 'tier_upgrade',
+      fromTier: currentTier,
+      toTier: getRideTier(nextCount),
+      fromMax,
+    };
   }
 
   return null;
@@ -54,6 +64,7 @@ export const TierUpgradeDialog = ({
   open,
   onOpenChange,
   currentBillableCount,
+  currentTier,
   currentTierLabel,
   organisationName,
   userEmail,
@@ -61,7 +72,7 @@ export const TierUpgradeDialog = ({
   const navigate = useNavigate();
   const [showSupport, setShowSupport] = useState(false);
 
-  const crossing = getTierCrossing(currentBillableCount);
+  const crossing = getTierCrossing(currentBillableCount, currentTier);
   if (!crossing) return null;
 
   const isSelfServeCap = crossing.type === 'self_serve_cap';
