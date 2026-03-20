@@ -221,7 +221,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
       const nextTierKey = subscription!.currentTier === 'starter' ? 'operator' : subscription!.currentTier === 'operator' ? 'professional' : 'business';
       toast({
         title: "Upgrade required",
-        description: `You've reached ${subscription!.rideLimit} rides on the ${subscription!.tierLabel} tier. Upgrade to ${getTierLabel(nextTierKey)} to add more.`,
+        description: `You've reached ${subscription!.rideLimit} items on the ${subscription!.tierLabel} tier. Upgrade to ${getTierLabel(nextTierKey)} to add more.`,
       });
       navigate('/billing');
       return;
