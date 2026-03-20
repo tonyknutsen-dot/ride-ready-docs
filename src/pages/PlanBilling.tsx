@@ -250,6 +250,14 @@ export default function PlanBilling() {
         <ArrowLeft className="w-4 h-4 mr-2" />Back to Settings
       </Button>
 
+      {/* Syncing subscription status indicator */}
+      {isSyncing && !showReturnBanner && (
+        <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Syncing subscription status…
+        </div>
+      )}
+
       {/* Return from Stripe Banner */}
       {showReturnBanner && (
         <Alert className="border-2 border-info bg-info/10 animate-pulse">
