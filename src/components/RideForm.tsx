@@ -36,7 +36,6 @@ const rideSchema = z.object({
   manufacturer: z.string().trim().max(100, "Manufacturer must be less than 100 characters").optional(),
   year_manufactured: z.number().int().min(1800).max(new Date().getFullYear() + 1).optional(),
   serial_number: z.string().trim().max(50, "Serial number must be less than 50 characters").optional(),
-  owner_name: z.string().trim().max(100, "Owner name must be less than 100 characters").optional(),
 });
 
 const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
