@@ -44,6 +44,26 @@ export default function PlanBilling() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [showReturnBanner, setShowReturnBanner] = useState(false);
   const [showStripeModal, setShowStripeModal] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  // Auto-sync subscription status on billing page mount (covers return-from-Stripe portal)
+  useEffect(() => {
+    if (!user || isTester) return;
+    let cancelled = false;
+    const sync = async () => {
+      setIsSyncing(true);
+      try {
+        await supabase.auth.refreshSession();
+        await checkSubscriptionStatus();
+      } catch (e) {
+        console.warn('[Billing] Auto-sync failed:', e);
+      } finally {
+        if (!cancelled) setIsSyncing(false);
+      }
+    };
+    sync();
+    return () => { cancelled = true; };
+  }, [user, isTester, checkSubscriptionStatus]);
 
   // Handle success/cancel from Stripe checkout — must be before any early returns
   useEffect(() => {
