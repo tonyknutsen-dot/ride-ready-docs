@@ -21,7 +21,6 @@ const PLAN_FEATURES = [
   { icon: CheckCircle2, label: "Billable items determine your current plan" },
   { icon: Gauge, label: "Each plan has an item limit and next tier" },
   { icon: Wrench, label: "Registered items are tracked across all categories" },
-  { icon: Shield, label: "Non-billable items are tracked separately" },
   { icon: TrendingUp, label: "Upgrade plan when nearing your item limit" },
   { icon: Users, label: "Self-serve limit is 50 billable items" },
 ];
