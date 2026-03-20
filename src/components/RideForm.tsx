@@ -324,7 +324,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
             manufacturer: validatedData.manufacturer || null,
             year_manufactured: validatedData.year_manufactured || null,
             serial_number: validatedData.serial_number || null,
-            owner_name: validatedData.owner_name || null,
+            
           })
           .select()
           .single();
