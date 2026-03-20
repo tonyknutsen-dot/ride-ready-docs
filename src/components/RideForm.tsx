@@ -205,7 +205,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     
     // If adding a billable ride would exceed tier, block and redirect
     if (wouldExceedTier) {
-      const nextTierKey = subscription!.currentTier === 'starter' ? 'operator' : subscription!.currentTier === 'operator' ? 'professional' : 'enterprise';
+      const nextTierKey = subscription!.currentTier === 'starter' ? 'operator' : subscription!.currentTier === 'operator' ? 'professional' : 'business';
       toast({
         title: "Upgrade required",
         description: `You've reached ${subscription!.rideLimit} rides on the ${subscription!.tierLabel} tier. Upgrade to ${getTierLabel(nextTierKey)} to add more.`,

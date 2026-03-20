@@ -210,7 +210,7 @@ export function useOfflineSync() {
 
       const completedByName = profileData?.controller_name || user.email || 'Unknown';
       const completedByRole = memberData
-        ? (memberData.permission_level === 'full_access' ? 'Owner' : memberData.permission_level?.replace('_', ' ') || 'Staff')
+        ? (memberData.permission_level === 'manager' ? 'Owner' : memberData.permission_level?.replace('_', ' ') || 'Staff')
         : 'Owner';
 
       // 2. Upload evidence files from stored blobs

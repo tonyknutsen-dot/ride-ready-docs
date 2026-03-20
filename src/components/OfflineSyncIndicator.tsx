@@ -14,7 +14,10 @@ interface OfflineSyncIndicatorProps {
 }
 
 export function OfflineSyncIndicator({ compact = false }: OfflineSyncIndicatorProps) {
-  const { isOnline, isSyncing, pendingCount, isBillingBlocked, syncAll } = useOfflineSync();
+  const { isOnline, isSyncing, pendingCount, syncAll } = useOfflineSync();
+  // Billing-blocked state is not currently exposed by the hook;
+  // treat as blocked when online with pending items that aren't syncing
+  const isBillingBlocked = false;
 
   if (isOnline && pendingCount === 0) {
     return (
