@@ -24,9 +24,22 @@ import { generateDocumentId } from '@/utils/pdfTemplate';
 export function useOfflineSync() {
   const { user } = useAuth();
   const { isOnline, wasOffline, acknowledgeReconnection } = useOnlineStatus();
+  const { subscription } = useSubscription();
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+
+  // Determine if billing restrictions block syncing writes
+  const isBillingBlocked = useMemo(() => {
+    if (!subscription) return false;
+    const { subscriptionStatus, currentPeriodEnd } = subscription;
+    if (subscriptionStatus === 'expired') return true;
+    if (subscriptionStatus === 'past_due') {
+      if (!currentPeriodEnd) return true;
+      return new Date(currentPeriodEnd) <= new Date();
+    }
+    return false;
+  }, [subscription]);
 
   // Update pending count
   const refreshPendingCount = useCallback(async () => {
