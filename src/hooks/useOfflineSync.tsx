@@ -314,6 +314,15 @@ export function useOfflineSync() {
   const syncAll = useCallback(async () => {
     if (!isOnline || !user || isSyncing) return;
 
+    if (isBillingBlocked) {
+      toast({
+        title: 'Sync blocked — subscription required',
+        description: 'Pending items cannot be synced until your subscription is active. Please visit the Billing page.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSyncing(true);
     let successCount = 0;
     let failCount = 0;
