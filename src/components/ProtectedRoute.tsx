@@ -22,6 +22,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [canRedirectToAuth, setCanRedirectToAuth] = useState(false);
   const [loaderTimedOut, setLoaderTimedOut] = useState(false);
+  const [retryNonce, setRetryNonce] = useState(0);
 
   useEffect(() => {
     if (loading || user || refreshAttempted || refreshing) return;
@@ -67,7 +68,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
         clearTimeout(redirectTimer);
       }
     };
-  }, [loading, user, refreshAttempted, refreshing]);
+  }, [loading, user, refreshAttempted, refreshing, retryNonce]);
 
   const isWaitingForAuth =
     loading ||
@@ -90,6 +91,24 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     return () => clearTimeout(timer);
   }, [isWaitingForAuth, location.pathname]);
 
+  const handleRetry = () => {
+    setLoaderTimedOut(false);
+    setCanRedirectToAuth(false);
+    setRefreshAttempted(false);
+    setRefreshing(false);
+    setRetryNonce((value) => value + 1);
+  };
+
+  const handleGoToSignIn = async () => {
+    try {
+      await supabase.auth.signOut();
+    } catch (error) {
+      console.warn('[ProtectedRoute] signOut during recovery failed:', error);
+    } finally {
+      window.location.assign('/auth');
+    }
+  };
+
   if (isWaitingForAuth && !loaderTimedOut) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -111,14 +130,14 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           <div className="flex items-center justify-center gap-2">
             <button
               type="button"
-              onClick={() => window.location.reload()}
+              onClick={handleRetry}
               className="px-3 py-2 text-sm rounded-md bg-primary text-primary-foreground hover:opacity-90"
             >
               Retry
             </button>
             <button
               type="button"
-              onClick={() => setCanRedirectToAuth(true)}
+              onClick={handleGoToSignIn}
               className="px-3 py-2 text-sm rounded-md border border-border text-foreground hover:bg-muted"
             >
               Go to sign in
@@ -129,7 +148,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
 
-  // No user at all (no session) – redirect to auth
   if (!user) {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
