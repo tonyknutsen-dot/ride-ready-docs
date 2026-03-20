@@ -188,7 +188,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
   };
 
   // Staff with full_access can add rides, others cannot
-  const canAddRides = !isStaff || permissionLevel === 'full_access';
+  const canAddRides = !isStaff || permissionLevel === 'manager';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -205,7 +205,7 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
     
     // If adding a billable ride would exceed tier, block and redirect
     if (wouldExceedTier) {
-      const nextTierKey = subscription!.currentTier === 'starter' ? 'operator' : subscription!.currentTier === 'operator' ? 'professional' : 'enterprise';
+      const nextTierKey = subscription!.currentTier === 'starter' ? 'operator' : subscription!.currentTier === 'operator' ? 'professional' : 'business';
       toast({
         title: "Upgrade required",
         description: `You've reached ${subscription!.rideLimit} rides on the ${subscription!.tierLabel} tier. Upgrade to ${getTierLabel(nextTierKey)} to add more.`,
