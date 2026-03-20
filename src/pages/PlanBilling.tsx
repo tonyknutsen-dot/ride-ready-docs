@@ -508,10 +508,6 @@ export default function PlanBilling() {
                   <span className="text-sm text-muted-foreground">Billable items</span>
                   <span className="font-semibold">{billable}</span>
                 </div>
-                <div className="flex justify-between items-center py-2 border-b border-border">
-                  <span className="text-sm text-muted-foreground">Non-billable items</span>
-                  <span className="font-semibold">{subscription?.freeAssetCount ?? 0}</span>
-                </div>
                 <div className="flex justify-between items-center py-2">
                   <span className="text-sm font-medium">Current plan</span>
                   <Badge variant="outline" className="bg-[#EEF2FF] border-[#C7D2FE] text-[#4F46E5] text-[11px]">

@@ -350,6 +350,9 @@ export const useSubscription = () => {
       return { blocked: true, reason: 'tester_account' };
     }
 
+    // Refresh session to ensure the JWT is fresh before calling Stripe
+    await supabase.auth.refreshSession();
+
     const returnUrl = getBillingReturnUrl();
     
     const { data, error } = await supabase.functions.invoke('customer-portal', {
