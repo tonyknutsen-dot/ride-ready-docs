@@ -452,15 +452,15 @@ const RideForm = ({ onSuccess, onCancel, ride }: RideFormProps) => {
           </p>
           {subscription && !isEditMode && subscription.subscriptionStatus === 'active' && (
             <p className="text-xs text-muted-foreground mt-2">
-              {subscription.billableRideCount} of {subscription.rideLimit} billable rides on {subscription.tierLabel} tier
+              {subscription.billableRideCount} of {subscription.rideLimit} billable items on {subscription.tierLabel} tier
             </p>
           )}
           {wouldExceedTier && (
             <Alert className="mt-3 border-warning/30 bg-warning/10">
               <AlertTriangle className="h-4 w-4 text-warning" />
-              <AlertTitle className="text-warning">Tier limit reached</AlertTitle>
+              <AlertTitle className="text-warning">Item limit reached</AlertTitle>
               <AlertDescription>
-                You have {subscription!.billableRideCount} of {subscription!.rideLimit} billable rides on the {subscription!.tierLabel} tier. 
+                You have {subscription!.billableRideCount} of {subscription!.rideLimit} billable items on the {subscription!.tierLabel} tier. 
                 To add more, <button type="button" className="underline font-medium" onClick={() => navigate('/billing')}>upgrade your plan</button>.
               </AlertDescription>
             </Alert>
