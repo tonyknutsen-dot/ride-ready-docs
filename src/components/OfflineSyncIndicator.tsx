@@ -1,4 +1,4 @@
-import { Cloud, CloudOff, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Cloud, CloudOff, RefreshCw, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useOfflineSync } from '@/hooks/useOfflineSync';
@@ -14,7 +14,7 @@ interface OfflineSyncIndicatorProps {
 }
 
 export function OfflineSyncIndicator({ compact = false }: OfflineSyncIndicatorProps) {
-  const { isOnline, isSyncing, pendingCount, syncAll } = useOfflineSync();
+  const { isOnline, isSyncing, pendingCount, isBillingBlocked, syncAll } = useOfflineSync();
 
   if (isOnline && pendingCount === 0) {
     return (
@@ -57,7 +57,31 @@ export function OfflineSyncIndicator({ compact = false }: OfflineSyncIndicatorPr
     );
   }
 
-  // Online but has pending items
+  // Online, has pending items, but billing is blocking sync
+  if (isBillingBlocked) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div className={`flex items-center gap-1.5 text-destructive px-2 py-1 rounded-md bg-destructive/10 ${compact ? 'justify-center' : 'justify-start'}`}>
+              <AlertCircle className="h-4 w-4" />
+              {!compact && (
+                <span className="text-xs font-medium">Sync blocked</span>
+              )}
+              <Badge variant="destructive" className="h-5 px-1.5 text-xs">
+                {pendingCount}
+              </Badge>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>{pendingCount} item{pendingCount !== 1 ? 's' : ''} cannot sync — subscription required. Visit Billing to restore access.</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  // Online but has pending items — allow manual sync
   return (
     <TooltipProvider>
       <Tooltip>

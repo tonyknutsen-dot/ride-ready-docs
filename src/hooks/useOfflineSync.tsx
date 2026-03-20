@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useSubscription } from '@/hooks/useSubscription';
 import { useAuth } from '@/contexts/AuthContext';
 import { useOnlineStatus } from './useOnlineStatus';
 import { useToast } from './use-toast';
@@ -23,9 +24,22 @@ import { generateDocumentId } from '@/utils/pdfTemplate';
 export function useOfflineSync() {
   const { user } = useAuth();
   const { isOnline, wasOffline, acknowledgeReconnection } = useOnlineStatus();
+  const { subscription } = useSubscription();
   const { toast } = useToast();
   const [isSyncing, setIsSyncing] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+
+  // Determine if billing restrictions block syncing writes
+  const isBillingBlocked = useMemo(() => {
+    if (!subscription) return false;
+    const { subscriptionStatus, currentPeriodEnd } = subscription;
+    if (subscriptionStatus === 'expired') return true;
+    if (subscriptionStatus === 'past_due') {
+      if (!currentPeriodEnd) return true;
+      return new Date(currentPeriodEnd) <= new Date();
+    }
+    return false;
+  }, [subscription]);
 
   // Update pending count
   const refreshPendingCount = useCallback(async () => {
@@ -300,6 +314,15 @@ export function useOfflineSync() {
   const syncAll = useCallback(async () => {
     if (!isOnline || !user || isSyncing) return;
 
+    if (isBillingBlocked) {
+      toast({
+        title: 'Sync blocked — subscription required',
+        description: 'Pending items cannot be synced until your subscription is active. Please visit the Billing page.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsSyncing(true);
     let successCount = 0;
     let failCount = 0;
@@ -363,7 +386,7 @@ export function useOfflineSync() {
     } finally {
       setIsSyncing(false);
     }
-  }, [isOnline, user, isSyncing, toast, refreshPendingCount]);
+  }, [isOnline, user, isSyncing, isBillingBlocked, toast, refreshPendingCount]);
 
   // Auto-sync when coming back online
   useEffect(() => {
@@ -382,6 +405,7 @@ export function useOfflineSync() {
     isOnline,
     isSyncing,
     pendingCount,
+    isBillingBlocked,
     syncAll,
     refreshPendingCount,
   };
