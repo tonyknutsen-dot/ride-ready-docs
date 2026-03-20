@@ -405,6 +405,7 @@ export function useOfflineSync() {
     isOnline,
     isSyncing,
     pendingCount,
+    isBillingBlocked,
     syncAll,
     refreshPendingCount,
   };
