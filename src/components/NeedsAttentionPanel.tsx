@@ -242,13 +242,14 @@ const NeedsAttentionPanel = () => {
 
   // Group items by type
   const groups: AttentionGroup[] = useMemo(() => {
-    const groupDefs: { type: AttentionItem['type']; title: string; icon: typeof AlertOctagon; defaultOpen: boolean; headerStyle: AttentionGroup['headerStyle'] }[] = [
+    const groupDefs: { type: AttentionItem['type']; title: string; icon: typeof AlertOctagon; defaultOpen: boolean; headerStyle: AttentionGroup['headerStyle']; tier: SeverityTier }[] = [
       {
         type: 'stop_use',
         title: 'Stop Use Defects',
         icon: AlertOctagon,
         defaultOpen: true,
-        headerStyle: { bg: 'bg-destructive/5', border: 'border-destructive/30', iconColor: 'text-destructive', text: 'text-destructive' },
+        tier: 'critical',
+        headerStyle: SEVERITY_HEADER.critical,
       },
       {
         type: 'check_due',
