@@ -104,20 +104,6 @@ const Settings = () => {
 
   useEffect(() => { fetchProfile(); }, [user]);
 
-  // Load existing logo
-  useEffect(() => {
-    const load = async () => {
-      if (profile?.company_logo_path) {
-        try {
-          const { data } = await supabase.storage.from('ride-documents').createSignedUrl(profile.company_logo_path, 3600);
-          if (data?.signedUrl) setExistingLogoUrl(data.signedUrl);
-        } catch { /* ignore */ }
-      } else {
-        setExistingLogoUrl(null);
-      }
-    };
-    load();
-  }, [profile?.company_logo_path]);
 
   const handleComplete = () => {
     setEditingProfile(false);
