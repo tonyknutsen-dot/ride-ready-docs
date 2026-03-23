@@ -118,7 +118,8 @@ export default function PlanBilling() {
       });
       nav('/billing', { replace: true });
     }
-  }, [hasValidAuthSession, searchParams, toast, nav, checkSubscriptionStatus]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasValidAuthSession, searchParams]);
 
   // Show the instruction modal instead of directly opening Stripe
   const handleManageSubscriptionClick = () => {
