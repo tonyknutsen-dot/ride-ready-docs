@@ -24,7 +24,6 @@ import { useActionNeededCount } from "@/hooks/useActionNeededCount";
 const Overview = () => {
   const navigate = useNavigate();
   const { data, isLoading, refetch } = useOverviewData();
-  const unreadCount = useUnreadNotifications();
   const actionNeededCount = useActionNeededCount();
   const { subscription } = useSubscription();
 

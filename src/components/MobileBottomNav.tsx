@@ -41,7 +41,7 @@ export default function MobileBottomNav() {
   const [open, setOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
-  const unreadCount = useUnreadNotifications();
+  const unreadCount = useActionNeededCount();
   const overdueCount = useOverdueCompliance();
 
   // Don't show on public pages or if not logged in

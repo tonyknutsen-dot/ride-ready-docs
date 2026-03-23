@@ -105,7 +105,7 @@ export function AppSidebar() {
   const collapsed = state === 'collapsed';
   const [featureDialogOpen, setFeatureDialogOpen] = useState(false);
   const [contactDialogOpen, setContactDialogOpen] = useState(false);
-  const unreadCount = useUnreadNotifications();
+  const unreadCount = useActionNeededCount();
   const overdueCount = useOverdueCompliance();
 
   const hasFeatureAccess = (feature?: FeatureKey) => {
