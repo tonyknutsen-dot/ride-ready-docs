@@ -95,6 +95,7 @@ export default function PlanBilling() {
   }, [hasValidAuthSession, isTester, checkSubscriptionStatus]);
 
   // Handle success/cancel from Stripe checkout — only after auth is valid.
+  // Uses polling to wait for Stripe webhook propagation.
   useEffect(() => {
     if (!hasValidAuthSession) return;
 
@@ -102,11 +103,11 @@ export default function PlanBilling() {
     const canceled = searchParams.get('canceled');
 
     if (success === 'true') {
-      setIsSyncing(true);
-      void checkSubscriptionStatus().finally(() => setIsSyncing(false));
+      // Poll multiple times so webhook has time to propagate
+      void pollSubscriptionSync(4, 3000);
       toast({ 
         title: "Subscription activated!", 
-        description: "Thank you for subscribing. Your plan is now active.",
+        description: "Syncing your new plan — this may take a few moments.",
       });
       nav('/billing', { replace: true });
     } else if (canceled === 'true') {
