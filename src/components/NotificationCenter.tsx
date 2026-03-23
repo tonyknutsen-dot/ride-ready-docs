@@ -797,18 +797,28 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
     <div
       onClick={() => hasAction && onNavigate(n)}
       className={cn(
-        'flex items-start gap-2.5 px-3 py-2 rounded-xl border transition-all group',
-        variant === 'urgent' && 'border-destructive/20 bg-destructive/[0.04]',
-        variant === 'action' && 'border-border bg-card hover:border-primary/30',
-        isBrowse && n.is_read && 'border-transparent bg-transparent hover:bg-muted/60',
-        isBrowse && !n.is_read && 'border-border/50 bg-card/50 hover:bg-card',
+        'flex items-start gap-2.5 px-3 py-2.5 transition-all group relative',
+        // Left accent border via pseudo-element
+        variant === 'urgent' && 'pl-5',
+        variant === 'action' && 'pl-5',
+        isBrowse && 'rounded-xl',
+        isBrowse && n.is_read && 'bg-transparent hover:bg-muted/60',
+        isBrowse && !n.is_read && 'bg-card/50 hover:bg-card',
         hasAction && 'cursor-pointer active:scale-[0.995]'
       )}
     >
+      {/* Left accent bar */}
+      {(variant === 'urgent' || variant === 'action') && (
+        <span className={cn(
+          'absolute left-0 top-2 bottom-2 w-[3px] rounded-full',
+          variant === 'urgent' ? 'bg-destructive' : 'bg-amber-500'
+        )} />
+      )}
+
       {/* Icon */}
       <div className={cn(
         'flex items-center justify-center w-6 h-6 rounded-md shrink-0 mt-0.5',
-        variant === 'urgent' ? 'bg-destructive/10' : variant === 'action' ? 'bg-accent' : 'bg-muted'
+        variant === 'urgent' ? 'bg-destructive/10' : variant === 'action' ? 'bg-amber-500/10' : 'bg-muted'
       )}>
         {getIcon(n)}
       </div>
@@ -818,11 +828,12 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
         <div className="flex items-center gap-1.5">
           <p className={cn(
             'text-[13px] font-medium leading-snug line-clamp-1',
+            variant === 'urgent' ? 'text-destructive font-semibold' :
             n.is_read && isBrowse ? 'text-muted-foreground' : 'text-foreground'
           )}>
             {n.title}
           </p>
-          {!n.is_read && <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-primary" />}
+          {!n.is_read && isBrowse && <span className="shrink-0 w-1.5 h-1.5 rounded-full bg-primary" />}
         </div>
 
         {/* Message preview — only for urgent/action, or unread browse */}
@@ -851,7 +862,7 @@ const NotificationRow = ({ notification: n, variant, onNavigate, onDelete }: Not
           <span className={cn(
             'text-[10px] font-semibold px-1.5 py-0.5 rounded-md',
             variant === 'urgent' ? 'text-destructive bg-destructive/8' :
-            variant === 'action' ? 'text-foreground bg-accent' :
+            variant === 'action' ? 'text-amber-600 dark:text-amber-400 bg-amber-500/8' :
             'text-muted-foreground'
           )}>
             {getActionLabel(n)}
