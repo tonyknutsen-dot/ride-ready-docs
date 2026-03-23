@@ -136,17 +136,23 @@ const getActionLabel = (n: Notification): string => {
 const getIcon = (n: Notification) => {
   const title = n.title?.toLowerCase() ?? '';
   const cls = 'h-3.5 w-3.5';
+  // Critical — red icons
   if (title.includes('stop use') || title.includes('critical')) return <AlertOctagon className={cn(cls, 'text-destructive')} />;
-  if (title.includes('defect')) return <AlertTriangle className={cn(cls, 'text-destructive')} />;
-  if (title.includes('pressure')) return <Gauge className={cn(cls, 'text-destructive')} />;
-  if (title.includes('wind') || title.includes('threshold')) return <Wind className={cn(cls, 'text-primary')} />;
-  if (title.includes('check') || title.includes('missed')) return <ClipboardCheck className={cn(cls, 'text-accent-foreground')} />;
-  if (title.includes('inspection') || title.includes('ndt')) return <Shield className={cn(cls, 'text-primary')} />;
+  if (title.includes('pressure') && (title.includes('out of range') || title.includes('action'))) return <Gauge className={cn(cls, 'text-destructive')} />;
+  // Warning — warning-color icons
+  if (title.includes('defect')) return <AlertTriangle className={cn(cls, 'text-warning')} />;
+  if (title.includes('overdue') || title.includes('expired') || title.includes('expiring')) return <FileText className={cn(cls, 'text-warning')} />;
+  if (title.includes('missed')) return <ClipboardCheck className={cn(cls, 'text-warning')} />;
+  // Info — primary/info icons
+  if (title.includes('pressure')) return <Gauge className={cn(cls, 'text-info')} />;
+  if (title.includes('wind') || title.includes('threshold')) return <Wind className={cn(cls, 'text-info')} />;
+  if (title.includes('check')) return <ClipboardCheck className={cn(cls, 'text-info')} />;
+  if (title.includes('inspection') || title.includes('ndt')) return <Shield className={cn(cls, 'text-info')} />;
   if (title.includes('sent') || title.includes('shared')) return <Send className={cn(cls, 'text-primary')} />;
-  if (title.includes('document') || title.includes('expir') || title.includes('certificate')) return <FileText className={cn(cls, 'text-primary')} />;
-  if (title.includes('maintenance') || title.includes('repair')) return <Wrench className={cn(cls, 'text-accent-foreground')} />;
-  if (title.includes('billing') || title.includes('plan')) return <CreditCard className={cn(cls, 'text-accent-foreground')} />;
-  if (n.type === 'success') return <CheckCircle className={cn(cls, 'text-primary')} />;
+  if (title.includes('document') || title.includes('certificate')) return <FileText className={cn(cls, 'text-primary')} />;
+  if (title.includes('maintenance') || title.includes('repair')) return <Wrench className={cn(cls, 'text-primary')} />;
+  if (title.includes('billing') || title.includes('plan')) return <CreditCard className={cn(cls, 'text-muted-foreground')} />;
+  if (n.type === 'success') return <CheckCircle className={cn(cls, 'text-success')} />;
   return <Info className={cn(cls, 'text-muted-foreground')} />;
 };
 
