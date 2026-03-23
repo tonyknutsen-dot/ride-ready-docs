@@ -449,9 +449,6 @@ const Settings = () => {
           )}
         </SettingsGroup>
 
-        {activePanel === 'security' && (
-          <div className="space-y-3 animate-in fade-in-0 slide-in-from-top-1 duration-200">)
-
         {activePanel === 'email' && (
           <div className="rounded-xl border border-border bg-card p-4 animate-in fade-in-0 slide-in-from-top-1 duration-200">
             <div className="flex items-center justify-between mb-2">
