@@ -270,7 +270,7 @@ export default function PaymentsDashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="text-xs sm:text-sm font-medium flex items-center gap-2">
                 <Clock className="h-4 w-4 shrink-0" />
-                <span className="truncate">Sub Health</span>
+                <span className="truncate">Subscription Health</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">

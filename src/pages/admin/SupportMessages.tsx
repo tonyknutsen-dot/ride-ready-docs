@@ -208,12 +208,12 @@ export default function SupportMessages() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Support Messages</h1>
-            <p className="text-muted-foreground mt-1">
-              Manage and respond to user support requests
+            <h1 className="text-xl md:text-2xl font-bold">Support Messages</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Review and respond to user support requests
             </p>
           </div>
-          <MessageCircle className="h-8 w-8 text-muted-foreground" />
+          <MessageCircle className="h-6 w-6 text-muted-foreground/50" />
         </div>
 
         <div className="flex gap-2">
