@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Bell, Check, X, AlertTriangle, Info, CheckCircle,
   FileText, Wrench, ClipboardCheck, Shield, Wind,
