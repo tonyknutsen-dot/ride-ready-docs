@@ -11,6 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { formatDistanceToNow } from 'date-fns';
 import { setCache, getCache } from '@/lib/offlineCache';
 import DefectClosureDialog from '@/components/DefectClosureDialog';
+import { getDefectTier, SEVERITY_STRIP, SEVERITY_OPERATIONAL, SEVERITY_BADGE, SEVERITY_CARD, DEFECT_DISPLAY } from '@/utils/severityStyles';
 
 type DefectSeverity = 'non_urgent' | 'urgent' | 'stop_operation';
 type DefectStatus = 'open' | 'acknowledged' | 'in_progress' | 'awaiting_review' | 'resolved';
